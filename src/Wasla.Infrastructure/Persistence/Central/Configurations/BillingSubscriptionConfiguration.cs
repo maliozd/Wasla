@@ -53,6 +53,7 @@ public sealed class BillingSubscriptionConfiguration : IEntityTypeConfiguration<
         foreach (var snapshot in new[]
                  {
                      nameof(BillingSubscription.PendingRegistrationId),
+                     nameof(BillingSubscription.PlanPriceId),
                      nameof(BillingSubscription.PlanCode),
                      nameof(BillingSubscription.BillingPeriod),
                      nameof(BillingSubscription.Amount),
@@ -76,6 +77,12 @@ public sealed class BillingSubscriptionConfiguration : IEntityTypeConfiguration<
             .IsUnique()
             .HasFilter("[ExternalSubscriptionReference] IS NOT NULL")
             .HasDatabaseName("IX_BillingSubscriptions_ProviderReference");
+
+        // The price row a subscription was priced from stays as long as the subscription does.
+        builder.HasOne<BillingPlanPrice>()
+            .WithMany()
+            .HasForeignKey(x => x.PlanPriceId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // A registration is never deleted while it owns billing history.
         builder.HasOne<PendingRegistration>()

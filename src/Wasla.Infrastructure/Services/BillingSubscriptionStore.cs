@@ -38,22 +38,18 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
     public async Task<BillingStartResult> StartForRegistrationAsync(
         Guid pendingRegistrationId,
         BillingProviderScope scope,
-        BillingPrice price,
         CancellationToken ct)
     {
-        if (price == default)
-            throw new ArgumentException("A price is required.", nameof(price));
-
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             var existing = await _central.BillingSubscriptions.AsNoTracking()
                 .Where(s => s.PendingRegistrationId == pendingRegistrationId)
-                .Select(s => new { s.Id, s.Provider, s.Environment, s.Amount, s.Currency })
+                .Select(s => new { s.Id, s.Provider, s.Environment })
                 .FirstOrDefaultAsync(ct);
             if (existing is not null)
             {
-                var same = existing.Provider == scope.Provider && existing.Environment == scope.Environment
-                           && existing.Amount == price.Amount && existing.Currency == price.Currency;
+                // The existing subscription keeps the price it started with, even if a newer price row exists.
+                var same = existing.Provider == scope.Provider && existing.Environment == scope.Environment;
                 return new BillingStartResult(same ? BillingStoreOutcome.Unchanged : BillingStoreOutcome.Conflict, existing.Id);
             }
 
@@ -70,13 +66,26 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
                 || registration.BillingPeriod is not (BillingSubscription.MonthlyPeriod or BillingSubscription.YearlyPeriod))
                 return new BillingStartResult(BillingStoreOutcome.NotEligible, null);
 
+            // Wasla's own price in effect now for the registration's plan and period; never a caller's value.
+            var planPrice = await _central.BillingPlanPrices.AsNoTracking()
+                .Where(p => p.PlanCode == registration.PlanCode
+                            && p.BillingPeriod == registration.BillingPeriod
+                            && p.EffectiveFromUtc <= now)
+                .OrderByDescending(p => p.EffectiveFromUtc)
+                .FirstOrDefaultAsync(ct);
+            if (planPrice is null)
+            {
+                _logger.LogWarning(
+                    "Billing subscription not started: no plan price in effect. RegistrationId={RegistrationId}",
+                    pendingRegistrationId);
+                return new BillingStartResult(BillingStoreOutcome.PriceNotConfigured, null);
+            }
+
             var subscription = BillingSubscription.StartPending(
                 pendingRegistrationId,
                 scope.Provider,
                 scope.Environment,
-                registration.PlanCode,
-                registration.BillingPeriod,
-                price,
+                planPrice,
                 now);
             _central.BillingSubscriptions.Add(subscription);
             try
@@ -307,6 +316,7 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
             row.PendingRegistrationId,
             row.TenantId,
             new BillingProviderScope(row.Provider, row.Environment),
+            row.PlanPriceId,
             row.PlanCode,
             row.BillingPeriod,
             row.Price,

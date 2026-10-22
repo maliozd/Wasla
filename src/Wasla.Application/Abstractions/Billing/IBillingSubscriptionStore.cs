@@ -15,15 +15,15 @@ namespace Wasla.Application.Abstractions.Billing;
 public interface IBillingSubscriptionStore
 {
     /// <summary>
-    /// Creates the pending subscription for a registration that awaits payment, snapshotting the registration's plan
-    /// and period with <paramref name="price"/>. Repeating it with the same scope and price returns the existing
-    /// subscription as <see cref="BillingStoreOutcome.Unchanged"/>; a different scope or price is a
-    /// <see cref="BillingStoreOutcome.Conflict"/>.
+    /// Creates the pending subscription for a registration that awaits payment, priced from the CentralDb plan price
+    /// in effect now for the registration's plan and period, whose values it snapshots. Without such a price it is
+    /// <see cref="BillingStoreOutcome.PriceNotConfigured"/> and nothing is written. Repeating it in the same scope
+    /// returns the existing subscription, with its original price, as <see cref="BillingStoreOutcome.Unchanged"/>; a
+    /// different scope is a <see cref="BillingStoreOutcome.Conflict"/>.
     /// </summary>
     Task<BillingStartResult> StartForRegistrationAsync(
         Guid pendingRegistrationId,
         BillingProviderScope scope,
-        BillingPrice price,
         CancellationToken ct);
 
     Task<BillingSubscriptionView?> GetForRegistrationAsync(Guid pendingRegistrationId, CancellationToken ct);
@@ -84,7 +84,10 @@ public enum BillingStoreOutcome
     ScopeMismatch = 7,
 
     /// <summary>Concurrent writers kept changing the record; nothing was written by this call.</summary>
-    ConcurrencyConflict = 8
+    ConcurrencyConflict = 8,
+
+    /// <summary>No CentralDb plan price is in effect for the plan and period, so no checkout can be priced.</summary>
+    PriceNotConfigured = 9
 }
 
 /// <summary>
@@ -98,6 +101,7 @@ public sealed record BillingSubscriptionView(
     Guid PendingRegistrationId,
     Guid? TenantId,
     BillingProviderScope Scope,
+    Guid PlanPriceId,
     string PlanCode,
     string BillingPeriod,
     BillingPrice Price,

@@ -27,7 +27,7 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         var registration = await SeedRegistrationAsync();
 
         var results = await RaceAsync(store =>
-            store.StartForRegistrationAsync(registration, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct));
+            store.StartForRegistrationAsync(registration, BillingTestData.Sandbox, Ct));
 
         Assert.Single(results, r => r.Outcome == BillingStoreOutcome.Applied);
         Assert.All(results, r => Assert.Contains(r.Outcome, new[] { BillingStoreOutcome.Applied, BillingStoreOutcome.Unchanged }));
@@ -98,12 +98,23 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         await AssertRefusedAsync(db, InsertSql(registration, amount: "0"), 547);
         await AssertRefusedAsync(db, InsertSql(registration, environment: 3), 547);
         await AssertRefusedAsync(db, InsertSql(Guid.NewGuid()), 547);
+        await AssertRefusedAsync(db, InsertSql(registration, planPriceId: Guid.NewGuid()), 547);
+
+        // Plan prices: positive, Monthly or Yearly, one per plan, period and effective time, kept while referenced.
+        await AssertRefusedAsync(db, InsertPlanPriceSql("0"), 547);
+        await AssertRefusedAsync(db, InsertPlanPriceSql("100.00", period: "Weekly"), 547);
+        await AssertRefusedAsync(
+            db,
+            InsertPlanPriceSql("100.00", effectiveFrom: _db.PlanPrice.EffectiveFromUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffffff")),
+            2601);
 
         // Two pending rows without provider reference or tenant are fine; a second row for the registration is not.
         var other = await SeedRegistrationAsync();
         await db.Database.ExecuteSqlRawAsync(InsertSql(registration), Ct);
         await db.Database.ExecuteSqlRawAsync(InsertSql(other), Ct);
         await AssertRefusedAsync(db, InsertSql(registration), 2601);
+
+        await AssertRefusedAsync(db, $"DELETE FROM [BillingPlanPrices] WHERE [Id] = '{_db.PlanPrice.Id}'", 547);
 
         // A payment's environment is its subscription's.
         var id = await StartBoundAsync();
@@ -155,7 +166,7 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         var registration = await SeedRegistrationAsync();
         await using var db = _db.Open("Setup");
         var store = _db.Store(db);
-        var id = (await store.StartForRegistrationAsync(registration, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).SubscriptionId!.Value;
+        var id = (await store.StartForRegistrationAsync(registration, BillingTestData.Sandbox, Ct)).SubscriptionId!.Value;
         Assert.Equal(BillingStoreOutcome.Applied, await store.BindProviderReferencesAsync(id, BillingTestData.Sandbox, "sub-" + id.ToString("N"), null, Ct));
         return id;
     }
@@ -166,13 +177,18 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         return await db.BillingSubscriptions.Where(s => s.Id == id).Select(s => s.Revision).SingleAsync(Ct);
     }
 
-    private static string InsertSql(
+    private string InsertSql(
         Guid registration,
         int status = (int)SubscriptionStatus.Pending,
-        string amount = "999.00",
-        int environment = 1) =>
-        "INSERT INTO [BillingSubscriptions] ([Id],[PendingRegistrationId],[Provider],[Environment],[PlanCode],[BillingPeriod],[Amount],[Currency],[Status],[StatusObservedAtUtc],[CreatedAtUtc],[UpdatedAtUtc],[Revision]) " +
-        $"VALUES (NEWID(), '{registration}', 1, {environment}, 'Pro', 'Monthly', {amount}, 'TRY', {status}, '2026-10-22', '2026-10-22', '2026-10-22', 1)";
+        string amount = "123.45",
+        int environment = 1,
+        Guid? planPriceId = null) =>
+        "INSERT INTO [BillingSubscriptions] ([Id],[PendingRegistrationId],[Provider],[Environment],[PlanPriceId],[PlanCode],[BillingPeriod],[Amount],[Currency],[Status],[StatusObservedAtUtc],[CreatedAtUtc],[UpdatedAtUtc],[Revision]) " +
+        $"VALUES (NEWID(), '{registration}', 1, {environment}, '{planPriceId ?? _db.PlanPrice.Id}', 'Pro', 'Monthly', {amount}, 'TRY', {status}, '2026-10-22', '2026-10-22', '2026-10-22', 1)";
+
+    private static string InsertPlanPriceSql(string amount, string period = "Monthly", string effectiveFrom = "2027-01-01") =>
+        "INSERT INTO [BillingPlanPrices] ([Id],[PlanCode],[BillingPeriod],[Amount],[Currency],[EffectiveFromUtc],[CreatedAtUtc]) " +
+        $"VALUES (NEWID(), 'Pro', '{period}', {amount}, 'TRY', '{effectiveFrom}', '2026-10-22')";
 
     private static async Task AssertRefusedAsync(DbContext db, string sql, int sqlErrorNumber)
     {
@@ -206,7 +222,7 @@ public sealed class BillingMigrationSqlServerTests : IClassFixture<SqlServerCent
         var registration = BillingTestData.Registration();
         db.PendingRegistrations.Add(registration);
         await db.SaveChangesAsync(Ct);
-        var started = await _db.Store(db).StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
+        var started = await _db.Store(db).StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
         Assert.Equal(BillingStoreOutcome.Applied, started.Outcome);
 
         var refused = await Assert.ThrowsAsync<SqlException>(() => migrator.MigrateAsync(previous, Ct));
@@ -215,6 +231,10 @@ public sealed class BillingMigrationSqlServerTests : IClassFixture<SqlServerCent
         Assert.Contains(billing, await db.Database.GetAppliedMigrationsAsync(Ct));
 
         await db.BillingSubscriptions.ExecuteDeleteAsync(Ct);
+        refused = await Assert.ThrowsAsync<SqlException>(() => migrator.MigrateAsync(previous, Ct));
+        Assert.Equal(50147, refused.Number);
+
+        await db.BillingPlanPrices.ExecuteDeleteAsync(Ct);
         await migrator.MigrateAsync(previous, Ct);
         Assert.DoesNotContain(billing, await db.Database.GetAppliedMigrationsAsync(Ct));
 

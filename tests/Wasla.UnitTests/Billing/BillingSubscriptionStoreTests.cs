@@ -26,7 +26,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     {
         var registration = await _db.SeedRegistrationAsync();
 
-        var started = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
+        var started = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
 
         Assert.Equal(BillingStoreOutcome.Applied, started.Outcome);
         var view = await _db.Store().GetForRegistrationAsync(registration.Id, Ct);
@@ -42,22 +42,98 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Start_Repeated_ReturnsTheSameSubscription_AndAChangedPriceOrEnvironmentConflicts()
+    public async Task Start_Repeated_ReturnsTheSameSubscription_AndAnotherEnvironmentConflicts()
     {
         var registration = await _db.SeedRegistrationAsync();
-        var first = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
+        var first = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
 
-        var again = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
-        var repriced = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, new BillingPrice(499m, "TRY"), Ct);
-        var production = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Production, BillingTestData.MonthlyPrice, Ct);
+        var again = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
+        var production = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Production, Ct);
 
         Assert.Equal(new BillingStartResult(BillingStoreOutcome.Unchanged, first.SubscriptionId), again);
-        Assert.Equal(new BillingStartResult(BillingStoreOutcome.Conflict, first.SubscriptionId), repriced);
         Assert.Equal(new BillingStartResult(BillingStoreOutcome.Conflict, first.SubscriptionId), production);
         await using var check = _db.Open();
         var stored = await check.BillingSubscriptions.SingleAsync(Ct);
+        Assert.Equal(_db.PlanPrice.Id, stored.PlanPriceId);
         Assert.Equal(BillingTestData.MonthlyPrice, stored.Price);
         Assert.Equal(1, stored.Revision);
+    }
+
+    [Fact]
+    public async Task Start_WithoutAPlanPriceInEffect_IsPriceNotConfigured_AndWritesNothing()
+    {
+        // No row at all for Starter, and a Starter row that only takes effect tomorrow.
+        var starter = await _db.SeedRegistrationAsync(planCode: "Starter");
+        Assert.Equal(
+            new BillingStartResult(BillingStoreOutcome.PriceNotConfigured, null),
+            await _db.Store().StartForRegistrationAsync(starter.Id, BillingTestData.Sandbox, Ct));
+
+        await using (var db = _db.Open())
+        {
+            db.BillingPlanPrices.Add(BillingTestData.PlanPrice("Starter", effectiveFromUtc: BillingTestData.Now.AddDays(1)));
+            await db.SaveChangesAsync(Ct);
+        }
+
+        Assert.Equal(
+            new BillingStartResult(BillingStoreOutcome.PriceNotConfigured, null),
+            await _db.Store().StartForRegistrationAsync(starter.Id, BillingTestData.Sandbox, Ct));
+        await using var check = _db.Open();
+        Assert.False(await check.BillingSubscriptions.AnyAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Start_UsesThePriceInEffectNow_AndALaterPriceNeverRepricesAnExistingSubscription()
+    {
+        var revised = BillingTestData.PlanPrice(price: new BillingPrice(200.00m, "TRY"), effectiveFromUtc: BillingTestData.Now.AddDays(1));
+        await using (var db = _db.Open())
+        {
+            db.BillingPlanPrices.Add(revised);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var early = await _db.SeedRegistrationAsync();
+        var earlyId = (await _db.Store().StartForRegistrationAsync(early.Id, BillingTestData.Sandbox, Ct)).SubscriptionId;
+
+        _db.Time.UtcNow = BillingTestData.Now.AddDays(2);
+        var late = await _db.SeedRegistrationAsync();
+        var lateStart = await _db.Store().StartForRegistrationAsync(late.Id, BillingTestData.Sandbox, Ct);
+        var earlyAgain = await _db.Store().StartForRegistrationAsync(early.Id, BillingTestData.Sandbox, Ct);
+
+        Assert.Equal(new BillingStartResult(BillingStoreOutcome.Unchanged, earlyId), earlyAgain);
+        var earlyView = await _db.Store().GetForRegistrationAsync(early.Id, Ct);
+        var lateView = await _db.Store().GetForRegistrationAsync(late.Id, Ct);
+        Assert.Equal((_db.PlanPrice.Id, BillingTestData.MonthlyPrice), (earlyView!.PlanPriceId, earlyView.Price));
+        Assert.Equal(BillingStoreOutcome.Applied, lateStart.Outcome);
+        Assert.Equal((revised.Id, new BillingPrice(200.00m, "TRY")), (lateView!.PlanPriceId, lateView.Price));
+    }
+
+    [Fact]
+    public async Task PlanPrices_AreImmutable_UniquePerPlanPeriodAndTime_AndKeptWhileReferenced()
+    {
+        var registration = await _db.SeedRegistrationAsync();
+        await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
+
+        await using (var db = _db.Open())
+        {
+            var price = await db.BillingPlanPrices.SingleAsync(Ct);
+            db.Entry(price).Property(nameof(BillingPlanPrice.Amount)).CurrentValue = 1m;
+            await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync(Ct));
+        }
+
+        await using (var db = _db.Open())
+        {
+            db.BillingPlanPrices.Add(BillingTestData.PlanPrice(price: new BillingPrice(1m, "TRY"), effectiveFromUtc: _db.PlanPrice.EffectiveFromUtc));
+            await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(Ct));
+        }
+
+        await using (var db = _db.Open())
+        {
+            db.BillingPlanPrices.Remove(await db.BillingPlanPrices.SingleAsync(Ct));
+            await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(Ct));
+        }
+
+        await using var check = _db.Open();
+        Assert.Equal(BillingTestData.MonthlyPrice, (await check.BillingPlanPrices.SingleAsync(Ct)).Price);
     }
 
     [Theory]
@@ -70,7 +146,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     {
         var registration = await _db.SeedRegistrationAsync(status);
 
-        var started = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
+        var started = await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
 
         Assert.Equal(new BillingStartResult(BillingStoreOutcome.NotEligible, null), started);
         await using var check = _db.Open();
@@ -83,8 +159,8 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
         var registration = await _db.SeedRegistrationAsync();
         _db.Time.UtcNow = registration.ExpiresAtUtc!.Value;
 
-        Assert.Equal(BillingStoreOutcome.NotEligible, (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).Outcome);
-        Assert.Equal(BillingStoreOutcome.NotFound, (await _db.Store().StartForRegistrationAsync(Guid.NewGuid(), BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).Outcome);
+        Assert.Equal(BillingStoreOutcome.NotEligible, (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct)).Outcome);
+        Assert.Equal(BillingStoreOutcome.NotFound, (await _db.Store().StartForRegistrationAsync(Guid.NewGuid(), BillingTestData.Sandbox, Ct)).Outcome);
         await using var check = _db.Open();
         Assert.False(await check.BillingSubscriptions.AnyAsync(Ct));
     }
@@ -277,8 +353,8 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
         var tenantB = Guid.NewGuid();
         var registrationA = await _db.SeedRegistrationAsync(PendingRegistrationStatus.AwaitingPayment);
         var registrationB = await _db.SeedRegistrationAsync(PendingRegistrationStatus.AwaitingPayment);
-        var a = (await _db.Store().StartForRegistrationAsync(registrationA.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).SubscriptionId!.Value;
-        var b = (await _db.Store().StartForRegistrationAsync(registrationB.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).SubscriptionId!.Value;
+        var a = (await _db.Store().StartForRegistrationAsync(registrationA.Id, BillingTestData.Sandbox, Ct)).SubscriptionId!.Value;
+        var b = (await _db.Store().StartForRegistrationAsync(registrationB.Id, BillingTestData.Sandbox, Ct)).SubscriptionId!.Value;
         await ProvisionAsync(registrationA.Id, tenantA);
         await ProvisionAsync(registrationB.Id, tenantB);
 
@@ -307,7 +383,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     public async Task LinkTenant_RequiresTheProvisionedRegistrationToNameThatTenant()
     {
         var registration = await _db.SeedRegistrationAsync();
-        var id = (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).SubscriptionId!.Value;
+        var id = (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct)).SubscriptionId!.Value;
         var tenant = Guid.NewGuid();
 
         // Not provisioned yet.
@@ -328,7 +404,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     {
         var tenant = Guid.NewGuid();
         var registration = await _db.SeedRegistrationAsync();
-        var id = (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct)).SubscriptionId!.Value;
+        var id = (await _db.Store().StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct)).SubscriptionId!.Value;
         await ProvisionAsync(registration.Id, tenant);
         await _db.Store().LinkTenantAsync(id, tenant, Ct);
         await _db.Store().BindProviderReferencesAsync(id, BillingTestData.Sandbox, "sub-a", null, Ct);
@@ -355,7 +431,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
     private async Task<Guid> StartAsync(BillingProviderScope scope)
     {
         var registration = await _db.SeedRegistrationAsync();
-        var started = await _db.Store().StartForRegistrationAsync(registration.Id, scope, BillingTestData.MonthlyPrice, Ct);
+        var started = await _db.Store().StartForRegistrationAsync(registration.Id, scope, Ct);
         Assert.Equal(BillingStoreOutcome.Applied, started.Outcome);
         return started.SubscriptionId!.Value;
     }

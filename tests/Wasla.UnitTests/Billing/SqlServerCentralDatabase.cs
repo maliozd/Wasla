@@ -22,6 +22,9 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
 
     public BillingClock Time { get; } = new(BillingTestData.Now);
 
+    /// <summary>The plan price seeded for Pro, Monthly after migrating.</summary>
+    public Wasla.Domain.Entities.Central.BillingPlanPrice PlanPrice { get; } = BillingTestData.PlanPrice();
+
     /// <summary>Each distinct <paramref name="instance"/> has its own connection pool, as separate processes would.</summary>
     public CentralDbContext Open(string instance = "Inspector") => new(new DbContextOptionsBuilder<CentralDbContext>()
         .UseSqlServer(ConnectionString(DatabaseName, instance))
@@ -41,6 +44,8 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
 
         await using var db = Open("Setup");
         await db.Database.MigrateAsync();
+        db.BillingPlanPrices.Add(PlanPrice);
+        await db.SaveChangesAsync();
     }
 
     public async ValueTask DisposeAsync()

@@ -4,12 +4,14 @@ namespace Wasla.Application.Abstractions.Billing;
 
 /// <summary>
 /// What the provider needs to start a hosted checkout for one Wasla subscription. The plan, period and price are the
-/// subscription's stored snapshot, never request values. <see cref="IdempotencyKey"/> is derived from the Wasla
+/// subscription's stored snapshot, never request values. <see cref="PlanPriceId"/> names the Wasla price row, which the
+/// adapter maps to the provider's own product and pricing-plan references for its environment (WAS-148). <see cref="IdempotencyKey"/> is derived from the Wasla
 /// subscription so a retried command cannot start a second provider subscription where the provider supports it.
 /// </summary>
 public sealed record BillingCheckoutRequest(
     Guid SubscriptionId,
     Guid PendingRegistrationId,
+    Guid PlanPriceId,
     string PlanCode,
     string BillingPeriod,
     BillingPrice Price,

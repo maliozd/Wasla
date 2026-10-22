@@ -55,7 +55,7 @@ Main `DbSet` entities:
 | `TenantMembership` | Central membership links |
 | `CentralAdminUser` | Central admin operators |
 | `PendingRegistration` | Signup / payment / provisioning pipeline |
-| `BillingSubscription` / `BillingPayment` | Wasla subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
+| `BillingPlanPrice` / `BillingSubscription` / `BillingPayment` | Wasla plan prices, subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
 | `PrintBridgeDevice` / `PrintBridgeSetupSession` | Print Bridge device registry (central) |
 | Address/catalog helpers | `BusinessType`, `Country`, `City`, `District`, `Neighborhood`, `Street`, and related pending-registration join |
 

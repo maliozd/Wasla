@@ -17,7 +17,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [architecture/authentication.md](architecture/authentication.md) | Cookie schemes and Web/API session limits |
 | [architecture/realtime.md](architecture/realtime.md) | Live tenant notifications (SignalR hub, internal channel, browser fallback) |
 | [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md) | Decision: one Web instance for live notifications; multi-instance topology and its triggers |
-| [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb subscription and payment records, states, invariants, iyzico mapping intent |
+| [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb plan prices, subscription and payment records, states, invariants, iyzico mapping intent, open price decision |
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |

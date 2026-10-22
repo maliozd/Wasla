@@ -13,6 +13,25 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
         {
             // WAS-147: additive only. New billing tables; no existing table, column or row changes.
             migrationBuilder.CreateTable(
+                name: "BillingPlanPrices",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PlanCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    BillingPeriod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "char(3)", unicode: false, fixedLength: true, maxLength: 3, nullable: false),
+                    EffectiveFromUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BillingPlanPrices", x => x.Id);
+                    table.CheckConstraint("CK_BillingPlanPrices_Amount", "[Amount] > 0");
+                    table.CheckConstraint("CK_BillingPlanPrices_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "BillingSubscriptions",
                 columns: table => new
                 {
@@ -21,6 +40,7 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Provider = table.Column<int>(type: "int", nullable: false),
                     Environment = table.Column<int>(type: "int", nullable: false),
+                    PlanPriceId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PlanCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     BillingPeriod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
@@ -43,6 +63,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     table.CheckConstraint("CK_BillingSubscriptions_Provider", "[Provider] IN (1)");
                     table.CheckConstraint("CK_BillingSubscriptions_Status", "[Status] IN (2, 3, 4, 5, 6, 7)");
                     table.CheckConstraint("CK_BillingSubscriptions_VerifiedStateHasProviderReference", "[Status] NOT IN (2, 3) OR [ExternalSubscriptionReference] IS NOT NULL");
+                    table.ForeignKey(
+                        name: "FK_BillingSubscriptions_BillingPlanPrices_PlanPriceId",
+                        column: x => x.PlanPriceId,
+                        principalTable: "BillingPlanPrices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BillingSubscriptions_PendingRegistrations_PendingRegistrationId",
                         column: x => x.PendingRegistrationId,
@@ -104,10 +130,21 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                 columns: new[] { "SubscriptionId", "Provider", "Environment" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_BillingPlanPrices_PlanCode_BillingPeriod_EffectiveFromUtc",
+                table: "BillingPlanPrices",
+                columns: new[] { "PlanCode", "BillingPeriod", "EffectiveFromUtc" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BillingSubscriptions_PendingRegistrationId",
                 table: "BillingSubscriptions",
                 column: "PendingRegistrationId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BillingSubscriptions_PlanPriceId",
+                table: "BillingSubscriptions",
+                column: "PlanPriceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BillingSubscriptions_ProviderReference",
@@ -127,12 +164,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Rolling back would delete subscription and payment evidence. Refuse while any exists; an operator who really
+            // Rolling back would delete plan prices, subscription and payment evidence. Refuse while any exists; an operator who really
             // means it exports and removes those rows first. Nothing is changed when this stops.
             migrationBuilder.Sql(
                 """
-                IF EXISTS (SELECT 1 FROM [BillingSubscriptions]) OR EXISTS (SELECT 1 FROM [BillingPayments])
-                    THROW 50147, 'WAS-147: BillingSubscriptions or BillingPayments holds rows. Export and remove them before rolling back AddBillingSubscriptions.', 1;
+                IF EXISTS (SELECT 1 FROM [BillingSubscriptions]) OR EXISTS (SELECT 1 FROM [BillingPayments]) OR EXISTS (SELECT 1 FROM [BillingPlanPrices])
+                    THROW 50147, 'WAS-147: BillingPlanPrices, BillingSubscriptions or BillingPayments holds rows. Export and remove them before rolling back AddBillingSubscriptions.', 1;
                 """);
 
             migrationBuilder.DropTable(
@@ -140,6 +177,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
             migrationBuilder.DropTable(
                 name: "BillingSubscriptions");
+
+            migrationBuilder.DropTable(
+                name: "BillingPlanPrices");
         }
     }
 }

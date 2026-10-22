@@ -103,22 +103,27 @@ public sealed class SubscriptionStatusTransitionTests
     }
 
     [Fact]
-    public void ANewSubscription_IsPending_WithTheSnapshotAndNoProviderIdentifiers()
+    public void ANewSubscription_IsPending_WithThePlanPriceSnapshotAndNoProviderIdentifiers()
     {
         var registrationId = Guid.NewGuid();
+        var planPrice = BillingPlanPrice.Create(
+            "ProPlus",
+            BillingSubscription.YearlyPeriod,
+            new BillingPrice(14990.50m, "TRY"),
+            BillingTestData.Now.AddDays(-1),
+            BillingTestData.Now.AddDays(-1));
         var subscription = BillingSubscription.StartPending(
             registrationId,
             BillingProvider.Iyzico,
             BillingEnvironment.Production,
-            "ProPlus",
-            BillingSubscription.YearlyPeriod,
-            new BillingPrice(14990.50m, "TRY"),
+            planPrice,
             BillingTestData.Now);
 
         Assert.Equal(SubscriptionStatus.Pending, subscription.Status);
         Assert.Equal(registrationId, subscription.PendingRegistrationId);
         Assert.Null(subscription.TenantId);
         Assert.Equal(BillingEnvironment.Production, subscription.Environment);
+        Assert.Equal(planPrice.Id, subscription.PlanPriceId);
         Assert.Equal("ProPlus", subscription.PlanCode);
         Assert.Equal(BillingSubscription.YearlyPeriod, subscription.BillingPeriod);
         Assert.Equal(new BillingPrice(14990.50m, "TRY"), subscription.Price);
@@ -323,16 +328,20 @@ public sealed class SubscriptionStatusTransitionTests
     }
 
     [Fact]
-    public void ASubscription_StartsOnlyWithAValidSnapshot()
+    public void APlanPrice_AndASubscription_StartOnlyFromValidValues()
     {
-        BillingSubscription Start(string period = BillingSubscription.MonthlyPeriod, string plan = "Pro", BillingPrice? price = null) =>
-            BillingSubscription.StartPending(Guid.NewGuid(), BillingProvider.Iyzico, BillingEnvironment.Sandbox, plan, period, price ?? BillingTestData.MonthlyPrice, BillingTestData.Now);
+        BillingPlanPrice Price(string period = BillingSubscription.MonthlyPeriod, string plan = "Pro", BillingPrice? price = null) =>
+            BillingPlanPrice.Create(plan, period, price ?? BillingTestData.MonthlyPrice, BillingTestData.Now, BillingTestData.Now);
 
-        Assert.Throws<ArgumentException>(() => Start(period: "Weekly"));
-        Assert.Throws<ArgumentException>(() => Start(period: "monthly"));
-        Assert.Throws<ArgumentException>(() => Start(plan: " "));
-        Assert.Throws<ArgumentException>(() => Start(price: default(BillingPrice)));
-        Assert.Throws<ArgumentException>(() => BillingSubscription.StartPending(Guid.Empty, BillingProvider.Iyzico, BillingEnvironment.Sandbox, "Pro", BillingSubscription.MonthlyPeriod, BillingTestData.MonthlyPrice, BillingTestData.Now));
-        Assert.Throws<ArgumentOutOfRangeException>(() => BillingSubscription.StartPending(Guid.NewGuid(), BillingProvider.Iyzico, (BillingEnvironment)0, "Pro", BillingSubscription.MonthlyPeriod, BillingTestData.MonthlyPrice, BillingTestData.Now));
+        Assert.Throws<ArgumentException>(() => Price(period: "Weekly"));
+        Assert.Throws<ArgumentException>(() => Price(period: "monthly"));
+        Assert.Throws<ArgumentException>(() => Price(plan: " "));
+        Assert.Throws<ArgumentException>(() => Price(price: default(BillingPrice)));
+
+        var valid = Price();
+        Assert.Throws<ArgumentException>(() => BillingSubscription.StartPending(Guid.Empty, BillingProvider.Iyzico, BillingEnvironment.Sandbox, valid, BillingTestData.Now));
+        Assert.Throws<ArgumentOutOfRangeException>(() => BillingSubscription.StartPending(Guid.NewGuid(), BillingProvider.Iyzico, (BillingEnvironment)0, valid, BillingTestData.Now));
+        Assert.Throws<ArgumentNullException>(() => BillingSubscription.StartPending(Guid.NewGuid(), BillingProvider.Iyzico, BillingEnvironment.Sandbox, null!, BillingTestData.Now));
+        Assert.Throws<ArgumentException>(() => BillingSubscription.StartPending(Guid.NewGuid(), BillingProvider.Iyzico, BillingEnvironment.Sandbox, valid, BillingTestData.Now.AddTicks(-1)));
     }
 }

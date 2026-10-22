@@ -27,7 +27,7 @@ public sealed class BillingSimulationIsolationTests : IDisposable
 
         var simulated = await _harness.CreateService().SimulatePaymentSuccessAsync(registration.Id, Ct);
         var started = await new BillingSubscriptionStore(_harness.Db, TimeProvider.System, NullLogger<BillingSubscriptionStore>.Instance)
-            .StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, BillingTestData.MonthlyPrice, Ct);
+            .StartForRegistrationAsync(registration.Id, BillingTestData.Sandbox, Ct);
 
         Assert.Equal(Wasla.Application.Abstractions.Onboarding.Checkout.CheckoutSimulationOutcome.Applied, simulated.Outcome);
         Assert.Equal(PendingRegistrationStatus.PaymentSucceeded, (await _harness.ReloadAsync(registration.Id)).Status);

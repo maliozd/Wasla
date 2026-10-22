@@ -14,8 +14,9 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 |-------|-------------------|-------|
 | `BillingSubscriptions` | The `PendingRegistration` the checkout started from (required, unique), and after provisioning also the `Tenant` that registration became (unique when set) | One Wasla subscription: Wasla id, provider and environment, plan/period/price snapshot, state, provider references, concurrency revision |
 | `BillingPayments` | Its `BillingSubscription` (required) | One provider-verified paid period: provider payment reference, period, charged amount and currency, verification time |
+| `BillingPlanPrices` | Wasla (platform data, not a tenant's) | Wasla's authoritative price for one plan and billing period from an effective time: plan code, period, amount, currency. Immutable; a new price is a new row |
 
-**Sources:** `src/Wasla.Domain/Entities/Central/BillingSubscription.cs`, `BillingPayment.cs`, `src/Wasla.Domain/Billing/`, `src/Wasla.Infrastructure/Persistence/Central/Configurations/Billing*Configuration.cs`, `src/Wasla.Infrastructure/Services/BillingSubscriptionStore.cs`.
+**Sources:** `src/Wasla.Domain/Entities/Central/BillingSubscription.cs`, `BillingPayment.cs`, `BillingPlanPrice.cs`, `src/Wasla.Domain/Billing/`, `src/Wasla.Infrastructure/Persistence/Central/Configurations/Billing*Configuration.cs`, `src/Wasla.Infrastructure/Services/BillingSubscriptionStore.cs`.
 
 ### What is reused and what is not
 
@@ -24,7 +25,8 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 | `PendingRegistration` | The subscription's origin and owner before a tenant exists. The plan code and billing period are copied from it; checkout may start only while it is `AwaitingPayment` or `PaymentFailed` and not expired |
 | `Tenant` | Linked once the registration is provisioned and names that tenant (`LinkTenantAsync`) |
 | `SubscriptionStatus` | The subscription state, extended with `Pending` (6) and `ReconciliationRequired` (7). `None` and `Trialing` stay tenant-level values that a billing subscription never holds |
-| `WaslaPlanCodes`, `Monthly`/`Yearly` | The plan and period vocabulary of signup |
+| `WaslaPlanCodes`, `Monthly`/`Yearly` | The plan and period vocabulary of signup, and the key of `BillingPlanPrices` |
+| `WaslaPlanCatalog.MonthlyPrice`, `CheckoutSimulatedPricing` | Not reused as a charge price; see [Plan prices](#plan-prices) |
 | `TenantMembership` | Not reused for billing. It requires a tenant (none exists during checkout), it is deleted with the tenant (billing evidence must survive) and it has no environment, provider references or price snapshot. It keeps its current role |
 | `Tenant.SubscriptionStatus`, `Tenant.BillingPaymentStatus` | Unchanged. Provisioning sets `Trialing` and `Paid`; nothing reads them. Whether entitlement projects the billing state onto them is WAS-151 |
 
@@ -49,6 +51,20 @@ Source: `SubscriptionStatusTransitions`. Every other move, including any to `Non
 - **Payments.** A verified payment must match the subscription's price snapshot and needs a provider reference; recording one does not change the subscription row. A payment reported late, even after expiry, is still recorded as evidence.
 - **For WAS-151.** Entitlement asks `IsVerifiedActive` at the moment of the request (reading the view per request or within a short cache is fine: periods that had not ended are kept). Grace for `PastDue` or access until the end of a cancelled period are policy decisions WAS-151 adds on top, reading the same paid periods; they are not in this check.
 
+## Plan prices
+
+Two different mappings are involved, and only the first is Wasla's:
+
+| Mapping | Owner | Where |
+|---------|-------|-------|
+| Wasla plan + billing period → amount + currency, from an effective time | Wasla; authoritative for what a checkout charges | CentralDb `BillingPlanPrices` (WAS-147) |
+| Wasla price row → the provider's product and pricing-plan references, per provider environment | Provider configuration; created or looked up in iyzico | Keyed by `PlanPriceId` and `BillingEnvironment` (WAS-148; not stored by WAS-147) |
+
+- **Checkout price.** `StartForRegistrationAsync` takes no price from its caller. It prices the subscription from the `BillingPlanPrices` row for the registration's plan and period with the latest `EffectiveFromUtc` not after now, and the subscription keeps that row's id (`PlanPriceId`) and amount and currency as its immutable snapshot. A later row prices only later checkouts; an existing subscription, including a repeated start for the same registration, keeps its price. The provider must charge exactly the snapshot (`RecordVerifiedPaymentAsync` refuses another amount).
+- **No price, no checkout.** Without a row in effect the start is `PriceNotConfigured` and writes nothing.
+- **Changes.** Rows are immutable (`PropertySaveBehavior.Throw`), unique per plan, period and effective time, and cannot be deleted while a subscription references them. A price change is a new row with a later effective time, added by a reviewed CentralDb migration; there is no admin screen or CLI for prices.
+- **Current state: no rows.** The migration creates the table empty, so every checkout start returns `PriceNotConfigured` until prices are decided (see [Price decision required](#price-decision-required)). Nothing calls the start yet (WAS-149), so no current flow changes.
+
 ## Invariants the database enforces
 
 These hold even for a writer that bypasses the application.
@@ -61,12 +77,13 @@ These hold even for a writer that bypasses the application.
 | A provider payment reference is recorded once per provider and environment | `IX_BillingPayments_ProviderReference` on `(Provider, Environment, ExternalPaymentReference)` (unique) |
 | One payment per subscription period start | `IX_BillingPayments_SubscriptionId_PeriodStartUtc` (unique) |
 | A payment has its subscription's provider and environment | `FK_BillingPayments_BillingSubscriptions` on `(SubscriptionId, Provider, Environment)` to `AK_BillingSubscriptions_Id_Provider_Environment` |
-| Billing states only; known provider and environment; Monthly or Yearly; positive amounts; periods end after they start; verified states have a provider reference | `CK_BillingSubscriptions_*`, `CK_BillingPayments_*` |
-| Billing history outlives the tenant row and pins its registration | `TenantId` FK `ON DELETE SET NULL`; `PendingRegistrationId` and payment FKs `RESTRICT` |
+| One plan price per plan, period and effective time | `IX_BillingPlanPrices_PlanCode_BillingPeriod_EffectiveFromUtc` (unique) |
+| Billing states only; known provider and environment; Monthly or Yearly; positive amounts; periods end after they start; verified states have a provider reference | `CK_BillingSubscriptions_*`, `CK_BillingPayments_*`, `CK_BillingPlanPrices_*` |
+| Billing history outlives the tenant row and pins its registration and its price row | `TenantId` FK `ON DELETE SET NULL`; `PendingRegistrationId`, `PlanPriceId` and payment FKs `RESTRICT` |
 
 `delete-tenant` therefore keeps a deleted tenant's subscription and payments (tenant id cleared, registration owner kept). Nothing deletes registrations today.
 
-Snapshot columns (registration, plan, period, amount, currency, created time) and every payment column are marked `PropertySaveBehavior.Throw`: EF refuses to save a change to them. Provider and environment are part of the alternate key and cannot change either. Provider references and the tenant link are set once by the domain.
+Snapshot columns (registration, plan price, plan, period, amount, currency, created time), every payment column and every plan price column are marked `PropertySaveBehavior.Throw`: EF refuses to save a change to them. Provider and environment are part of the alternate key and cannot change either. Provider references and the tenant link are set once by the domain.
 
 Sandbox and production identifiers never collide: the same reference string in both environments names two different rows, and every provider-driven write carries the `BillingProviderScope` (provider and environment) of the gateway that verified it. A write whose scope is not the record's returns `ScopeMismatch` and changes nothing.
 
@@ -76,7 +93,7 @@ Sandbox and production identifiers never collide: the same reference string in b
 
 | Command | Repeated | Contradicting |
 |---------|----------|---------------|
-| `StartForRegistrationAsync` | Same scope and price returns the existing id as `Unchanged` | Other scope or price: `Conflict` with the existing id; registration not awaiting payment or expired: `NotEligible` |
+| `StartForRegistrationAsync` | Same scope returns the existing id, with its original price, as `Unchanged` | Other scope: `Conflict` with the existing id; registration not awaiting payment or expired: `NotEligible`; no plan price in effect: `PriceNotConfigured` |
 | `BindProviderReferencesAsync` | `Unchanged` | Other reference, or one held by another subscription: `Conflict` |
 | `ApplyProviderStatusAsync` | `Unchanged` | Older: `Stale`; not allowed: `InvalidTransition` |
 | `RecordVerifiedPaymentAsync` | Identical payment: `Unchanged` | Same reference with other data or on another subscription, a second payment for the same period start, a price other than the snapshot: `Conflict` |
@@ -107,8 +124,8 @@ The adapter lives in Infrastructure, implements `IBillingGateway`, and keeps eve
 | iyzico concept | Wasla |
 |----------------|-------|
 | Sandbox or live API base URL and keys | `BillingEnvironment` of the gateway's `Scope`; keys in secure configuration, never CentralDb |
-| Product and pricing plan reference codes | Adapter configuration keyed by `PlanCode` and `BillingPeriod`, per environment (WAS-148). Not stored per subscription |
-| Price of the selected pricing plan | `BillingPrice` passed to `StartForRegistrationAsync` and frozen in the snapshot |
+| Product and pricing plan reference codes | Provider mapping of a Wasla price row: `BillingCheckoutRequest.PlanPriceId` per environment (WAS-148). The iyzico pricing plan's amount must equal that row's; a new Wasla price row needs its own pricing plan |
+| Price of the selected pricing plan | Never the source: the amount comes from `BillingPlanPrices` and is frozen in the snapshot |
 | Subscription checkout form initialize: token, form content or page | `BillingHostedSession` (`SessionToken`, `RedirectUrl` or `EmbeddedFormContent`, expiry). How the token correlates a callback to the subscription is WAS-149 |
 | Checkout form result / subscription details | `BillingProviderSubscription`, then `BindProviderReferencesAsync`, `ApplyProviderStatusAsync`, `RecordVerifiedPaymentAsync` |
 | Subscription reference code | `ExternalSubscriptionReference` |
@@ -127,16 +144,16 @@ The checkout simulator (`POST /checkout/simulate-success|simulate-failed/{id}`, 
 
 Migration `AddBillingSubscriptions` (CentralDb only; apply with `migrate-central`, see [../operations/migrations.md](../operations/migrations.md)):
 
-- Additive: it creates the two tables with their keys, indexes and check constraints. No existing table, column or row changes, and existing tenants, registrations and the simulator behave as before.
+- Additive: it creates the three tables with their keys, indexes and check constraints, and inserts no rows. No existing table, column or row changes, and existing tenants, registrations and the simulator behave as before.
 - Order: like every CentralDb migration, apply it before the new Web, Api or Worker starts.
-- Rollback: `Down` drops both tables, so it refuses with error 50147 and changes nothing while either table holds a row. Billing history must be exported and removed deliberately before a rollback; once real payments exist, roll forward instead.
+- Rollback: `Down` drops the three tables, so it refuses with error 50147 and changes nothing while any of them holds a row (plan prices included). Billing history must be exported and removed deliberately before a rollback; once real payments exist, roll forward instead.
 - The application never applies it. It was verified on throwaway LocalDB databases only.
 
 ## Deferred work
 
 | Issue | Left for it |
 |-------|-------------|
-| WAS-148 | iyzico Subscription API client implementing `IBillingGateway`, plan and pricing-plan mapping per environment, which price is authoritative, secure configuration |
+| WAS-148 | iyzico Subscription API client implementing `IBillingGateway`, the provider product and pricing-plan references for each `BillingPlanPrices` row per environment, secure configuration |
 | WAS-149 | Signup and checkout wiring: create the subscription, hosted checkout, callback verification, session-token correlation, provisioning and `LinkTenantAsync`, replacing the simulator in the production flow |
 | WAS-150 | Webhook authenticity, a webhook inbox table for event idempotency (its key depends on iyzico's subscription event contract), reconciliation of state and payments |
 | WAS-151 | Entitlement policy per state, grace, cancellation and card update actions, owner-only management |
@@ -146,11 +163,29 @@ Migration `AddBillingSubscriptions` (CentralDb only; apply with `migrate-central
 
 No outbox and no state-history table exist: no current flow needs them, and each later issue adds what its flow requires.
 
+## Price decision required
+
+Three amounts exist in the code today, and none of them is a decided charge price:
+
+| Source | Starter | Pro | Pro+ | Yearly | Shown where |
+|--------|---------|-----|------|--------|-------------|
+| `WaslaPlanCatalog.MonthlyPrice` and the `Pricing.Plan.*.Price` resources (commit "Update public pricing", 2026-06-14) | 300 TL | 600 TL | 1,200 TL | 10 × monthly ("2 months" advantage note) | Public pricing page and signup, in all four languages |
+| `CheckoutSimulatedPricing` (added the same day with the simulated checkout) | 499 | 999 | 1,499 | 10 × monthly | `/checkout/review` in every environment, labelled TRY |
+| `BillingPlanPrices` | none | none | none | none | Nothing yet |
+
+The published 300/600/1,200 TL is the only one presented to customers as a price, but the roadmap leaves the final price open: WAS-154 requires "final plan pricing" to be confirmed before real charges, and WAS-153 leaves VAT treatment to a commercial decision. WAS-147 therefore seeds no price. The decision needed, from the product/commercial owner:
+
+1. The charge amount and currency for each self-service plan (Starter, Pro, Pro+) and each period (Monthly, Yearly), confirming or replacing 300/600/1,200 TL monthly and 3,000/6,000/12,000 TL yearly.
+2. Whether those amounts are the gross amount charged, VAT included, since the provider charges exactly the stored amount.
+3. The effective time from which they apply.
+
+Once decided, one reviewed migration inserts the rows, and the same change makes the pricing page, signup and `/checkout/review` show the decided amounts, so code holds no second, conflicting price. `CheckoutSimulatedPricing` stays the Development simulator's display until the production checkout replaces it (WAS-149).
+
 ## Known discrepancies
 
-- **Plan prices.** The public plan catalog (`WaslaPlanCatalog`: Starter 300, Pro 600, Pro+ 1200 TRY per month) and the simulated checkout pricing (`CheckoutSimulatedPricing`: 499, 999, 1499 TRY, yearly ×10) disagree. WAS-147 does not choose; the price is a parameter of `StartForRegistrationAsync`, decided by WAS-148's plan mapping.
+- **Checkout review amounts.** `/checkout/review` shows `CheckoutSimulatedPricing` amounts outside Development too, so a staging or production registration summary disagrees with the public pricing page. Not changed here; it is resolved with the price decision above.
 - **Tenant status fields.** `Tenant.SubscriptionStatus` and `Tenant.BillingPaymentStatus` are written at provisioning (`Trialing`, `Paid`) and never read. They are not the billing source of truth.
 
 ## Tests
 
-`tests/Wasla.UnitTests/Billing/`: state machine and fail-closed checks (`SubscriptionStatusTransitionTests`), the store over a SQLite CentralDb built from the model, including tenant A/B isolation, sandbox/production separation, duplicates, repeated writes, immutable snapshots and a concurrent write between read and save (`BillingSubscriptionStoreTests`), mapping and migration shape (`BillingPersistenceModelTests`), boundaries and data minimization (`BillingBoundaryTests`), the simulator (`BillingSimulationIsolationTests`), and on a real SQL Server simultaneous writers, database constraints and the rollback guard (`BillingSqlServerTests`, `BillingMigrationSqlServerTests`; see [../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).
+`tests/Wasla.UnitTests/Billing/`: state machine and fail-closed checks (`SubscriptionStatusTransitionTests`), the store over a SQLite CentralDb built from the model, including plan price resolution, tenant A/B isolation, sandbox/production separation, duplicates, repeated writes, immutable snapshots and a concurrent write between read and save (`BillingSubscriptionStoreTests`), mapping and migration shape (`BillingPersistenceModelTests`), boundaries and data minimization (`BillingBoundaryTests`), paid-period coverage including future periods, gaps and out-of-order payments (`BillingVerifiedPeriodTests`), the simulator (`BillingSimulationIsolationTests`), and on a real SQL Server simultaneous writers, database constraints and the rollback guard (`BillingSqlServerTests`, `BillingMigrationSqlServerTests`; see [../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).

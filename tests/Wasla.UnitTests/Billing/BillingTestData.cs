@@ -16,20 +16,30 @@ namespace Wasla.UnitTests.Billing;
 internal static class BillingTestData
 {
     public static readonly DateTime Now = new(2026, 10, 22, 9, 0, 0, DateTimeKind.Utc);
-    public static readonly BillingPrice MonthlyPrice = new(999.00m, "TRY");
+    /// <summary>A deliberately odd test amount: not a Wasla price (the business price is not decided yet).</summary>
+    public static readonly BillingPrice MonthlyPrice = new(123.45m, "TRY");
     public static readonly BillingProviderScope Sandbox = new(BillingProvider.Iyzico, BillingEnvironment.Sandbox);
     public static readonly BillingProviderScope Production = new(BillingProvider.Iyzico, BillingEnvironment.Production);
 
+    /// <summary>The test plan price for Pro, Monthly, in effect 30 days before <see cref="Now"/>.</summary>
+    public static BillingPlanPrice PlanPrice(
+        string planCode = "Pro",
+        string billingPeriod = BillingSubscription.MonthlyPeriod,
+        BillingPrice? price = null,
+        DateTime? effectiveFromUtc = null) =>
+        BillingPlanPrice.Create(planCode, billingPeriod, price ?? MonthlyPrice, effectiveFromUtc ?? Now.AddDays(-30), Now.AddDays(-30));
+
     public static PendingRegistration Registration(
         PendingRegistrationStatus status = PendingRegistrationStatus.AwaitingPayment,
-        Guid? tenantId = null)
+        Guid? tenantId = null,
+        string planCode = "Pro")
     {
         var id = Guid.NewGuid();
         var slug = "billing-" + id.ToString("N")[..10];
         return new PendingRegistration
         {
             Id = id,
-            PlanCode = "Pro",
+            PlanCode = planCode,
             BillingPeriod = BillingSubscription.MonthlyPeriod,
             BusinessName = "Billing Test Restaurant",
             Slug = slug,
@@ -66,9 +76,7 @@ internal static class BillingTestData
             Guid.NewGuid(),
             BillingProvider.Iyzico,
             BillingEnvironment.Sandbox,
-            "Pro",
-            BillingSubscription.MonthlyPeriod,
-            MonthlyPrice,
+            PlanPrice(),
             Now);
         if (status == SubscriptionStatus.Pending)
             return subscription;
@@ -95,7 +103,7 @@ internal static class BillingTestData
     public static async Task<(Guid SubscriptionId, Guid RegistrationId)> StartAsync(SqliteCentralDatabase db, BillingProviderScope scope)
     {
         var registration = await db.SeedRegistrationAsync();
-        var started = await db.Store().StartForRegistrationAsync(registration.Id, scope, MonthlyPrice, CancellationToken.None);
+        var started = await db.Store().StartForRegistrationAsync(registration.Id, scope, CancellationToken.None);
         Assert.Equal(BillingStoreOutcome.Applied, started.Outcome);
         return (started.SubscriptionId!.Value, registration.Id);
     }
@@ -118,7 +126,12 @@ internal sealed class SqliteCentralDatabase : IDisposable
         _connection.Open();
         using var db = Open();
         db.Database.EnsureCreated();
+        db.BillingPlanPrices.Add(PlanPrice);
+        db.SaveChanges();
     }
+
+    /// <summary>The one plan price seeded for Pro, Monthly; other plans and periods have none.</summary>
+    public BillingPlanPrice PlanPrice { get; } = BillingTestData.PlanPrice();
 
     public BillingClock Time { get; } = new(BillingTestData.Now);
 
@@ -137,12 +150,13 @@ internal sealed class SqliteCentralDatabase : IDisposable
 
     public async Task<PendingRegistration> SeedRegistrationAsync(
         PendingRegistrationStatus status = PendingRegistrationStatus.AwaitingPayment,
-        Guid? tenantId = null)
+        Guid? tenantId = null,
+        string planCode = "Pro")
     {
         await using var db = Open();
         if (tenantId is { } id)
             db.Tenants.Add(BillingTestData.Tenant(id));
-        var registration = BillingTestData.Registration(status, tenantId);
+        var registration = BillingTestData.Registration(status, tenantId, planCode);
         db.PendingRegistrations.Add(registration);
         await db.SaveChangesAsync();
         return registration;

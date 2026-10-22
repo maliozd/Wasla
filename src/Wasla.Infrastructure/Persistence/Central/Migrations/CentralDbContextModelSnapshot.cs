@@ -84,6 +84,52 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingPlanPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BillingPeriod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PlanCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanCode", "BillingPeriod", "EffectiveFromUtc")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingPlanPrices_PlanCode_BillingPeriod_EffectiveFromUtc");
+
+                    b.ToTable("BillingPlanPrices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillingPlanPrices_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_BillingPlanPrices_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
+                        });
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -127,6 +173,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<Guid>("PlanPriceId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Provider")
                         .HasColumnType("int");
 
@@ -154,6 +203,8 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.HasIndex("PendingRegistrationId")
                         .IsUnique()
                         .HasDatabaseName("IX_BillingSubscriptions_PendingRegistrationId");
+
+                    b.HasIndex("PlanPriceId");
 
                     b.HasIndex("TenantId")
                         .IsUnique()
@@ -1046,6 +1097,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.HasOne("Wasla.Domain.Entities.Central.PendingRegistration", null)
                         .WithMany()
                         .HasForeignKey("PendingRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Entities.Central.BillingPlanPrice", null)
+                        .WithMany()
+                        .HasForeignKey("PlanPriceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

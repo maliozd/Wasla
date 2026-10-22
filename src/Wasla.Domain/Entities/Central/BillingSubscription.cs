@@ -15,8 +15,9 @@ namespace Wasla.Domain.Entities.Central;
 /// </para>
 /// <para>
 /// The plan, period, amount, currency, provider and environment are a snapshot taken when checkout started and never
-/// change; a later plan catalog change does not reprice an existing subscription. Provider identifiers are opaque
-/// references only. No card data, provider payload or secret is stored here.
+/// change. The amount comes from the <see cref="BillingPlanPrice"/> row in effect then (<see cref="PlanPriceId"/>); a
+/// later price row does not reprice an existing subscription. Provider identifiers are opaque references only. No
+/// card data, provider payload or secret is stored here.
 /// </para>
 /// <para>
 /// <see cref="Revision"/> is the optimistic-concurrency token: every change raises it, and a save that read an older
@@ -44,6 +45,9 @@ public sealed class BillingSubscription
     public BillingProvider Provider { get; private set; }
 
     public BillingEnvironment Environment { get; private set; }
+
+    /// <summary>The <see cref="BillingPlanPrice"/> this subscription was priced from.</summary>
+    public Guid PlanPriceId { get; private set; }
 
     public string PlanCode { get; private set; } = string.Empty;
 
@@ -86,13 +90,12 @@ public sealed class BillingSubscription
         DateTime nowUtc) =>
         status == SubscriptionStatus.Active && verifiedPaidPeriods.Any(period => period.Covers(nowUtc));
 
+    /// <summary>Starts a pending subscription priced from <paramref name="planPrice"/>, whose values it snapshots.</summary>
     public static BillingSubscription StartPending(
         Guid pendingRegistrationId,
         BillingProvider provider,
         BillingEnvironment environment,
-        string planCode,
-        string billingPeriod,
-        BillingPrice price,
+        BillingPlanPrice planPrice,
         DateTime nowUtc)
     {
         if (pendingRegistrationId == Guid.Empty)
@@ -101,12 +104,9 @@ public sealed class BillingSubscription
             throw new ArgumentOutOfRangeException(nameof(provider));
         if (!Enum.IsDefined(environment))
             throw new ArgumentOutOfRangeException(nameof(environment));
-        if (string.IsNullOrWhiteSpace(planCode) || planCode.Length > PlanCodeMaxLength || planCode != planCode.Trim())
-            throw new ArgumentException("A plan code is required.", nameof(planCode));
-        if (billingPeriod is not (MonthlyPeriod or YearlyPeriod))
-            throw new ArgumentException("The billing period is Monthly or Yearly.", nameof(billingPeriod));
-        if (price == default)
-            throw new ArgumentException("A price is required.", nameof(price));
+        ArgumentNullException.ThrowIfNull(planPrice);
+        if (planPrice.EffectiveFromUtc > nowUtc)
+            throw new ArgumentException("The plan price is not in effect yet.", nameof(planPrice));
 
         return new BillingSubscription
         {
@@ -114,10 +114,11 @@ public sealed class BillingSubscription
             PendingRegistrationId = pendingRegistrationId,
             Provider = provider,
             Environment = environment,
-            PlanCode = planCode,
-            BillingPeriod = billingPeriod,
-            Amount = price.Amount,
-            Currency = price.Currency,
+            PlanPriceId = planPrice.Id,
+            PlanCode = planPrice.PlanCode,
+            BillingPeriod = planPrice.BillingPeriod,
+            Amount = planPrice.Amount,
+            Currency = planPrice.Currency,
             Status = SubscriptionStatus.Pending,
             StatusObservedAtUtc = nowUtc,
             CreatedAtUtc = nowUtc,

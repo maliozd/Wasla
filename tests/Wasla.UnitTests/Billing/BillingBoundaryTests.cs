@@ -20,7 +20,7 @@ public sealed class BillingBoundaryTests
         Application.GetTypes()
             .Where(t => t.Namespace == typeof(IBillingGateway).Namespace)
             .Concat(Domain.GetTypes().Where(t => t.Namespace == typeof(BillingPrice).Namespace))
-            .Concat([typeof(BillingSubscription), typeof(BillingPayment)])
+            .Concat([typeof(BillingSubscription), typeof(BillingPayment), typeof(BillingPlanPrice)])
             .Where(t => t.IsPublic);
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class BillingBoundaryTests
             "card|pan$|cvv|cvc|expir|holder|iban|email|phone|address|name$|token|secret|password|apikey|payload|raw|response|request|signature",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        var fields = new[] { typeof(BillingSubscription), typeof(BillingPayment) }
+        var fields = new[] { typeof(BillingSubscription), typeof(BillingPayment), typeof(BillingPlanPrice) }
             .SelectMany(t => t.GetProperties().Select(p => $"{t.Name}.{p.Name}"))
             .Where(name => forbidden.IsMatch(name.Split('.')[1]));
 

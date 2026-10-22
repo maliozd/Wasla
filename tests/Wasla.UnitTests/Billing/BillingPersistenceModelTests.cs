@@ -40,6 +40,10 @@ public sealed class BillingPersistenceModelTests
         var tenant = Assert.Single(entity.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(Tenant));
         Assert.False(tenant.IsRequired);
         Assert.Equal(DeleteBehavior.SetNull, tenant.DeleteBehavior);
+        var planPrice = Assert.Single(entity.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(BillingPlanPrice));
+        Assert.True(planPrice.IsRequired);
+        Assert.Equal(DeleteBehavior.Restrict, planPrice.DeleteBehavior);
+        Assert.Equal(nameof(BillingSubscription.PlanPriceId), Assert.Single(planPrice.Properties).Name);
 
         AssertUniqueIndex(entity, "IX_BillingSubscriptions_PendingRegistrationId", null, nameof(BillingSubscription.PendingRegistrationId));
         AssertUniqueIndex(entity, "IX_BillingSubscriptions_TenantId", "[TenantId] IS NOT NULL", nameof(BillingSubscription.TenantId));
@@ -62,7 +66,8 @@ public sealed class BillingPersistenceModelTests
         var subscription = central.Model.FindEntityType(typeof(BillingSubscription))!;
         foreach (var name in new[]
                  {
-                     nameof(BillingSubscription.PendingRegistrationId), nameof(BillingSubscription.Provider),
+                     nameof(BillingSubscription.PendingRegistrationId), nameof(BillingSubscription.PlanPriceId),
+                     nameof(BillingSubscription.Provider),
                      nameof(BillingSubscription.Environment), nameof(BillingSubscription.PlanCode),
                      nameof(BillingSubscription.BillingPeriod), nameof(BillingSubscription.Amount),
                      nameof(BillingSubscription.Currency), nameof(BillingSubscription.CreatedAtUtc)
@@ -74,6 +79,30 @@ public sealed class BillingPersistenceModelTests
 
         var payment = central.Model.FindEntityType(typeof(BillingPayment))!;
         Assert.All(payment.GetProperties(), p => Assert.Equal(PropertySaveBehavior.Throw, p.GetAfterSaveBehavior()));
+        var planPrice = central.Model.FindEntityType(typeof(BillingPlanPrice))!;
+        Assert.All(planPrice.GetProperties(), p => Assert.Equal(PropertySaveBehavior.Throw, p.GetAfterSaveBehavior()));
+    }
+
+    [Fact]
+    public void PlanPrices_AreUniquePerPlanPeriodAndEffectiveTime_WithPositiveAmounts()
+    {
+        using var central = SqlServerModel();
+        var model = central.GetService<IDesignTimeModel>().Model;
+        var entity = model.FindEntityType(typeof(BillingPlanPrice))!;
+        Assert.Equal("BillingPlanPrices", entity.GetTableName());
+
+        AssertUniqueIndex(
+            entity,
+            "IX_BillingPlanPrices_PlanCode_BillingPeriod_EffectiveFromUtc",
+            null,
+            nameof(BillingPlanPrice.PlanCode),
+            nameof(BillingPlanPrice.BillingPeriod),
+            nameof(BillingPlanPrice.EffectiveFromUtc));
+        var checks = entity.GetCheckConstraints().ToDictionary(c => c.Name!, c => c.Sql);
+        Assert.Equal("[Amount] > 0", checks["CK_BillingPlanPrices_Amount"]);
+        Assert.Equal("[BillingPeriod] IN ('Monthly', 'Yearly')", checks["CK_BillingPlanPrices_BillingPeriod"]);
+        Assert.Empty(entity.GetForeignKeys());
+        Assert.Null(entity.FindProperty(nameof(BillingPlanPrice.Price)));
     }
 
     [Fact]
@@ -134,12 +163,16 @@ public sealed class BillingPersistenceModelTests
             CreateIndexOperation i => i.Table,
             _ => throw new Xunit.Sdk.XunitException($"Unexpected operation {op.GetType().Name}: the migration must only add.")
         }).Distinct().Order();
-        Assert.Equal(["BillingPayments", "BillingSubscriptions"], touched);
+        Assert.Equal(["BillingPayments", "BillingPlanPrices", "BillingSubscriptions"], touched);
+
+        // No plan price rows: the amounts are a business decision not taken yet (see docs/architecture/billing.md).
+        Assert.DoesNotContain(migration.UpOperations, op => op is InsertDataOperation or SqlOperation);
 
         var guard = Assert.IsType<SqlOperation>(migration.DownOperations[0]);
         Assert.Contains("THROW 50147", guard.Sql, StringComparison.Ordinal);
+        Assert.Contains("[BillingPlanPrices]", guard.Sql, StringComparison.Ordinal);
         Assert.Equal(
-            ["BillingPayments", "BillingSubscriptions"],
+            ["BillingPayments", "BillingSubscriptions", "BillingPlanPrices"],
             migration.DownOperations.Skip(1).Select(op => Assert.IsType<DropTableOperation>(op).Name));
     }
 
