@@ -18,8 +18,7 @@ public sealed class BillingPayment
         BillingSubscription subscription,
         string externalPaymentReference,
         BillingPrice price,
-        DateTime periodStartUtc,
-        DateTime periodEndUtc,
+        BillingPaidPeriod period,
         DateTime verifiedAtUtc,
         DateTime nowUtc)
     {
@@ -30,8 +29,8 @@ public sealed class BillingPayment
         ExternalPaymentReference = externalPaymentReference;
         Amount = price.Amount;
         Currency = price.Currency;
-        PeriodStartUtc = periodStartUtc;
-        PeriodEndUtc = periodEndUtc;
+        PeriodStartUtc = period.StartUtc;
+        PeriodEndUtc = period.EndUtc;
         VerifiedAtUtc = verifiedAtUtc;
         CreatedAtUtc = nowUtc;
     }
@@ -59,6 +58,8 @@ public sealed class BillingPayment
     public DateTime CreatedAtUtc { get; private set; }
 
     public BillingPrice Price => new(Amount, Currency);
+
+    public BillingPaidPeriod Period => new(PeriodStartUtc, PeriodEndUtc);
 
     /// <summary>True when a repeated report describes exactly this payment, so recording it again is a no-op.</summary>
     public bool Describes(string externalPaymentReference, BillingPrice price, DateTime periodStartUtc, DateTime periodEndUtc) =>

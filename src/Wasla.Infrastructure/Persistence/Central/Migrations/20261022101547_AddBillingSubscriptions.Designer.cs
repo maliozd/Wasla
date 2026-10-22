@@ -12,7 +12,7 @@ using Wasla.Infrastructure.Persistence.Central;
 namespace Wasla.Infrastructure.Persistence.Central.Migrations
 {
     [DbContext(typeof(CentralDbContext))]
-    [Migration("20261021220941_AddBillingSubscriptions")]
+    [Migration("20261022101547_AddBillingSubscriptions")]
     partial class AddBillingSubscriptions
     {
         /// <inheritdoc />
@@ -111,12 +111,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasColumnType("char(3)")
                         .IsFixedLength();
 
-                    b.Property<DateTime?>("CurrentPeriodEndUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CurrentPeriodStartUtc")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("Environment")
                         .HasColumnType("int");
 
@@ -179,8 +173,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                             t.HasCheckConstraint("CK_BillingSubscriptions_Amount", "[Amount] > 0");
 
                             t.HasCheckConstraint("CK_BillingSubscriptions_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
-
-                            t.HasCheckConstraint("CK_BillingSubscriptions_CurrentPeriod", "[CurrentPeriodEndUtc] IS NULL OR ([CurrentPeriodStartUtc] IS NOT NULL AND [CurrentPeriodEndUtc] > [CurrentPeriodStartUtc])");
 
                             t.HasCheckConstraint("CK_BillingSubscriptions_Environment", "[Environment] IN (1, 2)");
 

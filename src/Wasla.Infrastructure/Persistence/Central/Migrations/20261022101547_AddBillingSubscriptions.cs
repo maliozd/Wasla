@@ -11,7 +11,7 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // WAS-147: additive only. Two new tables; no existing table, column or row changes.
+            // WAS-147: additive only. New billing tables; no existing table, column or row changes.
             migrationBuilder.CreateTable(
                 name: "BillingSubscriptions",
                 columns: table => new
@@ -29,8 +29,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     StatusObservedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExternalSubscriptionReference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     ExternalSubscriberReference = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    CurrentPeriodStartUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CurrentPeriodEndUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Revision = table.Column<int>(type: "int", nullable: false)
@@ -41,7 +39,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     table.UniqueConstraint("AK_BillingSubscriptions_Id_Provider_Environment", x => new { x.Id, x.Provider, x.Environment });
                     table.CheckConstraint("CK_BillingSubscriptions_Amount", "[Amount] > 0");
                     table.CheckConstraint("CK_BillingSubscriptions_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
-                    table.CheckConstraint("CK_BillingSubscriptions_CurrentPeriod", "[CurrentPeriodEndUtc] IS NULL OR ([CurrentPeriodStartUtc] IS NOT NULL AND [CurrentPeriodEndUtc] > [CurrentPeriodStartUtc])");
                     table.CheckConstraint("CK_BillingSubscriptions_Environment", "[Environment] IN (1, 2)");
                     table.CheckConstraint("CK_BillingSubscriptions_Provider", "[Provider] IN (1)");
                     table.CheckConstraint("CK_BillingSubscriptions_Status", "[Status] IN (2, 3, 4, 5, 6, 7)");
@@ -130,8 +127,8 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Rolling back would delete subscription and payment evidence. Refuse while any exists; an operator who
-            // really means it exports and removes those rows first. Nothing is changed when this stops.
+            // Rolling back would delete subscription and payment evidence. Refuse while any exists; an operator who really
+            // means it exports and removes those rows first. Nothing is changed when this stops.
             migrationBuilder.Sql(
                 """
                 IF EXISTS (SELECT 1 FROM [BillingSubscriptions]) OR EXISTS (SELECT 1 FROM [BillingPayments])

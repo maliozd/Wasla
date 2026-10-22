@@ -12,7 +12,7 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 
 | Table | Owner of each row | Holds |
 |-------|-------------------|-------|
-| `BillingSubscriptions` | The `PendingRegistration` the checkout started from (required, unique), and after provisioning also the `Tenant` that registration became (unique when set) | One Wasla subscription: Wasla id, provider and environment, plan/period/price snapshot, state, provider references, current verified paid period, concurrency revision |
+| `BillingSubscriptions` | The `PendingRegistration` the checkout started from (required, unique), and after provisioning also the `Tenant` that registration became (unique when set) | One Wasla subscription: Wasla id, provider and environment, plan/period/price snapshot, state, provider references, concurrency revision |
 | `BillingPayments` | Its `BillingSubscription` (required) | One provider-verified paid period: provider payment reference, period, charged amount and currency, verification time |
 
 **Sources:** `src/Wasla.Domain/Entities/Central/BillingSubscription.cs`, `BillingPayment.cs`, `src/Wasla.Domain/Billing/`, `src/Wasla.Infrastructure/Persistence/Central/Configurations/Billing*Configuration.cs`, `src/Wasla.Infrastructure/Services/BillingSubscriptionStore.cs`.
@@ -44,8 +44,10 @@ Source: `SubscriptionStatusTransitions`. Every other move, including any to `Non
 - **Verified observations only.** A state comes from a server-side provider read or an authenticated provider event, with the time it was observed. Browser redirects and client values never set a state.
 - **Ordering.** An observation older than the stored `StatusObservedAtUtc` is `Stale`. The same state seen later only moves that time forward, so a late older observation is still recognised. A different state at exactly the stored time is `Stale` too.
 - **Provider reference.** `Active` and `PastDue` require a provider subscription reference (domain rule and check constraint).
-- **Fail closed.** `IsVerifiedActive` is true only for `Active` with a verified paid period that has not ended. `Pending`, `PastDue`, `Cancelled`, `Expired` and `ReconciliationRequired` are false. A provider state the adapter cannot map is reported as `ReconciliationRequired`, which grants nothing and leaves only through a newer verified state. Grace periods and what each state means for login and features are WAS-151.
-- **Payments.** A verified payment must match the subscription's price snapshot and needs a provider reference. It moves the current period forward only when it ends later than the stored one. A payment reported late after expiry is still recorded as evidence.
+- **Fail closed.** `IsVerifiedActive(now)` is true only when the subscription is `Active` **and** one of its verified payments covers `now`: a paid period is half-open, `[PeriodStartUtc, PeriodEndUtc)`. `Pending`, `PastDue`, `Cancelled`, `Expired` and `ReconciliationRequired` are false. A provider state the adapter cannot map is reported as `ReconciliationRequired`, which grants nothing and leaves only through a newer verified state. Grace periods and what each state means for login and features are WAS-151.
+- **No single "current period".** Coverage is read from the payments, never from one stored period. So a paid period that starts in the future does not cover today, nor does one on the far side of an unpaid gap; and a later payment never hides an earlier period that still covers today (a period recorded out of order counts the same). `BillingSubscriptionView` carries every verified period that had not ended when it was read (`UnexpiredPaidPeriods`, `ReadAtUtc`), so a view evaluated a little later still sees an already-paid next period, and asking about a moment before `ReadAtUtc` is false.
+- **Payments.** A verified payment must match the subscription's price snapshot and needs a provider reference; recording one does not change the subscription row. A payment reported late, even after expiry, is still recorded as evidence.
+- **For WAS-151.** Entitlement asks `IsVerifiedActive` at the moment of the request (reading the view per request or within a short cache is fine: periods that had not ended are kept). Grace for `PastDue` or access until the end of a cancelled period are policy decisions WAS-151 adds on top, reading the same paid periods; they are not in this check.
 
 ## Invariants the database enforces
 
@@ -84,7 +86,7 @@ Sandbox and production identifiers never collide: the same reference string in b
 
 ## Data minimization
 
-Stored: Wasla ids, provider and environment, plan code, period, amount and currency, states and their times, opaque provider subscription, subscriber and payment references, verified period boundaries.
+Stored: Wasla ids, provider and environment, plan code, period, amount and currency, states and their times, opaque provider subscription, subscriber and payment references, verified paid-period boundaries per payment.
 
 Not stored: card numbers, CVV, expiry, holder name or any card field (checkout and card update are provider-hosted pages), owner name, email, phone or address (they stay on the registration and are passed to the provider only inside `BillingSubscriberContact`), hosted-session tokens, provider request or response payloads, credentials and signatures. The store logs Wasla ids, operations and outcomes, never provider references, amounts or contact data. `BillingBoundaryTests` fails if a billing record gains a field named like card, contact, token, secret or payload data.
 

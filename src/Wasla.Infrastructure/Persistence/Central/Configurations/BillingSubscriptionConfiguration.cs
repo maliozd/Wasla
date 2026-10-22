@@ -29,9 +29,6 @@ public sealed class BillingSubscriptionConfiguration : IEntityTypeConfiguration<
             table.HasCheckConstraint(
                 "CK_BillingSubscriptions_VerifiedStateHasProviderReference",
                 "[Status] NOT IN (2, 3) OR [ExternalSubscriptionReference] IS NOT NULL");
-            table.HasCheckConstraint(
-                "CK_BillingSubscriptions_CurrentPeriod",
-                "[CurrentPeriodEndUtc] IS NULL OR ([CurrentPeriodStartUtc] IS NOT NULL AND [CurrentPeriodEndUtc] > [CurrentPeriodStartUtc])");
         });
 
         builder.HasKey(x => x.Id);

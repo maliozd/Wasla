@@ -108,12 +108,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasColumnType("char(3)")
                         .IsFixedLength();
 
-                    b.Property<DateTime?>("CurrentPeriodEndUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("CurrentPeriodStartUtc")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("Environment")
                         .HasColumnType("int");
 
@@ -176,8 +170,6 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                             t.HasCheckConstraint("CK_BillingSubscriptions_Amount", "[Amount] > 0");
 
                             t.HasCheckConstraint("CK_BillingSubscriptions_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
-
-                            t.HasCheckConstraint("CK_BillingSubscriptions_CurrentPeriod", "[CurrentPeriodEndUtc] IS NULL OR ([CurrentPeriodStartUtc] IS NOT NULL AND [CurrentPeriodEndUtc] > [CurrentPeriodStartUtc])");
 
                             t.HasCheckConstraint("CK_BillingSubscriptions_Environment", "[Environment] IN (1, 2)");
 

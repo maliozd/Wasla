@@ -37,7 +37,7 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
     }
 
     [Fact]
-    public async Task SimultaneousIdenticalPayments_AreRecordedOnce_AndRaiseTheRevisionOnce()
+    public async Task SimultaneousIdenticalPayments_AreRecordedOnce_AndLeaveTheSubscriptionRowUnchanged()
     {
         var id = await StartBoundAsync();
         var revision = await RevisionAsync(id);
@@ -49,7 +49,7 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         Assert.All(results, r => Assert.Contains(r, new[] { BillingStoreOutcome.Applied, BillingStoreOutcome.Unchanged }));
         await using var check = _db.Open();
         Assert.Equal(1, await check.BillingPayments.CountAsync(p => p.SubscriptionId == id, Ct));
-        Assert.Equal(revision + 1, await RevisionAsync(id));
+        Assert.Equal(revision, await RevisionAsync(id));
     }
 
     [Fact]

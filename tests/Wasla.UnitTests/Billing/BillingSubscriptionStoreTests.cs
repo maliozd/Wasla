@@ -165,8 +165,7 @@ public sealed class BillingSubscriptionStoreTests : IDisposable
         await using var check = _db.Open();
         var stored = await check.BillingPayments.SingleAsync(Ct);
         Assert.Equal(a, stored.SubscriptionId);
-        Assert.Equal(october.AddMonths(1), (await check.BillingSubscriptions.SingleAsync(s => s.Id == a, Ct)).CurrentPeriodEndUtc);
-        Assert.Null((await check.BillingSubscriptions.SingleAsync(s => s.Id == b, Ct)).CurrentPeriodEndUtc);
+        Assert.Equal(new BillingPaidPeriod(october, october.AddMonths(1)), stored.Period);
     }
 
     [Fact]

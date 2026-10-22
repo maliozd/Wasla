@@ -1,4 +1,4 @@
-using Wasla.Domain.Billing;
+﻿using Wasla.Domain.Billing;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Domain.Entities.Central;
@@ -66,11 +66,6 @@ public sealed class BillingSubscription
 
     public string? ExternalSubscriberReference { get; private set; }
 
-    /// <summary>The latest verified paid period; it only ever moves forward.</summary>
-    public DateTime? CurrentPeriodStartUtc { get; private set; }
-
-    public DateTime? CurrentPeriodEndUtc { get; private set; }
-
     public DateTime CreatedAtUtc { get; private set; }
 
     public DateTime UpdatedAtUtc { get; private set; }
@@ -80,14 +75,16 @@ public sealed class BillingSubscription
     public BillingPrice Price => new(Amount, Currency);
 
     /// <summary>
-    /// Fail-closed check: only an <see cref="SubscriptionStatus.Active"/> subscription with a verified paid period
-    /// that has not ended. Pending, past due, cancelled, expired and reconciliation states are all false here; grace
-    /// rules belong to the entitlement policy (WAS-151).
+    /// Fail-closed check: an <see cref="SubscriptionStatus.Active"/> subscription with a verified paid period that
+    /// covers <paramref name="nowUtc"/>. A period that starts later or has ended does not count, so a future payment
+    /// or one on the far side of an unpaid gap never makes today paid, and a later payment never hides an earlier
+    /// period that still covers today. Every other state is false; grace rules are entitlement policy (WAS-151).
     /// </summary>
-    public static bool IsVerifiedActive(SubscriptionStatus status, DateTime? currentPeriodEndUtc, DateTime nowUtc) =>
-        status == SubscriptionStatus.Active && currentPeriodEndUtc is { } end && end > nowUtc;
-
-    public bool IsVerifiedActive(DateTime nowUtc) => IsVerifiedActive(Status, CurrentPeriodEndUtc, nowUtc);
+    public static bool IsVerifiedActive(
+        SubscriptionStatus status,
+        IEnumerable<BillingPaidPeriod> verifiedPaidPeriods,
+        DateTime nowUtc) =>
+        status == SubscriptionStatus.Active && verifiedPaidPeriods.Any(period => period.Covers(nowUtc));
 
     public static BillingSubscription StartPending(
         Guid pendingRegistrationId,
@@ -234,10 +231,10 @@ public sealed class BillingSubscription
     }
 
     /// <summary>
-    /// Creates the record of one verified, paid period and moves <see cref="CurrentPeriodEndUtc"/> forward when the
-    /// period ends later than the stored one (an older period recorded late never moves it back). The charged price
-    /// must equal this subscription's snapshot, and the subscription must already have a provider reference;
-    /// otherwise nothing is recorded. Duplicate references are checked by the caller and by unique indexes.
+    /// Creates the record of one verified, paid period. The subscription row itself does not change: whether a
+    /// moment is paid is read from the payments (<see cref="IsVerifiedActive"/>), never from a single stored period.
+    /// The charged price must equal this subscription's snapshot, and the subscription must already have a provider
+    /// reference; otherwise nothing is recorded. Duplicate references are checked by the caller and by unique indexes.
     /// </summary>
     public (BillingChangeResult Result, BillingPayment? Payment) RecordVerifiedPayment(
         string externalPaymentReference,
@@ -248,8 +245,7 @@ public sealed class BillingSubscription
         DateTime nowUtc)
     {
         ValidateReference(externalPaymentReference, nameof(externalPaymentReference));
-        if (periodEndUtc <= periodStartUtc)
-            throw new ArgumentException("A paid period ends after it starts.", nameof(periodEndUtc));
+        var period = new BillingPaidPeriod(periodStartUtc, periodEndUtc);
 
         // A late report of an earlier period is still evidence of a real charge, so any state may record it; only a
         // subscription the provider never confirmed cannot have a verified payment.
@@ -259,22 +255,7 @@ public sealed class BillingSubscription
         if (price != Price)
             return (BillingChangeResult.Conflict, null);
 
-        var payment = new BillingPayment(
-            this,
-            externalPaymentReference,
-            price,
-            periodStartUtc,
-            periodEndUtc,
-            verifiedAtUtc,
-            nowUtc);
-
-        if (CurrentPeriodEndUtc is null || periodEndUtc > CurrentPeriodEndUtc)
-        {
-            CurrentPeriodStartUtc = periodStartUtc;
-            CurrentPeriodEndUtc = periodEndUtc;
-        }
-
-        Touch(nowUtc);
+        var payment = new BillingPayment(this, externalPaymentReference, price, period, verifiedAtUtc, nowUtc);
         return (BillingChangeResult.Applied, payment);
     }
 

@@ -123,7 +123,6 @@ public sealed class SubscriptionStatusTransitionTests
         Assert.Equal(BillingSubscription.YearlyPeriod, subscription.BillingPeriod);
         Assert.Equal(new BillingPrice(14990.50m, "TRY"), subscription.Price);
         Assert.Null(subscription.ExternalSubscriptionReference);
-        Assert.Null(subscription.CurrentPeriodEndUtc);
         Assert.Equal(1, subscription.Revision);
     }
 
@@ -182,41 +181,67 @@ public sealed class SubscriptionStatusTransitionTests
     }
 
     [Fact]
-    public void OnlyAnActiveSubscriptionWithACurrentVerifiedPeriod_IsVerifiedActive()
+    public void OnlyAnActiveSubscription_WithAPaidPeriodCoveringNow_IsVerifiedActive()
     {
-        var periodStart = BillingTestData.Now.AddDays(-1);
-        foreach (var status in SubscriptionStatusTransitions.BillingStates)
-        {
-            var subscription = BillingTestData.SubscriptionIn(status);
-            subscription.RecordVerifiedPayment("pay-1", BillingTestData.MonthlyPrice, periodStart, periodStart.AddMonths(1), periodStart, BillingTestData.Now);
+        var covering = new[] { new BillingPaidPeriod(BillingTestData.Now.AddDays(-1), BillingTestData.Now.AddDays(29)) };
 
-            Assert.Equal(status == SubscriptionStatus.Active, subscription.IsVerifiedActive(BillingTestData.Now));
-        }
+        foreach (var status in Enum.GetValues<SubscriptionStatus>().Append((SubscriptionStatus)99))
+            Assert.Equal(status == SubscriptionStatus.Active, BillingSubscription.IsVerifiedActive(status, covering, BillingTestData.Now));
 
-        var unpaid = BillingTestData.SubscriptionIn(SubscriptionStatus.Active);
-        Assert.False(unpaid.IsVerifiedActive(BillingTestData.Now));
+        Assert.False(BillingSubscription.IsVerifiedActive(SubscriptionStatus.Active, [], BillingTestData.Now));
+    }
 
-        var lapsed = BillingTestData.SubscriptionIn(SubscriptionStatus.Active);
-        lapsed.RecordVerifiedPayment("pay-2", BillingTestData.MonthlyPrice, periodStart, periodStart.AddDays(1), periodStart, BillingTestData.Now);
-        Assert.False(lapsed.IsVerifiedActive(periodStart.AddDays(1)));
+    /// <summary>Paid periods as [start, end) day offsets from 1 October, the day asked about, and the answer.</summary>
+    public static TheoryData<string, int[], int, bool> CoverageCases() => new()
+    {
+        { "only a future period", [31, 61], 21, false },
+        { "inside an unpaid gap", [0, 31, 61, 92], 45, false },
+        { "after the gap is paid again", [0, 31, 61, 92], 70, true },
+        { "current, with the next one recorded", [0, 31, 31, 61], 21, true },
+        { "current, recorded after the next one", [31, 61, 0, 31], 21, true },
+        { "after the period ended", [0, 31], 33, false },
+        { "ordinary current period", [0, 31], 21, true },
+        { "first instant of the period", [0, 31], 0, true },
+        { "end instant of the period", [0, 31], 31, false }
+    };
+
+    [Theory]
+    [MemberData(nameof(CoverageCases))]
+    public void APaidPeriod_CountsOnlyWhileItCoversTheMomentAskedAbout(string scenario, int[] periodDays, int day, bool expected)
+    {
+        var october = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var periods = periodDays.Chunk(2)
+            .Select(p => new BillingPaidPeriod(october.AddDays(p[0]), october.AddDays(p[1])))
+            .ToArray();
+
+        Assert.True(
+            expected == BillingSubscription.IsVerifiedActive(SubscriptionStatus.Active, periods, october.AddDays(day)),
+            scenario);
+    }
+
+    [Fact]
+    public void APaidPeriod_MustEndAfterItStarts()
+    {
+        Assert.Throws<ArgumentException>(() => new BillingPaidPeriod(BillingTestData.Now, BillingTestData.Now));
+        Assert.Throws<ArgumentException>(() => new BillingPaidPeriod(BillingTestData.Now, BillingTestData.Now.AddTicks(-1)));
     }
 
     [Fact]
     public void AnUnknownProviderState_FailsClosed()
     {
+        var covering = new[] { new BillingPaidPeriod(BillingTestData.Now, BillingTestData.Now.AddMonths(1)) };
         foreach (var unknown in new[] { (SubscriptionStatus)99, SubscriptionStatus.None, SubscriptionStatus.Trialing })
         {
             var subscription = BillingTestData.SubscriptionIn(SubscriptionStatus.Pending);
             Assert.Equal(BillingChangeResult.InvalidTransition, subscription.ApplyProviderStatus(unknown, Later, Later));
             Assert.Equal(SubscriptionStatus.Pending, subscription.Status);
-            Assert.False(subscription.IsVerifiedActive(Later));
+            Assert.False(BillingSubscription.IsVerifiedActive(subscription.Status, covering, Later));
         }
 
         // An adapter maps what it cannot recognise to ReconciliationRequired, which grants nothing even with a paid period.
         var reconciling = BillingTestData.SubscriptionIn(SubscriptionStatus.Active);
-        reconciling.RecordVerifiedPayment("pay-1", BillingTestData.MonthlyPrice, BillingTestData.Now, BillingTestData.Now.AddMonths(1), BillingTestData.Now, BillingTestData.Now);
         Assert.Equal(BillingChangeResult.Applied, reconciling.ApplyProviderStatus(SubscriptionStatus.ReconciliationRequired, Later, Later));
-        Assert.False(reconciling.IsVerifiedActive(Later));
+        Assert.False(BillingSubscription.IsVerifiedActive(reconciling.Status, covering, Later));
     }
 
     [Fact]
@@ -250,28 +275,27 @@ public sealed class SubscriptionStatusTransitionTests
     }
 
     [Fact]
-    public void AVerifiedPayment_MustMatchThePriceSnapshot_AndNeverMovesThePeriodBack()
+    public void AVerifiedPayment_MustMatchThePriceSnapshot_AndLeavesTheSubscriptionRowUnchanged()
     {
         var subscription = BillingTestData.SubscriptionIn(SubscriptionStatus.Active);
+        var revision = subscription.Revision;
         var october = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
 
         Assert.Equal(
             BillingChangeResult.Conflict,
-            subscription.RecordVerifiedPayment("pay-x", new BillingPrice(1099.00m, "TRY"), october, october.AddMonths(1), october, Later).Result);
+            subscription.RecordVerifiedPayment("pay-x", new BillingPrice(BillingTestData.MonthlyPrice.Amount + 1m, "TRY"), october, october.AddMonths(1), october, Later).Result);
         Assert.Equal(
             BillingChangeResult.Conflict,
-            subscription.RecordVerifiedPayment("pay-x", new BillingPrice(999.00m, "USD"), october, october.AddMonths(1), october, Later).Result);
+            subscription.RecordVerifiedPayment("pay-x", new BillingPrice(BillingTestData.MonthlyPrice.Amount, "USD"), october, october.AddMonths(1), october, Later).Result);
 
         var (result, payment) = subscription.RecordVerifiedPayment("pay-nov", BillingTestData.MonthlyPrice, october.AddMonths(1), october.AddMonths(2), october, Later);
         Assert.Equal(BillingChangeResult.Applied, result);
         Assert.NotNull(payment);
         Assert.Equal(subscription.Id, payment!.SubscriptionId);
         Assert.Equal(subscription.Environment, payment.Environment);
-
-        // October reported after November: stored, but the current period stays November.
-        Assert.Equal(BillingChangeResult.Applied, subscription.RecordVerifiedPayment("pay-oct", BillingTestData.MonthlyPrice, october, october.AddMonths(1), october, Later).Result);
-        Assert.Equal(october.AddMonths(1), subscription.CurrentPeriodStartUtc);
-        Assert.Equal(october.AddMonths(2), subscription.CurrentPeriodEndUtc);
+        Assert.Equal(new BillingPaidPeriod(october.AddMonths(1), october.AddMonths(2)), payment.Period);
+        Assert.Equal(revision, subscription.Revision);
+        Assert.Throws<ArgumentException>(() => subscription.RecordVerifiedPayment("pay-bad", BillingTestData.MonthlyPrice, october, october, october, Later));
     }
 
     [Fact]
@@ -283,7 +307,6 @@ public sealed class SubscriptionStatusTransitionTests
 
         Assert.Equal(BillingChangeResult.InvalidTransition, result);
         Assert.Null(payment);
-        Assert.Null(subscription.CurrentPeriodEndUtc);
     }
 
     [Theory]

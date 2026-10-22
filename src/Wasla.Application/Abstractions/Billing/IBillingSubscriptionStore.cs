@@ -87,7 +87,12 @@ public enum BillingStoreOutcome
     ConcurrencyConflict = 8
 }
 
-/// <summary>A subscription as Application and later Web/Admin code may read it. No payment or provider payload.</summary>
+/// <summary>
+/// A subscription as Application and later Web/Admin code may read it. No payment or provider payload.
+/// <see cref="UnexpiredPaidPeriods"/> are the verified paid periods that had not ended when the view was read
+/// (<see cref="ReadAtUtc"/>), in start order, so <see cref="IsVerifiedActive"/> stays correct for any later moment the
+/// caller asks about, including the start of a period that was already paid.
+/// </summary>
 public sealed record BillingSubscriptionView(
     Guid Id,
     Guid PendingRegistrationId,
@@ -100,10 +105,14 @@ public sealed record BillingSubscriptionView(
     DateTime StatusObservedAtUtc,
     string? ExternalSubscriptionReference,
     string? ExternalSubscriberReference,
-    DateTime? CurrentPeriodStartUtc,
-    DateTime? CurrentPeriodEndUtc)
+    IReadOnlyList<BillingPaidPeriod> UnexpiredPaidPeriods,
+    DateTime ReadAtUtc)
 {
-    /// <inheritdoc cref="Wasla.Domain.Entities.Central.BillingSubscription.IsVerifiedActive(SubscriptionStatus, DateTime?, DateTime)"/>
+    /// <summary>
+    /// <inheritdoc cref="Wasla.Domain.Entities.Central.BillingSubscription.IsVerifiedActive(SubscriptionStatus, IEnumerable{BillingPaidPeriod}, DateTime)"/>
+    /// A moment before <see cref="ReadAtUtc"/> is false: the view does not hold the periods that had already ended.
+    /// </summary>
     public bool IsVerifiedActive(DateTime nowUtc) =>
-        Wasla.Domain.Entities.Central.BillingSubscription.IsVerifiedActive(Status, CurrentPeriodEndUtc, nowUtc);
+        nowUtc >= ReadAtUtc
+        && Wasla.Domain.Entities.Central.BillingSubscription.IsVerifiedActive(Status, UnexpiredPaidPeriods, nowUtc);
 }

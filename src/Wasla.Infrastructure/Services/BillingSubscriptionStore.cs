@@ -290,22 +290,32 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
     private async Task<BillingSubscriptionView?> ReadAsync(IQueryable<BillingSubscription> query, CancellationToken ct)
     {
         var row = await query.AsNoTracking().FirstOrDefaultAsync(ct);
-        return row is null
-            ? null
-            : new BillingSubscriptionView(
-                row.Id,
-                row.PendingRegistrationId,
-                row.TenantId,
-                new BillingProviderScope(row.Provider, row.Environment),
-                row.PlanCode,
-                row.BillingPeriod,
-                row.Price,
-                row.Status,
-                row.StatusObservedAtUtc,
-                row.ExternalSubscriptionReference,
-                row.ExternalSubscriberReference,
-                row.CurrentPeriodStartUtc,
-                row.CurrentPeriodEndUtc);
+        if (row is null)
+            return null;
+
+        // Every verified period that has not ended, not only one "current" period: a later payment must neither hide
+        // an earlier one that still covers now nor stand in for an unpaid gap before it.
+        var readAt = UtcNow();
+        var unexpired = await _central.BillingPayments.AsNoTracking()
+            .Where(p => p.SubscriptionId == row.Id && p.PeriodEndUtc > readAt)
+            .OrderBy(p => p.PeriodStartUtc)
+            .Select(p => new { p.PeriodStartUtc, p.PeriodEndUtc })
+            .ToListAsync(ct);
+
+        return new BillingSubscriptionView(
+            row.Id,
+            row.PendingRegistrationId,
+            row.TenantId,
+            new BillingProviderScope(row.Provider, row.Environment),
+            row.PlanCode,
+            row.BillingPeriod,
+            row.Price,
+            row.Status,
+            row.StatusObservedAtUtc,
+            row.ExternalSubscriptionReference,
+            row.ExternalSubscriberReference,
+            unexpired.Select(p => new BillingPaidPeriod(p.PeriodStartUtc, p.PeriodEndUtc)).ToArray(),
+            readAt);
     }
 
     private DateTime UtcNow() => _time.GetUtcNow().UtcDateTime;
