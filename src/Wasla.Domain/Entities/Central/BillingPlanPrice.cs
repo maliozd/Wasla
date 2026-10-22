@@ -5,7 +5,8 @@ namespace Wasla.Domain.Entities.Central;
 /// <summary>
 /// Wasla's authoritative price for one plan and billing period from <see cref="EffectiveFromUtc"/> on (WAS-147).
 /// CentralDb owns it; a checkout charges the row in effect when it starts, and the subscription keeps that amount as
-/// its snapshot. Rows never change: a new price is a new row with a later <see cref="EffectiveFromUtc"/>.
+/// its snapshot. Rows never change: a new price is a new row with a later <see cref="EffectiveFromUtc"/>. Central
+/// Admins add them on the plan prices page; nothing seeds them.
 /// </summary>
 /// <remarks>
 /// This is Wasla's price, not the provider's catalog. The payment provider's product and pricing-plan references for
@@ -23,11 +24,21 @@ public sealed class BillingPlanPrice
 
     public string BillingPeriod { get; private set; } = string.Empty;
 
+    /// <summary>The amount the provider charges for one period, in TRY with two decimals.</summary>
     public decimal Amount { get; private set; }
 
     public string Currency { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Whether <see cref="Amount"/> already includes VAT, as the Central Admin stated when setting the price. The amount
+    /// charged is <see cref="Amount"/> either way; tax handling of the payment is WAS-153.
+    /// </summary>
+    public bool VatIncluded { get; private set; }
+
     public DateTime EffectiveFromUtc { get; private set; }
+
+    /// <summary>The Central Admin who set this price; kept for audit, the admin row is not referenced by a key.</summary>
+    public Guid CreatedByCentralAdminUserId { get; private set; }
 
     public DateTime CreatedAtUtc { get; private set; }
 
@@ -37,7 +48,9 @@ public sealed class BillingPlanPrice
         string planCode,
         string billingPeriod,
         BillingPrice price,
+        bool vatIncluded,
         DateTime effectiveFromUtc,
+        Guid createdByCentralAdminUserId,
         DateTime nowUtc)
     {
         if (string.IsNullOrWhiteSpace(planCode) || planCode.Length > BillingSubscription.PlanCodeMaxLength || planCode != planCode.Trim())
@@ -46,6 +59,8 @@ public sealed class BillingPlanPrice
             throw new ArgumentException("The billing period is Monthly or Yearly.", nameof(billingPeriod));
         if (price == default)
             throw new ArgumentException("A price is required.", nameof(price));
+        if (createdByCentralAdminUserId == Guid.Empty)
+            throw new ArgumentException("The Central Admin who sets the price is required.", nameof(createdByCentralAdminUserId));
 
         return new BillingPlanPrice
         {
@@ -54,7 +69,9 @@ public sealed class BillingPlanPrice
             BillingPeriod = billingPeriod,
             Amount = price.Amount,
             Currency = price.Currency,
+            VatIncluded = vatIncluded,
             EffectiveFromUtc = effectiveFromUtc,
+            CreatedByCentralAdminUserId = createdByCentralAdminUserId,
             CreatedAtUtc = nowUtc
         };
     }

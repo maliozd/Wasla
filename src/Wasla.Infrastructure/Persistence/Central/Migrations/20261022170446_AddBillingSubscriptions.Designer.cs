@@ -12,7 +12,7 @@ using Wasla.Infrastructure.Persistence.Central;
 namespace Wasla.Infrastructure.Persistence.Central.Migrations
 {
     [DbContext(typeof(CentralDbContext))]
-    [Migration("20261022102051_AddBillingSubscriptions")]
+    [Migration("20261022170446_AddBillingSubscriptions")]
     partial class AddBillingSubscriptions
     {
         /// <inheritdoc />
@@ -104,6 +104,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("CreatedByCentralAdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -118,6 +121,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("VatIncluded")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 

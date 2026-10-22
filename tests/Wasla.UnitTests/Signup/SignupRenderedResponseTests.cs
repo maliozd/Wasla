@@ -604,6 +604,13 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
             return applicant;
         }
 
+        internal async Task AddPlanPriceAsync(BillingPlanPrice price)
+        {
+            await using var db = NewDb();
+            db.BillingPlanPrices.Add(price);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
         internal async Task<PendingRegistration> ReloadAsync(Guid id)
         {
             await using var db = NewDb();

@@ -68,11 +68,7 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
 
             // Wasla's own price in effect now for the registration's plan and period; never a caller's value.
             var planPrice = await _central.BillingPlanPrices.AsNoTracking()
-                .Where(p => p.PlanCode == registration.PlanCode
-                            && p.BillingPeriod == registration.BillingPeriod
-                            && p.EffectiveFromUtc <= now)
-                .OrderByDescending(p => p.EffectiveFromUtc)
-                .FirstOrDefaultAsync(ct);
+                .InEffectAsync(registration.PlanCode, registration.BillingPeriod, now, ct);
             if (planPrice is null)
             {
                 _logger.LogWarning(

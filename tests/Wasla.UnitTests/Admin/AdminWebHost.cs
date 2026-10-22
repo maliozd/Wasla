@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
@@ -126,6 +127,7 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
+        services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
         // Provisioning itself is covered by PendingRegistrationProvisioningServiceTests; by default it is never invoked.
         services.AddSingleton(provisioning ?? new NoProvisioning());
         services.AddSingleton<ITenantDbContextFactory>(tenants);
@@ -282,6 +284,27 @@ internal sealed partial class AdminBrowser : IDisposable
             response.StatusCode,
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
             response.Headers.Location);
+    }
+
+    /// <summary>Posts form fields, with the antiforgery field when a token is given.</summary>
+    public async Task<AdminResponse> PostFormAsync(string path, IReadOnlyDictionary<string, string> fields, string? antiforgeryToken)
+    {
+        var form = new Dictionary<string, string>(fields);
+        if (antiforgeryToken is not null)
+            form["__RequestVerificationToken"] = antiforgeryToken;
+
+        using var response = await _client.PostAsync(path, new FormUrlEncodedContent(form), TestContext.Current.CancellationToken);
+        return new AdminResponse(
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
+            response.Headers.Location);
+    }
+
+    /// <summary>The first antiforgery token in a rendered page, or null.</summary>
+    public static string? AntiforgeryTokenIn(string body)
+    {
+        var match = AntiforgeryToken().Match(body);
+        return match.Success ? WebUtility.HtmlDecode(match.Groups[1].Value) : null;
     }
 
     /// <summary>The Central Admin session cookie this browser currently holds, or null.</summary>

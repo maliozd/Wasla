@@ -29,13 +29,15 @@
                             <dd class="col-sm-8">@Model.PlanDisplayName</dd>
                             <dt class="col-sm-4">@L["Signup.PendingLabelPaymentPeriod"]</dt>
                             <dd class="col-sm-8">@billingLabel</dd>
-                            @if (Model.IsYearlyBilling)
-                            {
-                                <dt class="col-sm-4">@L["Checkout.MonthlyReferencePrice"]</dt>
-                                <dd class="col-sm-8">@Model.MonthlyPriceTry.ToString("N0") TRY</dd>
-                            }
                             <dt class="col-sm-4">@L["Checkout.TotalAmount"]</dt>
-                            <dd class="col-sm-8 fw-semibold">@Model.TotalPriceTry.ToString("N0") TRY</dd>
+                            @if (Model.PriceTry is { } price)
+                            {
+                                <dd class="col-sm-8"><span class="fw-semibold">@price.ToString("N2") TRY</span> <span class="text-muted">(@L[Model.PriceVatIncluded ? "Billing.VatIncluded" : "Billing.VatExcluded"])</span></dd>
+                            }
+                            else
+                            {
+                                <dd class="col-sm-8 text-muted">@L["Checkout.PriceNotSet"]</dd>
+                            }
                         </dl>
 
                         <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRestaurantInfo"]</h2>

@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
         services.AddScoped<IBillingSubscriptionStore, BillingSubscriptionStore>();
+        services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 

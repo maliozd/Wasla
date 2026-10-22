@@ -28,9 +28,10 @@ public sealed class CheckoutReviewViewModel
 
     public string AddressSummary { get; set; } = string.Empty;
 
-    public decimal MonthlyPriceTry { get; set; }
+    /// <summary>The CentralDb plan price checkout would charge; null when none applies yet.</summary>
+    public decimal? PriceTry { get; set; }
 
-    public decimal TotalPriceTry { get; set; }
+    public bool PriceVatIncluded { get; set; }
 
     public bool IsYearlyBilling { get; set; }
 

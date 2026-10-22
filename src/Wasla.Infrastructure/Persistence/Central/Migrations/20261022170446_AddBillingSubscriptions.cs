@@ -21,7 +21,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     BillingPeriod = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "char(3)", unicode: false, fixedLength: true, maxLength: 3, nullable: false),
+                    VatIncluded = table.Column<bool>(type: "bit", nullable: false),
                     EffectiveFromUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedByCentralAdminUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>

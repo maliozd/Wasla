@@ -110,7 +110,9 @@ public sealed class SubscriptionStatusTransitionTests
             "ProPlus",
             BillingSubscription.YearlyPeriod,
             new BillingPrice(14990.50m, "TRY"),
+            vatIncluded: false,
             BillingTestData.Now.AddDays(-1),
+            BillingTestData.AdminId,
             BillingTestData.Now.AddDays(-1));
         var subscription = BillingSubscription.StartPending(
             registrationId,
@@ -331,7 +333,7 @@ public sealed class SubscriptionStatusTransitionTests
     public void APlanPrice_AndASubscription_StartOnlyFromValidValues()
     {
         BillingPlanPrice Price(string period = BillingSubscription.MonthlyPeriod, string plan = "Pro", BillingPrice? price = null) =>
-            BillingPlanPrice.Create(plan, period, price ?? BillingTestData.MonthlyPrice, BillingTestData.Now, BillingTestData.Now);
+            BillingPlanPrice.Create(plan, period, price ?? BillingTestData.MonthlyPrice, vatIncluded: true, BillingTestData.Now, BillingTestData.AdminId, BillingTestData.Now);
 
         Assert.Throws<ArgumentException>(() => Price(period: "Weekly"));
         Assert.Throws<ArgumentException>(() => Price(period: "monthly"));

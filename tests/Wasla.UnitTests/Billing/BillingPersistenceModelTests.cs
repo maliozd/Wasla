@@ -103,6 +103,8 @@ public sealed class BillingPersistenceModelTests
         Assert.Equal("[BillingPeriod] IN ('Monthly', 'Yearly')", checks["CK_BillingPlanPrices_BillingPeriod"]);
         Assert.Empty(entity.GetForeignKeys());
         Assert.Null(entity.FindProperty(nameof(BillingPlanPrice.Price)));
+        Assert.False(entity.FindProperty(nameof(BillingPlanPrice.VatIncluded))!.IsNullable);
+        Assert.False(entity.FindProperty(nameof(BillingPlanPrice.CreatedByCentralAdminUserId))!.IsNullable);
     }
 
     [Fact]

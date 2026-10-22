@@ -3345,9 +3345,6 @@
   <data name="Checkout.UnknownPlanLabel" xml:space="preserve">
     <value>Стандартный пакет</value>
   </data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve">
-    <value>Ежемесячная справочная цена</value>
-  </data>
   <data name="Checkout.TotalAmount" xml:space="preserve">
     <value>Общая сумма</value>
   </data>
@@ -4612,4 +4609,49 @@
   <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Отправлено на принтер кассы</value></data>
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} закрыт</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>КУХНЯ · {0}</value></data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Цены тарифов</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цены не изменяются: запланируйте новую цену с более поздней даты.</value></data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Действующие цены</value></data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Тариф</value></data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Период оплаты</value></data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve"><value>НДС</value></data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve"><value>Действует с</value></data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve"><value>Следующая запланированная</value></data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve"><value>Цены нет — оплата недоступна</value></data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve"><value>Действует</value></data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve"><value>Запланирована</value></data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve"><value>Заменена</value></data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve"><value>Все цены</value></data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve"><value>Цены ещё не заданы.</value></data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve"><value>Запланировать цену</value></data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve"><value>Сумма (куруши)</value></data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve"><value>Целое число курушей: 29990 — это 299,90 TRY.</value></data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve"><value>{0} куруш.</value></data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve"><value>Включает ли эта сумма НДС?</value></data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve"><value>Да, НДС включён</value></data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve"><value>Нет, без НДС</value></data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve"><value>Действует с даты</value></data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve"><value>С 00:00 по времени Турции в эту дату. Сегодняшняя дата действует сразу.</value></data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve"><value>Запланировать цену</value></data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve"><value>Выберите…</value></data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve"><value>Цена сохранена.</value></data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve"><value>Отозвать</value></data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve"><value>Запланированная цена отозвана.</value></data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve"><value>Отозвать можно только цену, которая ещё не вступила в силу.</value></data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve"><value>Цена не сохранена. Проверьте поля ниже.</value></data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve"><value>Выберите тариф, который можно купить онлайн.</value></data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve"><value>Выберите «Ежемесячно» или «Ежегодно».</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve"><value>Введите сумму в курушах.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve"><value>Введите целое число курушей без точек и запятых.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve"><value>Сумма должна быть от 1 до 1 000 000 000 курушей.</value></data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve"><value>Укажите, включает ли сумма НДС.</value></data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve"><value>Введите дату вступления цены в силу.</value></data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>Введите правильную дату.</value></data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>Дата не может быть в прошлом.</value></data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>Для этого тарифа и периода оплаты на эту дату уже есть цена.</value></data>
+  <data name="Billing.VatIncluded" xml:space="preserve"><value>НДС включён</value></data>
+  <data name="Billing.VatExcluded" xml:space="preserve"><value>Без НДС</value></data>
+  <data name="Checkout.PriceNotSet" xml:space="preserve"><value>Цена этого тарифа ещё не задана.</value></data>
 </root>

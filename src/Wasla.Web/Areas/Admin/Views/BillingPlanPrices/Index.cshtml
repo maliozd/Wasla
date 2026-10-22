@@ -1,0 +1,232 @@
+@model Wasla.Web.Areas.Admin.Models.AdminPlanPricesViewModel
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Wasla.Application.Abstractions.Billing
+@using Wasla.Web.Areas.Admin.Models
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData["Title"] = L["Admin.PlanPrices.Title"].Value;
+    var hasErrors = Model.Errors.Count > 0;
+    var today = Model.Overview.TodayInTurkey.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    string Amount(long kurus) => (kurus / 100m).ToString("N2", CultureInfo.CurrentCulture) + " TRY";
+    string Kurus(long kurus) => string.Format(CultureInfo.CurrentCulture, L["Admin.PlanPrices.KurusValue"].Value, kurus.ToString("N0", CultureInfo.CurrentCulture));
+    string Date(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    string Vat(bool included) => L[included ? "Billing.VatIncluded" : "Billing.VatExcluded"].Value;
+    string? Error(BillingPlanPriceField field) => Model.Errors.TryGetValue(field, out var message) ? message : null;
+    string Invalid(BillingPlanPriceField field) => Error(field) is null ? "" : "is-invalid";
+    string? Described(BillingPlanPriceField field, string helpId)
+    {
+        var ids = (Error(field) is null ? helpId : helpId + " " + field + "-error").Trim();
+        return ids.Length == 0 ? null : ids;
+    }
+}
+
+<div class="wasla-admin-ops">
+    <div class="mb-4">
+        <h1 class="h4 mb-1">@L["Admin.PlanPrices.Title"]</h1>
+        <p class="text-muted small mb-0">@L["Admin.PlanPrices.Intro"]</p>
+    </div>
+
+    @if (Model.SuccessMessage is not null)
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+    @if (Model.ErrorMessage is not null)
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <section class="card border-0 shadow-sm mb-4" aria-labelledby="plan-prices-current">
+        <div class="card-body">
+            <h2 id="plan-prices-current" class="h6 fw-semibold mb-3">@L["Admin.PlanPrices.CurrentHeading"]</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">@L["Admin.PlanPrices.Plan"]</th>
+                            <th scope="col">@L["Admin.PlanPrices.Period"]</th>
+                            <th scope="col">@L["Admin.PlanPrices.Amount"]</th>
+                            <th scope="col">@L["Admin.PlanPrices.Vat"]</th>
+                            <th scope="col">@L["Admin.PlanPrices.EffectiveFrom"]</th>
+                            <th scope="col">@L["Admin.PlanPrices.NextScheduled"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var slot in Model.Overview.Slots)
+                        {
+                            <tr data-plan="@slot.PlanCode" data-period="@slot.BillingPeriod">
+                                <th scope="row" class="fw-normal">@Model.PlanName(slot.PlanCode)</th>
+                                <td>@L[AdminPlanPricePresenter.PeriodKey(slot.BillingPeriod)]</td>
+                                @if (slot.InEffect is { } current)
+                                {
+                                    <td><span class="fw-semibold">@Amount(current.AmountKurus)</span> <span class="text-muted small">(@Kurus(current.AmountKurus))</span></td>
+                                    <td>@Vat(current.VatIncluded)</td>
+                                    <td>@Date(current.EffectiveDateInTurkey)</td>
+                                }
+                                else
+                                {
+                                    <td colspan="3"><partial name="_AdminStatusBadge" model="AdminPlanPricePresenter.NoPrice" /></td>
+                                }
+                                <td>
+                                    @if (slot.NextScheduled is { } next)
+                                    {
+                                        <span>@Amount(next.AmountKurus) · @Date(next.EffectiveDateInTurkey)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="card border-0 shadow-sm mb-4" aria-labelledby="plan-prices-form">
+        <div class="card-body">
+            <h2 id="plan-prices-form" class="h6 fw-semibold mb-3">@L["Admin.PlanPrices.FormHeading"]</h2>
+
+            @if (hasErrors)
+            {
+                <div id="plan-price-errors" class="alert alert-danger" role="alert">
+                    <p class="mb-1 fw-semibold">@L["Admin.PlanPrices.Error.Summary"]</p>
+                    <ul class="mb-0">
+                        @foreach (var message in Model.Errors.Values)
+                        {
+                            <li>@message</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form method="post" action="/admin/billing/plan-prices" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label for="PlanCode" class="form-label">@L["Admin.PlanPrices.Plan"]</label>
+                        <select id="PlanCode" name="PlanCode" class="form-select @Invalid(BillingPlanPriceField.PlanCode)" aria-describedby="@Described(BillingPlanPriceField.PlanCode, "")" required>
+                            <option value="">@L["Admin.PlanPrices.SelectPlaceholder"]</option>
+                            @foreach (var plan in Model.Plans)
+                            {
+                                <option value="@plan.Code" selected="@(Model.Form.PlanCode == plan.Code)">@plan.DisplayName</option>
+                            }
+                        </select>
+                        @if (Error(BillingPlanPriceField.PlanCode) is { } planError)
+                        {
+                            <div id="PlanCode-error" class="invalid-feedback">@planError</div>
+                        }
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="BillingPeriod" class="form-label">@L["Admin.PlanPrices.Period"]</label>
+                        <select id="BillingPeriod" name="BillingPeriod" class="form-select @Invalid(BillingPlanPriceField.BillingPeriod)" aria-describedby="@Described(BillingPlanPriceField.BillingPeriod, "")" required>
+                            <option value="">@L["Admin.PlanPrices.SelectPlaceholder"]</option>
+                            <option value="Monthly" selected="@(Model.Form.BillingPeriod == "Monthly")">@L["Signup.BillingMonthly"]</option>
+                            <option value="Yearly" selected="@(Model.Form.BillingPeriod == "Yearly")">@L["Signup.BillingYearly"]</option>
+                        </select>
+                        @if (Error(BillingPlanPriceField.BillingPeriod) is { } periodError)
+                        {
+                            <div id="BillingPeriod-error" class="invalid-feedback">@periodError</div>
+                        }
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="AmountKurus" class="form-label">@L["Admin.PlanPrices.AmountKurus"]</label>
+                        <input id="AmountKurus" name="AmountKurus" type="text" inputmode="numeric" autocomplete="off" dir="ltr"
+                               class="form-control @Invalid(BillingPlanPriceField.AmountKurus)" value="@Model.Form.AmountKurus"
+                               aria-describedby="@Described(BillingPlanPriceField.AmountKurus, "AmountKurus-help")" required />
+                        <div id="AmountKurus-help" class="form-text">@L["Admin.PlanPrices.AmountKurusHelp"]</div>
+                        @if (Error(BillingPlanPriceField.AmountKurus) is { } amountError)
+                        {
+                            <div id="AmountKurus-error" class="invalid-feedback">@amountError</div>
+                        }
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="EffectiveDate" class="form-label">@L["Admin.PlanPrices.EffectiveDate"]</label>
+                        <input id="EffectiveDate" name="EffectiveDate" type="date" min="@today" dir="ltr"
+                               class="form-control @Invalid(BillingPlanPriceField.EffectiveDate)" value="@Model.Form.EffectiveDate"
+                               aria-describedby="@Described(BillingPlanPriceField.EffectiveDate, "EffectiveDate-help")" required />
+                        <div id="EffectiveDate-help" class="form-text">@L["Admin.PlanPrices.EffectiveDateHelp"]</div>
+                        @if (Error(BillingPlanPriceField.EffectiveDate) is { } dateError)
+                        {
+                            <div id="EffectiveDate-error" class="invalid-feedback">@dateError</div>
+                        }
+                    </div>
+                    <div class="col-12">
+                        <fieldset aria-describedby="@Described(BillingPlanPriceField.VatIncluded, "")">
+                            <legend class="form-label fs-6">@L["Admin.PlanPrices.VatQuestion"]</legend>
+                            <div class="form-check">
+                                <input class="form-check-input @Invalid(BillingPlanPriceField.VatIncluded)" type="radio" name="VatIncluded" id="VatIncluded-yes" value="true" checked="@(Model.Form.VatIncluded == "true")" />
+                                <label class="form-check-label" for="VatIncluded-yes">@L["Admin.PlanPrices.VatYes"]</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input @Invalid(BillingPlanPriceField.VatIncluded)" type="radio" name="VatIncluded" id="VatIncluded-no" value="false" checked="@(Model.Form.VatIncluded == "false")" />
+                                <label class="form-check-label" for="VatIncluded-no">@L["Admin.PlanPrices.VatNo"]</label>
+                            </div>
+                            @if (Error(BillingPlanPriceField.VatIncluded) is { } vatError)
+                            {
+                                <div id="VatIncluded-error" class="invalid-feedback d-block">@vatError</div>
+                            }
+                        </fieldset>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">@L["Admin.PlanPrices.Save"]</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="card border-0 shadow-sm" aria-labelledby="plan-prices-history">
+        <div class="card-body">
+            <h2 id="plan-prices-history" class="h6 fw-semibold mb-3">@L["Admin.PlanPrices.HistoryHeading"]</h2>
+            @if (Model.Overview.Prices.Count == 0)
+            {
+                <p class="text-muted mb-0">@L["Admin.PlanPrices.HistoryEmpty"]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">@L["Admin.PlanPrices.Plan"]</th>
+                                <th scope="col">@L["Admin.PlanPrices.Period"]</th>
+                                <th scope="col">@L["Admin.PlanPrices.Amount"]</th>
+                                <th scope="col">@L["Admin.PlanPrices.Vat"]</th>
+                                <th scope="col">@L["Admin.PlanPrices.EffectiveFrom"]</th>
+                                <th scope="col">@L["Admin.PlanPrices.Status"]</th>
+                                <th scope="col"><span class="visually-hidden">@L["Admin.PlanPrices.Withdraw"]</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var price in Model.Overview.Prices)
+                            {
+                                <tr data-plan-price="@price.Id">
+                                    <td>@Model.PlanName(price.PlanCode)</td>
+                                    <td>@L[AdminPlanPricePresenter.PeriodKey(price.BillingPeriod)]</td>
+                                    <td>@Amount(price.AmountKurus) <span class="text-muted small">(@Kurus(price.AmountKurus))</span></td>
+                                    <td>@Vat(price.VatIncluded)</td>
+                                    <td>@Date(price.EffectiveDateInTurkey)</td>
+                                    <td><partial name="_AdminStatusBadge" model="AdminPlanPricePresenter.State(price.State)" /></td>
+                                    <td class="text-end">
+                                        @if (price.State == BillingPlanPriceState.Scheduled)
+                                        {
+                                            <form method="post" action="/admin/billing/plan-prices/@price.Id/withdraw" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        aria-label="@L["Admin.PlanPrices.Withdraw"]: @Model.PlanName(price.PlanCode), @L[AdminPlanPricePresenter.PeriodKey(price.BillingPeriod)], @Date(price.EffectiveDateInTurkey)">
+                                                    @L["Admin.PlanPrices.Withdraw"]
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

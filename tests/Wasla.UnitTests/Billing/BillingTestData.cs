@@ -18,6 +18,8 @@ internal static class BillingTestData
     public static readonly DateTime Now = new(2026, 10, 22, 9, 0, 0, DateTimeKind.Utc);
     /// <summary>A deliberately odd test amount: not a Wasla price (the business price is not decided yet).</summary>
     public static readonly BillingPrice MonthlyPrice = new(123.45m, "TRY");
+    /// <summary>The Central Admin recorded on test plan prices.</summary>
+    public static readonly Guid AdminId = new("a0000000-0000-0000-0000-00000000a147");
     public static readonly BillingProviderScope Sandbox = new(BillingProvider.Iyzico, BillingEnvironment.Sandbox);
     public static readonly BillingProviderScope Production = new(BillingProvider.Iyzico, BillingEnvironment.Production);
 
@@ -27,7 +29,7 @@ internal static class BillingTestData
         string billingPeriod = BillingSubscription.MonthlyPeriod,
         BillingPrice? price = null,
         DateTime? effectiveFromUtc = null) =>
-        BillingPlanPrice.Create(planCode, billingPeriod, price ?? MonthlyPrice, effectiveFromUtc ?? Now.AddDays(-30), Now.AddDays(-30));
+        BillingPlanPrice.Create(planCode, billingPeriod, price ?? MonthlyPrice, vatIncluded: true, effectiveFromUtc ?? Now.AddDays(-30), AdminId, Now.AddDays(-30));
 
     public static PendingRegistration Registration(
         PendingRegistrationStatus status = PendingRegistrationStatus.AwaitingPayment,

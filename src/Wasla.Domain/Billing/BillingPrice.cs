@@ -25,6 +25,12 @@ public readonly record struct BillingPrice
 
     public string Currency { get; }
 
+    /// <summary>The amount in the currency's minor unit (kuruş for TRY); exact, because amounts have two decimals.</summary>
+    public long MinorUnits => (long)(Amount * 100m);
+
+    /// <summary>A price from a whole number of minor units, for example 29990 kuruş = 299.90 TRY.</summary>
+    public static BillingPrice FromMinorUnits(long minorUnits, string currency) => new(minorUnits / 100m, currency);
+
     private static bool IsCurrencyCode(string? value) =>
         value is { Length: CurrencyLength } && value.All(c => c is >= 'A' and <= 'Z');
 }

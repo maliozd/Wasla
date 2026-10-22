@@ -232,8 +232,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             : row.BusinessType ?? string.Empty;
         var businessTypeCodes = businessTypeRows.Select(x => x.Code).ToArray();
 
-        var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
-        var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
+        // The price a checkout would charge, from the one source checkout uses (WAS-147).
+        var planPrice = await _central.BillingPlanPrices.AsNoTracking()
+            .InEffectAsync(row.PlanCode, row.BillingPeriod, DateTime.UtcNow, ct);
 
         return new PendingRegistrationCheckoutDetails(
             row.Id,
@@ -258,9 +259,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.PostalCode,
             row.LocationUrl,
             row.Status,
-            monthly,
-            total,
-            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod),
+            planPrice is null ? null : new BillingPlanPriceQuote(planPrice.Amount, planPrice.VatIncluded),
+            string.Equals(row.BillingPeriod, BillingSubscription.YearlyPeriod, StringComparison.Ordinal),
             businessTypeCodes);
     }
 

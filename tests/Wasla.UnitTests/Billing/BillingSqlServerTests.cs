@@ -187,8 +187,8 @@ public sealed class BillingSqlServerTests : IClassFixture<SqlServerCentralDataba
         $"VALUES (NEWID(), '{registration}', 1, {environment}, '{planPriceId ?? _db.PlanPrice.Id}', 'Pro', 'Monthly', {amount}, 'TRY', {status}, '2026-10-22', '2026-10-22', '2026-10-22', 1)";
 
     private static string InsertPlanPriceSql(string amount, string period = "Monthly", string effectiveFrom = "2027-01-01") =>
-        "INSERT INTO [BillingPlanPrices] ([Id],[PlanCode],[BillingPeriod],[Amount],[Currency],[EffectiveFromUtc],[CreatedAtUtc]) " +
-        $"VALUES (NEWID(), 'Pro', '{period}', {amount}, 'TRY', '{effectiveFrom}', '2026-10-22')";
+        "INSERT INTO [BillingPlanPrices] ([Id],[PlanCode],[BillingPeriod],[Amount],[Currency],[VatIncluded],[EffectiveFromUtc],[CreatedByCentralAdminUserId],[CreatedAtUtc]) " +
+        $"VALUES (NEWID(), 'Pro', '{period}', {amount}, 'TRY', 1, '{effectiveFrom}', NEWID(), '2026-10-22')";
 
     private static async Task AssertRefusedAsync(DbContext db, string sql, int sqlErrorNumber)
     {

@@ -14,7 +14,7 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 |-------|-------------------|-------|
 | `BillingSubscriptions` | The `PendingRegistration` the checkout started from (required, unique), and after provisioning also the `Tenant` that registration became (unique when set) | One Wasla subscription: Wasla id, provider and environment, plan/period/price snapshot, state, provider references, concurrency revision |
 | `BillingPayments` | Its `BillingSubscription` (required) | One provider-verified paid period: provider payment reference, period, charged amount and currency, verification time |
-| `BillingPlanPrices` | Wasla (platform data, not a tenant's) | Wasla's authoritative price for one plan and billing period from an effective time: plan code, period, amount, currency. Immutable; a new price is a new row |
+| `BillingPlanPrices` | Wasla (platform data, not a tenant's); each row records the Central Admin who set it | Wasla's authoritative price for one plan and billing period from an effective time: plan code, period, amount, currency, whether VAT is included. Immutable; a new price is a new row |
 
 **Sources:** `src/Wasla.Domain/Entities/Central/BillingSubscription.cs`, `BillingPayment.cs`, `BillingPlanPrice.cs`, `src/Wasla.Domain/Billing/`, `src/Wasla.Infrastructure/Persistence/Central/Configurations/Billing*Configuration.cs`, `src/Wasla.Infrastructure/Services/BillingSubscriptionStore.cs`.
 
@@ -60,10 +60,25 @@ Two different mappings are involved, and only the first is Wasla's:
 | Wasla plan + billing period → amount + currency, from an effective time | Wasla; authoritative for what a checkout charges | CentralDb `BillingPlanPrices` (WAS-147) |
 | Wasla price row → the provider's product and pricing-plan references, per provider environment | Provider configuration; created or looked up in iyzico | Keyed by `PlanPriceId` and `BillingEnvironment` (WAS-148; not stored by WAS-147) |
 
+- **One rule, one source.** The price that applies to a plan and period at a moment is the row with the latest `EffectiveFromUtc` not after that moment (`BillingPlanPriceQueries.InEffectAsync`). Checkout, the checkout summary (`/checkout/review`) and the Central Admin page all use it; no price lives in code.
 - **Checkout price.** `StartForRegistrationAsync` takes no price from its caller. It prices the subscription from the `BillingPlanPrices` row for the registration's plan and period with the latest `EffectiveFromUtc` not after now, and the subscription keeps that row's id (`PlanPriceId`) and amount and currency as its immutable snapshot. A later row prices only later checkouts; an existing subscription, including a repeated start for the same registration, keeps its price. The provider must charge exactly the snapshot (`RecordVerifiedPaymentAsync` refuses another amount).
-- **No price, no checkout.** Without a row in effect the start is `PriceNotConfigured` and writes nothing.
-- **Changes.** Rows are immutable (`PropertySaveBehavior.Throw`), unique per plan, period and effective time, and cannot be deleted while a subscription references them. A price change is a new row with a later effective time, added by a reviewed CentralDb migration; there is no admin screen or CLI for prices.
-- **Current state: no rows.** The migration creates the table empty, so every checkout start returns `PriceNotConfigured` until prices are decided (see [Price decision required](#price-decision-required)). Nothing calls the start yet (WAS-149), so no current flow changes.
+- **No price, no checkout.** Without a row in effect the start is `PriceNotConfigured` and writes nothing, and `/checkout/review` says that the price has not been set instead of showing an amount.
+- **VAT.** Each row states whether its amount includes VAT (`VatIncluded`, a required choice). The amount charged is the stored amount either way; Wasla does not add or remove VAT. Tax treatment of the payment is WAS-153.
+- **Changes.** Rows are immutable (`PropertySaveBehavior.Throw`), unique per plan, period and effective time, and cannot be deleted while a subscription references them. A price change is a new row with a later effective time.
+- **Current state: no rows.** The migration creates the table empty and nothing seeds it, so every checkout start returns `PriceNotConfigured` until a Central Admin sets prices (see [Price decision required](#price-decision-required)). Nothing calls the start yet (WAS-149), so no current flow changes.
+
+### Central Admin plan prices page
+
+`/admin/billing/plan-prices` (`BillingPlanPricesController`, `IBillingPlanPriceAdminService`) is where prices are set. Like every Central Admin page it needs the Central Admin cookie, revalidated against CentralDb on every request ([authentication.md](authentication.md#central-admin-session-revalidation)); there are no Central Admin roles, so every active Central Admin may set prices. A tenant session never reaches it, and every POST validates the antiforgery token.
+
+- **Shows** every plan that can be bought online (the self-service plans of `WaslaPlanCatalog`; never Enterprise) with each period: the price in effect, or "no price — checkout is blocked", and the next scheduled price. Below, every price with its state: in effect, scheduled or replaced.
+- **Schedules** a price for a plan and period:
+  - The amount is a whole number of kuruş, from 1 to 1,000,000,000. That cap is an input guard against typing errors, not a commercial limit. The amount is stored exactly as TRY with two decimals.
+  - The VAT choice is required, with no default.
+  - The date is a Türkiye calendar date, today or later. The price takes effect at 00:00 Türkiye time on that date (`BillingPlanPriceInput.EffectiveFromUtc`), so today's date takes effect immediately.
+  - Every invalid input gets its own localized message and stores nothing, and a second price for the same plan, period and date is refused (also by the unique index when two admins save at once).
+  - The row records the acting admin's id (`CreatedByCentralAdminUserId`), and the log line carries ids, plan, period and effective time.
+- **Withdraws** a scheduled price that has not taken effect, in one conditional statement, so a price that has taken effect (and may be referenced) is never removed. A price in effect is replaced by scheduling a new one.
 
 ## Invariants the database enforces
 
@@ -165,27 +180,26 @@ No outbox and no state-history table exist: no current flow needs them, and each
 
 ## Price decision required
 
-Three amounts exist in the code today, and none of them is a decided charge price:
+The simulator's built-in amounts (`CheckoutSimulatedPricing`, 499/999/1,499) are removed; `/checkout/review` now shows the `BillingPlanPrices` price. Two sources of amounts remain, and neither is a decided charge price yet:
 
 | Source | Starter | Pro | Pro+ | Yearly | Shown where |
 |--------|---------|-----|------|--------|-------------|
 | `WaslaPlanCatalog.MonthlyPrice` and the `Pricing.Plan.*.Price` resources (commit "Update public pricing", 2026-06-14) | 300 TL | 600 TL | 1,200 TL | 10 × monthly ("2 months" advantage note) | Public pricing page and signup, in all four languages |
-| `CheckoutSimulatedPricing` (added the same day with the simulated checkout) | 499 | 999 | 1,499 | 10 × monthly | `/checkout/review` in every environment, labelled TRY |
-| `BillingPlanPrices` | none | none | none | none | Nothing yet |
+| `BillingPlanPrices`, set on the Central Admin page | none | none | none | none | `/checkout/review` ("price not set yet" while empty) and checkout |
 
-The published 300/600/1,200 TL is the only one presented to customers as a price, but the roadmap leaves the final price open: WAS-154 requires "final plan pricing" to be confirmed before real charges, and WAS-153 leaves VAT treatment to a commercial decision. WAS-147 therefore seeds no price. The decision needed, from the product/commercial owner:
+The published 300/600/1,200 TL is the only one presented to customers as a price, but the roadmap leaves the final price open: WAS-154 requires "final plan pricing" to be confirmed before real charges, and WAS-153 leaves VAT treatment to a commercial decision. WAS-147 therefore seeds no price. The decision needed, from the product/commercial owner, entered by a Central Admin on the plan prices page:
 
 1. The charge amount and currency for each self-service plan (Starter, Pro, Pro+) and each period (Monthly, Yearly), confirming or replacing 300/600/1,200 TL monthly and 3,000/6,000/12,000 TL yearly.
 2. Whether those amounts are the gross amount charged, VAT included, since the provider charges exactly the stored amount.
 3. The effective time from which they apply.
 
-Once decided, one reviewed migration inserts the rows, and the same change makes the pricing page, signup and `/checkout/review` show the decided amounts, so code holds no second, conflicting price. `CheckoutSimulatedPricing` stays the Development simulator's display until the production checkout replaces it (WAS-149).
+Checkout and `/checkout/review` follow the saved prices without a code change. The public pricing page and signup still show the static catalog amounts (`WaslaPlanCatalog.MonthlyPrice` and the `Pricing.Plan.*.Price` resources); once prices are decided, they must be brought in line, or made to read the saved prices, so customers are not shown an amount that checkout does not charge. The Development payment simulator still marks a registration paid without a price; it writes no billing row and charges nothing.
 
 ## Known discrepancies
 
-- **Checkout review amounts.** `/checkout/review` shows `CheckoutSimulatedPricing` amounts outside Development too, so a staging or production registration summary disagrees with the public pricing page. Not changed here; it is resolved with the price decision above.
+- **Public pricing page.** It shows the static catalog amounts, not the saved prices; see [Price decision required](#price-decision-required).
 - **Tenant status fields.** `Tenant.SubscriptionStatus` and `Tenant.BillingPaymentStatus` are written at provisioning (`Trialing`, `Paid`) and never read. They are not the billing source of truth.
 
 ## Tests
 
-`tests/Wasla.UnitTests/Billing/`: state machine and fail-closed checks (`SubscriptionStatusTransitionTests`), the store over a SQLite CentralDb built from the model, including plan price resolution, tenant A/B isolation, sandbox/production separation, duplicates, repeated writes, immutable snapshots and a concurrent write between read and save (`BillingSubscriptionStoreTests`), mapping and migration shape (`BillingPersistenceModelTests`), boundaries and data minimization (`BillingBoundaryTests`), paid-period coverage including future periods, gaps and out-of-order payments (`BillingVerifiedPeriodTests`), the simulator (`BillingSimulationIsolationTests`), and on a real SQL Server simultaneous writers, database constraints and the rollback guard (`BillingSqlServerTests`, `BillingMigrationSqlServerTests`; see [../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).
+`tests/Wasla.UnitTests/Billing/`: state machine and fail-closed checks (`SubscriptionStatusTransitionTests`), the store over a SQLite CentralDb built from the model, including plan price resolution, tenant A/B isolation, sandbox/production separation, duplicates, repeated writes, immutable snapshots and a concurrent write between read and save (`BillingSubscriptionStoreTests`), mapping and migration shape (`BillingPersistenceModelTests`), boundaries and data minimization (`BillingBoundaryTests`), paid-period coverage including future periods, gaps and out-of-order payments (`BillingVerifiedPeriodTests`), plan price input rules, effective dates, checkout and withdrawal (`BillingPlanPriceAdminServiceTests`), the Central Admin page over real HTTP: access, antiforgery, every validation message, duplicates and withdrawal (`Admin/AdminBillingPlanPricesWebTests`), the rendered checkout summary (`Signup/CheckoutReviewPriceRenderedTests`), the simulator (`BillingSimulationIsolationTests`), and on a real SQL Server simultaneous writers, database constraints and the rollback guard (`BillingSqlServerTests`, `BillingMigrationSqlServerTests`; see [../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)).
