@@ -76,18 +76,23 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         Assert.Equal(0, await browser.EvaluateAsync<int>("window.__permissionRequests", ct));
 
         // 2. The training step: start the practice order with the panel's own button, then open the modal from the note
-        // shown when it arrives.
+        // shown when it arrives. Starting posts a form and the Live Screen loads again. The practice order exists before
+        // that page arrives, so a live update can already show the note on the page being left; the marker makes the test
+        // act only on the new page, never on one that is about to be replaced.
+        await browser.EvaluateAsync<bool>("(window.__leftForPractice = true)", ct);
         await ClickAsync(browser, "[data-guided-training] [data-training-when='intro'] button[type=submit]", ct);
-        Assert.True(await browser.WaitForAsync(
-                "(() => { const n = document.querySelector('[data-training-notifications]'); return !!n && !n.hidden " +
+        Assert.True(await WaitAcrossNavigationAsync(browser,
+                "(() => { const n = document.querySelector('[data-training-notifications]'); return !window.__leftForPractice " +
+                "&& document.readyState === 'complete' && !!n && !n.hidden " +
                 "&& document.querySelector('[data-guided-training]').getAttribute('data-step') === 'practice-new' " +
-                "&& typeof window.__permissionRequests === 'number'; })()", Wait, ct),
-            $"The practice-order step and its notification note are not shown. {host.ServerErrors}");
+                "&& typeof window.__permissionRequests === 'number'; })()", ct),
+            $"The practice-order step and its notification note are not shown on the reloaded Live Screen. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync(
             "!!(window.WaslaOrders && window.WaslaOrders.state && window.WaslaOrders.state.notificationSettings)", Wait, ct));
 
         await ClickAsync(browser, "[data-training-notifications] [data-notification-settings-open]", ct);
-        Assert.True(await browser.WaitForAsync(ModalOpen(1), Wait, ct), $"The training step button did not open the notification settings modal. {host.ServerErrors}");
+        Assert.True(await browser.WaitForAsync(ModalOpen(1), Wait, ct),
+            $"The training step button did not open the notification settings modal ({await ModalStateAsync(browser, ct)}). {host.ServerErrors}");
         Assert.Equal(0, await browser.EvaluateAsync<int>("window.__permissionRequests", ct));
 
         // Escape from inside the modal closes only the modal; the training panel stays, and focus returns to its button.
@@ -152,6 +157,35 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered by {target.GetProperty("at").GetString()}.");
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
     }
+
+    /// <summary>Like WaitForAsync, but tolerates the moments of a navigation when the page cannot be evaluated.</summary>
+    private static async Task<bool> WaitAcrossNavigationAsync(HeadlessChromium browser, string expression, CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + Wait;
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                if (await browser.EvaluateAsync<bool>(expression, ct))
+                    return true;
+            }
+            catch (InvalidOperationException)
+            {
+                // The document is being replaced.
+            }
+
+            await Task.Delay(100, ct);
+        }
+
+        return false;
+    }
+
+    /// <summary>For a failure message: the page, the modal's state and the counted Bootstrap events.</summary>
+    private static Task<string> ModalStateAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<string>(
+            "(() => { const m = document.getElementById('notificationSettingsModal'); return 'path ' + location.pathname + ', left ' + !!window.__leftForPractice " +
+            "+ ', classes ' + (m ? m.className : 'no modal') + ', display ' + (m ? getComputedStyle(m).display : '-') " +
+            "+ ', shown ' + window.__modalShown + ', hidden ' + window.__modalHidden + ', body ' + document.body.className; })()", ct);
 
     private static Task<string> ActiveElementAsync(HeadlessChromium browser, CancellationToken ct) =>
         browser.EvaluateAsync<string>(
