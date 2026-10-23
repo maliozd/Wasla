@@ -16,6 +16,7 @@ namespace Wasla.UnitTests.Web;
 /// no Chromium browser is installed (see <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be loaded
 /// from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class TenantAccessibleNamesBrowserTests : IAsyncLifetime
 {
     private const string TenantThemeKey = "Wasla.tenant.theme";

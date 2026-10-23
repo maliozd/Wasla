@@ -1,0 +1,73 @@
+name: CI after base change
+
+# The CI workflow does not react to a pull request's base branch changing, so a pull request moved from dev to master
+# would keep only its fast checks. This runs the CI workflow again for a pull request whose base changed to master;
+# the CI workflow sees a pull request into master and runs the full scope.
+#
+# It is a separate workflow because adding the edited event to ci.yml would start a CI run for every title or body edit:
+# that run would either cancel the pull request's real run (same concurrency group) or, skipped, leave skipped checks
+# with the CI job names, which GitHub counts as passing. Here a title or body edit only skips these jobs.
+on:
+  pull_request:
+    types:
+      - edited
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # The event's commit is the merge with the old base: GitHub recomputes the pull request's merge commit only after the
+  # event. Wait until the merge commit's parents are the new base's current tip and the pull request's head.
+  merge-commit:
+    name: Find the merge with the new base
+    if: ${{ github.event.changes.base != null }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.find.outputs.sha }}
+    steps:
+      - name: Wait for the merge commit
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        # Fails rather than skips when GitHub cannot be read, so a base change never passes without the full run.
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 40); do
+            pr=$(gh api "repos/$REPOSITORY/pulls/$NUMBER" --jq '"\(.base.ref) \(.mergeable) \(.head.sha) \(.merge_commit_sha)"')
+            read -r base mergeable head merge <<<"$pr"
+            if [ -z "$base" ] || [ -z "$head" ]; then
+              echo "::error::Could not read pull request $NUMBER."
+              exit 1
+            fi
+            if [ "$base" != master ]; then
+              echo "::notice::The base is $base again; nothing to run."
+              exit 0
+            fi
+            if [ "$mergeable" = false ]; then
+              echo "::error::The pull request conflicts with master; resolve the conflict and push."
+              exit 1
+            fi
+            tip=$(gh api "repos/$REPOSITORY/branches/master" --jq .commit.sha)
+            if [ "$mergeable" = true ] && [ "$(gh api "repos/$REPOSITORY/commits/$merge" --jq '[.parents[].sha] | join(" ")')" = "$tip $head" ]; then
+              echo "Merge commit $merge: master $tip with head $head."
+              echo "sha=$merge" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::GitHub did not compute the merge with master within 10 minutes."
+          exit 1
+
+  full-ci:
+    name: Full CI after base change
+    needs: merge-commit
+    if: ${{ needs.merge-commit.outputs.sha != '' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.merge-commit.outputs.sha }}

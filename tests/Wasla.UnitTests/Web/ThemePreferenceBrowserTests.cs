@@ -10,6 +10,7 @@ namespace Wasla.UnitTests.Web;
 /// LTR and Arabic RTL. Real mouse input is used for every toggle. Skips only when no Chromium browser is installed
 /// (see <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap/AdminLTE cannot be loaded from their CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class ThemePreferenceBrowserTests : IAsyncLifetime
 {
     private const string TenantKey = "Wasla.tenant.theme";

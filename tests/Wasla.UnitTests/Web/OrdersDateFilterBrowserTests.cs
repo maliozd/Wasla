@@ -13,6 +13,7 @@ namespace Wasla.UnitTests.Web;
 /// day's order in the Gregorian calendar whatever the browser's own default for the language. Skips only when no Chromium
 /// browser is installed or Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class OrdersDateFilterBrowserTests : IAsyncLifetime
 {
     private static readonly Guid ActiveOrderId = Guid.Parse("13000000-0000-4000-8000-0000000000a5");

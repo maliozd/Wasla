@@ -14,6 +14,7 @@ namespace Wasla.UnitTests.Web;
 /// only when no Chromium browser is installed (see <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be
 /// loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class TenantLoginRedirectBrowserTests : IAsyncLifetime
 {
     private const string LiveScreen = "/orders/live-display";

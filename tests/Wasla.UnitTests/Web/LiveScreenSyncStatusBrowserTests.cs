@@ -12,6 +12,7 @@ namespace Wasla.UnitTests.Web;
 /// last successful synchronization from the connection records. Skips only when no Chromium browser is installed or
 /// Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class LiveScreenSyncStatusBrowserTests : IAsyncLifetime
 {
     private TenantVisualWebHost _host = null!;

@@ -15,6 +15,7 @@ namespace Wasla.UnitTests.Web;
 /// when no Chromium browser is installed (see <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be
 /// loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class WaslaHostRoutingBrowserTests : IAsyncLifetime
 {
     private static readonly string[] MappedHosts =

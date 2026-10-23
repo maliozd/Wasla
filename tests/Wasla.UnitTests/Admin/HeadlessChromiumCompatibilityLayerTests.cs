@@ -9,6 +9,7 @@ namespace Wasla.UnitTests.Admin;
 /// the whole test process, so the collection never runs in parallel with other tests.
 /// </summary>
 [Collection(nameof(CompatibilityLayerCollection))]
+[Trait("Category", "Browser")]
 public sealed class HeadlessChromiumCompatibilityLayerTests
 {
     private const string Layer = "DetectorsAppHealth";

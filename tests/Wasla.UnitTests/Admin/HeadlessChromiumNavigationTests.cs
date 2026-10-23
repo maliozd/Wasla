@@ -9,6 +9,7 @@ namespace Wasla.UnitTests.Admin;
 /// A navigation that does not finish loading names what the page still waits for. Browser tests that time out on a CI
 /// runner are diagnosed from the exception message alone, because the runner and its browser are gone afterwards.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class HeadlessChromiumNavigationTests
 {
     [Fact]

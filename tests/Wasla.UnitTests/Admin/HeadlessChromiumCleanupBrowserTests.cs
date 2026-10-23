@@ -8,6 +8,7 @@ namespace Wasla.UnitTests.Admin;
 /// and disposing one browser leaves another browser, an Edge started outside the driver and a profile folder it did not
 /// create untouched. Processes are observed through handles opened while the browser still tracks them.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class HeadlessChromiumCleanupBrowserTests
 {
     [Fact]

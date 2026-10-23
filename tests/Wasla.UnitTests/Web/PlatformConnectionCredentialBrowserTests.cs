@@ -12,6 +12,7 @@ namespace Wasla.UnitTests.Web;
 /// and Russian, in light and dark mode, at desktop and phone widths. Skips only when no Chromium browser is installed or
 /// Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class PlatformConnectionCredentialBrowserTests
 {
     private const string TenantThemeKey = "Wasla.tenant.theme";
