@@ -105,6 +105,7 @@
         var nameEl = document.getElementById("signupPlanSummaryName");
         var descriptionEl = document.getElementById("signupPlanSummaryDescription");
         var priceEl = document.getElementById("signupPlanSummaryPrice");
+        var vatEl = document.getElementById("signupPlanSummaryVat");
         var yearlyNoteEl = document.getElementById("signupPlanSummaryYearlyNote");
         var deviceEl = document.getElementById("signupPlanSummaryDevice");
         var featuresEl = document.getElementById("signupPlanSummaryFeatures");
@@ -116,10 +117,18 @@
         var isYearly = billingSelect && billingSelect.value === "Yearly";
         nameEl.textContent = plan.packageTitle || "";
         descriptionEl.textContent = plan.description || "";
-        priceEl.textContent = isYearly ? (plan.yearlyPrice || plan.monthlyPrice || "") : (plan.monthlyPrice || "");
+        var shown = window.WaslaSignupPlanPrice
+            ? window.WaslaSignupPlanPrice.forPeriod(plan, isYearly)
+            : { price: "", vat: "", saving: "" };
+        priceEl.textContent = shown.price;
+
+        if (vatEl) {
+            vatEl.textContent = shown.vat;
+        }
 
         if (yearlyNoteEl) {
-            yearlyNoteEl.classList.toggle("d-none", !(isYearly && plan.showYearlyNote));
+            yearlyNoteEl.textContent = shown.saving;
+            yearlyNoteEl.classList.toggle("d-none", !shown.saving);
         }
 
         deviceEl.textContent = plan.deviceLimit || "";

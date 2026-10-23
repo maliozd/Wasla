@@ -21,7 +21,7 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
     public string Server { get; } = ResolveServer();
     public string DatabaseName { get; } = NamePrefix + Guid.NewGuid().ToString("N")[..12];
 
-    private static string ResolveServer()
+    internal static string ResolveServer()
     {
         var configured = Environment.GetEnvironmentVariable(ServerVariable);
         var server = string.IsNullOrWhiteSpace(configured) ? DefaultServer : configured.Trim();

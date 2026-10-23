@@ -112,6 +112,7 @@ internal sealed class CheckoutTestHarness : IDisposable
             CreateService(),
             new SignupReferenceDataService(Db),
             new WaslaPlanCatalog(),
+            new BillingPlanPriceReader(Db, TimeProvider.System),
             new InlineValidator<PendingRegistrationRequest>(),
             _options,
             new KeyEchoLocalizer(),

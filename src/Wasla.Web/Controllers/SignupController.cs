@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
@@ -26,6 +27,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly ISignupReferenceDataService _referenceData;
     private readonly IWaslaPlanCatalog _planCatalog;
+    private readonly IBillingPlanPriceReader _planPrices;
     private readonly IValidator<PendingRegistrationRequest> _signupValidator;
     private readonly TenantOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
@@ -36,6 +38,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         IPendingRegistrationService pendingRegistrations,
         ISignupReferenceDataService referenceData,
         IWaslaPlanCatalog planCatalog,
+        IBillingPlanPriceReader planPrices,
         IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<TenantOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer,
@@ -45,6 +48,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         _pendingRegistrations = pendingRegistrations;
         _referenceData = referenceData;
         _planCatalog = planCatalog;
+        _planPrices = planPrices;
         _signupValidator = signupValidator;
         _options = options.Value;
         _localizer = localizer;
@@ -274,6 +278,8 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         model.IsPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(_environment);
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;
+        // The prices checkout would charge now (WAS-147). A missing price is shown as not set; signup still works.
+        model.PlanPrices = await _planPrices.GetPricesInEffectAsync(ct);
         model.BusinessTypeOptions = await _referenceData.GetActiveBusinessTypesAsync(ct);
         model.BusinessCategories = BusinessSubtypeCatalog.Categories
             .Select(category => new SignupBusinessCategoryGroup(

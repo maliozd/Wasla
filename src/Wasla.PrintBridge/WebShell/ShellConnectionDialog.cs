@@ -171,7 +171,7 @@ internal sealed class ShellConnectionDialog : Form
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        ShellWindowTheme.TrySetDarkTitleBar(Handle, _palette == ShellPalette.Dark);
+        ShellWindowTheme.TryApplyTitleBar(Handle, _palette == ShellPalette.Dark);
     }
 
     protected override void OnShown(EventArgs e)

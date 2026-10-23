@@ -40,13 +40,14 @@ Web, Worker and Api share one EF model. Tenant migrations run only through the C
 
 For every release that contains a CentralDb or TenantDb migration:
 
-1. Stop, or keep on the previous version, every Web, Worker and Api instance.
-2. Run `migrate-central`, then `migrate-all-tenants`.
-3. If either command exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun until it exits `0`.
-4. Confirm with `migration-status` that every active tenant shows `Pending: 0`.
-5. Only then deploy and start the new Web, Worker and Api versions.
+1. Back up CentralDb and every tenant database; stop provisioning new tenants during the migration window. Stop, or keep on the previous version where that version is schema-compatible, every Web, Worker and Api instance. Some releases below require stopping the previous version too.
+2. Run `scripts/release/migrate-before-start.sh` with **this release's published CLI DLL** and the command that starts the new Web, Worker and Api versions, separated by `--`. Use the same environment and migration credentials intended for this release. The script runs `migrate-central`, then unrestricted `migrate-all-tenants`, then `migration-status --require-current`; it executes the start command only if all three exit `0`.
+3. If any step exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun the gate until it succeeds. A failed start command also returns non-zero. Do not manually start the new version after a failed gate.
+4. Record the CLI's per-database results and the version being deployed. If schema changes are incompatible with the previous binaries, keep them stopped during repair. Do not assume that rolling back application binaries rolls back a partly applied migration; use the release-specific recovery plan and verified backup.
 
-Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release procedure must enforce it.
+The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. The actual systemd units and start command belong to WAS-76. The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
+
+Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release entry point must enforce it.
 
 Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-tenants` has run.
 

@@ -55,6 +55,7 @@ Main `DbSet` entities:
 | `TenantMembership` | Central membership links |
 | `CentralAdminUser` | Central admin operators |
 | `PendingRegistration` | Signup / payment / provisioning pipeline |
+| `BillingPlanPrice` / `BillingSubscription` / `BillingPayment` | Wasla plan prices, subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
 | `PrintBridgeDevice` / `PrintBridgeSetupSession` | Print Bridge device registry (central) |
 | Address/catalog helpers | `BusinessType`, `Country`, `City`, `District`, `Neighborhood`, `Street`, and related pending-registration join |
 
@@ -70,7 +71,7 @@ Current implementation stores, among other fields:
 - `EncryptionKeyVersion`
 - `SchemaVersion`, migration metadata
 - `IsActive`
-- Billing / provisioning / subscription status enums
+- Billing / provisioning / subscription status enums (written at provisioning, not the billing source of truth; see [billing.md](billing.md#what-is-reused-and-what-is-not))
 
 Resolution looks up by `PrimaryDomain` (case-normalized) and requires `IsActive`.
 
@@ -268,7 +269,7 @@ A registration ID is not secret: the pending-tenant redirect and `/tenant-not-fo
 - A successful signup submission is the only place that issues ownership proof: a Data Protection payload bound to that one registration ID, with the registration's expiry, in the HttpOnly, SameSite=Strict, host-only cookie `.Wasla.SignupRegistration` (Secure outside Development). It is never put in a URL. Proofs survive restarts and work across instances only when they share the key ring (`DataProtection:KeyPath`, application name `Wasla`).
 - `/signup/pending/{id}` shows the status and tenant address to anyone, and the applicant's details and checkout link only to the proven browser. `/checkout/review` and `/checkout/success` redirect anyone else to that status page. `/checkout/failed` and `/checkout/cancelled` are generic. The pending, review, and success pages are sent with `Cache-Control: no-store`.
 - `POST /checkout/cancel/{id}` requires the proof; without it the request gets 404 and nothing changes.
-- The payment simulator (`POST /checkout/simulate-success|simulate-failed/{id}`, its buttons, and the "payment will be simulated" note) exists only in Development, and only for the proven browser. Elsewhere the endpoints return 404. There is no real payment integration yet.
+- The payment simulator (`POST /checkout/simulate-success|simulate-failed/{id}`, its buttons, and the "payment will be simulated" note) exists only in Development, and only for the proven browser. Elsewhere the endpoints return 404. There is no real payment integration yet; the provider-neutral billing model it will use is in [billing.md](billing.md), and the simulator writes none of it.
 - Signup and checkout copy follows the same check (`CheckoutPaymentSimulator`, the host environment, never a request value; WAS-39). In Development the signup form, pending page, payment summary and failed page explain the simulator. Elsewhere they say that payment is not taken on these pages, that the registration awaits payment, and that the panel is prepared after payment is received; no page names a payment provider. There the signup form's submit button reads "Submit registration", `/checkout/review` is titled "Registration summary", and the buttons that lead to it (pending, failed and rate-limited pages) read "View registration summary" / "Return to registration summary". Status text such as "Payment pending" stays; nothing offers to start, continue or return to an online payment.
 - Every POST validates the antiforgery token. Status changes are compare-and-set on the status that request read, so a concurrent payment, failure, or cancellation is never overwritten (`PendingRegistrationService`).
 

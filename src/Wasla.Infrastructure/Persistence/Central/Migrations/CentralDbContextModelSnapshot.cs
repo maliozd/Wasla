@@ -22,6 +22,222 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<int>("Environment")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalPaymentReference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("PeriodEndUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PeriodStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId", "PeriodStartUtc")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingPayments_SubscriptionId_PeriodStartUtc");
+
+                    b.HasIndex("Provider", "Environment", "ExternalPaymentReference")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingPayments_ProviderReference");
+
+                    b.HasIndex("SubscriptionId", "Provider", "Environment");
+
+                    b.ToTable("BillingPayments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillingPayments_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_BillingPayments_Period", "[PeriodEndUtc] > [PeriodStartUtc]");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingPlanPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BillingPeriod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedByCentralAdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("EffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PlanCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("VatIncluded")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanCode", "BillingPeriod", "EffectiveFromUtc")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingPlanPrices_PlanCode_BillingPeriod_EffectiveFromUtc");
+
+                    b.ToTable("BillingPlanPrices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillingPlanPrices_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_BillingPlanPrices_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BillingPeriod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<int>("Environment")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalSubscriberReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ExternalSubscriptionReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("PendingRegistrationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PlanCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("PlanPriceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Provider")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StatusObservedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("Id", "Provider", "Environment")
+                        .HasName("AK_BillingSubscriptions_Id_Provider_Environment");
+
+                    b.HasIndex("PendingRegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingSubscriptions_PendingRegistrationId");
+
+                    b.HasIndex("PlanPriceId");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingSubscriptions_TenantId")
+                        .HasFilter("[TenantId] IS NOT NULL");
+
+                    b.HasIndex("Provider", "Environment", "ExternalSubscriptionReference")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BillingSubscriptions_ProviderReference")
+                        .HasFilter("[ExternalSubscriptionReference] IS NOT NULL");
+
+                    b.ToTable("BillingSubscriptions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillingSubscriptions_Amount", "[Amount] > 0");
+
+                            t.HasCheckConstraint("CK_BillingSubscriptions_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
+
+                            t.HasCheckConstraint("CK_BillingSubscriptions_Environment", "[Environment] IN (1, 2)");
+
+                            t.HasCheckConstraint("CK_BillingSubscriptions_Provider", "[Provider] IN (1)");
+
+                            t.HasCheckConstraint("CK_BillingSubscriptions_Status", "[Status] IN (2, 3, 4, 5, 6, 7)");
+
+                            t.HasCheckConstraint("CK_BillingSubscriptions_VerifiedStateHasProviderReference", "[Status] NOT IN (2, 3) OR [ExternalSubscriptionReference] IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Central.BusinessType", b =>
                 {
                     b.Property<int>("Id")
@@ -869,6 +1085,37 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasDatabaseName("IX_TenantMemberships_TenantId");
 
                     b.ToTable("TenantMemberships", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingPayment", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Central.BillingSubscription", null)
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId", "Provider", "Environment")
+                        .HasPrincipalKey("Id", "Provider", "Environment")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_BillingPayments_BillingSubscriptions");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingSubscription", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Central.PendingRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("PendingRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Entities.Central.BillingPlanPrice", null)
+                        .WithMany()
+                        .HasForeignKey("PlanPriceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasla.Domain.Entities.Central.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.District", b =>

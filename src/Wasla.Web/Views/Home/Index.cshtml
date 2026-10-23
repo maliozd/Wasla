@@ -1,5 +1,7 @@
+@model Wasla.Web.Models.Marketing.MarketingHomeViewModel
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Plans
+@using Wasla.Web.Formatting
 @using Wasla.Web.Models.Marketing
 @using Wasla.Web.Routing
 @using Wasla.Web.Ui
@@ -374,7 +376,24 @@
                     }
                     <h3 class="wm-plan__name" id="plan-@plan.PlanCode">@L[plan.DisplayNameKey]</h3>
                     <p class="wm-text-s">@L[plan.DescriptionKey]</p>
-                    <p class="wm-plan__price">@L[plan.PriceLabelKey]</p>
+                    @if (plan.IsContactSales)
+                    {
+                        <p class="wm-plan__price">@L[plan.ContactSalesPriceLabelKey!]</p>
+                    }
+                    else
+                    {
+                        @* The Central Admin prices in effect (WAS-147); monthly and yearly are separate prices, and a missing one says so. *@
+                        var monthly = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, PlanPriceText.Monthly);
+                        var yearly = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, PlanPriceText.Yearly);
+                        var monthlyVat = PlanPriceText.Vat(monthly, L);
+                        var yearlyVat = PlanPriceText.Vat(yearly, L);
+                        <p class="wm-plan__price" data-plan-price="@PlanPriceText.Monthly">@PlanPriceText.PerPeriod(monthly, PlanPriceText.Monthly, L)</p>
+                        @if (monthlyVat is not null)
+                        {
+                            <p class="wm-text-s" data-plan-vat="@PlanPriceText.Monthly">@monthlyVat</p>
+                        }
+                        <p class="wm-text-s" data-plan-price="@PlanPriceText.Yearly">@PlanPriceText.PerPeriod(yearly, PlanPriceText.Yearly, L)@(yearlyVat is null ? "" : " · " + yearlyVat)</p>
+                    }
                     <p class="wm-plan__devices"><i class="bi bi-printer" aria-hidden="true"></i> @L[plan.DeviceLimitKey]</p>
                     <ul class="wm-checks">
                         @foreach (var featureKey in plan.FeatureKeys)

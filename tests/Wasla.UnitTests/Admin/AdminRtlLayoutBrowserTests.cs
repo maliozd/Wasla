@@ -77,7 +77,8 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
                          "/admin",
                          "/admin/customers?sort=name&dir=asc",
                          $"/admin/customers/{_tenantId}",
-                         "/admin/pending-registrations"
+                         "/admin/pending-registrations",
+                         "/admin/billing/plan-prices"
                      })
             {
                 var page = $"{path} at {width}px ({culture})";

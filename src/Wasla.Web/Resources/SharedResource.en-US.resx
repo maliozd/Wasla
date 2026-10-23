@@ -2851,7 +2851,6 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>Prices are indicative. Real billing is not active yet.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>For small restaurants and first-time setup</value></data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve"><value>300 TL / month</value></data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 active Print Bridge device</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Basic order dashboard</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Supported platform connections</value></data>
@@ -2860,7 +2859,6 @@
   <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Order history</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>For active restaurants</value></data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve"><value>600 TL / month</value></data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Everything in Starter</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Automatic order synchronization</value></data>
@@ -2870,7 +2868,6 @@
   <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Order history and reports</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>For busy restaurants or larger operations</value></data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve"><value>1,200 TL / month</value></data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Everything in Pro</value></data>
   <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
@@ -2893,7 +2890,6 @@
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Your selection</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} package</value></data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>With this package:</value></data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve"><value>2 months free with yearly billing.</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Custom offer</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>Business details</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Owner account</value></data>
@@ -3005,7 +3001,6 @@
   <data name="Checkout.PlanLabel" xml:space="preserve"><value>Plan</value></data>
   <data name="Checkout.OwnerFullNameLabel" xml:space="preserve"><value>Authorized person</value></data>
   <data name="Checkout.UnknownPlanLabel" xml:space="preserve"><value>Standard package</value></data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve"><value>Monthly reference price</value></data>
   <data name="Checkout.TotalAmount" xml:space="preserve"><value>Total amount</value></data>
   <data name="Checkout.SimulateSuccess" xml:space="preserve"><value>Simulate successful payment</value></data>
   <data name="Checkout.SimulateFailed" xml:space="preserve"><value>Simulate failed payment</value></data>
@@ -4112,4 +4107,53 @@
   <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Sent to the counter printer</value></data>
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} closed</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>KITCHEN · {0}</value></data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Plan prices</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Checkout charges the price in effect for the registration's plan and billing period. A plan and period without a price cannot start a checkout. Prices are never edited: schedule a new price from a later date.</value></data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Prices in effect now</value></data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Billing period</value></data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve"><value>VAT</value></data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve"><value>Takes effect</value></data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve"><value>Next scheduled</value></data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve"><value>No price — checkout is blocked</value></data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve"><value>In effect</value></data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve"><value>Replaced</value></data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve"><value>All prices</value></data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve"><value>No price has been set yet.</value></data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve"><value>Schedule a price</value></data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve"><value>Amount (kuruş)</value></data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve"><value>Whole kuruş: 29990 means 299.90 TRY.</value></data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve"><value>{0} kuruş</value></data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve"><value>Does this amount include VAT?</value></data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve"><value>Yes, VAT included</value></data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve"><value>No, VAT not included</value></data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve"><value>Takes effect on</value></data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve"><value>From 00:00 Türkiye time on this date. Today's date takes effect immediately.</value></data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve"><value>Schedule price</value></data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve"><value>Select…</value></data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve"><value>The price was saved.</value></data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve"><value>Withdraw</value></data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve"><value>The scheduled price was withdrawn.</value></data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve"><value>Only a price that has not taken effect yet can be withdrawn.</value></data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve"><value>The price was not saved. Check the fields below.</value></data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve"><value>Choose a plan that can be bought online.</value></data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve"><value>Choose Monthly or Yearly.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve"><value>Enter the amount in kuruş.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve"><value>Enter a whole number of kuruş, without dots or commas.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve"><value>The amount must be between 1 and 1,000,000,000 kuruş.</value></data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve"><value>Choose whether the amount includes VAT.</value></data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve"><value>Enter the date the price takes effect.</value></data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>Enter a valid date.</value></data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>The date cannot be in the past.</value></data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>A price for this plan and billing period already takes effect on that date.</value></data>
+  <data name="Billing.VatIncluded" xml:space="preserve"><value>VAT included</value></data>
+  <data name="Billing.VatExcluded" xml:space="preserve"><value>VAT not included</value></data>
+  <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>
+  <data name="Billing.PriceNotSet" xml:space="preserve"><value>The price for this plan has not been set yet.</value></data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / month</value></data>
+  <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / year</value></data>
+  <data name="Pricing.YearlySaving" xml:space="preserve"><value>Yearly billing costs {0} less than 12 monthly payments.</value></data>
 </root>

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using FluentValidation;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Auth;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Branches;
 using Wasla.Application.Abstractions.Dashboard;
 using Wasla.Application.Abstractions.DevelopmentTools;
@@ -67,6 +68,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
+        services.AddScoped<IBillingSubscriptionStore, BillingSubscriptionStore>();
+        services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 

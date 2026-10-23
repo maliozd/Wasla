@@ -1,4 +1,5 @@
-﻿using Wasla.Domain.Enums;
+﻿using Wasla.Application.Abstractions.Billing;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 
@@ -25,7 +26,6 @@ public sealed record PendingRegistrationCheckoutDetails(
     string? PostalCode,
     string? LocationUrl,
     PendingRegistrationStatus Status,
-    decimal MonthlyPriceTry,
-    decimal TotalPriceTry,
+    BillingPriceQuote? Price,
     bool IsYearlyBilling,
     IReadOnlyList<string>? BusinessTypeCodes = null);

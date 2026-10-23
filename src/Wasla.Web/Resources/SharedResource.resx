@@ -60,9 +60,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Küçük restoranlar ve ilk kurulum için</value>
   </data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve">
-    <value>300 TL / ay</value>
-  </data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
     <value>1 aktif Print Bridge cihazı</value>
   </data>
@@ -86,9 +83,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Aktif restoranlar için</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve">
-    <value>600 TL / ay</value>
   </data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
     <value>3 aktif Print Bridge cihazı</value>
@@ -116,9 +110,6 @@
   </data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Yoğun restoranlar ve daha büyük operasyonlar için</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve">
-    <value>1.200 TL / ay</value>
   </data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
     <value>10 aktif Print Bridge cihazı</value>
@@ -185,9 +176,6 @@
   </data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
     <value>Bu paketle:</value>
-  </data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve">
-    <value>Yıllık ödemede 2 ay avantajlı fiyat.</value>
   </data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
     <value>Özel teklif</value>
@@ -558,9 +546,6 @@
   </data>
   <data name="Checkout.AddressSummary" xml:space="preserve">
     <value>Adres</value>
-  </data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve">
-    <value>Aylık referans fiyat</value>
   </data>
   <data name="Checkout.TotalAmount" xml:space="preserve">
     <value>Toplam tutar</value>
@@ -1719,5 +1704,152 @@
   </data>
   <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
     <value>Bu tablodaki güncellemeler, metin seçtiğiniz veya tablodaki bir denetimi kullandığınız sürece duraklatılır.</value>
+  </data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve">
+    <value>Plan fiyatları</value>
+  </data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve">
+    <value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Fiyatlar düzenlenmez; daha sonraki bir tarihten geçerli yeni bir fiyat planlayın.</value>
+  </data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve">
+    <value>Şu anda geçerli fiyatlar</value>
+  </data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve">
+    <value>Ödeme dönemi</value>
+  </data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve">
+    <value>Tutar</value>
+  </data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve">
+    <value>KDV</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve">
+    <value>Geçerlilik başlangıcı</value>
+  </data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve">
+    <value>Sonraki planlanan</value>
+  </data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve">
+    <value>Fiyat yok — ödeme başlatılamaz</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve">
+    <value>Geçerli</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve">
+    <value>Planlandı</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve">
+    <value>Yerini yenisi aldı</value>
+  </data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve">
+    <value>Tüm fiyatlar</value>
+  </data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve">
+    <value>Henüz fiyat belirlenmedi.</value>
+  </data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve">
+    <value>Fiyat planla</value>
+  </data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve">
+    <value>Tutar (kuruş)</value>
+  </data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve">
+    <value>Tam sayı kuruş: 29990, 299,90 TL demektir.</value>
+  </data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve">
+    <value>{0} kuruş</value>
+  </data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve">
+    <value>Bu tutar KDV dahil mi?</value>
+  </data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve">
+    <value>Evet, KDV dahil</value>
+  </data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve">
+    <value>Hayır, KDV hariç</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve">
+    <value>Geçerlilik tarihi</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve">
+    <value>Bu tarihte Türkiye saatiyle 00:00'dan itibaren. Bugünün tarihi hemen geçerli olur.</value>
+  </data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve">
+    <value>Fiyatı planla</value>
+  </data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve">
+    <value>Seçin…</value>
+  </data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve">
+    <value>Fiyat kaydedildi.</value>
+  </data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve">
+    <value>Geri çek</value>
+  </data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve">
+    <value>Planlanan fiyat geri çekildi.</value>
+  </data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve">
+    <value>Yalnızca henüz geçerli olmayan bir fiyat geri çekilebilir.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve">
+    <value>Fiyat kaydedilmedi. Aşağıdaki alanları kontrol edin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve">
+    <value>Çevrimiçi satın alınabilen bir plan seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve">
+    <value>Aylık veya Yıllık seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve">
+    <value>Tutarı kuruş olarak girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve">
+    <value>Nokta veya virgül olmadan tam sayı kuruş girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve">
+    <value>Tutar 1 ile 1.000.000.000 kuruş arasında olmalıdır.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve">
+    <value>Tutarın KDV dahil olup olmadığını seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve">
+    <value>Fiyatın geçerli olacağı tarihi girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve">
+    <value>Geçerli bir tarih girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve">
+    <value>Tarih geçmişte olamaz.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve">
+    <value>Bu plan ve ödeme dönemi için o tarihte başlayan bir fiyat zaten var.</value>
+  </data>
+  <data name="Billing.VatIncluded" xml:space="preserve">
+    <value>KDV dahil</value>
+  </data>
+  <data name="Billing.VatExcluded" xml:space="preserve">
+    <value>KDV hariç</value>
+  </data>
+  <data name="Billing.CurrencyTry" xml:space="preserve">
+    <value>TL</value>
+  </data>
+  <data name="Billing.PriceNotSet" xml:space="preserve">
+    <value>Bu planın fiyatı henüz belirlenmedi.</value>
+  </data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve">
+    <value>{0} / ay</value>
+  </data>
+  <data name="Pricing.PricePerYear" xml:space="preserve">
+    <value>{0} / yıl</value>
+  </data>
+  <data name="Pricing.YearlySaving" xml:space="preserve">
+    <value>Yıllık ödeme, 12 aylık ödemeden {0} daha az.</value>
   </data>
 </root>

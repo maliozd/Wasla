@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Onboarding;
 using Wasla.Infrastructure.Options;
+using Wasla.Web.Models.Marketing;
 using Wasla.Web.Routing;
 
 namespace Wasla.Web.Controllers;
@@ -14,20 +16,39 @@ public sealed class HomeController : Controller
     private readonly TenantOnboardingOptions _onboardingOptions;
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly IWebHostEnvironment _environment;
+    private readonly IBillingPlanPriceReader _planPrices;
+    private readonly ILogger<HomeController> _logger;
 
     public HomeController(
         IOptions<TenantOnboardingOptions> onboardingOptions,
         IPendingRegistrationService pendingRegistrations,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IBillingPlanPriceReader planPrices,
+        ILogger<HomeController> logger)
     {
         _onboardingOptions = onboardingOptions.Value;
         _pendingRegistrations = pendingRegistrations;
         _environment = environment;
+        _planPrices = planPrices;
+        _logger = logger;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        return View();
+        IReadOnlyList<BillingPriceQuote> prices;
+        try
+        {
+            prices = await _planPrices.GetPricesInEffectAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The marketing page did not depend on CentralDb before plan prices (WAS-147). If the prices cannot be read
+            // it still renders and shows them as not available, never a built-in amount.
+            _logger.LogWarning("Plan prices could not be read for the marketing page ({ExceptionType}).", ex.GetType().Name);
+            prices = [];
+        }
+
+        return View(new MarketingHomeViewModel(prices));
     }
 
     [AllowAnonymous]
