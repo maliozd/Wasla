@@ -10,12 +10,13 @@ public sealed class TenantSetupReadinessTests
     private static readonly DateTime UtcNow = new(2026, 9, 26, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void Restaurant_CompleteProfile_IsComplete()
+    public void Restaurant_CompleteProfile_IsCompleteButOptional()
     {
         var status = Evaluate(Restaurant("Mengen Lokantası", "5320000000", "İstanbul", "Türkiye"));
 
         Assert.True(status.Restaurant.IsComplete);
-        Assert.True(status.Restaurant.CountsTowardReadiness);
+        Assert.True(status.Restaurant.IsOptional);
+        Assert.False(status.Restaurant.CountsTowardReadiness);
     }
 
     [Theory]
@@ -24,7 +25,7 @@ public sealed class TenantSetupReadinessTests
     [InlineData("Mengen Lokantası", "", "İstanbul", "Türkiye")]
     [InlineData("Mengen Lokantası", "5320000000", "", "")]
     [InlineData("Mengen Lokantası", "5320000000", "   ", null)]
-    public void Restaurant_MissingRequiredOperationalField_IsIncomplete(
+    public void Restaurant_MissingOperationalField_IsIncompleteWithoutBlockingReadiness(
         string name,
         string phone,
         string city,
@@ -33,7 +34,9 @@ public sealed class TenantSetupReadinessTests
         var status = Evaluate(Restaurant(name, phone, city, country));
 
         Assert.False(status.Restaurant.IsComplete);
-        Assert.False(status.IsReady);
+        Assert.True(status.IsReady);
+        Assert.Equal(2, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
     }
 
     [Fact]
@@ -56,7 +59,7 @@ public sealed class TenantSetupReadinessTests
 
         Assert.False(status.Restaurant.IsAvailable);
         Assert.False(status.Restaurant.IsComplete);
-        Assert.False(status.IsReady);
+        Assert.True(status.IsReady);
     }
 
     [Fact]
@@ -127,34 +130,47 @@ public sealed class TenantSetupReadinessTests
     }
 
     [Fact]
-    public void Notifications_SavedSoundEnabled_IsComplete()
+    public void Notifications_EffectiveSoundOn_IsCompleteButOptional()
     {
-        var status = Evaluate(Notifications(hasSavedSettings: true, soundEnabled: true));
+        var status = Evaluate(Notifications(soundEnabled: true));
 
         Assert.True(status.Notifications.IsComplete);
-    }
-
-    [Theory]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    public void Notifications_NotSavedOrDisabled_IsIncomplete(bool hasSavedSettings, bool soundEnabled)
-    {
-        var status = Evaluate(Notifications(hasSavedSettings, soundEnabled));
-
-        Assert.False(status.Notifications.IsComplete);
-        Assert.False(status.IsReady);
+        Assert.True(status.Notifications.IsOptional);
+        Assert.False(status.Notifications.CountsTowardReadiness);
     }
 
     [Fact]
-    public void Printing_Absent_IsOptionalAndIncomplete()
+    public void Notifications_SoundOff_DoesNotBlockReadiness()
     {
-        var status = TenantSetupReadiness.Evaluate(ReadyFacts(), UtcNow);
+        var status = Evaluate(Notifications(soundEnabled: false));
 
-        Assert.True(status.Printing.IsOptional);
-        Assert.False(status.Printing.CountsTowardReadiness);
-        Assert.False(status.Printing.IsComplete);
+        Assert.False(status.Notifications.IsComplete);
         Assert.True(status.IsReady);
+        Assert.Equal(2, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
+    }
+
+    [Fact]
+    public void Notifications_UnavailableSource_DoesNotClaimSuccessOrBlockReadiness()
+    {
+        var status = Evaluate(new NotificationSetupFacts(false, SoundEnabled: true));
+
+        Assert.False(status.Notifications.IsAvailable);
+        Assert.False(status.Notifications.IsComplete);
+        Assert.True(status.IsReady);
+    }
+
+    [Fact]
+    public void Printing_Absent_IsRequiredAndBlocksReadiness()
+    {
+        var status = Evaluate(new PrintingSetupFacts(true, []));
+
+        Assert.False(status.Printing.IsOptional);
+        Assert.True(status.Printing.CountsTowardReadiness);
+        Assert.False(status.Printing.IsComplete);
+        Assert.False(status.IsReady);
+        Assert.Equal(1, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
     }
 
     [Theory]
@@ -173,7 +189,7 @@ public sealed class TenantSetupReadinessTests
         var status = TenantSetupReadiness.Evaluate(facts, UtcNow);
 
         Assert.Equal(expectedComplete, status.Printing.IsComplete);
-        Assert.True(status.IsReady);
+        Assert.Equal(expectedComplete, status.IsReady);
     }
 
     [Fact]
@@ -193,7 +209,7 @@ public sealed class TenantSetupReadinessTests
     }
 
     [Fact]
-    public void Printing_UnavailableSource_DoesNotClaimSuccessOrBlockReadiness()
+    public void Printing_UnavailableSource_DoesNotClaimSuccessOrReadiness()
     {
         var facts = ReadyFacts() with
         {
@@ -204,20 +220,57 @@ public sealed class TenantSetupReadinessTests
 
         Assert.False(status.Printing.IsAvailable);
         Assert.False(status.Printing.IsComplete);
-        Assert.True(status.IsReady);
+        Assert.False(status.IsReady);
     }
 
     [Fact]
-    public void Readiness_AllRequiredComplete_IsReadyWithoutPrinterOrLiveScreen()
+    public void Readiness_PlatformAndPrintBridge_AreTheOnlyRequiredSteps()
     {
         var status = TenantSetupReadiness.Evaluate(ReadyFacts(), UtcNow);
 
         Assert.True(status.IsReady);
-        Assert.Equal(3, status.RequiredStepsCompleted);
-        Assert.Equal(3, status.RequiredStepsTotal);
-        Assert.False(status.Printing.IsComplete);
+        Assert.Equal(2, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
+        Assert.True(status.Platform.CountsTowardReadiness);
+        Assert.True(status.Printing.CountsTowardReadiness);
+        Assert.False(status.Restaurant.CountsTowardReadiness);
+        Assert.False(status.Notifications.CountsTowardReadiness);
         Assert.False(status.LiveScreen.IsComplete);
         Assert.False(status.LiveScreen.CountsTowardReadiness);
+    }
+
+    [Fact]
+    public void Readiness_OnlyRequiredSteps_IsReadyWithoutProfileOrNotifications()
+    {
+        // The 18 Oct 2026 review: platform and Print Bridge connected, sound off and an incomplete profile.
+        // That is ready (2/2), not 2/3.
+        var facts = ReadyFacts() with
+        {
+            Restaurant = Restaurant("Mengen Lokantası", "", "", null),
+            Notifications = Notifications(soundEnabled: false)
+        };
+
+        var status = TenantSetupReadiness.Evaluate(facts, UtcNow);
+
+        Assert.True(status.IsReady);
+        Assert.Equal(2, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
+    }
+
+    [Fact]
+    public void Readiness_NothingConnected_IsZeroOfTwo()
+    {
+        var facts = ReadyFacts() with
+        {
+            Platforms = new PlatformConnectionFacts(true, []),
+            Printing = new PrintingSetupFacts(true, [])
+        };
+
+        var status = TenantSetupReadiness.Evaluate(facts, UtcNow);
+
+        Assert.False(status.IsReady);
+        Assert.Equal(0, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
     }
 
     [Fact]
@@ -231,7 +284,8 @@ public sealed class TenantSetupReadinessTests
         var status = TenantSetupReadiness.Evaluate(facts, UtcNow);
 
         Assert.False(status.IsReady);
-        Assert.Equal(2, status.RequiredStepsCompleted);
+        Assert.Equal(1, status.RequiredStepsCompleted);
+        Assert.Equal(2, status.RequiredStepsTotal);
     }
 
     [Fact]
@@ -314,11 +368,15 @@ public sealed class TenantSetupReadinessTests
     private static TenantSetupStatus Evaluate(NotificationSetupFacts notifications) =>
         TenantSetupReadiness.Evaluate(ReadyFacts() with { Notifications = notifications }, UtcNow);
 
+    private static TenantSetupStatus Evaluate(PrintingSetupFacts printing) =>
+        TenantSetupReadiness.Evaluate(ReadyFacts() with { Printing = printing }, UtcNow);
+
+    /// <summary>Both required steps done: an active platform and a Print Bridge with a fresh heartbeat.</summary>
     private static TenantSetupFacts ReadyFacts() => new(
         Restaurant("Mengen Lokantası", "5320000000", "İstanbul", "Türkiye"),
         Platforms(Connection(FoodPlatform.Yemeksepeti)),
-        Notifications(hasSavedSettings: true, soundEnabled: true),
-        new PrintingSetupFacts(true, []));
+        Notifications(soundEnabled: true),
+        new PrintingSetupFacts(true, [new PrintingDeviceFact(true, UtcNow.AddSeconds(-10))]));
 
     private static RestaurantProfileFacts Restaurant(string name, string phone, string city, string? country) =>
         new(true, name, phone, city, country);
@@ -334,8 +392,8 @@ public sealed class TenantSetupReadinessTests
         bool hasApiSecret = true) =>
         new(platform, isActive, storeId, hasApiKey, hasApiSecret);
 
-    private static NotificationSetupFacts Notifications(bool hasSavedSettings, bool soundEnabled) =>
-        new(true, hasSavedSettings, soundEnabled);
+    private static NotificationSetupFacts Notifications(bool soundEnabled) =>
+        new(true, soundEnabled);
 
     private static TenantTeamMemberFact Member(UserRole role, bool active, DateTime createdAt) =>
         new(Guid.NewGuid(), role, active, createdAt);

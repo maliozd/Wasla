@@ -14,6 +14,9 @@ public sealed class DashboardViewModel
     public TenantSetupPanelViewModel? Setup { get; set; }
     public Wasla.Web.Models.GuidedSetup.GuidedSetupDashboardViewModel? GuidedSetup { get; set; }
 
+    /// <summary>The user completed or skipped guided setup; nothing offers to start it again.</summary>
+    public bool GuidedSetupFinished { get; set; }
+
     public sealed class RecentOrderRow
     {
         public Guid Id { get; set; }

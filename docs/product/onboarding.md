@@ -1,6 +1,6 @@
 # Onboarding: guided setup and operational mode
 
-**Owns:** who may use guided setup, per-user guided setup state, the tenant's operational mode (Setup / Live), how a tenant goes live, and the Development tenant reset's effect on both.
+**Owns:** who may use guided setup, per-user guided setup state, the tenant's operational mode (Setup / Live), how a tenant goes live, the Dashboard setup checklist's readiness, and the Development tenant reset's effect on both.
 
 **Does not own:** signup, payment and provisioning (see [../operations/cli.md](../operations/cli.md) and [../architecture/tenancy.md](../architecture/tenancy.md)); what the Live Screen shows during order training ([../orders/live-screen.md](../orders/live-screen.md)); what synchronization does with orders in Setup ([../orders/synchronization.md](../orders/synchronization.md)).
 
@@ -67,6 +67,12 @@ After the Owner marks the practice order ready, it moves on by itself, like a re
 ## Print Bridge section: connected
 
 The Print Bridge section panel (`_GuidedSetupSectionPanel`) shows its connected state only when the server confirms a connected device: on page load, or when its read-only `GET /guided-setup/section-status` check confirms it. The panel runs that check after the automatic flow's verified success (`wasla:print-bridge-setup-completed`), or repeatedly while a manual connection waits for the device's first heartbeat (`wasla:print-bridge-manual-setup-started`). The connected state also includes a panel fixed to the bottom of the viewport ("Print Bridge bağlandı" / "Cihazını tanı"), so a user far down the page sees how to continue. Its link is the same `GET /guided-setup/print-bridge/device` as the panel's own link (both carry `data-guided-setup-continue` and share one click guard). It has no close button or timer, never scrolls or navigates on its own, and moves nothing on: the section Continue stays in the device guide. It disappears with the panel when the section is no longer the Owner's current one. The panel's status line is the single polite announcement of the connection.
+
+## Dashboard setup checklist
+
+The Owner's Dashboard checklist (`TenantSetupReadiness`, `TenantSetupStatusService`, `_TenantSetupPanel`) counts exactly two required operational steps: an active platform connection and a connected Print Bridge (a heartbeat within 60 seconds). Readiness is `n / 2`. The restaurant profile and the user's notification preferences are optional rows: they keep their information and never block readiness. The notifications row shows the effective new-order sound, which is on when no settings row has been saved (the default `/notification-settings/current` serves and the Live Screen shows); it has no action, because the preferences are changed from the Live Screen settings menu ([../orders/live-screen.md](../orders/live-screen.md)).
+
+Guided setup is one-shot. Once the Owner completed or skipped it (`IGuidedSetupCoordinator.GetDashboardAsync`, one read of their row), the Dashboard shows no guided-setup card and no welcome banner with “Start setup”. If both required steps are done, the whole checklist is gone as well; otherwise only the checklist of what is still missing remains. “Finish setup” (`SetupGuidanceCompletedAtUtc`) still removes the checklist for the tenant. A read failure shows neither a card nor the finished state, as before.
 
 ## Configured and effective automation
 

@@ -9,14 +9,8 @@
     const btn = document.getElementById("notificationSettingsBtn");
     if (!btn) return;
 
-    btn.addEventListener("click", async function () {
-      await O.notificationSettings.openNotificationSettingsModal();
-      const modalEl = document.getElementById("notificationSettingsModal");
-      if (!modalEl) return;
-      const modal = global.bootstrap && global.bootstrap.Modal
-        ? global.bootstrap.Modal.getOrCreateInstance(modalEl)
-        : null;
-      if (modal) modal.show();
+    btn.addEventListener("click", function () {
+      O.notificationSettings.show(btn);
     });
   }
 

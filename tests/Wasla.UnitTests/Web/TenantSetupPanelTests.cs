@@ -77,7 +77,9 @@ public sealed class TenantSetupPanelTests
         Assert.Contains("action=\"/dashboard/complete-setup\"", panel, StringComparison.Ordinal);
         Assert.Contains("Model.ShowAddTeamMember", panel, StringComparison.Ordinal);
         Assert.Contains("\"/platform-connections\"", mapper, StringComparison.Ordinal);
-        Assert.Contains("\"/settings/orders\"", mapper, StringComparison.Ordinal);
+        // Notification preferences are changed on the Live Screen (WAS-13); the checklist only shows the effective sound.
+        Assert.DoesNotContain("\"/settings/orders\"", mapper, StringComparison.Ordinal);
+        Assert.Contains("@if (!string.IsNullOrEmpty(step.ActionHref))", panel, StringComparison.Ordinal);
         Assert.Contains("\"/print-bridge/setup\"", mapper, StringComparison.Ordinal);
         Assert.Contains("\"/settings/account\"", mapper, StringComparison.Ordinal);
         Assert.Contains("href=\"/orders/live-display\"", panel, StringComparison.Ordinal);

@@ -6,7 +6,8 @@ namespace Wasla.Application.Setup;
 
 /// <summary>
 /// Derives tenant setup progress from persisted facts.
-/// Print Bridge is optional and never blocks readiness.
+/// Readiness has exactly two required operational steps: a platform connection and a connected Print Bridge.
+/// The restaurant profile and the user's notification preferences are shown as optional steps and never block it.
 /// Live Screen has no durable "opened" signal in the current model, so it stays an action
 /// and does not block readiness. Do not mark it complete from in-memory browser state.
 /// </summary>
@@ -30,16 +31,14 @@ public static class TenantSetupReadiness
             ? SelectActivePlatforms(facts.Platforms.Connections)
             : Array.Empty<FoodPlatform>();
         var platformComplete = facts.Platforms.Available && activePlatforms.Count > 0;
-        var notificationsComplete = facts.Notifications.Available
-            && facts.Notifications.HasSavedSettings
-            && facts.Notifications.SoundEnabled;
+        var notificationsComplete = facts.Notifications.Available && facts.Notifications.SoundEnabled;
         var printingComplete = facts.Printing.Available && HasConnectedPrinter(facts.Printing.Devices, utcNow);
 
         var restaurant = new TenantSetupStep(
             TenantSetupStepKind.RestaurantProfile,
             restaurantComplete,
-            IsOptional: false,
-            CountsTowardReadiness: true,
+            IsOptional: true,
+            CountsTowardReadiness: false,
             facts.Restaurant.Available);
         var platform = new TenantSetupStep(
             TenantSetupStepKind.PlatformConnection,
@@ -50,14 +49,14 @@ public static class TenantSetupReadiness
         var notifications = new TenantSetupStep(
             TenantSetupStepKind.Notifications,
             notificationsComplete,
-            IsOptional: false,
-            CountsTowardReadiness: true,
+            IsOptional: true,
+            CountsTowardReadiness: false,
             facts.Notifications.Available);
         var printing = new TenantSetupStep(
             TenantSetupStepKind.Printing,
             printingComplete,
-            IsOptional: true,
-            CountsTowardReadiness: false,
+            IsOptional: false,
+            CountsTowardReadiness: true,
             facts.Printing.Available);
         var liveScreen = new TenantSetupStep(
             TenantSetupStepKind.LiveScreen,
@@ -66,7 +65,7 @@ public static class TenantSetupReadiness
             CountsTowardReadiness: false,
             IsAvailable: true);
 
-        var required = new[] { restaurant, platform, notifications };
+        var required = new[] { platform, printing };
         var requiredCompleted = required.Count(step => step.IsComplete);
 
         return new TenantSetupStatus(

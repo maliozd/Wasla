@@ -3389,9 +3389,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>جهّز Wasla للاستخدام</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>اكتمل {0} / {1}</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>تقدم الإعداد</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>يحتسب التقدم الخطوات المطلوبة. الطابعة اختيارية ولا تمنع الجاهزية.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>يحتسب التقدم خطوتين مطلوبتين: منصة طلبات و Wasla Print Bridge. الخطوات الأخرى اختيارية.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla جاهزة</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>منصة الطلبات متصلة وشاشة العمليات جاهزة للاستخدام.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>منصة الطلبات و Wasla Print Bridge متصلان، وشاشة العمليات جاهزة للاستخدام.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>افتح Live Screen</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>أضف عضو فريق</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>إنهاء الإعداد</value></data>
@@ -3417,11 +3417,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>ربط المنصة</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} متصلة</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} منصات متصلة</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>اضبط إشعارات الطلبات</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>صوت الإشعار متوقف أو لم يُحفظ بعد.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>يمكنك تجربة الصوت من إعدادات الإشعارات.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>ضبط الإشعارات</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>إشعارات الطلبات</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>صوت الإشعار متوقف</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>يُغيَّر الصوت وإشعارات المتصفح وتمييز الطلبات الجديدة من قائمة الإعدادات في الشاشة المباشرة.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>صوت الإشعار مفعّل</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>إشعارات المتصفح اختيارية. عند تفعيلها يطلب المتصفح الإذن مرة واحدة. يعمل الصوت والتمييز بدونها.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>يسمح هذا المتصفح بإشعارات Wasla.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>يحظر هذا المتصفح إشعارات Wasla. للسماح بها، غيّر إذن هذا الموقع من إعدادات المتصفح. يظل الصوت والتمييز يعملان.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>لا يدعم هذا المتصفح الإشعارات. يظل الصوت والتمييز يعملان.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>عند وصول طلب حقيقي، تشغّل الشاشة المباشرة صوت الطلب الجديد وتميّز بطاقته؛ أما الطلبات التجريبية فتبقى صامتة. يمكنك أيضًا تفعيل إشعارات المتصفح لترى الطلبات الجديدة حتى عندما تكون نافذة أخرى في المقدمة. عندها يطلب المتصفح الإذن مرة واحدة، ويعمل الصوت والتمييز في كل الأحوال.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>اربط طابعة الإيصالات</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>الطابعة متصلة</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>ربط الطابعة</value></data>

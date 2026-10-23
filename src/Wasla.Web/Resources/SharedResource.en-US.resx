@@ -3389,9 +3389,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>Get Wasla ready</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} complete</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>Setup progress</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Progress counts required steps. A printer is optional and does not block readiness.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Progress counts the two required steps: an order platform and Wasla Print Bridge. The other steps are optional.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla is ready</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>Your order platform is connected and your operations screen is ready to use.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Your order platform and Wasla Print Bridge are connected, and your operations screen is ready to use.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Open Live Screen</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>Add a team member</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>Finish setup</value></data>
@@ -3417,11 +3417,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>Connect platform</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} connected</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platforms connected</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Set order notifications</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Notification sound is off or has not been saved yet.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>You can test the sound from notification settings.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Set notifications</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Order notifications</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Notification sound is off</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Sound, browser notifications and the new-order highlight are changed from the settings menu on the Live Screen.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Notification sound is on</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>Browser notifications are optional. When you turn them on, your browser asks for permission once. Sound and highlight work without them.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>This browser allows notifications from Wasla.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>This browser blocks notifications from Wasla. To allow them, change this site's permission in the browser settings. Sound and highlight still work.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>This browser does not support notifications. Sound and highlight still work.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>When a real order arrives, the Live Screen plays the new-order sound and highlights its card; practice orders stay silent. You can also turn on browser notifications to see new orders while another window is in front. Your browser then asks for permission once, and sound and highlight work either way.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>Connect a receipt printer</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>Printer connected</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>Connect printer</value></data>
