@@ -20,6 +20,7 @@ namespace Wasla.UnitTests.Realtime;
 /// settings, in every permission state (default, denied, granted), left to right and right to left. The number of
 /// pages is bounded (<see cref="ExtraPages"/>) and one browser runs at a time.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class RealtimeLifecycleBrowserTests
 {
     private const int ExtraPages = 3;

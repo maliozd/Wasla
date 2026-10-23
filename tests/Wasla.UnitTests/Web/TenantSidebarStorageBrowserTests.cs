@@ -12,6 +12,7 @@ namespace Wasla.UnitTests.Web;
 /// button (WAS-84). Skips only when no Chromium browser is installed (see
 /// <see cref="HeadlessChromium.BrowserVariable"/>) or Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class TenantSidebarStorageBrowserTests : IAsyncLifetime
 {
     private const string SidebarKey = "Wasla.sidebarCollapsed";

@@ -13,6 +13,7 @@ namespace Wasla.UnitTests.Web;
 /// notification permission and never change the user's saved preferences. A stand-in for <c>Notification</c> counts
 /// every permission request, because a headless browser has no real prompt.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class LiveScreenNotificationSettingsBrowserTests
 {
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(15);

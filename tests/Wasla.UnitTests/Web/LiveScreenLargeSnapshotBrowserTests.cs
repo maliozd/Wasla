@@ -18,6 +18,7 @@ namespace Wasla.UnitTests.Web;
 /// tablet widths, stacked on phones, right to left and in dark mode. Skips only when no Chromium browser is installed or
 /// Bootstrap cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScreenLargeSnapshotBrowserTests.LargeHost>
 {
     private const int PageSize = 100;

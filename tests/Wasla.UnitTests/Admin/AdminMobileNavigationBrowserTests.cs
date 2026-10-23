@@ -8,6 +8,7 @@ namespace Wasla.UnitTests.Admin;
 /// detail pages and, under reduced motion, a confirmation modal. Real keyboard, mouse and wheel input is used throughout. Skips only when no Chromium browser is
 /// installed (see <see cref="HeadlessChromium.BrowserVariable"/>) or AdminLTE cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
 {
     // Long, unbroken values: they must wrap inside their card instead of widening or clipping it.

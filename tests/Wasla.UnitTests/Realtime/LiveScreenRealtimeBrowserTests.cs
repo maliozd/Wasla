@@ -21,6 +21,7 @@ namespace Wasla.UnitTests.Realtime;
 /// connected screen keeps the 10-second rate (WAS-103). Skips only when no Chromium browser is installed or Bootstrap
 /// cannot be loaded from its CDN.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class LiveScreenRealtimeBrowserTests
 {
     private static readonly TimeSpan Push = TimeSpan.FromSeconds(5);

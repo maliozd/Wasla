@@ -8,6 +8,7 @@ namespace Wasla.UnitTests.Admin;
 /// horizontal overflow; on phones the RTL sidebar also covered the content. Skips only when no Chromium browser is
 /// installed (set <see cref="HeadlessChromium.BrowserVariable"/> to point at one) or AdminLTE cannot be loaded.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
 {
     private static readonly (int Width, int Height, bool Mobile)[] Viewports = [(375, 812, true), (1366, 860, false)];
