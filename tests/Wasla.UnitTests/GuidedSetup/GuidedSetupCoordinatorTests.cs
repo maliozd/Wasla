@@ -114,6 +114,47 @@ public sealed class GuidedSetupCoordinatorTests
         Assert.Null(await Coordinator(Owner).GetSectionPanelAsync(_tenant, _user, _principal, GuidedSetupSections.PlatformConnections, CancellationToken.None));
     }
 
+    [Theory]
+    [InlineData(GuidedSetupStatus.Completed)]
+    [InlineData(GuidedSetupStatus.Skipped)]
+    public async Task FinishedUsers_AreReportedFinished_FromOneRead_WithoutAWrite(GuidedSetupStatus status)
+    {
+        _state.Set(_user, status, GuidedSetupSections.PrintBridge);
+
+        var dashboard = await Coordinator(Owner).GetDashboardAsync(_tenant, _user, _principal, CancellationToken.None);
+
+        Assert.Null(dashboard.Card);
+        Assert.True(dashboard.HasFinished);
+        Assert.Equal(1, _state.Reads);
+        Assert.Equal(0, _state.Writes);
+    }
+
+    [Theory]
+    [InlineData(GuidedSetupStatus.NotStarted)]
+    [InlineData(GuidedSetupStatus.InProgress)]
+    public async Task UnfinishedUsers_GetTheirCard_AndAreNotFinished(GuidedSetupStatus status)
+    {
+        if (status != GuidedSetupStatus.NotStarted)
+            _state.Set(_user, status, GuidedSetupSections.PrintBridge);
+
+        var dashboard = await Coordinator(Owner).GetDashboardAsync(_tenant, _user, _principal, CancellationToken.None);
+
+        Assert.NotNull(dashboard.Card);
+        Assert.False(dashboard.HasFinished);
+    }
+
+    [Fact]
+    public async Task DashboardState_ForNonOwnersOrAFailedRead_IsNeitherACardNorFinished()
+    {
+        _state.Set(_user, GuidedSetupStatus.Completed, null);
+
+        Assert.Same(GuidedSetupDashboard.None, await Coordinator(Manager).GetDashboardAsync(_tenant, _user, _principal, CancellationToken.None));
+        Assert.Equal(0, _state.Reads);
+
+        _state.FailReads = true;
+        Assert.Same(GuidedSetupDashboard.None, await Coordinator(Owner).GetDashboardAsync(_tenant, _user, _principal, CancellationToken.None));
+    }
+
     [Fact]
     public async Task StateReadFailure_LogsAnError_AndHidesGuidance()
     {
@@ -1042,17 +1083,18 @@ public sealed class GuidedSetupCoordinatorTests
         public bool PrintingReady { get; set; }
         public int Writes { get; private set; }
 
+        /// <summary>Like the real readiness rule: platform and Print Bridge are the two required steps.</summary>
         public Task<TenantSetupStatus> GetAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
             Task.FromResult(new TenantSetupStatus(
-                IsReady: false,
-                RequiredStepsCompleted: 0,
-                RequiredStepsTotal: 3,
+                IsReady: PlatformReady && PrintingReady,
+                RequiredStepsCompleted: (PlatformReady ? 1 : 0) + (PrintingReady ? 1 : 0),
+                RequiredStepsTotal: 2,
                 ActivePlatforms: [],
-                Restaurant: Step(TenantSetupStepKind.RestaurantProfile, false),
+                Restaurant: Step(TenantSetupStepKind.RestaurantProfile, false, required: false),
                 Platform: Step(TenantSetupStepKind.PlatformConnection, PlatformReady),
-                Notifications: Step(TenantSetupStepKind.Notifications, false),
+                Notifications: Step(TenantSetupStepKind.Notifications, false, required: false),
                 Printing: Step(TenantSetupStepKind.Printing, PrintingReady),
-                LiveScreen: Step(TenantSetupStepKind.LiveScreen, false)));
+                LiveScreen: Step(TenantSetupStepKind.LiveScreen, false, required: false) with { IsOptional = false }));
 
         public Task<bool> CompleteGuidanceAsync(Guid tenantId, CancellationToken ct)
         {
@@ -1060,8 +1102,8 @@ public sealed class GuidedSetupCoordinatorTests
             return Task.FromResult(true);
         }
 
-        private static TenantSetupStep Step(TenantSetupStepKind kind, bool complete) =>
-            new(kind, complete, IsOptional: false, CountsTowardReadiness: true, IsAvailable: true);
+        private static TenantSetupStep Step(TenantSetupStepKind kind, bool complete, bool required = true) =>
+            new(kind, complete, IsOptional: !required, CountsTowardReadiness: required, IsAvailable: true);
     }
 
     /// <summary>

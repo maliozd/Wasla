@@ -175,7 +175,8 @@ test("opening settings without a loaded runtime uses the saved sound setting", a
   const click = testButton.click();
   await click;
   await Promise.resolve();
-  assert.deepEqual(order.slice(0, 3), ["stop-preview", "play", "permission"]);
+  // Testing a sound never asks for browser notification permission (WAS-13); only turning that switch on does.
+  assert.deepEqual(order, ["stop-preview", "play"]);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].kind, "test");
   assert.equal(calls[0].url, "/sounds/bell3.mp3");

@@ -3387,9 +3387,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>Wasla'yı kullanıma hazırla</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} tamamlandı</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>Kurulum ilerlemesi</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>İlerleme zorunlu adımları sayar. Yazıcı isteğe bağlıdır ve hazır olmayı engellemez.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>İlerleme iki zorunlu adımı sayar: bir sipariş platformu ve Wasla Print Bridge. Diğer adımlar isteğe bağlıdır.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla hazır</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>Sipariş platformunuz bağlı ve operasyon ekranınız kullanıma hazır.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Sipariş platformunuz ve Wasla Print Bridge bağlı; operasyon ekranınız kullanıma hazır.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Live Screen'i aç</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>Ekip üyesi ekle</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>Kurulumu tamamla</value></data>
@@ -3415,11 +3415,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>Platform bağla</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} bağlı</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platform bağlı</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Sipariş bildirimlerini ayarla</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Bildirim sesi kapalı veya henüz kaydedilmedi.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Ses denemesini bildirim ayarlarından yapabilirsiniz.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Bildirimleri ayarla</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Sipariş bildirimleri</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Bildirim sesi kapalı</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Ses, tarayıcı bildirimi ve yeni sipariş vurgusu Canlı Ekran'daki ayarlar menüsünden değiştirilir.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Bildirim sesi açık</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>Tarayıcı bildirimleri isteğe bağlıdır. Açtığınızda tarayıcınız bir kez izin ister. Ses ve vurgu bunlar olmadan da çalışır.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>Bu tarayıcı Wasla bildirimlerine izin veriyor.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>Bu tarayıcı Wasla bildirimlerini engelliyor. İzin vermek için tarayıcı ayarlarından bu sitenin iznini değiştirin. Ses ve vurgu yine çalışır.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>Bu tarayıcı bildirimleri desteklemiyor. Ses ve vurgu yine çalışır.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>Gerçek bir sipariş geldiğinde Canlı Ekran yeni sipariş sesini çalar ve kartını vurgular; deneme siparişleri sessizdir. Başka bir pencere öndeyken de yeni siparişleri görmek için tarayıcı bildirimlerini açabilirsiniz. Tarayıcınız o zaman bir kez izin ister; ses ve vurgu her durumda çalışır.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>Fiş yazıcısını bağla</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>Yazıcı bağlı</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>Yazıcıyı bağla</value></data>

@@ -148,9 +148,14 @@
                             </div>
                         </div>
                     </div>
+                    @* Every Live Screen user sets their own sound, browser notification and highlight here (WAS-13): the
+                       shared notification settings modal, saved per user. *@
+                    <div class="dropdown-divider" role="separator"></div>
+                    <button type="button" class="dropdown-item" id="ordersLiveDisplayNotificationSettings" data-notification-settings-open>
+                        <i class="bi bi-bell me-1" aria-hidden="true"></i>@L["Notification.Settings"]
+                    </button>
                     @if (navPermissions.CanManageOrderSettings)
                     {
-                        <div class="dropdown-divider" role="separator"></div>
                         <a class="dropdown-item orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
                     }
                 </div>
@@ -230,6 +235,8 @@
     </div>
 </div>
 
+@await Html.PartialAsync("_NotificationSettingsModalShell")
+
 <form id="ordersLiveDisplayCsrfForm" class="d-none">
     @Html.AntiForgeryToken()
 </form>
@@ -276,6 +283,17 @@
                 ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
                 ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
                 ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
+                ["notificationSettingsModalOpenFailed"] = L["Orders.NotificationSettingsModalOpenFailed"].Value,
+                ["notificationSettingsSaveFailed"] = L["Orders.NotificationSettingsSaveFailed"].Value,
+                ["notificationSettingsSaveException"] = L["Orders.NotificationSettingsSaveException"].Value,
+                ["settingsSaved"] = L["Notification.SettingsSaved"].Value,
+                ["settingsSaveFailed"] = L["Notification.SettingsSaveFailed"].Value,
+                ["notificationsOff"] = L["Notification.Disabled"].Value,
+                ["notificationsOffHelp"] = L["Notification.NotificationsHelp"].Value,
+                ["waitingForAudio"] = L["Notification.WaitingForBrowserAudio"].Value,
+                ["waitingForAudioHelp"] = L["Notification.NotificationsHelp"].Value,
+                ["notificationsOn"] = L["Notification.Enabled"].Value,
+                ["notificationsOnHelp"] = L["Notification.NotificationsHelp"].Value,
                 ["automationStatusSyncActive"] = L["Common.Active"].Value,
                 ["automationStatusSyncDisabled"] = L["Notification.Disabled"].Value,
                 ["automationStatusAutoApproveActive"] = L["Common.Active"].Value,

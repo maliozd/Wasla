@@ -28,12 +28,13 @@ public static class TenantSetupPanelMapper
             RestaurantName = restaurantName,
             TenantId = tenantId,
             ShowAddTeamMember = !status.HasAdditionalTeamMembers,
+            // The two required operational steps first, then the optional ones.
             Steps =
             [
-                MapRestaurant(status.Restaurant, localizer),
                 MapPlatform(status.Platform, status.ActivePlatforms, localizer),
-                MapNotifications(status.Notifications, localizer),
                 MapPrinting(status.Printing, localizer),
+                MapRestaurant(status.Restaurant, localizer),
+                MapNotifications(status.Notifications, localizer),
                 MapLiveScreen(status.LiveScreen, localizer)
             ]
         };
@@ -79,6 +80,10 @@ public static class TenantSetupPanelMapper
         };
     }
 
+    /// <summary>
+    /// Read-only: the user's effective sound, the same the Live Screen settings menu shows. The preferences
+    /// themselves are changed from that menu, so the row has no action of its own.
+    /// </summary>
     private static TenantSetupStepViewModel MapNotifications(
         TenantSetupStep step,
         IStringLocalizer<SharedResource> localizer) =>
@@ -90,14 +95,10 @@ public static class TenantSetupPanelMapper
                 localizer,
                 localizer["Setup.Notifications.Incomplete"].Value,
                 localizer["Setup.Notifications.Complete"].Value),
-            Hint = step.IsAvailable && !step.IsComplete
-                ? localizer["Setup.Notifications.Hint"].Value
-                : null,
+            Hint = step.IsAvailable ? localizer["Setup.Notifications.Hint"].Value : null,
             IsComplete = step.IsComplete,
             IsOptional = step.IsOptional,
             IsUnavailable = !step.IsAvailable,
-            ActionText = localizer["Setup.Notifications.Action"].Value,
-            ActionHref = "/settings/orders",
             StatusText = StatusText(step, localizer)
         };
 
@@ -111,7 +112,7 @@ public static class TenantSetupPanelMapper
                 : localizer["Setup.Printing.Title"].Value,
             Detail = !step.IsAvailable ? localizer["Setup.StatusUnavailable"].Value : null,
             IsComplete = step.IsComplete,
-            IsOptional = true,
+            IsOptional = step.IsOptional,
             IsUnavailable = !step.IsAvailable,
             ActionText = localizer["Setup.Printing.Action"].Value,
             ActionHref = "/print-bridge/setup",

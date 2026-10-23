@@ -125,12 +125,15 @@
                             <p class="wasla-setup-step__hint mb-0">@step.Hint</p>
                         }
                     </div>
-                    <div class="wasla-setup-step__action">
-                        <a class="btn btn-sm @(step.IsComplete ? "btn-outline-secondary" : "btn-outline-primary") wasla-setup-action"
-                           href="@step.ActionHref"
-                           target="@(step.OpenInNewTab ? "_blank" : null)"
-                           rel="@(step.OpenInNewTab ? "noopener noreferrer" : null)">@step.ActionText</a>
-                    </div>
+                    @if (!string.IsNullOrEmpty(step.ActionHref))
+                    {
+                        <div class="wasla-setup-step__action">
+                            <a class="btn btn-sm @(step.IsComplete ? "btn-outline-secondary" : "btn-outline-primary") wasla-setup-action"
+                               href="@step.ActionHref"
+                               target="@(step.OpenInNewTab ? "_blank" : null)"
+                               rel="@(step.OpenInNewTab ? "noopener noreferrer" : null)">@step.ActionText</a>
+                        </div>
+                    }
                 </li>
             }
         </ol>

@@ -46,8 +46,9 @@
 
     @if (Model.Setup is not null)
     {
-        @* The operational checklist stays; only its welcome banner yields to the guided-setup card. *@
-        @await Html.PartialAsync("_TenantSetupPanel", Model.Setup, new ViewDataDictionary(ViewData) { ["HideSetupWelcome"] = Model.GuidedSetup is not null })
+        @* The operational checklist stays; its welcome banner yields to the guided-setup card and never returns once
+           guided setup was completed or skipped. *@
+        @await Html.PartialAsync("_TenantSetupPanel", Model.Setup, new ViewDataDictionary(ViewData) { ["HideSetupWelcome"] = Model.GuidedSetup is not null || Model.GuidedSetupFinished })
     }
 
     @* Today's figures: label first, one emphasized number, a short qualifier. Compact enough for a phone. *@

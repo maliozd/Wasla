@@ -39,7 +39,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [architecture/pos-application-boundary.md](architecture/pos-application-boundary.md) | Decision: Wasla POS as a local-first installed product (POS Edge, local SQLite, POS Terminal, cloud sync) in this repository; data authority, sync, restore and cloud recovery, printing, the fiscal cash register (ÖKC) boundary, devices and certificate lifecycle, licensing |
 | [product/terminology.md](product/terminology.md) | Product names, Tenant vs order customer, clean-break policy and the historical migration exception |
 | [product/roles-and-permissions.md](product/roles-and-permissions.md) | Server-side role matrix |
-| [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live |
+| [product/onboarding.md](product/onboarding.md) | Per-user guided setup, tenant operational mode (Setup / Live), going live, Dashboard setup readiness |
 
 ## Task → documents
 

@@ -3877,9 +3877,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>Подготовьте Wasla к работе</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>Выполнено {0} из {1}</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>Ход настройки</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает обязательные шаги. Принтер необязателен и не мешает готовности.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает два обязательных шага: платформу заказов и Wasla Print Bridge. Остальные шаги необязательны.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla готова</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов подключена, операционный экран готов к работе.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов и Wasla Print Bridge подключены, операционный экран готов к работе.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Открыть Live Screen</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>Добавить сотрудника</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>Завершить настройку</value></data>
@@ -3905,11 +3905,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>Подключить платформу</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} подключена</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>Подключено платформ: {0}</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Настройте уведомления о заказах</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен или ещё не сохранён.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Проверить звук можно в настройках уведомлений.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Настроить уведомления</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Уведомления о заказах</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Звук, уведомления браузера и подсветка новых заказов меняются в меню настроек на Живом экране.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Звук уведомлений включён</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>Уведомления браузера необязательны. Когда вы их включите, браузер один раз запросит разрешение. Звук и подсветка работают и без них.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>Этот браузер разрешает уведомления Wasla.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>Этот браузер блокирует уведомления Wasla. Чтобы разрешить их, измените разрешение для этого сайта в настройках браузера. Звук и подсветка продолжают работать.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>Этот браузер не поддерживает уведомления. Звук и подсветка продолжают работать.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>Когда приходит настоящий заказ, Живой экран воспроизводит звук нового заказа и подсвечивает его карточку; тренировочные заказы остаются беззвучными. Можно также включить уведомления браузера, чтобы видеть новые заказы, даже когда впереди другое окно. Тогда браузер один раз запросит разрешение, а звук и подсветка работают в любом случае.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>Принтер подключён</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>Подключить принтер</value></data>
