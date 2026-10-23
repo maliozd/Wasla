@@ -310,11 +310,23 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
         await Task.Delay(300, ct);
         AssertDark(await AuditAsync(browser, "#tenant-main", ct), direction, page + " user validation");
 
-        // The notification settings modal.
+        // The notification settings modal. It opens once the page has read its content from the server, which on a loaded CI
+        // runner can take longer than the former 10 s wait (WAS-13): wait on that request, then on the modal itself.
         await LoadAsync(browser, "/settings/orders", ct);
         await ClickAsync(browser, "#notificationSettingsBtn", ct);
-        Assert.True(await browser.WaitForAsync("!!document.querySelector('#notificationSettingsModal.show .wasla-color-swatch')", TimeSpan.FromSeconds(10), ct),
-            $"{page}: the notification settings modal did not open");
+        var contentRead = await browser.WaitForAsync(
+            "performance.getEntriesByType('resource').some(e => new URL(e.name).pathname === '/notification-settings')", HeadlessChromium.NavigationTimeout, ct);
+        if (!contentRead || !await browser.WaitForAsync("!!document.querySelector('#notificationSettingsModal.show .wasla-color-swatch')", TimeSpan.FromSeconds(5), ct))
+        {
+            // Most telling first: the CI annotation keeps only about 300 characters.
+            var state = await browser.EvaluateAsync<string>("""
+                (() => 'modal events [' + (window.__waslaModalEvents || []).join('; ') + '], class "' + document.getElementById('notificationSettingsModal').className
+                  + '", body "' + document.getElementById('notificationSettingsModalBody').textContent.trim().slice(0, 60)
+                  + '", messages "' + [...document.querySelectorAll('.toast, .alert')].map(t => t.textContent.trim()).join(' | ').slice(0, 120) + '"')()
+                """, ct);
+            Assert.Fail((_host.ServerErrors is { } errors ? errors + " -- " : "")
+                + $"{page}: the notification settings modal did not open ({(contentRead ? "after its content was read" : "its content was not read")}): {state}");
+        }
         await Task.Delay(400, ct);
         AssertDark(await AuditAsync(browser, "#notificationSettingsModal .modal-content", ct), direction, page + " notification modal");
     }
