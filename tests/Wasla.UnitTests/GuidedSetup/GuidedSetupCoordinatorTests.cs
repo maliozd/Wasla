@@ -972,7 +972,7 @@ public sealed class GuidedSetupCoordinatorTests
 
     internal sealed class FixedTenant(Guid tenantId) : ICurrentTenantService
     {
-        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
     }
 
     internal sealed class FixedNavigation(TenantNavigationPermissions permissions) : ITenantNavigationAuthorizationService

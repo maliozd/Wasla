@@ -88,6 +88,9 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 - Viewport meta on layouts; Live Screen has narrow Focus behavior.
 - RTL: `dir="rtl"` + `wwwroot/css/rtl.css` (+ logical properties in foundation/theme where applied).
 - Focus-visible styles on key controls; `aria-pressed` on view switch; live regions for connection/sound status.
+- A label's `for` names the id the input actually renders (an explicit `id` overrides the one `asp-for` would give it).
+- The collapsed tenant sidebar shows icons only: link and control text is visually hidden, never `display: none`, so it stays the accessible name; decorative icons are `aria-hidden` (WAS-132).
+- A region rebuilt from polled markup is replaced only when its markup changed, and not while the user is selecting text in it or would lose the focused control; see the Print Bridge Devices page in [../integrations/print-bridge.md](../integrations/print-bridge.md#devices-page-presence-web-panel).
 - `prefers-reduced-motion`: Live view transitions and several theme animations disable/simplify when reduce is set.
 
 ### Browser-local vs server settings
@@ -105,7 +108,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 
 `wwwroot/js/theme-preference.js` is the only code that resolves, applies and stores the light/dark theme. Each layout loads it synchronously in `<head>`, before the stylesheets, and names its app on `<html data-wasla-theme-scope>`: `tenant` for `_TenantLayout` and `_OrdersDisplayLayout` (Live Screen), `admin` for `_AdminLayout`. It sets `data-bs-theme` on `<html>`, and on `<body>` as soon as the parser inserts it, so the first frame is painted in the resolved theme. `theme-mode.js` only drives the toggle buttons (`.wasla-theme-toggle`).
 
-**Scope: browser, per app.** The choice is stored in the browser, not on the user or the tenant. That matches the architecture: there is no per-user preference store in CentralDb or TenantDb, the theme must be known before the first frame (a server or user setting would need a request or a database read on every page), operational devices such as a kitchen Live Screen are often shared by several users, and each tenant host is its own origin, so one tenant's choice never reaches another tenant's pages. Central Admin is served under `/admin` on every host, so it can share an origin with the tenant app; the two apps use separate keys and never read or write each other's.
+**Scope: browser, per app.** The choice is stored in the browser, not on the user or the tenant. That matches the architecture: there is no per-user preference store in CentralDb or TenantDb, the theme must be known before the first frame (a server or user setting would need a request or a database read on every page), operational devices such as a kitchen Live Screen are often shared by several users, and each tenant host is its own origin, so one tenant's choice never reaches another tenant's pages. Central Admin is served under `/admin` on the marketing, application and tenant hosts (not on unknown host names, WAS-66), so it can share an origin with the tenant app; the two apps use separate keys and never read or write each other's.
 
 **Tenant app precedence:**
 

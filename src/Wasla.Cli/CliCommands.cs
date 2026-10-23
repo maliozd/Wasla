@@ -265,7 +265,7 @@ internal static class CliCommands
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("WARNING: This will permanently delete data.");
-        Console.WriteLine("This will permanently delete the customer record and/or the customer database.");
+        Console.WriteLine("This will permanently delete the tenant record and/or the tenant database.");
         Console.ResetColor();
 
         if (!confirm)
@@ -395,7 +395,7 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> AddCustomerAsync(
+    public static async Task<int> AddTenantAsync(
         IHost host,
         string name,
         string slug,
@@ -458,7 +458,7 @@ internal static class CliCommands
                 .ConfigureAwait(false);
             if (exists)
             {
-                WriteError("A customer with this slug or primary domain already exists.");
+                WriteError("A tenant with this slug or primary domain already exists.");
                 return 2;
             }
 
@@ -473,23 +473,23 @@ internal static class CliCommands
             WriteLineStep($"Target database name: {dbName}");
 
             // Creates and marks the database for this tenant id; an existing database of that name is never adopted.
-            var customerId = Guid.NewGuid();
+            var tenantId = Guid.NewGuid();
             await SqlServerTenantDatabases
-                .ClaimAsync(server, sqlAuth, dbName, TenantDatabaseOwnership.ForTenant(customerId), ct)
+                .ClaimAsync(server, sqlAuth, dbName, TenantDatabaseOwnership.ForTenant(tenantId), ct)
                 .ConfigureAwait(false);
             WriteLineStep($"Database '{dbName}' created.");
             dbCreated = true;
 
-            var customerConnString = BuildCustomerConnectionString(server, sqlAuth, dbName);
+            var tenantConnString = BuildTenantConnectionString(server, sqlAuth, dbName);
             var options = new DbContextOptionsBuilder<TenantDbContext>()
-                .UseSqlServer(customerConnString)
+                .UseSqlServer(tenantConnString)
                 .Options;
             var migrationNow = DateTime.UtcNow;
             string migrationResult;
             try
             {
                 await using var db = new TenantDbContext(options);
-                WriteLineStep("Applying CustomerDb migrations…");
+                WriteLineStep("Applying TenantDb migrations…");
                 await db.Database.MigrateAsync(ct).ConfigureAwait(false);
                 migrationResult = "Success";
             }
@@ -500,12 +500,12 @@ internal static class CliCommands
             }
 
             WriteLineStep("Encrypting connection string…");
-            var (encrypted, keyVersion) = await secret.EncryptAsync(customerConnString, ct).ConfigureAwait(false);
+            var (encrypted, keyVersion) = await secret.EncryptAsync(tenantConnString, ct).ConfigureAwait(false);
 
             var now = DateTime.UtcNow;
-            var customer = new Tenant
+            var tenant = new Tenant
             {
-                Id = customerId,
+                Id = tenantId,
                 Name = name,
                 Slug = slug,
                 PrimaryDomain = domain,
@@ -523,21 +523,21 @@ internal static class CliCommands
             // The tenant row and its membership are stored together or not at all.
             await using (var transaction = await central.Database.BeginTransactionAsync(ct).ConfigureAwait(false))
             {
-                central.Tenants.Add(customer);
+                central.Tenants.Add(tenant);
                 await central.SaveChangesAsync(ct).ConfigureAwait(false);
 
                 // Paid signup creates this row too; the restaurant setup step reads the contact fields from it.
                 WriteLineStep("Recording tenant membership…");
                 await TenantMembershipRecords.EnsureAsync(
                     central,
-                    customerId,
+                    tenantId,
                     CliMembershipSeed(adminEmail, contact),
                     now,
                     ct).ConfigureAwait(false);
 
                 await transaction.CommitAsync(ct).ConfigureAwait(false);
             }
-            insertedCentral = customer;
+            insertedCentral = tenant;
 
             await using (var userDb = new TenantDbContext(options))
             {
@@ -560,10 +560,10 @@ internal static class CliCommands
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("✓ Customer created successfully");
+            Console.WriteLine("✓ Tenant created successfully");
             Console.ResetColor();
             Console.WriteLine($"""
-                Id:       {customerId}
+                Id:       {tenantId}
                 Name:     {name}
                 Domain:   {domain}
                 Database: {dbName}
@@ -584,8 +584,8 @@ internal static class CliCommands
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(
                     insertedCentral is not null
-                        ? $"Warning: partial failure. Drop database [{dbName}] and delete CentralDb customer row Id={insertedCentral.Id} if you need to retry clean."
-                        : "Warning: database was created or modified. If registration failed partway, manually drop the database and remove the Customer row from CentralDb if it was inserted.");
+                        ? $"Warning: partial failure. Drop database [{dbName}] and delete CentralDb tenant row Id={insertedCentral.Id} if you need to retry clean."
+                        : "Warning: database was created or modified. If registration failed partway, manually drop the database and remove the Tenant row from CentralDb if it was inserted.");
                 Console.ResetColor();
             }
             return 3;
@@ -684,21 +684,21 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> MigrateCustomerAsync(
+    public static async Task<int> MigrateTenantAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         CancellationToken ct)
     {
         var hasSlug = !string.IsNullOrWhiteSpace(slug);
-        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        if (hasSlug && !string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Use either --slug or --customer-id, not both.");
+            WriteError("Use either --slug or --tenant-id, not both.");
             return 2;
         }
-        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        if (!hasSlug && string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Specify --slug or --customer-id.");
+            WriteError("Specify --slug or --tenant-id.");
             return 2;
         }
         if (!string.IsNullOrWhiteSpace(slug) && !SlugRegex.IsMatch(slug))
@@ -707,15 +707,15 @@ internal static class CliCommands
             return 2;
         }
 
-        Guid? customerId = null;
-        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        Guid? tenantId = null;
+        if (!string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            if (!Guid.TryParse(customerIdArg, out var g))
+            if (!Guid.TryParse(tenantIdArg, out var g))
             {
-                WriteError("--customer-id must be a valid GUID.");
+                WriteError("--tenant-id must be a valid GUID.");
                 return 2;
             }
-            customerId = g;
+            tenantId = g;
         }
 
         try
@@ -725,24 +725,24 @@ internal static class CliCommands
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
             var slugNorm = slug?.Trim() ?? string.Empty;
-            var customer = customerId is { } id
+            var tenant = tenantId is { } id
                 ? await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
                 : await central.Tenants.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError("Customer not found.");
+                WriteError("Tenant not found.");
                 return 2;
             }
-            if (!customer.IsActive)
+            if (!tenant.IsActive)
             {
-                WriteError("Customer is inactive.");
+                WriteError("Tenant is inactive.");
                 return 2;
             }
 
-            WriteLineStep($"Customer: {customer.Name}  slug={customer.Slug}  database={customer.DatabaseName}");
+            WriteLineStep($"Tenant: {tenant.Name}  slug={tenant.Slug}  database={tenant.DatabaseName}");
 
-            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
@@ -751,19 +751,19 @@ internal static class CliCommands
             await using (var db = new TenantDbContext(options))
             {
                 var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
-                Console.WriteLine($"Pending CustomerDb migrations: {pending.Count}");
+                Console.WriteLine($"Pending TenantDb migrations: {pending.Count}");
                 foreach (var m in pending)
                     Console.WriteLine($"  {m}");
 
-                WriteLineStep("Applying CustomerDb migrations…");
+                WriteLineStep("Applying TenantDb migrations…");
                 await db.Database.MigrateAsync(ct).ConfigureAwait(false);
 
                 var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                 var latest = applied.Count > 0 ? applied[^1] : "(none)";
-                Console.WriteLine($"Latest applied CustomerDb migration: {latest}");
+                Console.WriteLine($"Latest applied TenantDb migration: {latest}");
             }
 
-            var tracked = await central.Tenants.FirstOrDefaultAsync(c => c.Id == customer.Id, ct).ConfigureAwait(false);
+            var tracked = await central.Tenants.FirstOrDefaultAsync(c => c.Id == tenant.Id, ct).ConfigureAwait(false);
             if (tracked is not null)
             {
                 var when = DateTime.UtcNow;
@@ -775,7 +775,7 @@ internal static class CliCommands
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("✓ migrate-customer completed successfully.");
+            Console.WriteLine("✓ migrate-tenant completed successfully.");
             Console.ResetColor();
             return 0;
         }
@@ -785,7 +785,7 @@ internal static class CliCommands
             {
                 using var scope2 = host.Services.CreateScope();
                 var central2 = scope2.ServiceProvider.GetRequiredService<CentralDbContext>();
-                Guid? idForTrack = customerId;
+                Guid? idForTrack = tenantId;
                 if (idForTrack is null && !string.IsNullOrWhiteSpace(slug))
                 {
                     var slugN = slug.Trim();
@@ -811,12 +811,12 @@ internal static class CliCommands
                 // ignore secondary failure
             }
 
-            WriteError($"migrate-customer failed: {ex.Message}");
+            WriteError($"migrate-tenant failed: {ex.Message}");
             return 1;
         }
     }
 
-    public static async Task<int> MigrateAllCustomersAsync(
+    public static async Task<int> MigrateAllTenantsAsync(
         IHost host,
         bool dryRun,
         string[]? onlySlugs,
@@ -839,14 +839,14 @@ internal static class CliCommands
                 {
                     if (list.All(c => !string.Equals(c.Slug, s, StringComparison.OrdinalIgnoreCase)))
                     {
-                        WriteError($"Customer slug not found: {s}");
+                        WriteError($"Tenant slug not found: {s}");
                         return 2;
                     }
                 }
             }
 
             var total = list.Count;
-            Console.WriteLine($"Active customers to process: {total}");
+            Console.WriteLine($"Active tenants to process: {total}");
             foreach (var c in list)
                 Console.WriteLine($"  - {c.Name}  ({c.Slug})  [{c.DatabaseName}]");
 
@@ -939,7 +939,7 @@ internal static class CliCommands
             if (failed.Count > 0)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Failed customers (slug / name):");
+                Console.WriteLine("Failed tenants (slug / name):");
                 foreach (var f in failed)
                     Console.WriteLine($"  - {f.Slug}  /  {f.Name}");
                 Console.ResetColor();
@@ -954,27 +954,36 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> MigrationStatusAsync(IHost host, CancellationToken ct)
+    public static async Task<int> MigrationStatusAsync(IHost host, bool requireCurrent, CancellationToken ct)
     {
         try
         {
             using var scope = host.Services.CreateScope();
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+            var notCurrent = false;
 
             Console.WriteLine("=== CentralDb ===");
             var centralPending = (await central.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
             var centralApplied = (await central.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
+            var centralKnown = central.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+            var centralUnknown = centralApplied.Any(m => !centralKnown.Contains(m));
             var centralLatest = centralApplied.Count > 0 ? centralApplied[^1] : "(none)";
             Console.WriteLine($"Latest applied: {centralLatest}");
             Console.WriteLine($"Pending count:  {centralPending.Count}");
+            if (centralPending.Count > 0 || centralUnknown)
+            {
+                notCurrent = true;
+                if (centralUnknown)
+                    Console.WriteLine("CentralDb has migrations unknown to this build.");
+            }
             if (centralPending.Count > 0)
             {
                 foreach (var m in centralPending)
                     Console.WriteLine($"  {m}");
             }
 
-            var customers = await central.Tenants
+            var tenants = await central.Tenants
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Slug)
@@ -982,8 +991,8 @@ internal static class CliCommands
                 .ConfigureAwait(false);
 
             Console.WriteLine();
-            Console.WriteLine("=== Customer databases (active) ===");
-            foreach (var c in customers)
+            Console.WriteLine("=== Tenant databases (active) ===");
+            foreach (var c in tenants)
             {
                 Console.WriteLine();
                 Console.WriteLine($"{c.Name}  |  slug: {c.Slug}  |  db: {c.DatabaseName}");
@@ -997,8 +1006,16 @@ internal static class CliCommands
                     var applied = (await db.Database.GetAppliedMigrationsAsync(ct).ConfigureAwait(false)).ToList();
                     var latest = applied.Count > 0 ? applied[^1] : "(none)";
                     var pending = (await db.Database.GetPendingMigrationsAsync(ct).ConfigureAwait(false)).ToList();
-                    Console.WriteLine($"  CustomerDb latest applied: {latest}");
+                    var known = db.Database.GetMigrations().ToHashSet(StringComparer.Ordinal);
+                    var unknown = applied.Any(m => !known.Contains(m));
+                    Console.WriteLine($"  TenantDb latest applied: {latest}");
                     Console.WriteLine($"  Pending: {pending.Count}");
+                    if (pending.Count > 0 || unknown)
+                    {
+                        notCurrent = true;
+                        if (unknown)
+                            Console.WriteLine("  TenantDb has migrations unknown to this build.");
+                    }
                     if (pending.Count > 0)
                     {
                         foreach (var m in pending)
@@ -1007,13 +1024,18 @@ internal static class CliCommands
                 }
                 catch (Exception ex)
                 {
+                    notCurrent = true;
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"  (could not read migration status) {ex.Message}");
+                    Console.WriteLine(requireCurrent
+                        ? $"  (could not read migration status) {ex.GetType().Name}"
+                        : $"  (could not read migration status) {ex.Message}");
                     Console.ResetColor();
                 }
             }
 
-            return 0;
+            if (requireCurrent)
+                Console.WriteLine(notCurrent ? "Migration readiness check failed." : "All active databases are current for this build.");
+            return requireCurrent && notCurrent ? 1 : 0;
         }
         catch (Exception ex)
         {
@@ -1022,7 +1044,7 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> ListCustomersAsync(IHost host, CancellationToken ct)
+    public static async Task<int> ListTenantsAsync(IHost host, CancellationToken ct)
     {
         try
         {
@@ -1080,16 +1102,16 @@ internal static class CliCommands
 
     public static async Task<int> CreateUserAsync(
         IHost host,
-        string customerSlug,
+        string tenantSlug,
         string email,
         string password,
         string role,
         string? fullName,
         CancellationToken ct)
     {
-        if (!SlugRegex.IsMatch(customerSlug))
+        if (!SlugRegex.IsMatch(tenantSlug))
         {
-            WriteError("Customer slug must match ^[a-zA-Z0-9_-]+$.");
+            WriteError("Tenant slug must match ^[a-zA-Z0-9_-]+$.");
             return 2;
         }
 
@@ -1106,22 +1128,22 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customer = await central.Tenants
+            var tenant = await central.Tenants
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Slug == customerSlug, ct)
+                .FirstOrDefaultAsync(c => c.Slug == tenantSlug, ct)
                 .ConfigureAwait(false);
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError("Customer not found for slug.");
+                WriteError("Tenant not found for slug.");
                 return 2;
             }
-            if (!customer.IsActive)
+            if (!tenant.IsActive)
             {
-                WriteError("Customer is inactive.");
+                WriteError("Tenant is inactive.");
                 return 2;
             }
 
-            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
@@ -1166,10 +1188,10 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> DeleteCustomerAsync(
+    public static async Task<int> DeleteTenantAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         bool confirm,
         bool forceProduction,
         CancellationToken ct)
@@ -1178,14 +1200,14 @@ internal static class CliCommands
             return 2;
 
         var hasSlug = !string.IsNullOrWhiteSpace(slug);
-        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        if (hasSlug && !string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Use either --slug or --customer-id, not both.");
+            WriteError("Use either --slug or --tenant-id, not both.");
             return 2;
         }
-        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        if (!hasSlug && string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Specify --slug or --customer-id.");
+            WriteError("Specify --slug or --tenant-id.");
             return 2;
         }
         if (hasSlug && !SlugRegex.IsMatch(slug!))
@@ -1194,15 +1216,15 @@ internal static class CliCommands
             return 2;
         }
 
-        Guid? customerId = null;
-        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        Guid? tenantId = null;
+        if (!string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            if (!Guid.TryParse(customerIdArg, out var g))
+            if (!Guid.TryParse(tenantIdArg, out var g))
             {
-                WriteError("--customer-id must be a valid GUID.");
+                WriteError("--tenant-id must be a valid GUID.");
                 return 2;
             }
-            customerId = g;
+            tenantId = g;
         }
 
         try
@@ -1212,24 +1234,24 @@ internal static class CliCommands
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
             var slugNorm = slug?.Trim() ?? string.Empty;
-            var customer = customerId is { } id
+            var tenant = tenantId is { } id
                 ? await central.Tenants.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
                 : await central.Tenants.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError("Customer not found.");
+                WriteError("Tenant not found.");
                 return 2;
             }
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"About to delete customer '{customer.Name}' (slug={customer.Slug}) and drop database '{customer.DatabaseName}'.");
+            Console.WriteLine($"About to delete tenant '{tenant.Name}' (slug={tenant.Slug}) and drop database '{tenant.DatabaseName}'.");
             Console.ResetColor();
 
-            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
 
-            var refusal = await GetDestructiveRefusalAsync(host, central, customer, plain, ct).ConfigureAwait(false);
+            var refusal = await GetDestructiveRefusalAsync(host, central, tenant, plain, ct).ConfigureAwait(false);
             if (refusal is not null)
             {
                 WriteError("Refusing to drop the database: " + refusal);
@@ -1241,30 +1263,30 @@ internal static class CliCommands
 
             await using (var db = new TenantDbContext(options))
             {
-                WriteLineStep("Dropping CustomerDb (if exists)…");
+                WriteLineStep("Dropping TenantDb (if exists)…");
                 await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
             }
 
-            WriteLineStep("Deleting CentralDb customer record…");
-            central.Tenants.Remove(customer);
+            WriteLineStep("Deleting CentralDb tenant record…");
+            central.Tenants.Remove(tenant);
             await central.SaveChangesAsync(ct).ConfigureAwait(false);
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("✓ Customer deleted successfully.");
+            Console.WriteLine("✓ Tenant deleted successfully.");
             Console.ResetColor();
             return 0;
         }
         catch (Exception ex)
         {
-            WriteError("delete-customer failed: " + ex.Message);
+            WriteError("delete-tenant failed: " + ex.Message);
             return 1;
         }
     }
 
-    public static async Task<int> ResetCustomerDbAsync(
+    public static async Task<int> ResetTenantDbAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         bool confirm,
         bool forceProduction,
         CancellationToken ct)
@@ -1273,14 +1295,14 @@ internal static class CliCommands
             return 2;
 
         var hasSlug = !string.IsNullOrWhiteSpace(slug);
-        if (hasSlug && !string.IsNullOrWhiteSpace(customerIdArg))
+        if (hasSlug && !string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Use either --slug or --customer-id, not both.");
+            WriteError("Use either --slug or --tenant-id, not both.");
             return 2;
         }
-        if (!hasSlug && string.IsNullOrWhiteSpace(customerIdArg))
+        if (!hasSlug && string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            WriteError("Specify --slug or --customer-id.");
+            WriteError("Specify --slug or --tenant-id.");
             return 2;
         }
         if (hasSlug && !SlugRegex.IsMatch(slug!))
@@ -1289,15 +1311,15 @@ internal static class CliCommands
             return 2;
         }
 
-        Guid? customerId = null;
-        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        Guid? tenantId = null;
+        if (!string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            if (!Guid.TryParse(customerIdArg, out var g))
+            if (!Guid.TryParse(tenantIdArg, out var g))
             {
-                WriteError("--customer-id must be a valid GUID.");
+                WriteError("--tenant-id must be a valid GUID.");
                 return 2;
             }
-            customerId = g;
+            tenantId = g;
         }
 
         try
@@ -1307,24 +1329,24 @@ internal static class CliCommands
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
             var slugNorm = slug?.Trim() ?? string.Empty;
-            var customer = customerId is { } id
+            var tenant = tenantId is { } id
                 ? await central.Tenants.FirstOrDefaultAsync(c => c.Id == id, ct).ConfigureAwait(false)
                 : await central.Tenants.FirstOrDefaultAsync(c => c.Slug == slugNorm, ct).ConfigureAwait(false);
 
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError("Customer not found.");
+                WriteError("Tenant not found.");
                 return 2;
             }
 
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"About to RESET database '{customer.DatabaseName}' for customer '{customer.Name}' (slug={customer.Slug}).");
+            Console.WriteLine($"About to RESET database '{tenant.DatabaseName}' for tenant '{tenant.Name}' (slug={tenant.Slug}).");
             Console.ResetColor();
 
-            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
 
-            var refusal = await GetDestructiveRefusalAsync(host, central, customer, plain, ct).ConfigureAwait(false);
+            var refusal = await GetDestructiveRefusalAsync(host, central, tenant, plain, ct).ConfigureAwait(false);
             if (refusal is not null)
             {
                 WriteError("Refusing to reset the database: " + refusal);
@@ -1340,10 +1362,10 @@ internal static class CliCommands
             try
             {
                 await using var db = new TenantDbContext(options);
-                WriteLineStep("Dropping CustomerDb (if exists)…");
+                WriteLineStep("Dropping TenantDb (if exists)…");
                 await db.Database.EnsureDeletedAsync(ct).ConfigureAwait(false);
 
-                WriteLineStep("Applying CustomerDb migrations…");
+                WriteLineStep("Applying TenantDb migrations…");
                 await db.Database.MigrateAsync(ct).ConfigureAwait(false);
                 migrationResult = "Success";
             }
@@ -1354,7 +1376,7 @@ internal static class CliCommands
             }
             finally
             {
-                var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == customer.Id, ct).ConfigureAwait(false);
+                var tracked = await central.Tenants.FirstOrDefaultAsync(x => x.Id == tenant.Id, ct).ConfigureAwait(false);
                 if (tracked is not null)
                 {
                     tracked.LastMigrationAt = migrationNow;
@@ -1366,19 +1388,19 @@ internal static class CliCommands
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("✓ Customer database reset successfully (schema migrated).");
+            Console.WriteLine("✓ Tenant database reset successfully (schema migrated).");
             Console.ResetColor();
-            Console.WriteLine("Note: All users/orders/platform connections/branches were deleted. Recreate admin user if needed (seed-customer-admin).");
+            Console.WriteLine("Note: All users/orders/platform connections/branches were deleted. Recreate admin user if needed (seed-tenant-admin).");
             return 0;
         }
         catch (Exception ex)
         {
-            WriteError("reset-customer-db failed: " + ex.Message);
+            WriteError("reset-tenant-db failed: " + ex.Message);
             return 1;
         }
     }
 
-    public static async Task<int> ResetAllCustomerDbsAsync(
+    public static async Task<int> ResetAllTenantDbsAsync(
         IHost host,
         bool confirm,
         bool forceProduction,
@@ -1393,20 +1415,20 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customers = await central.Tenants
+            var tenants = await central.Tenants
                 .AsNoTracking()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Slug)
                 .ToListAsync(ct)
                 .ConfigureAwait(false);
 
-            var total = customers.Count;
+            var total = tenants.Count;
             var succeeded = 0;
             var failed = new List<(string Slug, string Name)>();
 
-            Console.WriteLine($"Active customers to reset: {total}");
+            Console.WriteLine($"Active tenants to reset: {total}");
 
-            foreach (var c in customers)
+            foreach (var c in tenants)
             {
                 try
                 {
@@ -1469,7 +1491,7 @@ internal static class CliCommands
             if (failed.Count > 0)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Failed customers (slug / name):");
+                Console.WriteLine("Failed tenants (slug / name):");
                 foreach (var f in failed)
                     Console.WriteLine($"  - {f.Slug}  /  {f.Name}");
                 Console.ResetColor();
@@ -1479,17 +1501,17 @@ internal static class CliCommands
         }
         catch (Exception ex)
         {
-            WriteError("reset-all-customer-dbs failed: " + ex.Message);
+            WriteError("reset-all-tenant-dbs failed: " + ex.Message);
             return 1;
         }
     }
 
     /// <summary>
     /// Sets the restaurant contact the setup checklist requires, e.g. for a tenant created by
-    /// add-customer without it. Creates the tenant's membership row when missing. Repeating the
+    /// add-tenant without it. Creates the tenant's membership row when missing. Repeating the
     /// same values changes nothing; omitted fields keep their stored value.
     /// </summary>
-    public static async Task<int> UpdateCustomerProfileAsync(
+    public static async Task<int> UpdateTenantProfileAsync(
         IHost host,
         string? tenantSelector,
         TenantContactUpdate contact,
@@ -1527,7 +1549,7 @@ internal static class CliCommands
                 : await central.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == selector, ct).ConfigureAwait(false);
             if (tenant is null)
             {
-                WriteError("Customer not found.");
+                WriteError("Tenant not found.");
                 return 2;
             }
 
@@ -1594,14 +1616,14 @@ internal static class CliCommands
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("Note: the restaurant setup step stays incomplete until a business phone and a city or country are set:");
-        Console.WriteLine($"  update-customer-profile --tenant {slug} --business-phone <phone> --city <city> [--country <country>]");
+        Console.WriteLine($"  update-tenant-profile --tenant {slug} --business-phone <phone> --city <city> [--country <country>]");
         Console.ResetColor();
     }
 
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    public static async Task<int> SeedCustomerAdminAsync(
+    public static async Task<int> SeedTenantAdminAsync(
         IHost host,
         string slug,
         string adminEmail,
@@ -1621,18 +1643,18 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var customer = await central.Tenants
+            var tenant = await central.Tenants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
                 .ConfigureAwait(false);
 
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError("Customer not found for slug.");
+                WriteError("Tenant not found for slug.");
                 return 2;
             }
 
-            var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
                 .ConfigureAwait(false);
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlServer(plain)
@@ -1671,7 +1693,7 @@ internal static class CliCommands
         }
         catch (Exception ex)
         {
-            WriteError("seed-customer-admin failed: " + ex.Message);
+            WriteError("seed-tenant-admin failed: " + ex.Message);
             return 1;
         }
     }
@@ -1725,7 +1747,7 @@ internal static class CliCommands
         Console.ResetColor();
     }
 
-    private static string BuildCustomerConnectionString(string server, string sqlAuth, string database)
+    private static string BuildTenantConnectionString(string server, string sqlAuth, string database)
     {
         if (string.Equals(sqlAuth, "trusted", StringComparison.OrdinalIgnoreCase))
         {
@@ -1861,7 +1883,7 @@ internal static class CliCommands
 
     public static async Task<int> GeneratePrintBridgeTokenAsync(
         IHost host,
-        Guid? customerId,
+        Guid? tenantId,
         string? slug,
         string? deviceName,
         CancellationToken ct)
@@ -1869,39 +1891,39 @@ internal static class CliCommands
         using var scope = host.Services.CreateScope();
         var centralDb = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
 
-        Guid resolvedCustomerId;
-        if (customerId.HasValue && customerId.Value != Guid.Empty)
+        Guid resolvedTenantId;
+        if (tenantId.HasValue && tenantId.Value != Guid.Empty)
         {
-            resolvedCustomerId = customerId.Value;
+            resolvedTenantId = tenantId.Value;
         }
         else if (!string.IsNullOrWhiteSpace(slug))
         {
-            var customer = await centralDb.Tenants
+            var tenant = await centralDb.Tenants
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug.Trim(), ct)
                 .ConfigureAwait(false);
-            if (customer is null)
+            if (tenant is null)
             {
-                WriteError($"Customer not found for slug '{slug}'.");
+                WriteError($"Tenant not found for slug '{slug}'.");
                 return 2;
             }
 
-            resolvedCustomerId = customer.Id;
+            resolvedTenantId = tenant.Id;
         }
         else
         {
-            WriteError("Usage: generate-print-bridge-token --customer-id <guid> | --slug <slug> [--name <device-name>]");
+            WriteError("Usage: generate-print-bridge-token --tenant-id <guid> | --slug <slug> [--name <device-name>]");
             return 2;
         }
 
-        var customerActive = await centralDb.Tenants
+        var tenantActive = await centralDb.Tenants
             .AsNoTracking()
-            .AnyAsync(c => c.Id == resolvedCustomerId && c.IsActive, ct)
+            .AnyAsync(c => c.Id == resolvedTenantId && c.IsActive, ct)
             .ConfigureAwait(false);
 
-        if (!customerActive)
+        if (!tenantActive)
         {
-            WriteError("Customer not found or inactive.");
+            WriteError("Tenant not found or inactive.");
             return 2;
         }
 
@@ -1914,7 +1936,7 @@ internal static class CliCommands
 
         var device = new PrintBridgeDevice
         {
-            TenantId = resolvedCustomerId,
+            TenantId = resolvedTenantId,
             Name = name,
             TokenHash = tokenHash,
             IsActive = true,
@@ -1937,13 +1959,13 @@ internal static class CliCommands
     public static async Task<int> SeedPrintJobAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         CancellationToken ct)
     {
-        var customer = await ResolveCustomerAsync(host, slug, customerIdArg, ct).ConfigureAwait(false);
-        if (customer is null) return 2;
+        var tenant = await ResolveTenantAsync(host, slug, tenantIdArg, ct).ConfigureAwait(false);
+        if (tenant is null) return 2;
 
-        await using var db = await OpenCustomerDbAsync(host, customer, ct).ConfigureAwait(false);
+        await using var db = await OpenTenantDbAsync(host, tenant, ct).ConfigureAwait(false);
 
         var now = DateTime.UtcNow;
         var externalOrderId = $"TEST-{now:yyyyMMddHHmmssfff}";
@@ -1980,7 +2002,7 @@ internal static class CliCommands
 
         var payload = JsonSerializer.Serialize(new
         {
-            tenantDisplayName = customer.Name,
+            tenantDisplayName = tenant.Name,
             platform = order.Platform.ToString(),
             externalOrderCode = order.ExternalOrderCode,
             receivedAtUtc = order.ReceivedAt,
@@ -2024,13 +2046,13 @@ internal static class CliCommands
     public static async Task<int> ListPrintJobsAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         CancellationToken ct)
     {
-        var customer = await ResolveCustomerAsync(host, slug, customerIdArg, ct).ConfigureAwait(false);
-        if (customer is null) return 2;
+        var tenant = await ResolveTenantAsync(host, slug, tenantIdArg, ct).ConfigureAwait(false);
+        if (tenant is null) return 2;
 
-        await using var db = await OpenCustomerDbAsync(host, customer, ct).ConfigureAwait(false);
+        await using var db = await OpenTenantDbAsync(host, tenant, ct).ConfigureAwait(false);
 
         var jobs = await db.PrintJobs.AsNoTracking()
             .OrderByDescending(j => j.CreatedAt)
@@ -2066,20 +2088,20 @@ internal static class CliCommands
         return 0;
     }
 
-    private static async Task<Tenant?> ResolveCustomerAsync(
+    private static async Task<Tenant?> ResolveTenantAsync(
         IHost host,
         string? slug,
-        string? customerIdArg,
+        string? tenantIdArg,
         CancellationToken ct)
     {
         using var scope = host.Services.CreateScope();
         var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
 
-        if (!string.IsNullOrWhiteSpace(customerIdArg))
+        if (!string.IsNullOrWhiteSpace(tenantIdArg))
         {
-            if (!Guid.TryParse(customerIdArg, out var id))
+            if (!Guid.TryParse(tenantIdArg, out var id))
             {
-                WriteError("--customer-id must be a valid GUID.");
+                WriteError("--tenant-id must be a valid GUID.");
                 return null;
             }
 
@@ -2089,7 +2111,7 @@ internal static class CliCommands
 
         if (string.IsNullOrWhiteSpace(slug))
         {
-            WriteError("Specify --slug or --customer-id.");
+            WriteError("Specify --slug or --tenant-id.");
             return null;
         }
 
@@ -2097,10 +2119,10 @@ internal static class CliCommands
             .ConfigureAwait(false);
     }
 
-    private static async Task<TenantDbContext> OpenCustomerDbAsync(IHost host, Tenant customer, CancellationToken ct)
+    private static async Task<TenantDbContext> OpenTenantDbAsync(IHost host, Tenant tenant, CancellationToken ct)
     {
         var secret = host.Services.GetRequiredService<ISecretManager>();
-        var plain = await secret.DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+        var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
             .ConfigureAwait(false);
         var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(plain).Options;
         return new TenantDbContext(options);

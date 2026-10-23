@@ -19,6 +19,8 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Infrastructure.Diagnostics;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
@@ -63,7 +65,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         string keyRingPath,
         string environmentName = "Production",
         string applicationName = "Wasla",
-        IReadOnlyDictionary<string, string?>? configuration = null)
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var contentRoot = Directory.CreateTempSubdirectory("wasla-signup-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -101,10 +104,13 @@ internal sealed class SignupWebHost : IAsyncDisposable
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(centralDb));
-        services.Configure<TenantOnboardingOptions>(_ => { });
+        // Wasla:TenantOnboarding from the test's configuration, otherwise the Development domains (WAS-66).
+        services.Configure<TenantOnboardingOptions>(builder.Configuration.GetSection(TenantOnboardingOptions.SectionName));
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ITenantResolver, TenantResolver>();
         // The signup validator is not under test here; the controller's own checks still run.
         services.AddSingleton<IValidator<PendingRegistrationRequest>>(new InlineValidator<PendingRegistrationRequest>());
@@ -117,6 +123,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
             builder.Configuration.AddInMemoryCollection(configuration);
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
+        services.AddWaslaHealthChecks();
+        configureServices?.Invoke(services);
 
         var app = builder.Build();
         app.UseRequestLocalization();
@@ -124,6 +132,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
         app.UseMiddleware<TenantResolutionMiddleware>();
         app.MapControllers();
         app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+        app.MapWaslaHealthChecks();
 
         await app.StartAsync();
         return new SignupWebHost(app, contentRoot, new Uri(app.Urls.First()));
@@ -186,6 +195,15 @@ internal sealed class TestBrowser : IDisposable
 
     public Task<TestResponse> GetAsync(string path, string host = SignupWebHost.CentralHost) =>
         SendAsync(new HttpRequestMessage(HttpMethod.Get, path), host);
+
+    /// <summary>A GET with extra request headers, for example forwarded headers a client sends itself.</summary>
+    public Task<TestResponse> SendWithHeadersAsync(string path, string host, params (string Name, string Value)[] headers)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        foreach (var (name, value) in headers)
+            request.Headers.TryAddWithoutValidation(name, value);
+        return SendAsync(request, host);
+    }
 
     public Task<TestResponse> PostFormAsync(
         string path,

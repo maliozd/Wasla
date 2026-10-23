@@ -12,7 +12,7 @@ HTTPS / mkcert details stay in [../local-https.md](../local-https.md) (do not du
 
 - .NET 8 SDK (projects target `net8.0`)
 - SQL Server or LocalDB (default committed CentralDb connection uses LocalDB)
-- Ability to edit the Windows hosts file for `*.wasla.local`
+- Ability to edit the Windows hosts file for `wasla.local`, `app.wasla.local` and each `{slug}.app.wasla.local` you use (the repository never edits it)
 - For HTTPS on custom hosts: mkcert — follow [../local-https.md](../local-https.md)
 
 ## ENCRYPTION_MASTER_KEY
@@ -32,19 +32,19 @@ Open a **new** terminal so the user environment variable is visible.
 
 ## Hosts
 
-Central / public style hosts used in development:
+Development hosts follow the production shape (WAS-66, [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66)):
 
-- `localhost`
-- `wasla.local`
-- `www.wasla.local`
+| Role | Development host | Production equivalent |
+|------|------------------|-----------------------|
+| Marketing site, signup, checkout | `localhost`, `wasla.local`, `www.wasla.local` | `wasla.tr` |
+| Application entry (asks for the tenant address) | `app.wasla.local` | `app.wasla.tr` |
+| Tenant | `{slug}.app.wasla.local` (example: `sushim.app.wasla.local`) | `{slug}.app.wasla.tr` |
 
-Tenant hosts:
+Map the hosts you use in the hosts file to `127.0.0.1`; there is no wildcard, so add one line per tenant slug. Web launch profiles bind HTTP `5200` and HTTPS `7200` (see `Wasla.Web` launchSettings). Prefer the HTTPS tenant URL when using mkcert. In Development, links between hosts keep the request's port, for example `http://app.wasla.local:5200/auth/login`. On `localhost` the marketing pages link sign-in to `localhost` as well, so the marketing site works without any hosts entry. `localhost` and IP addresses are accepted only in Development; in any other environment Web and Api treat them as invalid hosts (health probes excepted). Tenant API calls need the tenant host (`{slug}.app.wasla.local`) in Development too.
 
-- `{slug}.wasla.local` (example: `sushim.wasla.local`)
+Domains in Web and Api `appsettings.Development.json`: `Wasla:TenantOnboarding:MarketingBaseDomain` = `wasla.local` and `Wasla:TenantOnboarding:ApplicationBaseDomain` = `app.wasla.local`. The base `appsettings.json` names none; running Web or Api in any other environment without both set to public host names stops at startup.
 
-Map these in the hosts file to `127.0.0.1`. Web launch profiles bind HTTP `5200` and HTTPS `7200` (see `Wasla.Web` launchSettings). Prefer the HTTPS tenant URL when using mkcert.
-
-Marketing / signup base domain in Web `appsettings.json`: `Wasla:TenantOnboarding:MarketingBaseDomain` = `wasla.local`.
+Tenants created before WAS-66 have `{slug}.wasla.local` as their stored primary domain, which is no longer a tenant host. Change it to `{slug}.app.wasla.local` in your own development CentralDb (`Tenants.PrimaryDomain`, and `PendingRegistrations.PrimaryDomain` for registrations still in progress), or provision the tenant again.
 
 ## Central admin
 
@@ -67,12 +67,12 @@ $env:DOTNET_ENVIRONMENT = "Development"
 dotnet run --project src\Wasla.Cli -- migrate-central
 ```
 
-The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-customer`, `reset-customer-db`, `reset-all-customer-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
+The CLI's committed `appsettings.json` names no CentralDb and no tenant SQL Server (WAS-93). Its `appsettings.Development.json` sets both to LocalDB, so local CLI runs need `DOTNET_ENVIRONMENT=Development`; without it the CLI stops with "ConnectionStrings:CentralDb is not configured" before touching any database. Environment variables (`ConnectionStrings__CentralDb`, `TenantDb__ServerInstance`) override both files, and `--sql-server` overrides the tenant server. The destructive commands (`delete-tenant`, `reset-tenant-db`, `reset-all-tenant-dbs`) also treat an unset environment as Production and then ask for `--force-production`.
 
 Create a tenant (creates DB + admin) **or** provision a paid signup request:
 
 ```powershell
-dotnet run --project src\Wasla.Cli -- add-customer --name "Demo Restaurant" --slug demo --domain demo.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin"
+dotnet run --project src\Wasla.Cli -- add-tenant --name "Demo Restaurant" --slug demo --domain demo.app.wasla.local --admin-email admin@demo.local --admin-password "YourStrongPassword!" --admin-name "Demo Admin"
 
 dotnet run --project src\Wasla.Cli -- provision-signup-request --registration-id <guid>
 ```
@@ -82,7 +82,7 @@ Tenant databases are created only on an explicitly chosen SQL Server: `--sql-ser
 Apply tenant schema updates after pulls:
 
 ```powershell
-dotnet run --project src\Wasla.Cli -- migrate-all-customers
+dotnet run --project src\Wasla.Cli -- migrate-all-tenants
 dotnet run --project src\Wasla.Cli -- migration-status
 ```
 
@@ -130,7 +130,7 @@ The launch profiles run every process in Development, where Worker and Api start
 
 API Data Protection keys: no committed configuration sets `DataProtection:KeyPath`, so on Windows the API keeps its keys in `C:\Wasla-keys` (`ApiDataProtection`); on other operating systems it uses the framework's default key storage.
 
-Do **not** assume a Web browser login cookie authenticates the API. Local Web is `{slug}.wasla.local` and local API is `localhost`. Cookies do not set a shared domain, and the API Data Protection key path is not the Web path, so the browser session is not shared.
+Do **not** assume a Web browser login cookie authenticates the API. Local Web is `{slug}.app.wasla.local` and local API is `localhost`. Cookies do not set a shared domain, and the API Data Protection key path is not the Web path, so the browser session is not shared.
 
 `POST /api/auth/validate` checks email and password and returns success or failure. It does not call `SignInAsync` and does not create a browser login. There is no API login endpoint that issues `.Wasla.TenantAuth`.
 

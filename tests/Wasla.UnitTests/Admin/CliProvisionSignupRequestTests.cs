@@ -8,9 +8,11 @@ using Wasla.Cli;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Admin;
 
+[Collection(nameof(CliConsoleCollection))]
 public sealed class CliProvisionSignupRequestTests : IDisposable
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
@@ -110,7 +112,7 @@ public sealed class CliProvisionSignupRequestTests : IDisposable
             Status = PendingRegistrationStatus.PaymentSucceeded,
             Slug = slug,
             BusinessName = $"Business {slug}",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             BusinessPhone = "+905551112233",
             Country = "TR",
@@ -131,8 +133,8 @@ public sealed class CliProvisionSignupRequestTests : IDisposable
 
     private static ProvisioningResult BuildResult(ProvisioningOutcome outcome) => outcome switch
     {
-        ProvisioningOutcome.Success => ProvisioningResult.Success(Guid.NewGuid(), "Tenant", "tenant.wasla.local"),
-        ProvisioningOutcome.AlreadyProvisioned => ProvisioningResult.AlreadyProvisioned(Guid.NewGuid(), "Tenant", "tenant.wasla.local"),
+        ProvisioningOutcome.Success => ProvisioningResult.Success(Guid.NewGuid(), "Tenant", "tenant.app.wasla.local"),
+        ProvisioningOutcome.AlreadyProvisioned => ProvisioningResult.AlreadyProvisioned(Guid.NewGuid(), "Tenant", "tenant.app.wasla.local"),
         ProvisioningOutcome.NotFound => ProvisioningResult.NotFound(),
         ProvisioningOutcome.NotEligible => ProvisioningResult.NotEligible("not eligible"),
         ProvisioningOutcome.ValidationError => ProvisioningResult.ValidationError("validation failed"),
@@ -160,7 +162,7 @@ public sealed class CliProvisionSignupRequestTests : IDisposable
     private sealed class FakeProvisioningService : IPendingRegistrationProvisioningService
     {
         public ProvisioningResult Result { get; set; } =
-            ProvisioningResult.Success(Guid.NewGuid(), "Tenant", "tenant.wasla.local");
+            ProvisioningResult.Success(Guid.NewGuid(), "Tenant", "tenant.app.wasla.local");
 
         public int CallCount { get; private set; }
         public bool? LastForce { get; private set; }

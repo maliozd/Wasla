@@ -150,7 +150,7 @@ public sealed partial class PrintBridgeManualConnectionTests
     [Theory]
     [InlineData(" https://panel.wasla.local ", "https://public.wasla.local/", "https://panel.wasla.local/")]
     [InlineData(null, "https://public.wasla.local", "https://public.wasla.local/")]
-    [InlineData(null, null, "https://sushim.wasla.local:7200/")]
+    [InlineData(null, null, "https://sushim.app.wasla.local:7200/")]
     public async Task SetupPage_HandsOutTheTenantWebUrl_ThenThePublicWebUrl_ThenTheRequestHost(
         string? tenantWebBaseUrl,
         string? publicWebBaseUrl,
@@ -158,7 +158,7 @@ public sealed partial class PrintBridgeManualConnectionTests
     {
         var controller = Controller(new RecordingDevices(), webPanelUrl: tenantWebBaseUrl, publicWebBaseUrl: publicWebBaseUrl);
         controller.HttpContext.Request.Scheme = "https";
-        controller.HttpContext.Request.Host = new HostString("sushim.wasla.local", 7200);
+        controller.HttpContext.Request.Host = new HostString("sushim.app.wasla.local", 7200);
 
         var model = Assert.IsType<PrintBridgeSetupViewModel>(Assert.IsType<ViewResult>(await controller.Setup(CancellationToken.None)).Model);
 
@@ -397,7 +397,7 @@ public sealed partial class PrintBridgeManualConnectionTests
 
     private PrintBridgeController Controller(
         RecordingDevices devices,
-        string? webPanelUrl = "https://tenant.wasla.local/",
+        string? webPanelUrl = "https://tenant.app.wasla.local/",
         ICurrentTenantService? tenant = null,
         IAuthorizationService? authorization = null,
         IGuidedSetupCoordinator? guidedSetup = null,

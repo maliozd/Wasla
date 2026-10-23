@@ -7,8 +7,23 @@ public static class RegistrationNameNormalizer
 {
     private static readonly Regex SlugPattern = new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
 
+    /// <summary>A slug is one DNS label of the tenant host, so it is never longer than a label may be.</summary>
+    public const int MaxSlugLength = 63;
+
+    /// <summary>
+    /// Names that are never a tenant address (WAS-66): they belong to Wasla's own hosts and products, as
+    /// <c>{name}.app.wasla.tr</c> or as root-level names such as <c>admin.wasla.tr</c>. Signup refuses them and host
+    /// resolution never looks them up.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ReservedSlugs = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "admin", "api", "app", "docs", "help", "partners", "pos", "status", "www"
+    };
+
     public static bool IsValidSlugFormat(string slug) =>
-        !string.IsNullOrWhiteSpace(slug) && SlugPattern.IsMatch(slug);
+        !string.IsNullOrWhiteSpace(slug) && slug.Length <= MaxSlugLength && SlugPattern.IsMatch(slug);
+
+    public static bool IsReservedSlug(string slug) => ReservedSlugs.Contains(slug);
 
     public static string NormalizeSlug(string slug) =>
         slug.Trim().ToLowerInvariant();
@@ -44,9 +59,10 @@ public static class RegistrationNameNormalizer
         return builder.ToString().Trim('-');
     }
 
-    public static string BuildPrimaryDomain(string slug, string marketingBaseDomain)
+    /// <summary>The tenant host <c>{slug}.{applicationBaseDomain}</c>, stored as the tenant's primary domain.</summary>
+    public static string BuildPrimaryDomain(string slug, string applicationBaseDomain)
     {
-        var domain = marketingBaseDomain.Trim().TrimStart('.');
+        var domain = applicationBaseDomain.Trim().TrimStart('.');
         return $"{slug}.{domain}";
     }
 
@@ -76,25 +92,17 @@ public static class RegistrationNameNormalizer
         return trimmed.ToLowerInvariant();
     }
 
-    public static string? ExtractSlugFromHost(string? host, string marketingBaseDomain)
+    /// <summary>
+    /// The tenant slug of a host, URL or <c>host:port</c> value when it is exactly <c>{slug}.{applicationBaseDomain}</c>
+    /// with a valid, unreserved slug (<see cref="WaslaHostClassifier"/>); otherwise null.
+    /// </summary>
+    public static string? ExtractSlugFromHost(string? host, string applicationBaseDomain)
     {
         var normalizedHost = NormalizeHostForComparison(host);
         if (string.IsNullOrWhiteSpace(normalizedHost))
             return null;
 
-        var normalizedDomain = NormalizeHostForComparison(marketingBaseDomain?.Trim().TrimStart('.'));
-        if (string.IsNullOrWhiteSpace(normalizedDomain))
-            return null;
-
-        var suffix = "." + normalizedDomain;
-        if (!normalizedHost.EndsWith(suffix, StringComparison.Ordinal))
-            return null;
-
-        var slug = normalizedHost[..^suffix.Length];
-        if (string.Equals(slug, "www", StringComparison.Ordinal))
-            return null;
-
-        return IsValidSlugFormat(slug) ? slug : null;
+        return WaslaHostClassifier.TryGetTenantSlug(normalizedHost, applicationBaseDomain);
     }
 
     private static string ToAsciiTurkish(string value)

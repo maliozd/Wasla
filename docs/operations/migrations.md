@@ -15,7 +15,7 @@ It does not inventory every historical migration file.
 
 These are **different** EF models and histories. Do not generate a TenantDb migration against CentralDb (or the reverse).
 
-CLI command names still say `migrate-customer` / `migrate-all-customers` even though product language is **tenant**. The databases are the per-tenant TenantDb instances.
+The CLI applies TenantDb migrations to the per-tenant databases with `migrate-tenant` and `migrate-all-tenants`.
 
 ## Design-time factories
 
@@ -66,29 +66,29 @@ Requires `ENCRYPTION_MASTER_KEY` for most CLI invocation paths used after help (
 | Command | Effect |
 |---------|--------|
 | `migrate-central` | Apply pending CentralDb migrations |
-| `migrate-customer` | Apply pending TenantDb migrations for **one** tenant (`--slug` or `--customer-id`) |
-| `migrate-all-customers` | Apply pending TenantDb migrations for active tenants |
-| `migration-status` | Show applied/pending status for CentralDb and tenant DBs |
+| `migrate-tenant` | Apply pending TenantDb migrations for **one** tenant (`--slug` or `--tenant-id`) |
+| `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants |
+| `migration-status` | Show applied/pending status for CentralDb and tenant DBs; `--require-current` exits non-zero when CentralDb or any active tenant DB has pending or unknown migrations, or cannot be read |
 
 ### Dry-run
 
-`migrate-all-customers --dry-run` lists pending migrations **without applying**.
+`migrate-all-tenants --dry-run` lists pending migrations **without applying**.
 
-`migrate-all-customers` also supports `--only <slug>` (repeatable) to limit tenants.
+`migrate-all-tenants` also supports `--only <slug>` (repeatable) to limit tenants.
 
 `provision-signup-request --dry-run` validates provisioning without creating DB/tenant/user (separate from EF dry-run).
 
 ## Provisioning vs middleware
 
-- New tenant databases receive TenantDb migrations **inside the provisioning / `add-customer` flows**, not via Web or API request middleware.
+- New tenant databases receive TenantDb migrations **inside the provisioning / `add-tenant` flows**, not via Web or API request middleware.
 - Tenant resolution must **not** create databases or run migrations.
-- After pulling schema changes for existing tenants, operators run `migrate-central` and/or `migrate-all-customers` (or `migrate-customer`) explicitly.
+- After pulling schema changes for existing tenants, operators run `migrate-central` and/or `migrate-all-tenants` (or `migrate-tenant`) explicitly.
 
 ## Operational warnings
 
 - Applying the wrong context’s migrations to a database corrupts that database’s `__EFMigrationsHistory` relative to the model.
 - SQL errors such as “Invalid column name” after a pull usually mean tenant (or central) migrations were not applied.
-- In deployed environments every tenant migration must succeed before the new Web or Worker starts. See [deployment.md](deployment.md#release-order-migrate-every-database-first).
+- In deployed environments every tenant migration must succeed before the new Web or Worker starts. Use the release gate in [deployment.md](deployment.md#release-order-migrate-every-database-first), not the informational `migration-status` exit code alone. `migrate-all-tenants --dry-run` is also informational and must not be used as a release gate.
 - Do not reset or squash migrations unless explicitly requested as a dedicated task.
 
 ## Related docs

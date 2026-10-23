@@ -45,7 +45,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             Id = _tenant,
             Name = "Setup Mode Restaurant",
             Slug = "setup-mode",
-            PrimaryDomain = "setup-mode.wasla.local",
+            PrimaryDomain = "setup-mode.app.wasla.local",
             DatabaseName = "unused",
             EncryptedConnectionString = "unused",
             EncryptionKeyVersion = 1,

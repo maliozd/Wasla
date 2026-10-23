@@ -12,15 +12,17 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Admin;
 
 /// <summary>
 /// WAS-93, WAS-136: tenant databases are created only on an explicitly configured SQL Server: <c>--sql-server</c>,
-/// else <c>TenantDb:ServerInstance</c>. Without either, provisioning and <c>add-customer</c> stop before any database
+/// else <c>TenantDb:ServerInstance</c>. Without either, provisioning and <c>add-tenant</c> stop before any database
 /// work with an error that names <c>TenantDb:ServerInstance</c>; nothing falls back to LocalDB or '.'.
 /// All databases are in-memory SQLite or fakes.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantSqlServerRequirementTests : IDisposable
 {
     private const string LocalDb = "(localdb)\\MSSQLLocalDB";
@@ -202,15 +204,15 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task AddCustomer_WithoutAServer_StopsBeforeAnyDatabaseWork(string? configured)
+    public async Task AddTenant_WithoutAServer_StopsBeforeAnyDatabaseWork(string? configured)
     {
         using var host = BuildCliHost(configured);
 
-        var exitCode = await QuietAsync(() => CliCommands.AddCustomerAsync(
+        var exitCode = await QuietAsync(() => CliCommands.AddTenantAsync(
             host,
             name: "No Server",
             slug: "no-server",
-            domain: "no-server.wasla.local",
+            domain: "no-server.app.wasla.local",
             adminEmail: "owner@no-server.test",
             adminPassword: "Fake-password-1",
             adminName: "Owner",
@@ -274,7 +276,7 @@ public sealed class TenantSqlServerRequirementTests : IDisposable
             Status = PendingRegistrationStatus.PaymentSucceeded,
             Slug = slug,
             BusinessName = "Business " + slug,
-            PrimaryDomain = slug + ".wasla.local",
+            PrimaryDomain = slug + ".app.wasla.local",
             DatabaseName = "Wasla_" + slug,
             BusinessPhone = "+905551112233",
             Country = "TR",

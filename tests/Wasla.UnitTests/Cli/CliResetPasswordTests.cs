@@ -13,6 +13,7 @@ using Wasla.UnitTests.Admin;
 
 namespace Wasla.UnitTests.Cli;
 
+[Collection(nameof(CliConsoleCollection))]
 public sealed class CliResetPasswordTests
 {
     private const string OldPassword = "OldPassword123!";
@@ -616,7 +617,7 @@ public sealed class CliResetPasswordTests
         {
             Name = name,
             Slug = slug,
-            PrimaryDomain = slug + ".wasla.local",
+            PrimaryDomain = slug + ".app.wasla.local",
             DatabaseName = "wasla_" + slug,
             EncryptedConnectionString = "not-used-in-test",
             EncryptionKeyVersion = 1,

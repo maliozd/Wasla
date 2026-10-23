@@ -1,10 +1,16 @@
 ﻿@model string
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.Marketing
+@using Microsoft.Extensions.Options
+@using Wasla.Infrastructure.Options
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IOptions<TenantOnboardingOptions> Onboarding
+@inject IWebHostEnvironment Environment
 @{
     var returnUrl = Model ?? "/";
+    // Sign-in leaves the marketing host for the configured application entry (WAS-66).
+    var loginUrl = TenantWelcomeUrlBuilder.BuildApplicationLoginUrl(Context.Request, Environment, Onboarding.Value.ApplicationBaseDomain);
     var onPosPage = string.Equals(Context.Request.Path.Value, PublicSiteUrls.PosPath, StringComparison.OrdinalIgnoreCase);
 }
 @* Public site header (WAS-155, Figma "Site header"). The products and language menus open on click or keyboard;
@@ -52,7 +58,7 @@
             </ul>
             <div class="wm-nav__end">
                 @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-header-languages", ShowLanguageName: false))
-                <a class="wm-nav__link" asp-area="Tenant" asp-controller="Auth" asp-action="Login">@L["Marketing.Nav.Login"]</a>
+                <a class="wm-nav__link" href="@loginUrl">@L["Marketing.Nav.Login"]</a>
                 <a class="wm-btn wm-btn--primary wm-btn--m" asp-controller="Signup" asp-action="Index">@L["Marketing.Cta.Start"]</a>
             </div>
         </nav>

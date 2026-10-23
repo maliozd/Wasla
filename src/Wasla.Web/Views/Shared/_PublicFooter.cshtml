@@ -1,10 +1,16 @@
 @model string
 @using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.Marketing
+@using Microsoft.Extensions.Options
+@using Wasla.Infrastructure.Options
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject IOptions<TenantOnboardingOptions> Onboarding
+@inject IWebHostEnvironment Environment
 @{
     var returnUrl = Model ?? "/";
+    // Sign-in leaves the marketing host for the configured application entry (WAS-66).
+    var loginUrl = TenantWelcomeUrlBuilder.BuildApplicationLoginUrl(Context.Request, Environment, Onboarding.Value.ApplicationBaseDomain);
 }
 @* Public site footer (WAS-155, Figma "Site footer"). Only destinations that exist are listed: legal pages and the
    LinkedIn, YouTube and X accounts are not published yet, so they are left out rather than linked to placeholders. *@
@@ -37,7 +43,7 @@
                     <ul class="wm-footer__links">
                         <li><a asp-controller="Signup" asp-action="Index">@L["Marketing.Cta.Start"]</a></li>
                         <li><a href="/#pricing">@L["Pricing.NavTitle"]</a></li>
-                        <li><a asp-area="Tenant" asp-controller="Auth" asp-action="Login">@L["Marketing.Nav.Login"]</a></li>
+                        <li><a href="@loginUrl">@L["Marketing.Nav.Login"]</a></li>
                     </ul>
                 </nav>
                 <nav aria-labelledby="wm-footer-contact">

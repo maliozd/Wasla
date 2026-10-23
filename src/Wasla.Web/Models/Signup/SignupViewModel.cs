@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Web.Validation;
@@ -107,7 +108,8 @@ public sealed class SignupViewModel
     [Display(Name = "Signup.ConfirmPassword")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
-    public string MarketingBaseDomain { get; set; } = "wasla.local";
+    /// <summary>The domain the tenant address is built under: <c>{slug}.{ApplicationBaseDomain}</c> (WAS-66).</summary>
+    public string ApplicationBaseDomain { get; set; } = string.Empty;
 
     public IReadOnlyList<SelectListItem> PlanOptions { get; set; } = Array.Empty<SelectListItem>();
 
@@ -129,4 +131,11 @@ public sealed class SignupViewModel
     /// </summary>
     [BindNever]
     public bool IsPaymentSimulatorAvailable { get; set; }
+
+    /// <summary>
+    /// The Central Admin plan prices in effect (WAS-147), monthly and yearly separately. Set by the server for every
+    /// render of the form and never taken from the posted form; a plan and period without a price is absent.
+    /// </summary>
+    [BindNever]
+    public IReadOnlyList<BillingPriceQuote> PlanPrices { get; set; } = Array.Empty<BillingPriceQuote>();
 }

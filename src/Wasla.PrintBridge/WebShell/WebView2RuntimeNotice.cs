@@ -96,7 +96,7 @@ internal sealed class WebView2RuntimeNotice : Form
     protected override void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        ShellWindowTheme.TrySetDarkTitleBar(Handle, _dark);
+        ShellWindowTheme.TryApplyTitleBar(Handle, _dark);
     }
 
     protected override void OnShown(EventArgs e)

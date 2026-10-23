@@ -2,7 +2,10 @@
    Design values follow src/Wasla.Web/wwwroot/css/wasla-foundation.css (warm operational minimalism:
    paper/ink, restrained orange, border-first). Dark values follow the Windows app theme through
    prefers-color-scheme; the desktop app has no theme setting of its own. Logical properties keep RTL correct.
-   Layout: header, tabs and the action bar stay fixed; only the content area scrolls. */
+   Layout: header, tabs and the action bar stay fixed; only the content area scrolls.
+   Top band: the header and the tabs share one surface (--pb-chrome) that the host also gives the native title bar
+   (ShellWindowTheme.TitleBarColorsFor), so title bar and toolbar read as one quiet band above the content.
+   Orange only marks the selected tab, focus and primary actions. */
 
 :root {
   color-scheme: light;
@@ -42,6 +45,8 @@
   --pb-state: var(--wasla-neutral);
   --pb-state-soft: var(--wasla-neutral-soft);
   --pb-gutter: var(--wasla-space-4);
+  --pb-chrome: var(--wasla-surface);
+  --pb-control-height: 2rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -139,7 +144,8 @@ dd {
   display: flex;
   align-items: center;
   gap: var(--wasla-space-3);
-  padding: var(--wasla-space-3) var(--pb-gutter) var(--wasla-space-2);
+  padding: var(--wasla-space-2) var(--pb-gutter);
+  background: var(--pb-chrome);
 }
 
 .pb-brand {
@@ -150,29 +156,20 @@ dd {
   margin-inline-end: auto;
 }
 
-/* Title: the canonical Wasla logo (wasla-logo.svg, the same file as Wasla Web) followed by the product name.
-   The heading's accessible name is the full app title, so the decorative logo is not announced twice. */
+/* Title: the canonical Wasla logo alone (wasla-logo.svg, the same file as Wasla Web). The window title already
+   names the product. The heading's accessible name is the full app title, so the decorative logo is not
+   announced twice. */
 .pb-title {
   display: flex;
   align-items: center;
-  gap: var(--wasla-space-2);
   min-inline-size: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .pb-brand-logo {
   display: block;
   inline-size: auto;
-  block-size: 1.5rem;
+  block-size: 1.375rem;
   flex-shrink: 0;
-}
-
-.pb-title-text {
-  overflow: hidden;
-  min-inline-size: 0;
-  text-overflow: ellipsis;
 }
 
 .pb-pill {
@@ -182,10 +179,12 @@ dd {
   align-items: center;
   gap: var(--wasla-space-2);
   max-inline-size: 14rem;
-  padding: 0.2rem 0.65rem;
+  min-block-size: var(--pb-control-height);
+  padding-block: 0;
+  padding-inline: 0.7rem;
   border: 1px solid var(--wasla-border);
   border-radius: 999px;
-  background: var(--wasla-surface);
+  background: var(--wasla-canvas);
   color: var(--pb-state);
   font-size: 0.8rem;
   font-weight: 600;
@@ -260,6 +259,18 @@ dd {
 
 .pb-language {
   max-inline-size: 9rem;
+  min-block-size: var(--pb-control-height);
+  background: var(--wasla-canvas);
+  cursor: pointer;
+  transition: border-color var(--wasla-transition), background-color var(--wasla-transition);
+}
+
+.pb-language:hover {
+  border-color: var(--wasla-text-secondary);
+}
+
+.pb-language:active {
+  background: var(--wasla-surface-muted);
 }
 
 .pb-grow {
@@ -353,29 +364,43 @@ dd {
 
 /* Tabs */
 
+/* Quiet text on the top band. Hover and press only tint the tab; the selected tab alone gets full-strength
+   text and the orange underline, which sits just above the band's border because the scrolling strip clips
+   anything drawn outside it. */
 .pb-tabs {
   display: flex;
   gap: var(--wasla-space-1);
-  padding-inline: var(--pb-gutter);
+  /* The first tab's label lines up with the logo above it. */
+  padding-inline: calc(var(--pb-gutter) - var(--wasla-space-3));
   border-block-end: 1px solid var(--wasla-border);
+  background: var(--pb-chrome);
   overflow-x: auto;
   scrollbar-width: none;
 }
 
 .pb-tab {
   position: relative;
-  padding: var(--wasla-space-2) var(--wasla-space-3);
+  min-block-size: 2.25rem;
+  padding-block: 0;
+  padding-inline: var(--wasla-space-3);
   border: 0;
+  border-radius: var(--wasla-radius-sm) var(--wasla-radius-sm) 0 0;
   background: transparent;
   color: var(--wasla-text-secondary);
   font: inherit;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  transition: color var(--wasla-transition), background-color var(--wasla-transition);
 }
 
 .pb-tab:hover {
+  background: var(--wasla-surface-muted);
   color: var(--wasla-text);
+}
+
+.pb-tab:active {
+  background: var(--wasla-border);
 }
 
 /* The tab strip scrolls horizontally and would clip a focus ring drawn outside the tab. */
@@ -391,10 +416,10 @@ dd {
 .pb-tab[aria-selected="true"]::after {
   content: "";
   position: absolute;
-  inset-inline: var(--wasla-space-2);
-  inset-block-end: -1px;
-  block-size: 3px;
-  border-radius: 3px 3px 0 0;
+  inset-inline: var(--wasla-space-3);
+  inset-block-end: 0;
+  block-size: 2px;
+  border-radius: 2px 2px 0 0;
   background: var(--wasla-accent);
 }
 
@@ -876,11 +901,6 @@ tr[data-status="skipped"] .pb-row-detail {
 @media (max-width: 36rem) {
   :root {
     --pb-gutter: var(--wasla-space-3);
-  }
-
-  /* The logo stays; the heading keeps the full app title as its accessible name. */
-  .pb-title-text {
-    display: none;
   }
 
   .pb-col-optional {

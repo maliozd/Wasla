@@ -604,6 +604,13 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
             return applicant;
         }
 
+        internal async Task AddPlanPriceAsync(BillingPlanPrice price)
+        {
+            await using var db = NewDb();
+            db.BillingPlanPrices.Add(price);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
         internal async Task<PendingRegistration> ReloadAsync(Guid id)
         {
             await using var db = NewDb();
@@ -645,7 +652,7 @@ internal sealed class SentinelApplicant
             Id = Guid.NewGuid(),
             Status = status,
             Slug = $"s{token}",
-            PrimaryDomain = $"s{token}.wasla.local",
+            PrimaryDomain = $"s{token}.app.wasla.local",
             DatabaseName = $"Wasla_s{token}",
             BusinessName = $"Bizname{token}",
             BusinessPhone = NewPhone(),

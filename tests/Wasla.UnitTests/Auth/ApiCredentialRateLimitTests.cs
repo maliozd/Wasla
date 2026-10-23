@@ -107,7 +107,11 @@ public sealed class ApiCredentialRateLimitTests : IAsyncLifetime
             var requests = clients.Select(client => ValidateAsync(client, _alphaOwner.Email, TenantSessionWebHost.Password)).ToList();
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(60));
-            while (requests.Count(request => request.IsCompleted) < attempts - permitLimit)
+            // Wait until every attempt is decided: answered, or held inside the credential check. A permitted attempt
+            // still has the rest of the pipeline to pass after taking its permit, so under load every rejection can be
+            // answered before the permitted attempts reach the check. While the gate is closed, an attempt inside the
+            // check cannot be answered, so no attempt is counted twice.
+            while (requests.Count(request => request.IsCompleted) + _probe.TenantChecks < attempts)
                 await Task.Delay(20, timeout.Token);
 
             var answered = requests.Where(request => request.IsCompleted).Select(request => request.Result).ToList();
@@ -240,7 +244,7 @@ public sealed class ApiCredentialRateLimitTests : IAsyncLifetime
     public async Task UnknownHost_IsStillAnswered404_NeverConsumesATenantsAllowance_AndOpensNoDatabase()
     {
         await StartAsync(RateLimitTestConfig.Limits(1));
-        using var unknown = _api.Client("unknown.wasla.local");
+        using var unknown = _api.Client("unknown.app.wasla.local");
 
         for (var i = 0; i < 4; i++)
         {
@@ -340,7 +344,7 @@ public sealed class ApiCredentialRateLimitTests : IAsyncLifetime
     {
         await StartAsync(RateLimitTestConfig.Limits(1));
         using var client = _api.Client(TenantSessionWebHost.AlphaHost);
-        var origin = new KeyValuePair<string, string>("Origin", "http://beta.wasla.local");
+        var origin = new KeyValuePair<string, string>("Origin", "http://beta.app.wasla.local");
         await ValidateAsync(client, _alphaOwner.Email, "Wrong-Password-1", origin);
 
         var limited = await ValidateAsync(client, _alphaOwner.Email, "Wrong-Password-1", origin);

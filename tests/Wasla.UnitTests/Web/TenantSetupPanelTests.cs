@@ -187,7 +187,7 @@ public sealed class TenantSetupPanelTests
     {
         public FixedCurrentTenantService(Guid tenantId)
         {
-            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
         }
 
         public ResolvedTenantDto? CurrentTenant { get; }

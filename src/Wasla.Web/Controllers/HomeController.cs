@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
+using Wasla.Application.Onboarding;
 using Wasla.Infrastructure.Options;
+using Wasla.Web.Models.Marketing;
+using Wasla.Web.Routing;
 
 namespace Wasla.Web.Controllers;
 
@@ -11,18 +15,40 @@ public sealed class HomeController : Controller
 {
     private readonly TenantOnboardingOptions _onboardingOptions;
     private readonly IPendingRegistrationService _pendingRegistrations;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IBillingPlanPriceReader _planPrices;
+    private readonly ILogger<HomeController> _logger;
 
     public HomeController(
         IOptions<TenantOnboardingOptions> onboardingOptions,
-        IPendingRegistrationService pendingRegistrations)
+        IPendingRegistrationService pendingRegistrations,
+        IWebHostEnvironment environment,
+        IBillingPlanPriceReader planPrices,
+        ILogger<HomeController> logger)
     {
         _onboardingOptions = onboardingOptions.Value;
         _pendingRegistrations = pendingRegistrations;
+        _environment = environment;
+        _planPrices = planPrices;
+        _logger = logger;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken ct)
     {
-        return View();
+        IReadOnlyList<BillingPriceQuote> prices;
+        try
+        {
+            prices = await _planPrices.GetPricesInEffectAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The marketing page did not depend on CentralDb before plan prices (WAS-147). If the prices cannot be read
+            // it still renders and shows them as not available, never a built-in amount.
+            _logger.LogWarning("Plan prices could not be read for the marketing page ({ExceptionType}).", ex.GetType().Name);
+            prices = [];
+        }
+
+        return View(new MarketingHomeViewModel(prices));
     }
 
     [AllowAnonymous]
@@ -31,6 +57,9 @@ public sealed class HomeController : Controller
     {
         ViewData["ReturnUrl"] = returnUrl;
         ViewData["SignupUrl"] = BuildSignupUrl();
+        ViewData["ExampleTenantAddress"] = RegistrationNameNormalizer.BuildPrimaryDomain(
+            "bahce-tadi",
+            _onboardingOptions.ApplicationBaseDomain);
         return View();
     }
 
@@ -49,9 +78,10 @@ public sealed class HomeController : Controller
     [HttpGet("/tenant-not-found")]
     public async Task<IActionResult> TenantNotFound([FromQuery] string? host = null, CancellationToken ct = default)
     {
-        if (!string.IsNullOrWhiteSpace(host))
+        // Only a tenant address is looked up (WAS-66): any other value in the query is shown, never queried.
+        if (RegistrationNameNormalizer.ExtractSlugFromHost(host, _onboardingOptions.ApplicationBaseDomain) is not null)
         {
-            var pending = await _pendingRegistrations.GetActiveByPrimaryDomainAsync(host, ct);
+            var pending = await _pendingRegistrations.GetActiveByPrimaryDomainAsync(host!, ct);
             if (pending is not null)
                 return Redirect($"/signup/pending/{pending.Id}");
         }
@@ -62,17 +92,6 @@ public sealed class HomeController : Controller
         return View();
     }
 
-    private string BuildSignupUrl()
-    {
-        var request = HttpContext.Request;
-        var portSuffix = request.Host.Port is int port ? $":{port}" : string.Empty;
-
-        if (string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{request.Scheme}://localhost{portSuffix}/signup";
-        }
-
-        var marketingDomain = _onboardingOptions.MarketingBaseDomain.Trim().TrimStart('.');
-        return $"{request.Scheme}://{marketingDomain}{portSuffix}/signup";
-    }
+    private string BuildSignupUrl() =>
+        TenantWelcomeUrlBuilder.BuildCentralSignupUrl(Request, _environment, _onboardingOptions.MarketingBaseDomain);
 }

@@ -85,7 +85,7 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
             TenantId = Guid.NewGuid(),
             Slug = "legacy-type",
             BusinessName = "Legacy",
-            PrimaryDomain = "legacy-type.wasla.local",
+            PrimaryDomain = "legacy-type.app.wasla.local",
             DatabaseName = "Wasla_legacy_type",
             BusinessPhone = "555",
             BusinessPhoneType = BusinessPhoneType.Mobile,
@@ -205,7 +205,7 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
     private sealed class SelfServicePlanCatalog : IWaslaPlanCatalog
     {
         private static readonly WaslaPlanDefinition Starter = new(
-            "starter", "plan", "plan", 100m, "price", [], false, false, false, 1, "cta", "devices");
+            "starter", "plan", "plan", null, [], false, false, false, 1, "cta", "devices");
 
         public IReadOnlyList<WaslaPlanDefinition> GetPublicPlans() => [Starter];
         public string? NormalizePlanCode(string? planCode) => planCode;

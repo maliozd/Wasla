@@ -35,7 +35,7 @@ public sealed class LogEmailSenderTests
     {
         var logger = new CapturingLogger<LogEmailSender>();
         var sender = new LogEmailSender(logger);
-        const string resetUrl = "https://tenant.wasla.local:5200/auth/reset-password?token=raw-token";
+        const string resetUrl = "https://tenant.app.wasla.local:5200/auth/reset-password?token=raw-token";
 
         await sender.SendAsync(new EmailMessage
         {

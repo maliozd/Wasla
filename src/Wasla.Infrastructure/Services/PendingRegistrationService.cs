@@ -24,28 +24,32 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
     private readonly ISignupReferenceDataService _referenceData;
     private readonly TenantOnboardingOptions _options;
     private readonly ILogger<PendingRegistrationService> _logger;
+    private readonly TimeProvider _time;
 
     public PendingRegistrationService(
         CentralDbContext central,
         IWaslaPlanCatalog planCatalog,
         ISignupReferenceDataService referenceData,
         IOptions<TenantOnboardingOptions> options,
-        ILogger<PendingRegistrationService> logger)
+        ILogger<PendingRegistrationService> logger,
+        TimeProvider? time = null)
     {
         _central = central;
         _planCatalog = planCatalog;
         _referenceData = referenceData;
         _options = options.Value;
         _logger = logger;
+        // The clock checkout (BillingSubscriptionStore) uses, so the summary and checkout pick the same price.
+        _time = time ?? TimeProvider.System;
     }
 
     public async Task<bool> IsSlugAvailableAsync(string slug, CancellationToken ct)
     {
         var normalized = RegistrationNameNormalizer.NormalizeSlug(slug);
-        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized))
+        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized) || RegistrationNameNormalizer.IsReservedSlug(normalized))
             return false;
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.MarketingBaseDomain);
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.ApplicationBaseDomain);
         return !await IsSlugOrDomainTakenAsync(normalized, primaryDomain, ct);
     }
 
@@ -70,8 +74,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.TooManyActiveRegistrations);
         }
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.MarketingBaseDomain);
-        if (await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
+        // A reserved name is never a tenant address (WAS-66); it is answered like a taken one.
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.ApplicationBaseDomain);
+        if (RegistrationNameNormalizer.IsReservedSlug(slug) || await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
         {
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.DuplicateSlug);
         }
@@ -231,8 +236,10 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             : row.BusinessType ?? string.Empty;
         var businessTypeCodes = businessTypeRows.Select(x => x.Code).ToArray();
 
-        var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
-        var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
+        // The price a checkout for this registration charges (WAS-147): its subscription's snapshot once one has
+        // started, otherwise the price in effect now. Never a newer price for an existing subscription.
+        var price = await BillingPlanPriceQueries.ForRegistrationAsync(
+            _central, row.Id, row.PlanCode, row.BillingPeriod, _time.GetUtcNow().UtcDateTime, ct);
 
         return new PendingRegistrationCheckoutDetails(
             row.Id,
@@ -257,9 +264,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.PostalCode,
             row.LocationUrl,
             row.Status,
-            monthly,
-            total,
-            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod),
+            price,
+            string.Equals(price?.BillingPeriod ?? row.BillingPeriod, BillingSubscription.YearlyPeriod, StringComparison.Ordinal),
             businessTypeCodes);
     }
 
@@ -449,7 +455,7 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
         var normalizedSlug = RegistrationNameNormalizer.ExtractSlugFromHost(
             normalizedHost,
-            _options.MarketingBaseDomain);
+            _options.ApplicationBaseDomain);
         var now = DateTime.UtcNow;
 
         var row = await _central.PendingRegistrations.AsNoTracking()
