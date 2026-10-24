@@ -56,6 +56,9 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         _ownership = new SignupRegistrationOwnership(dataProtection, environment);
     }
 
+    // While Wasla:TenantOnboarding:PublicSignupEnabled is false, this page and the routes that serve only its form
+    // (submission and address lookups) are closed; existing registrations keep their status and checkout pages (WAS-76).
+    [PublicSignupRequired(showUnavailablePage: true)]
     [HttpGet("")]
     public async Task<IActionResult> Index([FromQuery] string? plan, CancellationToken ct)
     {
@@ -66,6 +69,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
     // Limited per client network before any lookup, password hash or insert (AuthenticationRateLimiting:SignupSubmission);
     // the service also caps active registrations per owner email.
     [ValidateAntiForgeryToken]
+    [PublicSignupRequired(showUnavailablePage: true)]
     [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupSubmission)]
     [HttpPost("")]
     public async Task<IActionResult> Index(SignupViewModel model, CancellationToken ct)
@@ -191,6 +195,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         return result;
     }
 
+    [PublicSignupRequired]
     [HttpGet("districts")]
     public async Task<IActionResult> Districts([FromQuery] int cityId, CancellationToken ct)
     {
@@ -201,6 +206,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         return Json(districts.Select(d => new { id = d.Id, name = d.Name }));
     }
 
+    [PublicSignupRequired]
     [HttpGet("neighborhoods")]
     public async Task<IActionResult> Neighborhoods([FromQuery] int districtId, CancellationToken ct)
     {
@@ -211,6 +217,7 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         return Json(neighborhoods.Select(n => new { id = n.Id, name = n.Name }));
     }
 
+    [PublicSignupRequired]
     [HttpGet("streets")]
     public async Task<IActionResult> Streets([FromQuery] int neighborhoodId, CancellationToken ct)
     {
