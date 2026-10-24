@@ -65,7 +65,7 @@ public sealed partial class WaslaConfigurationKeyTests
     private static readonly HashSet<string> WaslaOwnedSettingNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "MarketingBaseDomain", "ApplicationBaseDomain", "SqlAuth", "TrialDays", "PendingRegistrationExpiryDays",
-        "MaxActivePendingRegistrationsPerOwnerEmail", "ServerInstance", "ApiBaseUrl", "TenantWebBaseUrl",
+        "MaxActivePendingRegistrationsPerOwnerEmail", "PublicSignupEnabled", "ServerInstance", "ApiBaseUrl", "TenantWebBaseUrl",
         "PublicWebBaseUrl", "PackageFileName", "PackagePath"
     };
 
@@ -189,7 +189,8 @@ public sealed partial class WaslaConfigurationKeyTests
             ("Wasla:TenantOnboarding:SqlAuth", "sql:test-user:not-a-real-password"),
             ("Wasla:TenantOnboarding:TrialDays", "30"),
             ("Wasla:TenantOnboarding:PendingRegistrationExpiryDays", "5"),
-            ("Wasla:TenantOnboarding:MaxActivePendingRegistrationsPerOwnerEmail", "2")
+            ("Wasla:TenantOnboarding:MaxActivePendingRegistrationsPerOwnerEmail", "2"),
+            ("Wasla:TenantOnboarding:PublicSignupEnabled", "false")
         };
 
         foreach (var register in new Action<IServiceCollection, IConfiguration>[]
@@ -211,6 +212,7 @@ public sealed partial class WaslaConfigurationKeyTests
             Assert.Equal(30, options.TrialDays);
             Assert.Equal(5, options.PendingRegistrationExpiryDays);
             Assert.Equal(2, options.MaxActivePendingRegistrationsPerOwnerEmail);
+            Assert.False(options.PublicSignupEnabled);
         }
     }
 
@@ -230,6 +232,8 @@ public sealed partial class WaslaConfigurationKeyTests
         Assert.Equal(14, options.TrialDays);
         Assert.Equal(7, options.PendingRegistrationExpiryDays);
         Assert.Equal(3, options.MaxActivePendingRegistrationsPerOwnerEmail);
+        // Open unless a deployment closes it (WAS-76); the committed files do not set it.
+        Assert.True(options.PublicSignupEnabled);
     }
 
     // --- EF design time -----------------------------------------------------------------------------
