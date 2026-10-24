@@ -20,12 +20,15 @@ public enum ManualOrderPrintOutcome
 /// <summary>
 /// Receipt print state of a single order, used to render the manual print action in its correct state.
 /// Automatic and manual receipts share one <see cref="PrintJobType.Receipt" /> stream, so this state
-/// reflects any receipt job for the order regardless of what created it.
+/// reflects any receipt job for the order regardless of what created it. <see cref="Version"/> is the highest
+/// <c>PrintJob.StatusVersion</c> of the order (0 without jobs): the same order-scoped value that live status
+/// notifications carry, so a screen can tell whether a notification is newer than what it shows.
 /// </summary>
 public sealed record OrderReceiptPrintState(
     PrintJobStatus? LatestStatus,
     bool HasActiveJob,
-    bool CanReprint)
+    bool CanReprint,
+    long Version = 0)
 {
     public static OrderReceiptPrintState None { get; } = new(null, false, false);
 }
@@ -43,6 +46,12 @@ public sealed record ManualOrderPrintResult(
 public interface IManualOrderPrintService
 {
     Task<OrderReceiptPrintState> GetReceiptPrintStateAsync(
+        Guid customerId,
+        Guid orderId,
+        CancellationToken ct);
+
+    /// <summary>The order's receipt print state, or null when the order does not exist in this tenant.</summary>
+    Task<OrderReceiptPrintState?> FindReceiptPrintStateAsync(
         Guid customerId,
         Guid orderId,
         CancellationToken ct);

@@ -17,40 +17,39 @@ namespace Wasla.Infrastructure.Services;
 
 public sealed class PendingRegistrationService : IPendingRegistrationService
 {
-    private static readonly PendingRegistrationStatus[] BlockingStatuses =
-    [
-        PendingRegistrationStatus.Draft,
-        PendingRegistrationStatus.AwaitingPayment,
-        PendingRegistrationStatus.PaymentSucceeded
-    ];
+    private const int DatabaseNameAttempts = 3;
 
     private readonly CentralDbContext _central;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly ISignupReferenceDataService _referenceData;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly ILogger<PendingRegistrationService> _logger;
+    private readonly TimeProvider _time;
 
     public PendingRegistrationService(
         CentralDbContext central,
         IWaslaPlanCatalog planCatalog,
         ISignupReferenceDataService referenceData,
-        IOptions<CustomerOnboardingOptions> options,
-        ILogger<PendingRegistrationService> logger)
+        IOptions<TenantOnboardingOptions> options,
+        ILogger<PendingRegistrationService> logger,
+        TimeProvider? time = null)
     {
         _central = central;
         _planCatalog = planCatalog;
         _referenceData = referenceData;
         _options = options.Value;
         _logger = logger;
+        // The clock checkout (BillingSubscriptionStore) uses, so the summary and checkout pick the same price.
+        _time = time ?? TimeProvider.System;
     }
 
     public async Task<bool> IsSlugAvailableAsync(string slug, CancellationToken ct)
     {
         var normalized = RegistrationNameNormalizer.NormalizeSlug(slug);
-        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized))
+        if (!RegistrationNameNormalizer.IsValidSlugFormat(normalized) || RegistrationNameNormalizer.IsReservedSlug(normalized))
             return false;
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.MarketingBaseDomain);
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(normalized, _options.ApplicationBaseDomain);
         return !await IsSlugOrDomainTakenAsync(normalized, primaryDomain, ct);
     }
 
@@ -68,19 +67,21 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.InvalidPlan);
         }
 
-        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.MarketingBaseDomain);
-        if (await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
+        // Before any other lookup, the password hash and the insert: one email cannot accumulate registrations.
+        if (await HasMaximumActiveRegistrationsAsync(request.OwnerEmail, ct))
+        {
+            _logger.LogInformation("Pending registration refused: the owner email has the maximum number of active registrations.");
+            return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.TooManyActiveRegistrations);
+        }
+
+        // A reserved name is never a tenant address (WAS-66); it is answered like a taken one.
+        var primaryDomain = RegistrationNameNormalizer.BuildPrimaryDomain(slug, _options.ApplicationBaseDomain);
+        if (RegistrationNameNormalizer.IsReservedSlug(slug) || await IsSlugOrDomainTakenAsync(slug, primaryDomain, ct))
         {
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.DuplicateSlug);
         }
 
-        var baseDatabaseName = RegistrationNameNormalizer.GenerateDatabaseNameFromBusinessName(request.BusinessName);
-        if (!RegistrationNameNormalizer.IsValidDatabaseNameFormat(baseDatabaseName))
-        {
-            return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.InvalidSlug);
-        }
-
-        var databaseName = await ResolveUniqueDatabaseNameAsync(baseDatabaseName, ct);
+        var databaseName = await AssignDatabaseNameAsync(slug, ct);
         if (databaseName is null)
         {
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.DuplicateDatabaseName);
@@ -235,8 +236,10 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             : row.BusinessType ?? string.Empty;
         var businessTypeCodes = businessTypeRows.Select(x => x.Code).ToArray();
 
-        var monthly = CheckoutSimulatedPricing.GetMonthlyPriceTry(row.PlanCode);
-        var total = CheckoutSimulatedPricing.GetTotalPriceTry(row.PlanCode, row.BillingPeriod);
+        // The price a checkout for this registration charges (WAS-147): its subscription's snapshot once one has
+        // started, otherwise the price in effect now. Never a newer price for an existing subscription.
+        var price = await BillingPlanPriceQueries.ForRegistrationAsync(
+            _central, row.Id, row.PlanCode, row.BillingPeriod, _time.GetUtcNow().UtcDateTime, ct);
 
         return new PendingRegistrationCheckoutDetails(
             row.Id,
@@ -261,9 +264,8 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             row.PostalCode,
             row.LocationUrl,
             row.Status,
-            monthly,
-            total,
-            CheckoutSimulatedPricing.IsYearlyBilling(row.BillingPeriod),
+            price,
+            string.Equals(price?.BillingPeriod ?? row.BillingPeriod, BillingSubscription.YearlyPeriod, StringComparison.Ordinal),
             businessTypeCodes);
     }
 
@@ -440,27 +442,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         if (customerTaken)
             return true;
 
-        var now = DateTime.UtcNow;
         return await _central.PendingRegistrations.AsNoTracking()
-            .AnyAsync(p =>
-                BlockingStatuses.Contains(p.Status)
-                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
-                && (p.Slug == slug || p.PrimaryDomain == primaryDomain), ct);
-    }
-
-    private async Task<bool> IsDatabaseNameTakenAsync(string databaseName, CancellationToken ct)
-    {
-        var customerTaken = await _central.Tenants.AsNoTracking()
-            .AnyAsync(c => c.DatabaseName == databaseName, ct);
-        if (customerTaken)
-            return true;
-
-        var now = DateTime.UtcNow;
-        return await _central.PendingRegistrations.AsNoTracking()
-            .AnyAsync(p =>
-                BlockingStatuses.Contains(p.Status)
-                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
-                && p.DatabaseName == databaseName, ct);
+            .Where(PendingRegistrationReservations.HoldsReservation(DateTime.UtcNow))
+            .AnyAsync(p => p.Slug == slug || p.PrimaryDomain == primaryDomain, ct);
     }
 
     public async Task<PendingRegistrationSummary?> GetActiveByPrimaryDomainAsync(string primaryDomain, CancellationToken ct)
@@ -471,7 +455,7 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
         var normalizedSlug = RegistrationNameNormalizer.ExtractSlugFromHost(
             normalizedHost,
-            _options.MarketingBaseDomain);
+            _options.ApplicationBaseDomain);
         var now = DateTime.UtcNow;
 
         var row = await _central.PendingRegistrations.AsNoTracking()
@@ -480,7 +464,10 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
                      && p.Status != PendingRegistrationStatus.PaymentFailed
                      && p.Status != PendingRegistrationStatus.Cancelled
                      && p.Status != PendingRegistrationStatus.Expired
-                     && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now))
+                     // A paid registration keeps its address until provisioned, past its original expiry (WAS-93).
+                     && (p.Status == PendingRegistrationStatus.PaymentSucceeded
+                         || p.ExpiresAtUtc == null
+                         || p.ExpiresAtUtc > now))
             .OrderByDescending(p => p.CreatedAtUtc)
             .Select(p => new PendingRegistrationSummary(
                 p.Id,
@@ -502,18 +489,36 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         return row;
     }
 
-    private async Task<string?> ResolveUniqueDatabaseNameAsync(string baseDatabaseName, CancellationToken ct)
+    private async Task<bool> HasMaximumActiveRegistrationsAsync(string ownerEmail, CancellationToken ct)
     {
-        if (!await IsDatabaseNameTakenAsync(baseDatabaseName, ct))
-            return baseDatabaseName;
+        var maximum = Math.Max(1, _options.MaxActivePendingRegistrationsPerOwnerEmail);
+        var normalizedEmail = ownerEmail.Trim().ToLowerInvariant();
+        var active = await _central.PendingRegistrations.AsNoTracking()
+            .Where(PendingRegistrationReservations.HoldsReservation(DateTime.UtcNow))
+            .Where(p => p.OwnerEmail.ToLower() == normalizedEmail)
+            .Take(maximum)
+            .CountAsync(ct);
+        return active >= maximum;
+    }
 
-        for (var suffix = 2; suffix < 10_000; suffix++)
+    /// <summary>
+    /// A server-assigned database name (WAS-93): a label from the slug and a random suffix, never derived from the
+    /// business name and never CentralDb or a system database. A name is free when no tenant and no registration in any
+    /// status uses it: one query per table per attempt, and a random 48-bit suffix practically never needs a second.
+    /// Whether the name is free on the SQL Server is checked when provisioning creates the database.
+    /// </summary>
+    private async Task<string?> AssignDatabaseNameAsync(string slug, CancellationToken ct)
+    {
+        var centralCatalog = _central.Database.GetDbConnection().Database;
+        for (var attempt = 0; attempt < DatabaseNameAttempts; attempt++)
         {
-            var candidate = baseDatabaseName + suffix.ToString();
-            if (!RegistrationNameNormalizer.IsValidDatabaseNameFormat(candidate))
+            var candidate = TenantDatabaseNames.Generate(slug);
+            if (TenantDatabaseNames.GetRejectionReason(candidate, centralCatalog) is not null)
                 continue;
 
-            if (!await IsDatabaseNameTakenAsync(candidate, ct))
+            var taken = await _central.Tenants.AsNoTracking().AnyAsync(t => t.DatabaseName == candidate, ct)
+                        || await _central.PendingRegistrations.AsNoTracking().AnyAsync(p => p.DatabaseName == candidate, ct);
+            if (!taken)
                 return candidate;
         }
 

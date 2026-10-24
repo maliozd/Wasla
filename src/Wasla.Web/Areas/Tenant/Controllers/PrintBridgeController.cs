@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Printing;
@@ -156,9 +155,8 @@ public sealed class PrintBridgeController : BaseController
 
         var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
         var activeDevice = deviceRows.FirstOrDefault(d => d.IsActive);
-        var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
         var packageFileName = PrintBridgePackagePaths.GetPackageFileName(_configuration);
-        var packageAvailable = System.IO.File.Exists(packagePath);
+        var packageAvailable = PrintBridgePackagePaths.PackageExists(_configuration, _environment);
         var guidedSetup = await _guidedSetup
             .GetSectionPanelAsync(tenant.Id, CurrentUserId, User, GuidedSetupSections.PrintBridge, ct)
             .ConfigureAwait(false);
@@ -175,7 +173,7 @@ public sealed class PrintBridgeController : BaseController
             PackageDownloadUrl = Url.Action(nameof(DownloadPackage), "PrintBridge", new { area = AreaNames.Tenant })
                 ?? "/print-bridge/download/package",
             DevicesUrl = Url.Action(nameof(Devices), "PrintBridge", new { area = AreaNames.Tenant }) ?? "/print-bridge/devices",
-            ServerUrl = ResolveCustomerWebBaseUrl(),
+            ServerUrl = ResolveTenantWebBaseUrl(),
             PackageAvailable = packageAvailable,
             PackageFileName = packageFileName,
             HasActiveDevice = activeDevice is not null,
@@ -206,7 +204,7 @@ public sealed class PrintBridgeController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var serverUrl = ResolveCustomerWebBaseUrl();
+        var serverUrl = ResolveTenantWebBaseUrl();
         if (string.IsNullOrWhiteSpace(serverUrl))
             return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ServerUrlUnavailable"].Value });
 
@@ -293,7 +291,7 @@ public sealed class PrintBridgeController : BaseController
         if (tenant is null) return NotFound();
 
         // The token is useless without the Web Panel URL the app needs next to it.
-        if (string.IsNullOrWhiteSpace(ResolveCustomerWebBaseUrl()))
+        if (string.IsNullOrWhiteSpace(ResolveTenantWebBaseUrl()))
             return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ServerUrlUnavailable"].Value });
 
         try
@@ -495,7 +493,7 @@ public sealed class PrintBridgeController : BaseController
     public IActionResult DownloadPackage()
     {
         var packagePath = PrintBridgePackagePaths.ResolvePackagePath(_configuration, _environment);
-        if (!System.IO.File.Exists(packagePath))
+        if (packagePath is null || !System.IO.File.Exists(packagePath))
             return NotFound();
 
         var fileName = Path.GetFileName(packagePath);
@@ -538,25 +536,25 @@ public sealed class PrintBridgeController : BaseController
             PrintJobsTodayCount = printJobsTodayCount,
             LastConnectedDeviceName = lastConnected?.Name,
             LastConnectedAtUtc = lastConnected?.LastSeenAtUtc,
-            ServerUrl = ResolveCustomerWebBaseUrl(),
+            ServerUrl = ResolveTenantWebBaseUrl(),
             PrintJobs = printJobs.Select(MapPrintJob).ToList()
         };
     }
 
     private string ResolveApiBaseUrl()
     {
-        var configured = _configuration["OrderHub:ApiBaseUrl"];
+        var configured = _configuration["Wasla:ApiBaseUrl"];
         if (!string.IsNullOrWhiteSpace(configured))
             return configured.TrimEnd('/');
 
-        return "https://your-orderhub-api.example.com";
+        return "https://your-wasla-api.example.com";
     }
 
-    private string? ResolveCustomerWebBaseUrl()
+    private string? ResolveTenantWebBaseUrl()
     {
-        var configured = _configuration["OrderHub:CustomerWebBaseUrl"];
+        var configured = _configuration["Wasla:TenantWebBaseUrl"];
         if (string.IsNullOrWhiteSpace(configured))
-            configured = _configuration["OrderHub:PublicWebBaseUrl"];
+            configured = _configuration["Wasla:PublicWebBaseUrl"];
 
         if (!string.IsNullOrWhiteSpace(configured))
             return EnsureTrailingSlash(configured.Trim());
@@ -588,31 +586,6 @@ public sealed class PrintBridgeController : BaseController
 
         mode = default;
         return false;
-    }
-
-    private static string BuildExampleConfigJson(string apiBaseUrl)
-    {
-        var config = new
-        {
-            OrderHub = new
-            {
-                BaseUrl = apiBaseUrl,
-                AgentToken = "YOUR_TOKEN_HERE"
-            },
-            PrintBridge = new
-            {
-                PrinterMode = "WindowsPrinter",
-                PrinterName = "POS-58",
-                IdlePollIntervalSeconds = 5,
-                BusyPollIntervalSeconds = 1,
-                ErrorPollIntervalSeconds = 15,
-                MaxJobsPerPoll = 3,
-                DryRun = false,
-                BridgeName = "Kitchen-PC"
-            }
-        };
-
-        return JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
     }
 
     private static PrintBridgeDeviceRowViewModel MapDevice(PrintBridgeDeviceSummaryDto d) =>

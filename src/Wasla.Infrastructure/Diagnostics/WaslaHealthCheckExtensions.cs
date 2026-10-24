@@ -12,15 +12,16 @@ public static class WaslaHealthCheckExtensions
 
     public static void MapWaslaHealthChecks(this WebApplication app)
     {
+        // Probes are anonymous on purpose, also where a fallback authorization policy applies (Wasla.Api).
         // Liveness only proves the process can answer. No dependency checks.
         app.MapHealthChecks("/health/live", new HealthCheckOptions
         {
             Predicate = static _ => false
-        });
+        }).AllowAnonymous();
 
         app.MapHealthChecks("/health/ready", new HealthCheckOptions
         {
             Predicate = static check => check.Tags.Contains("ready")
-        });
+        }).AllowAnonymous();
     }
 }

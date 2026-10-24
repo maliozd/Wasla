@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Admin;
+using Wasla.Application.Security;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -43,6 +45,7 @@ public sealed class AuthController : Controller
 
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.CentralAdminLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(AdminLoginViewModel model, CancellationToken ct)
     {
@@ -56,13 +59,12 @@ public sealed class AuthController : Controller
             return View(model);
         }
 
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, result.UserId!.Value.ToString()),
-            new(ClaimTypes.Email, result.Email!),
-            new(ClaimTypes.Name, result.DisplayName ?? "Central Admin"),
-            new(ClaimTypes.Role, "CentralAdmin"),
-        };
+        // Every request of this session is checked against the admin's current row in CentralDb (CentralAdminCookieEvents).
+        var claims = CentralAdminSessionClaims.Create(
+            result.UserId!.Value,
+            result.Email!,
+            result.DisplayName ?? "Central Admin",
+            result.SecurityStamp!.Value);
 
         var identity = new ClaimsIdentity(claims, AuthSchemes.CentralAdmin);
         var principal = new ClaimsPrincipal(identity);
@@ -99,9 +101,6 @@ public sealed class AuthController : Controller
         };
 
         Response.Cookies.Delete(CentralAdminAuthCookieNames.Active, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHub, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyOrderHubScheme, options);
-        Response.Cookies.Delete(CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme, options);
     }
 }
 

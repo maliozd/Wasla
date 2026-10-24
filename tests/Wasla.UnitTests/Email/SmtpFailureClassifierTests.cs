@@ -68,7 +68,7 @@ public sealed class SmtpFailureClassifierTests
     public async Task ServiceFailureLog_ContainsSafeCategoryAndNoSecrets()
     {
         const string smtpPassword = "smtp-password-that-must-not-appear";
-        const string resetUrl = "https://tenant.wasla.local/auth/reset-password?token=raw-token";
+        const string resetUrl = "https://tenant.app.wasla.local/auth/reset-password?token=raw-token";
         using var dbFactory = new SingleTenantDbFactory();
         await dbFactory.SeedActiveUserAsync(TestContext.Current.CancellationToken);
         var logger = new CapturingLogger<TenantPasswordResetService>();
@@ -140,8 +140,10 @@ public sealed class SmtpFailureClassifierTests
                     Role INTEGER NOT NULL,
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
+                    SecurityStamp TEXT NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
 
                 CREATE TABLE PasswordResetTokens (

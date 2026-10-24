@@ -21,6 +21,7 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
     private readonly HashSet<Guid> _created = new();
     private readonly object _gate = new();
     private readonly FailingStatement _failure = new();
+    private readonly OwnedSqlitePools _pools = new();
 
     /// <summary>When set, the first statement containing this SQL fails (once), as a database error would.</summary>
     public string? FailNextStatementContaining
@@ -29,16 +30,26 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
         set => _failure.SqlStart = value;
     }
 
+    /// <summary>
+    /// The exception the failing statement throws instead of the default database error. It is created after the
+    /// failure is used up, so it may set <see cref="FailNextStatementContaining"/> again.
+    /// </summary>
+    public Func<Exception>? FailWith
+    {
+        get => _failure.FailWith;
+        set => _failure.FailWith = value;
+    }
+
     /** Every SQL statement run against any tenant database so far (reads and writes). */
     public int StatementCount => _failure.Count;
 
     public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
     {
-        var connectionString = new SqliteConnectionStringBuilder
+        var connectionString = _pools.Own(new SqliteConnectionStringBuilder
         {
             DataSource = Path.Combine(_directory, customerId.ToString("N") + ".db"),
             DefaultTimeout = 30
-        }.ToString();
+        }.ToString());
 
         lock (_gate)
         {
@@ -97,15 +108,8 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
-        try
-        {
-            Directory.Delete(_directory, recursive: true);
-        }
-        catch (IOException)
-        {
-            // A late pooled handle; the temp folder is harmless.
-        }
+        _pools.Clear();
+        Directory.Delete(_directory, recursive: true);
     }
 
     private DbContextOptions<TenantDbContext> Options(string connectionString) =>
@@ -117,6 +121,8 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
         private int _count;
 
         public int Count => Volatile.Read(ref _count);
+
+        public Func<Exception>? FailWith { get; set; }
 
         public string? SqlStart
         {
@@ -145,7 +151,7 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
             if (start is null || !command.CommandText.Contains(start, StringComparison.Ordinal))
                 return;
             if (Interlocked.CompareExchange(ref _sqlStart, null, start) == start)
-                throw new InvalidOperationException("simulated tenant database failure");
+                throw FailWith?.Invoke() ?? new InvalidOperationException("simulated tenant database failure");
         }
     }
 

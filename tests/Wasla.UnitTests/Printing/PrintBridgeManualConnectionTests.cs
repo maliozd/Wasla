@@ -147,6 +147,24 @@ public sealed partial class PrintBridgeManualConnectionTests
         Assert.DoesNotContain("token", json, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData(" https://panel.wasla.local ", "https://public.wasla.local/", "https://panel.wasla.local/")]
+    [InlineData(null, "https://public.wasla.local", "https://public.wasla.local/")]
+    [InlineData(null, null, "https://sushim.app.wasla.local:7200/")]
+    public async Task SetupPage_HandsOutTheTenantWebUrl_ThenThePublicWebUrl_ThenTheRequestHost(
+        string? tenantWebBaseUrl,
+        string? publicWebBaseUrl,
+        string expected)
+    {
+        var controller = Controller(new RecordingDevices(), webPanelUrl: tenantWebBaseUrl, publicWebBaseUrl: publicWebBaseUrl);
+        controller.HttpContext.Request.Scheme = "https";
+        controller.HttpContext.Request.Host = new HostString("sushim.app.wasla.local", 7200);
+
+        var model = Assert.IsType<PrintBridgeSetupViewModel>(Assert.IsType<ViewResult>(await controller.Setup(CancellationToken.None)).Model);
+
+        Assert.Equal(expected, model.ServerUrl);
+    }
+
     [Fact]
     public async Task ManualDevice_WithoutAWebPanelUrl_CreatesNothing()
     {
@@ -306,7 +324,7 @@ public sealed partial class PrintBridgeManualConnectionTests
         var controller = Read("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "PrintBridgeController.cs");
         var setupApi = Read("src", "Wasla.Web", "Controllers", "PrintBridgeSetupApiController.cs");
         var registrations = Read("src", "Wasla.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs");
-        var desktopClient = Read("src", "Wasla.PrintBridge", "Services", "WaslaPrintBridgeClient.cs");
+        var desktopClient = Read("src", "Wasla.PrintBridge.Core", "Services", "WaslaPrintBridgeClient.cs");
 
         // The browser creates a session and opens the app with its one-time code inside the link...
         Assert.Contains("fetch(cfg.sessionCreateUrl, { method: \"POST\", body: form, credentials: \"same-origin\" })", script, StringComparison.Ordinal);
@@ -360,31 +378,36 @@ public sealed partial class PrintBridgeManualConnectionTests
     {
         var web = Load(culture);
         var desktop = LoadDesktop(culture);
-        var mainForm = Read("src", "Wasla.PrintBridge", "UI", "MainForm.cs");
+        var connectionDialog = Read("src", "Wasla.PrintBridge", "WebShell", "ShellConnectionDialog.cs");
 
-        // The fields the desktop Settings screen labels with these keys...
-        Assert.Contains("_lblServerUrl.Text = _localizer[\"Settings.ServerUrl\"];", mainForm, StringComparison.Ordinal);
-        Assert.Contains("_lblAgentToken.Text = _localizer[\"Settings.AgentToken\"];", mainForm, StringComparison.Ordinal);
+        // The fields the desktop app's connection dialog labels with these keys...
+        Assert.Contains("AddField(layout, _localizer[\"Settings.ServerUrl\"]", connectionDialog, StringComparison.Ordinal);
+        Assert.Contains("AddField(layout, _localizer[\"Settings.AgentToken\"]", connectionDialog, StringComparison.Ordinal);
         // ...carry exactly the labels the Web page shows next to the values to paste.
         Assert.Equal(desktop["Settings.ServerUrl"], web["PrintBridge.Manual.WebPanelUrlLabel"]);
         Assert.Equal(desktop["Settings.AgentToken"], web["PrintBridge.Manual.DeviceTokenLabel"]);
-        // The next step names the app's real Settings tab and its Save and Test buttons.
-        foreach (var label in new[] { desktop["Tab.Settings"], desktop["Button.SaveConnection"], desktop["Button.TestConnection"] })
+        // The next step and the setup steps name the app's real connect button, where it is, and the dialog's button.
+        foreach (var label in new[] { desktop["Shell.Action.Connect"], desktop["Tab.Settings"], desktop["Shell.Settings.Connection"], desktop["Shell.Setup.Connect"] })
             Assert.Contains(label, web["PrintBridge.Manual.Next"], StringComparison.Ordinal);
+        Assert.Contains(desktop["Shell.Action.Connect"], web["PrintBridge.SetupStep4"], StringComparison.Ordinal);
+        Assert.Contains(desktop["Shell.Setup.Connect"], web["PrintBridge.SetupStep5"], StringComparison.Ordinal);
     }
 
     // Helpers ------------------------------------------------------------------------------------
 
     private PrintBridgeController Controller(
         RecordingDevices devices,
-        string? webPanelUrl = "https://tenant.wasla.local/",
+        string? webPanelUrl = "https://tenant.app.wasla.local/",
         ICurrentTenantService? tenant = null,
         IAuthorizationService? authorization = null,
-        IGuidedSetupCoordinator? guidedSetup = null)
+        IGuidedSetupCoordinator? guidedSetup = null,
+        string? publicWebBaseUrl = null)
     {
         var settings = new Dictionary<string, string?>();
         if (webPanelUrl is not null)
-            settings["OrderHub:CustomerWebBaseUrl"] = webPanelUrl;
+            settings["Wasla:TenantWebBaseUrl"] = webPanelUrl;
+        if (publicWebBaseUrl is not null)
+            settings["Wasla:PublicWebBaseUrl"] = publicWebBaseUrl;
 
         var owner = new TenantNavigationPermissions(true, true, true, true, true, true, true, true, true, true, true);
         var httpContext = new DefaultHttpContext

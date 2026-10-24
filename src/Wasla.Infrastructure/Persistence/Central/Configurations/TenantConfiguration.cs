@@ -28,6 +28,10 @@ public class TenantConfiguration : IEntityTypeConfiguration<CentralTenant>
 
         builder.HasIndex(c => c.Slug).IsUnique().HasDatabaseName("IX_Tenants_Slug");
 
+        // One tenant per physical database (WAS-93): two rows naming the same database would let one tenant read,
+        // reset or drop the other's data.
+        builder.HasIndex(c => c.DatabaseName).IsUnique().HasDatabaseName("IX_Tenants_DatabaseName");
+
         // For worker: "give me all active tenants". Filtered index for efficiency.
         builder.HasIndex(c => c.IsActive).HasDatabaseName("IX_Tenants_IsActive");
     }

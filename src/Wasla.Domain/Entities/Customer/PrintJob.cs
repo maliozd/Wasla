@@ -29,4 +29,11 @@ public sealed class PrintJob : BaseEntity
     public DateTime? LastAttemptAt { get; set; }
 
     public DateTime? PrintedAt { get; set; }
+
+    /// <summary>
+    /// Order-scoped change sequence. A new job starts above every job of its order; each status transition adds one in
+    /// the same conditional update. Only one receipt job per order is active at a time and a finished job never changes
+    /// again, so within an order this value only grows. Live status notifications carry it as their version.
+    /// </summary>
+    public long StatusVersion { get; set; }
 }

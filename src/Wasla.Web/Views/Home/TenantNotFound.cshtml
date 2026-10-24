@@ -30,15 +30,7 @@
 <body class="wasla-landing">
 <header class="border-bottom bg-white">
     <div class="container py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <div class="wasla-logo-mark rounded-3 d-flex align-items-center justify-content-center">
-                <i class="bi bi-basket2-fill text-white"></i>
-            </div>
-            <div>
-                <div class="fw-bold text-dark">@L["Landing.Title"]</div>
-                <div class="small text-muted">@L["Landing.Subtitle"]</div>
-            </div>
-        </div>
+        @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--header" })
         <div class="d-flex flex-wrap align-items-center gap-2">
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">

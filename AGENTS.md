@@ -387,12 +387,17 @@ Use Cancelled only according to the existing business rules.
 
 ### Live status updates
 
-Refer to `docs/orders-printjob-status-signalr.md`.
+Refer to `docs/architecture/realtime.md`.
 
-That document describes future acceptance criteria; it is not evidence that
-SignalR is already implemented.
+Live receipt print status (WAS-23) and Live Screen order invalidation (WAS-24)
+are implemented through the SignalR hub in Wasla.Web. The Live Screen still
+renders only its polled snapshot; polling remains as the safety net.
 
-Do not add SignalR or alternative polling scope without a user request.
+Notifications are published only after a commit, carry identifiers and a version
+only, and never decide the shown state: screens read it again through their
+authorized HTTP endpoints. Print Bridge keeps its HTTP polling and job claiming.
+
+Do not extend SignalR or add alternative polling scope without a user request.
 
 ## 12. Signup, payment, and provisioning
 

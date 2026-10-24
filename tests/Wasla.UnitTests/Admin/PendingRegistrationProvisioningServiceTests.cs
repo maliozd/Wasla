@@ -199,12 +199,12 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.TenantId);
         Assert.Equal("Business successslug", result.TenantName);
-        Assert.Equal("successslug.wasla.local", result.TenantDomain);
+        Assert.Equal("successslug.app.wasla.local", result.TenantDomain);
 
         var tenant = await _db.Tenants.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(result.TenantId, tenant.Id);
         Assert.Equal("successslug", tenant.Slug);
-        Assert.Equal("successslug.wasla.local", tenant.PrimaryDomain);
+        Assert.Equal("successslug.app.wasla.local", tenant.PrimaryDomain);
         Assert.Equal("Wasla_successslug", tenant.DatabaseName);
         Assert.Equal("encrypted_base64", tenant.EncryptedConnectionString);
         Assert.Equal(1, tenant.EncryptionKeyVersion);
@@ -284,17 +284,148 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         Assert.Equal(0, await _db.TenantMemberships.CountAsync(TestContext.Current.CancellationToken));
     }
 
+    // --- WAS-93: fail closed on existing or reserved databases ---------------------------------------
+
+    [Theory]
+    [InlineData("main")] // The CentralDb catalog of this SQLite fixture.
+    [InlineData("MAIN")]
+    [InlineData("master")]
+    [InlineData("tempdb")]
+    [InlineData("msdb")]
+    [InlineData("model")]
+    public async Task ProvisionAsync_CentralDbOrSystemDatabaseName_IsRefusedBeforeAnyDatabaseWork(string databaseName)
+    {
+        var operations = new FakeTenantDatabaseProvisioningOperations();
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "reservedname");
+        reg.DatabaseName = databaseName;
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = BuildService(operations);
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.ValidationError, result.Outcome);
+        Assert.Equal(0, operations.CallCount);
+        Assert.Equal(0, await _db.Tenants.CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_PreExistingUnownedDatabase_FailsWithoutWritingCentralDb()
+    {
+        var operations = new FakeTenantDatabaseProvisioningOperations
+        {
+            // What SqlServerTenantDatabases.ClaimAsync raises for a database without this registration's marker.
+            ExceptionToThrow = new TenantDatabaseOwnershipException("Wasla_unowned")
+        };
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "unowned");
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = BuildService(operations);
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.Failed, result.Outcome);
+        Assert.Contains("will not adopt", result.Message, StringComparison.Ordinal);
+        Assert.Equal(0, await _db.Tenants.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await _db.TenantMemberships.CountAsync(TestContext.Current.CancellationToken));
+        var stored = await _db.PendingRegistrations.AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(PendingRegistrationStatus.PaymentSucceeded, stored.Status);
+        Assert.Null(stored.TenantId);
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_PaidRegistrationPastOriginalExpiry_StillProvisions()
+    {
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "latepaid");
+        reg.ExpiresAtUtc = DateTime.UtcNow.AddDays(-30);
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = BuildService();
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.Success, result.Outcome);
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_AnotherPaidRegistrationPastExpiry_StillReservesTheSlug()
+    {
+        var holder = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "heldslug");
+        holder.ExpiresAtUtc = DateTime.UtcNow.AddDays(-30);
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "heldslug");
+        reg.DatabaseName = "Wasla_other";
+        reg.OwnerEmail = "other@test.com";
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var operations = new FakeTenantDatabaseProvisioningOperations();
+        var service = BuildService(operations);
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.ValidationError, result.Outcome);
+        Assert.Equal(0, operations.CallCount);
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_DatabaseNameOfACancelledRegistration_IsNotReused()
+    {
+        var earlier = SeedRegistration(PendingRegistrationStatus.Cancelled, "cancelledslug");
+        earlier.DatabaseName = "Wasla_shared";
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "newcomer");
+        reg.DatabaseName = "Wasla_shared";
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var operations = new FakeTenantDatabaseProvisioningOperations();
+        var service = BuildService(operations);
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.ValidationError, result.Outcome);
+        Assert.Equal(0, operations.CallCount);
+    }
+
+    [Fact]
+    public async Task TenantsDatabaseName_IsUnique()
+    {
+        SeedTenant(Guid.NewGuid(), "first");
+        var second = SeedTenant(Guid.NewGuid(), "second");
+        second.DatabaseName = "Wasla_first";
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => _db.SaveChangesAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ProvisionAsync_FailureAtTheLastCentralDbWrite_LeavesNoTenantOrMembershipRow()
+    {
+        var reg = SeedRegistration(PendingRegistrationStatus.PaymentSucceeded, "atomic");
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var connectionString = _db.Database.GetConnectionString()!;
+        var operations = new FakeTenantDatabaseProvisioningOperations
+        {
+            // The registration row disappears while its database is prepared, so its final status update fails after
+            // the tenant and membership rows were written in the same transaction.
+            OnProvision = () =>
+            {
+                using var other = new CentralDbContext(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(connectionString).Options);
+                other.PendingRegistrations.Where(r => r.Id == reg.Id).ExecuteDelete();
+            }
+        };
+        var service = BuildService(operations);
+
+        var result = await service.ProvisionAsync(reg.Id, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(ProvisioningOutcome.Failed, result.Outcome);
+        Assert.Equal(0, await _db.Tenants.AsNoTracking().CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await _db.TenantMemberships.AsNoTracking().CountAsync(TestContext.Current.CancellationToken));
+    }
+
     private PendingRegistrationProvisioningService BuildService(
         FakeTenantDatabaseProvisioningOperations? operations = null,
         FakeSecretManager? secret = null)
     {
-        var opts = Options.Create(new CustomerOnboardingOptions
+        var opts = Options.Create(new TenantOnboardingOptions
         {
-            ServerInstance = "(localdb)\\MSSQLLocalDB",
             SqlAuth = "trusted",
             TrialDays = 14
         });
-        var config = new ConfigurationBuilder().Build();
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["TenantDb:ServerInstance"] = "(localdb)\\MSSQLLocalDB" })
+            .Build();
         var logger = NullLogger<PendingRegistrationProvisioningService>.Instance;
         var sp = new FakeServiceProvider();
         return new PendingRegistrationProvisioningService(
@@ -315,7 +446,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
             Status = status,
             Slug = slug,
             BusinessName = $"Business {slug}",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             BusinessPhone = "+905551112233",
             Country = "TR",
@@ -339,7 +470,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
             Id = id,
             Name = $"Tenant {slug}",
             Slug = slug,
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug}",
             EncryptedConnectionString = "enc",
             EncryptionKeyVersion = 1,
@@ -371,6 +502,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         public int OwnerCreateAttempts { get; private set; }
         public List<string> DatabaseNames { get; } = new();
         public Exception? ExceptionToThrow { get; set; }
+        public Action? OnProvision { get; set; }
 
         public Task<TenantDatabaseProvisioningWork> ProvisionAsync(
             PendingRegistration registration,
@@ -381,6 +513,7 @@ public sealed class PendingRegistrationProvisioningServiceTests : IDisposable
         {
             CallCount++;
             DatabaseNames.Add(databaseName);
+            OnProvision?.Invoke();
 
             if (ExceptionToThrow is not null)
                 throw ExceptionToThrow;

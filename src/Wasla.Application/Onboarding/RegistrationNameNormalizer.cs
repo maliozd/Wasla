@@ -6,14 +6,24 @@ namespace Wasla.Application.Onboarding;
 public static class RegistrationNameNormalizer
 {
     private static readonly Regex SlugPattern = new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
-    private static readonly Regex DatabaseNamePattern = new(@"^Wasla_[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
-    private static readonly Regex WordSplitPattern = new(@"[\s\-_\.]+", RegexOptions.Compiled);
+
+    /// <summary>A slug is one DNS label of the tenant host, so it is never longer than a label may be.</summary>
+    public const int MaxSlugLength = 63;
+
+    /// <summary>
+    /// Names that are never a tenant address (WAS-66): they belong to Wasla's own hosts and products, as
+    /// <c>{name}.app.wasla.tr</c> or as root-level names such as <c>admin.wasla.tr</c>. Signup refuses them and host
+    /// resolution never looks them up.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ReservedSlugs = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "admin", "api", "app", "docs", "help", "partners", "pos", "status", "www"
+    };
 
     public static bool IsValidSlugFormat(string slug) =>
-        !string.IsNullOrWhiteSpace(slug) && SlugPattern.IsMatch(slug);
+        !string.IsNullOrWhiteSpace(slug) && slug.Length <= MaxSlugLength && SlugPattern.IsMatch(slug);
 
-    public static bool IsValidDatabaseNameFormat(string databaseName) =>
-        !string.IsNullOrWhiteSpace(databaseName) && DatabaseNamePattern.IsMatch(databaseName);
+    public static bool IsReservedSlug(string slug) => ReservedSlugs.Contains(slug);
 
     public static string NormalizeSlug(string slug) =>
         slug.Trim().ToLowerInvariant();
@@ -49,27 +59,10 @@ public static class RegistrationNameNormalizer
         return builder.ToString().Trim('-');
     }
 
-    public static string GenerateDatabaseNameFromBusinessName(string businessName)
+    /// <summary>The tenant host <c>{slug}.{applicationBaseDomain}</c>, stored as the tenant's primary domain.</summary>
+    public static string BuildPrimaryDomain(string slug, string applicationBaseDomain)
     {
-        if (string.IsNullOrWhiteSpace(businessName))
-            return string.Empty;
-
-        var ascii = ToAsciiTurkish(businessName.Trim());
-        var parts = WordSplitPattern.Split(ascii)
-            .Where(part => part.Length > 0)
-            .Select(ToPascalWord)
-            .Where(part => part.Length > 0)
-            .ToArray();
-
-        if (parts.Length == 0)
-            return string.Empty;
-
-        return $"Wasla_{string.Concat(parts)}";
-    }
-
-    public static string BuildPrimaryDomain(string slug, string marketingBaseDomain)
-    {
-        var domain = marketingBaseDomain.Trim().TrimStart('.');
+        var domain = applicationBaseDomain.Trim().TrimStart('.');
         return $"{slug}.{domain}";
     }
 
@@ -99,59 +92,17 @@ public static class RegistrationNameNormalizer
         return trimmed.ToLowerInvariant();
     }
 
-    public static string? ExtractSlugFromHost(string? host, string marketingBaseDomain)
+    /// <summary>
+    /// The tenant slug of a host, URL or <c>host:port</c> value when it is exactly <c>{slug}.{applicationBaseDomain}</c>
+    /// with a valid, unreserved slug (<see cref="WaslaHostClassifier"/>); otherwise null.
+    /// </summary>
+    public static string? ExtractSlugFromHost(string? host, string applicationBaseDomain)
     {
         var normalizedHost = NormalizeHostForComparison(host);
         if (string.IsNullOrWhiteSpace(normalizedHost))
             return null;
 
-        var normalizedDomain = NormalizeHostForComparison(marketingBaseDomain?.Trim().TrimStart('.'));
-        if (string.IsNullOrWhiteSpace(normalizedDomain))
-            return null;
-
-        var suffix = "." + normalizedDomain;
-        if (!normalizedHost.EndsWith(suffix, StringComparison.Ordinal))
-            return null;
-
-        var slug = normalizedHost[..^suffix.Length];
-        if (string.Equals(slug, "www", StringComparison.Ordinal))
-            return null;
-
-        return IsValidSlugFormat(slug) ? slug : null;
-    }
-
-    public static string ResolveUniqueDatabaseName(string baseDatabaseName, Func<string, bool> exists)
-    {
-        if (string.IsNullOrWhiteSpace(baseDatabaseName))
-            throw new ArgumentException("Base database name is required.", nameof(baseDatabaseName));
-
-        if (!exists(baseDatabaseName))
-            return baseDatabaseName;
-
-        for (var suffix = 2; suffix < 10_000; suffix++)
-        {
-            var candidate = baseDatabaseName + suffix.ToString();
-            if (!exists(candidate))
-                return candidate;
-        }
-
-        throw new InvalidOperationException("Unable to resolve a unique database name.");
-    }
-
-    private static string ToPascalWord(string word)
-    {
-        var cleaned = new StringBuilder(word.Length);
-        foreach (var ch in word)
-        {
-            if (char.IsLetterOrDigit(ch))
-                cleaned.Append(ch);
-        }
-
-        if (cleaned.Length == 0)
-            return string.Empty;
-
-        var text = cleaned.ToString();
-        return char.ToUpperInvariant(text[0]) + (text.Length > 1 ? text[1..].ToLowerInvariant() : string.Empty);
+        return WaslaHostClassifier.TryGetTenantSlug(normalizedHost, applicationBaseDomain);
     }
 
     private static string ToAsciiTurkish(string value)

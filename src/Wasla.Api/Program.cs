@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.DataProtection;
-using Wasla.Api.Middleware;
+﻿using Wasla.Api;
 using Wasla.Api.Security;
 using Wasla.Api.Tenant;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Sync;
 using Serilog;
@@ -34,34 +34,19 @@ builder.Host.UseSerilog((ctx, services, cfg) =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 
-try
-{
-    var keyPath = builder.Configuration["DataProtection:KeyPath"];
-    if (string.IsNullOrWhiteSpace(keyPath))
-        keyPath = @"C:\Wasla-keys";
-
-    var keyDir = new DirectoryInfo(keyPath);
-    if (!keyDir.Exists)
-    {
-        Directory.CreateDirectory(keyDir.FullName);
-    }
-
-    builder.Services.AddDataProtection()
-        .SetApplicationName("Wasla")
-        .PersistKeysToFileSystem(keyDir);
-}
-catch
-{
-    // Fallback gracefully: if key persistence fails, default DP settings apply.
-    builder.Services.AddDataProtection()
-        .SetApplicationName("Wasla");
-}
+builder.Services.AddWaslaApiDataProtection(builder.Configuration, OperatingSystem.IsWindows());
 
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+// Same host-domain startup policy as Wasla.Web (WAS-66).
+builder.Services.AddWaslaHostDomains(builder.Configuration, builder.Environment);
+
+// Print Bridge job reports this process records are announced to Wasla.Web's open screens (Realtime:Internal). Same
+// startup policy as Wasla.Worker: outside Development it must be configured or explicitly disabled (WAS-103).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration, builder.Environment);
 builder.Services.AddWaslaHealthChecks();
 builder.Services.Configure<RequestDiagnosticsOptions>(options =>
 {
@@ -70,11 +55,24 @@ builder.Services.Configure<RequestDiagnosticsOptions>(options =>
 
 builder.Services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);
 
+// POST /api/auth/validate attempts per tenant and client network (AuthenticationRateLimiting section).
+builder.Services.AddWaslaApiAuthenticationRateLimiting(builder.Configuration);
+
+// X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
+builder.Services.AddWaslaTrustedProxies(builder.Configuration);
+
+// Unknown tenant hosts: one CentralDb lookup per host per short TTL, bounded in size (TenantResolution:MissCache).
+builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.Services.LogWebTenantChangeChannel(builder.Configuration, "Wasla.Api");
+
+// First, so that request logging and rate-limit partitions see the forwarded client.
+app.UseWaslaTrustedProxies();
 
 app.UseSerilogRequestLogging(options =>
 {
@@ -106,16 +104,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<TenantResolutionMiddleware>();
-app.UseMiddleware<PrintBridgeAuthMiddleware>();
-app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-app.MapGet("/", () => Results.Ok("Wasla API"));
-app.MapWaslaHealthChecks();
+// Tenant resolution → Print Bridge device auth → tenant cookie (revalidated per request) → role policies.
+app.UseWaslaApiRequestPipeline();
+app.MapWaslaApiEndpoints();
 
 app.Run();
 

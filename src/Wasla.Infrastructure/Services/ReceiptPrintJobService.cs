@@ -2,10 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -23,15 +25,18 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 {
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly IReceiptTemplateSettingsService _templateSettings;
+    private readonly ITenantChangeNotifier _notifier;
     private readonly ILogger<ReceiptPrintJobService> _logger;
 
     public ReceiptPrintJobService(
         ITenantDbContextFactory dbFactory,
         IReceiptTemplateSettingsService templateSettings,
+        ITenantChangeNotifier notifier,
         ILogger<ReceiptPrintJobService> logger)
     {
         _dbFactory = dbFactory;
         _templateSettings = templateSettings;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -74,10 +79,10 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             return false;
         }
 
+        // The receipt lists items in the order every screen shows them.
         var order = await db.Orders
             .AsNoTracking()
-            .Include(o => o.Items)
-            .ThenInclude(i => i.Options)
+            .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == orderId, ct)
             .ConfigureAwait(false);
 
@@ -94,6 +99,7 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         var safeCopyCount = Math.Clamp(copyCount, 1, 3);
         var nowUtc = DateTime.UtcNow;
+        var statusVersion = await PrintJobStatusVersions.NextForNewJobAsync(db, orderId, ct).ConfigureAwait(false);
 
         var job = new PrintJob
         {
@@ -104,7 +110,8 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             PayloadJson = ReceiptPayloadBuilder.Build(order, tenantDisplayName, template),
             AttemptCount = 0,
             CreatedAt = nowUtc,
-            UpdatedAt = nowUtc
+            UpdatedAt = nowUtc,
+            StatusVersion = statusVersion
         };
 
         db.PrintJobs.Add(job);
@@ -132,6 +139,13 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             orderId,
             job.Id,
             safeCopyCount);
+
+        await TenantChangePublisher.PublishAsync(
+                _notifier,
+                customerId,
+                new PrintJobChanged(orderId, job.Id, job.Status, job.StatusVersion),
+                _logger)
+            .ConfigureAwait(false);
 
         return true;
     }

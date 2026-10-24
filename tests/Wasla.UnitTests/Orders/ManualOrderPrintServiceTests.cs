@@ -6,6 +6,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
 using Wasla.Infrastructure.Services;
@@ -329,7 +330,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         var orderId = await SeedOrderAsync(_tenantId);
         var service = CreateService();
         await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
-        var polling = new PrintBridgeJobService(_dbFactory, NullLogger<PrintBridgeJobService>.Instance);
+        var polling = new PrintBridgeJobService(_dbFactory, NullTenantChangeNotifier.Instance, NullLogger<PrintBridgeJobService>.Instance);
 
         var jobs = await polling.GetPendingJobsAsync(_tenantId, max: 10, Ct);
 
@@ -409,11 +410,13 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         var receiptJobs = new ReceiptPrintJobService(
             _dbFactory,
             templateSettings,
+            NullTenantChangeNotifier.Instance,
             NullLogger<ReceiptPrintJobService>.Instance);
 
         var history = new PrintJobHistoryService(
             _dbFactory,
             templateSettings,
+            NullTenantChangeNotifier.Instance,
             NullLogger<PrintJobHistoryService>.Instance);
 
         return new ManualOrderPrintService(
@@ -570,6 +573,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

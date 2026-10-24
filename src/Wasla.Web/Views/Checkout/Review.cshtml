@@ -1,9 +1,11 @@
 ﻿@model Wasla.Web.Models.Checkout.CheckoutReviewViewModel
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Formatting
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     Layout = "_PublicLayout";
-    ViewData["Title"] = L["Checkout.ReviewTitle"];
+    var titleKey = Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewTitle" : "Checkout.RegistrationSummaryTitle";
+    ViewData["Title"] = L[titleKey];
     var billingLabel = Model.IsYearlyBilling ? L["Signup.BillingYearly"] : L["Signup.BillingMonthly"];
 }
 <div class="wasla-signup-page py-4 py-md-5">
@@ -11,8 +13,8 @@
         <div class="row justify-content-center">
             <div class="col-xl-9">
                 <div class="text-center mb-4">
-                    <h1 class="h3 fw-bold mb-2">@L["Checkout.ReviewTitle"]</h1>
-                    <p class="text-secondary mb-0">@L["Checkout.ReviewSubtitle"]</p>
+                    <h1 class="h3 fw-bold mb-2">@L[titleKey]</h1>
+                    <p class="text-secondary mb-0">@L[Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewSubtitle" : "Checkout.ReviewSubtitleAwaitingPayment"]</p>
                 </div>
 
                 <div class="card border-0 shadow-sm wasla-signup-card mb-3">
@@ -28,13 +30,15 @@
                             <dd class="col-sm-8">@Model.PlanDisplayName</dd>
                             <dt class="col-sm-4">@L["Signup.PendingLabelPaymentPeriod"]</dt>
                             <dd class="col-sm-8">@billingLabel</dd>
-                            @if (Model.IsYearlyBilling)
-                            {
-                                <dt class="col-sm-4">@L["Checkout.MonthlyReferencePrice"]</dt>
-                                <dd class="col-sm-8">@Model.MonthlyPriceTry.ToString("N0") TRY</dd>
-                            }
                             <dt class="col-sm-4">@L["Checkout.TotalAmount"]</dt>
-                            <dd class="col-sm-8 fw-semibold">@Model.TotalPriceTry.ToString("N0") TRY</dd>
+                            @if (Model.Price is { } price)
+                            {
+                                <dd class="col-sm-8"><span class="fw-semibold">@PlanPriceText.PerPeriod(price, price.BillingPeriod, L)</span> <span class="text-muted">(@PlanPriceText.Vat(price, L))</span></dd>
+                            }
+                            else
+                            {
+                                <dd class="col-sm-8 text-muted">@PlanPriceText.PerPeriod(null, Model.BillingPeriod, L)</dd>
+                            }
                         </dl>
 
                         <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRestaurantInfo"]</h2>

@@ -20,7 +20,10 @@ public sealed class MockTrendyolYemekFoodPlatformClient : IFoodPlatformClient
 
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 
-    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct)
+    /// <summary>Mock orders are generated per run; the fetch window is not used.</summary>
+    public TimeSpan? MaxFetchWindow => null;
+
+    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
     {
         await Task.Delay(Random.Shared.Next(300, 800), ct);
 

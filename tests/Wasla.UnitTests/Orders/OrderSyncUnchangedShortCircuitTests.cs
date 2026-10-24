@@ -14,6 +14,7 @@ using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 
@@ -283,8 +284,14 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.NotEqual(before.OptionIds, after.OptionIds);
     }
 
+    /// <summary>
+    /// The provider's order is part of the order (WAS-44): the same lines (same ids) and modifiers listed in a different
+    /// order are an update, stored with their new positions. Ids and payload noise alone still change nothing (see
+    /// StableOrder_RepeatedSync_DoesNotRewriteRows). OrderItemSequenceTests covers every surface, the order's version and
+    /// the change notification.
+    /// </summary>
     [Fact]
-    public async Task ReorderedItemsAndModifiers_AreUnchanged()
+    public async Task ReorderedItemsAndModifiers_AreAnUpdate()
     {
         var sync = await CreateSyncAsync();
         var cheese = new ExternalOrderItemOptionDto("Cheese", 5m);
@@ -297,32 +304,33 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await SyncAsync(sync, original);
         var before = await ReadAsync(original.ExternalOrderId);
 
+        // The same provider lines (same ids, quantities, prices and modifiers), listed in a different order.
         var reordered = original with
         {
-            Subtotal = 1m,
             RawPayloadJson = "{\"reordered\":true}",
-            Items =
-            [
-                fries with { ExternalItemId = "fries-moved" },
-                burger with
-                {
-                    ExternalItemId = "burger-moved",
-                    Options = [bacon, cheese]
-                }
-            ]
+            Items = [fries, burger with { Options = [bacon, cheese] }]
         };
 
         var result = await SyncAsync(sync, reordered);
 
-        Assert.Equal(1, result.UnchangedCount);
-        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(0, result.UnchangedCount);
+        Assert.Equal(1, result.UpdatedCount);
         var after = await ReadAsync(original.ExternalOrderId);
-        Assert.Equal(before.UpdatedAt, after.UpdatedAt);
-        Assert.Equal(before.ItemIds, after.ItemIds);
-        Assert.Equal(before.OptionIds, after.OptionIds);
-        Assert.Equal(before.RawPayloadJson, after.RawPayloadJson);
+        Assert.NotEqual(before.ItemIds, after.ItemIds);
+        Assert.Equal("{\"reordered\":true}", after.RawPayloadJson);
         Assert.Equal(2, after.Items.Length);
         Assert.Equal(3, after.OptionIds.Length);
+
+        await using (var db = await _db.CreateAsync(_tenantId, CancellationToken))
+        {
+            var items = await db.OrderItems.Include(i => i.Options).OrderBy(i => i.Sequence).ToListAsync(CancellationToken);
+            Assert.Equal(["Fries", "Burger"], items.Select(i => i.ProductName).ToArray());
+            Assert.Equal([0, 1], items.Select(i => i.Sequence).ToArray());
+            Assert.Equal(["Bacon", "Cheese"], items[1].Options.OrderBy(o => o.Sequence).Select(o => o.Name).ToArray());
+        }
+
+        // Stored as the provider lists it now, so the same list again is unchanged.
+        Assert.Equal(1, (await SyncAsync(sync, reordered)).UnchangedCount);
     }
 
     [Fact]
@@ -489,6 +497,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     public async Task DeliveredOrder_IgnoresProviderCancellation()
     {
         var sync = await CreateSyncAsync();
+        // A first sync looks back an hour, which dates no milestone; after it, polling is live.
+        await SyncAsync(sync);
         var delivered = Sample(externalStatus: "Delivered");
         await SyncAsync(sync, delivered);
         var before = await ReadAsync(delivered.ExternalOrderId);
@@ -507,10 +517,38 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.Null(after.CancelledAt);
     }
 
+    /// <summary>
+    /// A client that ignores the fetch window (this fake, like Yemeksepeti and the mocks): milestones still follow the
+    /// window planned from the checkpoint, so only live polling dates them.
+    /// </summary>
+    [Fact]
+    public async Task WindowlessClient_DatesMilestonesOnlyWhilePollingIsLive()
+    {
+        var sync = await CreateSyncAsync();
+
+        // The first sync looks back an hour.
+        var first = Sample(externalOrderId: "ext-first", externalStatus: "Delivered");
+        await SyncAsync(sync, first);
+        Assert.Null((await ReadAsync("ext-first")).DeliveredAt);
+
+        // Live polling: the window starts five minutes before the checkpoint.
+        var live = Sample(externalOrderId: "ext-live", externalStatus: "Cancelled");
+        await SyncAsync(sync, first, live);
+        Assert.NotNull((await ReadAsync("ext-live")).CancelledAt);
+        Assert.Null((await ReadAsync("ext-first")).DeliveredAt);
+
+        // Twenty minutes without a successful sync: the next window is too long to date what it finds.
+        await MoveCheckpointAsync(TimeSpan.FromMinutes(-20));
+        var afterGap = Sample(externalOrderId: "ext-gap", externalStatus: "Delivered");
+        await SyncAsync(sync, first, live, afterGap);
+        Assert.Null((await ReadAsync("ext-gap")).DeliveredAt);
+    }
+
     [Fact]
     public async Task CancelledOrder_IsNotReopenedByProviderRefresh()
     {
         var sync = await CreateSyncAsync();
+        await SyncAsync(sync);
         var cancelled = Sample(externalStatus: "Cancelled");
         await SyncAsync(sync, cancelled);
 
@@ -531,7 +569,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await SyncAsync(sync, order);
         var ready = await ReadAsync(order.ExternalOrderId);
         Assert.Equal(OrderStatus.ReadyForPickup, ready.InternalStatus);
-        var actions = new OrderActionService(_db, [_client], NullLogger<OrderActionService>.Instance);
+        var actions = new OrderActionService(_db, [_client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
         // Pickup: refused before any provider call or status change; provider sync applies it.
         var manualPickup = await actions.MarkOnTheWayAsync(_tenantId, ready.Id, CancellationToken);
@@ -590,6 +628,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
     }
 
@@ -597,6 +636,14 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     {
         _client.Set(orders);
         return await sync.SyncCustomerWithResultAsync(_tenantId, CancellationToken);
+    }
+
+    private async Task MoveCheckpointAsync(TimeSpan fromNow)
+    {
+        await using var db = await _db.CreateAsync(_tenantId, CancellationToken);
+        var connection = await db.PlatformConnections.SingleAsync(CancellationToken);
+        connection.LastSuccessfulSync = DateTime.UtcNow + fromNow;
+        await db.SaveChangesAsync(CancellationToken);
     }
 
     private async Task SetStatusAsync(string externalOrderId, OrderStatus status)
@@ -728,7 +775,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Guid Id,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        DateTime CreatedAtPlatform,
+        DateTime? CreatedAtPlatform,
         OrderStatus InternalStatus,
         string PlatformStatus,
         string ExternalOrderCode,
@@ -764,10 +811,11 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
         public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
@@ -922,6 +970,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
                     builder.ToTable("Orders");
                     builder.HasKey(x => x.Id);
                     builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                    builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                     builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
                 });
 

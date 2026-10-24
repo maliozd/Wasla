@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Api.Security;
+using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Security;
 using Wasla.Web.Security;
@@ -26,28 +27,30 @@ public sealed class ApiTenantAuthenticationTests : IDisposable
     }
 
     [Fact]
-    public void ApiProgram_UsesWaslaTenantCookie_AndDoesNotConfigureLegacyCookie()
+    public void ApiProgram_UsesWaslaTenantCookie()
     {
         var root = FindRepositoryRoot();
         var program = File.ReadAllText(Path.Combine(root, "src", "Wasla.Api", "Program.cs"));
+        // Program.cs runs the request pipeline through this extension (WAS-94).
+        var pipeline = File.ReadAllText(Path.Combine(root, "src", "Wasla.Api", "WaslaApiPipeline.cs"));
         var authController = File.ReadAllText(Path.Combine(root, "src", "Wasla.Api", "Controllers", "AuthController.cs"));
 
         Assert.Equal(AuthSchemes.Tenant, WaslaAuthContracts.TenantScheme);
         Assert.Equal(TenantAuthCookieNames.Active, WaslaAuthContracts.TenantCookieName);
         Assert.Equal(AuthSchemes.CentralAdmin, WaslaAuthContracts.CentralAdminScheme);
         Assert.Equal(CentralAdminAuthCookieNames.Active, WaslaAuthContracts.CentralAdminCookieName);
-        Assert.Equal("orderhub_auth", WaslaAuthContracts.LegacyTenantCookieName);
 
         Assert.Contains("AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always)", program, StringComparison.Ordinal);
-        Assert.Contains("ExpireLegacyTenantAuthCookieMiddleware", program, StringComparison.Ordinal);
-        Assert.Contains("UseMiddleware<TenantResolutionMiddleware>();", program, StringComparison.Ordinal);
-        Assert.Contains("UseMiddleware<PrintBridgeAuthMiddleware>();", program, StringComparison.Ordinal);
-        var tenantResolution = program.IndexOf("UseMiddleware<TenantResolutionMiddleware>();", StringComparison.Ordinal);
-        var printBridge = program.IndexOf("UseMiddleware<PrintBridgeAuthMiddleware>();", StringComparison.Ordinal);
-        var authentication = program.IndexOf("UseAuthentication();", StringComparison.Ordinal);
-        Assert.True(tenantResolution >= 0 && tenantResolution < printBridge && printBridge < authentication);
+        Assert.Contains("app.UseWaslaApiRequestPipeline();", program, StringComparison.Ordinal);
+        Assert.Contains("app.MapWaslaApiEndpoints();", program, StringComparison.Ordinal);
+        Assert.Contains("UseMiddleware<TenantResolutionMiddleware>();", pipeline, StringComparison.Ordinal);
+        Assert.Contains("UseMiddleware<PrintBridgeAuthMiddleware>();", pipeline, StringComparison.Ordinal);
+        var tenantResolution = pipeline.IndexOf("UseMiddleware<TenantResolutionMiddleware>();", StringComparison.Ordinal);
+        var printBridge = pipeline.IndexOf("UseMiddleware<PrintBridgeAuthMiddleware>();", StringComparison.Ordinal);
+        var sessionUnavailable = pipeline.IndexOf("UseMiddleware<TenantSessionUnavailableMiddleware>();", StringComparison.Ordinal);
+        var authentication = pipeline.IndexOf("UseAuthentication();", StringComparison.Ordinal);
+        Assert.True(tenantResolution >= 0 && tenantResolution < printBridge && printBridge < sessionUnavailable && sessionUnavailable < authentication);
 
-        Assert.DoesNotContain("orderhub_auth", program, StringComparison.Ordinal);
         Assert.DoesNotContain("CookieAuthenticationDefaults", program, StringComparison.Ordinal);
         Assert.DoesNotContain("SignInAsync", authController, StringComparison.Ordinal);
         Assert.Contains("WaslaAuthContracts.TenantIdClaim", authController, StringComparison.Ordinal);
@@ -89,6 +92,7 @@ public sealed class ApiTenantAuthenticationTests : IDisposable
         using var host = await StartApiHostAsync(_tenantId);
         var response = await SendAsync(host, "/api/tenant", cookie);
 
+        // The role policy's own TenantId binding, behind session validation (which rejects such a session with 401).
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -110,23 +114,6 @@ public sealed class ApiTenantAuthenticationTests : IDisposable
         var response = await SendAsync(host, "/api/tenant", cookie);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task LegacyOrderHubCookie_IsNotAuthenticated_AndIsExpired()
-    {
-        var cookie = await IssueCookieAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            WaslaAuthContracts.LegacyTenantCookieName,
-            TenantPrincipal(_tenantId));
-
-        using var host = await StartApiHostAsync(_tenantId);
-        var response = await SendAsync(host, "/api/tenant", cookie);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        var setCookie = string.Join("\n", response.Headers.GetValues("Set-Cookie"));
-        Assert.Contains("orderhub_auth=", setCookie, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -197,8 +184,10 @@ public sealed class ApiTenantAuthenticationTests : IDisposable
         AddSharedDataProtection(builder.Services);
         builder.Services.AddSingleton<ICurrentTenantService>(new FixedTenant(resolvedTenantId));
         builder.Services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.None);
+        // These tests cover which cookie and scheme authenticate. Session revalidation against the tenant database is
+        // covered over real HTTP by ApiTenantSessionTests; here every session the scheme reads is accepted.
+        builder.Services.AddSingleton<ITenantSessionValidator>(new AcceptingSessionValidator());
         var app = builder.Build();
-        app.UseMiddleware<ExpireLegacyTenantAuthCookieMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapGet("/api/tenant", (ClaimsPrincipal user) =>
@@ -287,6 +276,12 @@ public sealed class ApiTenantAuthenticationTests : IDisposable
 
     private sealed class FixedTenant(Guid tenantId) : ICurrentTenantService
     {
-        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+        public ResolvedTenantDto? CurrentTenant { get; } = new(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
+    }
+
+    private sealed class AcceptingSessionValidator : ITenantSessionValidator
+    {
+        public Task<TenantSessionState> ValidateAsync(Guid? resolvedTenantId, ClaimsPrincipal? principal, CancellationToken ct) =>
+            Task.FromResult(TenantSessionState.Valid);
     }
 }

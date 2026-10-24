@@ -14,6 +14,9 @@ public sealed class DashboardViewModel
     public TenantSetupPanelViewModel? Setup { get; set; }
     public Wasla.Web.Models.GuidedSetup.GuidedSetupDashboardViewModel? GuidedSetup { get; set; }
 
+    /// <summary>The user completed or skipped guided setup; nothing offers to start it again.</summary>
+    public bool GuidedSetupFinished { get; set; }
+
     public sealed class RecentOrderRow
     {
         public Guid Id { get; set; }
@@ -22,7 +25,11 @@ public sealed class DashboardViewModel
         public OrderStatus Status { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
-        public DateTime ReceivedAtUtc { get; set; }
+        /// <summary>Operational order time (UTC, WAS-125): the provider's creation time, otherwise the import time.</summary>
+        public DateTime OrderedAtUtc { get; set; }
+
+        /// <summary>False when <see cref="OrderedAtUtc"/> is Wasla's import time because the provider sent none.</summary>
+        public bool OrderedAtIsFromPlatform { get; set; }
     }
 
     public sealed class PlatformSummaryRow

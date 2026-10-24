@@ -1,3 +1,4 @@
+@model Wasla.Web.Models.Auth.AccessDeniedViewModel
 @{
     ViewData["Title"] = L["Auth.AccessDenied.Title"];
 }
@@ -11,7 +12,10 @@
                 </div>
                 <h1 class="h4 mb-2">@L["Auth.AccessDenied.Title"]</h1>
                 <p class="text-muted mb-4">@L["Auth.AccessDenied.Description"]</p>
-                <a class="btn btn-primary" href="/orders">@L["Auth.AccessDenied.BackToOrders"]</a>
+                @if (Model.LandingPageUrl is not null)
+                {
+                    <a class="btn btn-primary" href="@Model.LandingPageUrl" data-access-denied-home>@L["Auth.AccessDenied.GoToStartPage"]</a>
+                }
             </div>
         </div>
     </div>

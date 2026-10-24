@@ -33,7 +33,7 @@ namespace Wasla.UnitTests.Signup;
 internal sealed class CheckoutTestHarness : IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly IOptions<CustomerOnboardingOptions> _options = Options.Create(new CustomerOnboardingOptions());
+    private readonly IOptions<TenantOnboardingOptions> _options = Options.Create(new TenantOnboardingOptions());
     private readonly IDataProtectionProvider _dataProtection = new EphemeralDataProtectionProvider();
     private readonly List<CentralDbContext> _extraContexts = [];
 
@@ -112,6 +112,7 @@ internal sealed class CheckoutTestHarness : IDisposable
             CreateService(),
             new SignupReferenceDataService(Db),
             new WaslaPlanCatalog(),
+            new BillingPlanPriceReader(Db, TimeProvider.System),
             new InlineValidator<PendingRegistrationRequest>(),
             _options,
             new KeyEchoLocalizer(),
@@ -133,7 +134,7 @@ internal sealed class CheckoutTestHarness : IDisposable
             Status = status,
             Slug = slug,
             BusinessName = "Checkout Test Restaurant",
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_{slug.Replace('-', '_')}",
             BusinessPhone = "5551112233",
             BusinessEmail = "business@example.test",

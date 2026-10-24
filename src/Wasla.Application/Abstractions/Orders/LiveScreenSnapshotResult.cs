@@ -22,7 +22,53 @@ public sealed record LiveScreenSnapshotResult(
     /// when the status could not be read; the page then keeps what it showed.
     /// </summary>
     public LiveScreenAutomationStatus? Automation { get; init; }
+
+    /// <summary>
+    /// Whether platform orders are actually being synchronized, from the tenant's platform connection records (see
+    /// <see cref="LiveScreenSyncStatus"/>), for every Live Screen user. Null, and serialized as null, only when the
+    /// status could not be read; the page then shows a connection issue rather than a "Live" it cannot back up.
+    /// </summary>
+    public LiveScreenSyncStatus? Sync { get; init; }
 }
+
+/// <summary>
+/// The Live Screen's connection indicator. An open page, a working poll or a successful request is never evidence: every
+/// state comes from the tenant's platform connection records (see <c>LiveScreenSyncRules</c>).
+/// </summary>
+public enum LiveScreenSyncState
+{
+    /// <summary>The tenant has no platform connection.</summary>
+    NotConnected = 0,
+
+    /// <summary>
+    /// Synchronization is switched off: the tenant's Order Sync setting is off, or every connection is deactivated. For
+    /// one platform: that connection is deactivated, or the tenant's Order Sync setting is off.
+    /// </summary>
+    SyncDisabled = 1,
+
+    /// <summary>Every active connection completed a sync recently enough, and none failed its last attempt.</summary>
+    Live = 2,
+
+    /// <summary>
+    /// An active connection failed its last attempt, is paused after repeated failures, has never completed a sync, or
+    /// has not completed one for too long. One such connection is enough: other healthy platforms do not hide it.
+    /// </summary>
+    Issue = 3
+}
+
+/// <summary>
+/// The connection indicator: the overall state, the oldest last successful sync of the active connections (null when
+/// one has never completed a sync, or none is active), and each platform's own state. Read-only status: no store id,
+/// credential, failure count or error text.
+/// </summary>
+public sealed record LiveScreenSyncStatus(
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] LiveScreenSyncState State,
+    DateTime? LastSuccessfulSyncUtc,
+    IReadOnlyList<LiveScreenPlatformSync> Platforms);
+
+public sealed record LiveScreenPlatformSync(
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] FoodPlatform Platform,
+    [property: JsonConverter(typeof(JsonStringEnumConverter))] LiveScreenSyncState State);
 
 /// <summary>
 /// What each automation does right now: Active, Off, or PendingSetup (configured on, waiting for the tenant to leave
@@ -66,6 +112,23 @@ public sealed record LiveScreenOrderDto(
     /// the Worker uses. The Live Screen shows a countdown from it and never acts on it. Null for every real order.
     /// </summary>
     public LiveScreenDemoAutomation? DemoAutomation { get; init; }
+
+    /// <summary>
+    /// The order's <c>ChangeVersion</c> when this snapshot was read; 0 for a practice order. A live
+    /// <c>OrderChanged</c> whose version is not higher than this is already shown by the snapshot.
+    /// </summary>
+    public long ChangeVersion { get; init; }
+
+    /// <summary>
+    /// When the order was placed on the platform, as the provider reported it (WAS-125); null when it sent no creation
+    /// time, and for a practice order. The Live Screen shows and counts from it, and falls back to
+    /// <see cref="ReceivedAtUtc"/> under the "received in Wasla" label when it is null.
+    /// </summary>
+    public DateTime? PlacedAtUtc { get; init; }
+
+    /// <summary>The operational order time: <see cref="PlacedAtUtc"/>, otherwise <see cref="ReceivedAtUtc"/>.</summary>
+    [JsonIgnore]
+    public DateTime OrderedAtUtc => PlacedAtUtc ?? ReceivedAtUtc;
 }
 
 /// <summary>

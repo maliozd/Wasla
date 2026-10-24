@@ -8,6 +8,7 @@ using Wasla.Application;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Email;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Onboarding;
 using Wasla.Domain.Entities.Central;
 using TenantEntity = Wasla.Domain.Entities.Central.Tenant;
 using Wasla.Domain.Enums;
@@ -23,11 +24,9 @@ namespace Wasla.Infrastructure.Services;
 /// </summary>
 public sealed class PendingRegistrationProvisioningService : IPendingRegistrationProvisioningService
 {
-    private static readonly Regex SqlDbNameRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
-
     private readonly CentralDbContext _central;
     private readonly ISecretManager _secret;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantDatabaseProvisioningOperations _tenantDatabaseOperations;
@@ -36,7 +35,7 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
     public PendingRegistrationProvisioningService(
         CentralDbContext central,
         ISecretManager secret,
-        IOptions<CustomerOnboardingOptions> options,
+        IOptions<TenantOnboardingOptions> options,
         IConfiguration configuration,
         IServiceProvider serviceProvider,
         ITenantDatabaseProvisioningOperations tenantDatabaseOperations,
@@ -59,6 +58,15 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         string? panelLoginUrl = null,
         CancellationToken ct = default)
     {
+        // Taken before the registration is read: a later attempt then sees the finished result and reports
+        // AlreadyProvisioned, and a simultaneous one is refused before any database work (WAS-93).
+        await using var attemptLock = await ProvisioningRegistrationLock
+            .TryAcquireAsync(_central, registrationId, ct)
+            .ConfigureAwait(false);
+        if (attemptLock is null)
+            return ProvisioningResult.NotEligible(
+                "Another provisioning attempt for this registration is in progress. Check the registration again when it finishes.");
+
         var registration = await _central.PendingRegistrations
             .FirstOrDefaultAsync(r => r.Id == registrationId, ct)
             .ConfigureAwait(false);
@@ -111,11 +119,23 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
 
         var dbName = registration.DatabaseName.Trim();
 
+        // Never CentralDb or a SQL Server system database, whatever the registration row says (WAS-93).
+        var nameError = TenantDatabaseNames.GetRejectionReason(dbName, CentralCatalog());
+        if (nameError is not null)
+            return ProvisioningResult.ValidationError(nameError);
+
+        // An explicitly configured SQL Server only; no built-in LocalDB or '.' default (WAS-93).
+        var serverResolution = TenantSqlServerConfiguration.Resolve(
+            sqlServerOverride,
+            _configuration[TenantSqlServerConfiguration.ServerInstanceKey]);
+        if (!serverResolution.IsResolved)
+            return ProvisioningResult.ValidationError(serverResolution.Error!);
+        var server = serverResolution.Server!;
+
         var uniquenessError = await ValidateUniquenessAsync(registration, ct).ConfigureAwait(false);
         if (uniquenessError is not null)
             return ProvisioningResult.ValidationError(uniquenessError);
 
-        var server = ResolveServer(sqlServerOverride);
         var sqlAuth = ResolveAuth(sqlAuthOverride);
 
         _logger.LogInformation(
@@ -154,6 +174,11 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
                 UpdatedAt = now
             };
 
+            // The tenant row, its membership and the registration's Provisioned status are stored together or not at
+            // all. A failure leaves the registration PaymentSucceeded with no tenant row, so a retry of this same
+            // registration resumes the database it marked; unique indexes stop a concurrent second attempt (WAS-93).
+            await using var transaction = await _central.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+
             _central.Tenants.Add(tenant);
             await _central.SaveChangesAsync(ct).ConfigureAwait(false);
 
@@ -177,6 +202,8 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
             registration.TenantId = tenantId;
             registration.ProvisionedAtUtc = now;
             await _central.SaveChangesAsync(ct).ConfigureAwait(false);
+
+            await transaction.CommitAsync(ct).ConfigureAwait(false);
 
             await TrySendPanelReadyEmailAsync(registration, panelLoginUrl, ct).ConfigureAwait(false);
 
@@ -211,14 +238,8 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         return value[..maxLength];
     }
 
-    private string ResolveServer(string? sqlServerOverride)
-    {
-        if (!string.IsNullOrWhiteSpace(sqlServerOverride))
-            return sqlServerOverride.Trim();
-
-        return _configuration["CustomerDb:ServerInstance"]?.Trim()
-            ?? _options.ServerInstance;
-    }
+    /// <summary>The catalog CentralDb connects to; empty when unknown, which <see cref="TenantDatabaseNames"/> refuses.</summary>
+    private string? CentralCatalog() => _central.Database.GetDbConnection().Database;
 
     private string ResolveAuth(string? sqlAuthOverride)
     {
@@ -234,7 +255,6 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         if (string.IsNullOrWhiteSpace(r.Slug)) return "Slug is required.";
         if (string.IsNullOrWhiteSpace(r.PrimaryDomain)) return "PrimaryDomain is required.";
         if (string.IsNullOrWhiteSpace(r.DatabaseName)) return "DatabaseName is required.";
-        if (!SqlDbNameRegex.IsMatch(r.DatabaseName.Trim())) return $"DatabaseName '{r.DatabaseName}' contains invalid characters.";
         if (string.IsNullOrWhiteSpace(r.OwnerEmail)) return "OwnerEmail is required.";
         if (string.IsNullOrWhiteSpace(r.OwnerFullName)) return "OwnerFullName is required.";
         if (string.IsNullOrWhiteSpace(r.PasswordHash)) return "PasswordHash is required.";
@@ -266,18 +286,19 @@ public sealed class PendingRegistrationProvisioningService : IPendingRegistratio
         if (byDb is not null && byDb.Id != registration.TenantId)
             return $"A tenant with database name '{dbName}' already exists (TenantId={byDb.Id}).";
 
-        var now = DateTime.UtcNow;
         var pendingConflict = await _central.PendingRegistrations.AsNoTracking()
-            .AnyAsync(p =>
-                p.Id != registration.Id
-                && (p.Status == PendingRegistrationStatus.Draft
-                    || p.Status == PendingRegistrationStatus.AwaitingPayment
-                    || p.Status == PendingRegistrationStatus.PaymentSucceeded)
-                && (p.ExpiresAtUtc == null || p.ExpiresAtUtc > now)
-                && (p.Slug == slug || p.PrimaryDomain == domain || p.DatabaseName == dbName),
-                ct).ConfigureAwait(false);
+            .Where(p => p.Id != registration.Id)
+            .Where(PendingRegistrationReservations.HoldsReservation(DateTime.UtcNow))
+            .AnyAsync(p => p.Slug == slug || p.PrimaryDomain == domain, ct).ConfigureAwait(false);
         if (pendingConflict)
-            return "Another active pending registration reserves the same slug, domain, or database name.";
+            return "Another active pending registration reserves the same slug or domain.";
+
+        // A database name belongs to one registration, whatever that registration's status: a database a cancelled or
+        // expired registration's attempt created must not become another registration's database.
+        var databaseNameConflict = await _central.PendingRegistrations.AsNoTracking()
+            .AnyAsync(p => p.Id != registration.Id && p.DatabaseName == dbName, ct).ConfigureAwait(false);
+        if (databaseNameConflict)
+            return $"Another pending registration uses database name '{dbName}'.";
 
         return null;
     }

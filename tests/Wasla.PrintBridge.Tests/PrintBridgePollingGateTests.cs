@@ -46,7 +46,6 @@ public sealed class PrintBridgePollingGateTests
                  })
         {
             var content = File.ReadAllText(Path.Combine(resourcesDir, culture));
-            Assert.Contains("Settings.ConnectionTroubleshootingTitle", content);
             Assert.Contains("Settings.ResetConnectionHelp", content);
             Assert.Contains("Message.ReconnectFromWebToContinue", content);
             Assert.Contains("Button.ResetConnection", content);

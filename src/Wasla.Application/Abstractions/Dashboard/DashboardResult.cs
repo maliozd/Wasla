@@ -19,7 +19,8 @@ public sealed class DashboardResult
         OrderStatus Status,
         string CustomerName,
         decimal TotalAmount,
-        DateTime ReceivedAtUtc);
+        DateTime OrderedAtUtc,
+        bool OrderedAtIsFromPlatform);
 
     public sealed record PlatformSummaryRow(
         FoodPlatform Platform,

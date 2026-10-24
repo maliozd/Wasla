@@ -1,5 +1,7 @@
-@* Shared print action. Rendered from the current server PrintJob snapshot (queued / reprint / print).
-   Phase 2B5 does not live-update after queue. SignalR follow-up: docs/orders-printjob-status-signalr.md *@
+@* Shared print action, rendered from the current server PrintJob state (print / reprint / queued / printing, plus the
+   newest finished receipt's outcome). While it is on screen, orders-print-status.js reads GET /orders/{id}/print-state
+   again when a live print notification arrives, after a reconnect, and every few seconds while the live connection is
+   down. See docs/architecture/realtime.md. *@
 @model Wasla.Web.Models.Orders.OrderPrintActionModel
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
@@ -13,21 +15,41 @@
 
 @if (canManualPrint)
 {
-    var mode = Model.InProgress ? "queued" : (Model.CanReprint ? "reprint" : "print");
-    var label = Model.InProgress
-        ? L["Orders.Print.InQueue"].Value
-        : (Model.CanReprint ? L["PrintBridge.Reprint"].Value : L["Orders.Print.Action"].Value);
+    var mode = Model.Mode;
+    var label = mode switch
+    {
+        "queued" => L["Orders.Print.InQueue"].Value,
+        "printing" => L["Orders.Print.Printing"].Value,
+        "reprint" => L["PrintBridge.Reprint"].Value,
+        _ => L["Orders.Print.Action"].Value
+    };
+    var outcomeText = Model.Outcome switch
+    {
+        "printed" => L["Orders.Print.Status.Printed"].Value,
+        "failed" => L["Orders.Print.Status.Failed"].Value,
+        _ => ""
+    };
 
-    <button type="button"
-            class="btn btn-outline-secondary @Model.ButtonSizeClass wasla-order-print-btn"
-            data-order-print="@Model.OrderId"
-            data-print-mode="@mode"
-            data-label-print="@L["Orders.Print.Action"].Value"
-            data-label-reprint="@L["PrintBridge.Reprint"].Value"
-            data-label-queued="@L["Orders.Print.InQueue"].Value"
-            data-confirm-reprint="@L["Orders.Print.ConfirmReprint"].Value"
-            disabled="@(Model.InProgress ? "disabled" : null)"
-            title="@L["Orders.Print.Hint"]">
-        <i class="bi bi-printer me-1" aria-hidden="true"></i><span data-print-label>@label</span>
-    </button>
+    <span class="wasla-order-print d-inline-flex flex-wrap align-items-center gap-2"
+          data-print-action-for="@Model.OrderId"
+          data-print-version="@Model.Version">
+        <button type="button"
+                class="btn btn-outline-secondary @Model.ButtonSizeClass wasla-order-print-btn"
+                data-order-print="@Model.OrderId"
+                data-print-mode="@mode"
+                data-label-print="@L["Orders.Print.Action"].Value"
+                data-label-reprint="@L["PrintBridge.Reprint"].Value"
+                data-label-queued="@L["Orders.Print.InQueue"].Value"
+                data-label-printing="@L["Orders.Print.Printing"].Value"
+                data-confirm-reprint="@L["Orders.Print.ConfirmReprint"].Value"
+                disabled="@(Model.InProgress ? "disabled" : null)"
+                title="@L["Orders.Print.Hint"]">
+            <i class="bi bi-printer me-1" aria-hidden="true"></i><span data-print-label aria-live="polite">@label</span>
+        </button>
+        <span class="wasla-order-print__outcome small @(Model.Outcome == "failed" ? "text-danger-emphasis" : "text-success-emphasis")"
+              role="status"
+              data-print-outcome="@Model.Outcome"
+              data-label-printed="@L["Orders.Print.Status.Printed"].Value"
+              data-label-failed="@L["Orders.Print.Status.Failed"].Value">@outcomeText</span>
+    </span>
 }

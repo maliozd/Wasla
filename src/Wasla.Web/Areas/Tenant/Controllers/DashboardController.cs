@@ -70,19 +70,23 @@ public sealed class DashboardController : BaseController
                     Status = o.Status,
                     CustomerName = o.CustomerName,
                     TotalAmount = o.TotalAmount,
-                    ReceivedAtUtc = o.ReceivedAtUtc
+                    OrderedAtUtc = o.OrderedAtUtc,
+                    OrderedAtIsFromPlatform = o.OrderedAtIsFromPlatform
                 })
                 .ToList()
         };
 
-        vm.Setup = await TryLoadSetupAsync(tenant.Id, tenant.Name, ct);
-
+        var guidedSetup = GuidedSetupDashboard.None;
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("UserId");
         if (Guid.TryParse(userIdValue, out var userId))
         {
             // Fails closed inside the coordinator: a read error hides guidance, never the Dashboard.
-            vm.GuidedSetup = await _guidedSetup.GetDashboardCardAsync(tenant.Id, userId, User, ct);
+            guidedSetup = await _guidedSetup.GetDashboardAsync(tenant.Id, userId, User, ct);
         }
+
+        vm.GuidedSetup = guidedSetup.Card;
+        vm.GuidedSetupFinished = guidedSetup.HasFinished;
+        vm.Setup = await TryLoadSetupAsync(tenant.Id, tenant.Name, guidedSetup.HasFinished, ct);
 
         return View("Index", vm);
     }
@@ -107,6 +111,7 @@ public sealed class DashboardController : BaseController
     private async Task<TenantSetupPanelViewModel?> TryLoadSetupAsync(
         Guid tenantId,
         string restaurantName,
+        bool guidedSetupFinished,
         CancellationToken ct)
     {
         var allowed = await _authorization.AuthorizeAsync(User, resource: null, TenantPolicies.CanManageTenantSettings);
@@ -120,7 +125,9 @@ public sealed class DashboardController : BaseController
         try
         {
             var status = await _setup.GetAsync(tenantId, userId, ct);
-            if (status.IsSetupGuidanceCompleted)
+            // Nothing is left once setup guidance was finished here, or once the user finished guided setup and both
+            // required steps are done; a finished journey leaves no banner behind.
+            if (status.IsSetupGuidanceCompleted || (guidedSetupFinished && status.IsReady))
                 return null;
 
             return TenantSetupPanelMapper.Map(status, restaurantName, tenantId, _localizer);

@@ -46,19 +46,19 @@ Character labels from design language: warm, reliable, fast, operational, restau
 
 ## Tokens (foundation = token source)
 
-`wasla-foundation.css` on `body.wasla-tenant-shell` (selected):
+`wasla-foundation.css` on `body.wasla-tenant-shell` (selected), with the dark value set on `[data-bs-theme="dark"] body.wasla-tenant-shell` (see [Dark mode](#dark-mode-in-the-tenant-app)):
 
-| Token | Value | Role |
-| --- | --- | --- |
-| `--wasla-accent` | `#E87342` | Wasla Orange |
-| `--wasla-accent-hover` | `#B94F2A` | Action Orange |
-| `--wasla-accent-soft` | `#FBE9DF` | Soft orange surface |
-| `--wasla-canvas` | `#F7F4EE` | Application canvas |
-| `--wasla-surface` | `#FFFEFA` | Main surface |
-| `--wasla-surface-muted` | `#F4F0E9` | Nested / quiet surface |
-| `--wasla-border` / `--wasla-border-strong` | `#E3DDD3` / `#D3CABD` | Borders |
-| `--wasla-text` / `--wasla-text-secondary` | `#28231F` / `#746D66` | Ink / muted |
-| Status family vars | success / warning / danger / info soft pairs | Semantic, not decorative |
+| Token | Light | Dark | Role |
+| --- | --- | --- | --- |
+| `--wasla-accent` | `#E87342` | `#f26b3a` | Wasla Orange |
+| `--wasla-accent-hover` | `#B94F2A` | `#e35f2e` | Action Orange |
+| `--wasla-accent-soft` | `#FBE9DF` | orange at 14 % | Soft orange surface |
+| `--wasla-canvas` | `#F7F4EE` | `#0f1115` | Application canvas |
+| `--wasla-surface` | `#FFFEFA` | `#171a21` | Main surface |
+| `--wasla-surface-muted` | `#F4F0E9` | `#141820` | Nested / quiet surface |
+| `--wasla-border` / `--wasla-border-strong` | `#E3DDD3` / `#D3CABD` | white at 8 % / 14 % | Borders |
+| `--wasla-text` / `--wasla-text-secondary` / `--wasla-text-muted` | `#28231F` / `#746D66` / `#746D66` | `#f3f4f6` / `#aeb4c0` / `#8b939f` | Ink / secondary / muted |
+| Status family vars | success / warning / danger / info soft pairs | light status text on 14 % tints | Semantic, not decorative |
 | `--wasla-radius-sm/md/lg` | `0.4rem` / `0.65rem` / `0.9rem` | Radius scale |
 | `--wasla-space-1` … `6` | `0.25rem` … `1.5rem` | Spacing (aligns with 4/8/12/16/24/32 intent) |
 | `--wasla-shadow-sm/md` | subtle warm shadows | Elevation when needed |
@@ -100,7 +100,7 @@ Responsive modifiers:
 
 Sorting rules:
 
-- Paginated or growing lists sort on the server, before `Skip`/`Take`, from an allowlist of column names (never a raw column name or SQL fragment), with a deterministic tie-breaker (newest `ReceivedAt`, then `Id`).
+- Paginated or growing lists sort on the server, before `Skip`/`Take`, from an allowlist of column names (never a raw column name or SQL fragment), with a deterministic tie-breaker (newest `OrderedAt`, the order time, then `Id`).
 - A sort link keeps every filter, the search and the page size, and returns to page 1. Culture is a cookie, so it is unaffected.
 - A small list that is fully rendered on the page sorts in the browser, stably, with a deterministic tie-breaker.
 - The sorted column's header cell carries `aria-sort`; the control is a link (server-side) or a button (client-side), keyboard-operable with a visible focus ring; the arrow icon is decorative.
@@ -108,24 +108,64 @@ Sorting rules:
 
 | Table | Kind | Sorting |
 | --- | --- | --- |
-| Orders (`Orders/_OrdersTable.cshtml`) | Sortable data table (paginated) | Server-side: platform, customer, status, total, received, with `aria-sort`, icons and a stable tie-breaker. Order code and actions are intentionally not sortable; search finds a specific order. |
-| Users (`TenantUsers/Index.cshtml`) | Sortable data table (complete list on the page) | Client-side, stable (`tenant-users-index.js`): name (display name, else email), role (by permission level, Owner first, not by the translated label), created. Ties fall back to email, then the rendered order. Status, last login and actions are not sortable. Last login is not sortable because tenant users' last login is not recorded yet (the column shows "not recorded"). |
-| Dashboard Recent Orders (`Dashboard/Index.cshtml`) | Chronological snapshot | Not sortable: the latest 10, newest first, is its meaning; "View all" opens the sortable Orders list. |
+| Orders (`Orders/_OrdersTable.cshtml`) | Sortable data table (paginated) | Server-side: platform, customer, status, total, order time (`orderedAt`, the default, newest first; `receivedAt` is still accepted), with `aria-sort`, icons and a stable tie-breaker. The order-time cell names Wasla's import time under it when that stands in for a missing provider time or came 10 minutes or more later ([../orders/lifecycle.md](../orders/lifecycle.md#order-times-was-125)). Order code and actions are intentionally not sortable; search finds a specific order. |
+| Users (`TenantUsers/Index.cshtml`) | Sortable data table (complete list on the page) | Client-side, stable (`tenant-users-index.js`): name (display name, else email), role (by permission level, Owner first, not by the translated label), created, last login (by the stored UTC value in `data-sort-last-login`, newest first on the first click; users with no recorded login stay last in both directions). Ties fall back to email, then the rendered order. Status and actions are not sortable. Last login is shown in the page culture followed by "UTC" inside `<time datetime>` (Wasla has no tenant or user time zone setting), or "Not recorded"; the list and details page share `_LastLogin.cshtml`. |
+| Dashboard Recent Orders (`Dashboard/Index.cshtml`) | Chronological snapshot | Not sortable: the latest 10 of any day by order time, newest first, is its meaning; "View all" opens the sortable Orders list. Its subtitle and empty state say "latest orders", never "today" (the figures above it are today's), and rows from an earlier day show their date. |
 | Print jobs (`PrintBridge/_PrintJobHistory.cshtml`) | Chronological snapshot (capped feed) | Not sortable: the latest 50, newest first, refreshed in place. |
-| Order items (`Orders/Details.cshtml`, Live Screen detail) | Ordered item list | Not sortable: an order's items in one fixed order. That order is by item record (`OrderItems.Id`, a GUID), which is stable but not guaranteed to be the provider's sequence. |
+| Order items (`Orders/Details.cshtml`, Live Screen board, list, focus and detail, receipts) | Ordered item list | Not sortable: an order's items, and each item's options, in the order the provider listed them (`Sequence`, written by order sync, WAS-44), then by stored time, then by `Id`. Rows stored before `Sequence` existed all have 0 and use that fallback, which is deterministic and the same on every surface but not guaranteed to be the provider's order. One definition: `OrderItemOrdering` (Infrastructure). |
 | Platform connections (`PlatformConnections/Index.cshtml`) | Small operational list | Not sortable: at most one row per platform (three today). |
 | Branches (`Branches/Index.cshtml`) | Small operational list | Not sortable: one location per tenant today. |
 | Print Bridge devices (rendered by `print-bridge-page.js`) | Small operational list | Not sortable: few devices, re-rendered on poll. |
 
-### Known limitation: dark mode in the tenant shell
+### Dark mode in the tenant app
 
-Choosing dark mode does not restyle the tenant shell: the body, cards and tables stay light on every tenant page (for example Branches). This predates the dashboard and table work, which does not fix it; the foundation tokens on `body.wasla-tenant-shell` have no dark values yet.
+The preference (keys, precedence, early application, cross-tab sync, tenant/Admin isolation) is described in [architecture.md](architecture.md#theme). This section covers how dark mode is painted.
+
+**Coverage.** Every page on `_TenantLayout` renders dark: Dashboard, Orders and an order's details, Platform Connections (list, create, edit), Users (list, create, details), Order, Receipt & Printer and Account settings with the notification settings modal, Branches, Print Bridge devices and setup, and Help. So does the Live Screen (`_OrdersDisplayLayout`): Board, List, Focus, the detail modal and the settings menu. Guided setup is covered for a tenant still in Setup: the setup checklist and the guided setup cards on the Dashboard, a section panel, and the Live Screen order-training panel with its practice order. Shared parts are covered with them: the sidebar, the mobile drawer, the sidebar menus, dropdowns, modals, alerts, forms and validation messages, tables and pagination, badges and focus rings, at phone and desktop widths, LTR and RTL.
+
+**How it works.**
+
+- The light token block on `body.wasla-tenant-shell` also re-declares the shared `--color-*` and `--bs-*` aliases from the `--wasla-*` tokens. Those body-level declarations win over the dark values `wasla-theme.css` sets on `[data-bs-theme="dark"]`, which is why the shell used to stay light. `[data-bs-theme="dark"] body.wasla-tenant-shell` now redefines the `--wasla-*` tokens, so every alias and every token-driven rule (including the existing dark component rules in `wasla-theme.css`) resolves dark.
+- The dark values are the existing dark palette of `wasla-theme.css`, which the Live Screen already used, so the panel and the Live Screen match and no third palette is added. Two values differ, for contrast: muted text is `#8b939f` (the dark sidebar muted value; `#737b89` is only 4.1:1 on a surface), and the hover orange is a darker step, `#e35f2e` (white on the theme's `#ff7d4f` is 2.5:1).
+- Local overrides exist only where a fixed colour prevented theming: the Users avatars and role pills; the Bootstrap utilities `.text-danger` (Bootstrap's `#dc3545` is 3.9:1 on a dark surface), `.text-bg-light`, `.btn-light` and `.table-light`; the dark link colour, which no longer recolours Wasla buttons rendered as links; on the Live Screen, Reject, the "sound is active" pill, muted text (on the Live Screen body only), the column counts and the Trendyol GO plate in List; and the text of the notification highlight preview. The Live Screen does not load the foundation, so its dark body also defines the foundation token names the order-training panel uses (`--wasla-accent`, `--wasla-text-secondary`, …); in light mode the panel keeps its light fallbacks. `--wasla-accent-strong` has a dark value only; light mode uses the component fallback.
+- Light on purpose in dark mode: the receipt paper preview, the Trendyol GO logo plate (its wordmark has black lettering) and the highlight colour swatches.
+- Known contrast exceptions, in both themes and not introduced by dark mode (they do **not** meet WCAG AA for normal-size text):
+  - White text on the Wasla orange of primary buttons is about 3.0:1 (the brand pairing; a hovered button is 3.5:1 in dark mode).
+  - Recently completed Live Screen orders are deliberately dimmed and may fall below AA for normal-size text.
+  - Disabled options are dimmed, and an unchecked switch's knob is faint.
+
+**Not themed (light only).** Pages that do not use `_TenantLayout`, `_OrdersDisplayLayout` or `_AdminLayout` have no theme script and stay light; see [architecture.md](architecture.md#theme) for the list (sign-in and password pages, the error page, public, signup and status pages). Central Admin keeps its own dark mode, unchanged: the tenant dark tokens are scoped to `body.wasla-tenant-shell` and the Live Screen body.
+
+**Verification.** `TenantDarkModeBrowserTests` checks in a real browser that no visible surface is light and that visible text keeps WCAG AA contrast on the pages and states above, except the known contrast exceptions listed in How it works, which the test exempts; that light mode keeps its surfaces, and that a theme choice restyles open pages, also with storage unavailable. `TenantDarkThemeContractTests` keeps every literal colour token of the shell paired with a dark value. See [../operations/testing.md](../operations/testing.md).
+
+---
+
+## Logo
+
+The approved Wasla logo is the orange (`#E87342`) lowercase "wasla" wordmark. It has no separate symbol.
+
+| File | Role |
+| --- | --- |
+| `docs/brand/wasla-logo-source.svg` | The approved master, unchanged: a 612 × 792 page with a white background. Not served. |
+| `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg` | The canonical production asset, derived from the master by two changes only: the `viewBox` is cropped to the wordmark (`213.9 255.4 184.3 68.1`, aspect ratio about 2.71) and the two white background rectangles are removed so it sits on any surface. The glyph paths, transforms and colour are byte-identical. |
+
+Rules:
+
+- Web renders the logo only through the `_WaslaLogo` partial (`WaslaLogoModel`: a placement class, and `Decorative` for an empty alt). Do not inline the SVG, embed it as Base64, redraw it in CSS or replace it with a font.
+- Set only the height (`.wasla-logo--sidebar`, `--admin-sidebar`, `--admin`, `--auth`, `--header`, `--status`, `--marketing`, `--hub`); the width follows the aspect ratio. The collapsed tenant rail shrinks the full logo to the rail width rather than widening the rail.
+- Alt text is `Brand.LogoAlt` ("Wasla"). Use `Decorative = true` where the logo is inside content already hidden from or named for assistive technology. Plain-text mentions of Wasla stay text.
+- One colour works on the light and dark surfaces in use (Central Admin dark mode, the Print Bridge app); there are no logo variants.
+- The Live Screen empty state shows the logo as a decorative CSS background of the same file.
+- Wasla Print Bridge ships the same file, linked from Wasla.Web at build time rather than copied; see [../integrations/print-bridge.md](../integrations/print-bridge.md).
+- `favicon.ico` is still the ASP.NET template icon. The wordmark is not legible at favicon size and has no symbol to extract, so a dedicated Wasla icon has to be designed separately.
+- Email templates show "Wasla" as text: SVG images are not reliably displayed by mail clients.
 
 ---
 
 ## Typography
 
 - System / local font stacks. Do not add a font CDN.
+- Exception: the public marketing pages (see [Public marketing site](#public-marketing-site)) self-host the two Wasla Marketing typefaces from `wwwroot/fonts/`. The tenant app, Central Admin and the Live Screen keep system fonts.
 - One semantic `H1` per page; clear section hierarchy
 - Validate layout in tr-TR, en-US, ar-SA, ru-RU (Arabic line-height / RTL)
 
@@ -137,6 +177,26 @@ Choosing dark mode does not restyle the tenant shell: the body, cards and tables
 - RTL via `dir` + `rtl.css` + logical border/margin where foundation/theme already use them
 - Focus rings on Wasla controls; do not remove outline without a visible replacement
 - Theme and Live Screen CSS include `@media (prefers-reduced-motion: reduce)` blocks; JS view transitions also check the media query
+- Under reduced motion AdminLTE 4.0.0-rc3 sets `.fade{display:block}`; `wasla-theme.css` keeps closed modals (`.modal.fade:not(.show)`) hidden. Do not override `.fade` itself: Bootstrap's own rules already keep closed toasts, tab panes and collapses hidden
+
+---
+
+## Public marketing site
+
+**Owns:** the homepage (`/`) and the Wasla POS page (`/pos`), and the shared header and footer of `_PublicLayout` (WAS-155). The approved design is the Figma file *Wasla Marketing* (homepage frame `20:2`, POS frame `18:2`, design-system page `14:804`). Figma is the visual source only; what the pages may claim follows the product state.
+
+- **Styles.** `wasla-marketing.css`, every rule scoped to a `wm-` class, so tenant, Admin and the other public pages are unaffected. `landing.css` still styles the signup, checkout, tenant-not-found and tenant-address-required pages. The marketing tokens (`--wm-*`, on `.wasla-landing`) are the Figma design-system values; brand orange, action orange, canvas, surface, borders and ink equal the foundation tokens above. The extra peach, sand and ink surfaces come from the same Figma file; they are not a second palette.
+- **Type.** Bricolage Grotesque (headings) and Figtree (text), both SIL Open Font License 1.1 with their `OFL.txt`, self-hosted as Latin and Latin Extended subsets (Turkish included). Arabic and Cyrillic have no glyphs in them and use the system font. Mockup UI text uses the system font instead of Figma's Inter.
+- **Primary action.** Action orange `#B94F2A` with white text (4.9:1). Focus is a 2 px action-orange outline with a soft brand-orange ring; the brand orange alone is 3.0:1 on white and is not used as the only focus indicator.
+- **Responsive.** Figma has 1440 px desktop frames only. From 1200 px the hero mockups follow the Figma composition; below it they stack on a peach panel. Below 1100 px the header navigation folds into a menu button. Checked at 1440, 768 and 390 px with no horizontal scroll, in both reading directions.
+- **Behaviour.** `wasla-marketing.js` opens the products and language menus and the mobile menu on click or keyboard (never on hover); Escape closes the open menu and returns focus. Without JavaScript the mobile navigation stays visible.
+- **Mockups.** Product screens are decorative markup, not images: `aria-hidden="true"`, with the surrounding text carrying the content. Wasla POS screens are labelled as concept interface.
+- **Photos.** Every photo in the Figma file is marked AI-generated and temporary. None is shipped; the hero and closing panels use the design-system surfaces until approved photos exist.
+- **Platform marks.** Yemeksepeti and GetirYemek use the repository assets the app already shows (`images/platforms/`). The Trendyol GO wordmark in the repository comes from a third-party logo site and its marketing use is not confirmed, so the public pages name Trendyol GO in text. The Figma "Migros Yemek (INTERNAL PLACEHOLDER)" component is never rendered.
+- **Truthfulness.** Wasla POS is shown as "coming soon" everywhere it appears and cannot be bought; platform integrations are described as being rolled out, not as live. Calls to action lead only to existing flows: signup (`/signup`, with a plan), sign-in (`/auth/login` on the configured application host `app.wasla.tr`, which asks for the restaurant address; WAS-66), in-page sections, `/pos`, and the confirmed Instagram account `app.wasla.tr`. Unconfirmed social accounts and legal pages are left out, not linked to placeholders.
+- **Metadata.** Each page sets its title, description, canonical URL and Open Graph tags through `PublicPageMetadata`. The canonical URL is built by `PublicSiteUrls` on the configured marketing domain (the apex), never from the request host; only a local run on `localhost` or an IP address keeps its own host. The redirect from `www.` belongs to deployment (WAS-76).
+
+`PublicMarketingSiteTests` renders both pages in every culture and checks the metadata, one `H1`, every link target, the Instagram link and the decorative mockups.
 
 ---
 
@@ -157,3 +217,6 @@ Choosing dark mode does not restyle the tenant shell: the body, cards and tables
 | Foundation tokens | `src/Wasla.Web/wwwroot/css/wasla-foundation.css` |
 | Theme / components | `src/Wasla.Web/wwwroot/css/wasla-theme.css` |
 | RTL helpers | `src/Wasla.Web/wwwroot/css/rtl.css` |
+| Logo (canonical asset, partial) | `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`, `Views/Shared/_WaslaLogo.cshtml` |
+| Logo master | `docs/brand/wasla-logo-source.svg` |
+| Public marketing site | `src/Wasla.Web/wwwroot/css/wasla-marketing.css`, `wwwroot/js/wasla-marketing.js`, `wwwroot/fonts/`, `Views/Home/Index.cshtml`, `Views/Marketing/Pos.cshtml`, `Views/Shared/_Public*.cshtml`, `Views/Shared/_Marketing*.cshtml` |

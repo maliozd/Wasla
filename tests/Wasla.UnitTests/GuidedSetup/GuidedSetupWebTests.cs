@@ -294,6 +294,75 @@ public sealed partial class GuidedSetupWebTests
         Assert.Equal(readFails, logger.Entries.Any(entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Error));
     }
 
+    [Theory]
+    [InlineData(GuidedSetupStatus.Completed, true, false)]
+    [InlineData(GuidedSetupStatus.Skipped, true, false)]
+    [InlineData(GuidedSetupStatus.Completed, false, true)]
+    [InlineData(GuidedSetupStatus.Skipped, false, true)]
+    public async Task Dashboard_AfterGuidedSetupFinished_OffersNoWelcome_AndLeavesOnlyWhatIsMissing(
+        GuidedSetupStatus status, bool ready, bool expectChecklist)
+    {
+        var state = new FakeGuidedSetup();
+        state.Set(_userId, status, GuidedSetupSections.LiveScreenDemo);
+        var setup = new FakeSetupStatus { PlatformReady = true, PrintingReady = ready };
+
+        var model = await DashboardModelAsync(state, setup);
+
+        // One-shot: no card and nothing that offers to start setup again.
+        Assert.Null(model.GuidedSetup);
+        Assert.True(model.GuidedSetupFinished);
+        // Both required steps done: nothing is left, so no banner stays. Otherwise only the checklist of what is missing.
+        Assert.Equal(expectChecklist, model.Setup is not null);
+        if (model.Setup is not null)
+        {
+            Assert.False(model.Setup.IsReady);
+            Assert.Equal(1, model.Setup.RequiredCompleted);
+            Assert.Equal(2, model.Setup.RequiredTotal);
+        }
+    }
+
+    [Fact]
+    public async Task Dashboard_BeforeGuidedSetupFinished_KeepsTheCardAndTheChecklist()
+    {
+        var model = await DashboardModelAsync(new FakeGuidedSetup(), new FakeSetupStatus { PlatformReady = true, PrintingReady = true });
+
+        Assert.NotNull(model.GuidedSetup);
+        Assert.False(model.GuidedSetupFinished);
+        Assert.NotNull(model.Setup);
+        Assert.True(model.Setup.IsReady);
+        Assert.Equal(2, model.Setup.RequiredCompleted);
+        Assert.Equal(2, model.Setup.RequiredTotal);
+        // The two required steps first; the notifications row only describes the effective sound and has no action.
+        Assert.Equal(
+            ["Setup.Platform.Title", "Setup.Printing.Complete", "Setup.Restaurant.Title", "Setup.Notifications.Title", "Setup.LiveScreen.Title"],
+            model.Setup.Steps.Select(step => step.Title));
+        Assert.Equal([false, false, true, true], model.Setup.Steps.Take(4).Select(step => step.IsOptional));
+        Assert.Equal("", model.Setup.Steps[3].ActionHref);
+    }
+
+    private async Task<Wasla.Web.Models.Dashboard.DashboardViewModel> DashboardModelAsync(FakeGuidedSetup state, FakeSetupStatus setup)
+    {
+        var coordinator = new GuidedSetupCoordinator(state, new FixedNavigation(Owner), setup, new FakeDemos(), new FakePrintBridgeDevices(), new CapturingLogger());
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, _userId.ToString())], "Tenant"))
+        };
+        var controller = new DashboardController(
+            new FixedTenant(_tenantId),
+            new EmptyDashboard(),
+            setup,
+            new AllowAll(),
+            coordinator,
+            new KeyLocalizer(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DashboardController>.Instance)
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext }
+        };
+
+        var view = Assert.IsType<ViewResult>(await controller.Index(CancellationToken.None));
+        return Assert.IsType<Wasla.Web.Models.Dashboard.DashboardViewModel>(view.Model);
+    }
+
     // Views -------------------------------------------------------------------------------
 
     [Fact]
@@ -811,15 +880,31 @@ public sealed partial class GuidedSetupWebTests
     [Fact]
     public void OrderTraining_AddsNoRealtimeTransport_TheLiveScreenStillPolls()
     {
+        // The live print status channel (WAS-23) is the only realtime transport, and it lives in these files only.
+        // Order training, the Live Screen snapshot and every other file must not open one of their own.
+        var realtimeModule = new[]
+        {
+            Path.Combine("src", "Wasla.Web", "Realtime") + Path.DirectorySeparatorChar,
+            Path.Combine("src", "Wasla.Web", "wwwroot", "js", "realtime", "wasla-realtime.js")
+        };
         var source = Directory.EnumerateFiles(Path.Combine(Root(), "src"), "*.*", SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".cs", StringComparison.Ordinal) || path.EndsWith(".js", StringComparison.Ordinal)
                 || path.EndsWith(".cshtml", StringComparison.Ordinal) || path.EndsWith(".csproj", StringComparison.Ordinal))
-            .Where(path => !Regex.IsMatch(path, @"[\\/](bin|obj|lib)[\\/]"));
+            .Where(path => !Regex.IsMatch(path, @"[\\/](bin|obj|lib)[\\/]"))
+            .Where(path => !realtimeModule.Any(allowed => Path.GetRelativePath(Root(), path).StartsWith(allowed, StringComparison.Ordinal)))
+            .ToList();
+        Assert.NotEmpty(source);
         foreach (var path in source)
         {
             var text = File.ReadAllText(path);
             foreach (var transport in new[] { "AddSignalR", "MapHub", "HubConnectionBuilder", "Microsoft.AspNetCore.SignalR", "new EventSource", "new WebSocket", "text/event-stream" })
                 Assert.False(text.Contains(transport, StringComparison.Ordinal), $"{transport} in {Path.GetFileName(path)}");
+        }
+
+        foreach (var training in new[] { Read("src", "Wasla.Web", "wwwroot", "js", "wasla-guided-training.js"), Read("src", "Wasla.Web", "wwwroot", "js", "orders", "orders-live-store.js") })
+        {
+            Assert.DoesNotContain("WaslaRealtime", training, StringComparison.Ordinal);
+            Assert.DoesNotContain("signalR", training, StringComparison.Ordinal);
         }
 
         Assert.Contains("liveDataUrl: \"/orders/live-data\"", Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml"), StringComparison.Ordinal);
@@ -1153,6 +1238,15 @@ public sealed partial class GuidedSetupWebTests
 
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName) =>
             Task.FromResult(AuthorizationResult.Failed());
+    }
+
+    private sealed class AllowAll : IAuthorizationService
+    {
+        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, IEnumerable<IAuthorizationRequirement> requirements) =>
+            Task.FromResult(AuthorizationResult.Success());
+
+        public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName) =>
+            Task.FromResult(AuthorizationResult.Success());
     }
 
     private sealed class NullTempDataProvider : ITempDataProvider

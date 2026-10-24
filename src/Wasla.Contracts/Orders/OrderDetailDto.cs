@@ -14,12 +14,14 @@ public record OrderDetailDto(
     string PaymentStatus,
     OrderStatusDto InternalStatus,
     string PlatformStatus,
-    DateTime CreatedAtPlatform,
+    DateTime? CreatedAtPlatform,
     DateTime ReceivedAt,
     DateTime? AcceptedAt,
     DateTime? DeliveredAt,
     DateTime? CancelledAt,
-    IReadOnlyList<OrderItemDto> Items);
+    IReadOnlyList<OrderItemDto> Items,
+    DateTime OrderedAt,
+    DateTime? PlatformModifiedAt);
 
 public record OrderItemDto(
     Guid Id,

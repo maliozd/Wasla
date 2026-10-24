@@ -45,7 +45,8 @@ UI style:
 - Do not introduce React/Vue for MVP unless explicitly requested.
 - Keep tenant UI simple and operational.
 - Do not duplicate Notification Settings in the account dropdown.
-- Notification Settings should stay on the Orders page header unless explicitly moved.
+- Notification Settings open the one shared notification settings modal from the Live Screen settings menu (every Live Screen user) and from Order Settings (`/settings/orders`). They are not on the Orders page header. Do not add a second modal or save path.
+- Browser notification permission is requested only when the user turns browser notifications on; opening, testing sound and saving never request it.
 - Auto Approve and Order Sync are different concepts and should not be mixed.
 - User-facing status pages must not show technical enum names.
 - Clickable text must be rendered as a real `<a href>`, not a styled span.

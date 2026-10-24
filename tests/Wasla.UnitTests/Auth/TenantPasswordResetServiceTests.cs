@@ -33,7 +33,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         await SeedUserAsync(_tenantA, "owner@example.test", "OldPassword123!", isActive: true);
         var service = CreateService();
         string? rawToken = null;
-        const string resetUrlPrefix = "http://tenant.wasla.local:5200/auth/reset-password?token=";
+        const string resetUrlPrefix = "http://tenant.app.wasla.local:5200/auth/reset-password?token=";
 
         var result = await service.RequestResetAsync(
             _tenantA,
@@ -76,7 +76,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         var result = await service.RequestResetAsync(
             _tenantA,
             email,
-            token => "https://tenant.wasla.local/auth/reset-password?token=" + token,
+            token => "https://tenant.app.wasla.local/auth/reset-password?token=" + token,
             "en-US",
             TestContext.Current.CancellationToken);
 
@@ -103,7 +103,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         await service.RequestResetAsync(
             _tenantA,
             "owner@example.test",
-            token => "https://tenant.wasla.local/auth/reset-password?token=" + token,
+            token => "https://tenant.app.wasla.local/auth/reset-password?token=" + token,
             "en-US",
             TestContext.Current.CancellationToken);
 
@@ -131,7 +131,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
             token =>
             {
                 rawToken = token;
-                resetUrl = "https://tenant.wasla.local/auth/reset-password?token=" + token;
+                resetUrl = "https://tenant.app.wasla.local/auth/reset-password?token=" + token;
                 return resetUrl;
             },
             "en-US",
@@ -159,7 +159,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         var result = await service.RequestResetAsync(
             _tenantA,
             "owner@example.test",
-            token => "https://tenant-a.wasla.local/auth/reset-password?token=" + token,
+            token => "https://tenant-a.app.wasla.local/auth/reset-password?token=" + token,
             "en-US",
             TestContext.Current.CancellationToken);
 
@@ -190,6 +190,8 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         var updatedUser = await db.AppUsers.SingleAsync(u => u.Id == user.Id, TestContext.Current.CancellationToken);
         Assert.False(BCrypt.Net.BCrypt.Verify(oldPassword, updatedUser.PasswordHash));
         Assert.True(BCrypt.Net.BCrypt.Verify(newPassword, updatedUser.PasswordHash));
+        // A new stamp ends the user's existing sessions (WAS-89).
+        Assert.NotEqual(user.SecurityStamp, updatedUser.SecurityStamp);
         Assert.NotNull(await db.PasswordResetTokens.Where(t => t.Id == token.Id).Select(t => t.UsedAtUtc).SingleAsync(TestContext.Current.CancellationToken));
         Assert.NotNull(await db.PasswordResetTokens.Where(t => t.Id == otherActive.Id).Select(t => t.UsedAtUtc).SingleAsync(TestContext.Current.CancellationToken));
     }
@@ -286,7 +288,7 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
     {
         var logger = new CapturingLogger<LogEmailSender>();
         var sender = new LogEmailSender(logger);
-        const string resetUrl = "https://tenant.wasla.local/auth/reset-password?token=secret-token";
+        const string resetUrl = "https://tenant.app.wasla.local/auth/reset-password?token=secret-token";
 
         await sender.SendAsync(new EmailMessage
         {
@@ -413,8 +415,10 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
                     Role INTEGER NOT NULL,
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
+                    SecurityStamp TEXT NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
 
                 CREATE UNIQUE INDEX IX_AppUsers_Email ON AppUsers (Email);

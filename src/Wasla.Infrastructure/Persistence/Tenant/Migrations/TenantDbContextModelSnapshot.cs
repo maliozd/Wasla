@@ -47,6 +47,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -54,6 +57,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("SecurityStamp")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -212,10 +218,13 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<long>("ChangeVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedAtPlatform")
+                    b.Property<DateTime?>("CreatedAtPlatform")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CustomerAddress")
@@ -262,6 +271,11 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<int>("InternalStatus")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("OrderedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime2")
+                        .HasComputedColumnSql("COALESCE(CreatedAtPlatform, ReceivedAt)", true);
+
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("int");
 
@@ -270,6 +284,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
                     b.Property<int>("Platform")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlatformModifiedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PlatformStatus")
                         .IsRequired()
@@ -299,6 +316,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("IX_Orders_IdempotencyKey");
+
+                    b.HasIndex("OrderedAt")
+                        .IsDescending()
+                        .HasDatabaseName("IX_Orders_OrderedAt");
 
                     b.HasIndex("ReceivedAt")
                         .IsDescending()
@@ -336,6 +357,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .HasColumnType("nvarchar(300)");
 
                     b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Sequence")
                         .HasColumnType("int");
 
                     b.Property<decimal>("TotalPrice")
@@ -377,6 +401,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -553,6 +580,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<long>("StatusVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
@@ -568,6 +598,40 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .HasDatabaseName("IX_PrintJobs_Status_LockedByInstallationId");
 
                     b.ToTable("PrintJobs", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Customer.RestaurantLogo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Background")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RestaurantLogos", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.SyncLog", b =>

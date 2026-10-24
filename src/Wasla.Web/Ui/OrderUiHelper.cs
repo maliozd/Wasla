@@ -24,6 +24,17 @@ public static class OrderUiHelper
     public static (TimeZoneInfo TimeZone, DateOnly Today) GetTurkeyDisplayContext() =>
         (TimeZoneHelper.ResolveTurkeyTimeZone(), OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
 
+    /// <summary>
+    /// How much later than the provider's creation time Wasla must have received an order before screens show the
+    /// import time beside the order time (WAS-125). Live orders arrive within a polling interval; a recovery import of
+    /// an older order is the case worth showing.
+    /// </summary>
+    public static readonly TimeSpan ReceivedSeparatelyAfter = TimeSpan.FromMinutes(10);
+
+    public static bool ShowReceivedSeparately(DateTime? createdAtPlatformUtc, DateTime receivedAtUtc) =>
+        createdAtPlatformUtc is { } placed && receivedAtUtc - placed >= ReceivedSeparatelyAfter;
+
+    /// <summary>A UTC instant as a short Turkey-local label: the time for today, the date and time otherwise.</summary>
     public static string FormatReceivedAtUtc(DateTime receivedAtUtc, TimeZoneInfo timeZone, DateOnly turkeyToday)
     {
         var local = TimeZoneInfo.ConvertTimeFromUtc(
@@ -39,11 +50,24 @@ public static class OrderUiHelper
             : local.ToString("g", CultureInfo.CurrentCulture);
 
     /// <summary>
-    /// Culture-aware amount with two fraction digits and no currency symbol.
-    /// There is no authoritative currency on the order.
+    /// Culture-aware amount with two fraction digits and no currency symbol, for Live Screen markup whose amounts the
+    /// browser formatter replaces (<c>data-money</c>). Everywhere else use <see cref="FormatMoney(decimal)"/>.
     /// </summary>
     public static string FormatAmount(decimal amount) =>
         amount.ToString("N2", CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// An order amount in the order currency (<see cref="OrderCurrency"/>), with two fraction digits. The UI culture
+    /// decides digit grouping, the decimal separator and where the symbol goes; it never decides the currency.
+    /// </summary>
+    public static string FormatMoney(decimal amount) => FormatMoney(amount, CultureInfo.CurrentCulture);
+
+    public static string FormatMoney(decimal amount, CultureInfo culture)
+    {
+        var format = (NumberFormatInfo)culture.NumberFormat.Clone();
+        format.CurrencySymbol = OrderCurrency.Symbol;
+        return amount.ToString("C2", format);
+    }
 
     public static string FormatElapsed(DateTime receivedAtUtc, DateTime serverTimeUtc, IStringLocalizer localizer)
     {

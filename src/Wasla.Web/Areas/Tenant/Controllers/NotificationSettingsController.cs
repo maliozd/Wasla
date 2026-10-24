@@ -163,18 +163,21 @@ public sealed class NotificationSettingsController : BaseController
         return 100;
     }
 
+    // Read through the provider UseStaticFiles serves from. WebRootPath is null when the content
+    // root has no wwwroot (WAS-122); the provider is then empty and the .mp3 defaults apply.
     private IReadOnlyList<NotificationSettingsViewModel.SoundOption> ResolveSounds()
     {
-        var soundsDir = Path.Combine(_env.WebRootPath, "sounds");
+        var soundFiles = _env.WebRootFileProvider.GetDirectoryContents("sounds")
+            .Where(f => !f.IsDirectory)
+            .Select(f => f.Name)
+            .ToList();
         var result = new List<NotificationSettingsViewModel.SoundOption>();
 
         foreach (var name in NotificationSoundOptions.AllowedNames)
         {
-            var match = Directory.Exists(soundsDir)
-                ? Directory.GetFiles(soundsDir, name + ".*").FirstOrDefault()
-                : null;
+            var match = soundFiles.FirstOrDefault(f => f.StartsWith(name + ".", StringComparison.OrdinalIgnoreCase));
 
-            var fileName = match is not null ? Path.GetFileName(match) : (name + ".mp3");
+            var fileName = match ?? (name + ".mp3");
             var url = "/sounds/" + fileName;
 
             result.Add(new NotificationSettingsViewModel.SoundOption

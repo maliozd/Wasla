@@ -2,16 +2,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
 
@@ -19,13 +22,14 @@ namespace Wasla.Web.Controllers;
 
 [AllowAnonymous]
 [Route("signup")]
-public sealed class SignupController : Controller
+public sealed class SignupController : Controller, IAuthenticationRateLimitResponder
 {
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly ISignupReferenceDataService _referenceData;
     private readonly IWaslaPlanCatalog _planCatalog;
+    private readonly IBillingPlanPriceReader _planPrices;
     private readonly IValidator<PendingRegistrationRequest> _signupValidator;
-    private readonly CustomerOnboardingOptions _options;
+    private readonly TenantOnboardingOptions _options;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
     private readonly SignupRegistrationOwnership _ownership;
@@ -34,8 +38,9 @@ public sealed class SignupController : Controller
         IPendingRegistrationService pendingRegistrations,
         ISignupReferenceDataService referenceData,
         IWaslaPlanCatalog planCatalog,
+        IBillingPlanPriceReader planPrices,
         IValidator<PendingRegistrationRequest> signupValidator,
-        IOptions<CustomerOnboardingOptions> options,
+        IOptions<TenantOnboardingOptions> options,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
         IDataProtectionProvider dataProtection)
@@ -43,6 +48,7 @@ public sealed class SignupController : Controller
         _pendingRegistrations = pendingRegistrations;
         _referenceData = referenceData;
         _planCatalog = planCatalog;
+        _planPrices = planPrices;
         _signupValidator = signupValidator;
         _options = options.Value;
         _localizer = localizer;
@@ -57,7 +63,10 @@ public sealed class SignupController : Controller
         return View(model);
     }
 
+    // Limited per client network before any lookup, password hash or insert (AuthenticationRateLimiting:SignupSubmission);
+    // the service also caps active registrations per owner email.
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupSubmission)]
     [HttpPost("")]
     public async Task<IActionResult> Index(SignupViewModel model, CancellationToken ct)
     {
@@ -142,6 +151,9 @@ public sealed class SignupController : Controller
         }
 
         var result = await _pendingRegistrations.SubmitAsync(request, ct);
+        if (result.Error == PendingRegistrationError.TooManyActiveRegistrations)
+            return TooManySignups(model);
+
         if (!result.Success)
         {
             ApplySignupError(result);
@@ -156,6 +168,27 @@ public sealed class SignupController : Controller
             DateTimeOffset.UtcNow.AddDays(Math.Max(1, _options.PendingRegistrationExpiryDays)));
 
         return RedirectToAction(nameof(Pending), new { id = registrationId });
+    }
+
+    /// <summary>
+    /// The signup form again, as for a validation error: its option lists (the reads a GET of this page makes), the
+    /// submitted values (never the password) and the throttling message in the validation summary, with status 429.
+    /// </summary>
+    async Task<IActionResult> IAuthenticationRateLimitResponder.RateLimitedAsync(ActionExecutingContext context)
+    {
+        var model = context.ActionArguments.Values.OfType<SignupViewModel>().FirstOrDefault() ?? new SignupViewModel();
+        await PopulateReferenceDataAsync(model, context.HttpContext.RequestAborted);
+        LocalizeModelStateErrors();
+        return TooManySignups(model);
+    }
+
+    // The same answer for the network limit and the per-email cap, so it does not say which applied.
+    private ViewResult TooManySignups(SignupViewModel model)
+    {
+        ModelState.AddModelError(string.Empty, _localizer["Signup.TooManyAttempts"].Value);
+        var result = View(nameof(Index), model);
+        result.StatusCode = StatusCodes.Status429TooManyRequests;
+        return result;
     }
 
     [HttpGet("districts")]
@@ -229,7 +262,7 @@ public sealed class SignupController : Controller
         {
             PlanCode = selected,
             IsContactSalesPlan = found?.IsContactSales ?? false,
-            MarketingBaseDomain = _options.MarketingBaseDomain,
+            ApplicationBaseDomain = _options.ApplicationBaseDomain,
             PlanOptions = BuildPlanOptions(selected),
             Country = "Türkiye",
             BusinessPhoneType = "Mobile"
@@ -241,9 +274,12 @@ public sealed class SignupController : Controller
 
     private async Task PopulateReferenceDataAsync(SignupViewModel model, CancellationToken ct)
     {
-        model.MarketingBaseDomain = _options.MarketingBaseDomain;
+        model.ApplicationBaseDomain = _options.ApplicationBaseDomain;
+        model.IsPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(_environment);
         model.PlanOptions = BuildPlanOptions(model.PlanCode);
         model.IsContactSalesPlan = _planCatalog.FindByCode(model.PlanCode)?.IsContactSales ?? false;
+        // The prices checkout would charge now (WAS-147). A missing price is shown as not set; signup still works.
+        model.PlanPrices = await _planPrices.GetPricesInEffectAsync(ct);
         model.BusinessTypeOptions = await _referenceData.GetActiveBusinessTypesAsync(ct);
         model.BusinessCategories = BusinessSubtypeCatalog.Categories
             .Select(category => new SignupBusinessCategoryGroup(

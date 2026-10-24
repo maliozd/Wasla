@@ -210,9 +210,9 @@ public sealed partial class PrintBridgeFirstInstallTests
         Assert.Contains("<button type=\"button\" class=\"btn btn-link\" id=\"pbAlreadyInstalledBtn\" aria-controls=\"pbStepConnect\">", markup, StringComparison.Ordinal);
         Assert.Contains("id=\"pbNotWindowsNotice\" role=\"note\"", markup, StringComparison.Ordinal);
 
-        // No dead download link in the shared fallback during the first install.
+        // No dead download link in the shared fallback, in the first install or on the ordinary page (WAS-128).
         var status = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "PrintBridge", "_PrintBridgeAutoStatus.cshtml");
-        Assert.Matches(new Regex(@"@if \(!Model\.IsGuidedFirstInstall \|\| Model\.PackageAvailable\)\s*\{\s*<a class=""btn btn-outline-secondary btn-sm"" href=""@Model\.PackageDownloadUrl"">"), status);
+        Assert.Matches(new Regex(@"@if \(Model\.PackageAvailable\)\s*\{\s*<a class=""btn btn-outline-secondary btn-sm"" href=""@Model\.PackageDownloadUrl"">"), status);
 
         // The guided panel has no Print Bridge top action any more; "set up later" and the next-section line stay.
         var panel = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Shared", "_GuidedSetupSectionPanel.cshtml");
@@ -339,9 +339,8 @@ public sealed partial class PrintBridgeFirstInstallTests
         var desktop = LoadResx(Path.Combine(Root(), "src", "Wasla.PrintBridge", "Resources", $"PrintBridgeResources{culture}.resx"));
 
         foreach (var key in new[] { "PrintBridge.FirstInstall.Printer.Body", "Help.PrintBridge.Step5" })
-        foreach (var label in new[] { desktop["Tab.Settings"], desktop["Button.SavePrinter"], desktop["Button.TestPrinter"] })
+        foreach (var label in new[] { desktop["Shell.Tab.Printer"], desktop["Button.SavePrinter"], desktop["Button.TestPrinter"] })
             Assert.Contains(label, copy[key], StringComparison.Ordinal);
-        Assert.Contains(desktop["Settings.Section.Printer"], copy["PrintBridge.FirstInstall.Printer.Body"], StringComparison.Ordinal);
         Assert.Contains("Wasla.PrintBridge.exe", copy["PrintBridge.FirstInstall.Prepare.Run"], StringComparison.Ordinal);
         Assert.Contains(".NET 8 Desktop Runtime", copy["PrintBridge.FirstInstall.Prepare.Runtime"], StringComparison.Ordinal);
         Assert.Contains("ZIP", copy["PrintBridge.FirstInstall.Download.Requirement"], StringComparison.Ordinal);
@@ -361,9 +360,9 @@ public sealed partial class PrintBridgeFirstInstallTests
 
     private PrintBridgeController Controller(TenantNavigationPermissions permissions, string? packagePath = null)
     {
-        var settings = new Dictionary<string, string?> { ["OrderHub:CustomerWebBaseUrl"] = "https://tenant.wasla.local/" };
+        var settings = new Dictionary<string, string?> { ["Wasla:TenantWebBaseUrl"] = "https://tenant.app.wasla.local/" };
         if (packagePath is not null)
-            settings["OrderHub:PrintBridgeDownload:PackagePath"] = packagePath;
+            settings["Wasla:PrintBridgeDownload:PackagePath"] = packagePath;
 
         var httpContext = new DefaultHttpContext { User = Principal() };
         return new PrintBridgeController(

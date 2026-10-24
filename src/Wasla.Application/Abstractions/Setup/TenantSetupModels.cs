@@ -41,9 +41,12 @@ public sealed record PlatformConnectionFact(
     bool HasApiKey,
     bool HasApiSecret);
 
+/// <summary>
+/// The user's effective new-order sound: the saved value, or the default the notification settings
+/// service serves (and the Live Screen shows) when nothing is saved yet.
+/// </summary>
 public sealed record NotificationSetupFacts(
     bool Available,
-    bool HasSavedSettings,
     bool SoundEnabled);
 
 public sealed record PrintingSetupFacts(

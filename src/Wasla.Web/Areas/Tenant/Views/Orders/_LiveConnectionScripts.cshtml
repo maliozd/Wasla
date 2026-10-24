@@ -1,0 +1,5 @@
+@* The page's single live connection to the tenant notification hub (docs/architecture/realtime.md): the vendored
+   SignalR client and wasla-realtime.js. Load once per page, before the modules that subscribe to it
+   (orders-print-status.js, orders-live-realtime.js). The hub joins only the streams the user's role admits. *@
+<script src="~/lib/microsoft-signalr/signalr.min.js" asp-append-version="true"></script>
+<script src="~/js/realtime/wasla-realtime.js" asp-append-version="true"></script>

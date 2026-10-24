@@ -27,6 +27,9 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
+            <div class="mb-4">
+                @await Html.PartialAsync("_WaslaLogo", new WaslaLogoModel { CssClass = "wasla-logo--auth" })
+            </div>
             <div class="card wasla-card">
                 <div class="card-body p-4">
                     <h1 class="h4 mb-3">@L["Auth.LoginTitle"]</h1>
@@ -41,7 +44,11 @@
                         <div class="alert alert-success">@authSuccess</div>
                     }
 
-                    @if (!ViewData.ModelState.IsValid)
+                    @if (ViewData[Wasla.Web.Security.WebAuthenticationRateLimiting.RateLimitedViewDataKey] is true)
+                    {
+                        <div class="alert alert-warning" role="alert">@L["Auth.Login.TooManyAttempts"]</div>
+                    }
+                    else if (!ViewData.ModelState.IsValid)
                     {
                         <div class="alert alert-danger">@L["Auth.InvalidCredentials"]</div>
                     }
@@ -57,7 +64,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label" asp-for="Password">@L["Auth.Password"]</label>
+                            <label class="form-label" for="login-password">@L["Auth.Password"]</label>
                             <div class="input-group">
                                 <input class="form-control" asp-for="Password" type="password" autocomplete="current-password" id="login-password" />
                                 <button class="btn btn-outline-secondary" type="button" id="toggle-password"

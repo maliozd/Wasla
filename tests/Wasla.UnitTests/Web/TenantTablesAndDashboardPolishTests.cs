@@ -91,13 +91,13 @@ public sealed class TenantTablesAndDashboardPolishTests
             var result = await reader.GetListAsync(
                 tenantId, null, null, null, null, "platform", "asc", page, 4, null, CancellationToken.None);
             Assert.Equal(9, result.TotalCount);
-            seen.AddRange(result.Items.Select(row => new OrderListRowSnapshot(row.Id, row.ReceivedAtUtc)));
+            seen.AddRange(result.Items.Select(row => new OrderListRowSnapshot(row.Id, row.OrderedAtUtc)));
         }
 
         Assert.Equal(9, seen.Count);
         Assert.Equal(expected.OrderBy(id => id), seen.Select(row => row.Id).OrderBy(id => id));
         var orderedForTies = seen
-            .OrderByDescending(row => row.ReceivedAtUtc)
+            .OrderByDescending(row => row.OrderedAtUtc)
             .ThenBy(row => row.Id.ToString().ToUpperInvariant(), StringComparer.Ordinal)
             .Select(row => row.Id);
         Assert.Equal(orderedForTies, seen.Select(row => row.Id));
@@ -113,9 +113,10 @@ public sealed class TenantTablesAndDashboardPolishTests
         var controller = Read("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "OrdersController.cs");
         var service = Read("src", "Wasla.Infrastructure", "Services", "OrderReadService.cs");
 
-        Assert.Contains("\"receivedAt\" or \"platform\" or \"status\" or \"customerName\" or \"totalAmount\" => s,", controller);
-        Assert.Contains("_ => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt)", service);
-        Assert.Contains("q = ordered.ThenByDescending(o => o.ReceivedAt).ThenBy(o => o.Id);", service);
+        Assert.Contains("OrderListSort.OrderedAt or OrderListSort.ReceivedAt or \"platform\" or \"status\" or \"customerName\" or \"totalAmount\" => s,", controller);
+        Assert.Contains("OrderListSort.ReceivedAt => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt),", service);
+        Assert.Contains("_ => ascending ? q.OrderBy(o => o.OrderedAt) : q.OrderByDescending(o => o.OrderedAt)", service);
+        Assert.Contains("q = ordered.ThenByDescending(o => o.OrderedAt).ThenBy(o => o.Id);", service);
         Assert.DoesNotContain("EF.Property", service);
         Assert.DoesNotContain("FromSql", service);
     }
@@ -173,28 +174,42 @@ public sealed class TenantTablesAndDashboardPolishTests
         Assert.Contains("class=\"wasla-table wasla-table--stack wasla-dash-table\"", dashboard);
         Assert.Contains("_OrderStatusBadge", dashboard);
         Assert.Contains("href=\"/orders/details/@o.Id\"", dashboard);
-        Assert.Contains("Dashboard.NoOrdersYetToday", dashboard);
+        Assert.Contains("Dashboard.NoOrdersYet", dashboard);
         Assert.True(
             dashboard.IndexOf("</header>", StringComparison.Ordinal) < dashboard.IndexOf("_GuidedSetupCard", StringComparison.Ordinal));
     }
 
-    // Last login is not sortable: tenant users' LastLoginAt is never recorded (the list always shows
-    // "not recorded"), so only name, role and created date sort.
+    // Last login sorts on the stored UTC value (ISO 8601 in data-sort-last-login, empty when never recorded),
+    // not on the culture-formatted cell text. Status and actions do not sort.
     [Fact]
-    public void UsersTable_SortsNameRoleAndCreatedWithButtons_NotStatusLastLoginOrActions()
+    public void UsersTable_SortsNameRoleCreatedAndLastLoginWithButtons_NotStatusOrActions()
     {
         var index = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "Index.cshtml");
+        var details = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "Details.cshtml");
+        var lastLogin = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "TenantUsers", "_LastLogin.cshtml");
         var js = Read("src", "Wasla.Web", "wwwroot", "js", "tenant-users-index.js");
 
-        foreach (var key in new[] { "name", "role", "created" })
+        foreach (var key in new[] { "name", "role", "created", "last-login" })
             Assert.Contains($"<button type=\"button\" class=\"wasla-table__sort\" data-users-sort=\"{key}\">", index);
-        Assert.Equal(3, Regex.Matches(index, "data-users-sort=").Count);
-        Assert.Equal(3, Regex.Matches(index, "class=\"wasla-table__sortable").Count);
+        Assert.Equal(4, Regex.Matches(index, "data-users-sort=").Count);
+        Assert.Equal(4, Regex.Matches(index, "class=\"wasla-table__sortable").Count);
         Assert.Contains("<th scope=\"col\">@L[\"TenantUsers.Status\"]</th>", index);
-        Assert.Contains("<th class=\"wasla-col--secondary\" scope=\"col\">@L[\"TenantUsers.LastLogin\"]</th>", index);
         Assert.Contains("<th scope=\"col\">@L[\"TenantUsers.Actions\"]</th>", index);
         Assert.Contains("data-sort-role=\"@((int)user.Role)\"", index);
         Assert.Contains("data-sort-email=\"@user.Email\"", index);
+        Assert.Contains("data-sort-last-login=\"@(user.LastLoginAt is { } lastLoginAt ? UtcTimestampPresentation.ToIso(lastLoginAt) : string.Empty)\"", index);
+        Assert.Contains("lastLogin: row.getAttribute(\"data-sort-last-login\")", js);
+
+        // List and details render the same partial: <time datetime> with the UTC value, or "Not recorded".
+        Assert.Contains("<partial name=\"_LastLogin\" model=\"user.LastLoginAt\" />", index);
+        Assert.Contains("<partial name=\"_LastLogin\" model=\"Model.LastLoginAt\" />", details);
+        Assert.Contains("<time datetime=\"@UtcTimestampPresentation.ToIso(lastLoginAt)\">@UtcTimestampPresentation.ToDisplay(lastLoginAt)</time>", lastLogin);
+        Assert.Contains("@L[\"TenantUsers.LastLoginNotRecorded\"]", lastLogin);
+        foreach (var view in new[] { index, details })
+        {
+            Assert.DoesNotContain("LastLoginAt?.ToString", view);
+            Assert.DoesNotContain("TenantUsers.LastLoginUnavailable", view);
+        }
         Assert.Contains("header.setAttribute(\"aria-sort\"", js);
         Assert.Contains("header.removeAttribute(\"aria-sort\")", js);
         Assert.Contains("body.appendChild(entry.row)", js);
@@ -399,7 +414,7 @@ public sealed class TenantTablesAndDashboardPolishTests
         return directory?.FullName ?? throw new InvalidOperationException("Repository root was not found.");
     }
 
-    private sealed record OrderListRowSnapshot(Guid Id, DateTime ReceivedAtUtc);
+    private sealed record OrderListRowSnapshot(Guid Id, DateTime OrderedAtUtc);
 
     private sealed class TenantSqlite : ITenantDbContextFactory, IDisposable
     {
@@ -442,6 +457,7 @@ public sealed class TenantTablesAndDashboardPolishTests
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

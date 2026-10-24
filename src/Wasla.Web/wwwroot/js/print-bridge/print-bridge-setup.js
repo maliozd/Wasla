@@ -321,7 +321,7 @@
             if (sameDay) {
                 return (messages.lastSeen || "Last seen") + ": " + (messages.today || "Today") + " " + time;
             }
-            return (messages.lastSeen || "Last seen") + ": " + d.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+            return (messages.lastSeen || "Last seen") + ": " + d.toLocaleString([], { calendar: "gregory", dateStyle: "short", timeStyle: "short" });
         } catch (_) {
             return messages.lastSeenNever || "—";
         }

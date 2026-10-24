@@ -9,6 +9,7 @@
 
   let notificationSettingsBindingsAbort = null;
   let isSavingNotificationSettings = false;
+  let isOpeningNotificationSettings = false;
 
   function isHexColor(v) {
     if (!v) return false;
@@ -167,6 +168,18 @@
     }
   }
 
+  /** The browser's own permission state, in the localized words the modal carries; it never asks the browser. */
+  function updateBrowserPermissionHelp() {
+    const help = document.getElementById("browserNotificationPermissionHelp");
+    if (!help) return;
+    let permission = "unsupported";
+    try {
+      if ("Notification" in global) permission = global.Notification.permission || "default";
+    } catch (e) { /* unsupported */ }
+    const text = help.getAttribute("data-permission-" + permission) || help.getAttribute("data-permission-default") || "";
+    if (help.textContent !== text) help.textContent = text;
+  }
+
   function showModalWarning(text) {
     const warn = document.getElementById("notificationStatusWarning");
     if (!warn) return;
@@ -281,6 +294,18 @@
       });
     }
 
+    // Browser notifications are their own choice: turning them on is the one gesture that asks the browser for
+    // permission. Testing or saving sound and highlight never asks.
+    const browserNotification = document.getElementById("ShowBrowserNotification");
+    if (browserNotification) {
+      on(browserNotification, "change", async function () {
+        if (browserNotification.checked) {
+          await O.audio.maybeRequestBrowserNotificationPermission({ showBrowserNotification: true });
+        }
+        updateBrowserPermissionHelp();
+      });
+    }
+
     const soundSel = document.getElementById("newOrderSoundSelect");
     if (soundSel) {
       on(soundSel, "change", function () {
@@ -307,9 +332,7 @@
         }
         const opt = soundSel && soundSel.options[soundSel.selectedIndex];
         const url = opt && opt.getAttribute("data-sound-url");
-        const playback = O.audio.playSoundNow(st, url || null, "test");
-        await O.audio.maybeRequestBrowserNotificationPermission(st);
-        await playback;
+        await O.audio.playSoundNow(st, url || null, "test");
         updateNotificationStatusUi(getModalState());
       });
     }
@@ -366,6 +389,7 @@
     }
 
     updateHighlightPreview();
+    updateBrowserPermissionHelp();
   }
 
   async function saveNotificationSettings() {
@@ -380,7 +404,6 @@
       isSavingNotificationSettings = true;
       if (saveBtn) saveBtn.disabled = true;
       const state = getModalState();
-      await O.audio.maybeRequestBrowserNotificationPermission(state);
 
       const fd = new FormData(form);
       fd.set("NewOrderSoundEnabled", state.newOrderSoundEnabled ? "true" : "false");
@@ -456,7 +479,7 @@
         O.showOrdersWarning("notification-settings-modal-failed", O.getMessage("notificationSettingsModalOpenFailed"));
       }
       O.debugWarn("Notification settings modal fetch failed", error);
-      return;
+      return false;
     }
 
     O.debugLog("Notification settings modal response", { status: resp.status });
@@ -468,12 +491,12 @@
         O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
       }
       O.debugWarn("Notification settings modal HTTP failed", resp);
-      return;
+      return false;
     }
 
     const html = await resp.text();
     const body = document.getElementById("notificationSettingsModalBody");
-    if (!body) return;
+    if (!body) return false;
     body.innerHTML = html;
 
     if (O.state.notificationSettings) {
@@ -503,11 +526,46 @@
 
     wireNotificationModalContent();
     updateNotificationStatusUi(getModalState());
+    return true;
+  }
+
+  /** Where focus goes when the modal closes: the control that opened it, or its menu's toggle once the menu closed. */
+  function focusReturnTarget(trigger) {
+    if (!trigger || typeof trigger.closest !== "function") return null;
+    const menu = trigger.closest(".dropdown-menu");
+    const dropdown = menu && menu.parentElement;
+    return (dropdown && dropdown.querySelector("[data-bs-toggle=\"dropdown\"]")) || trigger;
+  }
+
+  /**
+   * Loads the modal and shows it: the one way every page opens notification settings. A repeated request while it
+   * opens is ignored; a failed load leaves the modal closed with the existing error message.
+   */
+  async function showNotificationSettingsModal(trigger) {
+    if (isOpeningNotificationSettings) return;
+    const modalEl = document.getElementById("notificationSettingsModal");
+    const Modal = global.bootstrap && global.bootstrap.Modal;
+    if (!modalEl || !Modal) return;
+
+    isOpeningNotificationSettings = true;
+    try {
+      if (!await openNotificationSettingsModal()) return;
+      const returnTo = focusReturnTarget(trigger);
+      if (returnTo) {
+        modalEl.addEventListener("hidden.bs.modal", function () {
+          if (document.contains(returnTo)) returnTo.focus();
+        }, { once: true });
+      }
+      Modal.getOrCreateInstance(modalEl).show();
+    } finally {
+      isOpeningNotificationSettings = false;
+    }
   }
 
   O.notificationSettings = {
     load: loadNotificationSettings,
     openNotificationSettingsModal: openNotificationSettingsModal,
+    show: showNotificationSettingsModal,
     getModalState: getModalState,
     setModalEnabled: setModalEnabled,
     updateNotificationStatusUi: updateNotificationStatusUi,

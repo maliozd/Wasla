@@ -12,15 +12,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Button.ClearLogs" xml:space="preserve">
-    <value>مسح السجلات</value>
-  </data>
-  <data name="Button.CopyLogs" xml:space="preserve">
-    <value>نسخ السجلات</value>
-  </data>
-  <data name="Button.JumpToLatest" xml:space="preserve">
-    <value>الانتقال إلى الأحدث</value>
-  </data>
   <data name="Button.HideToken" xml:space="preserve">
     <value>إخفاء</value>
   </data>
@@ -33,11 +24,8 @@
   <data name="Button.SaveSettings" xml:space="preserve">
     <value>حفظ الإعدادات</value>
   </data>
-  <data name="Button.SaveConnection" xml:space="preserve"><value>حفظ الاتصال</value></data>
   <data name="Button.SavePrinter" xml:space="preserve"><value>حفظ الطابعة</value></data>
   <data name="Button.SaveDeviceName" xml:space="preserve"><value>حفظ اسم الجهاز</value></data>
-  <data name="Button.ApplyLanguage" xml:space="preserve"><value>تطبيق اللغة</value></data>
-  <data name="Button.SaveAdvanced" xml:space="preserve"><value>حفظ الإعدادات المتقدمة</value></data>
   <data name="Button.ShowToken" xml:space="preserve">
     <value>إظهار</value>
   </data>
@@ -61,9 +49,6 @@
   </data>
   <data name="Common.NotConfigured" xml:space="preserve">
     <value>(غير مُعد)</value>
-  </data>
-  <data name="Common.Subtitle" xml:space="preserve">
-    <value>جسر طباعة الإيصالات</value>
   </data>
   <data name="Connection.AuthenticationFailed" xml:space="preserve">
     <value>فشل المصادقة</value>
@@ -186,15 +171,6 @@
   <data name="Message.ConnectionSuccess" xml:space="preserve">
     <value>تم الاتصال بنجاح.</value>
   </data>
-  <data name="Message.ConnectionSuccessWithDetails" xml:space="preserve">
-    <value>تم الاتصال بنجاح.{0}العميل: {1}{0}الجهاز: {2}</value>
-  </data>
-  <data name="Message.DeviceNameLoadedFromServer" xml:space="preserve">
-    <value>تم تحميل اسم الجهاز من الخادم.</value>
-  </data>
-  <data name="Message.LogsCopyFailed" xml:space="preserve">
-    <value>تعذر نسخ السجلات: {0}</value>
-  </data>
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>لم يتم إنشاء مجلد السجلات بعد.</value>
   </data>
@@ -210,23 +186,14 @@
   <data name="Message.SettingsSaved" xml:space="preserve">
     <value>تم حفظ الإعدادات.</value>
   </data>
-  <data name="Message.SettingsSavedConnectionVerified" xml:space="preserve">
-    <value>تم حفظ الإعدادات والتحقق من الاتصال.</value>
-  </data>
   <data name="Message.SslCertificateError" xml:space="preserve">
     <value>خطأ في شهادة SSL. تأكد من أن Windows يثق بشهادة HTTPS.</value>
   </data>
   <data name="Message.TokenInvalidUnauthorized" xml:space="preserve">
     <value>الرمز غير صالح أو غير مصرح لهذا الجهاز.</value>
   </data>
-  <data name="Message.ValidatingConnection" xml:space="preserve">
-    <value>جارٍ التحقق من الاتصال...</value>
-  </data>
   <data name="Message.LanguageRestartRequired" xml:space="preserve">
     <value>سيتم تطبيق تغيير اللغة بعد إعادة تشغيل Print Bridge.</value>
-  </data>
-  <data name="Message.SettingsSaveFailed" xml:space="preserve">
-    <value>تعذر حفظ الإعدادات: {0}</value>
   </data>
   <data name="Message.TestPrintSent" xml:space="preserve">
     <value>تم إرسال الطباعة التجريبية إلى الطابعة.</value>
@@ -240,47 +207,14 @@
   <data name="Printing.Started" xml:space="preserve">
     <value>بدأت الطباعة</value>
   </data>
-  <data name="RecentJobs.Column.Order" xml:space="preserve">
-    <value>الطلب</value>
-  </data>
-  <data name="RecentJobs.Column.Printer" xml:space="preserve">
-    <value>الطابعة</value>
-  </data>
-  <data name="RecentJobs.Column.Status" xml:space="preserve">
-    <value>الحالة</value>
-  </data>
-  <data name="RecentJobs.Column.Time" xml:space="preserve">
-    <value>الوقت</value>
-  </data>
-  <data name="RecentJobs.Column.Type" xml:space="preserve">
-    <value>النوع</value>
-  </data>
-  <data name="RecentJobs.Tooltip.JobId" xml:space="preserve">
-    <value>معرّف المهمة: {0}</value>
-  </data>
   <data name="RecentJobs.Empty" xml:space="preserve">
     <value>لم تتم معالجة أي مهام طباعة في هذه الجلسة بعد.</value>
-  </data>
-  <data name="RecentJobs.Title" xml:space="preserve">
-    <value>المهام الأخيرة (هذه الجلسة)</value>
-  </data>
-  <data name="Settings.Advanced" xml:space="preserve">
-    <value>متقدم</value>
   </data>
   <data name="Settings.AgentToken" xml:space="preserve">
     <value>رمز الجهاز</value>
   </data>
-  <data name="Settings.BusyPollSeconds" xml:space="preserve">
-    <value>فترة الاستعلام المشغول (ث)</value>
-  </data>
-  <data name="Footer.Device" xml:space="preserve">
-    <value>الجهاز: {0}</value>
-  </data>
   <data name="Footer.NotConnected" xml:space="preserve">
     <value>غير متصل</value>
-  </data>
-  <data name="Footer.Version" xml:space="preserve">
-    <value>الإصدار: {0}</value>
   </data>
   <data name="Settings.ComputerName" xml:space="preserve">
     <value>اسم الجهاز</value>
@@ -295,26 +229,11 @@
   <data name="Settings.MachineNameHint" xml:space="preserve">
     <value>الجهاز الفعلي: {0}</value>
   </data>
-  <data name="Settings.DryRunDescription" xml:space="preserve">
-    <value>لا ترسل إلى الطابعة، سجّل فقط</value>
-  </data>
-  <data name="Settings.DryRunMode" xml:space="preserve">
-    <value>وضع الاختبار</value>
-  </data>
-  <data name="Settings.ErrorPollSeconds" xml:space="preserve">
-    <value>فترة الاستعلام بعد الخطأ (ث)</value>
-  </data>
-  <data name="Settings.IdlePollSeconds" xml:space="preserve">
-    <value>فترة الاستعلام الخامل (ث)</value>
-  </data>
   <data name="Settings.Language" xml:space="preserve">
     <value>اللغة</value>
   </data>
   <data name="Settings.PrinterName" xml:space="preserve">
     <value>اسم الطابعة</value>
-  </data>
-  <data name="Settings.SavedPathHint" xml:space="preserve">
-    <value>يتم حفظ الإعدادات في: {0}</value>
   </data>
   <data name="Settings.ServerUrl" xml:space="preserve">
     <value>رابط لوحة Wasla Web</value>
@@ -328,17 +247,8 @@
   <data name="Settings.AgentTokenPasteGuard" xml:space="preserve">
     <value>هذا الحقل مخصص لرمز الجهاز. لا تلصق رمز الإعداد أو رابط wasla-printbridge هنا. استخدم صفحة إعداد Print Bridge في لوحة Wasla Web للاتصال.</value>
   </data>
-  <data name="Settings.Section.Connection" xml:space="preserve"><value>اتصال Wasla</value></data>
-  <data name="Settings.Section.ConnectionHelp" xml:space="preserve"><value>إعدادات عنوان لوحة الويب واتصال الجهاز.</value></data>
-  <data name="Settings.Section.Printer" xml:space="preserve"><value>إعداد الطابعة</value></data>
-  <data name="Settings.Section.PrinterHelp" xml:space="preserve"><value>اختر طابعة Windows المحلية المستخدمة للإيصالات. لا يتطلب ذلك بيانات اعتماد الخادم.</value></data>
   <data name="Settings.Section.Device" xml:space="preserve"><value>هوية الجهاز</value></data>
   <data name="Settings.Section.DeviceHelp" xml:space="preserve"><value>إدارة معلومات العرض المحلية لتثبيت Print Bridge هذا.</value></data>
-  <data name="Settings.Section.Language" xml:space="preserve"><value>اللغة</value></data>
-  <data name="Settings.Section.LanguageHelp" xml:space="preserve"><value>غيّر لغة التطبيق دون التحقق من الاتصال أو إعدادات الطابعة.</value></data>
-  <data name="Settings.SectionSaved" xml:space="preserve"><value>تم الحفظ.</value></data>
-  <data name="Settings.Saving" xml:space="preserve"><value>جارٍ الحفظ...</value></data>
-  <data name="Settings.LanguageApplied" xml:space="preserve"><value>تم تطبيق اللغة.</value></data>
   <data name="Settings.DryRunEnabledWarning" xml:space="preserve">
     <value>وضع الاختبار مفعّل. لن تُطبع الفواتير؛ سيتم تسجيل المهام فقط.</value>
   </data>
@@ -350,9 +260,6 @@
   </data>
   <data name="Status.Disconnected" xml:space="preserve">
     <value>غير متصل</value>
-  </data>
-  <data name="Status.Error" xml:space="preserve">
-    <value>خطأ</value>
   </data>
   <data name="Status.Offline" xml:space="preserve">
     <value>غير متصل</value>
@@ -371,9 +278,6 @@
   </data>
   <data name="Status.Running" xml:space="preserve">
     <value>يعمل</value>
-  </data>
-  <data name="Status.RunningDryRun" xml:space="preserve">
-    <value>يعمل (اختبار)</value>
   </data>
   <data name="Status.Stopped" xml:space="preserve">
     <value>متوقف</value>
@@ -450,27 +354,6 @@
   <data name="PrintHistory.EmptyFiltered" xml:space="preserve">
     <value>لا توجد سجلات تطابق الفلتر أو البحث المحدد.</value>
   </data>
-  <data name="PrintHistory.Tooltip.Error" xml:space="preserve">
-    <value>خطأ: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.JobId" xml:space="preserve">
-    <value>معرّف المهمة: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Order" xml:space="preserve">
-    <value>الطلب: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Platform" xml:space="preserve">
-    <value>المنصة: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Printer" xml:space="preserve">
-    <value>الطابعة: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Status" xml:space="preserve">
-    <value>الحالة: {0}</value>
-  </data>
-  <data name="PrintHistory.Tooltip.Time" xml:space="preserve">
-    <value>الوقت: {0}</value>
-  </data>
   <data name="PrintHistory.Filter.Last30Days" xml:space="preserve">
     <value>آخر 30 يومًا</value>
   </data>
@@ -507,9 +390,6 @@
   <data name="Reprint.Button" xml:space="preserve">
     <value>إعادة الطباعة</value>
   </data>
-  <data name="Reprint.Confirm" xml:space="preserve">
-    <value>إعادة طباعة الإيصال لـ {0}؟</value>
-  </data>
   <data name="Reprint.Created" xml:space="preserve">
     <value>تم إنشاء مهمة إعادة الطباعة. سيلتقطها Print Bridge قريبًا.</value>
   </data>
@@ -525,20 +405,11 @@
   <data name="Reprint.OrderNotFound" xml:space="preserve">
     <value>الطلب غير موجود.</value>
   </data>
-  <data name="Reprint.SelectPrintedJob" xml:space="preserve">
-    <value>اختر مهمة مطبوعة بنجاح لإعادة الطباعة.</value>
-  </data>
-  <data name="Tab.Logs" xml:space="preserve">
-    <value>السجلات</value>
-  </data>
   <data name="Tab.PrintHistory" xml:space="preserve">
     <value>سجل الطباعة</value>
   </data>
   <data name="Tab.Settings" xml:space="preserve">
     <value>الإعدادات</value>
-  </data>
-  <data name="Tab.Status" xml:space="preserve">
-    <value>الحالة</value>
   </data>
   <data name="Tray.ConnectionStatus" xml:space="preserve">
     <value>● {0}</value>
@@ -593,7 +464,6 @@
   <data name="Message.ResetConnectionConfirmTitle" xml:space="preserve"><value>إعادة تعيين الاتصال؟</value></data>
   <data name="Message.ResetConnectionConfirm" xml:space="preserve"><value>يمسح هذا رمز الاتصال على هذا الجهاز. يتم الاحتفاظ بعنوان الخادم وهوية الجهاز واللغة وسجل الطباعة المحلي. ستحتاج إلى إعادة توصيل Print Bridge للمتابعة.</value></data>
   <data name="Settings.ResetConnectionHelp" xml:space="preserve"><value>استخدم هذا عندما لم يعد الاتصال أو الرمز صالحًا.</value></data>
-  <data name="Settings.ConnectionTroubleshootingTitle" xml:space="preserve"><value>استكشاف مشاكل الاتصال</value></data>
   <data name="Message.ReconnectFromWebToContinue" xml:space="preserve"><value>أعد توصيل Print Bridge من لوحة الويب للمتابعة.</value></data>
   <data name="RuntimeIssue.ManualReset.Detail" xml:space="preserve"><value>تمت إعادة تعيين الاتصال. أعد توصيل هذا الجهاز من صفحة إعداد Print Bridge في لوحة Wasla Web.</value></data>
   <data name="Settings.SetupCode" xml:space="preserve"><value>رمز الإعداد</value></data>
@@ -602,9 +472,6 @@
   <data name="Message.SetupCodeReconnectAfterReset" xml:space="preserve"><value>تمت إعادة تعيين الاتصال. أعد توصيل هذا الجهاز من صفحة إعداد Print Bridge في لوحة Wasla Web.</value></data>
   <data name="Settings.Validation.Failed" xml:space="preserve">
     <value>تعذر التحقق من الاتصال</value>
-  </data>
-  <data name="Settings.Validation.Verified" xml:space="preserve">
-    <value>تم التحقق من الاتصال</value>
   </data>
   <data name="Validation.ServerUrlRequired" xml:space="preserve">
     <value>رابط لوحة Wasla Web مطلوب.</value>
@@ -626,4 +493,308 @@
   <data name="Auto.InvalidOrExpired" xml:space="preserve"><value>رابط الإعداد غير صالح أو منتهي الصلاحية.</value></data>
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" في Wasla Web بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
+  <data name="Auto.PrintingInProgress" xml:space="preserve"><value>لا تزال مهمة طباعة إيصال قيد الإكمال. لم يتم تغيير الاتصال؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. افتح رابط الإعداد مرة أخرى بعد انتهاء الطباعة.</value></data>
+  <data name="Shell.Connection.Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال</value>
+  </data>
+  <data name="Shell.Detail.Online" xml:space="preserve">
+    <value>متصل بـ Wasla. بانتظار مهام إيصالات جديدة.</value>
+  </data>
+  <data name="Shell.Detail.Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال بخادم Wasla…</value>
+  </data>
+  <data name="Shell.Detail.Stopped" xml:space="preserve">
+    <value>الاستماع متوقف. لا يتم استلام مهام طباعة جديدة.</value>
+  </data>
+  <data name="Shell.Detail.NotConfigured" xml:space="preserve">
+    <value>هذا الجهاز غير متصل بـ Wasla بعد. اختر «الاتصال بـ Wasla» لإعداده.</value>
+  </data>
+  <data name="Shell.Detail.UnexpectedError" xml:space="preserve">
+    <value>حدث خطأ غير متوقع. التفاصيل في ملف السجل: الإعدادات ← التشخيص ← فتح مجلد السجلات.</value>
+  </data>
+  <data name="Shell.LastJob.Title" xml:space="preserve">
+    <value>آخر مهمة طباعة</value>
+  </data>
+  <data name="Shell.Today.Title" xml:space="preserve">
+    <value>اليوم</value>
+  </data>
+  <data name="Shell.Nav.Label" xml:space="preserve">
+    <value>الأقسام</value>
+  </data>
+  <data name="Shell.Tab.Overview" xml:space="preserve">
+    <value>نظرة عامة</value>
+  </data>
+  <data name="Shell.Tab.Printer" xml:space="preserve">
+    <value>الطابعة</value>
+  </data>
+  <data name="Shell.Tile.Printer" xml:space="preserve">
+    <value>الطابعة</value>
+  </data>
+  <data name="Shell.Tile.Engine" xml:space="preserve">
+    <value>الاستماع</value>
+  </data>
+  <data name="Shell.Overview.Actions" xml:space="preserve">
+    <value>إجراءات سريعة</value>
+  </data>
+  <data name="Shell.Action.Reconnect" xml:space="preserve">
+    <value>إعادة الاتصال</value>
+  </data>
+  <data name="Shell.Action.ConfigurePrinter" xml:space="preserve">
+    <value>اختر طابعة</value>
+  </data>
+  <data name="Shell.Action.ShowDiagnostics" xml:space="preserve">
+    <value>عرض التشخيص</value>
+  </data>
+  <data name="Shell.Action.Working" xml:space="preserve">
+    <value>جارٍ التنفيذ…</value>
+  </data>
+  <data name="Shell.Action.Confirm" xml:space="preserve">
+    <value>تأكيد</value>
+  </data>
+  <data name="Shell.Action.Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Shell.Printer.Title" xml:space="preserve">
+    <value>طابعة الإيصالات</value>
+  </data>
+  <data name="Shell.Printer.Help" xml:space="preserve">
+    <value>اختر طابعة Windows التي تستقبل الإيصالات واحفظها. لا تتم مقاطعة المهمة الجاري طباعتها عند الحفظ.</value>
+  </data>
+  <data name="Shell.Printer.Placeholder" xml:space="preserve">
+    <value>اختر طابعة</value>
+  </data>
+  <data name="Shell.Printer.NoneInstalled" xml:space="preserve">
+    <value>لا توجد طابعة مثبتة على هذا الكمبيوتر. أضف الطابعة في Windows ثم اختر تحديث.</value>
+  </data>
+  <data name="Shell.Printer.SavedNotInstalled" xml:space="preserve">
+    <value>الطابعة المحفوظة غير مثبتة على هذا الكمبيوتر. اختر طابعة أخرى أو أضفها إلى Windows مرة أخرى.</value>
+  </data>
+  <data name="Shell.Printer.TestHelp" xml:space="preserve">
+    <value>يُرسل إيصال الاختبار إلى الطابعة المحفوظة. قبول Windows للمهمة لا يضمن طباعة الورق.</value>
+  </data>
+  <data name="Shell.Printer.NotInstalled" xml:space="preserve">
+    <value>الطابعة المحددة غير مثبتة على هذا الكمبيوتر.</value>
+  </data>
+  <data name="Shell.History.Range" xml:space="preserve">
+    <value>النطاق الزمني</value>
+  </data>
+  <data name="Shell.History.ConfirmReprint" xml:space="preserve">
+    <value>إعادة طباعة هذا الإيصال؟</value>
+  </data>
+  <data name="Shell.History.Previous" xml:space="preserve">
+    <value>السابق</value>
+  </data>
+  <data name="Shell.History.Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Shell.History.Loading" xml:space="preserve">
+    <value>جارٍ تحميل السجل…</value>
+  </data>
+  <data name="Shell.History.Error.Printer" xml:space="preserve">
+    <value>تعذر الوصول إلى الطابعة.</value>
+  </data>
+  <data name="Shell.History.Error.Server" xml:space="preserve">
+    <value>لم يؤكد الخادم المهمة.</value>
+  </data>
+  <data name="Shell.History.Error.Generic" xml:space="preserve">
+    <value>تعذرت الطباعة. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.History.Skipped" xml:space="preserve">
+    <value>تمت معالجة المهمة في مكان آخر أو لم تعد قيد الانتظار.</value>
+  </data>
+  <data name="Shell.History.DryRun" xml:space="preserve">
+    <value>وضع الاختبار: لم تتم الطباعة على الورق.</value>
+  </data>
+  <data name="Shell.Settings.Connection" xml:space="preserve">
+    <value>اتصال Wasla</value>
+  </data>
+  <data name="Shell.Settings.ConnectionHelp" xml:space="preserve">
+    <value>يُدخل عنوان اللوحة ورمز الجهاز في نافذة محلية آمنة ويُفحصان قبل الحفظ. لا تطّلع هذه الشاشة عليهما، ولا يُعرض الرمز المحفوظ مرة أخرى.</value>
+  </data>
+  <data name="Shell.Settings.Appearance" xml:space="preserve">
+    <value>اللغة والمظهر</value>
+  </data>
+  <data name="Shell.Settings.ThemeFollowsWindows" xml:space="preserve">
+    <value>يتبع المظهر الفاتح أو الداكن سمة تطبيقات Windows.</value>
+  </data>
+  <data name="Shell.Settings.TestMode" xml:space="preserve">
+    <value>وضع الاختبار</value>
+  </data>
+  <data name="Shell.Settings.TestModeOn" xml:space="preserve">
+    <value>مفعّل — لا تُطبع الإيصالات</value>
+  </data>
+  <data name="Shell.Settings.TestModeOff" xml:space="preserve">
+    <value>متوقف</value>
+  </data>
+  <data name="Shell.Diagnostics.Title" xml:space="preserve">
+    <value>التشخيص</value>
+  </data>
+  <data name="Shell.Diagnostics.AppVersion" xml:space="preserve">
+    <value>إصدار التطبيق</value>
+  </data>
+  <data name="Shell.Diagnostics.WebView2" xml:space="preserve">
+    <value>بيئة تشغيل WebView2</value>
+  </data>
+  <data name="Shell.Diagnostics.Engine" xml:space="preserve">
+    <value>حالة الاستماع</value>
+  </data>
+  <data name="Shell.Diagnostics.LastError" xml:space="preserve">
+    <value>آخر خطأ</value>
+  </data>
+  <data name="Shell.Diagnostics.None" xml:space="preserve">
+    <value>لا يوجد</value>
+  </data>
+  <data name="Shell.Diagnostics.Unavailable" xml:space="preserve">
+    <value>غير معروف</value>
+  </data>
+  <data name="Shell.Toast.Dismiss" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Shell.Device.Unknown" xml:space="preserve">
+    <value>لم يتم استلام اسم الجهاز بعد</value>
+  </data>
+  <data name="Shell.Op.Started" xml:space="preserve">
+    <value>بدأ الاستماع.</value>
+  </data>
+  <data name="Shell.Op.Stopped" xml:space="preserve">
+    <value>توقف الاستماع.</value>
+  </data>
+  <data name="Shell.Op.Busy" xml:space="preserve">
+    <value>هذه العملية قيد التنفيذ بالفعل.</value>
+  </data>
+  <data name="Shell.Op.Failed" xml:space="preserve">
+    <value>تعذر إكمال العملية. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.Op.TimedOut" xml:space="preserve">
+    <value>انتهت مهلة العملية. حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Op.PrintersRefreshed" xml:space="preserve">
+    <value>تم تحديث قائمة الطابعات.</value>
+  </data>
+  <data name="Shell.Op.PrinterSaved" xml:space="preserve">
+    <value>تم حفظ الطابعة.</value>
+  </data>
+  <data name="Shell.Op.ResetDone" xml:space="preserve">
+    <value>تمت إعادة تعيين الاتصال. أعد ربط هذا الجهاز من Wasla Web.</value>
+  </data>
+  <data name="Shell.Op.ResetCancelled" xml:space="preserve">
+    <value>لم تتم إعادة تعيين الاتصال.</value>
+  </data>
+  <data name="Shell.Op.LogsOpened" xml:space="preserve">
+    <value>تم فتح مجلد السجلات.</value>
+  </data>
+  <data name="Shell.Action.Connect" xml:space="preserve">
+    <value>الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Action.ChangeConnection" xml:space="preserve">
+    <value>تغيير الاتصال</value>
+  </data>
+  <data name="Shell.Settings.Printing" xml:space="preserve">
+    <value>سلوك الطباعة</value>
+  </data>
+  <data name="Shell.Settings.PrintingHelp" xml:space="preserve">
+    <value>تُستخدم القيم المحفوظة بدءًا من الفحص التالي للخادم، ولا حاجة إلى إعادة التشغيل. يكتمل أي انتظار جارٍ أولًا.</value>
+  </data>
+  <data name="Shell.Settings.TestModeHelp" xml:space="preserve">
+    <value>عند تفعيله لا تُطبع مهام الإيصالات الجديدة على الورق، لكن يُبلَّغ Wasla بأنها طُبعت. استخدمه للتجربة فقط؛ يُطلب تأكيد قبل تفعيله.</value>
+  </data>
+  <data name="Shell.Settings.IdlePoll" xml:space="preserve">
+    <value>فترة الفحص في وضع الخمول</value>
+  </data>
+  <data name="Shell.Settings.BusyPoll" xml:space="preserve">
+    <value>فترة الفحص بعد وصول المهام</value>
+  </data>
+  <data name="Shell.Settings.ErrorPoll" xml:space="preserve">
+    <value>الانتظار بعد خطأ في الاتصال</value>
+  </data>
+  <data name="Shell.Settings.Unsaved" xml:space="preserve">
+    <value>لديك تغييرات غير محفوظة.</value>
+  </data>
+  <data name="Shell.Settings.Invalid" xml:space="preserve">
+    <value>أدخل كل فترة كعدد صحيح ضمن النطاق المسموح به.</value>
+  </data>
+  <data name="Shell.Settings.Discard" xml:space="preserve">
+    <value>تجاهل التغييرات</value>
+  </data>
+  <data name="Shell.Settings.Range" xml:space="preserve">
+    <value>{0}–{1} ث</value>
+  </data>
+  <data name="Shell.Op.SettingsSaved" xml:space="preserve">
+    <value>تم حفظ الإعدادات. تُطبَّق بدءًا من الفحص التالي، ولا حاجة إلى إعادة التشغيل.</value>
+  </data>
+  <data name="Shell.Op.TestModeCancelled" xml:space="preserve">
+    <value>لم يتم تفعيل وضع الاختبار؛ لم تتغير الإعدادات.</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmTitle" xml:space="preserve">
+    <value>هل تريد تفعيل وضع الاختبار؟</value>
+  </data>
+  <data name="Shell.TestMode.ConfirmMessage" xml:space="preserve">
+    <value>في وضع الاختبار لا تُطبع مهام الإيصالات الجديدة على الورق، لكن يُبلَّغ Wasla بأنها طُبعت. لن تخرج إيصالات المطبخ أو الكاشير طوال تفعيله.</value>
+  </data>
+  <data name="Shell.TestMode.Confirm" xml:space="preserve">
+    <value>تفعيل وضع الاختبار</value>
+  </data>
+  <data name="Shell.Setup.Title.First" xml:space="preserve">
+    <value>الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Reconnect" xml:space="preserve">
+    <value>إعادة الاتصال بـ Wasla</value>
+  </data>
+  <data name="Shell.Setup.Title.Change" xml:space="preserve">
+    <value>تغيير اتصال Wasla</value>
+  </data>
+  <data name="Shell.Setup.Intro.First" xml:space="preserve">
+    <value>افتح صفحة إعداد Print Bridge في لوحة Wasla Web. الصق أدناه عنوان اللوحة ورمز الجهاز الذي أُنشئ لهذا الكمبيوتر.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Reconnect" xml:space="preserve">
+    <value>لم يعد رمز هذا الجهاز صالحًا. أعد ربط الجهاز في Wasla Web والصق رمز الجهاز الجديد.</value>
+  </data>
+  <data name="Shell.Setup.Intro.Change" xml:space="preserve">
+    <value>غيّر عنوان اللوحة أو رمز الجهاز. يُفحص الاتصال قبل حفظ أي شيء.</value>
+  </data>
+  <data name="Shell.Setup.TokenKeepHint" xml:space="preserve">
+    <value>يوجد رمز محفوظ على هذا الكمبيوتر ولا يمكن عرضه. اترك الحقل فارغًا للاحتفاظ به، أو الصق رمزًا جديدًا.</value>
+  </data>
+  <data name="Shell.Setup.Connect" xml:space="preserve">
+    <value>الاتصال والحفظ</value>
+  </data>
+  <data name="Shell.Setup.Checking" xml:space="preserve">
+    <value>جارٍ فحص الاتصال…</value>
+  </data>
+  <data name="Shell.Setup.Saving" xml:space="preserve">
+    <value>تم التحقق من الاتصال. جارٍ الحفظ…</value>
+  </data>
+  <data name="Shell.Setup.Connected" xml:space="preserve">
+    <value>تم التحقق من الاتصال وحفظه.</value>
+  </data>
+  <data name="Shell.Setup.ConnectedChoosePrinter" xml:space="preserve">
+    <value>تم التحقق من الاتصال وحفظه. اختر طابعة لبدء طباعة الإيصالات.</value>
+  </data>
+  <data name="Shell.Setup.Cancelled" xml:space="preserve">
+    <value>لم تتغير إعدادات الاتصال.</value>
+  </data>
+  <data name="Shell.Setup.SaveFailed" xml:space="preserve">
+    <value>تم التحقق من الاتصال لكن تعذر حفظ الإعدادات؛ لا يزال الاتصال السابق قيد الاستخدام. التفاصيل في ملف السجل.</value>
+  </data>
+  <data name="Shell.Setup.PrintingInProgress" xml:space="preserve">
+    <value>تتم طباعة إيصال الآن. لم يتم حفظ الاتصال الجديد؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. اختر «الاتصال والحفظ» مرة أخرى بعد انتهاء الطباعة.</value>
+  </data>
+  <data name="Shell.Setup.TokenRejected" xml:space="preserve">
+    <value>لم يقبل الخادم رمز الجهاز هذا. انسخ رمزًا جديدًا من صفحة إعداد Print Bridge في Wasla Web.</value>
+  </data>
+  <data name="Shell.Setup.TimedOut" xml:space="preserve">
+    <value>لم يستجب الخادم في الوقت المحدد. تحقق من العنوان والشبكة ثم حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Setup.TokenTooLong" xml:space="preserve">
+    <value>هذه القيمة أطول من أن تكون رمز جهاز. انسخ الرمز من Wasla Web مرة أخرى.</value>
+  </data>
+  <data name="RuntimeNotice.Title" xml:space="preserve">
+    <value>مطلوب WebView2 Runtime</value>
+  </data>
+  <data name="RuntimeNotice.Message" xml:space="preserve">
+    <value>تحتاج نافذة Print Bridge إلى Microsoft Edge WebView2 Runtime، وهو غير مثبت أو لا يمكن استخدامه على هذا الكمبيوتر. تستمر طباعة الإيصالات في الخلفية. ثبّت Microsoft Edge WebView2 Runtime أو أصلحه، ثم أعد تشغيل Print Bridge.</value>
+  </data>
+  <data name="RuntimeNotice.Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
 </root>

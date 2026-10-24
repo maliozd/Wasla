@@ -9,36 +9,196 @@ on:
     branches:
       - dev
       - master
+  workflow_dispatch:
+  # Called by ci-base-change.yml when a pull request's base changes to master. A called workflow keeps the caller's
+  # event, so the scope and the concurrency group below are those of a pull request into master.
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to test instead of the event's commit (the pull request's merge with its new base)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels the pull request's older run. Pushes and manual runs each get a group of their
+# own (a pending run is cancelled by any newer run in its group), so every commit on dev and master gets a result.
+# A run started by a base change to master is in its pull request's group, so it replaces the run for the old base.
+concurrency:
+  group: ci-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
+    name: Release build, .NET and Print Bridge tests (Windows)
     runs-on: windows-latest
+    timeout-minutes: 60
 
     env:
       DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
 
     steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests); every other event
+      # runs every test. The script owns the filters; see docs/operations/testing.md.
+      - name: Select test scope
+        shell: pwsh
+        run: ./scripts/ci/select-test-scope.ps1
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
+
+      # The Admin and theme browser tests and the Print Bridge runtime tests skip themselves when their
+      # prerequisite is missing. The browser is chosen here explicitly; a skip of any kind fails the
+      # "Require every test to run and pass" step below.
+      - name: Provide headless browser and report test prerequisites
+        shell: pwsh
+        run: |
+          $edge = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+            (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+          ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $edge) {
+            Write-Host '::error::Microsoft Edge is not installed on the runner; the headless-browser tests cannot run.'
+            exit 1
+          }
+          Write-Host "Headless browser: $edge ($((Get-Item -LiteralPath $edge).VersionInfo.ProductVersion))"
+          "WASLA_TEST_BROWSER=$edge" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+          $webView2 = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $runtime = (Get-ItemProperty -LiteralPath $webView2 -ErrorAction SilentlyContinue).pv
+          if ($runtime) { Write-Host "WebView2 Runtime: $runtime" } else { Write-Host '::warning::No machine-wide WebView2 Runtime registration found; the WebView2 runtime tests will skip and fail the run.' }
+
+          $printers = @(Get-Printer -ErrorAction SilentlyContinue)
+          Write-Host "Installed printers (enumerated only; tests print to a recording fake): $($printers.Count)"
+          if ($printers.Count -eq 0) { Write-Host '::warning::No printer is installed; the Print Bridge runtime tests will skip and fail the run.' }
+
+      # Only speeds up the download; restore always runs and resolves every package itself.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore solution
         run: dotnet restore Wasla.sln
 
-      - name: Restore unit tests
-        run: dotnet restore tests/Wasla.UnitTests/Wasla.UnitTests.csproj
-
       - name: Build solution
+        id: build
         run: dotnet build Wasla.sln --configuration Release --no-restore
 
-      - name: Run unit tests
+      # An empty filter (full scope) passes no --filter, so the whole project runs.
+      - name: Run Wasla.UnitTests (${{ env.TEST_SCOPE }})
+        shell: pwsh
+        run: |
+          $filter = if ($env:UNIT_TESTS_FILTER) { '--filter', $env:UNIT_TESTS_FILTER } else { @() }
+          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=Wasla.UnitTests.trx" `
+            --results-directory artifacts/test-results `
+            --blame-hang-timeout 15m `
+            --blame-hang-dump-type none `
+            @filter
+
+      # Runs after a unit-test failure too, so one run reports both suites.
+      - name: Run Wasla.PrintBridge.Tests (${{ env.TEST_SCOPE }})
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $filter = if ($env:PRINT_BRIDGE_TESTS_FILTER) { '--filter', $env:PRINT_BRIDGE_TESTS_FILTER } else { @() }
+          dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=Wasla.PrintBridge.Tests.trx" `
+            --results-directory artifacts/test-results `
+            --blame-hang-timeout 15m `
+            --blame-hang-dump-type none `
+            @filter
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
         run: >
-          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj
-          --configuration Release
-          --no-restore
-          --verbosity normal
-          --logger "trx;LogFileName=test-results.trx"
+          ./scripts/ci/assert-test-results.ps1 -Path
+          artifacts/test-results/Wasla.UnitTests.trx,
+          artifacts/test-results/Wasla.PrintBridge.Tests.trx
+
+      # Every test must stop the browsers, WebView2 hosts and test hosts it started. A survivor is reported here, not
+      # killed, so a cleanup leak shows up in the run instead of slowing or breaking later tests unnoticed.
+      - name: Report leftover browser and test processes
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $left = @(Get-Process -Name msedge, msedgewebview2, testhost -ErrorAction SilentlyContinue)
+          if ($left.Count -eq 0) { Write-Host 'No Edge, WebView2 or test host process is left running.'; exit 0 }
+          $left | Group-Object ProcessName | ForEach-Object { Write-Host "$($_.Name): $($_.Count) left running" }
+          Write-Host "::warning title=Leftover processes::$($left.Count) Edge, WebView2 or test host process(es) outlived the tests."
+
+      - name: Upload .NET test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  javascript-tests:
+    name: JavaScript tests (Node.js)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Run every tracked *.test.js file
+        shell: bash
+        run: |
+          mapfile -t files < <(git ls-files '*.test.js')
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::No tracked *.test.js files were found."
+            exit 1
+          fi
+          echo "Node.js $(node --version); ${#files[@]} test files:"
+          printf '  %s\n' "${files[@]}"
+          mkdir -p artifacts/test-results
+          node --test \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=junit --test-reporter-destination=artifacts/test-results/javascript-tests.xml \
+            "${files[@]}"
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./scripts/ci/assert-test-results.ps1 -Path artifacts/test-results/javascript-tests.xml
+
+      - name: Upload JavaScript test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: javascript-test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14

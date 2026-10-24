@@ -66,6 +66,7 @@
       order.customerNote || "",
       order.totalAmount,
       order.receivedAtUtc || "",
+      order.placedAtUtc || "",
       order.deliveredAtUtc || "",
       itemPart
     ].join("\u001d");
@@ -158,6 +159,16 @@
     return typeof value === "string" && value.length > 0 && isFinite(Date.parse(value));
   }
 
+  // WAS-125: the operational order time. placedAtUtc is the provider's creation time; an order without one shows,
+  // counts and sorts by when Wasla received it, under that label, never as the order time.
+  function orderTimeUtc(order) {
+    return isTimestamp(order.placedAtUtc) ? order.placedAtUtc : order.receivedAtUtc;
+  }
+
+  function hasPlacedTime(order) {
+    return isTimestamp(order.placedAtUtc);
+  }
+
   function isWholeNumber(value) {
     return typeof value === "number" && isFinite(value) && Math.floor(value) === value && value >= 0;
   }
@@ -184,11 +195,13 @@
       if (typeof order.platform !== "string" || !order.platform) return { ok: false, reason: "platform" };
       if (!SUPPORTED_STATUSES[order.status]) return { ok: false, reason: "status" };
       if (!isTimestamp(order.receivedAtUtc)) return { ok: false, reason: "received" };
+      if (order.placedAtUtc != null && !isTimestamp(order.placedAtUtc)) return { ok: false, reason: "placed" };
       if (order.deliveredAtUtc != null && !isTimestamp(order.deliveredAtUtc)) return { ok: false, reason: "delivered" };
       if (typeof order.customerName !== "string") return { ok: false, reason: "customer" };
       if (order.customerAddress != null && typeof order.customerAddress !== "string") return { ok: false, reason: "address" };
       if (order.customerNote != null && typeof order.customerNote !== "string") return { ok: false, reason: "orderNote" };
       if (typeof order.totalAmount !== "number" || !isFinite(order.totalAmount)) return { ok: false, reason: "amount" };
+      if (order.changeVersion != null && !isWholeNumber(order.changeVersion)) return { ok: false, reason: "changeVersion" };
       if (!Array.isArray(order.items)) return { ok: false, reason: "items" };
       for (let n = 0; n < order.items.length; n++) {
         const item = order.items[n];
@@ -206,6 +219,9 @@
     return sample.indexOf("<!doctype") >= 0 || sample.indexOf("<html") >= 0;
   }
 
+  /** How late the snapshot timeout may fire before it counts as delayed by the page rather than by the network. */
+  const LATE_TIMER_MS = 1000;
+
   function nextBackoffMs(attempt, maxBackoffMs) {
     const cap = maxBackoffMs || 30000;
     const shift = Math.min(attempt, 4);
@@ -213,9 +229,10 @@
   }
 
   function createRefreshCoordinator(options) {
-    const intervalMs = options.intervalMs || 10000;
+    let intervalMs = options.intervalMs || 10000;
     const timeoutMs = options.timeoutMs || 15000;
     const maxBackoffMs = options.maxBackoffMs || 30000;
+    const now = options.now || function () { return Date.now(); };
     const known = new Set();
     let generation = 0;
     let current = null;
@@ -295,10 +312,25 @@
       current = ticket;
 
       let timedOut = false;
-      const timeoutId = options.setTimeout(function () {
-        timedOut = true;
-        controller.abort();
-      }, timeoutMs);
+      let timeoutId = null;
+      let extended = false;
+      let due = now() + timeoutMs;
+      const armTimeout = function (ms) {
+        timeoutId = options.setTimeout(function () {
+          // A timer that fires well after it was due waited behind a long task on this page (for example rendering a
+          // large snapshot), not for the network, and the response may be waiting as well. Give the request its time
+          // back once instead of discarding it (WAS-5).
+          if (!extended && now() - due > LATE_TIMER_MS) {
+            extended = true;
+            due = now() + timeoutMs;
+            armTimeout(timeoutMs);
+            return;
+          }
+          timedOut = true;
+          controller.abort();
+        }, ms);
+      };
+      armTimeout(timeoutMs);
 
       ticket.promise = Promise.resolve()
         .then(function () { return options.fetchSnapshot(controller.signal); })
@@ -385,9 +417,22 @@
       return ticket.promise;
     }
 
+    /**
+     * Changes the polling interval (the live connection lowers it while connected). A shorter interval reschedules a
+     * pending poll at once; a longer one applies from the next poll. Error backoff is unchanged.
+     */
+    function setIntervalMs(ms) {
+      if (!(ms > 0) || ms === intervalMs) return;
+      const shorter = ms < intervalMs;
+      intervalMs = ms;
+      if (timer && shorter) schedule(intervalMs);
+    }
+
     return {
       beginMutation: beginMutation,
       requestRefresh: requestRefresh,
+      setIntervalMs: setIntervalMs,
+      intervalMs: function () { return intervalMs; },
       start: function () { return start("start"); },
       lastSnapshot: function () { return lastSnapshot; },
       isBaselineReady: function () { return baselineReady; }
@@ -425,6 +470,8 @@
     formatAmount: formatAmount,
     applyDetailCurrency: applyDetailCurrency,
     elapsedMinutes: elapsedMinutes,
+    orderTimeUtc: orderTimeUtc,
+    hasPlacedTime: hasPlacedTime,
     collectNewIds: collectNewIds,
     isIsolatedSnapshot: isIsolatedSnapshot,
     validateSnapshot: validateSnapshot,
@@ -437,6 +484,7 @@
 
 function attachBrowser(O, global, api) {
   const hostId = "ordersLiveScreenHost";
+  const orderTimeUtc = api.orderTimeUtc;
   let coordinator = null;
   let timeFormat = null;
   let dateTimeFormat = null;
@@ -463,6 +511,9 @@ function attachBrowser(O, global, api) {
   let boardItemsResizeObserver = null;
   let boardItemsResizePending = null;
   let boardOverflowResizeBound = false;
+  const boardWatchedCards = new WeakSet();
+  // Board cards the IntersectionObserver reports on screen.
+  const boardVisibleCards = new Set();
   const cardTimes = new WeakMap();
   const cardItems = new WeakMap();
   const lastTimings = {
@@ -473,8 +524,13 @@ function attachBrowser(O, global, api) {
     changedCards: 0,
     addedCards: 0,
     removedCards: 0,
-    unchangedCards: 0
+    unchangedCards: 0,
+    movedCards: 0
   };
+
+  function orderTimeLabel(order) {
+    return message(api.hasPlacedTime(order) ? "ordersFullscreenOrderTime" : "ordersFullscreenReceived");
+  }
 
   function message(key) {
     return O.getMessage(key);
@@ -499,8 +555,9 @@ function attachBrowser(O, global, api) {
   function ensureDateFormatters() {
     if (timeFormat) return;
     const zone = timeZone();
-    timeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, timeStyle: "short" });
-    dateTimeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, dateStyle: "short", timeStyle: "short" });
+    // Gregorian in every language: ar-SA would otherwise default to the Umm al-Qura calendar.
+    timeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, calendar: "gregory", timeStyle: "short" });
+    dateTimeFormat = new Intl.DateTimeFormat(culture(), { timeZone: zone, calendar: "gregory", dateStyle: "short", timeStyle: "short" });
     dayFormat = new Intl.DateTimeFormat("en-CA", {
       timeZone: zone,
       year: "numeric",
@@ -552,6 +609,8 @@ function attachBrowser(O, global, api) {
   }
 
   function onStatus(kind) {
+    // The header's sync status must not keep saying "Live" while the screen cannot refresh.
+    document.dispatchEvent(new CustomEvent("wasla:live-poll-status", { detail: { kind: kind } }));
     const el = connectionEl();
     if (!el) return;
     if (kind === "ok") {
@@ -710,7 +769,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-screen-card__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     head.appendChild(platformHost);
     head.appendChild(status);
     head.appendChild(fresh);
@@ -823,13 +882,14 @@ function attachBrowser(O, global, api) {
     received.setAttribute("data-received-row", "");
     const receivedLabel = document.createElement("span");
     receivedLabel.className = "wasla-live-list-row__received-label";
-    receivedLabel.textContent = message("ordersFullscreenReceived");
+    receivedLabel.setAttribute("data-order-time-label", "");
+    receivedLabel.textContent = orderTimeLabel(order);
     const receivedValue = document.createElement("span");
     receivedValue.setAttribute("data-received", "");
-    receivedValue.textContent = formatReceived(order.receivedAtUtc, serverTimeUtc);
+    receivedValue.textContent = formatReceived(orderTimeUtc(order), serverTimeUtc);
     received.appendChild(receivedLabel);
     received.appendChild(receivedValue);
-    markReceivedDay(received, order.receivedAtUtc, serverTimeUtc);
+    markReceivedDay(received, orderTimeUtc(order), serverTimeUtc);
     meta.appendChild(received);
     identity.appendChild(headline);
     identity.appendChild(meta);
@@ -871,7 +931,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-screen-card__elapsed wasla-live-list-row__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
 
     const aside = document.createElement("div");
     aside.className = "wasla-live-list-row__aside";
@@ -1268,14 +1328,14 @@ function attachBrowser(O, global, api) {
   }
 
   function timeKey(order, serverTimeUtc) {
-    return Math.floor(Date.parse(serverTimeUtc) / 3600000) + "|" + api.elapsedMinutes(serverTimeUtc, order.receivedAtUtc) + "|" + order.receivedAtUtc;
+    return Math.floor(Date.parse(serverTimeUtc) / 3600000) + "|" + api.elapsedMinutes(serverTimeUtc, orderTimeUtc(order)) + "|" + orderTimeUtc(order);
   }
 
   function syncTimeLabels(card, order, serverTimeUtc) {
     const key = timeKey(order, serverTimeUtc);
     if (cardTimes.get(card) === key) return false;
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
-    const received = (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
+    const received = (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(orderTimeUtc(order), serverTimeUtc);
     let changed = false;
     const elapsedEl = card.querySelector("[data-elapsed]");
     if (elapsedEl && elapsedEl.textContent !== elapsed) {
@@ -1287,7 +1347,8 @@ function attachBrowser(O, global, api) {
       receivedEl.textContent = received;
       changed = true;
     }
-    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
+    markReceivedDay(card.querySelector("[data-received-row]"), orderTimeUtc(order), serverTimeUtc);
+    setText(card.querySelector("[data-order-time-label]"), orderTimeLabel(order));
     cardTimes.set(card, key);
     return changed;
   }
@@ -1333,9 +1394,10 @@ function attachBrowser(O, global, api) {
       card.getAttribute("data-live-layout") === "list"
         ? formatListMoney(order.totalAmount)
         : (" " + formatMoney(order.totalAmount)));
-    setText(card.querySelector("[data-received]"), (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(order.receivedAtUtc, serverTimeUtc));
-    setText(card.querySelector("[data-elapsed]"), formatElapsed(serverTimeUtc, order.receivedAtUtc));
-    markReceivedDay(card.querySelector("[data-received-row]"), order.receivedAtUtc, serverTimeUtc);
+    setText(card.querySelector("[data-received]"), (card.getAttribute("data-live-layout") === "list" ? "" : " ") + formatReceived(orderTimeUtc(order), serverTimeUtc));
+    setText(card.querySelector("[data-elapsed]"), formatElapsed(serverTimeUtc, orderTimeUtc(order)));
+    markReceivedDay(card.querySelector("[data-received-row]"), orderTimeUtc(order), serverTimeUtc);
+    setText(card.querySelector("[data-order-time-label]"), orderTimeLabel(order));
     if (statusChanged) {
       const actions = card.querySelector("[data-order-actions]");
       if (actions) fillActions(actions, order);
@@ -1372,13 +1434,13 @@ function attachBrowser(O, global, api) {
     return 4;
   }
 
-  // Newest received time first within a visual group, then the immutable id.
+  // Newest order time first within a visual group (WAS-125), then the immutable id.
   // Actual status must not separate New from Accepted or reshuffle a group.
   function comparePresentation(a, b) {
     const group = groupRank(a.status) - groupRank(b.status);
     if (group) return group;
-    const timeA = Date.parse(a.receivedAtUtc);
-    const timeB = Date.parse(b.receivedAtUtc);
+    const timeA = Date.parse(orderTimeUtc(a));
+    const timeB = Date.parse(orderTimeUtc(b));
     const validA = timeA === timeA;
     const validB = timeB === timeB;
     if (validA && validB && timeA !== timeB) return timeB - timeA;
@@ -1430,6 +1492,117 @@ function attachBrowser(O, global, api) {
       root.appendChild(column);
     });
     return root;
+  }
+
+  // A Board column, List group or Focus queue group renders at most a page of orders (newest first, as sorted), and
+  // more pages on request. Every order stays one "Show more" away and the column says how many it shows; the column
+  // and header counts still count every order. Thousands of rendered cards kept the page frozen for tens of seconds
+  // (WAS-5); a restaurant-sized column stays below one page and looks as before.
+  const GROUP_PAGE_SIZE = 100;
+  const groupLimits = {};
+
+  function groupPageSize() {
+    const size = O.opts && O.opts.liveGroupPageSize;
+    return typeof size === "number" && size > 0 ? size : GROUP_PAGE_SIZE;
+  }
+
+  function groupLimit(key) {
+    return groupLimits[key] || groupPageSize();
+  }
+
+  // Orders that stay rendered beyond the page: the one holding keyboard focus, the Focus selection and the order whose
+  // details are open, so neither focus nor an open dialog's return target is taken away by a poll.
+  function pinnedOrderIds(focusedId) {
+    const ids = new Set();
+    if (focusedId) ids.add(String(focusedId));
+    if (selectedOrderId) ids.add(String(selectedOrderId));
+    const open = O.liveDetailModal && typeof O.liveDetailModal.getOpenOrderId === "function" ? O.liveDetailModal.getOpenOrderId() : null;
+    if (open) ids.add(String(open));
+    return ids;
+  }
+
+  function createGroupPager() {
+    return { shown: {}, totals: {} };
+  }
+
+  /** Counts the order in its group and says whether it is rendered. */
+  function pageOrder(pager, key, order, pinned) {
+    pager.totals[key] = (pager.totals[key] || 0) + 1;
+    const shown = pager.shown[key] || 0;
+    if (shown >= groupLimit(key) && !order.isDemo && !pinned.has(String(order.id))) return false;
+    pager.shown[key] = shown + 1;
+    return true;
+  }
+
+  function formatCount(value) {
+    try {
+      return new Intl.NumberFormat(culture()).format(value);
+    } catch (e) {
+      return String(value);
+    }
+  }
+
+  function fillTemplate(template, values) {
+    let text = String(template || "");
+    values.forEach(function (value, index) { text = text.split("{" + index + "}").join(value); });
+    return text;
+  }
+
+  function syncGroupMore(column, key, pager) {
+    const shown = pager.shown[key] || 0;
+    const total = pager.totals[key] || 0;
+    let more = null;
+    for (let i = 0; i < column.children.length; i++) {
+      if (column.children[i].hasAttribute("data-live-more")) more = column.children[i];
+    }
+    if (total <= shown) {
+      if (more) more.remove();
+      return;
+    }
+    if (!more) {
+      const list = column.querySelector("[data-board-list]");
+      const statusId = (list && list.getAttribute("aria-labelledby") ? list.getAttribute("aria-labelledby") : "live-group-" + key) + "-more";
+      more = document.createElement("div");
+      more.className = "wasla-live-more";
+      more.setAttribute("data-live-more", key);
+      const status = document.createElement("p");
+      status.className = "wasla-live-more__status";
+      status.id = statusId;
+      status.setAttribute("data-live-more-status", "");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-sm btn-outline-secondary wasla-live-more__button";
+      button.setAttribute("data-live-show-more", key);
+      button.setAttribute("aria-describedby", statusId);
+      more.appendChild(status);
+      more.appendChild(button);
+      if (list && list.nextSibling) column.insertBefore(more, list.nextSibling);
+      else column.appendChild(more);
+    }
+    const statusText = fillTemplate(message("groupShowing"), [formatCount(shown), formatCount(total)]);
+    const buttonText = fillTemplate(message("groupShowMore"), [formatCount(Math.min(groupPageSize(), total - shown))]);
+    const statusEl = more.querySelector("[data-live-more-status]");
+    const buttonEl = more.querySelector("[data-live-show-more]");
+    if (statusEl && statusEl.textContent !== statusText) statusEl.textContent = statusText;
+    if (buttonEl && buttonEl.textContent !== buttonText) buttonEl.textContent = buttonText;
+  }
+
+  /** Renders the next page of a group from the snapshot on screen; no request is made. */
+  function showMoreInGroup(key) {
+    if (!renderedSnapshot || !boardColumns.some(function (spec) { return spec.key === key; })) return;
+    const host = document.getElementById(hostId);
+    const column = host ? host.querySelector('[data-board-column="' + key + '"]') : null;
+    const list = column ? column.querySelector("[data-board-list]") : null;
+    const before = list ? list.children.length : 0;
+    groupLimits[key] = groupLimit(key) + groupPageSize();
+    renderSnapshot(renderedSnapshot);
+    // The button keeps focus while there is more; once everything is shown, focus moves to the first order it revealed.
+    const button = column && column.querySelector("[data-live-show-more]");
+    if (button || !list || !list.isConnected) return;
+    const revealed = list.children[before];
+    const target = revealed && (revealed.hasAttribute("data-focus-select") ? revealed
+      : (revealed.querySelector("[data-order-action]") || revealed.querySelector("[data-order-detail]")));
+    if (target && typeof target.focus === "function") target.focus({ preventScroll: false });
   }
 
   function currentLayout() {
@@ -1493,7 +1666,6 @@ function attachBrowser(O, global, api) {
     const mark = document.createElement("div");
     mark.className = "wasla-live-empty__mark";
     mark.setAttribute("aria-hidden", "true");
-    mark.textContent = "W";
     const title = document.createElement("h2");
     title.className = "wasla-live-empty__title";
     const description = document.createElement("p");
@@ -1607,7 +1779,7 @@ function attachBrowser(O, global, api) {
     elapsed.className = "wasla-live-focus-entry__elapsed";
     elapsed.setAttribute("data-elapsed", "");
     elapsed.setAttribute("data-tour", "live-timer");
-    elapsed.textContent = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    elapsed.textContent = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     meta.appendChild(platformHost);
     meta.appendChild(status);
     meta.appendChild(elapsed);
@@ -1628,7 +1800,7 @@ function attachBrowser(O, global, api) {
 
   function updateFocusEntry(entry, order, serverTimeUtc) {
     const signature = queueSignature(order);
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     if (entry.getAttribute("data-live-signature") === signature) {
       const elapsedEl = entry.querySelector("[data-elapsed]");
       if (elapsedEl && elapsedEl.textContent !== elapsed) {
@@ -1682,7 +1854,7 @@ function attachBrowser(O, global, api) {
     if (!detail || typeof detail.querySelector !== "function") return;
     const panel = detail.querySelector(".wasla-live-detail");
     if (!panel || panel.getAttribute("data-order-id") !== String(order.id)) return;
-    const elapsed = formatElapsed(serverTimeUtc, order.receivedAtUtc);
+    const elapsed = formatElapsed(serverTimeUtc, orderTimeUtc(order));
     const elapsedEl = panel.querySelector("[data-elapsed]");
     if (elapsedEl && elapsedEl.textContent !== elapsed) elapsedEl.textContent = elapsed;
     if (typeof order.totalAmount === "number" && isFinite(order.totalAmount)) {
@@ -2028,8 +2200,13 @@ function attachBrowser(O, global, api) {
     let unchanged = 0;
     let timeUpdates = 0;
     let moved = 0;
+    const pager = createGroupPager();
+    const pinned = pinnedOrderIds(focusedId);
     orders.forEach(function (order) {
       const id = String(order.id);
+      const key = columnKey(order.status);
+      counts[key] += order.isDemo ? 0 : 1;
+      if (!pageOrder(pager, key, order, pinned)) return;
       seen.add(id);
       let entry = byId.get(id);
       if (!entry) {
@@ -2041,9 +2218,7 @@ function attachBrowser(O, global, api) {
         else if (result === "time") timeUpdates += 1;
         else unchanged += 1;
       }
-      const key = columnKey(order.status);
       const list = lists[key];
-      counts[key] += order.isDemo ? 0 : 1;
       const anchor = anchors[key];
       const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
       if (entry !== expected) {
@@ -2067,6 +2242,7 @@ function attachBrowser(O, global, api) {
       if (count.textContent !== text) count.textContent = text;
       var hasCard = !!column.querySelector("[data-order-id]");
       column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0 || hasCard;
+      syncGroupMore(column, spec.key, pager);
     });
     markPressed();
 
@@ -2105,30 +2281,32 @@ function attachBrowser(O, global, api) {
     return scroll - client > 1;
   }
 
-  function syncBoardItemOverflow(card) {
-    if (!card || card.getAttribute("data-live-layout") !== "board") return;
-    const shell = card.querySelector(".wasla-live-board-items");
-    const viewport = shell && shell.querySelector(".wasla-live-board-items__viewport");
-    if (!shell || !viewport) return;
-    const overflow = boardItemsOverflow(viewport);
-    if (overflow === null) return;
-    shell.classList.toggle("has-item-overflow", overflow);
-    const details = card.querySelector(".wasla-live-screen-card__details");
-    if (details) details.classList.toggle("has-item-overflow", overflow);
+  // Reads every preview's size first and writes the classes afterwards. A class change between two reads would make
+  // the browser lay the page out again for each card, which with thousands of cards kept the first render of a large
+  // snapshot busy for minutes (WAS-5).
+  function measureBoardOverflow(cards) {
+    const results = [];
+    cards.forEach(function (card) {
+      if (!card || card.isConnected === false || card.getAttribute("data-live-layout") !== "board") return;
+      const shell = card.querySelector(".wasla-live-board-items");
+      const viewport = shell && shell.querySelector(".wasla-live-board-items__viewport");
+      if (!shell || !viewport) return;
+      const overflow = boardItemsOverflow(viewport);
+      if (overflow === null) return;
+      results.push({ card: card, shell: shell, overflow: overflow });
+    });
+    results.forEach(function (result) {
+      if (result.shell.classList.contains("has-item-overflow") !== result.overflow) {
+        result.shell.classList.toggle("has-item-overflow", result.overflow);
+      }
+      const details = result.card.querySelector(".wasla-live-screen-card__details");
+      if (details && details.classList.contains("has-item-overflow") !== result.overflow) {
+        details.classList.toggle("has-item-overflow", result.overflow);
+      }
+    });
   }
 
-  function watchBoardCardOverflow(card) {
-    if (!card) return;
-    if (global.IntersectionObserver) {
-      if (!boardOverflowObserver) {
-        boardOverflowObserver = new global.IntersectionObserver(function (entries) {
-          for (let i = 0; i < entries.length; i++) {
-            if (entries[i].isIntersecting) syncBoardItemOverflow(entries[i].target);
-          }
-        });
-      }
-      boardOverflowObserver.observe(card);
-    }
+  function observeBoardItems(card) {
     // A Board card keeps one height, so its product preview gets whatever room is left: a note, wrapped actions or the
     // practice-order countdown change that room without changing the card. The "more in details" line follows the
     // preview's own size, re-checked on the next frame.
@@ -2147,18 +2325,54 @@ function attachBrowser(O, global, api) {
         nextFrame(function () {
           const cards = boardItemsResizePending;
           boardItemsResizePending = null;
-          if (cards) cards.forEach(function (owner) { if (owner.isConnected !== false) syncBoardItemOverflow(owner); });
+          if (cards) measureBoardOverflow(Array.from(cards));
         });
       });
     }
     boardItemsResizeObserver.observe(viewport);
   }
 
-  function unwatchBoardCard(card) {
-    if (!card) return;
-    if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
+  function unobserveBoardItems(card) {
     const viewport = boardItemsResizeObserver && card.querySelector ? card.querySelector(".wasla-live-board-items__viewport") : null;
     if (viewport) boardItemsResizeObserver.unobserve(viewport);
+  }
+
+  // Only cards on screen are measured and followed: a card scrolled into view is measured then. Without
+  // IntersectionObserver every card is.
+  function watchBoardCardOverflow(card) {
+    if (!card || boardWatchedCards.has(card)) return;
+    boardWatchedCards.add(card);
+    if (!global.IntersectionObserver) {
+      observeBoardItems(card);
+      return;
+    }
+    if (!boardOverflowObserver) {
+      boardOverflowObserver = new global.IntersectionObserver(function (entries) {
+        const shown = [];
+        for (let i = 0; i < entries.length; i++) {
+          const target = entries[i].target;
+          if (entries[i].isIntersecting) {
+            if (!boardVisibleCards.has(target)) {
+              boardVisibleCards.add(target);
+              observeBoardItems(target);
+            }
+            shown.push(target);
+          } else if (boardVisibleCards.delete(target)) {
+            unobserveBoardItems(target);
+          }
+        }
+        if (shown.length) measureBoardOverflow(shown);
+      });
+    }
+    boardOverflowObserver.observe(card);
+  }
+
+  function unwatchBoardCard(card) {
+    if (!card) return;
+    boardWatchedCards.delete(card);
+    boardVisibleCards.delete(card);
+    if (boardOverflowObserver) boardOverflowObserver.unobserve(card);
+    unobserveBoardItems(card);
   }
 
   function releaseBoardOverflow(root) {
@@ -2170,10 +2384,8 @@ function attachBrowser(O, global, api) {
   function syncBoardOverflow(host) {
     if (!host) return;
     const cards = host.querySelectorAll('.wasla-live-screen-card[data-live-layout="board"]');
-    for (let i = 0; i < cards.length; i++) {
-      syncBoardItemOverflow(cards[i]);
-      watchBoardCardOverflow(cards[i]);
-    }
+    for (let i = 0; i < cards.length; i++) watchBoardCardOverflow(cards[i]);
+    measureBoardOverflow(global.IntersectionObserver ? Array.from(boardVisibleCards) : Array.from(cards));
   }
 
   function bindBoardOverflowResize() {
@@ -2244,8 +2456,14 @@ function attachBrowser(O, global, api) {
     function createEntry(order) {
       return layout === "board" ? createCard(order, serverTimeUtc) : createListRow(order, serverTimeUtc);
     }
+    const pager = createGroupPager();
+    const pinned = pinnedOrderIds(focusedId);
     orders.forEach(function (order) {
       const id = String(order.id);
+      const key = columnKey(order.status);
+      counts[key] += order.isDemo ? 0 : 1;
+      // Not rendered on this page of its group: an existing card is removed below like any order that left.
+      if (!pageOrder(pager, key, order, pinned)) return;
       seen.add(id);
       let card = byId.get(id);
       if (!card) {
@@ -2265,9 +2483,7 @@ function attachBrowser(O, global, api) {
       } else {
         unchanged += 1;
       }
-      const key = columnKey(order.status);
       const list = lists[key];
-      counts[key] += order.isDemo ? 0 : 1;
       const anchor = anchors[key];
       const expected = anchor ? anchor.nextElementSibling : list.firstElementChild;
       if (card !== expected) {
@@ -2294,6 +2510,7 @@ function attachBrowser(O, global, api) {
       if (count.textContent !== text) count.textContent = text;
       var hasCard = !!column.querySelector("[data-order-id]");
       column.querySelector("[data-board-empty]").hidden = counts[spec.key] !== 0 || hasCard;
+      syncGroupMore(column, spec.key, pager);
     });
     if (layout === "board") syncBoardOverflow(host);
     // Reparenting or replacing an action button may blur it. Never steal focus
@@ -2345,16 +2562,19 @@ function attachBrowser(O, global, api) {
     lastTimings.removedCards = diff.removed;
     lastTimings.unchangedCards = diff.unchanged;
     lastTimings.timeUpdates = diff.timeUpdates || 0;
+    lastTimings.movedCards = diff.moved || 0;
     setSummary(snapshot);
     touchUpdated();
-    // Listeners such as order training, the automation status and the practice-order countdown read the accepted
-    // snapshot instead of scraping one view's DOM. Neither the automation section nor the practice order's countdown
-    // deadline takes part in new-order detection; serverTimeUtc lets the countdown measure the server's deadline.
+    // Listeners such as order training, the automation and platform sync status and the practice-order countdown read
+    // the accepted snapshot instead of scraping one view's DOM. Neither the automation or sync section nor the practice
+    // order's countdown deadline takes part in new-order detection; serverTimeUtc lets the countdown measure the
+    // server's deadline.
     document.dispatchEvent(new CustomEvent("wasla:live-rendered", {
       detail: {
         orders: snapshot.orders,
         training: snapshot.training || null,
         automation: snapshot.automation || null,
+        sync: snapshot.sync || null,
         serverTimeUtc: snapshot.serverTimeUtc
       }
     }));
@@ -2415,6 +2635,13 @@ function attachBrowser(O, global, api) {
 
   if (typeof document.addEventListener === "function") {
     document.addEventListener("wasla:order-action-completed", onOrderAction);
+    // Delegated once: the "Show more" controls are rebuilt with their column.
+    document.addEventListener("click", function (ev) {
+      const target = ev && ev.target;
+      const button = target && target.closest ? target.closest("[data-live-show-more]") : null;
+      if (!button || !button.closest("#" + hostId)) return;
+      showMoreInGroup(button.getAttribute("data-live-show-more"));
+    });
   }
   bindNarrowWatcher();
   bindBoardOverflowResize();
@@ -2435,11 +2662,30 @@ function attachBrowser(O, global, api) {
       return ensureCoordinator().beginMutation();
     },
     requestRefresh: function () { return ensureCoordinator().requestRefresh(); },
+    setPollingIntervalMs: function (ms) { ensureCoordinator().setIntervalMs(ms); },
+    pollingIntervalMs: function () { return coordinator ? coordinator.intervalMs() : null; },
+    /**
+     * The order's ChangeVersion in the snapshot on screen, or -1 when the order is not shown (not loaded yet, not on
+     * the Live Screen, or hidden by order training). A live OrderChanged at or below it is already shown.
+     */
+    shownChangeVersion: function (orderId) {
+      const snapshot = coordinator && coordinator.lastSnapshot();
+      if (!snapshot || !Array.isArray(snapshot.orders)) return -1;
+      const wanted = String(orderId || "").toLowerCase();
+      for (let i = 0; i < snapshot.orders.length; i++) {
+        const order = snapshot.orders[i];
+        if (String(order.id).toLowerCase() === wanted) {
+          return typeof order.changeVersion === "number" ? order.changeVersion : -1;
+        }
+      }
+      return -1;
+    },
     refreshView: function () {
       const snapshot = coordinator && coordinator.lastSnapshot();
       if (snapshot) renderSnapshot(snapshot);
     },
     selectOrder: selectOrder,
+    showMoreInGroup: showMoreInGroup,
     showQueue: showQueue,
     retrySelectedDetail: retrySelectedDetail,
     getSelectedOrderId: function () { return selectedOrderId; },

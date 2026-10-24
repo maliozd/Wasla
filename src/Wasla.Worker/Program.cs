@@ -3,6 +3,7 @@ using Wasla.Infrastructure.Security;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.Worker.Jobs;
@@ -34,6 +35,10 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 
+// Orders, automatic approvals and receipt jobs this process stores are announced to Wasla.Web's open screens
+// (Realtime:Internal). Outside Development it must be configured or explicitly disabled, or startup stops (WAS-103).
+builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration, builder.Environment);
+
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddHostedService<OrderSyncWorker>();
@@ -43,6 +48,7 @@ builder.Services.AddSingleton<GuidedDemoSchedule>();
 builder.Services.AddHostedService<GuidedDemoScheduler>();
 
 var host = builder.Build();
+host.Services.LogWebTenantChangeChannel(builder.Configuration, "Wasla.Worker");
 
 await host.RunAsync();
 

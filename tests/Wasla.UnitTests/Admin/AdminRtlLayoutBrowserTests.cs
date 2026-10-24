@@ -8,6 +8,7 @@ namespace Wasla.UnitTests.Admin;
 /// horizontal overflow; on phones the RTL sidebar also covered the content. Skips only when no Chromium browser is
 /// installed (set <see cref="HeadlessChromium.BrowserVariable"/> to point at one) or AdminLTE cannot be loaded.
 /// </summary>
+[Trait("Category", "Browser")]
 public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
 {
     private static readonly (int Width, int Height, bool Mobile)[] Viewports = [(375, 812, true), (1366, 860, false)];
@@ -76,7 +77,8 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
                          "/admin",
                          "/admin/customers?sort=name&dir=asc",
                          $"/admin/customers/{_tenantId}",
-                         "/admin/pending-registrations"
+                         "/admin/pending-registrations",
+                         "/admin/billing/plan-prices"
                      })
             {
                 var page = $"{path} at {width}px ({culture})";
@@ -147,9 +149,11 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
 
         using var session = await _host.SignedInAdminAsync(culture);
         var browser = await HeadlessChromium.StartAsync(executable, ct);
-        foreach (var cookie in session.Cookies)
-            await browser.SetCookieAsync(_host.BaseAddress, cookie.Name, cookie.Value, ct);
-        return browser;
+        return await browser.SetUpAsync(async started =>
+        {
+            foreach (var cookie in session.Cookies)
+                await started.SetCookieAsync(_host.BaseAddress, cookie.Name, cookie.Value, ct);
+        });
     }
 
     /// <summary>Loads a page, waits for AdminLTE to create its live region, and returns the layout metrics.</summary>

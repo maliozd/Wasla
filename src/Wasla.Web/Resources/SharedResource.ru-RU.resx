@@ -279,50 +279,14 @@
   <data name="Layout.TenantNavigation" xml:space="preserve">
     <value>Меню ресторана</value>
   </data>
-  <data name="Landing.Title" xml:space="preserve">
+  <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
-  </data>
-  <data name="Landing.Subtitle" xml:space="preserve">
-    <value>Мультиплатформенное управление заказами</value>
   </data>
   <data name="Landing.CustomerLogin" xml:space="preserve">
     <value>Вход для клиентов</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Вход администратора</value>
-  </data>
-  <data name="Landing.SinglePanel" xml:space="preserve">
-    <value>Одна панель</value>
-  </data>
-  <data name="Landing.SinglePanelDescription" xml:space="preserve">
-    <value>Все заказы платформы в одном месте</value>
-  </data>
-  <data name="Landing.EasyManagement" xml:space="preserve">
-    <value>Простое управление</value>
-  </data>
-  <data name="Landing.EasyManagementDescription" xml:space="preserve">
-    <value>Легко управляйте ветками и соединениями</value>
-  </data>
-  <data name="Landing.LiveTracking" xml:space="preserve">
-    <value>Живое отслеживание</value>
-  </data>
-  <data name="Landing.LiveTrackingDescription" xml:space="preserve">
-    <value>Отслеживайте поток заказов и изменения статуса</value>
-  </data>
-  <data name="Landing.HeroBadge" xml:space="preserve">
-    <value>SaaS • Ресторан • Операционная деятельность</value>
-  </data>
-  <data name="Landing.HeroTitle" xml:space="preserve">
-    <value>Управляйте заказами в ресторане с одного экрана.</value>
-  </data>
-  <data name="Landing.HeroDescription" xml:space="preserve">
-    <value>Просматривайте, отслеживайте и управляйте заказами от Yemeksepeti, Getir и Trendyol на одной панели.</value>
-  </data>
-  <data name="Landing.HeroSubtitle" xml:space="preserve">
-    <value>Отслеживайте заказы Yemeksepeti, GetirYemek и TrendyolYemek с одной панели. Мгновенно просматривайте новые заказы, получайте звуковые уведомления и упрощайте работу ресторана.</value>
-  </data>
-  <data name="Landing.TenantNote" xml:space="preserve">
-    <value>Вход для клиентов осуществляется через закрепленный за вами домен ресторана.</value>
   </data>
   <data name="Landing.FooterTagline" xml:space="preserve">
     <value>Современное управление заказами для оперативных групп</value>
@@ -420,8 +384,8 @@
   <data name="Dashboard.AverageValuePerOrder" xml:space="preserve">
     <value>Средняя стоимость заказа</value>
   </data>
-  <data name="Dashboard.LatestOrdersReceivedToday" xml:space="preserve">
-    <value>Последние заказы, полученные сегодня</value>
+  <data name="Dashboard.LatestOrdersReceived" xml:space="preserve">
+    <value>Последние заказы по времени заказа</value>
   </data>
   <data name="Dashboard.OrdersByPlatformToday" xml:space="preserve">
     <value>Заказы по платформам сегодня</value>
@@ -441,14 +405,11 @@
   <data name="Dashboard.Status" xml:space="preserve">
     <value>Статус</value>
   </data>
-  <data name="Dashboard.Received" xml:space="preserve">
-    <value>Полученный</value>
-  </data>
   <data name="Dashboard.Orders" xml:space="preserve">
     <value>Заказы</value>
   </data>
-  <data name="Dashboard.NoOrdersYetToday" xml:space="preserve">
-    <value>Сегодня заказов еще нет.</value>
+  <data name="Dashboard.NoOrdersYet" xml:space="preserve">
+    <value>Заказов пока нет.</value>
   </data>
   <data name="Dashboard.NewOrdersWillAppearHere" xml:space="preserve">
     <value>Новые заказы будут появляться здесь автоматически.</value>
@@ -586,7 +547,25 @@
     <value>Общий</value>
   </data>
   <data name="Orders.ReceivedAt" xml:space="preserve">
-    <value>Полученный</value>
+    <value>Получен в Wasla</value>
+  </data>
+  <data name="Orders.OrderTime" xml:space="preserve">
+    <value>Время заказа</value>
+  </data>
+  <data name="Orders.OrderTimeFallbackHint" xml:space="preserve">
+    <value>Платформа не передала время заказа; показано время получения заказа в Wasla.</value>
+  </data>
+  <data name="Orders.Details.PlacedOnPlatform" xml:space="preserve">
+    <value>Создан на платформе</value>
+  </data>
+  <data name="Orders.Details.PlatformModified" xml:space="preserve">
+    <value>Последнее изменение на платформе</value>
+  </data>
+  <data name="Orders.Details.LastChangedInWasla" xml:space="preserve">
+    <value>Последнее обновление в Wasla</value>
+  </data>
+  <data name="Orders.Details.NotProvidedByPlatform" xml:space="preserve">
+    <value>Платформа не передала</value>
   </data>
   <data name="Orders.Details" xml:space="preserve">
     <value>Подробности</value>
@@ -663,6 +642,15 @@
   <data name="Orders.Print.Failed" xml:space="preserve">
     <value>Не удалось добавить чек в очередь печати.</value>
   </data>
+  <data name="Orders.Print.Printing" xml:space="preserve">
+    <value>Печатается…</value>
+  </data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve">
+    <value>Чек отправлен на принтер</value>
+  </data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve">
+    <value>Не удалось напечатать чек</value>
+  </data>
   <data name="Orders.Details.OpenFullOrder" xml:space="preserve">
     <value>Открыть заказ</value>
   </data>
@@ -683,6 +671,21 @@
   </data>
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve">
     <value>В эфире</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve">
+    <value>Платформа не подключена</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve">
+    <value>Синхронизация выключена</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve">
+    <value>Проблема с подключением</value>
+  </data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve">
+    <value>Проблема с подключением: {0}</value>
+  </data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve">
+    <value>Последняя успешная синхронизация</value>
   </data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve">
     <value>Звук уведомлений</value>
@@ -778,7 +781,7 @@
     <value>Статус</value>
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
-    <value>Полученный</value>
+    <value>Получен в Wasla</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Способ оплаты</value>
@@ -964,7 +967,7 @@
     <value>Включено</value>
   </data>
   <data name="Notification.Disabled" xml:space="preserve">
-    <value>Неполноценный</value>
+    <value>Выключено</value>
   </data>
   <data name="Notification.WaitingForBrowserAudio" xml:space="preserve">
     <value>Ожидание разрешения на воспроизведение звука в браузере</value>
@@ -1179,356 +1182,8 @@
   <data name="Validation.AddressRequired" xml:space="preserve">
     <value>Требуется адрес.</value>
   </data>
-  <data name="Landing.Order" xml:space="preserve">
-    <value>Заказ</value>
-  </data>
-  <data name="Landing.Endorsement" xml:space="preserve">
-    <value>Поддержка</value>
-  </data>
-  <data name="Landing.Preparing" xml:space="preserve">
-    <value>Подготовка</value>
-  </data>
-  <data name="Landing.OnTheRoad" xml:space="preserve">
-    <value>На дороге</value>
-  </data>
-  <data name="Landing.OrdersToday" xml:space="preserve">
-    <value>Заказы сегодня</value>
-  </data>
-  <data name="Landing.Live" xml:space="preserve">
-    <value>Жить</value>
-  </data>
-  <data name="Landing.PlatformsTitle" xml:space="preserve">
-    <value>Платформа заказов в одной панели</value>
-  </data>
-  <data name="Landing.PlatformsDescription" xml:space="preserve">
-    <value>Заказы с разных продуктовых площадок собраны в одной панели.</value>
-  </data>
-  <data name="Landing.HowItWorksTitle" xml:space="preserve">
-    <value>Как это работает</value>
-  </data>
-  <data name="Landing.HowItWorksDescription" xml:space="preserve">
-    <value>Пять шагов от онлайн-заказов до кухни и автоматической печати чеков.</value>
-  </data>
-  <data name="Landing.Step1Title" xml:space="preserve">
-    <value>Определить соединения платформы</value>
-  </data>
-  <data name="Landing.Step1Description" xml:space="preserve">
-    <value>Объедините аккаунты торговой площадки вашего ресторана в одном месте.</value>
-  </data>
-  <data name="Landing.Step2Title" xml:space="preserve">
-    <value>Отслеживайте заказы с одного экрана</value>
-  </data>
-  <data name="Landing.Step2Description" xml:space="preserve">
-    <value>Просматривайте новые и выполняемые заказы, не переключаясь между системами.</value>
-  </data>
-  <data name="Landing.Step3Title" xml:space="preserve">
-    <value>Получайте звуковые и визуальные уведомления</value>
-  </data>
-  <data name="Landing.Step3Description" xml:space="preserve">
-    <value>Будьте оповещены в момент поступления нового заказа, даже в часы пик.</value>
-  </data>
-  <data name="Landing.Step4Title" xml:space="preserve">
-    <value>Управляйте работой ресторана с ясностью</value>
-  </data>
-  <data name="Landing.Step4Description" xml:space="preserve">
-    <value>Филиалы, сотрудники и платформы поддерживают единый последовательный рабочий процесс.</value>
-  </data>
-  <data name="Landing.FeaturesTitle" xml:space="preserve">
-    <value>Функции</value>
-  </data>
-  <data name="Landing.FeaturesDescription" xml:space="preserve">
-    <value>Все, что вам нужно для управления маркетплейсами, филиалами и командами в одной системе.</value>
-  </data>
-  <data name="Landing.FeatureSinglePanel" xml:space="preserve">
-    <value>Однопанельное управление заказами</value>
-  </data>
-  <data name="Landing.FeatureSinglePanelDescription" xml:space="preserve">
-    <value>Все каналы в одном списке с актуальным статусом и подробностями.</value>
-  </data>
-  <data name="Landing.FeatureLiveTracking" xml:space="preserve">
-    <value>Отслеживание заказов в реальном времени</value>
-  </data>
-  <data name="Landing.FeatureLiveTrackingDescription" xml:space="preserve">
-    <value>Посмотрите, на каком этапе проходит каждый заказ: от принятия до передачи.</value>
-  </data>
-  <data name="Landing.FeatureNotifications" xml:space="preserve">
-    <value>Уведомления о новых заказах</value>
-  </data>
-  <data name="Landing.FeatureNotificationsDescription" xml:space="preserve">
-    <value>Не пропускайте заказы во время суеты благодаря четким оповещениям.</value>
-  </data>
-  <data name="Landing.FeatureBranchManagement" xml:space="preserve">
-    <value>Управление филиалом</value>
-  </data>
-  <data name="Landing.FeatureBranchManagementDescription" xml:space="preserve">
-    <value>Организуйте несколько локаций и команд из одного места.</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnections" xml:space="preserve">
-    <value>Соединения платформы</value>
-  </data>
-  <data name="Landing.FeaturePlatformConnectionsDescription" xml:space="preserve">
-    <value>Подключите основные рынки доставки и развивайтесь без лишнего хаоса.</value>
-  </data>
-  <data name="Landing.FeatureMultilingual" xml:space="preserve">
-    <value>Многоязычный интерфейс</value>
-  </data>
-  <data name="Landing.FeatureMultilingualDescription" xml:space="preserve">
-    <value>Работайте на языке, который подходит вашей команде, включая поддержку справа налево.</value>
-  </data>
-  <data name="Landing.FeatureAdminPanel" xml:space="preserve">
-    <value>Админ-панель</value>
-  </data>
-  <data name="Landing.FeatureAdminPanelDescription" xml:space="preserve">
-    <value>Системное администрирование, безопасность и настройка в выделенной зоне.</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabases" xml:space="preserve">
-    <value>Отдельная база данных для каждого клиента.</value>
-  </data>
-  <data name="Landing.FeatureSeparateDatabasesDescription" xml:space="preserve">
-    <value>Данные каждого ресторана остаются изолированными для обеспечения конфиденциальности и производительности.</value>
-  </data>
-  <data name="Landing.BenefitsTitle" xml:space="preserve">
-    <value>Упростите работу ресторана</value>
-  </data>
-  <data name="Landing.BenefitsDescription" xml:space="preserve">
-    <value>Практическая польза для кухонных и обслуживающих бригад.</value>
-  </data>
-  <data name="Landing.BenefitLessSwitching" xml:space="preserve">
-    <value>Меньше переключения между экранами платформы</value>
-  </data>
-  <data name="Landing.BenefitLessSwitchingDescription" xml:space="preserve">
-    <value>Вам не придется весь день переключаться между панелями разных платформ.</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrders" xml:space="preserve">
-    <value>Снижение риска пропущенных заказов</value>
-  </data>
-  <data name="Landing.BenefitFewerMissedOrdersDescription" xml:space="preserve">
-    <value>Консолидированная видимость и оповещения не позволяют ничему ускользнуть.</value>
-  </data>
-  <data name="Landing.BenefitBranchTracking" xml:space="preserve">
-    <value>Отслеживайте заказы по филиалам и платформам</value>
-  </data>
-  <data name="Landing.BenefitBranchTrackingDescription" xml:space="preserve">
-    <value>Следуйте заказам по платформам и филиалам более организованно.</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterface" xml:space="preserve">
-    <value>Просто для ресторанных команд</value>
-  </data>
-  <data name="Landing.BenefitSimpleInterfaceDescription" xml:space="preserve">
-    <value>Интерфейс, разработанный для скорости во время обслуживания, а не для медленной офисной работы.</value>
-  </data>
-  <data name="Landing.VisualTitle" xml:space="preserve">
-    <value>От кухни до передачи</value>
-  </data>
-  <data name="Landing.VisualDescription" xml:space="preserve">
-    <value>Визуальные подсказки, соответствующие тому, как заказы перемещаются в реальном потоке обслуживания.</value>
-  </data>
-  <data name="Landing.CtaTitle" xml:space="preserve">
-    <value>Войдите в свою панель клиента</value>
-  </data>
-  <data name="Landing.CtaDescription" xml:space="preserve">
-    <value>Вход клиентов работает только через домен, закрепленный за вашим рестораном.</value>
-  </data>
-  <data name="Landing.MockupTitle" xml:space="preserve">
-    <value>Экран текущих заказов</value>
-  </data>
-  <data name="Landing.MockupSubtitle" xml:space="preserve">
-    <value>Просматривайте новые заказы в одной таблице, следите за статусами и получайте звуковые уведомления.</value>
-  </data>
-  <data name="Landing.TrustTitle" xml:space="preserve">
-    <value>Данные каждого ресторана обрабатываются отдельно.</value>
-  </data>
-  <data name="Landing.TrustDescription" xml:space="preserve">
-    <value>Ваши операции остаются в выделенном пространстве — безопасно и под вашим контролем.</value>
-  </data>
-  <data name="Landing.FinalCtaTitle" xml:space="preserve">
-    <value>Соедините онлайн-заказы с работой кухни</value>
-  </data>
-  <data name="Landing.FinalCtaDescription" xml:space="preserve">
-    <value>Wasla связывает платформы онлайн-заказов с операциями ресторана. Собирает заказы на одном экране, упрощает кухонный процесс и автоматически печатает чеки.</value>
-  </data>
-  <data name="Landing.FinalCtaButton" xml:space="preserve">
-    <value>Начать бесплатно</value>
-  </data>
-  <data name="Landing.NewOrder" xml:space="preserve">
-    <value>Новый</value>
-  </data>
-  <data name="Landing.Delivered" xml:space="preserve">
-    <value>Доставленный</value>
-  </data>
-  <data name="Landing.SoundNotification" xml:space="preserve">
-    <value>Звуковое уведомление</value>
-  </data>
-  <data name="Landing.BenefitMissedOrders" xml:space="preserve">
-    <value>Уменьшите количество пропущенных заказов</value>
-  </data>
-  <data name="Landing.BenefitMissedOrdersDescription" xml:space="preserve">
-    <value>Немедленно просматривайте новые заказы и действуйте быстро благодаря четким звуковым оповещениям.</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperation" xml:space="preserve">
-    <value>Экран простых операций</value>
-  </data>
-  <data name="Landing.BenefitSimpleOperationDescription" xml:space="preserve">
-    <value>Четкое представление заказов, которое ваша команда ресторана может использовать во время загруженного обслуживания.</value>
-  </data>
-  <data name="Landing.StepConnectionsTitle" xml:space="preserve">
-    <value>Платформы подключаются к Wasla</value>
-  </data>
-  <data name="Landing.StepConnectionsDescription" xml:space="preserve">
-    <value>Используемые вами платформы заказа еды интегрируются с Wasla.</value>
-  </data>
-  <data name="Landing.StepTrackTitle" xml:space="preserve">
-    <value>Заказы отображаются на одном экране</value>
-  </data>
-  <data name="Landing.StepTrackDescription" xml:space="preserve">
-    <value>Входящие заказы мгновенно появляются на едином экране управления.</value>
-  </data>
-  <data name="Landing.StepNotifyTitle" xml:space="preserve">
-    <value>Получайте уведомления о новых заказах</value>
-  </data>
-  <data name="Landing.StepNotifyDescription" xml:space="preserve">
-    <value>Слушайте и смотрите, когда поступает новый заказ, особенно во время спешки.</value>
-  </data>
-  <data name="Landing.StepManageTitle" xml:space="preserve">
-    <value>Запускайте сервис с большей ясностью</value>
-  </data>
-  <data name="Landing.StepManageDescription" xml:space="preserve">
-    <value>Сохраняйте контроль над платформами, филиалами и статусами заказов.</value>
-  </data>
-  <data name="Landing.CustomerOnlyTitle" xml:space="preserve">
-    <value>Панель клиента доступна только в домене вашего ресторана.</value>
-  </data>
-  <data name="Landing.CustomerOnlyDescription" xml:space="preserve">
-    <value>На общедоступном сайте не осуществляется вход для клиентов. Используйте адрес, который вам дали.</value>
-  </data>
-  <data name="Landing.CustomerOnlyHelp" xml:space="preserve">
-    <value>Откройте частную ссылку для входа в систему для вашего бизнеса — обычно это субдомен в домене вашего оператора.</value>
-  </data>
-  <data name="Landing.CustomerOnlyExample" xml:space="preserve">
-    <value>Пример: имя компании.wasla.local/auth/login.</value>
-  </data>
   <data name="Landing.BackToHome" xml:space="preserve">
     <value>Вернуться домой</value>
-  </data>
-  <data name="Landing.HeroImageAlt" xml:space="preserve">
-    <value>Повара, работающие на яркой кухне ресторана</value>
-  </data>
-  <data name="Landing.VisualImageAlt1" xml:space="preserve">
-    <value>Команда готовит еду на кухне ресторана</value>
-  </data>
-  <data name="Landing.VisualImageAlt2" xml:space="preserve">
-    <value>Еда в тарелках готова к упаковке для доставки</value>
-  </data>
-  <data name="Landing.VisualImageAlt3" xml:space="preserve">
-    <value>Передача пакетного заказа на стойке обслуживания</value>
-  </data>
-  <data name="Landing.MetaDescription" xml:space="preserve">
-    <value>Wasla — облачная система онлайн-управления заказами для ресторанов. Собирает заказы с платформ доставки еды на одном экране, с кухонным дисплеем и автоматической печатью чеков.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaTitle" xml:space="preserve">
-    <value>Что такое Wasla?</value>
-  </data>
-  <data name="Landing.WhatIsWaslaLead" xml:space="preserve">
-    <value>Облачная система управления заказами ресторана, которая позволяет управлять заказами с разных платформ доставки еды на одном экране.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaProblem" xml:space="preserve">
-    <value>Рестораны, работающие с несколькими платформами заказов, обычно вынуждены одновременно следить за разными планшетами, устройствами и отдельными процессами.</value>
-  </data>
-  <data name="Landing.WhatIsWaslaSolution" xml:space="preserve">
-    <value>Wasla объединяет эти потоки заказов и упрощает ежедневное управление операциями.</value>
-  </data>
-  <data name="Landing.StepReviewTitle" xml:space="preserve">
-    <value>Персонал проверяет и управляет заказом</value>
-  </data>
-  <data name="Landing.StepReviewDescription" xml:space="preserve">
-    <value>Сотрудники ресторана проверяют, подтверждают и управляют каждым заказом в ежедневном потоке.</value>
-  </data>
-  <data name="Landing.StepKitchenTitle" xml:space="preserve">
-    <value>Кухня следует за приготовлением</value>
-  </data>
-  <data name="Landing.StepKitchenDescription" xml:space="preserve">
-    <value>Кухонная команда отслеживает процесс приготовления на понятном кухонном экране заказов.</value>
-  </data>
-  <data name="Landing.StepPrintTitle" xml:space="preserve">
-    <value>Чек печатается автоматически</value>
-  </data>
-  <data name="Landing.StepPrintDescription" xml:space="preserve">
-    <value>Wasla Print Bridge автоматически отправляет чек на настроенный принтер.</value>
-  </data>
-  <data name="Landing.ProblemsTitle" xml:space="preserve">
-    <value>Какую проблему решает Wasla?</value>
-  </data>
-  <data name="Landing.ProblemsDescription" xml:space="preserve">
-    <value>Система отслеживания заказов ресторана, ориентированная на практические задачи ежедневной работы.</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrders" xml:space="preserve">
-    <value>Заказы собраны в одном месте</value>
-  </data>
-  <data name="Landing.ProblemUnifiedOrdersDescription" xml:space="preserve">
-    <value>Заказы с разных платформ объединяются в одном списке.</value>
-  </data>
-  <data name="Landing.ProblemFewerDevices" xml:space="preserve">
-    <value>Меньше контроля устройств</value>
-  </data>
-  <data name="Landing.ProblemFewerDevicesDescription" xml:space="preserve">
-    <value>Снижается необходимость одновременно следить за несколькими планшетами и устройствами.</value>
-  </data>
-  <data name="Landing.ProblemMissedOrders" xml:space="preserve">
-    <value>Меньше риск пропустить заказ</value>
-  </data>
-  <data name="Landing.ProblemMissedOrdersDescription" xml:space="preserve">
-    <value>Когда все каналы видны на одном экране, заказы реже остаются незамеченными.</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordination" xml:space="preserve">
-    <value>Более согласованная работа кухни</value>
-  </data>
-  <data name="Landing.ProblemKitchenCoordinationDescription" xml:space="preserve">
-    <value>Управление кухней и заказами становится понятнее в одном потоке.</value>
-  </data>
-  <data name="Landing.ProblemAutoPrint" xml:space="preserve">
-    <value>Автоматическая печать чеков</value>
-  </data>
-  <data name="Landing.ProblemAutoPrintDescription" xml:space="preserve">
-    <value>Чеки автоматически отправляются на принтер через Wasla Print Bridge.</value>
-  </data>
-  <data name="Landing.ProblemBusyHours" xml:space="preserve">
-    <value>Более организованная работа в часы пик</value>
-  </data>
-  <data name="Landing.ProblemBusyHoursDescription" xml:space="preserve">
-    <value>В период высокой нагрузки процесс остаётся более контролируемым и организованным.</value>
-  </data>
-  <data name="Landing.ProblemLessSwitching" xml:space="preserve">
-    <value>Меньше переключений между устройствами</value>
-  </data>
-  <data name="Landing.ProblemLessSwitchingDescription" xml:space="preserve">
-    <value>Персонал тратит меньше времени на переход между разными экранами.</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcess" xml:space="preserve">
-    <value>Проще отслеживать процесс заказов</value>
-  </data>
-  <data name="Landing.ProblemMonitorProcessDescription" xml:space="preserve">
-    <value>Следить за потоком заказов с одного экрана становится проще.</value>
-  </data>
-  <data name="Landing.WhoIsItForTitle" xml:space="preserve">
-    <value>Для кого подходит?</value>
-  </data>
-  <data name="Landing.WhoIsItForDescription" xml:space="preserve">
-    <value>Wasla подходит для:</value>
-  </data>
-  <data name="Landing.AudienceDelivery" xml:space="preserve">
-    <value>Ресторанов с доставкой или самовывозом</value>
-  </data>
-  <data name="Landing.AudienceMultiPlatform" xml:space="preserve">
-    <value>Бизнесов, использующих несколько онлайн-платформ заказов</value>
-  </data>
-  <data name="Landing.AudienceChains" xml:space="preserve">
-    <value>Сетей ресторанов с централизованным управлением заказами</value>
-  </data>
-  <data name="Landing.AudienceKitchenWorkflow" xml:space="preserve">
-    <value>Бизнесов, которые хотят улучшить кухонный процесс</value>
-  </data>
-  <data name="Landing.AudienceAutoPrint" xml:space="preserve">
-    <value>Ресторанов, которым нужна автоматическая печать чеков</value>
   </data>
   <data name="PlatformConnections.ErrorCount" xml:space="preserve">
     <value>Последовательные ошибки</value>
@@ -1619,9 +1274,6 @@
   </data>
   <data name="Admin.InvalidCredentials" xml:space="preserve">
     <value>Неверный адрес электронной почты или пароль.</value>
-  </data>
-  <data name="Admin.AccountInactive" xml:space="preserve">
-    <value>Ваша учетная запись администратора неактивна.</value>
   </data>
   <data name="Admin.BackToDashboard" xml:space="preserve">
     <value>Вернуться к списку ресторанов</value>
@@ -1748,6 +1400,9 @@
   </data>
   <data name="Orders.InvalidEndDate" xml:space="preserve">
     <value>Неверная дата окончания.</value>
+  </data>
+  <data name="Orders.InvalidDateRange" xml:space="preserve">
+    <value>Дата окончания не может быть раньше даты начала.</value>
   </data>
   <data name="Orders.AutoApprove" xml:space="preserve">
     <value>Автоматическое одобрение</value>
@@ -2208,8 +1863,113 @@
   <data name="Settings.AccountSettings.Subtitle" xml:space="preserve">
     <value>Управление настройками учетной записи и профиля.</value>
   </data>
-  <data name="Settings.AccountSettings.ComingSoon" xml:space="preserve">
-    <value>Настройки аккаунта будут доступны здесь позже.</value>
+  <data name="Settings.RestaurantLogo.Title" xml:space="preserve">
+    <value>Логотип ресторана</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Description" xml:space="preserve">
+    <value>Логотип показывается рядом с названием ресторана в заголовке экрана «Живой экран». Без логотипа показывается стандартный значок магазина.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Current" xml:space="preserve">
+    <value>Текущий логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.None" xml:space="preserve">
+    <value>Логотип не загружен</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Preview" xml:space="preserve">
+    <value>Предпросмотр — ещё не сохранено</value>
+  </data>
+  <data name="Settings.RestaurantLogo.CurrentAlt" xml:space="preserve">
+    <value>Текущий логотип ресторана</value>
+  </data>
+  <data name="Settings.RestaurantLogo.PreviewAlt" xml:space="preserve">
+    <value>Предпросмотр выбранного логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseFile" xml:space="preserve">
+    <value>Выберите файл логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.ChooseReplacement" xml:space="preserve">
+    <value>Выберите новый файл логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve">
+    <value>PNG, JPEG или WebP; не более {0} МБ и {1} × {1} пикселей. Лучше всего подходит квадратный простой значок на прозрачном фоне (PNG или WebP).</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Upload" xml:space="preserve">
+    <value>Сохранить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Replace" xml:space="preserve">
+    <value>Заменить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Remove" xml:space="preserve">
+    <value>Удалить логотип</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Saved" xml:space="preserve">
+    <value>Логотип сохранён.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Removed" xml:space="preserve">
+    <value>Логотип удалён.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Required" xml:space="preserve">
+    <value>Выберите файл логотипа.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.TooLarge" xml:space="preserve">
+    <value>Размер файла логотипа — не более {0} МБ.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.UnsupportedFormat" xml:space="preserve">
+    <value>Можно загрузить только изображения PNG, JPEG или WebP.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Invalid" xml:space="preserve">
+    <value>Не удалось прочитать файл как изображение.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve">
+    <value>Размер логотипа — не более {0} × {0} пикселей.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Title" xml:space="preserve">
+    <value>Фон логотипа</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Description" xml:space="preserve">
+    <value>Выберите, что показывать за логотипом в заголовке «Живого экрана». Загруженное изображение не меняется.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAware" xml:space="preserve">
+    <value>По теме</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAwareDescription" xml:space="preserve">
+    <value>В светлой теме — прозрачный; в тёмной — лёгкая светлая подложка за логотипом. Тёмные логотипы читаются в обеих темах.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Transparent" xml:space="preserve">
+    <value>Прозрачный</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.TransparentDescription" xml:space="preserve">
+    <value>Без фона в обеих темах.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Light" xml:space="preserve">
+    <value>Светлый</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.LightDescription" xml:space="preserve">
+    <value>Лёгкая светлая подложка в обеих темах.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Dark" xml:space="preserve">
+    <value>Тёмный</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.DarkDescription" xml:space="preserve">
+    <value>Лёгкая тёмная подложка в обеих темах. Подходит для светлых и белых логотипов.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Recommended" xml:space="preserve">
+    <value>Рекомендуется</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewLight" xml:space="preserve">
+    <value>Светлая тема</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.PreviewDark" xml:space="preserve">
+    <value>Тёмная тема</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Save" xml:space="preserve">
+    <value>Сохранить фон</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.Saved" xml:space="preserve">
+    <value>Фон логотипа сохранён.</value>
+  </data>
+  <data name="Settings.RestaurantLogo.Background.NoLogo" xml:space="preserve">
+    <value>Сначала загрузите логотип.</value>
   </data>
   <data name="Orders.StatusNewBadge" xml:space="preserve">
     <value>Новый</value>
@@ -2264,6 +2024,21 @@
   </data>
   <data name="PlatformConnections.ApiSecretLeaveEmptyHelp" xml:space="preserve">
     <value>Оставьте пустым, чтобы сохранить существующую тайну.</value>
+  </data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>Показать API ключ</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>Показать API секрет</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>Значение сохранено и никогда не отображается.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>Значение не сохранено. Введите его для подключения.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>В целях безопасности введённые учётные данные API очищены, и ничего не сохранено. Введите их снова.</value>
   </data>
   <data name="PlatformConnections.SupplierId" xml:space="preserve">
     <value>Идентификатор поставщика</value>
@@ -2641,10 +2416,10 @@
     <value>Создайте токен устройства и скопируйте его.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>В Print Bridge откройте «Настройки» и вставьте Wasla Веб-панель URL и токен устройства.</value>
+    <value>В Print Bridge нажмите «Подключить к Wasla» (в разделе «Настройки», «Подключение к Wasla») и вставьте Wasla Веб-панель URL и токен устройства.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>Нажмите «Сохранить подключение», затем «Тестовое соединение».</value>
+    <value>Нажмите «Подключить и сохранить». Print Bridge проверяет подключение перед сохранением.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Выберите принтер и сохраните.</value>
@@ -2952,6 +2727,9 @@
   <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
     <value>Перепечатать квитанцию ​​для {0}?</value>
   </data>
+  <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
+    <value>Обновления этой таблицы приостановлены, пока вы выделяете в ней текст или пользуетесь её элементом управления.</value>
+  </data>
   <data name="PrintBridge.CreatedAt" xml:space="preserve">
     <value>Созданный</value>
   </data>
@@ -3066,9 +2844,6 @@
   <data name="Pricing.Subtitle" xml:space="preserve">
     <value>Подключите свой ресторан к платформам онлайн-заказов из одного места. Интеграция платежей скоро появится.</value>
   </data>
-  <data name="Pricing.ViewPlans" xml:space="preserve">
-    <value>Посмотреть планы</value>
-  </data>
   <data name="Pricing.Recommended" xml:space="preserve">
     <value>Рекомендуется</value>
   </data>
@@ -3108,9 +2883,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Для небольших ресторанов и первой установки</value>
   </data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve">
-    <value>300 TL / месяц</value>
-  </data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
     <value>1 активное устройство Print Bridge</value>
   </data>
@@ -3134,9 +2906,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Для активных ресторанов</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve">
-    <value>600 TL / месяц</value>
   </data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
     <value>3 активных устройства Print Bridge</value>
@@ -3164,9 +2933,6 @@
   </data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Для оживленных ресторанов или крупных предприятий</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve">
-    <value>1200 TL / месяц</value>
   </data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
     <value>10 активных устройств Print Bridge</value>
@@ -3216,9 +2982,6 @@
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
     <value>Таможенное соглашение и лимиты</value>
   </data>
-  <data name="Signup.StartNow" xml:space="preserve">
-    <value>Начать сейчас</value>
-  </data>
   <data name="Signup.Title" xml:space="preserve">
     <value>Создайте свою учетную запись Wasla</value>
   </data>
@@ -3236,9 +2999,6 @@
   </data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
     <value>С этим пакетом:</value>
-  </data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve">
-    <value>2 месяца бесплатно при ежегодной оплате.</value>
   </data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
     <value>Индивидуальное предложение</value>
@@ -3266,6 +3026,9 @@
   </data>
   <data name="Signup.BillingNote" xml:space="preserve">
     <value>Интеграция платежей еще не активна. Поток платежей будет смоделирован на следующем экране.</value>
+  </data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve">
+    <value>Оплата не принимается при онлайн-регистрации. После отправки регистрация ожидает оплаты, а панель ресторана готовится только после получения оплаты.</value>
   </data>
   <data name="Signup.BusinessName" xml:space="preserve">
     <value>Название компании/ресторана</value>
@@ -3399,6 +3162,9 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve">
     <value>Завершите регистрацию и продолжите оплату</value>
   </data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve">
+    <value>Отправить регистрацию</value>
+  </data>
   <data name="Signup.CreateAccount" xml:space="preserve">
     <value>Зарегистрироваться</value>
   </data>
@@ -3408,6 +3174,9 @@
   <data name="Signup.PendingSubtitle" xml:space="preserve">
     <value>Мы получили ваши данные. Завершите шаг оплаты, чтобы продолжить.</value>
   </data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Мы получили ваши данные. Ваша регистрация ожидает оплаты.</value>
+  </data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve">
     <value>После оплаты панно вашего ресторана будет готово.</value>
   </data>
@@ -3416,6 +3185,9 @@
   </data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve">
     <value>Перейти к оплате</value>
+  </data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve">
+    <value>Посмотреть сводку регистрации</value>
   </data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
     <value>Ваш ресторан</value>
@@ -3522,8 +3294,14 @@
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Сводка платежей</value>
   </data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve">
+    <value>Сводка регистрации</value>
+  </data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Просмотрите выбранный пакет и информацию о ресторане. В этой тестовой среде будет смоделирован результат платежа.</value>
+  </data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Проверьте выбранный пакет и данные ресторана. На этой странице оплата не принимается; регистрация остаётся в ожидании, пока оплата не будет получена.</value>
   </data>
   <data name="Checkout.SimulationNotice" xml:space="preserve">
     <value>Интеграция реальных платежей еще не активна. На этом экране моделируется результат платежа.</value>
@@ -3554,9 +3332,6 @@
   </data>
   <data name="Checkout.UnknownPlanLabel" xml:space="preserve">
     <value>Стандартный пакет</value>
-  </data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve">
-    <value>Ежемесячная справочная цена</value>
   </data>
   <data name="Checkout.TotalAmount" xml:space="preserve">
     <value>Общая сумма</value>
@@ -3603,6 +3378,12 @@
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve">
     <value>Панель ресторана не создана. При желании вы можете попробовать выполнить платеж еще раз.</value>
   </data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve">
+    <value>Оплата не завершена</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve">
+    <value>Оплата по этой регистрации не завершена, поэтому панель ресторана не создана.</value>
+  </data>
   <data name="Checkout.CancelledTitle" xml:space="preserve">
     <value>Регистрация отменена</value>
   </data>
@@ -3612,11 +3393,17 @@
   <data name="Checkout.TryAgain" xml:space="preserve">
     <value>Вернуться к этапу оплаты</value>
   </data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve">
+    <value>Вернуться к сводке регистрации</value>
+  </data>
   <data name="Checkout.RegisterAgain" xml:space="preserve">
     <value>Зарегистрируйтесь снова</value>
   </data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve">
     <value>Платеж уже смоделирован как успешный для этой регистрации.</value>
+  </data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve">
+    <value>Оплата по этой регистрации получена.</value>
   </data>
   <data name="Checkout.StatusCancelled" xml:space="preserve">
     <value>Данная регистрация отменена.</value>
@@ -3778,7 +3565,7 @@
     <value>Чтобы войти в свою панель, используйте специальный адрес Wasla вашего ресторана.</value>
   </data>
   <data name="TenantAddressRequired.Example" xml:space="preserve">
-    <value>Пример: bahce-tadi.wasla.local</value>
+    <value>Пример: {0}</value>
   </data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Вернуться к регистрации</value>
@@ -3830,7 +3617,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Вы сами вводите Wasla Веб-панель URL и токен устройства в «Настройках» Print Bridge. Используйте этот способ, если приложение не открывается автоматически.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Выберите способ подключения</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Выберите и проверьте принтер</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков в разделе «Настройка принтера», нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>В Print Bridge откройте вкладку «Принтер», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Когда Wasla подтвердит подключение, панель пошаговой настройки вверху страницы покажет «{0}». Дальше — знакомство с устройством, затем обучение работе с заказами.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Веб-панель URL и токен устройства</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Используйте этот способ, если Print Bridge не открывается с этой страницы. На экране «Настройки» Print Bridge нужны именно эти два значения.</value></data>
@@ -3848,7 +3635,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Показать токен</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Скрыть токен</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Токен устройства скопирован.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте «Настройки» в Print Bridge, вставьте оба значения в поля с такими же названиями, затем нажмите «Сохранить подключение» и «Тестовое соединение».</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Теперь откройте Print Bridge и нажмите «Подключить к Wasla» (в разделе «Настройки», «Подключение к Wasla»), вставьте оба значения в поля с такими же названиями, затем нажмите «Подключить и сохранить».</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Создание или копирование токена не подключает Print Bridge. Подключение засчитывается только после того, как Wasla подтвердит соединение от Print Bridge.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla подтвердил подключение Print Bridge. Продолжить можно на панели пошаговой настройки вверху этой страницы.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla ещё не подтвердил подключение. Нажмите «Тестовое соединение» в Print Bridge, затем перезагрузите эту страницу, чтобы проверить снова.</value></data>
@@ -3884,7 +3671,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Токен отсутствует</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Настройка / повторное подключение</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Последняя активность печати</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Исходный токен устройства и хэш токена на этой странице не отображаются.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Текущий токен устройства больше нельзя показать. «Восстановить токен» создаёт новый токен, а старый сразу перестаёт работать. Новый токен показывается только один раз и сначала скрыт: «Показать токен» / «Скрыть токен» меняет только его отображение, а «Копировать токен» работает, пока токен скрыт. Сохраните его в надёжном месте: после закрытия окна, ухода со страницы или её перезагрузки его нельзя будет показать снова.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Идентификация</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Действия устройства</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Включить устройство</value></data>
@@ -3954,11 +3741,11 @@
   <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>Введите адрес электронной почты, связанный с вашей учетной записью.</value></data>
   <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>Отправить ссылку для сброса</value></data>
   <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>Проверьте электронную почту</value></data>
-  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>Ссылка для сброса пароля отправлена на ваш адрес электронной почты. Проверьте входящие и папку спама.</value></data>
-  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>Для этого ресторана пользователь с таким адресом электронной почты не найден.</value></data>
-  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>Эта учетная запись пользователя не активна. Обратитесь к администратору ресторана.</value></data>
-  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>Не удалось отправить письмо для сброса пароля. Повторите попытку позже.</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>Если для этого адреса электронной почты есть активная учетная запись, на него отправлена ссылка для сброса пароля. Проверьте входящие и папку спама.</value></data>
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Слишком много попыток сброса пароля. Повторите попытку позже.</value></data>
+  <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>Слишком много попыток входа. Подождите несколько минут и повторите попытку.</value></data>
+  <data name="Signup.TooManyAttempts" xml:space="preserve"><value>Слишком много попыток регистрации. Повторите попытку позже или завершите уже начатую регистрацию.</value></data>
+  <data name="Checkout.TooManyAttempts" xml:space="preserve"><value>Слишком много запросов для этой регистрации. Подождите несколько минут и повторите попытку.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Сброс пароля</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>Новый пароль</value></data>
   <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Подтвердите новый пароль</value></data>
@@ -3968,7 +3755,7 @@
   <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Вернуться ко входу</value></data>
   <data name="Auth.AccessDenied.Title" xml:space="preserve"><value>Доступ запрещен</value></data>
   <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>Вы вошли в систему, но у вас нет разрешения для этой страницы или действия.</value></data>
-  <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Назад к заказам</value></data>
+  <data name="Auth.AccessDenied.GoToStartPage" xml:space="preserve"><value>Перейти на начальную страницу</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>Пользователи</value></data>
   <data name="TenantUsers.Title" xml:space="preserve"><value>Команда и права доступа</value></data>
   <data name="TenantUsers.Subtitle" xml:space="preserve"><value>Управляйте ролями команды ресторана и статусом доступа.</value></data>
@@ -4015,6 +3802,7 @@
   <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Выбрана недопустимая роль.</value></data>
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>Пользователь не найден.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>Последнего Owner нельзя деактивировать или понизить.</value></data>
+  <data name="TenantUsers.SelfChangeBlocked" xml:space="preserve"><value>Нельзя изменить собственную роль или статус активности. Это может сделать другой Owner.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>Не удалось обновить пользователя.</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Сводка по пользователям</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Всего</value></data>
@@ -4030,6 +3818,8 @@
   <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Доска</value></data>
   <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Завершённые</value></data>
   <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Нет заказов</value></data>
+  <data name="Orders.LiveScreen.GroupShowing" xml:space="preserve"><value>Показано {0} из {1}</value></data>
+  <data name="Orders.LiveScreen.GroupShowMore" xml:space="preserve"><value>Показать ещё ({0})</value></data>
   <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Заказ</value></data>
   <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Время</value></data>
   <data name="Orders.LiveScreen.ListTotal" xml:space="preserve"><value>Итого</value></data>
@@ -4087,9 +3877,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>Подготовьте Wasla к работе</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>Выполнено {0} из {1}</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>Ход настройки</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает обязательные шаги. Принтер необязателен и не мешает готовности.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>Прогресс считает два обязательных шага: платформу заказов и Wasla Print Bridge. Остальные шаги необязательны.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla готова</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов подключена, операционный экран готов к работе.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Платформа заказов и Wasla Print Bridge подключены, операционный экран готов к работе.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Открыть Live Screen</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>Добавить сотрудника</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>Завершить настройку</value></data>
@@ -4115,11 +3905,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>Подключить платформу</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} подключена</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>Подключено платформ: {0}</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Настройте уведомления о заказах</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен или ещё не сохранён.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Проверить звук можно в настройках уведомлений.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Настроить уведомления</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Уведомления о заказах</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Звук уведомлений выключен</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Звук, уведомления браузера и подсветка новых заказов меняются в меню настроек на Живом экране.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Звук уведомлений включён</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>Уведомления браузера необязательны. Когда вы их включите, браузер один раз запросит разрешение. Звук и подсветка работают и без них.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>Этот браузер разрешает уведомления Wasla.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>Этот браузер блокирует уведомления Wasla. Чтобы разрешить их, измените разрешение для этого сайта в настройках браузера. Звук и подсветка продолжают работать.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>Этот браузер не поддерживает уведомления. Звук и подсветка продолжают работать.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>Когда приходит настоящий заказ, Живой экран воспроизводит звук нового заказа и подсвечивает его карточку; тренировочные заказы остаются беззвучными. Можно также включить уведомления браузера, чтобы видеть новые заказы, даже когда впереди другое окно. Тогда браузер один раз запросит разрешение, а звук и подсветка работают в любом случае.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>Подключите принтер чеков</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>Принтер подключён</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>Подключить принтер</value></data>
@@ -4291,7 +4085,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>Распакуйте ZIP-файл в папку.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Один раз запустите Wasla.PrintBridge.exe. Если Windows запросит .NET 8 Desktop Runtime, установите её.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>На странице настройки выберите способ подключения: «{0}» откроет приложение и подключит его автоматически (рекомендуется), или подключите вручную, вставив токен устройства и Wasla Веб-панель URL в «Настройки» Print Bridge. Никому не сообщайте токен устройства.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте «Настройки», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>В Print Bridge откройте вкладку «Принтер», выберите принтер чеков, нажмите «Сохранить принтер», а затем «Распечатать тестовую квитанцию».</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Когда Wasla подтвердит подключение, познакомьтесь с устройством: на его странице видно подключение, там же можно восстановить токен или удалить устройство. Подробнее — в разделе «{0}» ниже.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Управление устройствами Print Bridge</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Каждая установка Print Bridge отображается как устройство в списке устройств Print Bridge. Откройте сведения об устройстве, чтобы переименовать его, проверить подключение, восстановить токен или удалить устройство.</value></data>
@@ -4301,10 +4095,11 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>«Подключено» означает, что Wasla получал сигнал от этой установки в течение последней минуты. «Последний раз видели» показывает, когда она в последний раз выходила на связь; более раннее время обычно означает, что приложение или компьютер выключены.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Токен устройства</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Токен устройства позволяет этой установке входить в Wasla и получать задания печати. Wasla не хранит сам токен, поэтому после создания его нельзя показать снова.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>Новый токен показывается только один раз и в скрытом виде. Чтобы проверить его, используйте «Показать токен» / «Скрыть токен», а чтобы вставить его в приложение Print Bridge, — кнопку копирования; копирование работает, пока токен остаётся скрытым.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Восстановить токен</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Создаёт новый токен для этого устройства.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Старый токен сразу перестаёт работать, и эта установка не сможет печатать, пока не получит новый.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Введите новый токен в разделе «Настройки» приложения Print Bridge, затем сохраните и проверьте подключение.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>В приложении Print Bridge откройте «Настройки», введите новый токен в разделе «Подключение к Wasla» и нажмите «Подключить и сохранить».</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Новый токен показывается только один раз.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Удалить устройство</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Прекращает доступ этого устройства к Wasla; его токен перестаёт работать.</value></data>
@@ -4542,12 +4337,12 @@
   <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>База данных ресторана не ответила за несколько секунд. Проверьте, что SQL Server работает, а эта база существует и принимает настроенный вход, затем обновите страницу.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Не удалось расшифровать сохранённые данные подключения. Проверьте, что сервер использует тот же ENCRYPTION_MASTER_KEY, с которым ресторан был подготовлен.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Базу данных ресторана не удалось проверить из-за непредвиденной ошибки. Смотрите журналы сервера для этого ресторана.</value></data>
-  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-customer или migrate-all-customers) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>В базе данных ресторана нет миграций, нужных этой версии. Примените их через CLI (migrate-tenant или migrate-all-tenants) по процедуре выпуска; до этого функции, использующие новые столбцы, могут не работать.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>В базе данных ресторана есть миграции, неизвестные этой версии приложения. Возможно, её обновила более новая версия; проверьте, какая версия развёрнута.</value></data>
   <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Последняя записанная миграция для этого ресторана не удалась. Выполните migration-status через CLI и повторите миграцию для этого ресторана.</value></data>
   <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Некоторые разделы не удалось прочитать. Обычно причина — ожидающая миграция; смотрите журналы сервера.</value></data>
   <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Ресторан всё ещё в режиме настройки: заказы синхронизируются, но ничего не принимается и не печатается автоматически, пока владелец не завершит или не пропустит пошаговую настройку.</value></data>
-  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-customer-admin).</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>У ресторана нет активного владельца. Только владелец управляет настройками, подключениями и устройствами; при необходимости добавьте владельца через CLI (seed-tenant-admin).</value></data>
   <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Не подключена ни одна платформа доставки, поэтому заказы не поступают. Владелец добавляет подключение в разделе «Подключения к платформам».</value></data>
   <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Все подключения к платформам отключены, поэтому заказы не загружаются. Уточните у владельца, задумано ли это.</value></data>
   <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Синхронизация заказов выключена в настройках ресторана; Worker его пропускает. Существующие заказы остаются видимыми.</value></data>
@@ -4563,4 +4358,296 @@
   <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>За последние 24 часа часть заданий печати завершилась ошибкой. Владелец может проверить принтер на компьютере с Print Bridge.</value></data>
   <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Связанная заявка на регистрацию не отмечена как подготовленная. Откройте её, чтобы проверить состояние; не меняйте её вручную.</value></data>
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Сейчас ничего не требует внимания.</value></data>
+  <data name="Marketing.SkipToContent" xml:space="preserve"><value>Перейти к содержимому</value></data>
+  <data name="Marketing.ComingSoon" xml:space="preserve"><value>Скоро</value></data>
+  <data name="Marketing.ConceptUi" xml:space="preserve"><value>Концепт интерфейса: Wasla POS пока недоступен.</value></data>
+  <data name="Marketing.Nav.Label" xml:space="preserve"><value>Главное меню</value></data>
+  <data name="Marketing.Nav.OpenMenu" xml:space="preserve"><value>Открыть меню</value></data>
+  <data name="Marketing.Nav.CloseMenu" xml:space="preserve"><value>Закрыть меню</value></data>
+  <data name="Marketing.Nav.Products" xml:space="preserve"><value>Продукты</value></data>
+  <data name="Marketing.Nav.Integrations" xml:space="preserve"><value>Интеграции</value></data>
+  <data name="Marketing.Nav.Login" xml:space="preserve"><value>Войти</value></data>
+  <data name="Marketing.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Marketing.Product.OrdersShort" xml:space="preserve"><value>Онлайн-заказы</value></data>
+  <data name="Marketing.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Marketing.Product.PosShort" xml:space="preserve"><value>Продажи в ресторане</value></data>
+  <data name="Marketing.Product.PrintBridge" xml:space="preserve"><value>Wasla Print Bridge</value></data>
+  <data name="Marketing.Product.Family" xml:space="preserve"><value>Семейство продуктов Wasla</value></data>
+  <data name="Marketing.Cta.Start" xml:space="preserve"><value>Начать</value></data>
+  <data name="Marketing.Cta.ExploreProducts" xml:space="preserve"><value>Посмотреть продукты</value></data>
+  <data name="Marketing.Cta.ExploreOrders" xml:space="preserve"><value>Подробнее о Wasla Orders</value></data>
+  <data name="Marketing.Cta.ExplorePos" xml:space="preserve"><value>Подробнее о Wasla POS</value></data>
+  <data name="Marketing.Cta.ExplorePosFeatures" xml:space="preserve"><value>Возможности POS</value></data>
+  <data name="Marketing.Cta.ViewPlans" xml:space="preserve"><value>Смотреть тарифы</value></data>
+  <data name="Marketing.Cta.FollowInstagram" xml:space="preserve"><value>Следите за новостями в Instagram</value></data>
+  <data name="Marketing.Cta.ContactInstagram" xml:space="preserve"><value>Напишите нам в Instagram</value></data>
+  <data name="Marketing.Footer.Tagline" xml:space="preserve"><value>Программы для управления онлайн-заказами и продажами в ресторане.</value></data>
+  <data name="Marketing.Footer.GetStarted" xml:space="preserve"><value>Начало работы</value></data>
+  <data name="Marketing.Footer.Contact" xml:space="preserve"><value>Контакты</value></data>
+  <data name="Marketing.Footer.InstagramLabel" xml:space="preserve"><value>Instagram: {0}</value></data>
+  <data name="Marketing.Footer.Copyright" xml:space="preserve"><value>© {0} Wasla. Все права защищены.</value></data>
+  <data name="Marketing.Home.MetaTitle" xml:space="preserve"><value>Wasla — программы для онлайн-заказов и продаж ресторана</value></data>
+  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>Управляйте онлайн-заказами с платформ на одном экране с Wasla Orders: живой экран заказов и автоматическая печать чеков. Wasla POS для продаж в ресторане — скоро.</value></data>
+  <data name="Marketing.Home.HeroTitle" xml:space="preserve"><value>Вся работа ресторана —</value></data>
+  <data name="Marketing.Home.HeroTitleAccent" xml:space="preserve"><value>в Wasla.</value></data>
+  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>Управляйте онлайн-заказами с платформ уже сегодня в Wasla Orders; Wasla POS для продаж в ресторане скоро появится. Более чёткий сервис, быстрая работа и одно семейство продуктов.</value></data>
+  <data name="Marketing.Home.ProductsTitle" xml:space="preserve"><value>Два продукта — одна работа ресторана.</value></data>
+  <data name="Marketing.Home.ProductsLead" xml:space="preserve"><value>Wasla Orders — для онлайн-заказов, Wasla POS — для продаж в ресторане. Один бренд, единый дизайн и одна команда поддержки.</value></data>
+  <data name="Marketing.Home.OrdersTagline" xml:space="preserve"><value>Центр управления онлайн-заказами.</value></data>
+  <data name="Marketing.Home.OrdersFeature1" xml:space="preserve"><value>Заказы с платформ</value></data>
+  <data name="Marketing.Home.OrdersFeature2" xml:space="preserve"><value>Живой экран заказов</value></data>
+  <data name="Marketing.Home.OrdersFeature3" xml:space="preserve"><value>Автоматическая печать чеков</value></data>
+  <data name="Marketing.Home.OrdersFeature4" xml:space="preserve"><value>История заказов</value></data>
+  <data name="Marketing.Home.IntegrationsNote" xml:space="preserve"><value>Интеграции с Yemeksepeti, Trendyol GO и GetirYemek запускаются поэтапно; пока работают не все подключения к платформам.</value></data>
+  <data name="Marketing.Home.PosTagline" xml:space="preserve"><value>Быстрый и современный POS для продаж в ресторане.</value></data>
+  <data name="Marketing.Home.PosFeature1" xml:space="preserve"><value>Заказы за столом и навынос</value></data>
+  <data name="Marketing.Home.PosFeature2" xml:space="preserve"><value>Сенсорное управление</value></data>
+  <data name="Marketing.Home.PosFeature3" xml:space="preserve"><value>Меню и оплата</value></data>
+  <data name="Marketing.Home.PosFeature4" xml:space="preserve"><value>Работа зала</value></data>
+  <data name="Marketing.Home.ChannelsTitle" xml:space="preserve"><value>Заказы приходят по двум каналам.</value></data>
+  <data name="Marketing.Home.ChannelsLead" xml:space="preserve"><value>Онлайн-заказы с платформ собираются в Wasla Orders; Wasla POS для продаж за столом и на кассе скоро появится. Оба продукта рассчитаны на одну кухню.</value></data>
+  <data name="Marketing.Home.ChannelOnlineTitle" xml:space="preserve"><value>Онлайн-платформы</value></data>
+  <data name="Marketing.Home.ChannelOnlineDesc" xml:space="preserve"><value>Заказы с доставкой</value></data>
+  <data name="Marketing.Home.ChannelOnlineFoot" xml:space="preserve"><value>Собираются в Wasla Orders</value></data>
+  <data name="Marketing.Home.ChannelInStoreTitle" xml:space="preserve"><value>Продажи в ресторане</value></data>
+  <data name="Marketing.Home.ChannelInStoreDesc" xml:space="preserve"><value>Столы, навынос, самовывоз и касса</value></data>
+  <data name="Marketing.Home.ChannelInStoreFoot" xml:space="preserve"><value>Принимаются в Wasla POS</value></data>
+  <data name="Marketing.Home.SameKitchen" xml:space="preserve"><value>Одна кухня</value></data>
+  <data name="Marketing.Home.ReceiptAndPrinter" xml:space="preserve"><value>Чеки и принтер</value></data>
+  <data name="Marketing.Home.RoutesTitle" xml:space="preserve"><value>Какой продукт вам подходит?</value></data>
+  <data name="Marketing.Home.RoutesLead" xml:space="preserve"><value>Начните с того, что нужно сейчас: семейство продуктов растёт вместе с рестораном.</value></data>
+  <data name="Marketing.Home.RouteOrdersNeed" xml:space="preserve"><value>Мне нужно управлять только онлайн-заказами с платформ.</value></data>
+  <data name="Marketing.Home.RouteOrdersDetail" xml:space="preserve"><value>Создан, чтобы собирать заказы Yemeksepeti, Trendyol GO и GetirYemek на одном экране.</value></data>
+  <data name="Marketing.Home.RoutePosNeed" xml:space="preserve"><value>Мне нужны продажи в зале и управление столами.</value></data>
+  <data name="Marketing.Home.RoutePosDetail" xml:space="preserve"><value>Сенсорный POS для продаж за столом, навынос, самовывоза и на кассе — скоро.</value></data>
+  <data name="Marketing.Home.RouteBothNeed" xml:space="preserve"><value>Я хочу развивать оба направления вместе.</value></data>
+  <data name="Marketing.Home.RouteBothDetail" xml:space="preserve"><value>Начните с Wasla Orders сегодня и продолжите в том же семействе продуктов, когда Wasla POS будет готов.</value></data>
+  <data name="Marketing.Home.ValuesTitle" xml:space="preserve"><value>Общий подход обоих продуктов.</value></data>
+  <data name="Marketing.Home.ValuesLead" xml:space="preserve"><value>Продукты Wasla создаются по одним принципам.</value></data>
+  <data name="Marketing.Home.ValueOperationTitle" xml:space="preserve"><value>Дизайн для работы ресторана</value></data>
+  <data name="Marketing.Home.ValueOperationText" xml:space="preserve"><value>Экраны рассчитаны на кухню, кассу и зал: читаются издалека и быстры в час пик.</value></data>
+  <data name="Marketing.Home.ValueLearnTitle" xml:space="preserve"><value>Быстро осваивается</value></data>
+  <data name="Marketing.Home.ValueLearnText" xml:space="preserve"><value>Простые экраны, чтобы новый сотрудник справлялся с основным уже в первую смену.</value></data>
+  <data name="Marketing.Home.ValueLocalTitle" xml:space="preserve"><value>Фокус на местных потребностях</value></data>
+  <data name="Marketing.Home.ValueLocalText" xml:space="preserve"><value>В приоритете платформы заказов Турции, доставка и турецкий язык.</value></data>
+  <data name="Marketing.Home.ValueSupportTitle" xml:space="preserve"><value>Настройка и поддержка</value></data>
+  <data name="Marketing.Home.ValueSupportText" xml:space="preserve"><value>Настраиваем вместе и остаёмся рядом во время работы.</value></data>
+  <data name="Marketing.Home.ValueFamilyTitle" xml:space="preserve"><value>Растущее семейство продуктов</value></data>
+  <data name="Marketing.Home.ValueFamilyText" xml:space="preserve"><value>Wasla развивается как семейство продуктов — от онлайн-заказов до продаж в ресторане.</value></data>
+  <data name="Marketing.Home.TrustTitle" xml:space="preserve"><value>Создаётся для ресторанов Турции.</value></data>
+  <data name="Marketing.Home.TrustLead" xml:space="preserve"><value>Отзывы клиентов и цифры мы опубликуем, когда появятся реальные данные. Что можно сказать уже сегодня:</value></data>
+  <data name="Marketing.Home.TrustRestaurantsTitle" xml:space="preserve"><value>Для ресторанов Турции</value></data>
+  <data name="Marketing.Home.TrustRestaurantsText" xml:space="preserve"><value>Проектируется с учётом кухни доставки, кассы и обслуживания столов.</value></data>
+  <data name="Marketing.Home.TrustPlatformsTitle" xml:space="preserve"><value>Фокус на местных платформах заказов</value></data>
+  <data name="Marketing.Home.TrustPlatformsText" xml:space="preserve"><value>Мы работаем над подключениями Yemeksepeti, Trendyol GO и GetirYemek; интеграции запускаются поэтапно.</value></data>
+  <data name="Marketing.Home.TrustTurkishTitle" xml:space="preserve"><value>Продукт и поддержка на турецком</value></data>
+  <data name="Marketing.Home.TrustTurkishText" xml:space="preserve"><value>Интерфейс и поддержка на турецком; при настройке наша команда рядом.</value></data>
+  <data name="Marketing.Home.TrustPrintBridgeText" xml:space="preserve"><value>Вспомогательное приложение для Windows отправляет чеки на ваш принтер.</value></data>
+  <data name="Marketing.Home.TrustLanguagesTitle" xml:space="preserve"><value>Многоязычность</value></data>
+  <data name="Marketing.Home.TrustLanguagesText" xml:space="preserve"><value>Разрабатывается интерфейс на турецком, английском, арабском и русском языках.</value></data>
+  <data name="Marketing.Home.FinalTitle" xml:space="preserve"><value>Выберите подходящий продукт Wasla для вашего ресторана.</value></data>
+  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders для онлайн-заказов готов уже сегодня; Wasla POS для продаж в ресторане — скоро.</value></data>
+  <data name="Marketing.Pos.MetaTitle" xml:space="preserve"><value>Wasla POS (скоро) — продажи в ресторане | Wasla</value></data>
+  <data name="Marketing.Pos.MetaDescription" xml:space="preserve"><value>Wasla POS — сенсорный ресторанный POS в разработке для продаж за столом, навынос, самовывоза и на кассе. Пока не продаётся.</value></data>
+  <data name="Marketing.Pos.HeroTitle" xml:space="preserve"><value>От стола до кассы — продажи в ресторане</value></data>
+  <data name="Marketing.Pos.HeroTitleAccent" xml:space="preserve"><value>на одном экране.</value></data>
+  <data name="Marketing.Pos.HeroLead" xml:space="preserve"><value>С Wasla POS вы будете принимать заказы за столом и навынос, управлять меню, проводить оплату и следить за обслуживанием в одном современном POS.</value></data>
+  <data name="Marketing.Pos.Notice" xml:space="preserve"><value>Wasla POS находится в разработке: его пока нельзя купить и он не используется в работе. Экраны на этой странице показывают концепцию продукта.</value></data>
+  <data name="Marketing.Pos.HeroPoint1" xml:space="preserve"><value>Сенсорное управление</value></data>
+  <data name="Marketing.Pos.HeroPoint2" xml:space="preserve"><value>Столы и навынос</value></data>
+  <data name="Marketing.Pos.HeroPoint3" xml:space="preserve"><value>Кухонные чеки</value></data>
+  <data name="Marketing.Pos.ServicesTitle" xml:space="preserve"><value>Свой сценарий для каждого вида обслуживания.</value></data>
+  <data name="Marketing.Pos.ServicesLead" xml:space="preserve"><value>Заказы за столом, навынос, быстрые продажи и самовывоз в одном POS — у каждого своя логика.</value></data>
+  <data name="Marketing.Pos.ServiceTableTitle" xml:space="preserve"><value>Заказ за столом</value></data>
+  <data name="Marketing.Pos.ServiceTableText" xml:space="preserve"><value>Выберите стол, добавьте блюда и отправьте заказ на кухню.</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayTitle" xml:space="preserve"><value>Заказ навынос</value></data>
+  <data name="Marketing.Pos.ServiceTakeawayText" xml:space="preserve"><value>Записывайте телефонные заказы с данными клиента и адресом.</value></data>
+  <data name="Marketing.Pos.ServiceQuickTitle" xml:space="preserve"><value>Быстрая продажа</value></data>
+  <data name="Marketing.Pos.ServiceQuickText" xml:space="preserve"><value>Оформляйте продажу на кассе в несколько касаний, не открывая стол.</value></data>
+  <data name="Marketing.Pos.ServicePickupTitle" xml:space="preserve"><value>Самовывоз</value></data>
+  <data name="Marketing.Pos.ServicePickupText" xml:space="preserve"><value>Укажите время самовывоза и выдайте заказ, когда он готов.</value></data>
+  <data name="Marketing.Pos.TablesTitle" xml:space="preserve"><value>Весь зал — с одного взгляда.</value></data>
+  <data name="Marketing.Pos.TablesLead" xml:space="preserve"><value>Какие столы свободны, заняты или ждут счёт — команда зала видит всё на одном экране.</value></data>
+  <data name="Marketing.Pos.TablesPoint1" xml:space="preserve"><value>План зала и столов</value></data>
+  <data name="Marketing.Pos.TablesPoint2" xml:space="preserve"><value>Свободные, занятые столы и запросы счёта</value></data>
+  <data name="Marketing.Pos.TablesPoint3" xml:space="preserve"><value>Добавление заказов к столу</value></data>
+  <data name="Marketing.Pos.TablesPoint4" xml:space="preserve"><value>Счёт и оплата</value></data>
+  <data name="Marketing.Pos.TouchTitle" xml:space="preserve"><value>Быстрый заказ касанием.</value></data>
+  <data name="Marketing.Pos.TouchLead" xml:space="preserve"><value>Крупные зоны касания, понятные категории и опции на одном экране. Даже в час пик заказ — это несколько касаний.</value></data>
+  <data name="Marketing.Pos.TouchPoint1" xml:space="preserve"><value>Категории меню</value></data>
+  <data name="Marketing.Pos.TouchPoint2" xml:space="preserve"><value>Опции блюд</value></data>
+  <data name="Marketing.Pos.TouchPoint3" xml:space="preserve"><value>Добавки и комментарии</value></data>
+  <data name="Marketing.Pos.TouchPoint4" xml:space="preserve"><value>Быстрое добавление</value></data>
+  <data name="Marketing.Pos.TouchNote" xml:space="preserve"><value>Зоны касания не меньше 48 px (цель дизайна).</value></data>
+  <data name="Marketing.Pos.MenuTitle" xml:space="preserve"><value>Меню и цены под рукой.</value></data>
+  <data name="Marketing.Pos.MenuLead" xml:space="preserve"><value>Редактируйте блюда и категории, меняйте цены и снимайте закончившиеся позиции с продажи.</value></data>
+  <data name="Marketing.Pos.MenuPoint1" xml:space="preserve"><value>Блюда и категории</value></data>
+  <data name="Marketing.Pos.MenuPoint2" xml:space="preserve"><value>Обновление цен</value></data>
+  <data name="Marketing.Pos.MenuPoint3" xml:space="preserve"><value>Статус «в наличии / закончилось»</value></data>
+  <data name="Marketing.Pos.PaymentTitle" xml:space="preserve"><value>Примите оплату, распечатайте чек, закройте стол.</value></data>
+  <data name="Marketing.Pos.PaymentLead" xml:space="preserve"><value>Каждый шаг от счёта до закрытия — на одном экране и в одном порядке.</value></data>
+  <data name="Marketing.Pos.PaymentStageBill" xml:space="preserve"><value>Счёт</value></data>
+  <data name="Marketing.Pos.PaymentStageMethod" xml:space="preserve"><value>Способ оплаты</value></data>
+  <data name="Marketing.Pos.PaymentStageReceipt" xml:space="preserve"><value>Чек</value></data>
+  <data name="Marketing.Pos.PaymentStageClose" xml:space="preserve"><value>Закрытие</value></data>
+  <data name="Marketing.Pos.KitchenTitle" xml:space="preserve"><value>Заказ — на кухню, чек — на принтер.</value></data>
+  <data name="Marketing.Pos.KitchenLead" xml:space="preserve"><value>Заказ официанта выходит из термопринтера кухонным чеком. Кухня знает, что готовить и для какого стола.</value></data>
+  <data name="Marketing.Pos.KitchenStepPos" xml:space="preserve"><value>POS</value></data>
+  <data name="Marketing.Pos.KitchenStepPosMeta" xml:space="preserve"><value>Стол 6 · На кухню</value></data>
+  <data name="Marketing.Pos.KitchenStepTicket" xml:space="preserve"><value>Кухонный чек</value></data>
+  <data name="Marketing.Pos.KitchenStepTicketMeta" xml:space="preserve"><value>2× Адана-кебаб · не острый</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinter" xml:space="preserve"><value>Термопринтер</value></data>
+  <data name="Marketing.Pos.KitchenStepPrinterMeta" xml:space="preserve"><value>Принтер кухни · Напечатано</value></data>
+  <data name="Marketing.Pos.EcosystemTitle" xml:space="preserve"><value>Онлайн-заказы и продажи в ресторане — в одной экосистеме Wasla.</value></data>
+  <data name="Marketing.Pos.EcosystemLead" xml:space="preserve"><value>Два продукта управляют двумя каналами заказов одного ресторана.</value></data>
+  <data name="Marketing.Pos.EcosystemInStore" xml:space="preserve"><value>Столы и продажи в ресторане</value></data>
+  <data name="Marketing.Pos.EcosystemOperation" xml:space="preserve"><value>Работа вашего ресторана</value></data>
+  <data name="Marketing.Pos.EcosystemKitchen" xml:space="preserve"><value>Кухня</value></data>
+  <data name="Marketing.Pos.EcosystemTeam" xml:space="preserve"><value>Команда</value></data>
+  <data name="Marketing.Pos.FinalTitle" xml:space="preserve"><value>Обновите продажи в вашем ресторане.</value></data>
+  <data name="Marketing.Pos.FinalLead" xml:space="preserve"><value>Wasla POS скоро появится. Следите за новостями, а Wasla Orders для онлайн-заказов можно подключить уже сегодня.</value></data>
+  <data name="Marketing.Mock.OnlinePlatformOrders" xml:space="preserve"><value>Онлайн-заказы с платформ</value></data>
+  <data name="Marketing.Mock.OneFamily" xml:space="preserve"><value>Одно семейство</value></data>
+  <data name="Marketing.Mock.SameTeam" xml:space="preserve"><value>Тот же ресторан, та же команда</value></data>
+  <data name="Marketing.Mock.KitchenTicketPrinted" xml:space="preserve"><value>Кухонный чек напечатан</value></data>
+  <data name="Marketing.Mock.TableAndTakeaway" xml:space="preserve"><value>Заказы за столом и навынос</value></data>
+  <data name="Marketing.Mock.Hall" xml:space="preserve"><value>Зал</value></data>
+  <data name="Marketing.Mock.Garden" xml:space="preserve"><value>Сад</value></data>
+  <data name="Marketing.Mock.Terrace" xml:space="preserve"><value>Терраса</value></data>
+  <data name="Marketing.Mock.Table" xml:space="preserve"><value>Стол {0}</value></data>
+  <data name="Marketing.Mock.Guests" xml:space="preserve"><value>{0} гостя</value></data>
+  <data name="Marketing.Mock.GuestsMinutes" xml:space="preserve"><value>{0} гост. · {1} мин</value></data>
+  <data name="Marketing.Mock.TableFree" xml:space="preserve"><value>Свободен</value></data>
+  <data name="Marketing.Mock.TableOccupied" xml:space="preserve"><value>Занят</value></data>
+  <data name="Marketing.Mock.TableBill" xml:space="preserve"><value>Запрошен счёт</value></data>
+  <data name="Marketing.Mock.TableSelected" xml:space="preserve"><value>Выбран</value></data>
+  <data name="Marketing.Mock.TakePayment" xml:space="preserve"><value>Принять оплату</value></data>
+  <data name="Marketing.Mock.OrderItems" xml:space="preserve"><value>2× Адана-дюрюм, 1× Айран</value></data>
+  <data name="Marketing.Mock.Approve" xml:space="preserve"><value>Принять</value></data>
+  <data name="Marketing.Mock.ReceiptPlatform" xml:space="preserve"><value>YEMEKSEPETI · ДОСТАВКА</value></data>
+  <data name="Marketing.Mock.ItemAdana" xml:space="preserve"><value>Адана-кебаб</value></data>
+  <data name="Marketing.Mock.ItemUrfa" xml:space="preserve"><value>Урфа-кебаб</value></data>
+  <data name="Marketing.Mock.ItemIskender" xml:space="preserve"><value>Искендер</value></data>
+  <data name="Marketing.Mock.ItemBeyti" xml:space="preserve"><value>Бейти</value></data>
+  <data name="Marketing.Mock.ItemChicken" xml:space="preserve"><value>Куриный шиш</value></data>
+  <data name="Marketing.Mock.ItemLamb" xml:space="preserve"><value>Шиш из баранины</value></data>
+  <data name="Marketing.Mock.ItemLentilSoup" xml:space="preserve"><value>Чечевичный суп</value></data>
+  <data name="Marketing.Mock.ItemAyran" xml:space="preserve"><value>Айран</value></data>
+  <data name="Marketing.Mock.ItemLahmacun" xml:space="preserve"><value>Лахмаджун</value></data>
+  <data name="Marketing.Mock.ItemMixedPide" xml:space="preserve"><value>Пиде ассорти</value></data>
+  <data name="Marketing.Mock.ItemTea" xml:space="preserve"><value>Чай</value></data>
+  <data name="Marketing.Mock.ItemWater" xml:space="preserve"><value>Вода</value></data>
+  <data name="Marketing.Mock.ItemSimit" xml:space="preserve"><value>Симит</value></data>
+  <data name="Marketing.Mock.ItemLavash" xml:space="preserve"><value>Лаваш</value></data>
+  <data name="Marketing.Mock.ItemKunefe" xml:space="preserve"><value>Кюнефе</value></data>
+  <data name="Marketing.Mock.NewOrderAmount" xml:space="preserve"><value>Новый заказ · {0}</value></data>
+  <data name="Marketing.Mock.PhoneTakeaway" xml:space="preserve"><value>Навынос #P-031 · телефон</value></data>
+  <data name="Marketing.Mock.PickupAt" xml:space="preserve"><value>Самовывоз · 19:30</value></data>
+  <data name="Marketing.Mock.QuickSaleCounter" xml:space="preserve"><value>Быстрая продажа · касса</value></data>
+  <data name="Marketing.Mock.ServiceTable" xml:space="preserve"><value>Стол</value></data>
+  <data name="Marketing.Mock.ServiceTakeaway" xml:space="preserve"><value>Навынос</value></data>
+  <data name="Marketing.Mock.ServiceQuickSale" xml:space="preserve"><value>Быстрая продажа</value></data>
+  <data name="Marketing.Mock.ServicePickup" xml:space="preserve"><value>Самовывоз</value></data>
+  <data name="Marketing.Mock.CatSoups" xml:space="preserve"><value>Супы</value></data>
+  <data name="Marketing.Mock.CatKebabs" xml:space="preserve"><value>Кебабы</value></data>
+  <data name="Marketing.Mock.CatPide" xml:space="preserve"><value>Пиде</value></data>
+  <data name="Marketing.Mock.CatDrinks" xml:space="preserve"><value>Напитки</value></data>
+  <data name="Marketing.Mock.CatDesserts" xml:space="preserve"><value>Десерты</value></data>
+  <data name="Marketing.Mock.SoldOut" xml:space="preserve"><value>Закончилось</value></data>
+  <data name="Marketing.Mock.Available" xml:space="preserve"><value>В наличии</value></data>
+  <data name="Marketing.Mock.Open" xml:space="preserve"><value>Открыт</value></data>
+  <data name="Marketing.Mock.NotSpicy" xml:space="preserve"><value>Не острый</value></data>
+  <data name="Marketing.Mock.MildSpicy" xml:space="preserve"><value>Слегка острый</value></data>
+  <data name="Marketing.Mock.Spicy" xml:space="preserve"><value>Острый</value></data>
+  <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>На кухню</value></data>
+  <data name="Marketing.Mock.TakeawayOrder" xml:space="preserve"><value>Заказ навынос #P-031</value></data>
+  <data name="Marketing.Mock.PreparingMinutes" xml:space="preserve"><value>Готовится · {0} мин</value></data>
+  <data name="Marketing.Mock.PaidByCard" xml:space="preserve"><value>Оплачено картой</value></data>
+  <data name="Marketing.Mock.Customer" xml:space="preserve"><value>Клиент</value></data>
+  <data name="Marketing.Mock.Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="Marketing.Mock.Address" xml:space="preserve"><value>Адрес</value></data>
+  <data name="Marketing.Mock.TableTotal" xml:space="preserve"><value>Итого по столу</value></data>
+  <data name="Marketing.Mock.Card" xml:space="preserve"><value>Карта</value></data>
+  <data name="Marketing.Mock.ItemsAmount" xml:space="preserve"><value>{0} поз. · {1}</value></data>
+  <data name="Marketing.Mock.MarkDelivered" xml:space="preserve"><value>Отметить как выданный</value></data>
+  <data name="Marketing.Mock.AddOrder" xml:space="preserve"><value>Добавить заказ</value></data>
+  <data name="Marketing.Mock.PrintBill" xml:space="preserve"><value>Печать счёта</value></data>
+  <data name="Marketing.Mock.Portion" xml:space="preserve"><value>Порция</value></data>
+  <data name="Marketing.Mock.PortionOne" xml:space="preserve"><value>1 порция</value></data>
+  <data name="Marketing.Mock.PortionOneHalf" xml:space="preserve"><value>1,5 порции</value></data>
+  <data name="Marketing.Mock.Spice" xml:space="preserve"><value>Острота</value></data>
+  <data name="Marketing.Mock.Extras" xml:space="preserve"><value>Добавки</value></data>
+  <data name="Marketing.Mock.RoastedPepper" xml:space="preserve"><value>Печёный перец</value></data>
+  <data name="Marketing.Mock.ExtraLavash" xml:space="preserve"><value>Доп. лаваш</value></data>
+  <data name="Marketing.Mock.Note" xml:space="preserve"><value>Комментарий</value></data>
+  <data name="Marketing.Mock.NoOnion" xml:space="preserve"><value>Без лука</value></data>
+  <data name="Marketing.Mock.AddToCart" xml:space="preserve"><value>В корзину · {0}</value></data>
+  <data name="Marketing.Mock.CartFor" xml:space="preserve"><value>Корзина · {0}</value></data>
+  <data name="Marketing.Mock.ItemCount" xml:space="preserve"><value>{0} поз.</value></data>
+  <data name="Marketing.Mock.QuickAdd" xml:space="preserve"><value>Быстро добавить</value></data>
+  <data name="Marketing.Mock.SearchProduct" xml:space="preserve"><value>Поиск блюда</value></data>
+  <data name="Marketing.Mock.AllCategories" xml:space="preserve"><value>Все категории</value></data>
+  <data name="Marketing.Mock.AddProduct" xml:space="preserve"><value>Добавить блюдо</value></data>
+  <data name="Marketing.Mock.ColProduct" xml:space="preserve"><value>Блюдо</value></data>
+  <data name="Marketing.Mock.ColCategory" xml:space="preserve"><value>Категория</value></data>
+  <data name="Marketing.Mock.ColPrice" xml:space="preserve"><value>Цена</value></data>
+  <data name="Marketing.Mock.ColStatus" xml:space="preserve"><value>Статус</value></data>
+  <data name="Marketing.Mock.Subtotal" xml:space="preserve"><value>Подытог</value></data>
+  <data name="Marketing.Mock.Service" xml:space="preserve"><value>Обслуживание</value></data>
+  <data name="Marketing.Mock.NotIncluded" xml:space="preserve"><value>Не включено</value></data>
+  <data name="Marketing.Mock.AmountDue" xml:space="preserve"><value>К оплате</value></data>
+  <data name="Marketing.Mock.AmountByCard" xml:space="preserve"><value>{0} картой</value></data>
+  <data name="Marketing.Mock.Bill" xml:space="preserve"><value>СЧЁТ</value></data>
+  <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Отправлено на принтер кассы</value></data>
+  <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} закрыт</value></data>
+  <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>КУХНЯ · {0}</value></data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Цены тарифов</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цены не изменяются: запланируйте новую цену с более поздней даты.</value></data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Действующие цены</value></data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Тариф</value></data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Период оплаты</value></data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve"><value>НДС</value></data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve"><value>Действует с</value></data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve"><value>Следующая запланированная</value></data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve"><value>Цены нет — оплата недоступна</value></data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve"><value>Действует</value></data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve"><value>Запланирована</value></data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve"><value>Заменена</value></data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve"><value>Все цены</value></data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve"><value>Цены ещё не заданы.</value></data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve"><value>Запланировать цену</value></data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve"><value>Сумма (куруши)</value></data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve"><value>Целое число курушей: 29990 — это 299,90 TRY.</value></data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve"><value>{0} куруш.</value></data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve"><value>Включает ли эта сумма НДС?</value></data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve"><value>Да, НДС включён</value></data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve"><value>Нет, без НДС</value></data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve"><value>Действует с даты</value></data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve"><value>С 00:00 по времени Турции в эту дату. Сегодняшняя дата действует сразу.</value></data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve"><value>Запланировать цену</value></data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve"><value>Выберите…</value></data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve"><value>Цена сохранена.</value></data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve"><value>Отозвать</value></data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve"><value>Запланированная цена отозвана.</value></data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve"><value>Отозвать можно только цену, которая ещё не вступила в силу.</value></data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve"><value>Цена не сохранена. Проверьте поля ниже.</value></data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve"><value>Выберите тариф, который можно купить онлайн.</value></data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve"><value>Выберите «Ежемесячно» или «Ежегодно».</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve"><value>Введите сумму в курушах.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve"><value>Введите целое число курушей без точек и запятых.</value></data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve"><value>Сумма должна быть от 1 до 1 000 000 000 курушей.</value></data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve"><value>Укажите, включает ли сумма НДС.</value></data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve"><value>Введите дату вступления цены в силу.</value></data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>Введите правильную дату.</value></data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>Дата не может быть в прошлом.</value></data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>Для этого тарифа и периода оплаты на эту дату уже есть цена.</value></data>
+  <data name="Billing.VatIncluded" xml:space="preserve"><value>НДС включён</value></data>
+  <data name="Billing.VatExcluded" xml:space="preserve"><value>Без НДС</value></data>
+  <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>
+  <data name="Billing.PriceNotSet" xml:space="preserve"><value>Цена этого тарифа ещё не задана.</value></data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / месяц</value></data>
+  <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / год</value></data>
+  <data name="Pricing.YearlySaving" xml:space="preserve"><value>Годовая оплата на {0} меньше 12 ежемесячных платежей.</value></data>
 </root>

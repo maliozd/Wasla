@@ -9,7 +9,7 @@ public sealed class OrderFilterViewModel
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
 
-    public string SortBy { get; set; } = "receivedAt";
+    public string SortBy { get; set; } = Wasla.Application.Orders.OrderListSort.OrderedAt;
     public string SortDirection { get; set; } = "desc";
 
     public int Page { get; set; } = 1;

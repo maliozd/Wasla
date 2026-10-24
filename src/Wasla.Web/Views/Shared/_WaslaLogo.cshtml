@@ -1,0 +1,7 @@
+@model Wasla.Web.Models.Ui.WaslaLogoModel
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* The only place that references the logo file. Width and height give the image its intrinsic aspect ratio;
+   CSS sets the height and keeps width auto, so the logo is never stretched. *@
+<img src="~/images/brand/wasla-logo.svg" asp-append-version="true" class="wasla-logo @Model.CssClass"
+     alt="@(Model.Decorative ? string.Empty : L["Brand.LogoAlt"].Value)" width="184" height="68" />

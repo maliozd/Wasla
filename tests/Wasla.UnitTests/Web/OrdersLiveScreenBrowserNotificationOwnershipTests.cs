@@ -67,6 +67,46 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
     }
 
     [Fact]
+    public void LiveScreenSettingsMenu_AndOrderTraining_OpenTheOneSharedNotificationSettingsModal()
+    {
+        // WAS-13. The behaviour (opening, focus return, permission) is covered by notification-settings-modal-entry.test.js.
+        var liveView = Read("Areas", "Tenant", "Views", "Orders", "LiveDisplay.cshtml");
+        var training = Read("Areas", "Tenant", "Views", "Orders", "_GuidedTrainingPanel.cshtml");
+        var modal = Read("Areas", "Tenant", "Views", "NotificationSettings", "_NotificationSettingsModal.cshtml");
+
+        var menu = liveView[liveView.IndexOf("id=\"ordersLiveDisplaySettingsMenu\"", StringComparison.Ordinal)..liveView.IndexOf("id=\"ordersLiveDisplayStopSound\"", StringComparison.Ordinal)];
+        var entry = menu.IndexOf("data-notification-settings-open", StringComparison.Ordinal);
+        Assert.True(entry >= 0, "The settings menu has no notification settings entry.");
+        // Every Live Screen user changes their own preferences; only "Manage settings" needs the order-settings policy.
+        Assert.True(entry < menu.IndexOf("navPermissions.CanManageOrderSettings", StringComparison.Ordinal));
+        // The existing shell, modal and save endpoint; no second modal on the page.
+        Assert.Equal(1, CountOccurrences(liveView, "@await Html.PartialAsync(\"_NotificationSettingsModalShell\")"));
+        Assert.DoesNotContain("id=\"notificationSettingsModal\"", liveView, StringComparison.Ordinal);
+        Assert.Contains("[\"notificationSettingsSaveFailed\"]", liveView, StringComparison.Ordinal);
+
+        // When the practice order arrives, training explains attention and browser permission and opens the same modal.
+        Assert.Matches(
+            new System.Text.RegularExpressions.Regex(
+                @"data-training-when=""@GuidedTrainingSteps\.PracticeNew""[^>]*data-training-notifications>.*?GuidedSetup\.Training\.Notifications\.Body.*?data-notification-settings-open",
+                System.Text.RegularExpressions.RegexOptions.Singleline),
+            training);
+        Assert.DoesNotContain("requestPermission", training, StringComparison.Ordinal);
+
+        Assert.Contains("aria-describedby=\"browserNotificationPermissionHelp\"", modal, StringComparison.Ordinal);
+        foreach (var state in new[] { "default", "granted", "denied", "unsupported" })
+            Assert.Contains($"data-permission-{state}=", modal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BrowserPermission_IsAskedOnlyWhenBrowserNotificationsAreTurnedOn()
+    {
+        var settingsJs = ReadWwwroot("js", "orders", "orders-notification-settings.js");
+
+        Assert.Equal(1, CountOccurrences(settingsJs, "maybeRequestBrowserNotificationPermission("));
+        Assert.Contains("maybeRequestBrowserNotificationPermission({ showBrowserNotification: true })", settingsJs, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Phase2B1And2B2OwnershipMarkersRemainIntact()
     {
         var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");

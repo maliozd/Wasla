@@ -23,6 +23,13 @@ public interface IGuidedSetupCoordinator
     /// <summary>The Dashboard card, or null when guided setup has nothing to show (or cannot be read).</summary>
     Task<GuidedSetupDashboardViewModel?> GetDashboardCardAsync(Guid tenantId, Guid userId, ClaimsPrincipal user, CancellationToken ct);
 
+    /// <summary>
+    /// The Dashboard card and whether this user finished guided setup (Completed or Skipped), from one read. Guided setup
+    /// is one-shot: once finished, the Dashboard offers no card, welcome or "start setup" again. A read failure is
+    /// neither a card nor finished.
+    /// </summary>
+    Task<GuidedSetupDashboard> GetDashboardAsync(Guid tenantId, Guid userId, ClaimsPrincipal user, CancellationToken ct);
+
     /// <summary>The page panel for <paramref name="sectionKey"/>, only while it is the user's current section.</summary>
     Task<GuidedSetupSectionPanelViewModel?> GetSectionPanelAsync(Guid tenantId, Guid userId, ClaimsPrincipal user, string sectionKey, CancellationToken ct);
 
@@ -93,6 +100,12 @@ public interface IGuidedSetupCoordinator
     /// Only moves forward, only during order training, and never fails the demo action itself.
     /// </summary>
     Task RecordPracticeProgressAsync(Guid tenantId, Guid userId, ClaimsPrincipal user, OrderStatus status, CancellationToken ct);
+}
+
+/// <summary>The Dashboard's guided-setup state: the card to show (if any) and whether the user finished guided setup.</summary>
+public sealed record GuidedSetupDashboard(GuidedSetupDashboardViewModel? Card, bool HasFinished)
+{
+    public static GuidedSetupDashboard None { get; } = new(null, false);
 }
 
 /// <summary>Where to go after a command, and an optional localized message key.</summary>
@@ -174,29 +187,37 @@ public sealed class GuidedSetupCoordinator : IGuidedSetupCoordinator
             : new(CanManagePlatformConnections: false, CanManagePrintBridge: false, CanManageOrders: false);
 
     public async Task<GuidedSetupDashboardViewModel?> GetDashboardCardAsync(
+        Guid tenantId, Guid userId, ClaimsPrincipal user, CancellationToken ct) =>
+        (await GetDashboardAsync(tenantId, userId, user, ct).ConfigureAwait(false)).Card;
+
+    public async Task<GuidedSetupDashboard> GetDashboardAsync(
         Guid tenantId, Guid userId, ClaimsPrincipal user, CancellationToken ct)
     {
         var permissions = await _navigation.GetPermissionsAsync(user).ConfigureAwait(false);
         var plan = GuidedSetupPlan.SectionsFor(ToCapabilities(permissions));
         if (plan.Count == 0)
-            return null;
+            return GuidedSetupDashboard.None;
 
         var state = await TryReadAsync(tenantId, userId, ct).ConfigureAwait(false);
         if (state is null)
-            return null;
+            return GuidedSetupDashboard.None;
 
         switch (state.Status)
         {
             case GuidedSetupStatus.NotStarted:
-                return new GuidedSetupDashboardViewModel(GuidedSetupCardKind.FirstUse, plan, null);
+                return new GuidedSetupDashboard(new GuidedSetupDashboardViewModel(GuidedSetupCardKind.FirstUse, plan, null), false);
             case GuidedSetupStatus.InProgress:
                 var current = ResolveSection(state.SectionKey, plan);
                 var kind = current == GuidedSetupSections.LiveScreenDemo
                     ? GuidedSetupCardKind.OrderTrainingNext
                     : GuidedSetupCardKind.Resume;
-                return new GuidedSetupDashboardViewModel(kind, plan, current);
+                return new GuidedSetupDashboard(new GuidedSetupDashboardViewModel(kind, plan, current), false);
+            case GuidedSetupStatus.Completed:
+            case GuidedSetupStatus.Skipped:
+                // Terminal: nothing offers guided setup again.
+                return new GuidedSetupDashboard(null, HasFinished: true);
             default:
-                return null;
+                return GuidedSetupDashboard.None;
         }
     }
 

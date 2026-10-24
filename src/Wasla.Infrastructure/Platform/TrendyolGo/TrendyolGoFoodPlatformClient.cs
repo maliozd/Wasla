@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
@@ -20,9 +21,34 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     internal const int FetchPageSize = 50;
 
     /// <summary>
-    /// Defensive cap. Twenty pages cover 1,000 packages in the one-hour fetch window.
+    /// Defensive cap per fetch window. Twenty pages cover 1,000 packages modified within one window.
     /// </summary>
     internal const int MaxFetchPages = 20;
+
+    /// <summary>
+    /// Longest modification-time window one fetch requests. The official "Sipariş Paketlerini Çekme" documentation
+    /// gives no maximum range, so a longer interval is split into consecutive windows of the one-hour span this
+    /// client has always queried (see <c>OrderFetchWindowPlanner</c>).
+    /// </summary>
+    internal static readonly TimeSpan FetchWindowLength = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// Every <c>packageStatuses</c> value the official documentation lists, with its casing and in its order. The
+    /// terminal statuses (Cancelled, UnSupplied, Delivered) are required: without them a cancellation or a delivery
+    /// reported by Trendyol GO never reaches Wasla.
+    /// </summary>
+    internal const string PackageStatusesFilter = "Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered";
+
+    /// <summary>
+    /// Retries of the same page after HTTP 429. A page gets at most three attempts; the third 429 fails the window.
+    /// </summary>
+    internal const int MaxThrottledRetries = 2;
+
+    /// <summary>Wait after a 429 without a usable <c>Retry-After</c>.</summary>
+    internal static readonly TimeSpan DefaultThrottleDelay = TimeSpan.FromSeconds(10);
+
+    /// <summary>Longest wait honoured from <c>Retry-After</c>; a longer value is shortened to this.</summary>
+    internal static readonly TimeSpan MaxThrottleDelay = TimeSpan.FromSeconds(60);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -35,22 +61,38 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOptions<TrendyolGoOptions> _options;
     private readonly ILogger<TrendyolGoFoodPlatformClient> _logger;
+    private readonly TrendyolRequestRateLimiter _requestLimiter;
+    private readonly TimeProvider _time;
 
+    /// <param name="requestLimiter">
+    /// The process-wide singleton. Required: a client with its own limiter would have its own budget.
+    /// </param>
     public TrendyolGoFoodPlatformClient(
         HttpClient httpClient,
         ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<TrendyolGoOptions> options,
-        ILogger<TrendyolGoFoodPlatformClient> logger)
+        ILogger<TrendyolGoFoodPlatformClient> logger,
+        TrendyolRequestRateLimiter requestLimiter,
+        TimeProvider time)
     {
         _httpClient = httpClient;
         _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options;
         _logger = logger;
+        _requestLimiter = requestLimiter;
+        _time = time;
     }
 
+    internal TrendyolRequestRateLimiter RequestLimiter => _requestLimiter;
+
+    /// <summary>Named HttpClient key used during DI registration.</summary>
+    public const string TrendyolGoHttpClientName = "TrendyolGo";
+
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+
+    public TimeSpan? MaxFetchWindow => FetchWindowLength;
 
     private static string? ResolveSupplierId(PlatformConnection connection)
     {
@@ -59,13 +101,20 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         return null;
     }
 
-    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct)
+    public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
+        PlatformConnection connection,
+        OrderFetchWindow window,
+        CancellationToken ct)
     {
         var supplierId = ResolveSupplierId(connection);
         if (string.IsNullOrWhiteSpace(supplierId))
             throw new InvalidOperationException("SupplierId could not be resolved (SupplierId and StoreId are empty)");
 
-        var sinceMs = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeMilliseconds();
+        if (window.EndUtc < window.StartUtc || window.EndUtc - window.StartUtc > FetchWindowLength)
+            throw new ArgumentOutOfRangeException(nameof(window), "The fetch window must be ordered and at most FetchWindowLength long.");
+
+        var startMs = ToUnixMilliseconds(window.StartUtc);
+        var endMs = ToUnixMilliseconds(window.EndUtc);
         var collected = new List<ExternalOrderDto>();
         var seenPackages = new Dictionary<string, string>(StringComparer.Ordinal);
         int? previousTotalPages = null;
@@ -75,7 +124,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         for (var pageIndex = 0; pageIndex < MaxFetchPages; pageIndex++)
         {
             ct.ThrowIfCancellationRequested();
-            var page = await FetchPackagePageAsync(connection, supplierId, sinceMs, pageIndex, ct);
+            var page = await FetchPackagePageAsync(connection, supplierId, startMs, endMs, pageIndex, ct);
             pagesFetched++;
 
             if (page.TotalPages is < 0 || page.TotalCount is < 0 || page.Page is < 0)
@@ -115,9 +164,11 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
         swAll.Stop();
         _logger.LogDebug(
-            "Provider fetch completed. Provider={Provider} Operation={Operation} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ElapsedMs={ElapsedMs}",
+            "Provider fetch completed. Provider={Provider} Operation={Operation} WindowStartUtc={WindowStartUtc:O} WindowEndUtc={WindowEndUtc:O} PagesFetched={PagesFetched} OrdersFetched={OrdersFetched} ElapsedMs={ElapsedMs}",
             "TrendyolGo",
             "FetchOrders",
+            window.StartUtc,
+            window.EndUtc,
             pagesFetched,
             collected.Count,
             swAll.ElapsedMilliseconds);
@@ -128,13 +179,14 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private async Task<TrendyolGoPackagesResponse> FetchPackagePageAsync(
         PlatformConnection connection,
         string supplierId,
-        long sinceMs,
+        long startMs,
+        long endMs,
         int pageIndex,
         CancellationToken ct)
     {
         var query = new List<string>
         {
-            "packageStatuses=Created,Picking,Invoiced,Shipped",
+            $"packageStatuses={PackageStatusesFilter}",
             $"size={FetchPageSize}",
             $"page={pageIndex}"
         };
@@ -142,20 +194,62 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         if (!string.IsNullOrWhiteSpace(connection.StoreId))
             query.Add($"storeId={Uri.EscapeDataString(connection.StoreId)}");
 
-        query.Add($"packageModificationStartDate={sinceMs}");
+        query.Add($"packageModificationStartDate={startMs}");
+        query.Add($"packageModificationEndDate={endMs}");
 
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages?{string.Join("&", query)}";
-        using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
-        var sw = Stopwatch.StartNew();
-        using var resp = await _httpClient.SendAsync(req, ct);
-        sw.Stop();
 
-        if (!resp.IsSuccessStatusCode)
-            throw ProviderFailure("TrendyolGo", "FetchOrders", resp, sw.ElapsedMilliseconds, externalOrderId: null);
+        // Every attempt, including a 429 retry, takes a permit first. A 429 retries this same page.
+        for (var attempt = 0; ; attempt++)
+        {
+            await _requestLimiter.AcquireAsync(ct);
 
-        await using var stream = await resp.Content.ReadAsStreamAsync(ct);
-        return await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct)
-            ?? new TrendyolGoPackagesResponse();
+            using var req = await BuildRequestAsync(HttpMethod.Get, path, connection, supplierId, ct);
+            var sw = Stopwatch.StartNew();
+            using var resp = await _httpClient.SendAsync(req, ct);
+            sw.Stop();
+
+            if (resp.StatusCode == HttpStatusCode.TooManyRequests && attempt < MaxThrottledRetries)
+            {
+                var (delay, source) = ThrottleDelay(resp.Headers.RetryAfter);
+                _logger.LogWarning(
+                    "Provider throttled the request; retrying the same page. Provider={Provider} Operation={Operation} StatusCode={StatusCode} Page={Page} Attempt={Attempt} RetryDelayMs={RetryDelayMs} RetryDelaySource={RetryDelaySource}",
+                    "TrendyolGo",
+                    "FetchOrders",
+                    (int)resp.StatusCode,
+                    pageIndex,
+                    attempt + 1,
+                    (long)delay.TotalMilliseconds,
+                    source);
+                _requestLimiter.Defer(delay);
+                continue;
+            }
+
+            if (!resp.IsSuccessStatusCode)
+                throw ProviderFailure("TrendyolGo", "FetchOrders", resp, sw.ElapsedMilliseconds, externalOrderId: null);
+
+            await using var stream = await resp.Content.ReadAsStreamAsync(ct);
+            return await JsonSerializer.DeserializeAsync<TrendyolGoPackagesResponse>(stream, JsonOptions, ct)
+                ?? new TrendyolGoPackagesResponse();
+        }
+    }
+
+    /// <summary>
+    /// <c>Retry-After</c> as seconds or as an HTTP date, kept between zero and <see cref="MaxThrottleDelay"/>;
+    /// <see cref="DefaultThrottleDelay"/> when the header is missing or cannot be parsed.
+    /// </summary>
+    private (TimeSpan Delay, string Source) ThrottleDelay(RetryConditionHeaderValue? retryAfter)
+    {
+        TimeSpan? requested = retryAfter?.Delta;
+        if (requested is null && retryAfter?.Date is { } date)
+            requested = date - _time.GetUtcNow();
+
+        if (requested is not { } value)
+            return (DefaultThrottleDelay, "fallback");
+
+        if (value < TimeSpan.Zero)
+            value = TimeSpan.Zero;
+        return (value > MaxThrottleDelay ? MaxThrottleDelay : value, "retry-after");
     }
 
     private void AddPackages(
@@ -197,6 +291,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             collected.Add(dto);
         }
     }
+
+    private static long ToUnixMilliseconds(DateTime utc) =>
+        new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToUnixTimeMilliseconds();
 
     private static string PackageSignature(ExternalOrderDto dto) =>
         string.Join('\u001f', dto.ExternalStatus, dto.Total.ToString(System.Globalization.CultureInfo.InvariantCulture), dto.CustomerNote, dto.Items.Count);
@@ -313,7 +410,10 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var phone = package.Address?.Phone ?? string.Empty;
         var address = BuildAddress(package.Address);
 
-        var orderedAtUtc = DateTimeOffset.FromUnixTimeMilliseconds(package.PackageCreationDate).UtcDateTime;
+        // packageCreationDate and packageModificationDate: epoch milliseconds in the official package model. A missing
+        // or non-positive value stays null; Wasla does not substitute its own clock (WAS-125).
+        var orderedAtUtc = FromEpochMilliseconds(package.PackageCreationDate);
+        var modifiedAtUtc = FromEpochMilliseconds(package.PackageModificationDate);
 
         var internalStatus = _statusMapper.MapToInternalStatus(FoodPlatform.TrendyolYemek, package.PackageStatus ?? string.Empty);
 
@@ -343,7 +443,16 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ExternalStatus: package.PackageStatus ?? string.Empty,
             RawPayloadJson: JsonSerializer.Serialize(package, JsonOptions),
             Items: items,
-            CustomerNote: package.CustomerNote);
+            CustomerNote: package.CustomerNote,
+            ModifiedAtUtc: modifiedAtUtc);
+    }
+
+    private static DateTime? FromEpochMilliseconds(long? value)
+    {
+        if (value is not > 0 || value.Value > DateTimeOffset.MaxValue.ToUnixTimeMilliseconds())
+            return null;
+
+        return DateTimeOffset.FromUnixTimeMilliseconds(value.Value).UtcDateTime;
     }
 
     private static ExternalOrderItemDto MapLine(string? packageId, TrendyolGoLine line, int idx)
@@ -486,7 +595,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         public string? Id { get; set; }
         public string? OrderCode { get; set; }
         public string? OrderNumber { get; set; }
-        public long PackageCreationDate { get; set; }
+        public long? PackageCreationDate { get; set; }
+        public long? PackageModificationDate { get; set; }
         public string? PackageStatus { get; set; }
         public decimal TotalPrice { get; set; }
         public TrendyolGoCustomer? Customer { get; set; }
@@ -522,7 +632,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     {
         public bool IsCancelled { get; set; }
         public string? PackageItemId { get; set; }
-        public string? LineItemId { get; set; }
+
+        /// <summary>A JSON number in the documented package model (<c>packageItemId</c> is a string).</summary>
+        public long? LineItemId { get; set; }
     }
 
     private sealed class TrendyolGoModifierProduct

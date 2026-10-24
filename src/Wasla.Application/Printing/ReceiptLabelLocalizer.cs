@@ -120,14 +120,15 @@ public static class ReceiptLabelLocalizer
         return DefaultFooters.Values.Any(v => string.Equals(v, normalized, StringComparison.Ordinal));
     }
 
+    /// <summary>Receipt culture with the Gregorian calendar, so printed order times match provider records.</summary>
     public static CultureInfo GetCulture(string? language) =>
-        ReceiptLanguageCodes.Normalize(language) switch
+        GregorianCulture.For(ReceiptLanguageCodes.Normalize(language) switch
         {
             ReceiptLanguageCodes.English => CultureInfo.GetCultureInfo("en-US"),
             ReceiptLanguageCodes.Arabic => CultureInfo.GetCultureInfo("ar-SA"),
             ReceiptLanguageCodes.Russian => CultureInfo.GetCultureInfo("ru-RU"),
             _ => CultureInfo.GetCultureInfo("tr-TR")
-        };
+        });
 
     public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> GetAllLabels() => Labels;
 

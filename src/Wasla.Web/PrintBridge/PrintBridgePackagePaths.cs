@@ -6,13 +6,18 @@ public static class PrintBridgePackagePaths
     public const string DefaultRelativeFolder = "downloads/wasla-print-bridge";
 
     public static string GetPackageFileName(IConfiguration configuration) =>
-        string.IsNullOrWhiteSpace(configuration["OrderHub:PrintBridgeDownload:PackageFileName"])
+        string.IsNullOrWhiteSpace(configuration["Wasla:PrintBridgeDownload:PackageFileName"])
             ? DefaultPackageFileName
-            : configuration["OrderHub:PrintBridgeDownload:PackageFileName"]!.Trim();
+            : configuration["Wasla:PrintBridgeDownload:PackageFileName"]!.Trim();
 
-    public static string ResolvePackagePath(IConfiguration configuration, IWebHostEnvironment environment)
+    /// <summary>
+    /// The configured package path, otherwise the default folder in the web root. Null when no path is configured and
+    /// the host has no web root (ASP.NET Core leaves <c>WebRootPath</c> null when the content root has no wwwroot,
+    /// WAS-128): the package is then unavailable.
+    /// </summary>
+    public static string? ResolvePackagePath(IConfiguration configuration, IWebHostEnvironment environment)
     {
-        var configured = configuration["OrderHub:PrintBridgeDownload:PackagePath"]?.Trim();
+        var configured = configuration["Wasla:PrintBridgeDownload:PackagePath"]?.Trim();
         if (!string.IsNullOrWhiteSpace(configured))
         {
             return Path.IsPathRooted(configured)
@@ -20,10 +25,13 @@ public static class PrintBridgePackagePaths
                 : Path.GetFullPath(Path.Combine(environment.ContentRootPath, configured));
         }
 
+        if (string.IsNullOrEmpty(environment.WebRootPath))
+            return null;
+
         var fileName = GetPackageFileName(configuration);
         return Path.Combine(environment.WebRootPath, DefaultRelativeFolder.Replace('/', Path.DirectorySeparatorChar), fileName);
     }
 
     public static bool PackageExists(IConfiguration configuration, IWebHostEnvironment environment) =>
-        File.Exists(ResolvePackagePath(configuration, environment));
+        ResolvePackagePath(configuration, environment) is { } path && File.Exists(path);
 }

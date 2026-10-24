@@ -9,7 +9,7 @@
     download folder for local tenant setup page testing.
 
 .PARAMETER CopyToWebDownload
-    Copy Wasla.PrintBridge-win-x64.zip to src/Wasla.Web/wwwroot/downloads/orderhub-print-bridge/
+    Copy Wasla.PrintBridge-win-x64.zip to src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/
 
 .PARAMETER SelfContained
     Publish self-contained (larger zip; no .NET 8 runtime required on target PC).
@@ -44,12 +44,11 @@ Windows computer connected to your receipt printer, then run Wasla.PrintBridge.e
 
 Quick start:
 1. Extract all files to a folder (for example C:\Wasla\PrintBridge).
-2. Run Wasla.PrintBridge.exe.
-3. Open the Settings tab in the app.
-4. Paste the device token from Wasla Web (Print Bridge > Devices).
-5. Select your Windows receipt printer.
-6. Turn off Test mode for real printing.
-7. Click Save settings and verify the connection.
+2. Run Wasla.PrintBridge.exe. The Print Bridge window opens.
+3. Click "Connect to Wasla", paste the Wasla Web Panel URL and the device token
+   from Wasla Web (Print Bridge > Devices), then click "Connect and save".
+4. Open the Printer tab, select your Windows receipt printer and click "Save printer".
+5. Turn off Test mode in Settings for real printing.
 
 Configuration:
 - Settings are saved under C:\ProgramData\Wasla\PrintBridge\appsettings.json
@@ -59,6 +58,8 @@ Configuration:
 Requirements:
 - Windows 10 or later
 - .NET 8 Desktop Runtime (unless you received a self-contained build)
+- Microsoft Edge WebView2 Runtime (without it Print Bridge shows a notice and keeps
+  printing in the background, but its window does not open)
 - USB or network receipt printer installed in Windows
 
 Support: configure devices and tokens in Wasla Web > Print Bridge.

@@ -42,6 +42,33 @@ public sealed class TenantSetupGuidancePersistenceTests : IDisposable
         Assert.Equal(first, second);
     }
 
+    [Fact]
+    public async Task Notifications_WithoutSavedSettings_AreTheDefaultSoundOn_LikeTheLiveScreen()
+    {
+        // The 18 Oct 2026 review: no settings row was saved, the Live Screen said the sound was active and the
+        // Dashboard said it was off. Both now describe the same effective state.
+        var status = await CreateService().GetAsync(_tenantA, Guid.NewGuid(), CancellationToken.None);
+
+        Assert.True(status.Notifications.IsAvailable);
+        Assert.True(status.Notifications.IsComplete);
+        Assert.False(status.Notifications.CountsTowardReadiness);
+    }
+
+    [Fact]
+    public async Task Notifications_SavedSoundOff_IsOffForThatUserOnly()
+    {
+        var user = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        await using (var db = await _tenants.CreateAsync(_tenantA, CancellationToken.None))
+        {
+            db.UserNotificationSettings.Add(new UserNotificationSettings { Id = Guid.NewGuid(), UserId = user, NewOrderSoundEnabled = false });
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        Assert.False((await CreateService().GetAsync(_tenantA, user, CancellationToken.None)).Notifications.IsComplete);
+        Assert.True((await CreateService().GetAsync(_tenantA, other, CancellationToken.None)).Notifications.IsComplete);
+    }
+
     private TenantSetupStatusService CreateService() =>
         new(_central, _tenants, new FixedTime(), NullLogger<TenantSetupStatusService>.Instance);
 
@@ -106,6 +133,12 @@ public sealed class TenantSetupGuidancePersistenceTests : IDisposable
             {
                 builder.ToTable("TenantOperationalSettings");
                 builder.HasKey(settings => settings.Id);
+            });
+            modelBuilder.Entity<UserNotificationSettings>(builder =>
+            {
+                builder.ToTable("UserNotificationSettings");
+                builder.HasKey(settings => settings.Id);
+                builder.Ignore(settings => settings.AppUser);
             });
         }
     }

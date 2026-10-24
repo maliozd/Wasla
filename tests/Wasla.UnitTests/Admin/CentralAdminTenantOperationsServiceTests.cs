@@ -121,7 +121,7 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
 
         Assert.Equal(["kebap-house"], (await ListAsync(Query(search: "KEBAP"))).Items.Select(i => i.Slug));
         Assert.Equal(["pizza"], (await ListAsync(Query(search: "pizza p"))).Items.Select(i => i.Slug));
-        Assert.Equal(["sushi"], (await ListAsync(Query(search: "sushi.wasla"))).Items.Select(i => i.Slug));
+        Assert.Equal(["sushi"], (await ListAsync(Query(search: "sushi.app.wasla"))).Items.Select(i => i.Slug));
         Assert.Empty((await ListAsync(Query(search: "%"))).Items);
         Assert.Empty((await ListAsync(Query(search: "_"))).Items);
     }

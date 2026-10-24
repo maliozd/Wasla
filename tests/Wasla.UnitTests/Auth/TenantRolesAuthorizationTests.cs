@@ -7,14 +7,17 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.Models.TenantUsers;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Auth;
@@ -58,10 +61,16 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.False(result.Succeeded);
     }
 
+    // Sessions carry the exact role name the login writes (UserRole.ToString()); nothing else names a role (WAS-94 R-2).
+    // "Owner, Manager" used to parse as Owner|Manager = Kitchen, and "1" as Owner.
     [Theory]
     [InlineData("owner")]
     [InlineData("OwNeR")]
-    public async Task TenantRolePolicy_AcceptsRoleClaimCasingVariants(string roleClaim)
+    [InlineData(" Owner ")]
+    [InlineData("1")]
+    [InlineData("Owner, Manager")]
+    [InlineData("Staff")]
+    public async Task TenantRolePolicy_RejectsNonCanonicalRoleClaims(string roleClaim)
     {
         var service = BuildAuthorizationService(_tenantId);
 
@@ -70,7 +79,31 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             null,
             TenantPolicies.CanManageDeviceSecurity);
 
-        Assert.True(result.Succeeded);
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task TenantRolePolicy_RejectsRepeatedOrConflictingRoleAndTenantClaims()
+    {
+        var service = BuildAuthorizationService(_tenantId);
+        ClaimsPrincipal With(params Claim[] claims) => new(new ClaimsIdentity(claims, authenticationType: "Tenant"));
+        var tenant = new Claim("TenantId", _tenantId.ToString());
+        var owner = new Claim(ClaimTypes.Role, UserRole.Owner.ToString());
+
+        foreach (var principal in new[]
+                 {
+                     With(tenant, owner, new Claim(ClaimTypes.Role, UserRole.Owner.ToString())),
+                     With(tenant, owner, new Claim("Role", UserRole.Viewer.ToString())),
+                     With(tenant, new Claim("TenantId", _otherTenantId.ToString()), owner),
+                     With(tenant, new Claim("TenantId", _tenantId.ToString()), owner)
+                 })
+        {
+            Assert.False((await service.AuthorizeAsync(principal, null, TenantPolicies.CanManageDeviceSecurity)).Succeeded);
+        }
+
+        // The same claims without the repeat are an Owner of this tenant.
+        Assert.True((await service.AuthorizeAsync(With(tenant, owner, new Claim("Role", UserRole.Owner.ToString())), null,
+            TenantPolicies.CanManageDeviceSecurity)).Succeeded);
     }
 
     [Fact]
@@ -104,15 +137,19 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         var root = GetRepositoryRoot();
         var programSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Program.cs"));
+        // Program.cs registers the tenant scheme through this extension (WAS-89).
+        var cookieSource = File.ReadAllText(Path.Combine(root, "src", "Wasla.Web", "Security", "TenantCookieAuthentication.cs"));
 
         Assert.Equal(".Wasla.TenantAuth", TenantAuthCookieNames.Active);
-        Assert.Equal("orderhub_auth", TenantAuthCookieNames.LegacyOrderHub);
-        Assert.Contains("options.Cookie.Name = TenantAuthCookieNames.Active;", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.Cookie.Name = \"orderhub_auth\";", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.Cookie.Name = TenantAuthCookieNames.LegacyOrderHub;", programSource, StringComparison.Ordinal);
-        Assert.Contains("options.LoginPath = \"/auth/login\";", programSource, StringComparison.Ordinal);
-        Assert.Contains("options.AccessDeniedPath = \"/auth/access-denied\";", programSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("options.AccessDeniedPath = \"/auth/login\";", programSource, StringComparison.Ordinal);
+        Assert.Contains(".AddWaslaTenantCookie(authCookieSecurePolicy)", programSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(".AddCookie(AuthSchemes.Tenant", programSource, StringComparison.Ordinal);
+        Assert.Contains("options.Cookie.Name = TenantAuthCookieNames.Active;", cookieSource, StringComparison.Ordinal);
+        Assert.Contains("options.LoginPath = \"/auth/login\";", cookieSource, StringComparison.Ordinal);
+        Assert.Contains("options.AccessDeniedPath = \"/auth/access-denied\";", cookieSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("options.AccessDeniedPath = \"/auth/login\";", cookieSource, StringComparison.Ordinal);
+        Assert.Contains("options.EventsType = typeof(TenantCookieEvents);", cookieSource, StringComparison.Ordinal);
+        // The tenant session validator is not attached to the Central Admin scheme.
+        Assert.DoesNotContain("TenantCookieEvents", programSource, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -138,10 +175,12 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
             "AccessDenied.cshtml"));
 
         Assert.Contains("[HttpGet(\"access-denied\")]", controllerSource, StringComparison.Ordinal);
-        Assert.Contains("IActionResult AccessDenied()", controllerSource, StringComparison.Ordinal);
+        Assert.Contains("Task<IActionResult> AccessDenied()", controllerSource, StringComparison.Ordinal);
         Assert.Contains("Auth.AccessDenied.Title", viewSource, StringComparison.Ordinal);
         Assert.Contains("Auth.AccessDenied.Description", viewSource, StringComparison.Ordinal);
-        Assert.Contains("href=\"/orders\"", viewSource, StringComparison.Ordinal);
+        // The recovery link is the user's own landing page (WAS-113), covered over HTTP by TenantPostLoginRedirectTests.
+        Assert.Contains("href=\"@Model.LandingPageUrl\"", viewSource, StringComparison.Ordinal);
+        Assert.Contains("Auth.AccessDenied.GoToStartPage", viewSource, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -205,7 +244,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task Owner_CanViewTenantUsers()
     {
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Index(TestContext.Current.CancellationToken);
 
@@ -242,7 +281,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner2@example.test");
         var user = await SeedUserAsync(_tenantId, UserRole.Viewer);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Edit(
             user.Id,
@@ -260,7 +299,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var user = await SeedUserAsync(_tenantId, UserRole.Viewer, email: "viewer@example.test");
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Edit(
             user.Id,
@@ -278,7 +317,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var otherTenantUser = await SeedUserAsync(_otherTenantId, UserRole.Viewer);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Edit(
             otherTenantUser.Id,
@@ -296,7 +335,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var user = await SeedUserAsync(_tenantId, UserRole.Manager, email: "manager@example.test");
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Deactivate(user.Id, TestContext.Current.CancellationToken);
 
@@ -311,7 +350,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var user = await SeedUserAsync(_tenantId, UserRole.Manager, isActive: false, email: "inactive@example.test");
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Activate(user.Id, TestContext.Current.CancellationToken);
 
@@ -325,7 +364,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task Owner_CanViewUserDetails()
     {
         var user = await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Details(user.Id, TestContext.Current.CancellationToken);
 
@@ -336,11 +375,38 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     }
 
     [Fact]
+    public async Task UsersListAndDetails_ShowTheSameRecordedLastLogin()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var loggedIn = await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner@example.test");
+        var never = await SeedUserAsync(_tenantId, UserRole.Viewer, email: "viewer@example.test");
+        var loginTime = new DateTimeOffset(2026, 10, 6, 9, 15, 30, TimeSpan.Zero);
+        var recorder = new TenantLoginRecorder(
+            _db,
+            new FixedTimeProvider(loginTime),
+            NullLogger<TenantLoginRecorder>.Instance);
+        await recorder.RecordSuccessfulLoginAsync(_tenantId, loggedIn.Id, ct);
+        var controller = await CreateTenantUsersControllerAsync();
+
+        var list = Assert.IsType<TenantUsersViewModel>(Assert.IsType<ViewResult>(await controller.Index(ct)).Model);
+        var loggedInDetails = Assert.IsType<TenantUserDetailsViewModel>(
+            Assert.IsType<ViewResult>(await controller.Details(loggedIn.Id, ct)).Model);
+        var neverDetails = Assert.IsType<TenantUserDetailsViewModel>(
+            Assert.IsType<ViewResult>(await controller.Details(never.Id, ct)).Model);
+
+        var loggedInRow = list.Users.Single(u => u.Id == loggedIn.Id);
+        Assert.Equal(loginTime.UtcDateTime.Ticks, loggedInRow.LastLoginAt?.Ticks);
+        Assert.Equal(loggedInRow.LastLoginAt, loggedInDetails.LastLoginAt);
+        Assert.Null(list.Users.Single(u => u.Id == never.Id).LastLoginAt);
+        Assert.Null(neverDetails.LastLoginAt);
+    }
+
+    [Fact]
     public async Task Owner_CanEditDisplayName()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var user = await SeedUserAsync(_tenantId, UserRole.Manager, email: "manager-name@example.test");
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Edit(
             user.Id,
@@ -366,7 +432,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
                 .SingleAsync(TestContext.Current.CancellationToken);
         }
 
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
         var result = await controller.Edit(
             user.Id,
             EditModel(user),
@@ -386,7 +452,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
         var user = await SeedUserAsync(_tenantId, UserRole.Manager, email: "manager-new-password@example.test");
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Edit(
             user.Id,
@@ -416,7 +482,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
                 .SingleAsync(TestContext.Current.CancellationToken);
         }
 
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
         var result = await controller.Edit(
             user.Id,
             EditModel(user, newPassword: "******"),
@@ -436,7 +502,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task Owner_CanCreateTenantUser()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Create(new TenantUserCreateViewModel
         {
@@ -461,7 +527,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task CreateUser_IsTenantScoped()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         await controller.Create(new TenantUserCreateViewModel
         {
@@ -483,7 +549,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task DuplicateEmailInSameTenant_IsRejectedAndDoesNotCreateAnotherUser()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
         var email = "duplicate@example.test";
 
         await controller.Create(new TenantUserCreateViewModel
@@ -517,7 +583,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task ActiveCreatedUser_CanLoginWithCreatedPassword()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         await controller.Create(new TenantUserCreateViewModel
         {
@@ -544,7 +610,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task InactiveCreatedUser_CannotLoginWithCreatedPassword()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         await controller.Create(new TenantUserCreateViewModel
         {
@@ -570,7 +636,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task PasswordConfirmationMismatch_IsRejected()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Create(new TenantUserCreateViewModel
         {
@@ -591,7 +657,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     public async Task CreateUser_InvalidRole_IsRejected()
     {
         await SeedUserAsync(_tenantId, UserRole.Owner);
-        var controller = CreateTenantUsersController();
+        var controller = await CreateTenantUsersControllerAsync();
 
         var result = await controller.Create(new TenantUserCreateViewModel
         {
@@ -773,15 +839,27 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Contains("Role = UserRole.Owner", provisioningSource, StringComparison.Ordinal);
     }
 
-    private TenantUsersController CreateTenantUsersController()
+    /// <summary>
+    /// The controller as the tenant's first active Owner would reach it: with that Owner's validated session claims.
+    /// </summary>
+    private async Task<TenantUsersController> CreateTenantUsersControllerAsync()
     {
+        await using var db = await _db.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
+        var owner = await db.AppUsers.AsNoTracking()
+            .Where(u => u.IsActive && u.Role == UserRole.Owner)
+            .OrderBy(u => u.Email)
+            .FirstAsync(TestContext.Current.CancellationToken);
+
         var controller = new TenantUsersController(
             new FixedCurrentTenantService(_tenantId),
             CreateTenantUserRoleService(),
             new FakeStringLocalizer());
         controller.ControllerContext = new ControllerContext
         {
-            HttpContext = new DefaultHttpContext()
+            HttpContext = new DefaultHttpContext
+            {
+                User = SessionPrincipal(owner)
+            }
         };
         controller.TempData = new TempDataDictionary(
             controller.ControllerContext.HttpContext,
@@ -840,64 +918,279 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         Assert.Null(result);
     }
 
+    // --- Last Owner, self-changes and the acting Owner (WAS-89) -----------------------------------
+    // Every change is made by an active Owner who may not change their own role or active state, so that Owner always
+    // remains. The explicit last-Owner checks stay in the service as a second guard.
+
     [Fact]
-    public async Task TenantUserRoleService_DoesNotDemoteLastOwner()
+    public async Task TenantUserRoleService_SoleOwnerCannotDemoteThemselves()
     {
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
         var service = CreateTenantUserRoleService();
 
         var result = await service.ChangeRoleAsync(
             _tenantId,
+            Actor(owner),
             owner.Id,
             UserRole.Manager,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved, result.Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed, result.Outcome);
+        await AssertActiveOwnerAsync(owner);
     }
 
     [Fact]
-    public async Task TenantUserRoleService_DoesNotDisableLastOwner()
+    public async Task TenantUserRoleService_SoleOwnerCannotDeactivateThemselves()
     {
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
         var service = CreateTenantUserRoleService();
 
         var result = await service.SetActiveAsync(
             _tenantId,
+            Actor(owner),
             owner.Id,
             isActive: false,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved, result.Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed, result.Outcome);
+        await AssertActiveOwnerAsync(owner);
     }
 
     [Fact]
-    public async Task TenantUserRoleService_DoesNotRemoveLastOwner()
+    public async Task TenantUserRoleService_SoleOwnerCannotRemoveThemselves()
     {
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
         var service = CreateTenantUserRoleService();
 
         var result = await service.RemoveAsync(
             _tenantId,
+            Actor(owner),
             owner.Id,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(TenantUserRoleUpdateOutcome.LastOwnerWouldBeRemoved, result.Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed, result.Outcome);
+        await AssertActiveOwnerAsync(owner);
     }
 
     [Fact]
-    public async Task TenantUserRoleService_AllowsManagerChangeWhenAnotherOwnerExists()
+    public async Task TenantUserRoleService_OwnerCanDemoteAnotherOwner_AndEndsTheirSessions()
     {
-        await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner2@example.test");
+        var actor = await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner2@example.test");
         var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
         var service = CreateTenantUserRoleService();
 
         var result = await service.ChangeRoleAsync(
             _tenantId,
+            Actor(actor),
             owner.Id,
             UserRole.Manager,
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Succeeded);
+        var updated = await ReadUserAsync(owner.Id);
+        Assert.Equal(UserRole.Manager, updated.Role);
+        Assert.NotEqual(owner.SecurityStamp, updated.SecurityStamp);
+        Assert.Equal(actor.SecurityStamp, (await ReadUserAsync(actor.Id)).SecurityStamp);
+    }
+
+    [Theory]
+    [InlineData(UserRole.Viewer, true)]
+    [InlineData(UserRole.Owner, false)]
+    [InlineData(UserRole.Manager, false)]
+    public async Task UpdateUser_OwnRoleOrActiveStateCannotBeChanged_EvenWithAnotherOwner(UserRole role, bool isActive)
+    {
+        var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
+        await SeedUserAsync(_tenantId, UserRole.Owner, email: "owner2@example.test");
+        var service = CreateTenantUserRoleService();
+
+        var result = await service.UpdateUserAsync(
+            _tenantId,
+            Actor(owner),
+            owner.Id,
+            new TenantUserUpdateCommand("Renamed", role, isActive, null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(TenantUserRoleUpdateOutcome.SelfChangeNotAllowed, result.Outcome);
+        var unchanged = await ReadUserAsync(owner.Id);
+        Assert.Equal((UserRole.Owner, true, "Test User", owner.SecurityStamp), (unchanged.Role, unchanged.IsActive, unchanged.FullName, unchanged.SecurityStamp));
+    }
+
+    [Fact]
+    public async Task UpdateUser_OwnNameAndPasswordCanBeChanged_AndThePasswordEndsTheOwnSession()
+    {
+        var owner = await SeedUserAsync(_tenantId, UserRole.Owner);
+        var service = CreateTenantUserRoleService();
+
+        var renamed = await service.UpdateUserAsync(
+            _tenantId, Actor(owner), owner.Id,
+            new TenantUserUpdateCommand("Renamed Owner", UserRole.Owner, true, null),
+            TestContext.Current.CancellationToken);
+        Assert.True(renamed.Succeeded);
+        Assert.Equal(owner.SecurityStamp, (await ReadUserAsync(owner.Id)).SecurityStamp);
+
+        var newPassword = await service.UpdateUserAsync(
+            _tenantId, Actor(owner), owner.Id,
+            new TenantUserUpdateCommand("Renamed Owner", UserRole.Owner, true, "Another-Horse-27"),
+            TestContext.Current.CancellationToken);
+        Assert.True(newPassword.Succeeded);
+        var updated = await ReadUserAsync(owner.Id);
+        Assert.True(BCrypt.Net.BCrypt.Verify("Another-Horse-27", updated.PasswordHash));
+        Assert.NotEqual(owner.SecurityStamp, updated.SecurityStamp);
+    }
+
+    [Theory]
+    [InlineData("role")]
+    [InlineData("inactive")]
+    [InlineData("stamp")]
+    [InlineData("deleted")]
+    public async Task StaleActor_ChangesNothing(string staleness)
+    {
+        var attacker = await SeedUserAsync(_tenantId, UserRole.Owner, email: "attacker@example.test");
+        var victim = await SeedUserAsync(_tenantId, UserRole.Owner, email: "victim@example.test");
+        var staleActor = Actor(attacker);
+        await using (var db = await _db.CreateAsync(_tenantId, TestContext.Current.CancellationToken))
+        {
+            var row = await db.AppUsers.SingleAsync(u => u.Id == attacker.Id, TestContext.Current.CancellationToken);
+            switch (staleness)
+            {
+                case "role": row.Role = UserRole.Manager; break;
+                case "inactive": row.IsActive = false; break;
+                case "stamp": row.SecurityStamp = Guid.NewGuid(); break;
+                case "deleted": db.AppUsers.Remove(row); break;
+            }
+
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var service = CreateTenantUserRoleService();
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.CreateUserAsync(_tenantId, staleActor,
+            new TenantUserCreateCommand("new-owner@example.test", "New Owner", UserRole.Owner, true, "Correct-Horse-9"), ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.UpdateUserAsync(_tenantId, staleActor, victim.Id,
+            new TenantUserUpdateCommand(victim.FullName, UserRole.Viewer, true, "Takeover-Horse-1"), ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.UpdateUserAsync(_tenantId, staleActor, attacker.Id,
+            new TenantUserUpdateCommand(attacker.FullName, UserRole.Owner, true, null), ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.ChangeRoleAsync(_tenantId, staleActor, victim.Id, UserRole.Viewer, ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.SetActiveAsync(_tenantId, staleActor, victim.Id, false, ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.SetActiveAsync(_tenantId, staleActor, attacker.Id, true, ct)).Outcome);
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, (await service.RemoveAsync(_tenantId, staleActor, victim.Id, ct)).Outcome);
+
+        var victimRow = await ReadUserAsync(victim.Id);
+        Assert.Equal((UserRole.Owner, true, victim.SecurityStamp), (victimRow.Role, victimRow.IsActive, victimRow.SecurityStamp));
+        Assert.True(BCrypt.Net.BCrypt.Verify("password", victimRow.PasswordHash));
+        await using var check = await _db.CreateAsync(_tenantId, ct);
+        Assert.False(await check.AppUsers.AnyAsync(u => u.Email == "new-owner@example.test", ct));
+    }
+
+    [Fact]
+    public async Task StaleActor_CannotUseAnotherTenantsUserId()
+    {
+        // The same user id with the same stamp is an active Owner in another tenant only.
+        var other = await SeedUserAsync(_otherTenantId, UserRole.Owner);
+        var victim = await SeedUserAsync(_tenantId, UserRole.Owner, email: "victim@example.test");
+        var service = CreateTenantUserRoleService();
+
+        var result = await service.SetActiveAsync(_tenantId, Actor(other), victim.Id, false, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TenantUserRoleUpdateOutcome.ActorNotAuthorized, result.Outcome);
+        Assert.True((await ReadUserAsync(victim.Id)).IsActive);
+    }
+
+    [Theory]
+    [InlineData("role")]
+    [InlineData("active")]
+    [InlineData("password")]
+    public async Task SecurityRelevantChanges_ReplaceTheTargetsStamp(string change)
+    {
+        var actor = await SeedUserAsync(_tenantId, UserRole.Owner);
+        var user = await SeedUserAsync(_tenantId, UserRole.Manager, email: "manager@example.test");
+        var service = CreateTenantUserRoleService();
+
+        var result = await service.UpdateUserAsync(
+            _tenantId,
+            Actor(actor),
+            user.Id,
+            new TenantUserUpdateCommand(
+                user.FullName,
+                change == "role" ? UserRole.Kitchen : UserRole.Manager,
+                change != "active",
+                change == "password" ? "Another-Horse-27" : null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.NotEqual(user.SecurityStamp, (await ReadUserAsync(user.Id)).SecurityStamp);
+    }
+
+    [Fact]
+    public async Task NameOnlyChange_KeepsTheTargetsStamp()
+    {
+        var actor = await SeedUserAsync(_tenantId, UserRole.Owner);
+        var user = await SeedUserAsync(_tenantId, UserRole.Manager, email: "manager@example.test");
+        var service = CreateTenantUserRoleService();
+
+        var result = await service.UpdateUserAsync(
+            _tenantId, Actor(actor), user.Id,
+            new TenantUserUpdateCommand("New Name", UserRole.Manager, true, null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(user.SecurityStamp, (await ReadUserAsync(user.Id)).SecurityStamp);
+    }
+
+    /// <summary>
+    /// Two Owners demote each other at the same time. SQLite runs the two serializable transactions one after the
+    /// other, so this shows the service's re-check, not SQL Server locking: the second change finds its actor already
+    /// demoted and writes nothing, and one active Owner remains.
+    /// </summary>
+    [Fact]
+    public async Task OwnersDemotingEachOtherConcurrently_LeaveOneActiveOwner()
+    {
+        using var tenants = new Wasla.UnitTests.Admin.RecordingTenantDbFactory();
+        tenants.CreateTenantDatabase(_tenantId);
+        var first = NewUser("first@example.test", UserRole.Owner);
+        var second = NewUser("second@example.test", UserRole.Owner);
+        tenants.Seed(_tenantId, db => db.AppUsers.AddRange(first, second));
+        var service = new TenantUserRoleService(tenants, new DefaultPasswordPolicy());
+        var ct = TestContext.Current.CancellationToken;
+
+        var results = await Task.WhenAll(
+            Task.Run(() => service.ChangeRoleAsync(_tenantId, Actor(first), second.Id, UserRole.Manager, ct), ct),
+            Task.Run(() => service.ChangeRoleAsync(_tenantId, Actor(second), first.Id, UserRole.Manager, ct), ct));
+
+        Assert.Single(results, r => r.Succeeded);
+        Assert.Single(results, r => r.Outcome == TenantUserRoleUpdateOutcome.ActorNotAuthorized);
+        await using var check = await tenants.CreateAsync(_tenantId, ct);
+        Assert.Equal(1, await check.AppUsers.CountAsync(u => u.IsActive && u.Role == UserRole.Owner, ct));
+    }
+
+    private static TenantUserActor Actor(AppUser user) => new(user.Id, user.SecurityStamp);
+
+    private static AppUser NewUser(string email, UserRole role) => new()
+    {
+        Id = Guid.NewGuid(),
+        Email = email,
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("password", workFactor: 4),
+        FullName = "Test User",
+        Role = role,
+        IsActive = true
+    };
+
+    private ClaimsPrincipal SessionPrincipal(AppUser user) =>
+        new(new ClaimsIdentity(
+            TenantSessionClaims.Create(_tenantId, user.Id, user.Role, user.SecurityStamp),
+            AuthSchemes.Tenant));
+
+    private async Task<AppUser> ReadUserAsync(Guid userId)
+    {
+        await using var db = await _db.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
+        return await db.AppUsers.AsNoTracking().SingleAsync(u => u.Id == userId, TestContext.Current.CancellationToken);
+    }
+
+    private async Task AssertActiveOwnerAsync(AppUser owner)
+    {
+        var row = await ReadUserAsync(owner.Id);
+        Assert.Equal((UserRole.Owner, true, owner.SecurityStamp), (row.Role, row.IsActive, row.SecurityStamp));
     }
 
     private async Task<AppUser> SeedUserAsync(
@@ -976,11 +1269,16 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
 
     public void Dispose() => _db.Dispose();
 
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
     private sealed class FixedCurrentTenantService : ICurrentTenantService
     {
         public FixedCurrentTenantService(Guid tenantId)
         {
-            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
         }
 
         public ResolvedTenantDto? CurrentTenant { get; }
@@ -1045,8 +1343,10 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
                     Role INTEGER NOT NULL,
                     BranchId TEXT NULL,
                     IsActive INTEGER NOT NULL,
+                    SecurityStamp TEXT NOT NULL,
                     CreatedAt TEXT NOT NULL,
-                    UpdatedAt TEXT NOT NULL
+                    UpdatedAt TEXT NOT NULL,
+                    LastLoginAt TEXT NULL
                 );
                 CREATE UNIQUE INDEX IX_AppUsers_Email ON AppUsers (Email);
                 """;

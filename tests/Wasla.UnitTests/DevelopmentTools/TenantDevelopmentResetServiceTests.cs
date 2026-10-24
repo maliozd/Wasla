@@ -3,7 +3,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
+using Wasla.Application.Abstractions.DevelopmentTools;
 using Wasla.Application.Abstractions.GuidedSetup;
+using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Central;
@@ -119,7 +121,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
         await using var central = NewCentral();
         var tenant = await central.Tenants.SingleAsync(t => t.Id == _tenantA, ct);
         Assert.Equal("reset-a", tenant.Slug);
-        Assert.Equal("reset-a.wasla.local", tenant.PrimaryDomain);
+        Assert.Equal("reset-a.app.wasla.local", tenant.PrimaryDomain);
         Assert.True(tenant.IsActive);
         var membership = await central.TenantMemberships.SingleAsync(m => m.TenantId == _tenantA, ct);
         Assert.Equal("Growth", membership.PlanCode);
@@ -151,6 +153,75 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
         Assert.NotNull(pending.FailedAtUtc);
         var completed = await central.PrintBridgeSetupSessions.SingleAsync(s => s.Id == seeded.CompletedSessionA, ct);
         Assert.Null(completed.FailedAtUtc);
+    }
+
+    [Fact]
+    public async Task ResetWhileANewDevicePairingWaitsForTheLock_PairingCreatesNoDevice_AndTheSessionStaysFailed()
+    {
+        await SeedTenantAsync(_tenantA, _owner);
+        await SeedCentralAsync();
+        var ct = TestContext.Current.CancellationToken;
+        var lockWait = new BeforeTransactionStart();
+        var pairing = Pairing(lockWait);
+        var created = await pairing.CreateSessionAsync(
+            _tenantA, PrintBridgeSetupMode.NewDevice, null, "https://reset-a.wasla.local/", null,
+            confirmReplaceActiveToken: false, ct);
+
+        // The exchange has claimed the code and is about to take the tenant lock for the new device. The reset
+        // takes that lock first and commits; in SQL Server the exchange waits for it exactly here.
+        TenantDevelopmentResetResult? reset = null;
+        lockWait.Run = async () => reset = await Service().ResetAsync(_tenantA, CancellationToken.None);
+
+        var exchange = await pairing.ExchangeAsync(created.Code, ClientInfo(Guid.NewGuid()), ct);
+
+        Assert.True(reset!.Succeeded);
+        Assert.Equal(2, reset.PrintBridgeDevices);
+        Assert.Null(exchange);
+        await AssertPairingLeftNoDeviceAsync(created.SessionId, ct);
+        Assert.Equal(PrintBridgeSetupSessionStatus.Failed, (await pairing.GetStatusAsync(_tenantA, created.SessionId, ct))!.Status);
+
+        // Retrying the same code and running the reset again change nothing.
+        Assert.Null(await pairing.ExchangeAsync(created.Code, ClientInfo(Guid.NewGuid()), ct));
+        var again = await Service().ResetAsync(_tenantA, CancellationToken.None);
+        Assert.True(again.Succeeded);
+        Assert.Equal(0, again.PrintBridgeDevices);
+        await AssertPairingLeftNoDeviceAsync(created.SessionId, ct);
+    }
+
+    [Fact]
+    public async Task PairingThatFinishedBeforeTheReset_LeavesNoActiveDeviceOrWorkingToken_AndCannotBeCompleted()
+    {
+        await SeedTenantAsync(_tenantA, _owner);
+        await SeedCentralAsync();
+        var ct = TestContext.Current.CancellationToken;
+        var pairing = Pairing();
+        var installationId = Guid.NewGuid();
+        var created = await pairing.CreateSessionAsync(
+            _tenantA, PrintBridgeSetupMode.NewDevice, null, "https://reset-a.wasla.local/", null,
+            confirmReplaceActiveToken: false, ct);
+        var exchange = await pairing.ExchangeAsync(created.Code, ClientInfo(installationId), ct);
+        Assert.NotNull(exchange);
+
+        var reset = await Service().ResetAsync(_tenantA, CancellationToken.None);
+
+        Assert.True(reset.Succeeded);
+        Assert.Equal(3, reset.PrintBridgeDevices);
+        await using (var central = NewCentral())
+        {
+            var device = await central.PrintBridgeDevices.SingleAsync(d => d.InstallationId == installationId, ct);
+            Assert.NotNull(device.RemovedAtUtc);
+            Assert.False(device.IsActive);
+            Assert.NotEqual(PrintBridgeTokenHasher.HashToken(exchange!.DeviceToken), device.TokenHash);
+            Assert.Equal(0, await central.PrintBridgeDevices.CountAsync(d => d.TenantId == _tenantA && d.RemovedAtUtc == null, ct));
+            var session = await central.PrintBridgeSetupSessions.SingleAsync(s => s.Id == created.SessionId, ct);
+            Assert.Equal(TenantDevelopmentResetService.SetupSessionFailureReason, session.FailureReason);
+            Assert.Null(session.CompletedAtUtc);
+        }
+
+        // The desktop app's completion after the reset is refused, every time.
+        Assert.False(await pairing.CompleteAsync(created.SessionId, exchange.CompletionCredential, true, ct));
+        Assert.False(await pairing.CompleteAsync(created.SessionId, exchange.CompletionCredential, true, ct));
+        Assert.Equal(PrintBridgeSetupSessionStatus.Failed, (await pairing.GetStatusAsync(_tenantA, created.SessionId, ct))!.Status);
     }
 
     [Fact]
@@ -301,6 +372,37 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
             NullLogger<TenantDevelopmentResetService>.Instance);
     }
 
+    /// <summary>A pairing service with its own Central context, as a separate request would have.</summary>
+    private PrintBridgeSetupSessionService Pairing(BeforeTransactionStart? lockWait = null)
+    {
+        var builder = new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_centralConnection);
+        if (lockWait is not null)
+            builder.AddInterceptors(lockWait);
+        var central = new CentralDbContext(builder.Options);
+        return new PrintBridgeSetupSessionService(
+            central,
+            new PrintBridgeDeviceManagementService(central, NullLogger<PrintBridgeDeviceManagementService>.Instance, new NoActivePrintJobs()),
+            new SqlServerPrintBridgeSetupTenantLock(central),
+            NullLogger<PrintBridgeSetupSessionService>.Instance);
+    }
+
+    private static PrintBridgeSetupClientInfo ClientInfo(Guid installationId) =>
+        new("Kitchen PC", "1.0.0", "Thermal-80", installationId);
+
+    /// <summary>The session is failed by the reset, unbound and never completed, and no device came from it.</summary>
+    private async Task AssertPairingLeftNoDeviceAsync(Guid sessionId, CancellationToken ct)
+    {
+        await using var central = NewCentral();
+        Assert.Equal(2, await central.PrintBridgeDevices.CountAsync(d => d.TenantId == _tenantA, ct));
+        Assert.Equal(0, await central.PrintBridgeDevices.CountAsync(d => d.TenantId == _tenantA && d.RemovedAtUtc == null, ct));
+        var session = await central.PrintBridgeSetupSessions.SingleAsync(s => s.Id == sessionId, ct);
+        Assert.NotNull(session.ExchangedAtUtc);
+        Assert.Equal(TenantDevelopmentResetService.SetupSessionFailureReason, session.FailureReason);
+        Assert.NotNull(session.FailedAtUtc);
+        Assert.Null(session.PrintBridgeDeviceId);
+        Assert.Null(session.CompletedAtUtc);
+    }
+
     private CentralDbContext NewCentral() => new(CentralOptions());
 
     private DbContextOptions<CentralDbContext> CentralOptions() =>
@@ -408,7 +510,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
                 Id = id,
                 Name = slug,
                 Slug = slug,
-                PrimaryDomain = slug + ".wasla.local",
+                PrimaryDomain = slug + ".app.wasla.local",
                 DatabaseName = "Wasla_" + slug,
                 EncryptedConnectionString = "encrypted",
                 EncryptionKeyVersion = 1,
@@ -496,6 +598,31 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
     {
         public Task<IReadOnlyList<string>?> GetSubtypeCodesAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>?>(null);
+    }
+
+    private sealed class NoActivePrintJobs : IPrintBridgeActivePrintJobChecker
+    {
+        public Task<bool> HasActivePrintingJobAsync(Guid tenantId, Guid? installationId, string? legacyLockedBy, CancellationToken ct) =>
+            Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// Runs <see cref="Run"/> once, just before the next transaction starts on this context. For a new-device
+    /// exchange that is after it claimed the code and before it takes the tenant lock.
+    /// </summary>
+    private sealed class BeforeTransactionStart : DbTransactionInterceptor
+    {
+        public Func<Task>? Run { get; set; }
+
+        public override async ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
+            DbConnection connection, TransactionStartingEventData eventData, InterceptionResult<DbTransaction> result, CancellationToken cancellationToken = default)
+        {
+            var run = Run;
+            Run = null;
+            if (run is not null)
+                await run();
+            return result;
+        }
     }
 
     private sealed class FailingCentralDbContext(DbContextOptions<CentralDbContext> options) : CentralDbContext(options)

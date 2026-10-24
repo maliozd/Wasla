@@ -5,6 +5,9 @@ namespace Wasla.Application.PlatformConnections;
 
 public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator<CreatePlatformConnectionCommand>
 {
+    /// <summary>The longest API key or secret accepted, on create and when an edit replaces one.</summary>
+    public const int MaxCredentialLength = 500;
+
     public CreatePlatformConnectionCommandValidator()
     {
         RuleFor(x => x.Platform)
@@ -16,11 +19,11 @@ public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator
 
         RuleFor(x => x.ApiKey)
             .NotEmpty().WithMessage("Validation.ApiKeyRequired")
-            .MaximumLength(500).WithMessage("Validation.ApiKeyMaxLength");
+            .MaximumLength(MaxCredentialLength).WithMessage("Validation.ApiKeyMaxLength");
 
         RuleFor(x => x.ApiSecret)
             .NotEmpty().WithMessage("Validation.ApiSecretRequired")
-            .MaximumLength(500).WithMessage("Validation.ApiSecretMaxLength");
+            .MaximumLength(MaxCredentialLength).WithMessage("Validation.ApiSecretMaxLength");
 
         RuleFor(x => x.SupplierId)
             .MaximumLength(100).WithMessage("Validation.SupplierIdMaxLength")

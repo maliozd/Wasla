@@ -7,5 +7,5 @@ public sealed record AuthSessionResult(
     Guid UserId,
     string Email,
     string FullName,
-    UserRole Role);
-
+    UserRole Role,
+    Guid SecurityStamp);

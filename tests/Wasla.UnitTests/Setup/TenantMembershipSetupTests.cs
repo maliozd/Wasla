@@ -10,6 +10,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Cli;
 
 namespace Wasla.UnitTests.Setup;
 
@@ -17,6 +18,7 @@ namespace Wasla.UnitTests.Setup;
 /// The restaurant setup step reads the business phone and location from the tenant's membership row.
 /// Paid signup always created it; CLI-provisioned tenants did not, which left their setup panel stuck.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantMembershipSetupTests : IDisposable
 {
     private static readonly DateTime Now = new(2026, 9, 28, 9, 0, 0, DateTimeKind.Utc);
@@ -60,7 +62,7 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task CliProvisionedTenant_WithoutContact_IsUnblockedByUpdateCustomerProfile_AndRepeatIsANoOp()
+    public async Task CliProvisionedTenant_WithoutContact_IsUnblockedByUpdateTenantProfile_AndRepeatIsANoOp()
     {
         var tenantId = await SeedTenantAsync("cli-later");
         await using (var central = NewCentral())
@@ -76,11 +78,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
         Assert.False((await ReadStatusAsync(tenantId)).Restaurant.IsComplete);
 
         var contact = new TenantContactUpdate("+90 212 000 00 00", "Ankara", null);
-        Assert.Equal(0, await (CliCommands.UpdateCustomerProfileAsync(_host, "cli-later", contact, CancellationToken.None)));
+        Assert.Equal(0, await (CliCommands.UpdateTenantProfileAsync(_host, "cli-later", contact, CancellationToken.None)));
         Assert.True((await ReadStatusAsync(tenantId)).Restaurant.IsComplete);
         var first = await ReadMembershipAsync(tenantId);
 
-        Assert.Equal(0, await (CliCommands.UpdateCustomerProfileAsync(_host, tenantId.ToString(), contact, CancellationToken.None)));
+        Assert.Equal(0, await (CliCommands.UpdateTenantProfileAsync(_host, tenantId.ToString(), contact, CancellationToken.None)));
         var second = await ReadMembershipAsync(tenantId);
 
         Assert.Equal(first.UpdatedAt, second.UpdatedAt);
@@ -89,11 +91,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateCustomerProfile_CreatesTheMissingMembership_ForAnExistingCliTenant()
+    public async Task UpdateTenantProfile_CreatesTheMissingMembership_ForAnExistingCliTenant()
     {
         var tenantId = await SeedTenantAsync("cli-old");
 
-        var exit = await (CliCommands.UpdateCustomerProfileAsync(
+        var exit = await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-old", new TenantContactUpdate("+90 312 000 00 00", null, "Türkiye"), CancellationToken.None));
 
         Assert.Equal(0, exit);
@@ -104,13 +106,13 @@ public sealed class TenantMembershipSetupTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateCustomerProfile_KeepsOmittedFields_AndRejectsInvalidInput()
+    public async Task UpdateTenantProfile_KeepsOmittedFields_AndRejectsInvalidInput()
     {
         var tenantId = await SeedTenantAsync("cli-partial");
-        await (CliCommands.UpdateCustomerProfileAsync(
+        await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate("+90 212 000 00 00", "Izmir", null), CancellationToken.None));
 
-        await (CliCommands.UpdateCustomerProfileAsync(
+        await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(null, null, "Türkiye"), CancellationToken.None));
 
         var membership = await ReadMembershipAsync(tenantId);
@@ -118,11 +120,11 @@ public sealed class TenantMembershipSetupTests : IDisposable
         Assert.Equal("Izmir", membership.City);
         Assert.Equal("Türkiye", membership.Country);
 
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(null, null, null), CancellationToken.None)));
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "cli-partial", new TenantContactUpdate(new string('1', 51), null, null), CancellationToken.None)));
-        Assert.Equal(2, await (CliCommands.UpdateCustomerProfileAsync(
+        Assert.Equal(2, await (CliCommands.UpdateTenantProfileAsync(
             _host, "missing-tenant", new TenantContactUpdate("+90 212 000 00 00", null, null), CancellationToken.None)));
     }
 
@@ -176,7 +178,7 @@ public sealed class TenantMembershipSetupTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "Setup " + slug,
             Slug = slug,
-            PrimaryDomain = slug + ".wasla.local",
+            PrimaryDomain = slug + ".app.wasla.local",
             DatabaseName = "Wasla_" + slug.Replace("-", string.Empty),
             EncryptedConnectionString = "encrypted",
             CreatedAt = Now,
