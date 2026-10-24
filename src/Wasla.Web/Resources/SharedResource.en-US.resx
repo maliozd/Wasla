@@ -3255,6 +3255,8 @@
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Too many password reset attempts. Please try again later.</value></data>
   <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>Too many sign-in attempts. Please wait a few minutes and try again.</value></data>
   <data name="Signup.TooManyAttempts" xml:space="preserve"><value>Too many signup attempts. Please try again later, or complete a signup you have already started.</value></data>
+  <data name="Signup.UnavailableTitle" xml:space="preserve"><value>Online signup is not open yet</value></data>
+  <data name="Signup.UnavailableBody" xml:space="preserve"><value>You can't sign up for Wasla on this page at the moment. If you'd like to start using Wasla in your restaurant, contact us and we'll help you get started.</value></data>
   <data name="Checkout.TooManyAttempts" xml:space="preserve"><value>Too many requests for this signup. Please wait a few minutes and try again.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Reset password</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>New password</value></data>
