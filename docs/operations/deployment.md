@@ -45,7 +45,7 @@ For every release that contains a CentralDb or TenantDb migration:
 3. If any step exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun the gate until it succeeds. A failed start command also returns non-zero. Do not manually start the new version after a failed gate.
 4. Record the CLI's per-database results and the version being deployed. If schema changes are incompatible with the previous binaries, keep them stopped during repair. Do not assume that rolling back application binaries rolls back a partly applied migration; use the release-specific recovery plan and verified backup.
 
-The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. The actual systemd units and start command belong to WAS-76. The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
+The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. On the Linux VDS, `deploy/linux/bin/wasla-install-release` runs this gate with the release's own CLI before it switches `/opt/wasla/current` and starts the services, and every unit runs `migration-status --require-current` again before each start ([linux-vds-runbook.md](linux-vds-runbook.md)). The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
 
 Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release entry point must enforce it.
 
@@ -87,11 +87,11 @@ Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Emai
 
 ## Domains and HTTPS
 
-Wasla Orders uses three host roles (WAS-66). The application implements them; the production domain is not live yet, and DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS belong to WAS-76.
+Wasla Orders uses three host roles (WAS-66). The application implements them. DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS for the single-VDS deployment are in [linux-vds-runbook.md](linux-vds-runbook.md).
 
 | Role | Host | Setting |
 |------|------|---------|
-| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which WAS-76 redirects to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
+| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which the proxy redirects permanently to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
 | Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
 | Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
 
@@ -105,7 +105,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them; th
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
 
-**Expected DNS and TLS shape (WAS-76, not applied by this repository):**
+**Expected DNS and TLS shape:**
 
 | Record | Points to |
 |--------|-----------|
@@ -114,7 +114,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them; th
 | `app.wasla.tr` | The Web server (application entry) |
 | `*.app.wasla.tr` | The Web server (tenant hosts) |
 
-The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment.
+The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment. Until the DNS provider supports automated DNS-01 validation, the pilot uses one HTTP-01 certificate that names each tenant host; every new tenant host is added to it ([linux-vds-runbook.md](linux-vds-runbook.md#tls-certificate)).
 
 Useful URL overrides (env `__` form):
 
@@ -127,7 +127,7 @@ Do not leave production pointing at `localhost` or LocalDB.
 
 ## Reverse proxy and client address
 
-The repository contains no reverse-proxy configuration. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
+The Nginx configuration of the single-VDS deployment is `deploy/linux/nginx/wasla-https.conf`. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
 
 | Key | Meaning |
 |-----|---------|
@@ -147,7 +147,7 @@ The process refuses to start when:
 
 At startup each process logs either "No trusted proxies configured…" or the number of trusted proxies and networks.
 
-If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api (production proxy decisions: WAS-77). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
+If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api; the single-VDS deployment lists its local Nginx as `127.0.0.1` ([linux-vds-runbook.md](linux-vds-runbook.md)). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
 
 ## Provider mode
 
@@ -205,7 +205,7 @@ The `Host` and forwarded headers are the same as for every other location ([Reve
 | Variable | Value |
 |----------|-------|
 | `Realtime__Internal__Port` | A free local port, for example `5290`. Web listens on `127.0.0.1` only; do not open it in the firewall or the proxy. |
-| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (WAS-77); never commit it. |
+| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (on the Linux VDS, `/etc/wasla/secrets.env`); never commit it. |
 | `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
 | `Realtime__Internal__Disabled` | Only for an environment that is polling-only on purpose: `true`, with no `Port`. Set it for Web, Worker and Api. |
 
@@ -257,7 +257,7 @@ Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl 
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
-Wasla__TenantOnboarding__PublicSignupEnabled # Web: false in production until billing exists (default true); see tenancy.md
+Wasla__TenantOnboarding__PublicSignupEnabled # Web reads it: false in production until billing exists (default true); the Linux VDS preflight requires false for every process; see tenancy.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters

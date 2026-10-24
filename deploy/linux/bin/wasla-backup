@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Full backup of WaslaProd_Central and every tenant database owned by the tenant owner login, with CHECKSUM,
+# RESTORE VERIFYONLY and local retention (WAS-79, first local step). Run by wasla-backup.timer or by hand:
+#
+#   sudo wasla-backup [label]
+#
+# SQL Server Express has no Agent and no backup compression, so this runs from systemd and writes plain .bak files.
+# Local copies only: they do not survive the loss of this VDS. Off-site copies are a separate, open step.
+set -euo pipefail
+
+etc=${WASLA_ETC:-/etc/wasla}
+dir=${WASLA_BACKUP_DIR:-/var/opt/mssql/backup/wasla-prod}
+retention_days=${WASLA_BACKUP_RETENTION_DAYS:-14}
+central=${WASLA_CENTRAL_DB_NAME:-WaslaProd_Central}
+label=${1:-FULL}
+sqlcmd=/opt/mssql-tools18/bin/sqlcmd
+
+die() { printf 'wasla-backup: %s\n' "$1" >&2; exit 2; }
+[[ $EUID -eq 0 ]] || die 'run with sudo.'
+[[ "$label" =~ ^[A-Za-z0-9_-]+$ ]] || die 'the label may contain letters, digits, - and _ only.'
+
+setting() { sed -n "s/^$1=\"\{0,1\}\([^\"]*\)\"\{0,1\}\$/\1/p" "$etc/operator.env"; }
+owner=$(setting WASLA_TENANT_SQL_LOGIN)
+login=$(setting WASLA_BACKUP_SQL_LOGIN)
+SQLCMDPASSWORD=$(setting WASLA_BACKUP_SQL_PASSWORD)
+export SQLCMDPASSWORD
+[[ -n "$owner" && -n "$login" && -n "$SQLCMDPASSWORD" ]] \
+  || die "WASLA_TENANT_SQL_LOGIN, WASLA_BACKUP_SQL_LOGIN and WASLA_BACKUP_SQL_PASSWORD must be set in $etc/operator.env."
+
+sql() { "$sqlcmd" -S tcp:127.0.0.1,1433 -U "$login" -N -C -b -h -1 -W -Q "SET NOCOUNT ON; $1"; }
+
+install -d -o mssql -g mssql -m 0750 "$dir"
+# Every tenant database is created by the tenant owner login, so a new tenant is included without a list to edit.
+# The backup login needs db_backupoperator in it (runbook); without it BACKUP fails and so does this job.
+mapfile -t databases < <(sql "SELECT name FROM sys.databases WHERE state_desc = 'ONLINE' AND (name = N'$central' OR owner_sid = SUSER_SID(N'$owner')) ORDER BY name;")
+[[ " ${databases[*]} " == *" $central "* ]] || die "$central is not online or not visible to $login."
+
+stamp=$(date +%Y%m%d_%H%M%S)
+failed=0
+for db in "${databases[@]}"; do
+  [[ "$db" =~ ^[A-Za-z0-9_]+$ ]] || { printf 'skipped unexpected database name\n' >&2; failed=1; continue; }
+  file="$dir/${db}_${label}_${stamp}.bak"
+  if sql "BACKUP DATABASE [$db] TO DISK = N'$file' WITH CHECKSUM, INIT, NAME = N'$db $label $stamp';" >/dev/null \
+     && sql "RESTORE VERIFYONLY FROM DISK = N'$file' WITH CHECKSUM;" >/dev/null \
+     && [[ -s "$file" && -r "$file" ]]; then
+    printf 'ok %s %s bytes %s\n' "$db" "$(stat -c %s "$file")" "$file"
+  else
+    printf 'FAILED %s\n' "$db" >&2
+    failed=1
+  fi
+done
+
+# Retention by file age, only for files this job writes.
+find "$dir" -maxdepth 1 -type f -name '*_FULL_*.bak' -mtime "+$retention_days" -print -delete
+
+(( failed == 0 )) || die 'one or more databases were not backed up and verified.'
+printf 'backed up and verified %d database(s) into %s\n' "${#databases[@]}" "$dir"
