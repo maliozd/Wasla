@@ -47,12 +47,15 @@ try {
     if (-not (Test-Path (Join-Path $out 'web/wwwroot'))) { throw 'The Web publish output has no wwwroot.' }
 
     Copy-Item (Join-Path $work 'scripts/release/migrate-before-start.sh') $out
-    New-Item -ItemType Directory -Force (Join-Path $out 'deploy') | Out-Null
-    Copy-Item -Recurse (Join-Path $work 'deploy/linux') (Join-Path $out 'deploy/linux')
+    # Releases from before deploy/linux existed still install; the host scripts come from the host setup.
+    if (Test-Path (Join-Path $work 'deploy/linux')) {
+        New-Item -ItemType Directory -Force (Join-Path $out 'deploy') | Out-Null
+        Copy-Item -Recurse (Join-Path $work 'deploy/linux') (Join-Path $out 'deploy/linux')
+    }
     $release = "commit=$Commit`npublished_utc=$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))`ndotnet_sdk=$((dotnet --version).Trim())`n"
     [IO.File]::WriteAllText((Join-Path $out 'RELEASE'), $release)
 
-    $crlf = Get-ChildItem (Join-Path $out 'migrate-before-start.sh'), (Join-Path $out 'deploy/linux/bin') -File -Recurse |
+    $crlf = Get-ChildItem (Join-Path $out 'migrate-before-start.sh'), (Join-Path $out 'deploy/linux/bin') -File -Recurse -ErrorAction SilentlyContinue |
         Where-Object { [IO.File]::ReadAllText($_.FullName).Contains("`r") }
     if ($crlf) { throw "CRLF line endings in: $($crlf.Name -join ', ')" }
 
