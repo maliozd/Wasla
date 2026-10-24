@@ -35,6 +35,13 @@ public sealed class TenantOnboardingOptions
     /// A further signup with that email is refused until one is completed, cancelled or expires. Values below 1 count as 1.
     /// </summary>
     public int MaxActivePendingRegistrationsPerOwnerEmail { get; set; } = 3;
+
+    /// <summary>
+    /// Whether the marketing host offers public signup (WAS-76). When false, <c>/signup</c> says that online registration
+    /// is not open yet and creates no registration, while existing registrations keep their status and checkout pages.
+    /// Deployments set it to false until a payment provider can complete a signup.
+    /// </summary>
+    public bool PublicSignupEnabled { get; set; } = true;
 }
 
 /// <summary>

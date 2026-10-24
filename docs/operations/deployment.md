@@ -99,7 +99,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them. DN
 - Health probes (`/health/live`, `/health/ready`) of Web and Api answer on any host name, so a probe may use the IP, `localhost` or the public host. Everything else treats `localhost` and IP addresses as invalid hosts outside Development: Central Admin (`/admin`) and the Print Bridge API answer only on the marketing, application and tenant hosts, signup and checkout only on the marketing host, and the proxy must therefore pass the public `Host` header for every non-probe request.
 - Wasla.Api resolves tenants under the same contract: only `{slug}.app.wasla.tr` is a tenant; any other host gets 404 "Tenant not found" without a CentralDb lookup.
 - The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
-- Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`. The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+- Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`, and `PublicSignupEnabled` (default `true`), which production sets to `false` until billing exists so that `/signup` says online registration is not open yet and creates nothing ([../architecture/tenancy.md](../architecture/tenancy.md#signup-and-checkout-access)). The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
 - The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
 - Cookies stay host-only: the tenant session, Central Admin session, antiforgery and signup-ownership cookies set no `Domain`, so a tenant's session is never sent to another tenant, to `app.wasla.tr` or to `wasla.tr`.
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
@@ -257,6 +257,7 @@ Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl 
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
+Wasla__TenantOnboarding__PublicSignupEnabled # Web: false in production until billing exists (default true); see tenancy.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters

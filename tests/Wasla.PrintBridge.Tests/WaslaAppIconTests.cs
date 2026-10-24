@@ -6,6 +6,7 @@ namespace Wasla.PrintBridge.Tests;
 /// The app window's icon is made from the canonical logo's first letter, with one image per common size so the
 /// title bar and the taskbar stay sharp at every display scale.
 /// </summary>
+[Collection(SharedLogoShapeCollection.Name)]
 public sealed class WaslaAppIconTests
 {
     private static readonly Color Orange = Color.FromArgb(0xE8, 0x73, 0x42);
