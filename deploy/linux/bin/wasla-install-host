@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# One-time, idempotent host preparation for Wasla on the single Ubuntu VDS (WAS-76). Run from an extracted release
+# archive or a checkout: sudo deploy/linux/bin/wasla-install-host
+#
+# Creates the wasla service account and the persistent directories, installs the operator scripts, the systemd
+# units and the Nginx site files (without enabling the HTTPS site), and leaves every secret file untouched.
+set -euo pipefail
+
+src=$(cd "$(dirname "$0")/.." && pwd)
+[[ $EUID -eq 0 ]] || { echo 'run with sudo.' >&2; exit 2; }
+
+id wasla >/dev/null 2>&1 || useradd --system --home-dir /var/lib/wasla --shell /usr/sbin/nologin --user-group wasla
+
+install -d -o root  -g root  -m 0755 /opt/wasla /opt/wasla/bin
+install -d -o root  -g wasla -m 0750 /opt/wasla/releases
+install -d -o root  -g root  -m 0700 /etc/wasla
+install -d -o wasla -g wasla -m 0750 /var/lib/wasla /var/log/wasla
+install -d -o wasla -g wasla -m 0700 /var/lib/wasla/keys /var/lib/wasla/keys/web /var/lib/wasla/keys/api
+install -d -o wasla -g wasla -m 0750 /var/log/wasla/web /var/log/wasla/api /var/log/wasla/worker
+install -d -o root  -g root  -m 0755 /var/www/letsencrypt
+
+for f in wasla-preflight wasla-cli wasla-install-release wasla-rollback wasla-backup wasla-first-setup; do
+  install -o root -g root -m 0755 "$src/bin/$f" "/opt/wasla/bin/$f"
+done
+for f in wasla-web.service wasla-api.service wasla-worker.service wasla-backup.service wasla-backup.timer; do
+  install -o root -g root -m 0644 "$src/systemd/$f" "/etc/systemd/system/$f"
+done
+install -o root -g root -m 0644 "$src/nginx/wasla-http.conf" /etc/nginx/sites-available/wasla-http
+install -o root -g root -m 0644 "$src/nginx/wasla-https.conf" /etc/nginx/sites-available/wasla-https
+systemctl daemon-reload
+
+for f in wasla.env secrets.env operator.env; do
+  if [[ -f "/etc/wasla/$f" ]]; then
+    chown root:root "/etc/wasla/$f"; chmod 0600 "/etc/wasla/$f"
+  else
+    printf 'missing /etc/wasla/%s: create it from deploy/linux/env/%s.example (root:root 0600).\n' "$f" "$f"
+  fi
+done
+echo 'Host prepared. Units are installed but not enabled; see docs/operations/linux-vds-runbook.md.'

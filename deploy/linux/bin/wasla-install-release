@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Installs a published Wasla release side by side, migrates every database through the release gate with the
+# release's own CLI, and only then switches /opt/wasla/current and starts Web, Api and Worker (WAS-76/78).
+#
+#   sudo wasla-install-release [--no-start] <release.tar.gz> <40-character commit SHA>
+#
+# --no-start switches current after a successful gate but leaves the services stopped (first deployment: the
+# Central Admin, the first tenant and the initial backup come before the first start).
+#
+# The archive comes from deploy/linux/publish-release.ps1 and contains web/, api/, worker/, cli/, RELEASE and
+# migrate-before-start.sh. A release directory is never overwritten; a failed gate leaves the services stopped.
+set -euo pipefail
+
+root=${WASLA_ROOT:-/opt/wasla}
+services=(wasla-web wasla-api wasla-worker)
+
+die() { printf 'wasla-install-release: %s\n' "$1" >&2; exit "${2:-2}"; }
+
+[[ $EUID -eq 0 ]] || die 'run with sudo.'
+start=true
+if [[ "${1:-}" == --no-start ]]; then start=false; shift; fi
+(( $# == 2 )) || die 'usage: wasla-install-release [--no-start] <release.tar.gz> <commit-sha>'
+archive=$1
+sha=$2
+[[ -f "$archive" ]] || die "$archive not found."
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || die 'the commit SHA must be 40 lowercase hexadecimal characters.'
+
+dest="$root/releases/$sha"
+[[ ! -e "$dest" ]] || die "$dest already exists; releases are immutable. Use wasla-rollback to switch to it."
+
+incoming=$(mktemp -d "$root/releases/.incoming-$sha.XXXXXX")
+trap 'rm -rf -- "$incoming"' EXIT
+tar -xzf "$archive" -C "$incoming" --no-same-owner
+
+[[ "$(sed -n 's/^commit=//p' "$incoming/RELEASE")" == "$sha" ]] || die 'RELEASE does not name this commit.'
+for f in web/Wasla.Web.dll api/Wasla.Api.dll worker/Wasla.Worker.dll cli/Wasla.Cli.dll migrate-before-start.sh; do
+  [[ -f "$incoming/$f" ]] || die "the archive has no $f."
+done
+[[ -d "$incoming/web/wwwroot" ]] || die 'the archive has no web/wwwroot.'
+for p in web api worker cli; do
+  [[ -f "$incoming/$p/appsettings.json" ]] || die "the archive has no $p/appsettings.json."
+done
+if grep -l $'\r' "$incoming/migrate-before-start.sh" >/dev/null; then die 'migrate-before-start.sh has CRLF line endings.'; fi
+
+chown -R root:wasla "$incoming"
+find "$incoming" -type d -exec chmod 0750 {} +
+find "$incoming" -type f -exec chmod 0640 {} +
+chmod 0750 "$incoming/migrate-before-start.sh"
+mv -T "$incoming" "$dest"
+trap - EXIT
+chmod 0750 "$dest"
+printf 'Installed %s\n' "$dest"
+
+previous=$(readlink -f "$root/current" 2>/dev/null || true)
+
+# Stop the previous version before migrating: some migrations require it (docs/operations/deployment.md).
+systemctl stop "${services[@]}"
+
+# migrate-central, migrate-all-tenants, migration-status --require-current; any failure stops the rollout here.
+if ! "$root/bin/wasla-cli" --operator --release "$dest" --gate; then
+  printf '\nThe migration gate failed. Web, Api and Worker stay stopped; %s still points at %s.\n' \
+    "$root/current" "${previous:-nothing}" >&2
+  printf 'Fix the failed databases and run this command again, or restore from backup (see the runbook).\n' >&2
+  printf 'Do not start the previous version unless this release'"'"'s migrations are known to be compatible with it.\n' >&2
+  exit 1
+fi
+
+[[ -z "$previous" ]] || printf '%s\n' "$(basename "$previous")" > "$root/previous-release"
+ln -sfn "releases/$sha" "$root/current.new"
+mv -T "$root/current.new" "$root/current"
+printf '%s now points at %s\n' "$root/current" "$dest"
+
+if ! $start; then
+  printf 'Release %s is installed and current; services left stopped (--no-start).\n' "$sha"
+  exit 0
+fi
+systemctl start "${services[@]}"
+for url in http://127.0.0.1:5200/health/ready http://127.0.0.1:5201/health/ready; do
+  ok=false
+  for _ in $(seq 1 30); do
+    if curl -fsS -o /dev/null --max-time 5 "$url"; then ok=true; break; fi
+    sleep 2
+  done
+  $ok || die "$url did not become ready; check journalctl -u wasla-web -u wasla-api." 1
+  printf 'ready: %s\n' "$url"
+done
+systemctl is-active --quiet wasla-worker || die 'wasla-worker is not active; check journalctl -u wasla-worker.' 1
+printf 'Release %s is running.\n' "$sha"

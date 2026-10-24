@@ -1,0 +1,47 @@
+# Wasla.Api on the single Linux VDS (WAS-76). Loopback only and not published by Nginx: the API answers tenant
+# JSON only on {slug}.app.wasla.tr, the hosts Web already serves, and Print Bridge uses Web. Kept running so its
+# health and its internal channel to Web are exercised; expose it only with a reviewed Nginx change.
+[Unit]
+Description=Wasla Api (JSON API, loopback only)
+After=network-online.target mssql-server.service wasla-web.service
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=exec
+User=wasla
+Group=wasla
+EnvironmentFile=/etc/wasla/wasla.env
+EnvironmentFile=/etc/wasla/secrets.env
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5201
+Environment=DataProtection__KeyPath=/var/lib/wasla/keys/api
+Environment=WASLA_PROCESS=api
+# Serilog writes logs/wasla-api-*.log relative to the working directory.
+WorkingDirectory=/var/log/wasla/api
+ExecStartPre=/opt/wasla/bin/wasla-preflight api
+ExecStartPre=/usr/bin/dotnet /opt/wasla/current/cli/Wasla.Cli.dll migration-status --require-current
+ExecStart=/usr/bin/dotnet /opt/wasla/current/api/Wasla.Api.dll --contentRoot /opt/wasla/current/api
+Restart=on-failure
+RestartSec=10
+KillSignal=SIGTERM
+TimeoutStartSec=120
+TimeoutStopSec=40
+SyslogIdentifier=wasla-api
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/wasla/keys/api /var/log/wasla/api
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

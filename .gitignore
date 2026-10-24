@@ -407,3 +407,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Linux deployment scripts and name-only environment examples (WAS-76); real environment files stay ignored.
+!deploy/linux/bin/
+!deploy/linux/env/*.env.example

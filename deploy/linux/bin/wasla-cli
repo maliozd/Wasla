@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Runs the installed release's Wasla.Cli as the wasla account with the production environment (WAS-76/78).
+#
+#   sudo wasla-cli [--operator] [--release DIR] [--prompt OPTION LABEL]... [--tenant-sql-auth] -- COMMAND [ARGS...]
+#   sudo wasla-cli --operator [--release DIR] --gate
+#
+# --operator         CentralDb as waslaprod_migrator and the tenant SQL Server from /etc/wasla/operator.env.
+# --release DIR      Use the CLI of DIR (a directory under /opt/wasla/releases) instead of /opt/wasla/current.
+# --prompt OPT LABEL Ask for OPT's value on the terminal without echo (twice), and pass it through a response file
+#                    in /run that only the wasla account can read and that is removed on exit. The value never
+#                    reaches the command line, the shell history or a log. Example: --prompt --password "Owner password"
+# --tenant-sql-auth  Pass --sql-auth for the tenant database owner from operator.env the same way.
+# --gate             Run the release's migrate-before-start.sh (migrate-central, migrate-all-tenants,
+#                    migration-status --require-current) instead of one command; it exits non-zero on any failure.
+set -euo pipefail
+
+etc=${WASLA_ETC:-/etc/wasla}
+root=${WASLA_ROOT:-/opt/wasla}
+release="$root/current"
+operator=false
+tenant_sql_auth=false
+gate=false
+prompts=()
+
+die() { printf 'wasla-cli: %s\n' "$1" >&2; exit 2; }
+
+while (( $# > 0 )); do
+  case "$1" in
+    --operator) operator=true; shift ;;
+    --release) [[ $# -ge 2 ]] || die '--release needs a directory.'; release=$2; shift 2 ;;
+    --prompt) [[ $# -ge 3 ]] || die '--prompt needs an option and a label.'; prompts+=("$2" "$3"); shift 3 ;;
+    --tenant-sql-auth) tenant_sql_auth=true; shift ;;
+    --gate) gate=true; shift ;;
+    --) shift; break ;;
+    *) die "unknown option $1 (put the CLI command after --)." ;;
+  esac
+done
+if $gate; then
+  (( $# == 0 && ${#prompts[@]} == 0 )) && ! $tenant_sql_auth || die '--gate takes no command, --prompt or --tenant-sql-auth.'
+  $operator || die '--gate needs --operator (migrate-central runs as the migrator).'
+else
+  (( $# > 0 )) || die 'no CLI command given after --.'
+fi
+[[ $EUID -eq 0 ]] || die 'run with sudo: the environment files are readable by root only.'
+
+cli="$(readlink -f "$release")/cli/Wasla.Cli.dll"
+[[ -f "$cli" ]] || die "no Wasla.Cli.dll under $release/cli."
+
+# The files are parsed, never sourced: values are taken literally, one KEY="value" per line.
+load_env() {
+  local file=$1 line name val
+  [[ -f "$file" ]] || die "$file is missing."
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    name=${line%%=*}
+    val=${line#*=}
+    [[ "$name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "$file has a line that is not KEY=value."
+    if [[ "$val" == \"*\" && ${#val} -ge 2 ]]; then val=${val:1:${#val}-2}; fi
+    export "$name=$val"
+  done < "$file"
+}
+
+load_env "$etc/wasla.env"
+load_env "$etc/secrets.env"
+if $operator || $tenant_sql_auth; then
+  load_env "$etc/operator.env"
+fi
+if $operator; then
+  [[ -n "${WASLA_MIGRATOR_CENTRAL_DB:-}" ]] || die 'WASLA_MIGRATOR_CENTRAL_DB is not set in operator.env.'
+  export ConnectionStrings__CentralDb="$WASLA_MIGRATOR_CENTRAL_DB"
+else
+  unset TenantDb__ServerInstance
+fi
+
+rsp=""
+cleanup() { [[ -z "$rsp" ]] || rm -f -- "$rsp"; }
+trap cleanup EXIT
+
+add_token() {
+  local token=$1
+  [[ "$token" != *\"* && "$token" != *$'\n'* && "$token" != @* ]] \
+    || die 'a value may not contain double quotes or line breaks, or start with @.'
+  printf '"%s"\n' "$token" >> "$rsp"
+}
+
+if (( ${#prompts[@]} > 0 )) || $tenant_sql_auth; then
+  rsp=$(mktemp /run/wasla-cli.XXXXXXXX)
+  chmod 600 "$rsp"
+  chown wasla:wasla "$rsp"
+  for (( i = 0; i < ${#prompts[@]}; i += 2 )); do
+    option=${prompts[i]}
+    label=${prompts[i+1]}
+    read -r -s -p "$label: " first < /dev/tty; printf '\n' > /dev/tty
+    read -r -s -p "$label (again): " second < /dev/tty; printf '\n' > /dev/tty
+    [[ -n "$first" ]] || die "$label is empty."
+    [[ "$first" == "$second" ]] || die "$label: the two entries differ."
+    add_token "$option"
+    add_token "$first"
+    unset first second
+  done
+  if $tenant_sql_auth; then
+    [[ -n "${WASLA_TENANT_SQL_LOGIN:-}" && -n "${WASLA_TENANT_SQL_PASSWORD:-}" ]] \
+      || die 'WASLA_TENANT_SQL_LOGIN and WASLA_TENANT_SQL_PASSWORD must be set in operator.env.'
+    add_token --sql-auth
+    add_token "sql:$WASLA_TENANT_SQL_LOGIN:$WASLA_TENANT_SQL_PASSWORD"
+  fi
+  set -- "$@" "@$rsp"
+fi
+unset WASLA_MIGRATOR_CENTRAL_DB WASLA_TENANT_SQL_PASSWORD
+
+export HOME=/var/lib/wasla
+cd /var/lib/wasla
+as_wasla() { setpriv --reuid=wasla --regid=wasla --init-groups -- "$@"; }
+if $gate; then
+  gate_script="$(readlink -f "$release")/migrate-before-start.sh"
+  [[ -f "$gate_script" ]] || die "no migrate-before-start.sh in $release."
+  as_wasla /bin/bash "$gate_script" "$cli" -- /bin/true
+  exit
+fi
+# Not exec: the response file is removed after the CLI exits.
+as_wasla /usr/bin/dotnet "$cli" "$@"
