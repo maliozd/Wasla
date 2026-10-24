@@ -8,10 +8,24 @@ using static Wasla.PrintBridge.Tests.WebShell.WebShellTestSupport;
 namespace Wasla.PrintBridge.Tests;
 
 /// <summary>
+/// Test classes that use the process-wide embedded logo (<see cref="WaslaLogoShape.Instance"/>), directly through
+/// <see cref="WaslaLogo.Draw"/> or through the icon <see cref="WaslaAppIcon.Instance"/> builds from it. Its paths are
+/// GDI+ objects, which are not thread-safe: drawing with them while the icon is built from them throws "Object is
+/// currently in use elsewhere", and the icon's Lazy keeps that exception (#61). The application uses them on its
+/// one UI thread; in this collection the classes run one after another, and in parallel with every other collection.
+/// </summary>
+[CollectionDefinition(Name)]
+public sealed class SharedLogoShapeCollection
+{
+    public const string Name = "Shared embedded logo shape";
+}
+
+/// <summary>
 /// Print Bridge ships the canonical Wasla logo owned by Wasla.Web (linked, not copied): the same bytes go to
 /// shell-ui for the WebView2 page and into the assembly for the native windows, the geometry is read exactly as
 /// the SVG defines it, and the wordmark is never drawn back to front in a right-to-left window.
 /// </summary>
+[Collection(SharedLogoShapeCollection.Name)]
 public sealed class WaslaLogoTests
 {
     private const uint LayoutRtl = 0x00000001;
