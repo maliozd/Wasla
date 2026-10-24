@@ -45,7 +45,7 @@ For every release that contains a CentralDb or TenantDb migration:
 3. If any step exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun the gate until it succeeds. A failed start command also returns non-zero. Do not manually start the new version after a failed gate.
 4. Record the CLI's per-database results and the version being deployed. If schema changes are incompatible with the previous binaries, keep them stopped during repair. Do not assume that rolling back application binaries rolls back a partly applied migration; use the release-specific recovery plan and verified backup.
 
-The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. The actual systemd units and start command belong to WAS-76. The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
+The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. On the Linux VDS, `deploy/linux/bin/wasla-install-release` runs this gate with the release's own CLI before it switches `/opt/wasla/current` and starts the services, and every unit runs `migration-status --require-current` again before each start ([linux-vds-runbook.md](linux-vds-runbook.md)). The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
 
 Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release entry point must enforce it.
 
@@ -87,7 +87,7 @@ Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Emai
 
 ## Domains and HTTPS
 
-Wasla Orders uses three host roles (WAS-66). The application implements them; the production domain is not live yet, and DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS belong to WAS-76.
+Wasla Orders uses three host roles (WAS-66). The application implements them. DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS for the single-VDS deployment are in [linux-vds-runbook.md](linux-vds-runbook.md).
 
 | Role | Host | Setting |
 |------|------|---------|
@@ -105,7 +105,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them; th
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
 
-**Expected DNS and TLS shape (WAS-76, not applied by this repository):**
+**Expected DNS and TLS shape:**
 
 | Record | Points to |
 |--------|-----------|
@@ -114,7 +114,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them; th
 | `app.wasla.tr` | The Web server (application entry) |
 | `*.app.wasla.tr` | The Web server (tenant hosts) |
 
-The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment.
+The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment. Until the DNS provider supports automated DNS-01 validation, the pilot uses one HTTP-01 certificate that names each tenant host; every new tenant host is added to it ([linux-vds-runbook.md](linux-vds-runbook.md#tls-certificate)).
 
 Useful URL overrides (env `__` form):
 
@@ -127,7 +127,7 @@ Do not leave production pointing at `localhost` or LocalDB.
 
 ## Reverse proxy and client address
 
-The repository contains no reverse-proxy configuration. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
+The Nginx configuration of the single-VDS deployment is `deploy/linux/nginx/wasla-https.conf`. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
 
 | Key | Meaning |
 |-----|---------|

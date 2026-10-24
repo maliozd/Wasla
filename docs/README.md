@@ -30,6 +30,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [operations/cli.md](operations/cli.md) | CLI commands and destructive guards |
 | [operations/migrations.md](operations/migrations.md) | Central vs tenant EF |
 | [operations/deployment.md](operations/deployment.md) | Hosts, keys, config |
+| [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md) | Single Ubuntu server: systemd units, Nginx, paths, SQL identities, first deployment, update, rollback, backups (`deploy/linux/`) |
 | [operations/observability.md](operations/observability.md) | Logs, trace id, health |
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
 | [operations/testing.md](operations/testing.md) | What to run, and what not to claim |
@@ -60,7 +61,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | Billing, subscriptions, payment provider | [architecture/billing.md](architecture/billing.md), [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
 | CLI | [operations/cli.md](operations/cli.md), [architecture/tenancy.md](architecture/tenancy.md) |
 | Migrations | [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
-| Deploy or config | [operations/deployment.md](operations/deployment.md), [operations/observability.md](operations/observability.md) |
+| Deploy or config | [operations/deployment.md](operations/deployment.md), [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md), [operations/observability.md](operations/observability.md) |
 | Central Admin tenant operations | [operations/tenant-operations-center.md](operations/tenant-operations-center.md), [architecture/authentication.md](architecture/authentication.md) |
 | Visual UI | [frontend/architecture.md](frontend/architecture.md), [frontend/design-system.md](frontend/design-system.md) |
 | Copy or RTL | [frontend/architecture.md](frontend/architecture.md) |
