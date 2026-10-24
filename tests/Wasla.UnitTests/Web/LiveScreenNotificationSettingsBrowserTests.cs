@@ -22,6 +22,13 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         window.__permissionRequests = 0;
         window.__modalShown = 0;
         window.__modalHidden = 0;
+        // Snapshots the Live Screen has rendered. The first one fills the settings menu's automation status and the
+        // training panel's real-order line and practice-order button, which moves the controls below them.
+        window.__liveRendered = 0;
+        document.addEventListener('wasla:live-rendered', function () { window.__liveRendered++; });
+        // What each real click landed on, so a click that missed its target says so.
+        window.__clicked = null;
+        document.addEventListener('click', function (e) { window.__clicked = e.target; }, true);
         // Bootstrap ignores a close while the modal still fades in; the test acts once it is fully shown or hidden.
         document.addEventListener('shown.bs.modal', function (e) { if (e.target.id === 'notificationSettingsModal') window.__modalShown++; });
         document.addEventListener('hidden.bs.modal', function (e) { if (e.target.id === 'notificationSettingsModal') window.__modalHidden++; });
@@ -35,6 +42,12 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
           Object.defineProperty(window, 'Notification', { configurable: true, writable: true, value: FakeNotification });
         })();
         """;
+
+    /// <summary>
+    /// The page has rendered its first Live Screen snapshot (its own <c>wasla:live-rendered</c> event). Until then the
+    /// controls the test clicks can still move.
+    /// </summary>
+    private const string SnapshotRendered = "window.__liveRendered >= 1";
 
     private static string ModalOpen(int times) =>
         "(() => { const m = document.getElementById('notificationSettingsModal'); return !!m && m.classList.contains('show') " +
@@ -81,7 +94,7 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         // that page arrives, so a live update can already show the note on the page being left; the marker makes the test
         // act only on the new page, never on one that is about to be replaced.
         await browser.EvaluateAsync<bool>("(window.__leftForPractice = true)", ct);
-        await ClickAsync(browser, "[data-guided-training] [data-training-when='intro'] button[type=submit]", ct);
+        await ClickAsync(browser, "[data-guided-training] [data-training-when='intro'] button[type=submit]", ct, navigates: true);
         Assert.True(await WaitAcrossNavigationAsync(browser,
                 "(() => { const n = document.querySelector('[data-training-notifications]'); return !window.__leftForPractice " +
                 "&& document.readyState === 'complete' && !!n && !n.hidden " +
@@ -90,6 +103,9 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
             $"The practice-order step and its notification note are not shown on the reloaded Live Screen. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync(
             "!!(window.WaslaOrders && window.WaslaOrders.state && window.WaslaOrders.state.notificationSettings)", Wait, ct));
+        // The reloaded page's first snapshot shows the real-order line and the practice-order button above the note.
+        Assert.True(await browser.WaitForAsync(SnapshotRendered, Wait, ct),
+            $"The reloaded Live Screen did not render its first snapshot. {host.ServerErrors}");
 
         await ClickAsync(browser, "[data-training-notifications] [data-notification-settings-open]", ct);
         Assert.True(await browser.WaitForAsync(ModalOpen(1), Wait, ct),
@@ -135,11 +151,18 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
             Assert.True(await started.WaitForAsync(
                 "!!(window.WaslaOrders.state && window.WaslaOrders.state.notificationSettings)", Wait, ct),
                 $"The Live Screen did not load the user's notification settings. {host.ServerErrors}");
+            // The settings are read before the first snapshot is requested, and that snapshot fills the settings menu's
+            // automation status (with the pending-setup line above its notification settings entry).
+            Assert.True(await started.WaitForAsync(SnapshotRendered, Wait, ct),
+                $"The Live Screen did not render its first snapshot. {host.ServerErrors}");
         });
     }
 
-    /// <summary>A real mouse click at the centre of the first visible match, after checking nothing covers it.</summary>
-    private static async Task ClickAsync(HeadlessChromium browser, string selector, CancellationToken ct)
+    /// <summary>
+    /// A real mouse click at the centre of the first visible match, after checking nothing covers it, and then that the
+    /// click reached it. A click that leaves the page (a form post) is not followed onto the next document.
+    /// </summary>
+    private static async Task ClickAsync(HeadlessChromium browser, string selector, CancellationToken ct, bool navigates = false)
     {
         var target = await browser.EvaluateAsync<JsonElement>($$"""
             (() => {
@@ -150,14 +173,33 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
               const r = e.getBoundingClientRect();
               const x = r.left + r.width / 2, y = r.top + r.height / 2;
               const hit = document.elementFromPoint(x, y);
-              return { found: true, x, y, hit: !!hit && e.contains(hit),
-                       at: hit ? hit.tagName.toLowerCase() + (hit.id ? '#' + hit.id : '') + [...hit.classList].slice(0, 3).map(c => '.' + c).join('') : 'nothing' };
+              window.__clickTarget = e;
+              window.__clicked = null;
+              return { found: true, x, y, hit: !!hit && e.contains(hit), at: {{Describe("hit")}}, rendered: window.__liveRendered };
             })()
             """, ct);
         Assert.True(target.GetProperty("found").GetBoolean(), $"{selector} is not on the page.");
         Assert.True(target.GetProperty("hit").GetBoolean(), $"{selector} is covered by {target.GetProperty("at").GetString()}.");
-        await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), target.GetProperty("y").GetDouble(), ct);
+        var y = target.GetProperty("y").GetDouble();
+        await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), y, ct);
+        if (navigates)
+            return;
+
+        // The click must have reached the control it aimed at; content that moved it in the meantime fails here, by name.
+        var landed = await browser.EvaluateAsync<JsonElement>($$"""
+            (() => {
+              const e = window.__clickTarget, c = window.__clicked, r = e.getBoundingClientRect();
+              return { ok: !!c && e.contains(c), at: {{Describe("c")}}, y: r.top + r.height / 2, rendered: window.__liveRendered };
+            })()
+            """, ct);
+        Assert.True(landed.GetProperty("ok").GetBoolean(),
+            $"The click aimed at {selector} (y {y:0}, {target.GetProperty("rendered").GetInt32()} snapshots rendered) landed on " +
+            $"{landed.GetProperty("at").GetString()}; the control is now at y {landed.GetProperty("y").GetDouble():0} " +
+            $"({landed.GetProperty("rendered").GetInt32()} snapshots rendered).");
     }
+
+    private static string Describe(string node) =>
+        $"({node} ? {node}.tagName.toLowerCase() + ({node}.id ? '#' + {node}.id : '') + [...{node}.classList].slice(0, 3).map(c => '.' + c).join('') : 'nothing')";
 
     /// <summary>Like WaitForAsync, but tolerates the moments of a navigation when the page cannot be evaluated.</summary>
     private static async Task<bool> WaitAcrossNavigationAsync(HeadlessChromium browser, string expression, CancellationToken ct)
