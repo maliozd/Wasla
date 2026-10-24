@@ -91,7 +91,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them. DN
 
 | Role | Host | Setting |
 |------|------|---------|
-| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which WAS-76 redirects to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
+| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which the proxy redirects permanently to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
 | Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
 | Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
 
@@ -147,7 +147,7 @@ The process refuses to start when:
 
 At startup each process logs either "No trusted proxies configured…" or the number of trusted proxies and networks.
 
-If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api (production proxy decisions: WAS-77). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
+If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api; the single-VDS deployment lists its local Nginx as `127.0.0.1` ([linux-vds-runbook.md](linux-vds-runbook.md)). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
 
 ## Provider mode
 
@@ -205,7 +205,7 @@ The `Host` and forwarded headers are the same as for every other location ([Reve
 | Variable | Value |
 |----------|-------|
 | `Realtime__Internal__Port` | A free local port, for example `5290`. Web listens on `127.0.0.1` only; do not open it in the firewall or the proxy. |
-| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (WAS-77); never commit it. |
+| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (on the Linux VDS, `/etc/wasla/secrets.env`); never commit it. |
 | `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
 | `Realtime__Internal__Disabled` | Only for an environment that is polling-only on purpose: `true`, with no `Port`. Set it for Web, Worker and Api. |
 
@@ -257,7 +257,7 @@ Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl 
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
-Wasla__TenantOnboarding__PublicSignupEnabled # Web: false in production until billing exists (default true); see tenancy.md
+Wasla__TenantOnboarding__PublicSignupEnabled # Web reads it: false in production until billing exists (default true); the Linux VDS preflight requires false for every process; see tenancy.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters
