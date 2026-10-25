@@ -203,7 +203,7 @@ Each test writes its sizes, durations, send-time percentiles and the test proces
 
 `OrderActionConcurrencySqlServerTests` (WAS-104) and `OrderSyncStatusRaceSqlServerTests` (WAS-123) need a real SQL Server, because SQLite does not run application locks and does not prove SQL Server locking. Each test class creates a throwaway database named `Wasla_ConcurrencyTest_<random>`, applies this build's tenant migrations, and drops only that database afterwards; no existing database is read or changed.
 
-The server is the `WASLA_TEST_SQLSERVER` environment variable (an instance name such as `(localdb)\WaslaTests`, not a connection string), otherwise `(localdb)\MSSQLLocalDB`, which CI uses. They run with the rest of `Wasla.UnitTests`. Without a reachable SQL Server they fail rather than skip. To keep them off a developer's own LocalDB instance, create a separate one first:
+The server is the `WASLA_TEST_SQLSERVER` environment variable (an instance name such as `(localdb)\WaslaTests`, not a connection string), otherwise `(localdb)\MSSQLLocalDB`, which CI uses. They run with the rest of `Wasla.UnitTests`. Without a reachable SQL Server they fail rather than skip. Before the tests, CI's "Start and verify SQL Server LocalDB" step starts `MSSQLLocalDB` with `sqllocaldb start` and runs one query against it, so no test fixture pays LocalDB's first-connection start, which on a busy runner outlasted a fixture's 60-second connect timeout (#69); if LocalDB cannot start, that step fails instead of the tests. To keep them off a developer's own LocalDB instance, create a separate one first:
 
 ```powershell
 sqllocaldb create WaslaTests
