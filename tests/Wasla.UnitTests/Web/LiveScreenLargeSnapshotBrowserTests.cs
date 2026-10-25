@@ -113,7 +113,10 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
             })()
             """, ct);
 
-        Assert.Equal(LargeActiveOrderSeed.ActiveOrders.ToString(CultureInfo.InvariantCulture), page.GetProperty("active").GetString());
+        // The header's active count is every active order, in the page culture's digits and grouping.
+        var activeText = await browser.EvaluateAsync<string>(
+            $"new Intl.NumberFormat(document.documentElement.lang).format({LargeActiveOrderSeed.ActiveOrders})", ct);
+        Assert.Equal(activeText, page.GetProperty("active").GetString());
         Assert.Equal(NewColumn.ToString(CultureInfo.InvariantCulture), page.GetProperty("newCount").GetString());
         Assert.Equal(PageSize, page.GetProperty("newRendered").GetInt32());
         // No recently delivered order: it would leave the screen by itself during the class (see LargeActiveOrderSeed).
@@ -184,8 +187,7 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
             Assert.Equal(rendered.GetProperty("count").GetInt32(), rendered.GetProperty("unique").GetInt32());
             Assert.Equal(2 * PageSize, await browser.EvaluateAsync<int>(
                 $"document.querySelectorAll('#ordersLiveScreenHost [data-board-column=\"new\"] [data-board-list] > [data-order-id]').length", ct));
-            Assert.Equal(LargeActiveOrderSeed.ActiveOrders.ToString(CultureInfo.InvariantCulture),
-                await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveCount').textContent", ct));
+            Assert.Equal(activeText, await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveCount').textContent", ct));
         }
 
         // The "showing x of y" line stays readable in the page's theme.
@@ -283,7 +285,7 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
             """, ct);
         Assert.False(failed.GetProperty("applied").GetBoolean());
         Assert.Equal(before, failed.GetProperty("cards").GetInt32());
-        Assert.Equal(LargeActiveOrderSeed.ActiveOrders.ToString(CultureInfo.InvariantCulture), failed.GetProperty("active").GetString());
+        Assert.Equal(LargeActiveOrderSeed.ActiveOrders.ToString("N0", CultureInfo.GetCultureInfo("en-US")), failed.GetProperty("active").GetString());
         Assert.True(failed.GetProperty("shown").GetBoolean(), "the failure is announced");
         Assert.Equal(Resource("en-US", "Orders.LiveScreen.ConnectionStale"), failed.GetProperty("text").GetString());
 

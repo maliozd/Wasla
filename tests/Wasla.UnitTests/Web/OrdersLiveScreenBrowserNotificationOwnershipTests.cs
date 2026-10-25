@@ -74,11 +74,16 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
         var training = Read("Areas", "Tenant", "Views", "Orders", "_GuidedTrainingPanel.cshtml");
         var modal = Read("Areas", "Tenant", "Views", "NotificationSettings", "_NotificationSettingsModal.cshtml");
 
-        var menu = liveView[liveView.IndexOf("id=\"ordersLiveDisplaySettingsMenu\"", StringComparison.Ordinal)..liveView.IndexOf("id=\"ordersLiveDisplayStopSound\"", StringComparison.Ordinal)];
+        var menu = liveView[liveView.IndexOf("id=\"ordersLiveDisplaySettingsMenu\"", StringComparison.Ordinal)..liveView.IndexOf("class=\"wasla-live-display-brand\"", StringComparison.Ordinal)];
         var entry = menu.IndexOf("data-notification-settings-open", StringComparison.Ordinal);
         Assert.True(entry >= 0, "The settings menu has no notification settings entry.");
-        // Every Live Screen user changes their own preferences; only "Manage settings" needs the order-settings policy.
-        Assert.True(entry < menu.IndexOf("navPermissions.CanManageOrderSettings", StringComparison.Ordinal));
+        // Every Live Screen user changes their own preferences; only the automation group's order-settings link needs
+        // the order-settings policy, so the notification entry is outside that block (it sits in the Notifications group).
+        var gate = menu.IndexOf("@if (navPermissions.CanManageOrderSettings)", StringComparison.Ordinal);
+        var gateEnd = menu.IndexOf("</a>", gate, StringComparison.Ordinal);
+        Assert.True(gate >= 0 && gateEnd > gate);
+        Assert.True(entry > gateEnd);
+        Assert.True(entry > menu.IndexOf("id=\"ordersLiveSettingsNotificationsHeading\"", StringComparison.Ordinal));
         // The existing shell, modal and save endpoint; no second modal on the page.
         Assert.Equal(1, CountOccurrences(liveView, "@await Html.PartialAsync(\"_NotificationSettingsModalShell\")"));
         Assert.DoesNotContain("id=\"notificationSettingsModal\"", liveView, StringComparison.Ordinal);

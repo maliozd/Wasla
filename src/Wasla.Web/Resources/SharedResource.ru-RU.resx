@@ -4610,7 +4610,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} закрыт</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>КУХНЯ · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Цены тарифов</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цены не изменяются: запланируйте новую цену с более поздней даты.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цену, которая ещё не используется ни в одной подписке, можно исправить; цена, которая уже используется, не изменяется, и вместо неё планируется новая цена с более поздней даты.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Действующие цены</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Тариф</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Период оплаты</value></data>
@@ -4682,4 +4682,25 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / месяц</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / год</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>Годовая оплата на {0} меньше 12 ежемесячных платежей.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>Удалить соединение с платформой?</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>Удаление этого соединения останавливает синхронизацию его заказов. Wasla больше не будет получать заказы этого магазина.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>Уже импортированные заказы останутся в Wasla. Позже вы сможете снова подключить эту платформу и магазин.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>Соединение с платформой удалено. Синхронизация его заказов остановлена.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>Этого соединения с платформой больше нет. Ничего не изменено.</value>
+  </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} ещё</value>
+  </data>
 </root>

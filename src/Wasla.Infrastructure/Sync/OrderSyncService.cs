@@ -364,7 +364,16 @@ public sealed class OrderSyncService : IOrderSyncService
         {
             // Saved before any provider call, so no unsaved tenant change is held while the request limiter waits.
             connection.LastSyncAttempt = nowUtc;
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            try
+            {
+                await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // A connection has no concurrency token, so the update found no row: it was removed after this pass
+                // loaded it. Nothing was fetched; the pass goes on with the tenant's other connections.
+                return RemovedDuringSync(customerId, db, connection, syncLog: null, swConn);
+            }
         }
 
         var syncLog = new SyncLog
@@ -589,7 +598,8 @@ public sealed class OrderSyncService : IOrderSyncService
             syncLog.FinishedAt = DateTime.UtcNow;
             syncLog.ErrorMessage = SanitizeErrorMessage(ex);
 
-            await RecordFailureAsync(customerId, db, connection, syncLog, ex, ct).ConfigureAwait(false);
+            if (!await RecordFailureAsync(customerId, db, connection, syncLog, ex, ct).ConfigureAwait(false))
+                return RemovedDuringSync(customerId, db, connection, syncLog, swConn);
 
             swConn.Stop();
             _logger.LogError(
@@ -633,10 +643,45 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     /// <summary>
-    /// Saves the failure report through a new context of the same tenant, so it can write only the
-    /// <see cref="SyncLog"/>, the <see cref="IntegrationError"/> and the connection's failure counters.
+    /// The operator removed the connection while this pass was syncing it (an update of its row found none). Orders the
+    /// pass already stored stay; no failure is recorded for a connection that no longer exists, and the pass stops
+    /// tracking it so no later save of the pass touches it.
     /// </summary>
-    private async Task RecordFailureAsync(
+    private OrderSyncConnectionResult RemovedDuringSync(
+        Guid customerId,
+        TenantDbContext db,
+        PlatformConnection connection,
+        SyncLog? syncLog,
+        Stopwatch swConn)
+    {
+        db.Entry(connection).State = EntityState.Detached;
+        swConn.Stop();
+        _logger.LogInformation(
+            "Platform connection was removed during sync; nothing more is recorded for it. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}",
+            customerId,
+            connection.Id,
+            connection.Platform);
+
+        return new OrderSyncConnectionResult(
+            customerId,
+            connection.Id,
+            connection.Platform,
+            connection.StoreId,
+            syncLog?.OrdersFetched ?? 0,
+            syncLog?.OrdersInserted ?? 0,
+            syncLog?.OrdersUpdated ?? 0,
+            0,
+            0,
+            IsFailed: false)
+        { ElapsedMs = swConn.ElapsedMilliseconds };
+    }
+
+    /// <summary>
+    /// Saves the failure report through a new context of the same tenant, so it can write only the
+    /// <see cref="SyncLog"/>, the <see cref="IntegrationError"/> and the connection's failure counters. False, with
+    /// nothing written, when the connection was removed meanwhile.
+    /// </summary>
+    private async Task<bool> RecordFailureAsync(
         Guid customerId,
         TenantDbContext db,
         PlatformConnection connection,
@@ -646,8 +691,10 @@ public sealed class OrderSyncService : IOrderSyncService
     {
         await using var report = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
         var stored = await report.PlatformConnections
-            .SingleAsync(c => c.Id == connection.Id, ct)
+            .SingleOrDefaultAsync(c => c.Id == connection.Id, ct)
             .ConfigureAwait(false);
+        if (stored is null)
+            return false;
 
         stored.ConsecutiveFailures++;
         if (stored.ConsecutiveFailures >= 5)
@@ -672,6 +719,7 @@ public sealed class OrderSyncService : IOrderSyncService
         entry.CurrentValues.SetValues(stored);
         entry.OriginalValues.SetValues(stored);
         entry.State = EntityState.Unchanged;
+        return true;
     }
 
     private async Task<OrderUpsertResult> UpsertOrderAsync(

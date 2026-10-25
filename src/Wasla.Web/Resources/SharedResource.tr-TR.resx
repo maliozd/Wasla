@@ -4116,7 +4116,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} kapatıldı</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>MUTFAK · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Plan fiyatları</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Fiyatlar düzenlenmez; daha sonraki bir tarihten geçerli yeni bir fiyat planlayın.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Henüz hiçbir abonelikte kullanılmayan bir fiyat düzeltilebilir; abonelikte kullanılan bir fiyat değiştirilmez, yerine daha sonraki bir tarihten geçerli yeni bir fiyat planlanır.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Şu anda geçerli fiyatlar</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Ödeme dönemi</value></data>
@@ -4188,4 +4188,25 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / ay</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / yıl</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>Yıllık ödeme, 12 aylık ödemeden {0} daha az.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>Platform bağlantısı kaldırılsın mı?</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>Bu bağlantıyı kaldırmak sipariş senkronizasyonunu durdurur. Wasla bu mağazanın siparişlerini artık çekmez.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>Daha önce alınan siparişler Wasla'da kalır. Bu platformu ve mağazayı daha sonra yeniden bağlayabilirsiniz.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>Platform bağlantısı kaldırıldı. Sipariş senkronizasyonu durduruldu.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>Bu platform bağlantısı artık yok. Hiçbir şey değiştirilmedi.</value>
+  </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} ürün daha</value>
+  </data>
 </root>

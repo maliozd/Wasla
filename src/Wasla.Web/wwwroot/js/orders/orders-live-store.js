@@ -96,6 +96,23 @@
     return liveMoneyFormat(culture).format(value);
   }
 
+  const liveCountFormats = new Map();
+
+  /** A count in the culture's digits and grouping: 1.250 in Turkish, 1,250 in English, ١٬٢٥٠ in Arabic. */
+  function formatCount(value, culture) {
+    const locale = culture || "tr-TR";
+    try {
+      let format = liveCountFormats.get(locale);
+      if (!format) {
+        format = new Intl.NumberFormat(locale);
+        liveCountFormats.set(locale, format);
+      }
+      return format.format(value);
+    } catch (e) {
+      return String(value);
+    }
+  }
+
   function applyDetailCurrency(root, culture) {
     if (!root || typeof root.querySelectorAll !== "function") return;
     const nodes = root.querySelectorAll("[data-money]");
@@ -468,6 +485,7 @@
     demoImageUrl: demoImageUrl,
     orderContentSignature: orderContentSignature,
     formatAmount: formatAmount,
+    formatCount: formatCount,
     applyDetailCurrency: applyDetailCurrency,
     elapsedMinutes: elapsedMinutes,
     orderTimeUtc: orderTimeUtc,
@@ -631,12 +649,18 @@ function attachBrowser(O, global, api) {
       if (orders[i].isDemo) continue;
       if (api.ACTIVE_STATUSES[orders[i].status]) active += 1;
     }
-    const activeEl = document.getElementById("ordersLiveDisplayActiveCount");
-    if (activeEl) activeEl.textContent = String(active);
-    const todayEl = document.getElementById("ordersLiveDisplayTodayCount");
-    if (todayEl) todayEl.textContent = String(snapshot.todayOrderCount);
-    const cancelledEl = document.getElementById("ordersLiveDisplayCancelledCount");
-    if (cancelledEl) cancelledEl.textContent = String(snapshot.cancelledOrderCount);
+    setSummaryCount("ordersLiveDisplayActiveCount", active);
+    setSummaryCount("ordersLiveDisplayTodayCount", snapshot.todayOrderCount);
+    setSummaryCount("ordersLiveDisplayCancelledCount", snapshot.cancelledOrderCount);
+  }
+
+  /** Writes a summary count in the page culture's format; a 0 gives its metric the quiet is-zero colours. */
+  function setSummaryCount(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = formatCount(count);
+    const metric = typeof el.closest === "function" ? el.closest(".wasla-live-summary__metric") : null;
+    if (metric) metric.classList.toggle("is-zero", count === 0);
   }
 
   function touchUpdated() {
@@ -761,6 +785,7 @@ function attachBrowser(O, global, api) {
     status.className = statusClass(order.status);
     status.setAttribute("data-status-badge", "");
     status.textContent = statusLabel(order.status);
+    status.title = status.textContent;
     const fresh = document.createElement("span");
     fresh.className = "badge text-bg-primary d-none wasla-orders-new-badge";
     fresh.setAttribute("data-new-badge", "");
@@ -780,6 +805,8 @@ function attachBrowser(O, global, api) {
     const link = document.createElement(order.isDemo ? "span" : "a");
     if (!order.isDemo) link.href = "/orders/details/" + encodeURIComponent(String(order.id));
     link.textContent = order.displayNumber || "";
+    // A very long code is cut to one line on the Board card; the tooltip and the details keep it whole.
+    link.title = order.displayNumber || "";
     code.appendChild(link);
 
     const identity = document.createElement("div");
@@ -1017,10 +1044,15 @@ function attachBrowser(O, global, api) {
     return row;
   }
 
+  // A List row shows at most this many lines of products; a longer order shows one line fewer and "+N" for the rest,
+  // so one large order does not make its row several times taller than the others. Details show every item.
+  const LIST_ITEM_LINES = 5;
+
   function fillItems(list, items) {
     const listLayout = list.className.indexOf("wasla-live-list-row__items") >= 0;
     while (list.firstChild) list.removeChild(list.firstChild);
-    items.forEach(function (item) {
+    const shownCount = listLayout && items.length > LIST_ITEM_LINES ? LIST_ITEM_LINES - 1 : items.length;
+    items.slice(0, shownCount).forEach(function (item) {
       const li = document.createElement("li");
       li.className = "wasla-live-screen-card__item";
       const qty = document.createElement("span");
@@ -1057,6 +1089,13 @@ function attachBrowser(O, global, api) {
       }
       list.appendChild(li);
     });
+    if (shownCount < items.length) {
+      const more = document.createElement("li");
+      more.className = "wasla-live-list-row__more";
+      more.setAttribute("data-items-more", "");
+      more.textContent = fillTemplate(message("boardItemsHidden"), [formatCount(items.length - shownCount)]);
+      list.appendChild(more);
+    }
     list.hidden = items.length === 0;
   }
 
@@ -1374,9 +1413,12 @@ function attachBrowser(O, global, api) {
     if (status) {
       status.className = statusClass(order.status);
       status.textContent = statusLabel(order.status);
+      if (status.title) status.title = status.textContent;
     }
     const link = card.querySelector(".wasla-live-screen-card__code a");
     if (link) link.textContent = order.displayNumber || "";
+    const boardCode = card.getAttribute("data-live-layout") === "board" ? card.querySelector(".wasla-live-screen-card__code > *") : null;
+    if (boardCode) boardCode.title = order.displayNumber || "";
     if (card.getAttribute("data-live-layout") === "list") syncListCustomer(card, order);
     else if (card.getAttribute("data-live-layout") === "board") {
       const customer = card.querySelector(".orders-card-customer");
@@ -1535,11 +1577,7 @@ function attachBrowser(O, global, api) {
   }
 
   function formatCount(value) {
-    try {
-      return new Intl.NumberFormat(culture()).format(value);
-    } catch (e) {
-      return String(value);
-    }
+    return api.formatCount(value, culture());
   }
 
   function fillTemplate(template, values) {
@@ -2281,6 +2319,22 @@ function attachBrowser(O, global, api) {
     return scroll - client > 1;
   }
 
+  // How many product rows fit whole in the preview: a row cut by the preview's edge counts as not shown, so the card
+  // says "+N" for it instead of showing half a line. Null when the browser cannot tell (no layout boxes).
+  function boardItemsShown(viewport) {
+    const list = viewport.querySelector(".wasla-live-screen-card__items");
+    if (!list || typeof viewport.getBoundingClientRect !== "function") return null;
+    const rows = list.children || [];
+    const bottom = viewport.getBoundingClientRect().bottom;
+    let shown = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (typeof rows[i].getBoundingClientRect !== "function") return null;
+      if (rows[i].getBoundingClientRect().bottom > bottom + 0.5) break;
+      shown += 1;
+    }
+    return { rows: rows, shown: shown };
+  }
+
   // Reads every preview's size first and writes the classes afterwards. A class change between two reads would make
   // the browser lay the page out again for each card, which with thousands of cards kept the first render of a large
   // snapshot busy for minutes (WAS-5).
@@ -2293,7 +2347,7 @@ function attachBrowser(O, global, api) {
       if (!shell || !viewport) return;
       const overflow = boardItemsOverflow(viewport);
       if (overflow === null) return;
-      results.push({ card: card, shell: shell, overflow: overflow });
+      results.push({ card: card, shell: shell, overflow: overflow, items: overflow ? boardItemsShown(viewport) : null, viewport: viewport });
     });
     results.forEach(function (result) {
       if (result.shell.classList.contains("has-item-overflow") !== result.overflow) {
@@ -2302,6 +2356,22 @@ function attachBrowser(O, global, api) {
       const details = result.card.querySelector(".wasla-live-screen-card__details");
       if (details && details.classList.contains("has-item-overflow") !== result.overflow) {
         details.classList.toggle("has-item-overflow", result.overflow);
+      }
+      // Rows that do not fit whole are hidden (visibility only, so nothing moves) and counted in the "+N" line.
+      const rows = result.items ? result.items.rows : (result.viewport.querySelector(".wasla-live-screen-card__items") || {}).children || [];
+      const shown = result.items ? result.items.shown : rows.length;
+      for (let i = 0; i < rows.length; i++) {
+        const clipped = i >= shown;
+        if (rows[i].hasAttribute && rows[i].hasAttribute("data-board-clipped") !== clipped) {
+          if (clipped) rows[i].setAttribute("data-board-clipped", "");
+          else rows[i].removeAttribute("data-board-clipped");
+        }
+      }
+      const more = result.shell.querySelector(".wasla-live-board-items__more");
+      if (more) {
+        const hidden = result.items ? rows.length - shown : 0;
+        const text = hidden > 0 ? fillTemplate(message("boardItemsHidden"), [formatCount(hidden)]) : message("boardItemsMore");
+        if (more.textContent !== text) more.textContent = text;
       }
     });
   }

@@ -1,0 +1,974 @@
+/*
+ * Live Screen presentation (loaded only by _OrdersDisplayLayout, after wasla-theme.css).
+ *
+ * One look for the three views of the same orders: a single header bar (restaurant, sync state, F11 hint, view
+ * switch, settings gear, Wasla logo), an inline summary row, and the same status treatment everywhere: a status
+ * stripe on the order's leading edge, the existing status badge and the status-tinted group headers. Board cards keep
+ * the canonical height from wasla-theme.css; this file only arranges what is inside them. Selectors start at the page
+ * root (.wasla-live-screen-page) so they win over the shared theme rules without !important. Logical properties keep
+ * Arabic right to left.
+ */
+
+.wasla-live-screen-page {
+  --lv-surface: var(--wasla-surface, #fff);
+  --lv-line: color-mix(in srgb, var(--wasla-border, #e5e7eb) 85%, transparent);
+  --lv-line-strong: color-mix(in srgb, var(--wasla-text, #212529) 16%, var(--wasla-border, #e5e7eb));
+  --lv-ink-soft: color-mix(in srgb, var(--wasla-text, #212529) 72%, var(--wasla-muted, #6c757d));
+  --lv-control-h: 2.5rem;
+  --lv-radius: .625rem;
+  --lv-gutter: 1rem;
+  --lv-stripe: 3px;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Page rhythm: header bar, summary row, orders. Tight on purpose, so orders start high on the screen.
+   --------------------------------------------------------------------------------------------------------------- */
+/* Clip sideways like the shared overflow-x: hidden, without making the body or the root a scroll container: the
+   sticky header then really stays at the top while the page scrolls. */
+body.wasla-orders-live-display {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+body.wasla-orders-live-display .wasla-live-screen-page.wasla-orders-live-display-root {
+  padding: 0 var(--lv-gutter) .75rem;
+  gap: .75rem;
+  overflow-x: clip;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Header bar (anchored on the root's id: the theme paints the header from a :has(#ordersLiveScreenHost…) rule)
+   --------------------------------------------------------------------------------------------------------------- */
+body.wasla-orders-live-display #ordersLiveDisplayRoot > .wasla-live-display-header.wasla-fs-header {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem 1.25rem;
+  margin-inline: calc(-1 * var(--lv-gutter));
+  padding: .625rem var(--lv-gutter);
+  background: var(--lv-surface);
+  border-bottom: 1px solid var(--lv-line);
+  box-shadow: 0 1px 0 rgba(16, 24, 40, .02);
+}
+
+body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-header__left {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0;
+}
+
+.wasla-live-screen-page .wasla-live-display-identity {
+  gap: .75rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.wasla-live-screen-page .wasla-live-display-identity__copy {
+  gap: .2rem;
+  min-width: 0;
+}
+
+.wasla-live-screen-page .wasla-live-display-identity__heading {
+  flex-wrap: nowrap;
+  gap: .5rem;
+  min-width: 0;
+}
+
+/* A long restaurant name is cut with an ellipsis; the sync state beside it never moves to a second line. */
+.wasla-live-screen-page .wasla-live-display-header__title.wasla-fs-header__title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-display-status {
+  flex: 0 0 auto;
+  padding-block: .14rem;
+  padding-inline: .4rem .55rem;
+  font-size: .75rem;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-display-header__meta.wasla-fs-header__meta {
+  font-size: .75rem;
+  gap: .15rem .45rem;
+}
+
+/* Controls: F11 hint, view switch, gear and the Wasla logo, all on one centre line. */
+body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-header__actions.wasla-fs-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: .75rem;
+  width: auto;
+  margin: 0;
+}
+
+.wasla-live-screen-page .wasla-live-display-fullscreen-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  color: var(--wasla-muted, #6c757d);
+  font-size: .75rem;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-screen-view-switch {
+  flex-wrap: nowrap;
+  min-height: var(--lv-control-h);
+  padding: 2px;
+}
+
+.wasla-live-screen-page .wasla-live-screen-view-switch__option {
+  min-height: calc(var(--lv-control-h) - 6px);
+  white-space: nowrap;
+}
+
+/* The settings gear: a square button of the switch's height, quiet at rest, tinted when hovered or open. */
+.wasla-live-screen-page .wasla-live-settings__toggle {
+  width: var(--lv-control-h);
+  min-width: var(--lv-control-h);
+  min-height: var(--lv-control-h);
+  height: var(--lv-control-h);
+  padding: 0;
+  border-radius: 10px;
+  color: var(--lv-ink-soft);
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle .bi {
+  font-size: 1.125rem;
+  transition: transform .2s ease;
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle[aria-expanded="true"] {
+  border-color: var(--color-accent-border, rgba(255, 107, 53, .35));
+  background: var(--color-accent-soft, rgba(255, 107, 53, .12));
+  color: var(--color-accent, #e8582e);
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle[aria-expanded="true"] .bi {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wasla-live-screen-page .wasla-live-settings__toggle .bi { transition: none; }
+}
+
+.wasla-live-screen-page .wasla-live-display-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-inline-start: .75rem;
+  border-inline-start: 1px solid var(--lv-line);
+}
+
+/* The wordmark's tall "l" makes its box taller than its letters, so the box centred on the controls leaves the letters
+   low; lifting it by 12% of its height puts their weight on the gear's centre line. */
+.wasla-live-screen-page .wasla-logo--live-screen {
+  display: block;
+  width: auto;
+  height: 2rem;
+  translate: 0 -12%;
+}
+
+/* The settings menu opens under the gear, aligned to its end, above the orders (the header is z-index 20). */
+.wasla-live-screen-page .wasla-live-settings .wasla-live-settings-menu {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  z-index: 1060;
+  min-width: 18rem;
+  max-width: min(21rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
+  margin-block-start: .4rem;
+  box-shadow: 0 10px 28px rgba(16, 24, 40, .14), 0 2px 6px rgba(16, 24, 40, .06);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__footer {
+  padding: .35rem .5rem .15rem;
+  border-block-start: 1px solid var(--lv-line);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__exit {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: .35rem .5rem;
+  border: 0;
+  border-radius: .45rem;
+  background: transparent;
+  color: var(--lv-ink-soft);
+  font: inherit;
+  font-size: .8125rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__exit:hover,
+.wasla-live-screen-page .wasla-live-settings-menu__exit:focus-visible {
+  background: color-mix(in srgb, var(--wasla-border, #e5e7eb) 45%, transparent);
+  color: var(--wasla-text, #212529);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__exit:focus-visible {
+  outline: 2px solid var(--color-accent, #e8582e);
+  outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Summary: today's, active and cancelled orders on one line, each as icon, count and label, with a short divider
+   between them. No box, border or selected state, so the row never reads as a button, filter or view switch. The
+   icons (images/live-screen/metric-*.svg) are masks in the metric's colour: soft ink, muted rose for cancelled orders
+   above 0, and a quiet grey for any 0. Words never wrap inside a metric; on phones the row wraps between metrics.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-live-screen-page {
+  --lv-metric-icon: var(--lv-ink-soft);
+  --lv-metric-cancelled: #a63446;
+  --lv-metric-zero: color-mix(in srgb, var(--wasla-muted, #6c757d) 85%, var(--wasla-text, #212529));
+}
+
+.wasla-live-screen-page .wasla-live-display-summary {
+  display: flex;
+  width: 100%;
+  margin: 0;
+}
+
+.wasla-live-screen-page .wasla-live-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  max-width: 100%;
+}
+
+.wasla-live-screen-page .wasla-live-summary__metric {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .5rem;
+  min-height: 1.5rem;
+  white-space: nowrap;
+}
+
+/* The divider sits 1rem from the metric before it (the row gap) and 1rem from this metric's icon. */
+.wasla-live-screen-page .wasla-live-summary__metric + .wasla-live-summary__metric::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 1px;
+  height: 1rem;
+  margin-inline-end: .5rem;
+  background: var(--lv-line-strong);
+}
+
+.wasla-live-screen-page .wasla-live-summary__metric--cancelled { --lv-metric-icon: var(--lv-metric-cancelled); }
+.wasla-live-screen-page .wasla-live-summary__metric.is-zero { --lv-metric-icon: var(--lv-metric-zero); }
+
+/* The glyph is painted on ::before, like the status heading icons: a masked colour fill, not a surface. */
+.wasla-live-screen-page .wasla-live-summary__icon {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.wasla-live-screen-page .wasla-live-summary__icon::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--lv-metric-icon);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.wasla-live-screen-page .wasla-live-summary__icon--today::before {
+  -webkit-mask-image: url("../images/live-screen/metric-today.svg");
+  mask-image: url("../images/live-screen/metric-today.svg");
+}
+.wasla-live-screen-page .wasla-live-summary__icon--active::before {
+  -webkit-mask-image: url("../images/live-screen/metric-active.svg");
+  mask-image: url("../images/live-screen/metric-active.svg");
+}
+.wasla-live-screen-page .wasla-live-summary__icon--cancelled::before {
+  -webkit-mask-image: url("../images/live-screen/metric-cancelled.svg");
+  mask-image: url("../images/live-screen/metric-cancelled.svg");
+}
+
+.wasla-live-screen-page .wasla-live-summary__value {
+  color: var(--wasla-text, #212529);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.wasla-live-screen-page .wasla-live-summary__metric.is-zero .wasla-live-summary__value {
+  color: var(--lv-metric-zero);
+}
+
+.wasla-live-screen-page .wasla-live-summary__label {
+  color: var(--lv-ink-soft);
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Shared status treatment: a stripe on the order's leading edge, in the order's status colour.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-live-screen-page .wasla-live-screen-card,
+.wasla-live-screen-page .wasla-live-focus-entry {
+  --lv-status: var(--wasla-status-completed, #6c757d);
+}
+
+.wasla-live-screen-page [data-order-status="New"] { --lv-status: var(--wasla-status-new, #e0a800); }
+.wasla-live-screen-page [data-order-status="Accepted"] { --lv-status: var(--wasla-status-accepted, #b45309); }
+.wasla-live-screen-page [data-order-status="Preparing"] { --lv-status: var(--wasla-status-preparing, #0d6efd); }
+.wasla-live-screen-page [data-order-status="ReadyForPickup"] { --lv-status: var(--wasla-status-ready, #198754); }
+.wasla-live-screen-page [data-order-status="OnTheWay"] { --lv-status: var(--wasla-status-on-the-way, #6f42c1); }
+.wasla-live-screen-page [data-order-status="Delivered"],
+.wasla-live-screen-page [data-order-status="Cancelled"],
+.wasla-live-screen-page [data-order-status="Failed"] { --lv-status: var(--wasla-status-completed, #6c757d); }
+
+/* Board column headers take the same status-tinted band as List groups and Focus queue groups. */
+.wasla-live-screen-page .wasla-live-board__heading {
+  min-height: 2.25rem;
+  margin: 0 0 .625rem;
+  padding: 0 .75rem;
+  border-radius: .5rem;
+  background: color-mix(in srgb, var(--wasla-status-completed) 12%, var(--lv-surface));
+  font-size: .9375rem;
+  font-weight: 700;
+}
+
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="new"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-new) 14%, var(--lv-surface));
+}
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="preparing"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-preparing) 12%, var(--lv-surface));
+}
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="ready"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-ready) 12%, var(--lv-surface));
+}
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="on-the-way"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-on-the-way) 12%, var(--lv-surface));
+}
+
+/* Every status heading (Board column, List group, Focus queue group) leads with its status icon instead of a dot. The
+   icons are the Live Screen set from Figma (images/live-screen/status-*.svg), used as masks so each takes the column's
+   own status colour from the theme (the cards' stripe colour), mixed a little toward the text colour so the thin
+   strokes stay legible on the heading's tint: darker in light mode, lighter in dark mode. Decorative: the heading's
+   words name the status. */
+.wasla-live-screen-page .wasla-live-board__heading::before,
+.wasla-live-screen-page .wasla-live-group__heading::before,
+.wasla-live-screen-page .wasla-live-focus__heading::before {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.wasla-live-screen-page .wasla-live-focus__heading::before {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.wasla-live-screen-page [data-board-column="new"] > :is(.wasla-live-board__heading, .wasla-live-group__heading, .wasla-live-focus__heading)::before {
+  -webkit-mask-image: url("../images/live-screen/status-new.svg");
+  mask-image: url("../images/live-screen/status-new.svg");
+  background: color-mix(in srgb, var(--wasla-status-new) 72%, var(--wasla-text, #212529));
+}
+.wasla-live-screen-page [data-board-column="preparing"] > :is(.wasla-live-board__heading, .wasla-live-group__heading, .wasla-live-focus__heading)::before {
+  -webkit-mask-image: url("../images/live-screen/status-preparing.svg");
+  mask-image: url("../images/live-screen/status-preparing.svg");
+  background: color-mix(in srgb, var(--wasla-status-preparing) 72%, var(--wasla-text, #212529));
+}
+.wasla-live-screen-page [data-board-column="ready"] > :is(.wasla-live-board__heading, .wasla-live-group__heading, .wasla-live-focus__heading)::before {
+  -webkit-mask-image: url("../images/live-screen/status-ready.svg");
+  mask-image: url("../images/live-screen/status-ready.svg");
+  background: color-mix(in srgb, var(--wasla-status-ready) 72%, var(--wasla-text, #212529));
+}
+.wasla-live-screen-page [data-board-column="on-the-way"] > :is(.wasla-live-board__heading, .wasla-live-group__heading, .wasla-live-focus__heading)::before {
+  -webkit-mask-image: url("../images/live-screen/status-on-the-way.svg");
+  mask-image: url("../images/live-screen/status-on-the-way.svg");
+  background: color-mix(in srgb, var(--wasla-status-on-the-way) 72%, var(--wasla-text, #212529));
+}
+.wasla-live-screen-page [data-board-column="completed"] > :is(.wasla-live-board__heading, .wasla-live-group__heading, .wasla-live-focus__heading)::before {
+  -webkit-mask-image: url("../images/live-screen/status-completed.svg");
+  mask-image: url("../images/live-screen/status-completed.svg");
+  background: color-mix(in srgb, var(--wasla-status-completed) 72%, var(--wasla-text, #212529));
+}
+
+.wasla-live-screen-page .wasla-live-board__count,
+.wasla-live-screen-page .wasla-live-group__count,
+.wasla-live-screen-page .wasla-live-focus__count {
+  margin-inline-start: auto;
+  background: var(--lv-surface);
+  color: var(--wasla-text, #212529);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Board: five 15rem columns (wasla-theme.css) that fit a 1440 px screen; cards in fixed regions.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-live-screen-page .wasla-live-board { padding: 0 0 .75rem; }
+
+.wasla-live-screen-page .wasla-live-board__column { padding: 0; }
+.wasla-live-screen-page .wasla-live-board__orders { gap: .625rem; }
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card {
+  border-radius: var(--lv-radius);
+  border-color: var(--lv-line);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+/* Identity on top, then the note and the product preview, the order's actions, and the total with Details on the
+   bottom edge of every card, whichever status it has. */
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] > .orders-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "identity identity"
+    "note note"
+    "items items"
+    "actions actions"
+    "total details";
+  gap: 0;
+  padding: .625rem .75rem .625rem;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__identity { grid-area: identity; gap: .3rem; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-order-note { grid-area: note; margin-block-start: .5rem; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-items { grid-area: items; margin-block-start: .5rem; }
+.wasla-live-screen-page .wasla-live-board .orders-card-actions { display: contents; }
+.wasla-live-screen-page .wasla-live-board .wasla-orders-actions {
+  grid-area: actions;
+  display: flex;
+  gap: .375rem;
+  margin-block-start: .5rem;
+}
+.wasla-live-screen-page .wasla-live-board .wasla-orders-actions[hidden] { display: none; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__secondary {
+  grid-area: total;
+  align-self: center;
+  justify-content: flex-start;
+  margin-block-start: .5rem;
+}
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__details {
+  grid-area: details;
+  align-self: center;
+  margin-block-start: .5rem;
+}
+
+/* Platform, status and elapsed time stay on one line, so the code sits at the same height on every card. A status
+   that does not fit ends in an ellipsis (its full text is the tooltip); the elapsed time never moves. */
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__head {
+  flex-wrap: nowrap;
+  gap: .35rem;
+  min-width: 0;
+}
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__head { block-size: 1.625rem; align-items: center; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__head > .orders-card-platform { flex: 0 0 auto; display: inline-flex; }
+
+/* Platform wordmarks at the Focus queue's size, so every platform gives the head the same height. */
+.wasla-live-screen-page .wasla-live-board .platform-badge {
+  min-height: 0;
+  gap: .25rem;
+  padding: .1rem .4rem;
+  font-size: .75rem;
+}
+.wasla-live-screen-page .wasla-live-board .platform-badge__icon,
+.wasla-live-screen-page .wasla-live-board .platform-badge--getiryemek .platform-badge__icon {
+  height: 14px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+}
+.wasla-live-screen-page .wasla-live-board .platform-badge--getiryemek.platform-badge .platform-badge__icon-wrap { padding: 1px 5px; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__head .wasla-dash-status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: .71875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wasla-live-screen-page .wasla-live-board .wasla-live-card__head .wasla-live-screen-card__elapsed { flex: 0 0 auto; }
+
+/* In a column that holds one status, the card's status badge only repeats the column heading (and the stripe), so it
+   is not drawn there; the New column (New and Accepted) and Completed keep it, because it tells orders apart. */
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="preparing"] .wasla-live-card__head [data-status-badge],
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="ready"] .wasla-live-card__head [data-status-badge],
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="on-the-way"] .wasla-live-card__head [data-status-badge] {
+  display: none;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__elapsed {
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__code {
+  min-width: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.005em;
+}
+
+/* One line: a very long code ends in an ellipsis (its title and the details show it whole), so it never takes the
+   room of the products. */
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__code > * {
+  display: block;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__code a:hover { text-decoration: underline; }
+
+/* The preview: whole rows only (a row cut by the edge is hidden by orders-live-store.js and counted in "+N"). */
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__viewport {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__item[data-board-clipped] { visibility: hidden; }
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__item { font-size: .875rem; line-height: 1.35; }
+
+/* A preview line per product (and one per item note): a long name ends in an ellipsis instead of taking the rows of
+   the products after it. Details show every name and note in full. */
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-screen-card__product {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__note {
+  color: var(--lv-ink-soft);
+  font-size: .78125rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-items__more {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-block-start: .25rem;
+  padding: .05rem .45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wasla-border, #e5e7eb) 55%, var(--lv-surface));
+  color: var(--wasla-text, #212529);
+  font-size: .75rem;
+  font-weight: 600;
+  visibility: hidden;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-items.has-item-overflow .wasla-live-board-items__more {
+  display: inline-flex;
+  visibility: visible;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-order-note { padding: .25rem .45rem; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-order-note__label { font-size: .6875rem; }
+.wasla-live-screen-page .wasla-live-board .wasla-live-board-order-note__text { font-size: .75rem; line-height: 1.35; }
+
+.wasla-live-screen-page .wasla-live-board [data-total] {
+  margin-inline-start: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Actions: one compact row; two actions share it, one action takes it. */
+.wasla-live-screen-page .wasla-live-board .wasla-orders-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: .3rem .6rem;
+  font-size: .8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__details {
+  min-height: 2rem;
+  padding: .2rem .6rem;
+  font-size: .8125rem;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-board .wasla-orders-actions .btn:disabled,
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__details:disabled { min-height: 2rem; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+   List: the same card language as the Board, in rows.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-live-screen-page .wasla-live-groups { gap: .75rem; }
+
+.wasla-live-screen-page .wasla-live-group {
+  border-color: var(--lv-line);
+  border-radius: var(--lv-radius);
+}
+
+.wasla-live-screen-page .wasla-live-group__heading {
+  min-height: 2.25rem;
+  border-start-start-radius: calc(var(--lv-radius) - 1px);
+  border-start-end-radius: calc(var(--lv-radius) - 1px);
+  font-size: .9375rem;
+  font-weight: 700;
+}
+
+.wasla-live-screen-page .wasla-live-group:has([data-board-list]:empty) .wasla-live-group__heading {
+  border-radius: .5rem;
+}
+
+.wasla-live-screen-page .wasla-live-groups .wasla-live-list-row {
+  border-radius: .5rem;
+}
+
+/* Identity: the platform beside the code; status and order time under the code. A long code wraps inside its own
+   column instead of running under the status badge. */
+.wasla-live-screen-page .wasla-live-list-row__identity {
+  grid-template-columns: 6rem minmax(0, 1fr);
+  row-gap: .3rem;
+  align-items: start;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__headline .orders-card-platform {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__headline .wasla-live-screen-card__code {
+  grid-column: 2;
+  grid-row: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__status {
+  grid-column: 2;
+  grid-row: 2;
+  flex-wrap: wrap;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__meta {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__more {
+  display: inline-flex;
+  margin-block-start: .2rem;
+  padding: .05rem .45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wasla-border, #e5e7eb) 55%, var(--lv-surface));
+  color: var(--wasla-text, #212529);
+  font-size: .75rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+/* Columns: products no longer take the room the customer and the note need, and the total, elapsed and action
+   columns have fixed widths, so every row of every group lines up (each row is its own grid). */
+@media (min-width: 1200px) {
+  .wasla-live-screen-page .wasla-live-screen-host--list .wasla-live-screen-card {
+    grid-template-columns: minmax(17rem, .95fr) minmax(12rem, 1.25fr) minmax(13rem, 1.2fr) 7rem 3.5rem 16.5rem;
+  }
+}
+
+.wasla-live-screen-page .wasla-live-screen-host--list .wasla-live-list-row__elapsed {
+  font-size: .875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--lv-ink-soft);
+  white-space: nowrap;
+}
+
+/* The same compact actions as the Board. */
+.wasla-live-screen-page .wasla-live-groups .wasla-orders-actions .btn,
+.wasla-live-screen-page .wasla-live-groups .wasla-live-screen-card__details {
+  min-height: 2.25rem;
+  padding: .3rem .75rem;
+  font-size: .8125rem;
+  white-space: nowrap;
+}
+
+/* Customer: one line for the name, two for the address, then the order note under them (three lines). */
+.wasla-live-screen-page .wasla-live-screen-host--list .wasla-live-list-row__customer--with-note {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .3rem;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__customer-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__customer-address {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.wasla-live-screen-page .wasla-live-list-row__order-note-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Focus: queue cards with a clear hierarchy, and a detail header balanced by the Wasla logo.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-live-screen-page .wasla-live-focus { gap: .75rem; }
+
+/* The queue and the panel reach the bottom of the screen under the one-row header and the summary chips. */
+@media (min-width: 768px) {
+  .wasla-live-screen-page .wasla-live-focus__queue,
+  .wasla-live-screen-page .wasla-live-focus__panel { max-height: calc(100dvh - 10.25rem); }
+}
+
+.wasla-live-screen-page .wasla-live-focus__panel {
+  border-color: var(--lv-line);
+  border-radius: var(--lv-radius);
+  padding: 1rem 1.25rem 1rem;
+}
+
+/* Row 1: code and elapsed time; row 2: platform and status; row 3: up to two lines of products. */
+.wasla-live-screen-page .wasla-live-focus-entry {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "code code code elapsed"
+    "platform status . ."
+    "summary summary summary summary";
+  align-items: center;
+  gap: .35rem .4rem;
+  padding: .625rem .75rem;
+  border-color: var(--lv-line);
+  border-inline-start: var(--lv-stripe) solid var(--lv-status);
+  border-radius: .5rem;
+}
+
+.wasla-live-screen-page .wasla-live-focus-entry__meta { display: contents; }
+.wasla-live-screen-page .wasla-live-focus-entry__code {
+  grid-area: code;
+  min-width: 0;
+  font-weight: 700;
+}
+.wasla-live-screen-page .wasla-live-focus-entry [data-platform-host] {
+  grid-area: platform;
+  display: inline-flex;
+  min-width: 0;
+}
+.wasla-live-screen-page .wasla-live-focus-entry [data-status-badge] {
+  grid-area: status;
+  justify-self: start;
+}
+.wasla-live-screen-page .wasla-live-focus-entry__elapsed {
+  grid-area: elapsed;
+  align-self: start;
+  white-space: nowrap;
+}
+.wasla-live-screen-page .wasla-live-focus-entry__summary { grid-area: summary; }
+
+/* Selected: accent surface and outline; the status stripe stays so the order's status is still visible. */
+.wasla-live-screen-page .wasla-live-focus-entry[aria-pressed="true"] {
+  padding-inline-start: .75rem;
+  border-color: var(--color-accent, #e8582e);
+  border-inline-start: var(--lv-stripe) solid var(--lv-status);
+  box-shadow: 0 0 0 1px var(--color-accent, #e8582e);
+}
+
+/* Detail header: code, then the platform on its own line, then status, elapsed and order time. */
+.wasla-live-screen-page .wasla-live-detail__head {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.wasla-live-screen-page .wasla-live-detail__headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .4rem;
+  min-width: 0;
+}
+
+.wasla-live-screen-page .wasla-live-detail__code {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+
+.wasla-live-screen-page .wasla-live-detail__meta { gap: .35rem .6rem; }
+
+/* Focus action bar: the buttons sit midway between the divider above them and the panel's bottom edge (the bar
+   reaches that edge through the panel's 1rem bottom padding, see wasla-theme.css). */
+.wasla-live-screen-page .wasla-live-focus .wasla-live-detail__actions {
+  padding-block: 1.125rem;
+}
+
+/* Products, notes and customer details are restaurant and customer text in any language: each keeps its own
+   direction, so a Turkish name in the Arabic screen reads left to right and is cut at its end. */
+.wasla-live-screen-page .wasla-live-screen-card__product,
+.wasla-live-screen-page .wasla-live-screen-card__note,
+.wasla-live-screen-page .wasla-live-list-row__note-text,
+.wasla-live-screen-page [data-order-note-text],
+.wasla-live-screen-page .wasla-live-list-row__customer-name,
+.wasla-live-screen-page .wasla-live-list-row__customer-address,
+.wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__code > * {
+  unicode-bidi: plaintext;
+  text-align: left;
+}
+
+/* ...and still lines up with the page: on the right in Arabic. */
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-screen-card__product,
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-screen-card__note,
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-list-row__note-text,
+html[dir="rtl"] .wasla-live-screen-page [data-order-note-text],
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-list-row__customer-name,
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-list-row__customer-address,
+html[dir="rtl"] .wasla-live-screen-page .wasla-live-board .wasla-live-screen-card__code > * {
+  text-align: right;
+}
+
+/* The status stripe is set last, after every rule above that sets a card's border colour. */
+.wasla-live-screen-page .wasla-live-screen-host .wasla-live-screen-card[data-order-status],
+.wasla-live-screen-page .wasla-live-screen-host .wasla-live-focus-entry[data-order-status] {
+  border-inline-start: var(--lv-stripe) solid var(--lv-status);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Narrower screens
+   --------------------------------------------------------------------------------------------------------------- */
+@media (max-width: 1279.98px) {
+  .wasla-live-screen-page .wasla-live-display-fullscreen-hint__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 899.98px) {
+  body.wasla-orders-live-display #ordersLiveDisplayRoot > .wasla-live-display-header.wasla-fs-header { flex-wrap: wrap; }
+  body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-header__actions.wasla-fs-header__actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .wasla-live-screen-page { --lv-gutter: .75rem; }
+  /* The sync state goes under the name instead of squeezing it; phones have no F11 key. */
+  .wasla-live-screen-page .wasla-live-display-identity__heading { flex-wrap: wrap; }
+  .wasla-live-screen-page .wasla-live-display-fullscreen-hint { display: none; }
+  body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-header__actions.wasla-fs-header__actions {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .wasla-live-screen-page .wasla-live-screen-view-switch { flex: 1 1 auto; width: auto; }
+  .wasla-live-screen-page .wasla-live-display-brand { padding-inline-start: .5rem; }
+  .wasla-live-screen-page .wasla-logo--live-screen { height: 1.4rem; }
+  /* The summary wraps between metrics here; a divider would start a line, so the gap alone separates them. */
+  .wasla-live-screen-page .wasla-live-summary { column-gap: 1.25rem; }
+  .wasla-live-screen-page .wasla-live-summary__metric + .wasla-live-summary__metric::before { content: none; }
+  .wasla-live-screen-page .wasla-live-detail__code { font-size: 1.25rem; }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Dark mode
+   --------------------------------------------------------------------------------------------------------------- */
+[data-bs-theme="dark"] body.wasla-orders-live-display #ordersLiveDisplayRoot > .wasla-live-display-header.wasla-fs-header {
+  background: var(--color-surface, #171a21);
+  border-bottom-color: var(--color-border, rgba(255, 255, 255, .08));
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-display-brand {
+  border-color: var(--color-border, rgba(255, 255, 255, .08));
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page { --lv-metric-cancelled: #f0a3af; }
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board .wasla-live-board-items__more,
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-list-row__more {
+  background: var(--color-surface-muted, #141820);
+  color: var(--color-text, #f3f4f6);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-completed) 18%, var(--color-surface, #171a21));
+}
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__column[data-board-column="new"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-new) 18%, var(--color-surface, #171a21));
+}
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__column[data-board-column="preparing"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-preparing) 18%, var(--color-surface, #171a21));
+}
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__column[data-board-column="ready"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-ready) 18%, var(--color-surface, #171a21));
+}
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__column[data-board-column="on-the-way"] .wasla-live-board__heading {
+  background: color-mix(in srgb, var(--wasla-status-on-the-way) 18%, var(--color-surface, #171a21));
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-board__count,
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-group__count,
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-focus__count {
+  background: var(--color-surface, #171a21);
+  color: var(--color-text, #f3f4f6);
+}
+
+/* Order codes are links, but read as the order's name: text colour, not the dark-mode link orange. */
+[data-bs-theme="dark"] #ordersLiveScreenHost .wasla-live-screen-card__code a {
+  color: var(--color-text, #f3f4f6);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings__toggle[aria-expanded="true"] {
+  color: var(--color-accent, #f26b3a);
+}
+
+[data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings .wasla-live-settings-menu {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}

@@ -101,16 +101,65 @@
                             </td>
                             <td data-label="@L["PlatformConnections.Actions"]">
                                 <span class="wasla-table__cell-label" aria-hidden="true">@L["PlatformConnections.Actions"]</span>
-                                <a class="wasla-btn wasla-btn--quiet"
-                                   href="/platform-connections/@c.Id/edit">
-                                    @L["PlatformConnections.Edit"]
-                                </a>
+                                <div class="wasla-connections__actions">
+                                    <a class="wasla-btn wasla-btn--quiet"
+                                       href="/platform-connections/@c.Id/edit">
+                                        @L["PlatformConnections.Edit"]
+                                    </a>
+                                    @* Every state (active, inactive, circuit open) can be removed; the dialog below asks first. *@
+                                    <button type="button"
+                                            class="wasla-btn wasla-btn--quiet wasla-connections__remove"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#pc-remove-@c.Id"
+                                            data-connection-remove="@c.Id">
+                                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                                        <span>@L["PlatformConnections.Remove"]</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
                     </tbody>
                 </table>
             </div>
+
+            @* One confirmation per connection (a tenant has at most one per platform). It posts that connection's id only;
+               Cancel, the close button and Escape send nothing. *@
+            @foreach (var c in Model.Connections)
+            {
+                <div class="modal fade wasla-connections__remove-dialog" id="pc-remove-@c.Id" tabindex="-1"
+                     aria-labelledby="pc-remove-@c.Id-title" aria-describedby="pc-remove-@c.Id-body" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2 class="modal-title h6" id="pc-remove-@c.Id-title">@L["PlatformConnections.RemoveConfirmTitle"]</h2>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Cancel"]"></button>
+                            </div>
+                            <div class="modal-body" id="pc-remove-@c.Id-body">
+                                <dl class="wasla-connections__remove-facts">
+                                    <div>
+                                        <dt>@L["PlatformConnections.Platform"]</dt>
+                                        <dd>@c.Platform</dd>
+                                    </div>
+                                    <div>
+                                        <dt>@L["PlatformConnections.StoreId"]</dt>
+                                        <dd dir="auto">@c.StoreId</dd>
+                                    </div>
+                                </dl>
+                                <p class="mb-2">@L["PlatformConnections.RemoveConfirmStopsSync"]</p>
+                                <p class="text-muted small mb-0">@L["PlatformConnections.RemoveConfirmKeepsOrders"]</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">@L["Common.Cancel"]</button>
+                                <form method="post" action="/platform-connections/@c.Id/remove" class="m-0" data-connection-remove-form>
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-sm" data-connection-remove-confirm>@L["PlatformConnections.Remove"]</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
         }
     </section>
 </div>

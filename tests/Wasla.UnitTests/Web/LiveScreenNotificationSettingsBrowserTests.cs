@@ -73,9 +73,10 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         await ClickAsync(browser, "#ordersLiveDisplaySettingsToggle", ct);
         Assert.True(await browser.WaitForAsync("document.getElementById('ordersLiveDisplaySettingsMenu').classList.contains('show')", Wait, ct),
             "The Live Screen settings menu did not open.");
+        // The compact action on the Notifications heading row shows "Settings" and is named with the heading.
         var label = await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayNotificationSettings').textContent.trim()", ct);
         if (culture == "tr-TR")
-            Assert.Equal("Bildirim Ayarları", label);
+            Assert.Equal("Ayarlar", label);
         await ClickAsync(browser, "#ordersLiveDisplayNotificationSettings", ct);
         Assert.True(await browser.WaitForAsync(ModalOpen(1), Wait, ct), $"The settings menu entry did not open the notification settings modal. {host.ServerErrors}");
         Assert.Equal(1, await browser.EvaluateAsync<int>("document.querySelectorAll('#notificationSettingsModal').length", ct));

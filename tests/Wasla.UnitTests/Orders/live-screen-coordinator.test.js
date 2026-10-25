@@ -314,6 +314,18 @@ test("live screen money shows the lira symbol while the locale only changes numb
   assert.equal(store.formatAmount(1230.1, "tr-TR"), store.formatAmount(1230.10, "tr-TR"));
 });
 
+test("summary and paging counts use the culture's digits and grouping", function () {
+  assert.equal(store.formatCount(0, "tr-TR"), "0");
+  assert.equal(store.formatCount(52, "tr-TR"), "52");
+  assert.equal(store.formatCount(1250, "tr-TR"), "1.250");
+  assert.equal(store.formatCount(1250, "en-US"), "1,250");
+  assert.equal(store.formatCount(1250, "ru-RU").replace(/\s/g, ""), "1250");
+  // Arabic counts use Arabic-Indic digits, like the prices on the same screen.
+  assert.equal(store.formatCount(52, "ar-SA"), "٥٢");
+  assert.equal(store.formatCount(1250, "ar-SA"), "١٬٢٥٠");
+  assert.equal(store.formatCount(1250), "1.250", "Turkish without a culture");
+});
+
 test("snapshots apply only after every pending mutation settles", async function () {
   const h = harness();
   const endA = h.coordinator.beginMutation();
@@ -3216,7 +3228,7 @@ function boardCss() {
 
 /** The Board card sizing block: from its comment to the Board's own phone grid rule after it. */
 function boardHeightBlock(css) {
-  const start = css.indexOf("/* Board cards: one block size on desktop and tablet");
+  const start = css.indexOf("/* Board cards: one block size at every width");
   const end = css.indexOf(".wasla-live-board { grid-template-columns: minmax(0, 1fr); }", start);
   assert.ok(start > 0 && end > start, "the Board card sizing block exists");
   return css.slice(start, end);
@@ -3255,18 +3267,18 @@ function cssRules(css) {
 const CANONICAL_CARD = '.wasla-live-board .wasla-live-screen-card[data-live-layout="board"]';
 const SIZE_PROPERTY = /(^|[;\s])(block-size|height|min-block-size|min-height|max-block-size|max-height)\s*:/;
 
-test("Board cards use one canonical desktop and tablet block size", () => {
+test("Board cards use one canonical block size at every width", () => {
   const rules = cssRules(boardCss());
   const sizing = rules.filter(r => r.selector === CANONICAL_CARD && /(^|[;\s])block-size\s*:/.test(r.body));
   assert.equal(sizing.length, 1, "one fixed block-size rule");
-  assert.equal(sizing[0].media, "@media (min-width: 768px)");
+  assert.equal(sizing[0].media, "", "phones, tablets and desktops alike");
   assert.match(sizing[0].body, /block-size: var\(--wasla-live-board-card-block-size\);/);
   assert.match(sizing[0].body, /contain-intrinsic-size: auto var\(--wasla-live-board-card-block-size\);/);
   assert.match(sizing[0].body, /flex: none;/);
   const token = rules.filter(r => /--wasla-live-board-card-block-size\s*:/.test(r.body));
   assert.equal(token.length, 1, "the size is defined once");
   assert.equal(token[0].selector, ".wasla-live-board");
-  assert.match(token[0].body, /--wasla-live-board-card-block-size: 20\.5rem;/);
+  assert.match(token[0].body, /--wasla-live-board-card-block-size: 18rem;/);
 });
 
 test("every status uses the same Board card shell, and no status, demo or countdown rule resizes it", () => {
@@ -3296,7 +3308,7 @@ test("every status uses the same Board card shell, and no status, demo or countd
   const existingBase = ".wasla-live-board .wasla-live-screen-card, .wasla-live-board .orders-card--kitchen";
   const offenders = cssRules(boardCss()).filter(r => isCard(r.selector) && SIZE_PROPERTY.test(r.body)
     && r.selector.replace(/\s+/g, " ") !== existingBase
-    && !(r.selector === CANONICAL_CARD && (r.media === "@media (min-width: 768px)" || r.media === "@media (max-width: 767.98px)")));
+    && !(r.selector === CANONICAL_CARD && r.media === ""));
   assert.deepEqual(offenders.map(r => (r.media + " " + r.selector).trim()), []);
   for (const rule of cssRules(boardCss()).filter(r => /wasla-live-board/.test(r.selector) && SIZE_PROPERTY.test(r.body)))
     assert.equal(/data-order-status|orders-card--muted|order-row-new|data-wasla-demo|:has\(/.test(rule.selector), false, rule.selector);
@@ -3306,7 +3318,7 @@ test("price and actions sit on the bottom edge; identity stays on top; only the 
   const block = boardHeightBlock(boardCss());
   const rules = cssRules(block);
   const find = (suffix, media) => rules.find(r => r.selector === CANONICAL_CARD + suffix && r.media === media);
-  const desktop = "@media (min-width: 768px)";
+  const desktop = "";
   assert.match(find(" > .orders-card-body", desktop).body, /flex: 1 1 auto;\s*min-block-size: 0;/);
   assert.match(find(" .wasla-live-card__secondary", desktop).body, /margin-block-start: auto;/);
   const items = find(" .wasla-live-board-items", desktop).body;
@@ -3346,6 +3358,61 @@ test("long names, notes and badges wrap inside the card, and Details stays avail
     const actions = id => h.card(id).querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action"));
     assert.deepEqual(actions(guid(1)), ["approve", "reject"]);
     assert.deepEqual(actions(guid(2)), ["mark-ready"]);
+  } finally { h.restore(); }
+});
+
+test("a Board preview shows whole product rows only and counts the rest as +N; the order keeps every item", () => {
+  const h = boardHarness(true, { getMessage: key => ({ boardItemsHidden: "+{0} more", boardItemsMore: "More in details" })[key] || key });
+  try {
+    const body = snapshot([guid(1)]);
+    body.orders[0].items = ["A", "B", "C", "D", "E", "F"].map(name => ({ productName: name, quantity: 1, notes: null }));
+    h.browser.renderSnapshot(body);
+    const card = h.card(guid(1));
+    const viewport = card.querySelector(".wasla-live-board-items__viewport");
+    const rows = card.querySelectorAll(".wasla-live-screen-card__item");
+    // Rows end at 20, 40, ... px; the preview ends at 70, so the fourth row is cut by its edge.
+    viewport.getBoundingClientRect = () => ({ top: 0, bottom: 70 });
+    rows.forEach((row, i) => { row.getBoundingClientRect = () => ({ top: i * 20, bottom: (i + 1) * 20 }); });
+    viewport.scrollHeight = 120;
+    viewport.clientHeight = 70;
+    h.browser.renderSnapshot(body);
+
+    assert.deepEqual(rows.map(row => row.hasAttribute("data-board-clipped")), [false, false, false, true, true, true]);
+    assert.equal(card.querySelector(".wasla-live-board-items__more").textContent, "+3 more");
+    assert.equal(rows.length, 6, "every product stays in the card; only its preview is cut");
+
+    // Enough room again: nothing is hidden and the count goes away.
+    viewport.scrollHeight = 60;
+    viewport.clientHeight = 130;
+    viewport.getBoundingClientRect = () => ({ top: 0, bottom: 130 });
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(rows.map(row => row.hasAttribute("data-board-clipped")), [false, false, false, false, false, false]);
+    assert.equal(card.querySelector(".wasla-live-board-items").classList.contains("has-item-overflow"), false);
+  } finally { h.restore(); }
+});
+
+test("a List row shows up to five product lines; a longer order shows four and +N for the rest", () => {
+  const h = boardHarness(true, { getMessage: key => (key === "boardItemsHidden" ? "+{0} more" : key) });
+  try {
+    h.view("list");
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[0].items = ["A", "B", "C", "D", "E"].map(name => ({ productName: name, quantity: 1, notes: null }));
+    body.orders[1].items = ["A", "B", "C", "D", "E", "F", "G"].map(name => ({ productName: name, quantity: 2, notes: "n " + name }));
+    h.browser.renderSnapshot(body);
+
+    const five = h.card(guid(1));
+    assert.deepEqual(five.querySelectorAll(".wasla-live-screen-card__product").map(node => node.textContent), ["A", "B", "C", "D", "E"]);
+    assert.equal(five.querySelector("[data-items-more]"), null);
+
+    const seven = h.card(guid(2));
+    assert.deepEqual(seven.querySelectorAll(".wasla-live-screen-card__product").map(node => node.textContent), ["A", "B", "C", "D"]);
+    assert.equal(seven.querySelector("[data-items-more]").textContent, "+3 more");
+
+    // An update that shortens the order refills the row without the count.
+    body.orders[1].items = body.orders[1].items.slice(0, 2);
+    h.browser.renderSnapshot(body);
+    assert.deepEqual(h.card(guid(2)).querySelectorAll(".wasla-live-screen-card__product").map(node => node.textContent), ["A", "B"]);
+    assert.equal(h.card(guid(2)).querySelector("[data-items-more]"), null);
   } finally { h.restore(); }
 });
 
@@ -3400,18 +3467,17 @@ test("the practice-order countdown fits inside the fixed card: no size of its ow
   assert.match(script, /var badge = card\.querySelector\("\[data-status-badge\]"\);/);
 });
 
-test("List, Focus, the detail modal and phones are not given the Board's fixed height", () => {
+test("Board cards keep their fixed height on phones too; List, Focus and the detail modal are not given it", () => {
   const rules = cssRules(boardCss());
   const fixed = rules.filter(r => /(^|[;\s])block-size: var\(--wasla-live-board-card-block-size\)/.test(r.body));
   assert.equal(fixed.length, 1);
-  assert.equal(fixed[0].media, "@media (min-width: 768px)");
+  assert.equal(fixed[0].media, "");
   for (const other of ["wasla-live-groups", "wasla-live-group", "wasla-live-list-row", "wasla-live-focus", "wasla-live-detail", "modal", "orders-card-grid"])
     assert.equal(fixed[0].selector.includes(other), false, other);
+  // No phone rule lets a long order grow its card again.
   const phone = rules.filter(r => r.selector === CANONICAL_CARD && r.media === "@media (max-width: 767.98px)");
-  assert.equal(phone.length, 1);
-  assert.match(phone[0].body, /min-block-size: var\(--wasla-live-board-card-min-block-size\);/);
-  assert.equal(/(^|[;\s])block-size\s*:/.test(phone[0].body), false, "phones grow with their content");
-  assert.ok(rules.some(r => r.selector === ".wasla-live-board" && /--wasla-live-board-card-min-block-size: 15rem;/.test(r.body)));
+  assert.equal(phone.length, 0);
+  assert.equal(/--wasla-live-board-card-min-block-size/.test(boardCss()), false);
 
   const h = boardHarness(true, { liveDetailModal: { loadPanel: () => Promise.resolve(true) } });
   try {
