@@ -119,6 +119,10 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
                     b.Property<bool>("VatIncluded")
                         .HasColumnType("bit");
 
@@ -133,6 +137,70 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                             t.HasCheckConstraint("CK_BillingPlanPrices_Amount", "[Amount] > 0");
 
                             t.HasCheckConstraint("CK_BillingPlanPrices_BillingPeriod", "[BillingPeriod] IN ('Monthly', 'Yearly')");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.BillingPlanPriceCorrection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CorrectedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CorrectedByCentralAdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("NewAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("NewCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("NewEffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("NewVatIncluded")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PlanPriceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PreviousAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PreviousCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .IsUnicode(false)
+                        .HasColumnType("char(3)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("PreviousEffectiveFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("PreviousVatIncluded")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanPriceId", "CorrectedAtUtc")
+                        .HasDatabaseName("IX_BillingPlanPriceCorrections_PlanPriceId_CorrectedAtUtc");
+
+                    b.ToTable("BillingPlanPriceCorrections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillingPlanPriceCorrections_NewAmount", "[NewAmount] > 0");
+
+                            t.HasCheckConstraint("CK_BillingPlanPriceCorrections_PreviousAmount", "[PreviousAmount] > 0");
                         });
                 });
 

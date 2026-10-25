@@ -178,6 +178,47 @@ public sealed class BillingPersistenceModelTests
             migration.DownOperations.Skip(1).Select(op => Assert.IsType<DropTableOperation>(op).Name));
     }
 
+    [Fact]
+    public void PlanPriceCorrections_AreAppendOnlyAudit_WithoutAForeignKey_AndEveryPriceCarriesARevision()
+    {
+        using var central = SqlServerModel();
+        var model = central.GetService<IDesignTimeModel>().Model;
+        var entity = model.FindEntityType(typeof(BillingPlanPriceCorrection))!;
+        Assert.Equal("BillingPlanPriceCorrections", entity.GetTableName());
+
+        // The audit outlives a withdrawn scheduled price, and it is not a reference that freezes the price.
+        Assert.Empty(entity.GetForeignKeys());
+        Assert.All(entity.GetProperties(), p => Assert.Equal(PropertySaveBehavior.Throw, p.GetAfterSaveBehavior()));
+        var index = Assert.Single(entity.GetIndexes());
+        Assert.Equal("IX_BillingPlanPriceCorrections_PlanPriceId_CorrectedAtUtc", index.GetDatabaseName());
+        Assert.False(index.IsUnique);
+        var checks = entity.GetCheckConstraints().ToDictionary(c => c.Name!, c => c.Sql);
+        Assert.Equal("[PreviousAmount] > 0", checks["CK_BillingPlanPriceCorrections_PreviousAmount"]);
+        Assert.Equal("[NewAmount] > 0", checks["CK_BillingPlanPriceCorrections_NewAmount"]);
+
+        var revision = model.FindEntityType(typeof(BillingPlanPrice))!.FindProperty(nameof(BillingPlanPrice.Revision))!;
+        Assert.True(revision.IsConcurrencyToken);
+        Assert.Equal(PropertySaveBehavior.Throw, revision.GetAfterSaveBehavior());
+    }
+
+    [Fact]
+    public void TheCorrectionMigration_OnlyAdds_AndItsRollbackRefusesToDeleteCorrections()
+    {
+        var migration = new AddBillingPlanPriceCorrections();
+
+        var revision = Assert.IsType<AddColumnOperation>(migration.UpOperations[0]);
+        Assert.Equal(("BillingPlanPrices", "Revision", 1), (revision.Table, revision.Name, revision.DefaultValue));
+        Assert.All(migration.UpOperations.Skip(1), op => Assert.True(
+            op is CreateTableOperation { Name: "BillingPlanPriceCorrections" } or CreateIndexOperation { Table: "BillingPlanPriceCorrections" },
+            $"Unexpected operation {op.GetType().Name}: the migration must only add."));
+
+        var guard = Assert.IsType<SqlOperation>(migration.DownOperations[0]);
+        Assert.Contains("THROW 50064", guard.Sql, StringComparison.Ordinal);
+        Assert.Contains("[BillingPlanPriceCorrections]", guard.Sql, StringComparison.Ordinal);
+        Assert.IsType<DropTableOperation>(migration.DownOperations[1]);
+        Assert.IsType<DropColumnOperation>(migration.DownOperations[2]);
+    }
+
     private static void AssertUniqueIndex(IEntityType entity, string name, string? filter, params string[] columns)
     {
         var index = Assert.Single(entity.GetIndexes(), i => i.GetDatabaseName() == name);

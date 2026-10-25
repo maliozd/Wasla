@@ -2853,6 +2853,12 @@
   <data name="Pricing.Monthly" xml:space="preserve">
     <value>Ежемесячно</value>
   </data>
+  <data name="Pricing.PeriodShownMonthly" xml:space="preserve">
+    <value>Показаны цены за месяц.</value>
+  </data>
+  <data name="Pricing.PeriodShownYearly" xml:space="preserve">
+    <value>Показаны цены за год.</value>
+  </data>
   <data name="Pricing.ContactSales" xml:space="preserve">
     <value>Индивидуальные цены</value>
   </data>
@@ -4645,6 +4651,30 @@
   <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>Введите правильную дату.</value></data>
   <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>Дата не может быть в прошлом.</value></data>
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>Для этого тарифа и периода оплаты на эту дату уже есть цена.</value></data>
+  <data name="Admin.PlanPrices.Actions" xml:space="preserve"><value>Действия</value></data>
+  <data name="Admin.PlanPrices.Correct" xml:space="preserve"><value>Исправить</value></data>
+  <data name="Admin.PlanPrices.Supersede" xml:space="preserve"><value>Заменить новой ценой</value></data>
+  <data name="Admin.PlanPrices.ReferencedCount" xml:space="preserve"><value>Используется в подписках: {0}; изменить нельзя</value></data>
+  <data name="Admin.PlanPrices.CorrectTitle" xml:space="preserve"><value>Исправление цены</value></data>
+  <data name="Admin.PlanPrices.CorrectIntro" xml:space="preserve"><value>Цену можно исправить на месте, пока её не использует ни одна подписка. Тариф и период оплаты не меняются; сумма, НДС и дата начала проверяются по тем же правилам, что и новая цена. Исправление записывается от вашего имени с прежними и новыми значениями.</value></data>
+  <data name="Admin.PlanPrices.CurrentValues" xml:space="preserve"><value>Текущие значения</value></data>
+  <data name="Admin.PlanPrices.Currency" xml:space="preserve"><value>Валюта</value></data>
+  <data name="Admin.PlanPrices.CorrectEffectiveDateHelp" xml:space="preserve"><value>Выберите сегодняшнюю или более позднюю дату по времени Турции либо оставьте текущую дату цены. Цена начинает действовать в 00:00 по времени Турции в этот день.</value></data>
+  <data name="Admin.PlanPrices.SaveCorrection" xml:space="preserve"><value>Сохранить исправление</value></data>
+  <data name="Admin.PlanPrices.BackToList" xml:space="preserve"><value>Вернуться к ценам</value></data>
+  <data name="Admin.PlanPrices.Corrected" xml:space="preserve"><value>Цена исправлена.</value></data>
+  <data name="Admin.PlanPrices.CorrectionUnchanged" xml:space="preserve"><value>Ничего не изменилось; цена осталась прежней.</value></data>
+  <data name="Admin.PlanPrices.NotFound" xml:space="preserve"><value>Цена не найдена.</value></data>
+  <data name="Admin.PlanPrices.ReferencedExplanation" xml:space="preserve"><value>Эта цена используется в подписках: {0}, поэтому её нельзя изменить. Вместо этого запланируйте новую цену для того же тарифа и периода оплаты; эта цена останется в истории без изменений.</value></data>
+  <data name="Admin.PlanPrices.CorrectionRefusedReferenced" xml:space="preserve"><value>Исправление не сохранено: за это время цена начала использоваться в подписках: {0}. Замените её новой ценой.</value></data>
+  <data name="Admin.PlanPrices.CorrectionStale" xml:space="preserve"><value>Исправление не сохранено: за это время цену изменил другой администратор. Проверьте текущие значения и попробуйте снова.</value></data>
+  <data name="Admin.PlanPrices.SupersedeNotice" xml:space="preserve"><value>Вы планируете новую цену вместо: {0}. Текущая цена не меняется и остаётся в истории; новая цена действует с выбранной даты.</value></data>
+  <data name="Admin.PlanPrices.CorrectionHistory" xml:space="preserve"><value>История исправлений</value></data>
+  <data name="Admin.PlanPrices.CorrectedAt" xml:space="preserve"><value>Время (Турция)</value></data>
+  <data name="Admin.PlanPrices.CorrectedBy" xml:space="preserve"><value>Администратор</value></data>
+  <data name="Admin.PlanPrices.PreviousValues" xml:space="preserve"><value>Было</value></data>
+  <data name="Admin.PlanPrices.NewValues" xml:space="preserve"><value>Стало</value></data>
+  <data name="Admin.PlanPrices.UnknownAdmin" xml:space="preserve"><value>Администратор больше не существует</value></data>
   <data name="Billing.VatIncluded" xml:space="preserve"><value>НДС включён</value></data>
   <data name="Billing.VatExcluded" xml:space="preserve"><value>Без НДС</value></data>
   <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>

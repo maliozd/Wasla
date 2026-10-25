@@ -239,7 +239,10 @@ public sealed class BillingMigrationSqlServerTests : IClassFixture<SqlServerCent
         Assert.DoesNotContain(billing, await db.Database.GetAppliedMigrationsAsync(Ct));
 
         await migrator.MigrateAsync(billing, Ct);
-        Assert.Empty(await db.Database.GetPendingMigrationsAsync(Ct));
         Assert.False(await db.BillingSubscriptions.AnyAsync(Ct));
+
+        // Later central migrations (AddBillingPlanPriceCorrections) apply on top again.
+        await migrator.MigrateAsync(null, Ct);
+        Assert.Empty(await db.Database.GetPendingMigrationsAsync(Ct));
     }
 }

@@ -97,6 +97,47 @@ jobs:
         id: build
         run: dotnet build Wasla.sln --configuration Release --no-restore
 
+      # The SQL Server tests use (localdb)\MSSQLLocalDB in both scopes. LocalDB otherwise starts on its first connection,
+      # and on a busy runner that start can outlast a test fixture's connect timeout, failing whichever class connects
+      # first (#69). Start it explicitly (sqllocaldb start returns once the instance runs) and prove it answers before
+      # any test runs; this step fails, rather than a test, when LocalDB cannot start.
+      - name: Start and verify SQL Server LocalDB
+        shell: powershell
+        run: |
+          $sqllocaldb = (Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue).Source
+          if (-not $sqllocaldb) {
+            $sqllocaldb = Get-ChildItem -Path "$env:ProgramFiles\Microsoft SQL Server\*\Tools\Binn\SqlLocalDB.exe" -ErrorAction SilentlyContinue |
+              Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $sqllocaldb) { Write-Host '::error::SqlLocalDB.exe was not found on the runner; the SQL Server tests cannot run.'; exit 1 }
+          & $sqllocaldb versions
+          # `sqllocaldb info` without a name lists the instances on stdout (no stderr to trip the step's error policy).
+          $instances = @(& $sqllocaldb info | ForEach-Object { $_.Trim() })
+          if ($instances -notcontains 'MSSQLLocalDB') {
+            & $sqllocaldb create MSSQLLocalDB
+            if ($LASTEXITCODE -ne 0) { Write-Host '::error::sqllocaldb could not create MSSQLLocalDB.'; exit 1 }
+          }
+          $started = [Diagnostics.Stopwatch]::StartNew()
+          & $sqllocaldb start MSSQLLocalDB
+          if ($LASTEXITCODE -ne 0) { Write-Host '::error::sqllocaldb could not start MSSQLLocalDB.'; exit 1 }
+          Write-Host "sqllocaldb start returned after $([int]$started.Elapsed.TotalSeconds) s"
+          & $sqllocaldb info MSSQLLocalDB
+
+          $connection = New-Object System.Data.SqlClient.SqlConnection 'Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=master;Integrated Security=True;Connect Timeout=180'
+          try {
+            $connection.Open()
+            $command = $connection.CreateCommand()
+            $command.CommandText = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(32)) + ' ' + CAST(SERVERPROPERTY('Edition') AS nvarchar(64))"
+            Write-Host "LocalDB answers: $($command.ExecuteScalar()) (ready after $([int]$started.Elapsed.TotalSeconds) s)"
+          }
+          catch {
+            Write-Host "::error::LocalDB did not answer a query: $($_.Exception.Message)"
+            exit 1
+          }
+          finally {
+            $connection.Dispose()
+          }
+
       # An empty filter (full scope) passes no --filter, so the whole project runs.
       - name: Run Wasla.UnitTests (${{ env.TEST_SCOPE }})
         shell: pwsh

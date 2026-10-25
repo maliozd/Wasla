@@ -84,7 +84,7 @@ public sealed class BillingBoundaryTests
             "card|pan$|cvv|cvc|expir|holder|iban|email|phone|address|name$|token|secret|password|apikey|payload|raw|response|request|signature",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        var fields = new[] { typeof(BillingSubscription), typeof(BillingPayment), typeof(BillingPlanPrice) }
+        var fields = new[] { typeof(BillingSubscription), typeof(BillingPayment), typeof(BillingPlanPrice), typeof(BillingPlanPriceCorrection) }
             .SelectMany(t => t.GetProperties().Select(p => $"{t.Name}.{p.Name}"))
             .Where(name => forbidden.IsMatch(name.Split('.')[1]));
 
