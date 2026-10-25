@@ -15,6 +15,7 @@ using PendingRegistrationBusinessType = Wasla.Domain.Entities.Central.PendingReg
 using BillingSubscription = Wasla.Domain.Entities.Central.BillingSubscription;
 using BillingPayment = Wasla.Domain.Entities.Central.BillingPayment;
 using BillingPlanPrice = Wasla.Domain.Entities.Central.BillingPlanPrice;
+using BillingPlanPriceCorrection = Wasla.Domain.Entities.Central.BillingPlanPriceCorrection;
 using Wasla.Infrastructure.Persistence.Central.Configurations;
 
 namespace Wasla.Infrastructure.Persistence.Central;
@@ -42,6 +43,7 @@ public class CentralDbContext : DbContext
     public DbSet<BillingSubscription> BillingSubscriptions => Set<BillingSubscription>();
     public DbSet<BillingPayment> BillingPayments => Set<BillingPayment>();
     public DbSet<BillingPlanPrice> BillingPlanPrices => Set<BillingPlanPrice>();
+    public DbSet<BillingPlanPriceCorrection> BillingPlanPriceCorrections => Set<BillingPlanPriceCorrection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,5 +63,6 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BillingSubscriptionConfiguration());
         modelBuilder.ApplyConfiguration(new BillingPaymentConfiguration());
         modelBuilder.ApplyConfiguration(new BillingPlanPriceConfiguration());
+        modelBuilder.ApplyConfiguration(new BillingPlanPriceCorrectionConfiguration());
     }
 }

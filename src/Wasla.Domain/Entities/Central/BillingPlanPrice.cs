@@ -5,8 +5,10 @@ namespace Wasla.Domain.Entities.Central;
 /// <summary>
 /// Wasla's authoritative price for one plan and billing period from <see cref="EffectiveFromUtc"/> on (WAS-147).
 /// CentralDb owns it; a checkout charges the row in effect when it starts, and the subscription keeps that amount as
-/// its snapshot. Rows never change: a new price is a new row with a later <see cref="EffectiveFromUtc"/>. Central
-/// Admins add them on the plan prices page; nothing seeds them.
+/// its snapshot. Central Admins add them on the plan prices page; nothing seeds them. A price change is a new row with
+/// a later <see cref="EffectiveFromUtc"/>. A row that nothing references yet may be corrected in place (GitHub #64): only
+/// with one conditional statement that bumps <see cref="Revision"/> and is recorded as a
+/// <see cref="BillingPlanPriceCorrection"/>; a referenced row never changes. EF refuses tracked changes to every column.
 /// </summary>
 /// <remarks>
 /// This is Wasla's price, not the provider's catalog. The payment provider's product and pricing-plan references for
@@ -42,6 +44,12 @@ public sealed class BillingPlanPrice
 
     public DateTime CreatedAtUtc { get; private set; }
 
+    /// <summary>
+    /// Raised by every correction. A correction names the revision it was based on, and a writer that starts referencing
+    /// the row first locks it at the revision it read, so neither can act on values that changed in between.
+    /// </summary>
+    public int Revision { get; private set; }
+
     public BillingPrice Price => new(Amount, Currency);
 
     public static BillingPlanPrice Create(
@@ -72,7 +80,8 @@ public sealed class BillingPlanPrice
             VatIncluded = vatIncluded,
             EffectiveFromUtc = effectiveFromUtc,
             CreatedByCentralAdminUserId = createdByCentralAdminUserId,
-            CreatedAtUtc = nowUtc
+            CreatedAtUtc = nowUtc,
+            Revision = 1
         };
     }
 }
