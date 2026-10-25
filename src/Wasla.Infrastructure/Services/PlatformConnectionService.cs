@@ -242,5 +242,13 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         await db.SaveChangesAsync(ct);
         return true;
     }
+
+    public async Task<bool> RemoveAsync(Guid customerId, Guid id, CancellationToken ct)
+    {
+        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        // One statement by id: a repeated or concurrent removal deletes nothing and reports false, and a connection
+        // created again for the same platform has a new id, so a stale confirmation can never remove it.
+        return await db.PlatformConnections.Where(p => p.Id == id).ExecuteDeleteAsync(ct) > 0;
+    }
 }
 

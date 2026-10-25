@@ -165,6 +165,7 @@ Implications:
 
 - A second connection for the same platform is rejected even when `StoreId` differs.
 - Deactivating a connection does not free that platform for a second row. The unique index is not filtered by `IsActive`.
+- Removing a connection (Platform Connections, Remove, then the confirmation; GitHub #72) deletes its row and stored credentials, which frees the platform: the same platform and store can be connected again as a new row with a new id. Orders, `SyncLogs` and `IntegrationErrors` are kept (none has a foreign key to the row; logs keep the removed id). Removal is by id in one statement, so a repeated or stale confirmation deletes nothing and says the connection no longer exists. The Worker loads connections on every pass, so a removed one is never polled again; one removed while its pass runs ends that pass without a failure record, and the tenant's other connections continue. Order actions on existing orders of that platform then fail as they do for an inactive connection, until the platform is connected again.
 - `Platform` cannot be changed on an existing connection. An edit that posts a different platform is rejected and leaves the stored row unchanged.
 - Different platforms may coexist on one tenant (one Trendyol connection, one Yemeksepeti connection, and one Getir connection).
 - `StoreId` identifies this tenant's location in the provider. It is stored and sent to the provider. It does not model a second restaurant inside the tenant.
@@ -217,7 +218,7 @@ Cache size (`MaxCachedTokens` = 4,096):
 - Past 4,096, a new token is used for its own fetch only and a warning is logged. Further fetches of that connection then request a token each time until older entries are pruned.
 - An entry whose token was discarded after a 401 or 403 is removed as soon as no fetch is using it. An entry whose token has expired is removed the next time any connection acquires a token. A rotated credential or a connection that is no longer synced therefore keeps its entry until its token has expired and another token has been acquired.
 
-Inactive connections: the Worker does not sync an inactive connection (`IsActive` false), so its cached token is not sent. There is no operator action that deletes a platform connection; connections are deactivated instead. The temporary Development reset tool deletes a tenant's connections, and after that they are never loaded, so their tokens are not sent either. A connection's entry ends when its token expires and is pruned.
+Inactive connections: the Worker does not sync an inactive connection (`IsActive` false), so its cached token is not sent. An Owner can remove a connection, and the temporary Development reset tool deletes all of a tenant's connections; a deleted connection is never loaded again, so its token is not sent either. A connection's entry ends when its token expires and is pruned.
 
 The real provider's token scope (chain, vendor or integrator), token lifetime, behavior after a secret rotation, and token-endpoint limits are not confirmed yet (WAS-70). These rules are verified against a fake provider only.
 

@@ -79,6 +79,25 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", initToggles);
+  // The removal dialog posts once: a second click while the first request is under way would answer "already
+  // removed" over the first request's result. The server stays idempotent either way.
+  function initRemoveConfirmations() {
+    document.querySelectorAll("form[data-connection-remove-form]").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        if (form.getAttribute("data-submitted") === "true") {
+          event.preventDefault();
+          return;
+        }
+        form.setAttribute("data-submitted", "true");
+        const button = form.querySelector("[data-connection-remove-confirm]");
+        if (button) button.setAttribute("aria-disabled", "true");
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initToggles();
+    initRemoveConfirmations();
+  });
 })(window);
 

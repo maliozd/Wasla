@@ -201,6 +201,25 @@ public sealed class PlatformConnectionsController : BaseController
         return RedirectToAction("Index");
     }
 
+    /// <summary>
+    /// The confirmation dialog's Remove. A connection this tenant no longer has (removed in another tab, a repeated
+    /// submission, or an id that was never its own) changes nothing and says so, without telling the cases apart.
+    /// </summary>
+    [ValidateAntiForgeryToken]
+    [HttpPost("{id:guid}/remove")]
+    public async Task<IActionResult> Remove(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        if (await _connections.RemoveAsync(tenant.Id, id, ct))
+            TempData["Success"] = _localizer["PlatformConnections.Removed"].Value;
+        else
+            TempData["Error"] = _localizer["PlatformConnections.AlreadyRemoved"].Value;
+
+        return RedirectToAction("Index");
+    }
+
     [ValidateAntiForgeryToken]
     [HttpPost("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)

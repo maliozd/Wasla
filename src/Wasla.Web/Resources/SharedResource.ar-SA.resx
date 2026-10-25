@@ -4188,4 +4188,25 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / شهر</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / سنة</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>الدفع السنوي أقل بمقدار {0} من 12 دفعة شهرية.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>إزالة</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>هل تريد إزالة اتصال المنصة؟</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>تؤدي إزالة هذا الاتصال إلى إيقاف مزامنة طلباته. لن تجلب Wasla طلبات هذا المتجر بعد الآن.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>تبقى الطلبات المستوردة سابقًا في Wasla. يمكنك ربط هذه المنصة وهذا المتجر مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>تمت إزالة اتصال المنصة. توقفت مزامنة طلباته.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>اتصال المنصة هذا لم يعد موجودًا. لم يتغير أي شيء.</value>
+  </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} أخرى</value>
+  </data>
 </root>

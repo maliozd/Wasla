@@ -24,17 +24,22 @@
 
 <div class="wasla-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
     <header class="wasla-live-detail__head">
-        <h3 class="wasla-live-detail__code">@Model.ExternalOrderCode</h3>
-        <div class="wasla-live-detail__meta">
-            @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
-            @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
-            <span class="wasla-live-detail__elapsed" data-elapsed>@elapsedLabel</span>
+        @* Code first, the platform on its own line below it, then status, elapsed time and order time together. *@
+        <div class="wasla-live-detail__headline">
+            <h3 class="wasla-live-detail__code">@Model.ExternalOrderCode</h3>
+            <div class="wasla-live-detail__platform">
+                @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
+            </div>
+            <div class="wasla-live-detail__meta">
+                @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
+                <span class="wasla-live-detail__elapsed" data-elapsed>@elapsedLabel</span>
+            </div>
+            <p class="wasla-live-detail__received" data-received>@orderTimeCaption @orderTimeLabel</p>
+            @if (showReceivedSeparately)
+            {
+                <p class="wasla-live-detail__received" data-received-in-wasla>@L["Orders.Details.Received"] @receivedLabel</p>
+            }
         </div>
-        <p class="wasla-live-detail__received" data-received>@orderTimeCaption @orderTimeLabel</p>
-        @if (showReceivedSeparately)
-        {
-            <p class="wasla-live-detail__received" data-received-in-wasla>@L["Orders.Details.Received"] @receivedLabel</p>
-        }
     </header>
 
     @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))

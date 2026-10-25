@@ -519,4 +519,6 @@ internal sealed class FakePlatformConnections : IPlatformConnectionService
     public Task<CreatePlatformConnectionResult> UpdateAsync(Guid customerId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct) => throw new NotSupportedException();
 
     public Task<bool> SetActiveAsync(Guid customerId, Guid id, bool isActive, CancellationToken ct) => throw new NotSupportedException();
+
+    public Task<bool> RemoveAsync(Guid customerId, Guid id, CancellationToken ct) => throw new NotSupportedException();
 }

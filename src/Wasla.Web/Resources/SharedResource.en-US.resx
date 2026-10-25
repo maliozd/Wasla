@@ -4188,4 +4188,25 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / month</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / year</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>Yearly billing costs {0} less than 12 monthly payments.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>Remove platform connection?</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>Removing this connection stops its order synchronization. Wasla will no longer fetch orders for this store.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>Orders already imported stay in Wasla. You can connect this platform and store again later.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>Platform connection removed. Its order synchronization has stopped.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>This platform connection no longer exists. Nothing was changed.</value>
+  </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} more</value>
+  </data>
 </root>

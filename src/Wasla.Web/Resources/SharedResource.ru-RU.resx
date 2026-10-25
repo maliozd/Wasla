@@ -4682,4 +4682,25 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / месяц</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / год</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>Годовая оплата на {0} меньше 12 ежемесячных платежей.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>Удалить соединение с платформой?</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>Удаление этого соединения останавливает синхронизацию его заказов. Wasla больше не будет получать заказы этого магазина.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>Уже импортированные заказы останутся в Wasla. Позже вы сможете снова подключить эту платформу и магазин.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>Соединение с платформой удалено. Синхронизация его заказов остановлена.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>Этого соединения с платформой больше нет. Ничего не изменено.</value>
+  </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} ещё</value>
+  </data>
 </root>

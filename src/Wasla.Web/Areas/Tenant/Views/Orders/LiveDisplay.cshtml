@@ -67,99 +67,14 @@
                     </p>
                 </div>
             </div>
-            <div class="wasla-live-display-summary">
-                <div class="wasla-live-summary">
-                    <div class="wasla-live-summary__metric">
-                        <span class="wasla-live-summary__icon wasla-live-summary__icon--today" aria-hidden="true"><i class="bi bi-clipboard"></i></span>
-                        <span class="wasla-live-summary__text">
-                            <span class="wasla-live-summary__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</span>
-                            <span class="wasla-live-summary__label">@L["Orders.TodaysOrders"]</span>
-                        </span>
-                    </div>
-                    <div class="wasla-live-summary__metric">
-                        <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"><i class="bi bi-box-seam"></i></span>
-                        <span class="wasla-live-summary__text">
-                            <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
-                            <span class="wasla-live-summary__label">@L["Orders.ActiveOrders"]</span>
-                        </span>
-                    </div>
-                    <div class="wasla-live-summary__metric">
-                        <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"><i class="bi bi-x-circle"></i></span>
-                        <span class="wasla-live-summary__text">
-                            <span class="wasla-live-summary__value" id="ordersLiveDisplayCancelledCount">0</span>
-                            <span class="wasla-live-summary__label">@L["Orders.CancelledOrders"]</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
         </div>
-        <div class="wasla-live-display-header__actions wasla-fs-header__actions d-flex flex-wrap align-items-center gap-2">
-            @* Operational status stays on the live screen, inside one settings menu. *@
-            <div class="dropdown wasla-live-settings">
-                <button type="button"
-                        class="btn btn-sm btn-outline-secondary wasla-live-settings__toggle"
-                        id="ordersLiveDisplaySettingsToggle"
-                        data-bs-toggle="dropdown"
-                        data-bs-display="static"
-                        data-bs-auto-close="true"
-                        aria-expanded="false"
-                        aria-haspopup="true"
-                        aria-controls="ordersLiveDisplaySettingsMenu"
-                        aria-label="@L["Layout.Settings"]">
-                    <i class="bi bi-gear" aria-hidden="true"></i>
-                </button>
-                <div class="dropdown-menu wasla-live-settings-menu"
-                     id="ordersLiveDisplaySettingsMenu"
-                     aria-labelledby="ordersLiveDisplaySettingsToggle">
-                    <div class="wasla-live-settings-menu__status" aria-label="@L["Settings.OrderSettings.Title"]">
-                        @* Two labelled groups: what runs automatically, then how new orders get attention. Read-only; settings change on /settings/orders. *@
-                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsAutomationHeading">
-                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
-                            <div class="wasla-live-settings-menu__row">
-                                <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
-                                <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
-                            </div>
-                            <div class="wasla-live-settings-menu__row">
-                                <span class="wasla-live-settings-menu__label">@L["Settings.AutoApproval.Title"]</span>
-                                <span id="automationStatusAutoApprove" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
-                            </div>
-                            <div class="wasla-live-settings-menu__row">
-                                <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
-                                <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
-                            </div>
-                            @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
-                            <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
-                        </div>
-                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsNotificationsHeading">
-                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
-                            <div class="wasla-live-settings-menu__row">
-                                <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
-                                <span id="ordersLiveDisplaySoundStatus"
-                                      class="wasla-live-settings-menu__value wasla-orders-status-chip--muted"
-                                      data-label-active="@L["Common.Active"]"
-                                      data-label-disabled="@L["Notification.Disabled"]">…</span>
-                            </div>
-                            <div id="ordersLiveDisplaySoundActive"
-                                 class="wasla-live-display-sound-active"
-                                 role="status"
-                                 hidden>
-                                <i class="bi bi-volume-up" aria-hidden="true"></i>
-                                <span>@L["Notification.SoundActive"]</span>
-                            </div>
-                        </div>
-                    </div>
-                    @* Every Live Screen user sets their own sound, browser notification and highlight here (WAS-13): the
-                       shared notification settings modal, saved per user. *@
-                    <div class="dropdown-divider" role="separator"></div>
-                    <button type="button" class="dropdown-item" id="ordersLiveDisplayNotificationSettings" data-notification-settings-open>
-                        <i class="bi bi-bell me-1" aria-hidden="true"></i>@L["Notification.Settings"]
-                    </button>
-                    @if (navPermissions.CanManageOrderSettings)
-                    {
-                        <a class="dropdown-item orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
-                    }
-                </div>
-            </div>
+        <div class="wasla-live-display-header__actions wasla-fs-header__actions">
+            @* On narrower screens only the key stays visible; the words remain for screen readers and as the tooltip. *@
+            <p class="wasla-live-display-fullscreen-hint mb-0" title="@L["Orders.LiveDisplay.FullscreenHintPrefix"] F11 @L["Orders.LiveDisplay.FullscreenHintSuffix"]">
+                <span class="wasla-live-display-fullscreen-hint__text">@L["Orders.LiveDisplay.FullscreenHintPrefix"]</span>
+                <kbd class="wasla-live-display-kbd">F11</kbd>
+                <span class="wasla-live-display-fullscreen-hint__text">@L["Orders.LiveDisplay.FullscreenHintSuffix"]</span>
+            </p>
             <button type="button"
                     id="ordersLiveDisplayStopSound"
                     class="btn btn-sm btn-outline-secondary text-nowrap wasla-live-display-stop-sound-btn"
@@ -181,16 +96,128 @@
                     <span>@L["Orders.LiveScreen.ViewFocus"]</span>
                 </button>
             </div>
-            <p class="wasla-live-display-fullscreen-hint text-muted small mb-0">
-                @L["Orders.LiveDisplay.FullscreenHintPrefix"]
-                <kbd class="wasla-live-display-kbd">F11</kbd>
-                @L["Orders.LiveDisplay.FullscreenHintSuffix"]
-            </p>
-            <button type="button" id="ordersLiveDisplayClose" class="btn btn-outline-primary btn-sm wasla-live-display-close-btn">
-                @L["Orders.LiveDisplay.CloseDisplay"]
-            </button>
+            @* Operational status stays on the live screen, inside one settings menu. The gear is named by its aria-label
+               (also its tooltip); the menu opens under it, aligned to its end. *@
+            <div class="dropdown wasla-live-settings">
+                <button type="button"
+                        class="wasla-live-settings__toggle"
+                        id="ordersLiveDisplaySettingsToggle"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="true"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        aria-controls="ordersLiveDisplaySettingsMenu"
+                        aria-label="@L["Layout.Settings"]"
+                        title="@L["Layout.Settings"]">
+                    <i class="bi bi-gear" aria-hidden="true"></i>
+                </button>
+                <div class="dropdown-menu wasla-live-settings-menu"
+                     id="ordersLiveDisplaySettingsMenu"
+                     aria-labelledby="ordersLiveDisplaySettingsToggle">
+                    <div class="wasla-live-settings-menu__status" aria-label="@L["Settings.OrderSettings.Title"]">
+                        @* Two labelled groups: what runs automatically, then how new orders get attention. Values are read-only;
+                           each heading row carries its compact Settings action (named "Settings" plus the group heading). *@
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsAutomationHeading">
+                            <div class="wasla-live-settings-menu__heading-row">
+                                <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
+                                @if (navPermissions.CanManageOrderSettings)
+                                {
+                                    @* Automation is configured on /settings/orders, behind the order-settings policy. *@
+                                    <a class="wasla-live-settings-menu__action"
+                                       id="ordersLiveDisplayAutomationSettings"
+                                       href="/settings/orders"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-labelledby="ordersLiveDisplayAutomationSettingsLabel ordersLiveSettingsAutomationHeading">
+                                        <i class="bi bi-sliders" aria-hidden="true"></i>
+                                        <span id="ordersLiveDisplayAutomationSettingsLabel">@L["Layout.Settings"]</span>
+                                    </a>
+                                }
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
+                                <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.AutoApproval.Title"]</span>
+                                <span id="automationStatusAutoApprove" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Settings.ReceiptPrinting.Title"]</span>
+                                <span id="automationStatusReceipt" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
+                            </div>
+                            @* Shown while an automation is configured on but waits for setup; pending indicators point to it. *@
+                            <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
+                        </div>
+                        <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsNotificationsHeading">
+                            <div class="wasla-live-settings-menu__heading-row">
+                                <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
+                                @* Every Live Screen user sets their own sound, browser notification and highlight here (WAS-13): the
+                                   shared notification settings modal, saved per user. *@
+                                <button type="button"
+                                        class="wasla-live-settings-menu__action"
+                                        id="ordersLiveDisplayNotificationSettings"
+                                        data-notification-settings-open
+                                        aria-labelledby="ordersLiveDisplayNotificationSettingsLabel ordersLiveSettingsNotificationsHeading">
+                                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                                    <span id="ordersLiveDisplayNotificationSettingsLabel">@L["Layout.Settings"]</span>
+                                </button>
+                            </div>
+                            <div class="wasla-live-settings-menu__row">
+                                <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
+                                <span id="ordersLiveDisplaySoundStatus"
+                                      class="wasla-live-settings-menu__value wasla-orders-status-chip--muted"
+                                      data-label-active="@L["Common.Active"]"
+                                      data-label-disabled="@L["Notification.Disabled"]">…</span>
+                            </div>
+                            <div id="ordersLiveDisplaySoundActive"
+                                 class="wasla-live-display-sound-active"
+                                 role="status"
+                                 hidden>
+                                <i class="bi bi-volume-up" aria-hidden="true"></i>
+                                <span>@L["Notification.SoundActive"]</span>
+                            </div>
+                        </div>
+                    </div>
+                    @* The way back to the app: Kitchen and Cashier land here after sign-in and the screen has no other navigation.
+                       It lives in this menu so the header stays clear in fullscreen; orders-live-display-page.js binds it by id. *@
+                    <div class="wasla-live-settings-menu__footer">
+                        <button type="button" id="ordersLiveDisplayClose" class="wasla-live-settings-menu__exit">
+                            <i class="bi bi-box-arrow-left" aria-hidden="true"></i>
+                            <span>@L["Orders.LiveDisplay.CloseDisplay"]</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <span class="wasla-live-display-brand">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--live-screen" })
+            </span>
         </div>
     </header>
+
+    @* Today's figures on one line, each as icon, count and label; read-only, not a control. The board's columns carry
+       the per-status counts. orders-live-store.js writes the counts in the page culture's number format and marks a 0
+       with is-zero (quiet colours); active and cancelled start at 0 until the first snapshot. *@
+    <div class="wasla-live-display-summary">
+        <div class="wasla-live-summary">
+            <div class="wasla-live-summary__metric@(Model.TotalCount == 0 ? " is-zero" : null)">
+                <span class="wasla-live-summary__icon wasla-live-summary__icon--today" aria-hidden="true"></span>
+                <span class="wasla-live-summary__value" id="ordersLiveDisplayTodayCount">@Model.TotalCount</span>
+                <span class="wasla-live-summary__label">@L["Orders.TodaysOrders"]</span>
+            </div>
+            <div class="wasla-live-summary__metric is-zero">
+                <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"></span>
+                <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
+                <span class="wasla-live-summary__label">@L["Orders.ActiveOrders"]</span>
+            </div>
+            <div class="wasla-live-summary__metric wasla-live-summary__metric--cancelled is-zero">
+                <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"></span>
+                <span class="wasla-live-summary__value" id="ordersLiveDisplayCancelledCount">0</span>
+                <span class="wasla-live-summary__label">@L["Orders.CancelledOrders"]</span>
+            </div>
+        </div>
+    </div>
 
     <div id="ordersLiveDisplaySoundBanner"
          class="wasla-live-display-sound-banner alert alert-warning border-0 shadow-sm d-none"
@@ -356,6 +383,7 @@
                 ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
                 ["itemsMore"] = L["Orders.ItemsMore"].Value,
                 ["boardItemsMore"] = L["Orders.LiveScreen.BoardItemsMore"].Value,
+                ["boardItemsHidden"] = L["Orders.LiveScreen.BoardItemsHidden"].Value,
                 ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
                 ["ordersFullscreenTotal"] = L["Orders.TotalAmount"].Value,
                 ["ordersFullscreenReceived"] = L["Orders.ReceivedAt"].Value,

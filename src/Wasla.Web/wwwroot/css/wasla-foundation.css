@@ -1763,6 +1763,56 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   text-align: end;
 }
 
+/* Edit and Remove share one aligned group at the row's end. */
+.wasla-connections__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wasla-space-2);
+}
+
+/* Restrained destructive action: the quiet button with danger text, tinted only on hover and focus. */
+.wasla-connections .wasla-connections__remove {
+  color: var(--wasla-danger);
+}
+
+.wasla-connections .wasla-connections__remove:hover,
+.wasla-connections .wasla-connections__remove:focus-visible {
+  border-color: color-mix(in srgb, var(--wasla-danger) 45%, var(--wasla-border-strong));
+  background: var(--wasla-danger-soft);
+  color: var(--wasla-danger);
+}
+
+.wasla-connections__remove-facts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--wasla-border);
+  border-radius: var(--wasla-radius-md);
+  background: var(--wasla-surface-muted);
+}
+
+.wasla-connections__remove-facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.wasla-connections__remove-facts dt {
+  color: var(--wasla-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.wasla-connections__remove-facts dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
 @media (max-width: 767.98px) {
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-user-create,
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connection-create,
@@ -1839,6 +1889,18 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
 
   .wasla-connections .wasla-btn--quiet {
     width: 100%;
+  }
+
+  /* On phones the two actions sit side by side and share the row's width. */
+  .wasla-connections .wasla-connections__actions {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .wasla-connections .wasla-connections__actions .wasla-btn--quiet {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 }
 
