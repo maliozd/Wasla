@@ -98,6 +98,7 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
                 active: document.getElementById('ordersLiveDisplayActiveCount').textContent,
                 newCount: column.querySelector('[data-board-count]').textContent,
                 newRendered: column.querySelectorAll('[data-board-list] > .wasla-live-screen-card').length,
+                completed: host.querySelectorAll('[data-board-column="completed"] [data-order-id]').length,
                 cards: ids.length, unique: new Set(ids).size,
                 status: more ? more.querySelector('[data-live-more-status]').textContent : null,
                 button: button ? button.textContent : null,
@@ -115,6 +116,8 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
         Assert.Equal(LargeActiveOrderSeed.ActiveOrders.ToString(CultureInfo.InvariantCulture), page.GetProperty("active").GetString());
         Assert.Equal(NewColumn.ToString(CultureInfo.InvariantCulture), page.GetProperty("newCount").GetString());
         Assert.Equal(PageSize, page.GetProperty("newRendered").GetInt32());
+        // No recently delivered order: it would leave the screen by itself during the class (see LargeActiveOrderSeed).
+        Assert.Equal(0, page.GetProperty("completed").GetInt32());
         Assert.Equal(page.GetProperty("cards").GetInt32(), page.GetProperty("unique").GetInt32());
         Assert.InRange(page.GetProperty("cards").GetInt32(), PageSize, PageSize + 10);
         Assert.Equal(1, page.GetProperty("otherMore").GetInt32());
@@ -151,21 +154,27 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
         var unchanged = await browser.EvaluateAsync<JsonElement>("""
             (async () => {
               const host = document.getElementById('ordersLiveScreenHost');
-              let added = 0, removed = 0;
-              const watch = new MutationObserver(list => { for (const r of list) { for (const n of r.addedNodes) if (n.nodeType === 1) added++; for (const n of r.removedNodes) if (n.nodeType === 1) removed++; } });
+              const added = [], removed = [];
+              const describe = n => n.tagName.toLowerCase() + (n.id ? '#' + n.id : '') + (n.className ? '.' + String(n.className).trim().split(/\s+/).join('.') : '')
+                + ['data-order-id', 'data-board-list'].filter(a => n.hasAttribute(a)).map(a => '[' + a + '=' + n.getAttribute(a) + ']').join('');
+              const record = (into, node, parent) => into.push(describe(node) + ' in ' + describe(parent));
+              const watch = new MutationObserver(list => { for (const r of list) { for (const n of r.addedNodes) if (n.nodeType === 1) record(added, n, r.target); for (const n of r.removedNodes) if (n.nodeType === 1) record(removed, n, r.target); } });
               watch.observe(host, { childList: true, subtree: true });
               const result = await WaslaOrders.liveStore.requestRefresh();
               await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
               watch.disconnect();
               const t = WaslaOrders.liveStore.lastTimings;
-              return { applied: !!(result && result.applied), added, removed, moved: t.movedCards, changed: t.changedCards, renderMs: Math.round(t.renderMs) };
+              return { applied: !!(result && result.applied), added, removed, moved: t.movedCards, changed: t.changedCards, addedCards: t.addedCards, removedCards: t.removedCards, renderMs: Math.round(t.renderMs) };
             })()
             """, ct);
         Assert.True(unchanged.GetProperty("applied").GetBoolean());
         Assert.Equal(0, unchanged.GetProperty("moved").GetInt32());
         Assert.Equal(0, unchanged.GetProperty("changed").GetInt32());
-        Assert.Equal(0, unchanged.GetProperty("added").GetInt32());
-        Assert.Equal(0, unchanged.GetProperty("removed").GetInt32());
+        Assert.Equal(0, unchanged.GetProperty("addedCards").GetInt32());
+        Assert.Equal(0, unchanged.GetProperty("removedCards").GetInt32());
+        // Named, so a failure says which element was added or removed and where.
+        Assert.Empty(unchanged.GetProperty("added").EnumerateArray().Select(node => node.GetString()));
+        Assert.Empty(unchanged.GetProperty("removed").EnumerateArray().Select(node => node.GetString()));
 
         // Board → List → Focus → Board: the same orders, once each, with the revealed page kept.
         foreach (var (view, selector) in new[] { ("list", ".wasla-live-screen-card"), ("focus", "[data-focus-select]"), ("board", ".wasla-live-screen-card") })
