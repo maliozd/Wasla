@@ -207,19 +207,26 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         await SendAsync("Page.addScriptToEvaluateOnNewDocument", new { source }, ct);
     }
 
-    /// <summary>Presses and releases one key as real keyboard input (Escape, Tab, Enter or a space), with optional Shift.</summary>
+    /// <summary>
+    /// Presses and releases one key as real keyboard input (Escape, Tab, Enter, a space, the left and right arrows, Home
+    /// or End), with optional Shift.
+    /// </summary>
     public async Task PressKeyAsync(string key, bool shift, CancellationToken ct)
     {
         var (code, keyCode, text) = key switch
         {
             "Escape" => ("Escape", 27, (string?)null),
             "Tab" => ("Tab", 9, null),
+            "ArrowLeft" => ("ArrowLeft", 37, null),
+            "ArrowRight" => ("ArrowRight", 39, null),
+            "Home" => ("Home", 36, null),
+            "End" => ("End", 35, null),
             "Enter" => ("Enter", 13, "\r"),
             " " => ("Space", 32, " "),
             _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unsupported key.")
         };
         var modifiers = shift ? 8 : 0;
-        // CDP rejects a null text field, so keys without text (Escape, Tab) send a rawKeyDown without it.
+        // CDP rejects a null text field, so keys without text (Escape, Tab, arrows, Home, End) send a rawKeyDown without it.
         object down = text is null
             ? new { type = "rawKeyDown", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers }
             : new { type = "keyDown", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers, text };

@@ -2841,6 +2841,8 @@
   <data name="Pricing.Recommended" xml:space="preserve"><value>موصى به</value></data>
   <data name="Pricing.PerMonth" xml:space="preserve"><value>شهر</value></data>
   <data name="Pricing.Monthly" xml:space="preserve"><value>شهري</value></data>
+  <data name="Pricing.PeriodShownMonthly" xml:space="preserve"><value>يتم عرض الأسعار الشهرية.</value></data>
+  <data name="Pricing.PeriodShownYearly" xml:space="preserve"><value>يتم عرض الأسعار السنوية.</value></data>
   <data name="Pricing.ContactSales" xml:space="preserve"><value>تسعير مخصص</value></data>
   <data name="Pricing.ContactUs" xml:space="preserve"><value>تواصل معنا</value></data>
   <data name="Pricing.ChoosePlan" xml:space="preserve"><value>اختر الخطة</value></data>

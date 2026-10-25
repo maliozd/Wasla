@@ -1697,6 +1697,50 @@
 
 /* ---------- Pricing (homepage; not in the Figma frames, styled with its tokens) ---------- */
 
+/* Billing period tabs: the selected tab is raised (surface and border) and bold, so colour is not the only cue. */
+.wm-period-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-block-end: 24px;
+  padding: 4px;
+  border: 1px solid var(--wm-border);
+  border-radius: 12px;
+  background: var(--wm-surface-muted);
+}
+
+.wm-period-tabs[hidden] {
+  display: none;
+}
+
+.wm-period-tabs__tab {
+  min-block-size: 44px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wm-text-body);
+  font-family: var(--wm-font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wm-period-tabs__tab:hover {
+  color: var(--wm-text);
+}
+
+.wm-period-tabs__tab[aria-selected="true"] {
+  border-color: var(--wm-border-strong);
+  background: var(--wm-white);
+  color: var(--wm-text);
+  font-weight: 700;
+}
+
+/* A period's price lines sit in the card's own flex column; the other period's block is hidden. */
+.wm-plan__period:not([hidden]) {
+  display: contents;
+}
+
 .wm-pricing {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
