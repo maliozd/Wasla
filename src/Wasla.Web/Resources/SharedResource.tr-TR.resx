@@ -4186,4 +4186,22 @@
   <data name="Pricing.PricePerMonth" xml:space="preserve"><value>{0} / ay</value></data>
   <data name="Pricing.PricePerYear" xml:space="preserve"><value>{0} / yıl</value></data>
   <data name="Pricing.YearlySaving" xml:space="preserve"><value>Yıllık ödeme, 12 aylık ödemeden {0} daha az.</value></data>
+  <data name="PlatformConnections.Remove" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmTitle" xml:space="preserve">
+    <value>Platform bağlantısı kaldırılsın mı?</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmStopsSync" xml:space="preserve">
+    <value>Bu bağlantıyı kaldırmak sipariş senkronizasyonunu durdurur. Wasla bu mağazanın siparişlerini artık çekmez.</value>
+  </data>
+  <data name="PlatformConnections.RemoveConfirmKeepsOrders" xml:space="preserve">
+    <value>Daha önce alınan siparişler Wasla'da kalır. Bu platformu ve mağazayı daha sonra yeniden bağlayabilirsiniz.</value>
+  </data>
+  <data name="PlatformConnections.Removed" xml:space="preserve">
+    <value>Platform bağlantısı kaldırıldı. Sipariş senkronizasyonu durduruldu.</value>
+  </data>
+  <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
+    <value>Bu platform bağlantısı artık yok. Hiçbir şey değiştirilmedi.</value>
+  </data>
 </root>
