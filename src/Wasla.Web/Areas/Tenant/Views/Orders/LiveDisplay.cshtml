@@ -97,24 +97,40 @@
             @* Operational status stays on the live screen, inside one settings menu. *@
             <div class="dropdown wasla-live-settings">
                 <button type="button"
-                        class="btn btn-sm btn-outline-secondary wasla-live-settings__toggle"
+                        class="wasla-live-settings__toggle"
                         id="ordersLiveDisplaySettingsToggle"
                         data-bs-toggle="dropdown"
                         data-bs-display="static"
                         data-bs-auto-close="true"
                         aria-expanded="false"
                         aria-haspopup="true"
-                        aria-controls="ordersLiveDisplaySettingsMenu"
-                        aria-label="@L["Layout.Settings"]">
+                        aria-controls="ordersLiveDisplaySettingsMenu">
                     <i class="bi bi-gear" aria-hidden="true"></i>
+                    <span>@L["Layout.Settings"]</span>
                 </button>
                 <div class="dropdown-menu wasla-live-settings-menu"
                      id="ordersLiveDisplaySettingsMenu"
                      aria-labelledby="ordersLiveDisplaySettingsToggle">
                     <div class="wasla-live-settings-menu__status" aria-label="@L["Settings.OrderSettings.Title"]">
-                        @* Two labelled groups: what runs automatically, then how new orders get attention. Read-only; settings change on /settings/orders. *@
+                        @* Two labelled groups: what runs automatically, then how new orders get attention. Values are read-only;
+                           each heading row carries its compact Settings action (named "Settings" plus the group heading). *@
                         <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsAutomationHeading">
-                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
+                            <div class="wasla-live-settings-menu__heading-row">
+                                <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsAutomationHeading">@L["Orders.LiveSettings.AutomationGroup"]</p>
+                                @if (navPermissions.CanManageOrderSettings)
+                                {
+                                    @* Automation is configured on /settings/orders, behind the order-settings policy. *@
+                                    <a class="wasla-live-settings-menu__action"
+                                       id="ordersLiveDisplayAutomationSettings"
+                                       href="/settings/orders"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-labelledby="ordersLiveDisplayAutomationSettingsLabel ordersLiveSettingsAutomationHeading">
+                                        <i class="bi bi-sliders" aria-hidden="true"></i>
+                                        <span id="ordersLiveDisplayAutomationSettingsLabel">@L["Layout.Settings"]</span>
+                                    </a>
+                                }
+                            </div>
                             <div class="wasla-live-settings-menu__row">
                                 <span class="wasla-live-settings-menu__label">@L["Settings.OrderSynchronization.Title"]</span>
                                 <span id="automationStatusSync" class="wasla-live-settings-menu__value wasla-orders-status-chip--muted">…</span>
@@ -131,7 +147,19 @@
                             <p id="automationPendingSetupHint" class="wasla-live-settings-menu__hint" hidden>@L["Orders.Automation.PendingSetupDescription"]</p>
                         </div>
                         <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsNotificationsHeading">
-                            <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
+                            <div class="wasla-live-settings-menu__heading-row">
+                                <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsNotificationsHeading">@L["Notification.Notifications"]</p>
+                                @* Every Live Screen user sets their own sound, browser notification and highlight here (WAS-13): the
+                                   shared notification settings modal, saved per user. *@
+                                <button type="button"
+                                        class="wasla-live-settings-menu__action"
+                                        id="ordersLiveDisplayNotificationSettings"
+                                        data-notification-settings-open
+                                        aria-labelledby="ordersLiveDisplayNotificationSettingsLabel ordersLiveSettingsNotificationsHeading">
+                                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                                    <span id="ordersLiveDisplayNotificationSettingsLabel">@L["Layout.Settings"]</span>
+                                </button>
+                            </div>
                             <div class="wasla-live-settings-menu__row">
                                 <span class="wasla-live-settings-menu__label">@L["Orders.LiveDisplay.NotificationSound"]</span>
                                 <span id="ordersLiveDisplaySoundStatus"
@@ -148,16 +176,6 @@
                             </div>
                         </div>
                     </div>
-                    @* Every Live Screen user sets their own sound, browser notification and highlight here (WAS-13): the
-                       shared notification settings modal, saved per user. *@
-                    <div class="dropdown-divider" role="separator"></div>
-                    <button type="button" class="dropdown-item" id="ordersLiveDisplayNotificationSettings" data-notification-settings-open>
-                        <i class="bi bi-bell me-1" aria-hidden="true"></i>@L["Notification.Settings"]
-                    </button>
-                    @if (navPermissions.CanManageOrderSettings)
-                    {
-                        <a class="dropdown-item orders-manage-settings" href="/settings/orders" target="_blank" rel="noopener noreferrer">@L["Orders.ManageSettings"]</a>
-                    }
                 </div>
             </div>
             <button type="button"

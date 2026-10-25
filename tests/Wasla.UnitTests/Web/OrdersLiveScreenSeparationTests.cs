@@ -228,8 +228,11 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Contains("automationStatusAutoApprove", liveView, StringComparison.Ordinal);
         Assert.Contains("automationStatusReceipt", liveView, StringComparison.Ordinal);
         Assert.Contains("orders-automation-status.js", liveView, StringComparison.Ordinal);
-        Assert.Contains("navPermissions.CanManageOrderSettings", liveView, StringComparison.Ordinal);
-        Assert.Contains("@L[\"Orders.ManageSettings\"]", liveView, StringComparison.Ordinal);
+        // The automation group's Settings action, which opens order settings, stays behind the order-settings policy.
+        var gate = liveView.IndexOf("@if (navPermissions.CanManageOrderSettings)", StringComparison.Ordinal);
+        Assert.True(gate >= 0, "The order-settings action is not behind navPermissions.CanManageOrderSettings.");
+        Assert.True(liveView.IndexOf("href=\"/settings/orders\"", StringComparison.Ordinal) > gate);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(liveView, "href=\"/settings/orders\""));
 
         // The read-only status summary comes with the Live Screen snapshot it already polls (effective states, see
         // LiveScreenAutomationStatusTests); the Live Screen calls no settings endpoint and has no alternate backend.

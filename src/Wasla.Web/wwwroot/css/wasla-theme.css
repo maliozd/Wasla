@@ -1621,28 +1621,6 @@ body.wasla-tenant.wasla-app .btn-outline-primary {
   color: color-mix(in srgb, var(--bs-warning) 40%, var(--wasla-text));
 }
 
-.orders-manage-settings {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.55rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--wasla-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  border: 1px solid color-mix(in srgb, var(--wasla-border) 50%, transparent);
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--wasla-border) 10%, var(--wasla-surface));
-  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-}
-
-.orders-manage-settings:hover {
-  color: var(--wasla-primary);
-  border-color: color-mix(in srgb, var(--wasla-primary) 35%, var(--wasla-border));
-  background: color-mix(in srgb, var(--wasla-primary) 6%, var(--wasla-surface));
-  text-decoration: none;
-}
-
 .orders-toolbar-right .wasla-orders-view-mode {
   flex-shrink: 0;
 }
@@ -2967,21 +2945,45 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   position: relative;
 }
 
+/* Same height, radius, border and type as the Board / List / Focus selector beside it: its 34px options, 3px padding
+   and 1px border make 42px, and its corners are 10px. A plain button like the selector's options, so the tenant
+   .btn polish does not restyle one of the two. */
 .wasla-live-screen-page .wasla-live-settings__toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.125rem;
-  min-width: 2.125rem;
-  height: 2.125rem;
-  padding: 0;
-  border-color: color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  gap: .4rem;
+  min-height: 42px;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: .8rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  border-radius: 10px;
   background: var(--wasla-surface, #fff);
+  color: color-mix(in srgb, var(--wasla-text, #212529) 62%, var(--wasla-muted, #6c757d));
+  font-family: inherit;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wasla-live-screen-page .wasla-live-settings__toggle:hover,
+.wasla-live-screen-page .wasla-live-settings__toggle[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  background: color-mix(in srgb, var(--wasla-border) 38%, var(--wasla-surface, #fff));
   color: var(--wasla-text, #212529);
 }
 
+.wasla-live-screen-page .wasla-live-settings__toggle:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .wasla-live-screen-page .wasla-live-settings__toggle .bi {
-  font-size: 1rem;
+  font-size: .95rem;
   line-height: 1;
 }
 
@@ -3009,6 +3011,62 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
 
 .wasla-live-screen-page .wasla-live-settings-menu__group + .wasla-live-settings-menu__group {
   border-block-start: 1px solid color-mix(in srgb, var(--wasla-border) 80%, transparent);
+}
+
+/* The group heading and its compact Settings action share one row; the heading keeps its own spacing. */
+.wasla-live-screen-page .wasla-live-settings-menu__heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding-block: 0 .15rem;
+  padding-inline: .75rem;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__heading-row .wasla-live-settings-menu__heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 0;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .3rem;
+  min-height: 1.75rem;
+  margin: 0;
+  padding-block: .15rem;
+  padding-inline: .5rem;
+  border: 1px solid color-mix(in srgb, var(--wasla-border) 85%, transparent);
+  border-radius: .45rem;
+  background: transparent;
+  color: var(--wasla-text, #212529);
+  font-family: inherit;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__action .bi {
+  font-size: .8rem;
+  line-height: 1;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__action:hover,
+.wasla-live-screen-page .wasla-live-settings-menu__action:focus-visible {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+  color: var(--wasla-text, #212529);
+  text-decoration: none;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__action:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .wasla-live-screen-page .wasla-live-settings-menu__heading {
@@ -3088,36 +3146,14 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   line-height: 1.35;
 }
 
-.wasla-live-screen-page .wasla-live-settings-menu .dropdown-divider {
-  margin-block: .25rem;
-  margin-inline: 0;
-  border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
-  opacity: 1;
-}
-
-.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings {
-  display: flex;
-  width: auto;
-  margin: .1rem .35rem .15rem;
-  padding-block: .4rem;
-  padding-inline: .55rem;
-  border: 0;
-  border-radius: .4rem;
-  background: transparent;
-  color: var(--wasla-text, #212529);
-  font-size: .8125rem;
-  font-weight: 600;
-}
-
-.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings:hover,
-.wasla-live-screen-page .wasla-live-settings-menu .orders-manage-settings:focus-visible {
-  background: color-mix(in srgb, var(--wasla-primary) 8%, var(--wasla-surface, #fff));
-  color: var(--wasla-primary);
-}
-
 .wasla-live-screen-page .wasla-live-settings-menu .wasla-live-display-sound-active {
   margin-block: .15rem .25rem;
   margin-inline: .75rem;
+}
+
+/* The automation action is a link: keep it the same as the notifications button instead of the dark-mode link colour. */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app #ordersLiveDisplaySettingsMenu .wasla-live-settings-menu__action {
+  color: var(--wasla-text, #f3f4f6);
 }
 
 [data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings-menu .wasla-orders-status-chip--active {
@@ -4420,18 +4456,6 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
   --bs-btn-hover-bg: var(--color-danger-soft);
   --bs-btn-hover-border-color: var(--color-danger-border);
   --bs-btn-hover-color: var(--color-danger);
-}
-
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app .orders-manage-settings:hover {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent-border);
-  color: var(--color-accent);
 }
 
 /* Badges — Bootstrap utility variants */
