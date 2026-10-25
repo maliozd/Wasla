@@ -18,7 +18,8 @@ target=${1:-$(cat "$root/previous-release" 2>/dev/null || true)}
 [[ "$target" =~ ^[0-9a-f]{40}$ ]] || die 'no target release: pass a commit SHA or record one in previous-release.'
 [[ -f "$root/releases/$target/RELEASE" ]] || die "release $target is not installed."
 
-current=$(basename "$(readlink -f "$root/current")")
+current=$(readlink -e "$root/current") || die "$root/current does not point at an installed release."
+current=$(basename "$current")
 [[ "$current" != "$target" ]] || die "release $target is already current."
 
 systemctl stop "${services[@]}"

@@ -51,7 +51,8 @@ trap - EXIT
 chmod 0750 "$dest"
 printf 'Installed %s\n' "$dest"
 
-previous=$(readlink -f "$root/current" 2>/dev/null || true)
+# -e: empty on a first install (readlink -f would name the missing link itself, recorded as release "current").
+previous=$(readlink -e "$root/current" 2>/dev/null || true)
 
 # Stop the previous version before migrating: some migrations require it (docs/operations/deployment.md).
 systemctl stop "${services[@]}"
