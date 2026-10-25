@@ -110,7 +110,9 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         var reviewBefore = await ReviewAsync(applicant);
 
         Assert.Contains("300 TL / ay", homeBefore, StringComparison.Ordinal);
-        Assert.Contains("2.750 TL / yıl · KDV dahil", homeBefore, StringComparison.Ordinal);
+        // Each period has its own price and VAT line on the card (the yearly one is shown by the period tabs, issue #65).
+        Assert.Contains("data-plan-price=\"Yearly\">2.750 TL / yıl</p>", homeBefore, StringComparison.Ordinal);
+        Assert.Contains("data-plan-vat=\"Yearly\">KDV dahil</p>", homeBefore, StringComparison.Ordinal);
         Assert.DoesNotContain("400 TL", homeBefore, StringComparison.Ordinal);
         Assert.DoesNotContain("3.000 TL", homeBefore, StringComparison.Ordinal);
         Assert.Contains(Text("Billing.PriceNotSet", "tr-TR"), Card((await GetAsync("/", "tr-TR")).Body, "Pro"), StringComparison.Ordinal);

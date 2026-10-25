@@ -2853,6 +2853,12 @@
   <data name="Pricing.Monthly" xml:space="preserve">
     <value>Ежемесячно</value>
   </data>
+  <data name="Pricing.PeriodShownMonthly" xml:space="preserve">
+    <value>Показаны цены за месяц.</value>
+  </data>
+  <data name="Pricing.PeriodShownYearly" xml:space="preserve">
+    <value>Показаны цены за год.</value>
+  </data>
   <data name="Pricing.ContactSales" xml:space="preserve">
     <value>Индивидуальные цены</value>
   </data>
