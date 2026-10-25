@@ -366,7 +366,16 @@
             <h2 class="wm-h2" id="pricing-title">@L["Pricing.Title"]</h2>
             <p class="wm-lead">@L["Pricing.Subtitle"]</p>
         </div>
-        <div class="wm-pricing">
+        @* Billing period tabs (issue #65). Every card carries both periods' prices, already worded by PlanPriceText; the
+           script only shows the selected period. Without JavaScript the tabs stay hidden and the monthly prices show. *@
+        <div class="wm-period-tabs" role="tablist" aria-label="@L["Signup.BillingPeriod"]" data-wm-period-tabs hidden>
+            <button type="button" class="wm-period-tabs__tab" role="tab" id="pricing-period-monthly" aria-selected="true" aria-controls="pricing-plans" tabindex="0"
+                    data-period="@PlanPriceText.Monthly" data-announce="@L["Pricing.PeriodShownMonthly"]">@L["Signup.BillingMonthly"]</button>
+            <button type="button" class="wm-period-tabs__tab" role="tab" id="pricing-period-yearly" aria-selected="false" aria-controls="pricing-plans" tabindex="-1"
+                    data-period="@PlanPriceText.Yearly" data-announce="@L["Pricing.PeriodShownYearly"]">@L["Signup.BillingYearly"]</button>
+        </div>
+        <p class="wm-visually-hidden" role="status" data-wm-period-status></p>
+        <div class="wm-pricing" id="pricing-plans" data-wm-period-panel>
             @foreach (var plan in PlanCatalog.GetPublicPlans())
             {
                 <article class="wm-plan@(plan.IsRecommended ? " wm-plan--featured" : string.Empty)" aria-labelledby="plan-@plan.PlanCode">
@@ -378,21 +387,30 @@
                     <p class="wm-text-s">@L[plan.DescriptionKey]</p>
                     @if (plan.IsContactSales)
                     {
-                        <p class="wm-plan__price">@L[plan.ContactSalesPriceLabelKey!]</p>
+                        @* Contact sales in both periods, with the labels signup shows for them. *@
+                        <div class="wm-plan__period" data-plan-period="@PlanPriceText.Monthly">
+                            <p class="wm-plan__price" data-plan-price="@PlanPriceText.Monthly">@L[plan.ContactSalesPriceLabelKey!]</p>
+                        </div>
+                        <div class="wm-plan__period" data-plan-period="@PlanPriceText.Yearly" hidden>
+                            <p class="wm-plan__price" data-plan-price="@PlanPriceText.Yearly">@L["Signup.PlanPrice.Enterprise.Yearly"]</p>
+                        </div>
                     }
                     else
                     {
-                        @* The Central Admin prices in effect (WAS-147); monthly and yearly are separate prices, and a missing one says so. *@
-                        var monthly = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, PlanPriceText.Monthly);
-                        var yearly = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, PlanPriceText.Yearly);
-                        var monthlyVat = PlanPriceText.Vat(monthly, L);
-                        var yearlyVat = PlanPriceText.Vat(yearly, L);
-                        <p class="wm-plan__price" data-plan-price="@PlanPriceText.Monthly">@PlanPriceText.PerPeriod(monthly, PlanPriceText.Monthly, L)</p>
-                        @if (monthlyVat is not null)
+                        @* The Central Admin prices in effect (WAS-147); monthly and yearly are separate prices, each shown only
+                           under its own period, and a missing one says so. *@
+                        foreach (var period in new[] { PlanPriceText.Monthly, PlanPriceText.Yearly })
                         {
-                            <p class="wm-text-s" data-plan-vat="@PlanPriceText.Monthly">@monthlyVat</p>
+                            var quote = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, period);
+                            var vat = PlanPriceText.Vat(quote, L);
+                            <div class="wm-plan__period" data-plan-period="@period" data-price-set="@(quote is null ? "false" : "true")" hidden="@(period != PlanPriceText.Monthly)">
+                                <p class="wm-plan__price" data-plan-price="@period">@PlanPriceText.PerPeriod(quote, period, L)</p>
+                                @if (vat is not null)
+                                {
+                                    <p class="wm-text-s" data-plan-vat="@period">@vat</p>
+                                }
+                            </div>
                         }
-                        <p class="wm-text-s" data-plan-price="@PlanPriceText.Yearly">@PlanPriceText.PerPeriod(yearly, PlanPriceText.Yearly, L)@(yearlyVat is null ? "" : " · " + yearlyVat)</p>
                     }
                     <p class="wm-plan__devices"><i class="bi bi-printer" aria-hidden="true"></i> @L[plan.DeviceLimitKey]</p>
                     <ul class="wm-checks">

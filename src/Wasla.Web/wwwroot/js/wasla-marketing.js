@@ -1,5 +1,6 @@
 // Public marketing header (WAS-155): the mobile menu and the disclosure menus (products, language).
 // Everything opens on click or keyboard, never on hover, and Escape closes the open menu and returns focus.
+// Homepage pricing (issue #65): the billing period tabs.
 (function () {
   "use strict";
 
@@ -88,6 +89,65 @@
     });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  // The server renders every plan card with both periods' prices, already formatted, and the monthly ones visible.
+  // These tabs only choose which period's block is shown; nothing here computes or derives a price. The tabs stay
+  // hidden until this has run, so without JavaScript the monthly prices show and there is no control that does nothing.
+  function initPeriodTabs() {
+    var tablist = document.querySelector("[data-wm-period-tabs]");
+    if (!tablist) return;
+    var tabs = Array.prototype.slice.call(tablist.querySelectorAll("[role='tab']"));
+    var panel = tabs.length ? document.getElementById(tabs[0].getAttribute("aria-controls")) : null;
+    if (!panel) return;
+    var status = document.querySelector("[data-wm-period-status]");
+    var current = tabs.filter(function (tab) { return tab.getAttribute("aria-selected") === "true"; })[0] || tabs[0];
+
+    function select(tab, announce) {
+      var period = tab.getAttribute("data-period");
+      var changed = tab !== current;
+      current = tab;
+      tabs.forEach(function (other) {
+        var selected = other === tab;
+        other.setAttribute("aria-selected", selected ? "true" : "false");
+        other.tabIndex = selected ? 0 : -1;
+      });
+      panel.setAttribute("aria-labelledby", tab.id);
+      Array.prototype.forEach.call(panel.querySelectorAll("[data-plan-period]"), function (block) {
+        block.hidden = block.getAttribute("data-plan-period") !== period;
+      });
+      if (announce && changed && status) status.textContent = tab.getAttribute("data-announce") || "";
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () { select(tab, true); });
+    });
+
+    // Roving focus: the arrow keys (mirrored right to left), Home and End move to a tab and select it.
+    tablist.addEventListener("keydown", function (event) {
+      var index = tabs.indexOf(document.activeElement);
+      if (index < 0) return;
+      var forward = window.getComputedStyle(tablist).direction === "rtl" ? "ArrowLeft" : "ArrowRight";
+      var backward = forward === "ArrowLeft" ? "ArrowRight" : "ArrowLeft";
+      var next;
+      if (event.key === forward) next = (index + 1) % tabs.length;
+      else if (event.key === backward) next = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      tabs[next].focus();
+      select(tabs[next], true);
+    });
+
+    panel.setAttribute("role", "tabpanel");
+    select(current, false);
+    tablist.hidden = false;
+  }
+
+  function start() {
+    init();
+    initPeriodTabs();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
 })();

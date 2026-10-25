@@ -30,6 +30,12 @@
   <data name="Pricing.Monthly" xml:space="preserve">
     <value>Aylık</value>
   </data>
+  <data name="Pricing.PeriodShownMonthly" xml:space="preserve">
+    <value>Aylık fiyatlar gösteriliyor.</value>
+  </data>
+  <data name="Pricing.PeriodShownYearly" xml:space="preserve">
+    <value>Yıllık fiyatlar gösteriliyor.</value>
+  </data>
   <data name="Pricing.ContactSales" xml:space="preserve">
     <value>Özel fiyat</value>
   </data>
