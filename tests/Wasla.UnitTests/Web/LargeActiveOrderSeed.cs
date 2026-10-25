@@ -1,3 +1,4 @@
+using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -9,6 +10,8 @@ namespace Wasla.UnitTests.Web;
 /// 14 October 2026 (5,754 active orders, 5,316 New and 438 Accepted, oldest eight days old, 53 from the current day,
 /// about 5 MB of snapshot). Added on top of <see cref="TenantVisualWebHost"/>'s own five active orders, it makes the
 /// Live Screen snapshot hold <see cref="ActiveOrders"/> active orders. Fixed seed, fake names, no provider or printer.
+/// The host's recently delivered order is dated before the Delivered window, so the snapshot holds no order that leaves
+/// the Live Screen by itself while the tests run.
 /// </summary>
 internal static class LargeActiveOrderSeed
 {
@@ -100,5 +103,15 @@ internal static class LargeActiveOrderSeed
         }
 
         db.Orders.AddRange(orders);
+
+        // The host's recently delivered order leaves the Live Screen when its Delivered window ends, about a minute after
+        // seeding and so in the middle of the class: a refresh the tests treat as unchanged then removed its card
+        // (GitHub #70). Delivered earlier, it is not in the snapshot, which then changes only when a test changes an order.
+        var windowStart = now - LiveScreenVisibility.RecentDeliveredWindow;
+        foreach (var delivered in db.Orders.Where(o => o.InternalStatus == OrderStatus.Delivered).ToList())
+        {
+            if (delivered.DeliveredAt > windowStart)
+                delivered.DeliveredAt = windowStart.AddMinutes(-10);
+        }
     }
 }
