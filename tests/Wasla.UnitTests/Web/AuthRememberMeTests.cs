@@ -157,11 +157,9 @@ public sealed class AuthRememberMeTests
 
         await controller.Logout();
 
+        Assert.Single(controller.Response.Headers.SetCookie);
         var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
         Assert.Contains($"{CentralAdminAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{CentralAdminAuthCookieNames.LegacyAspNetCoreOrderHubScheme}=", setCookieHeaders, StringComparison.Ordinal);
         Assert.DoesNotContain($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
     }
 
@@ -170,10 +168,10 @@ public sealed class AuthRememberMeTests
     [InlineData(true)]
     public async Task Tenant_Login_RespectsRememberMe(bool rememberMe)
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner", UserRole.Owner, Guid.NewGuid())
         };
         var authentication = new CapturingAuthenticationService();
         var controller = CreateTenantController(tenant, authValidation, authentication);
@@ -204,7 +202,7 @@ public sealed class AuthRememberMeTests
     public async Task Tenant_LoginGet_RedirectsWhenTenantMatches()
     {
         var tenantId = Guid.NewGuid();
-        var tenant = Tenant(tenantId, "tenant.wasla.local");
+        var tenant = Tenant(tenantId, "tenant.app.wasla.local");
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim("TenantId", tenantId.ToString()),
@@ -230,7 +228,7 @@ public sealed class AuthRememberMeTests
     [Fact]
     public async Task Tenant_LoginGet_DoesNotRedirectOnTenantIdMismatch()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim("TenantId", Guid.NewGuid().ToString()),
@@ -256,7 +254,7 @@ public sealed class AuthRememberMeTests
     [Fact]
     public async Task Tenant_LoginGet_DoesNotRedirectForCentralAdminPrincipal()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var adminPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
         [
             new Claim(ClaimTypes.Role, "CentralAdmin")
@@ -286,9 +284,9 @@ public sealed class AuthRememberMeTests
 
         await controller.Logout();
 
+        Assert.Single(controller.Response.Headers.SetCookie);
         var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
         Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
         Assert.DoesNotContain($"{CentralAdminAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
     }
 
@@ -317,16 +315,18 @@ public sealed class AuthRememberMeTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
-        httpContext.Request.Host = new HostString("tenant.wasla.local", 443);
+        httpContext.Request.Host = new HostString("tenant.app.wasla.local", 443);
         httpContext.RequestServices = new ServiceCollection()
             .AddSingleton<IAuthenticationService>(authenticationService ?? new CapturingAuthenticationService())
             .BuildServiceProvider();
 
         var controller = new TenantAuthController(
-            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
+            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
+            new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             new FakeTenantPasswordResetService(),
+            new DashboardLandingPages(),
             new TestWebHostEnvironment("Development"),
             new FakeStringLocalizer())
         {
@@ -353,7 +353,7 @@ public sealed class AuthRememberMeTests
     private sealed class SuccessfulCentralAdminAuthService : ICentralAdminAuthService
     {
         public Task<CentralAdminLoginResult> ValidateAsync(string email, string password, CancellationToken ct) =>
-            Task.FromResult(new CentralAdminLoginResult(true, Guid.NewGuid(), email, "Central Admin", null));
+            Task.FromResult(new CentralAdminLoginResult(true, Guid.NewGuid(), email, "Central Admin", null, Guid.NewGuid()));
     }
 
     private sealed class FakeCurrentTenantService(ResolvedTenantDto? tenant) : ICurrentTenantService
@@ -361,11 +361,19 @@ public sealed class AuthRememberMeTests
         public ResolvedTenantDto? CurrentTenant { get; } = tenant;
     }
 
+    private sealed class NoopLoginRecorder : ITenantLoginRecorder
+    {
+        public Task RecordSuccessfulLoginAsync(Guid tenantId, Guid userId, CancellationToken ct) => Task.CompletedTask;
+    }
+
     private sealed class FakeAuthValidationService : IAuthValidationService
     {
         public AuthSessionResult? Result { get; set; }
 
         public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
+            Task.FromResult(Result);
+
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
             Task.FromResult(Result);
     }
 

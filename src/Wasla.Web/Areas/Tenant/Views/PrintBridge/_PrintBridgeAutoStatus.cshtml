@@ -16,8 +16,8 @@
         <button type="button" class="btn btn-outline-primary btn-sm" id="pbAutoRetryBtn">
             <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.TryAgain"]
         </button>
-        @* The guided first install never offers a download that is not there. *@
-        @if (!Model.IsGuidedFirstInstall || Model.PackageAvailable)
+        @* Neither the guided first install nor the ordinary page offers a download that is not there (WAS-128). *@
+        @if (Model.PackageAvailable)
         {
             <a class="btn btn-outline-secondary btn-sm" href="@Model.PackageDownloadUrl">
                 <i class="bi bi-download me-1" aria-hidden="true"></i>@L["PrintBridge.Auto.Download"]

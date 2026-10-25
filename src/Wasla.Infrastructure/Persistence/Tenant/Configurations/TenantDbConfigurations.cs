@@ -179,6 +179,20 @@ public class UserNotificationSettingsConfiguration : IEntityTypeConfiguration<Us
     }
 }
 
+public class RestaurantLogoConfiguration : IEntityTypeConfiguration<RestaurantLogo>
+{
+    public void Configure(EntityTypeBuilder<RestaurantLogo> builder)
+    {
+        builder.ToTable("RestaurantLogos");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Content).IsRequired();
+        builder.Property(x => x.ContentType).IsRequired().HasMaxLength(32);
+        builder.Property(x => x.Version).IsRequired().HasMaxLength(64);
+        // Stored as int, written by EF on every insert; 0 is ThemeAware, the default.
+        builder.Property(x => x.Background).IsRequired();
+    }
+}
+
 public class TenantOperationalSettingsConfiguration : IEntityTypeConfiguration<TenantOperationalSettings>
 {
     public void Configure(EntityTypeBuilder<TenantOperationalSettings> builder)
@@ -235,6 +249,7 @@ public class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
         builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
         builder.Property(x => x.LockedByInstallationId);
         builder.Property(x => x.LockedBy).HasMaxLength(200);
+        builder.Property(x => x.StatusVersion).IsRequired();
 
         builder.HasIndex(x => new { x.OrderId, x.Type })
             .HasDatabaseName("IX_PrintJobs_OrderId_Type");

@@ -24,7 +24,7 @@
             @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "customerName", L["Orders.Customer"].Value))
             @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "status", L["Orders.Status"].Value))
             @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "totalAmount", L["Orders.TotalAmount"].Value, IsNumeric: true))
-            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, "receivedAt", L["Orders.ReceivedAt"].Value, IsNumeric: true))
+            @await Html.PartialAsync("_OrderListSortHeaderLink", new OrderListSortHeaderModel(Model.ListBasePath, Model.Filters, Wasla.Application.Orders.OrderListSort.OrderedAt, L["Orders.OrderTime"].Value, IsNumeric: true))
             <th scope="col" class="wasla-table__actions">@L["Orders.Actions"]</th>
         </tr>
         </thead>
@@ -47,6 +47,7 @@
                 <tr data-order-id="@o.Id"
                     data-order-status="@o.Status"
                     data-received-at="@o.ReceivedAtUtc.ToString("O")"
+                    data-ordered-at="@o.OrderedAtUtc.ToString("O")"
                     data-display-image="@o.DisplayImageUrl"
                     data-item-count="@o.ItemCount"
                     data-first-product="@o.FirstProductName">
@@ -76,11 +77,23 @@
                     </td>
                     <td class="wasla-table__num wasla-table__amount">
                         <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.TotalAmount"]</span>
-                        <span>@o.TotalAmount.ToString("C")</span>
+                        <span>@OrderUiHelper.FormatMoney(o.TotalAmount)</span>
                     </td>
                     <td class="wasla-table__num wasla-table__muted wasla-table__datetime">
-                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.ReceivedAt"]</span>
-                        @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.ReceivedAtUtc, o.ReceivedAtLocal, Model.TurkeyLocalToday))
+                        <span class="wasla-table__cell-label" aria-hidden="true">@L["Orders.OrderTime"]</span>
+                        @* WAS-125: the provider's order time. Without one, the import time stands in under its own label;
+                           a much later import (recovery) is shown under the order time. *@
+                        <span class="wasla-order-time">
+                            @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.OrderedAtUtc, o.OrderedAtLocal, Model.TurkeyLocalToday))
+                            @if (!o.OrderedAtIsFromPlatform)
+                            {
+                                <span class="wasla-order-time__source" title="@L["Orders.OrderTimeFallbackHint"]">@L["Orders.ReceivedAt"]</span>
+                            }
+                            else if (o.ShowReceivedSeparately)
+                            {
+                                <span class="wasla-order-time__source">@L["Orders.ReceivedAt"]: @await Html.PartialAsync("_ReceivedAtTime", new ReceivedAtTimeModel(o.ReceivedAtUtc, o.ReceivedAtLocal, Model.TurkeyLocalToday))</span>
+                            }
+                        </span>
                     </td>
                     <td class="wasla-table__actions">
                         @await Html.PartialAsync("_OrderLifecycleActions", new Wasla.Web.Models.Orders.OrderLifecycleActionsModel

@@ -16,13 +16,13 @@ public sealed class AdminPendingRegistrationDetailViewModel
     public string BusinessName { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string PrimaryDomain { get; set; } = string.Empty;
+    public string DatabaseName { get; set; } = string.Empty;
     public string PlanCode { get; set; } = string.Empty;
     public string BillingPeriod { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string? Neighborhood { get; set; }
-    public string? StreetAddress { get; set; }
     public string OwnerFullName { get; set; } = string.Empty;
     public string OwnerEmail { get; set; } = string.Empty;
     public string? OwnerPhone { get; set; }

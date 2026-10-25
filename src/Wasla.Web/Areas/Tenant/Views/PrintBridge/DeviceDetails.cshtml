@@ -34,6 +34,8 @@
             tokenCopied = L["PrintBridge.TokenCopied"].Value,
             tokenCopyFailed = L["PrintBridge.TokenCopyFailed"].Value,
             copied = L["PrintBridge.Copied"].Value,
+            showToken = L["PrintBridge.Manual.ShowToken"].Value,
+            hideToken = L["PrintBridge.Manual.HideToken"].Value,
             deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value
         }
     });
@@ -147,7 +149,7 @@
         <div id="printBridgeDetailTokenBox" class="d-none border rounded-3 p-3 mb-3 bg-body-tertiary" role="region" aria-live="polite">
             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                 <div class="flex-grow-1">
-                    <div class="form-label small fw-semibold mb-1">@L["PrintBridge.DeviceToken"]</div>
+                    <label class="form-label small fw-semibold mb-1" for="printBridgeDetailTokenValue">@L["PrintBridge.DeviceToken"]</label>
                     <div id="printBridgeDetailTokenTitle" class="small fw-semibold text-warning-emphasis"></div>
                     <div id="printBridgeDetailTokenNotice" class="text-muted small mt-1 mb-0"></div>
                 </div>
@@ -155,10 +157,24 @@
                         aria-label="@L["PrintBridge.DismissTokenBox"]"></button>
             </div>
             <div id="printBridgeDetailTokenWarning" class="alert alert-danger small py-2 mb-2 d-none" role="alert"></div>
-            <div class="d-flex flex-wrap align-items-stretch gap-2">
-                <pre id="printBridgeDetailTokenValue" class="font-monospace small flex-grow-1 mb-0 p-3 rounded border bg-body user-select-all text-break wasla-print-bridge-token-value"></pre>
-                <button type="button" class="btn btn-sm btn-primary align-self-start" id="printBridgeDetailCopyTokenBtn">
-                    <i class="bi bi-clipboard me-1"></i>@L["PrintBridge.CopyToken"]
+            <div class="input-group input-group-sm">
+                @* Masked by default, as on the setup page; the toggle only changes how the field is displayed. *@
+                <input type="password"
+                       class="form-control font-monospace wasla-print-bridge-setup-value"
+                       id="printBridgeDetailTokenValue"
+                       dir="ltr"
+                       autocomplete="off"
+                       spellcheck="false"
+                       readonly />
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        id="printBridgeDetailTokenToggleBtn"
+                        aria-controls="printBridgeDetailTokenValue">
+                    <i class="bi bi-eye" id="printBridgeDetailTokenToggleIcon" aria-hidden="true"></i>
+                    <span class="ms-1" id="printBridgeDetailTokenToggleText">@L["PrintBridge.Manual.ShowToken"]</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="printBridgeDetailCopyTokenBtn">
+                    <i class="bi bi-clipboard me-1" aria-hidden="true"></i>@L["PrintBridge.CopyToken"]
                 </button>
             </div>
         </div>
@@ -267,9 +283,24 @@
                 });
             }
 
+            // Masks or reveals the token field. Only the field's type changes: its value is the token's single copy on
+            // the page, the toggle's own name says what it will do next, and Copy works either way.
+            function setTokenMasked(masked) {
+                var value = document.getElementById("printBridgeDetailTokenValue");
+                var text = document.getElementById("printBridgeDetailTokenToggleText");
+                var icon = document.getElementById("printBridgeDetailTokenToggleIcon");
+                if (value) value.type = masked ? "password" : "text";
+                if (text) text.textContent = masked ? messages.showToken : messages.hideToken;
+                if (icon) icon.className = masked ? "bi bi-eye" : "bi bi-eye-slash";
+            }
+
             function hideToken() {
                 currentToken = null;
                 var box = document.getElementById("printBridgeDetailTokenBox");
+                var value = document.getElementById("printBridgeDetailTokenValue");
+                // Dismissing removes the token from the page, not only from view.
+                if (value) value.value = "";
+                setTokenMasked(true);
                 if (box) box.classList.add("d-none");
             }
 
@@ -281,7 +312,9 @@
                 var notice = document.getElementById("printBridgeDetailTokenNotice");
                 var warning = document.getElementById("printBridgeDetailTokenWarning");
                 if (!box || !value || !currentToken) return;
-                value.textContent = currentToken;
+                // Every new token starts masked, whatever the previous one showed.
+                setTokenMasked(true);
+                value.value = currentToken;
                 if (title) title.textContent = data.tokenTitle || "";
                 if (notice) notice.textContent = data.tokenNotice || "";
                 if (warning) {
@@ -334,6 +367,12 @@
                             .catch(function (e) { showMessage(e.message || messages.deviceUpdateFailed, "danger"); })
                             .finally(function () { setActiveBtn.disabled = false; });
                     });
+                }
+
+                var toggleBtn = document.getElementById("printBridgeDetailTokenToggleBtn");
+                var tokenValue = document.getElementById("printBridgeDetailTokenValue");
+                if (toggleBtn && tokenValue) {
+                    toggleBtn.addEventListener("click", function () { setTokenMasked(tokenValue.type !== "password"); });
                 }
 
                 var copyBtn = document.getElementById("printBridgeDetailCopyTokenBtn");

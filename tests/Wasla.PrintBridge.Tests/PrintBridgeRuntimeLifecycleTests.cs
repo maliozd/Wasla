@@ -68,6 +68,25 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.False(new PrintBridgeRuntimeIssue(ex.IssueCode, ex.UserMessageKey, ex.FormatArgs).ShouldClearToken);
     }
 
+    [Fact]
+    public async Task ActiveDevice_AuthenticatesWithItsTenantsIdAndName()
+    {
+        var created = await _devices.CreateDeviceAsync(_tenantId, "Kitchen POS", CancellationToken.None);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+
+        var authResult = await auth.AuthenticateDetailedAsync(
+            created.RawToken,
+            new PrintBridgeClientInfo("DESKTOP", "1.0.0", "POS-58", "127.0.0.1", Guid.NewGuid()),
+            CancellationToken.None);
+
+        Assert.True(authResult.Succeeded);
+        var context = authResult.Context!;
+        Assert.Equal(created.DeviceId, context.DeviceId);
+        Assert.Equal(_tenantId, context.TenantId);
+        Assert.Equal("sushim", context.TenantName);
+        Assert.Equal("Kitchen POS", context.DeviceName);
+    }
+
     [Theory]
     [InlineData("device_removed")]
     [InlineData("device_auth_invalid")]
@@ -81,7 +100,7 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             $$"""{"error":"{{serverErrorCode}}"}""",
             serverErrorCode);
         var issue = new PrintBridgeRuntimeIssue(ex.IssueCode, ex.UserMessageKey, ex.FormatArgs);
-        var hub = new WaslaOptions
+        var connection = new WaslaOptions
         {
             ServerUrl = "https://sushim.wasla.local:7200",
             AgentToken = "old-token"
@@ -95,14 +114,14 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         };
         var installationId = bridge.InstallationId;
 
-        var changed = PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
+        var changed = PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(connection, bridge);
 
         Assert.Equal(PrintBridgeRuntimeIssueCode.ReconnectRequired, ex.IssueCode);
         Assert.True(issue.ShouldClearToken);
         Assert.True(issue.ShouldStopPolling);
         Assert.True(changed);
-        Assert.Equal(string.Empty, hub.AgentToken);
-        Assert.Equal("https://sushim.wasla.local:7200", hub.ServerUrl);
+        Assert.Equal(string.Empty, connection.AgentToken);
+        Assert.Equal("https://sushim.wasla.local:7200", connection.ServerUrl);
         Assert.Equal(installationId, bridge.InstallationId);
         Assert.Equal(string.Empty, bridge.DisplayName);
         Assert.False(bridge.ServerDeviceNameResolved);
@@ -130,7 +149,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.False(isConnected);
         Assert.Equal(BridgeServerConnectionStatus.Error, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.ConnectionLost, status.TrayIconState);
-        Assert.Equal("RuntimeIssue.ReconnectRequired.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -149,7 +167,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.Equal("RuntimeIssue.DisabledByAdmin.Detail", issue.EffectiveDetailResourceKey);
         Assert.Equal("RuntimeIssue.DisabledByAdmin.Title", issue.EffectiveTitleResourceKey);
         Assert.Equal(BridgeServerConnectionStatus.Error, status.ServerConnectionStatus);
-        Assert.Equal("RuntimeIssue.DisabledByAdmin.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -163,7 +180,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.True(isConnected);
         Assert.Equal(BridgeServerConnectionStatus.Connected, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.Polling, status.TrayIconState);
-        Assert.Equal("Status.RunningDryRun", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -179,7 +195,7 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
     [Fact]
     public void ReconnectRequiredTokenClearing_PreservesSavedTurkishLanguage()
     {
-        var hub = new WaslaOptions
+        var connection = new WaslaOptions
         {
             ServerUrl = "https://sushim.wasla.local:7200",
             AgentToken = "old-token"
@@ -192,9 +208,9 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         };
         var ui = new UiOptions { Language = SupportedCultures.Turkish };
 
-        PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
+        PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(connection, bridge);
 
-        Assert.Equal(string.Empty, hub.AgentToken);
+        Assert.Equal(string.Empty, connection.AgentToken);
         Assert.Equal(SupportedCultures.Turkish, ui.Language);
     }
 
@@ -235,7 +251,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         var status = CreateStatus(isRunning: false, isConnected, issue);
 
         Assert.False(isConnected);
-        Assert.Equal("RuntimeIssue.DuplicateInstallation.Title", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
         Assert.NotEqual(
             new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ReconnectRequired).EffectiveDetailResourceKey,
             issue.EffectiveDetailResourceKey);
@@ -400,7 +415,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         Assert.Null(status.LastIssue);
         Assert.Equal(BridgeServerConnectionStatus.Connected, status.ServerConnectionStatus);
         Assert.Equal(TrayIconState.Polling, status.TrayIconState);
-        Assert.Equal("Status.RunningDryRun", PrintBridgeRuntimeStatus.ResolveHeaderBadgeResourceKey(status));
     }
 
     [Fact]
@@ -436,7 +450,7 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
     [Fact]
     public void ReconnectRequiredTokenClearing_AlwaysReplacesHolderState_EvenWhenAlreadyEmpty()
     {
-        var hub = new WaslaOptions
+        var connection = new WaslaOptions
         {
             ServerUrl = "https://sushim.wasla.local:7200",
             AgentToken = string.Empty
@@ -449,11 +463,11 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
         };
         var installationId = bridge.InstallationId;
 
-        var changed = PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(hub, bridge);
+        var changed = PrintBridgeRuntimeCredentialFallback.ClearTokenForReconnectRequired(connection, bridge);
 
         Assert.False(changed);
-        Assert.Equal(string.Empty, hub.AgentToken);
-        Assert.Equal("https://sushim.wasla.local:7200", hub.ServerUrl);
+        Assert.Equal(string.Empty, connection.AgentToken);
+        Assert.Equal("https://sushim.wasla.local:7200", connection.ServerUrl);
         Assert.Equal(installationId, bridge.InstallationId);
     }
 

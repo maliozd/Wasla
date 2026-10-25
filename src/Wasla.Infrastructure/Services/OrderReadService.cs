@@ -56,8 +56,10 @@ public sealed class OrderReadService : IOrderReadService
 
         if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
         if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
-        if (startDateUtc.HasValue) q = q.Where(o => o.ReceivedAt >= startDateUtc.Value);
-        if (endDateUtc.HasValue) q = q.Where(o => o.ReceivedAt < endDateUtc.Value);
+        // Date filters and the default sort use the operational order time (WAS-125): the provider's creation time,
+        // or the first-import time when the provider sent none.
+        if (startDateUtc.HasValue) q = q.Where(o => o.OrderedAt >= startDateUtc.Value);
+        if (endDateUtc.HasValue) q = q.Where(o => o.OrderedAt < endDateUtc.Value);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -69,7 +71,7 @@ public sealed class OrderReadService : IOrderReadService
                 (o.CustomerPhone != null && o.CustomerPhone.Contains(term)));
         }
 
-        var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
+        var safeSortBy = string.IsNullOrWhiteSpace(sortBy) ? OrderListSort.OrderedAt : sortBy.Trim();
         var safeSortDirection = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
         var ascending = safeSortDirection == "asc";
@@ -79,12 +81,13 @@ public sealed class OrderReadService : IOrderReadService
             "status" => ascending ? q.OrderBy(o => o.InternalStatus) : q.OrderByDescending(o => o.InternalStatus),
             "customerName" => ascending ? q.OrderBy(o => o.CustomerName) : q.OrderByDescending(o => o.CustomerName),
             "totalAmount" => ascending ? q.OrderBy(o => o.TotalAmount) : q.OrderByDescending(o => o.TotalAmount),
-            _ => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt)
+            OrderListSort.ReceivedAt => ascending ? q.OrderBy(o => o.ReceivedAt) : q.OrderByDescending(o => o.ReceivedAt),
+            _ => ascending ? q.OrderBy(o => o.OrderedAt) : q.OrderByDescending(o => o.OrderedAt)
         };
 
-        // Rows that tie on the sorted column (same platform, status, customer or amount) need a fixed order,
-        // or a row could appear on two pages or on none. Newest first, then the unique ID.
-        q = ordered.ThenByDescending(o => o.ReceivedAt).ThenBy(o => o.Id);
+        // Rows that tie on the sorted column (same platform, status, customer, amount or time) need a fixed order,
+        // or a row could appear on two pages or on none. Newest order time first, then the unique ID.
+        q = ordered.ThenByDescending(o => o.OrderedAt).ThenBy(o => o.Id);
 
         var total = await q.CountAsync(ct);
 
@@ -98,6 +101,7 @@ public sealed class OrderReadService : IOrderReadService
         var pageQuery = q.Skip((page - 1) * pageSize).Take(pageSize);
 
         // Single SQL projection either way — never 1+N. Line items only when Live Screen asks for them.
+        // Items in OrderItemOrdering's order: provider position, stored time, Id.
         List<OrderListResult.Row> items;
         if (includeLineItems)
         {
@@ -112,11 +116,12 @@ public sealed class OrderReadService : IOrderReadService
                     o.InternalStatus,
                     o.PlatformStatus,
                     o.CreatedAtPlatform,
+                    o.OrderedAt,
                     o.ReceivedAt,
                     o.Items.Count,
-                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    o.Items.OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
                     o.Items
-                        .OrderBy(i => i.Id)
+                        .OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id)
                         .Select(i => new OrderListResult.LineItem(i.ProductName, i.Quantity, i.Notes))
                         .ToList()))
                 .ToListAsync(ct);
@@ -134,9 +139,10 @@ public sealed class OrderReadService : IOrderReadService
                     o.InternalStatus,
                     o.PlatformStatus,
                     o.CreatedAtPlatform,
+                    o.OrderedAt,
                     o.ReceivedAt,
                     o.Items.Count,
-                    o.Items.OrderBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
+                    o.Items.OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id).Select(i => i.ProductName).FirstOrDefault(),
                     Array.Empty<OrderListResult.LineItem>()))
                 .ToListAsync(ct);
         }
@@ -154,7 +160,7 @@ public sealed class OrderReadService : IOrderReadService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
         var order = await db.Orders.AsNoTracking()
-            .Include(o => o.Items).ThenInclude(i => i.Options)
+            .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         if (order is null) return null;
@@ -177,7 +183,10 @@ public sealed class OrderReadService : IOrderReadService
             Status = order.InternalStatus,
             PlatformStatus = order.PlatformStatus,
             CreatedAtPlatformUtc = order.CreatedAtPlatform,
+            PlatformModifiedAtUtc = order.PlatformModifiedAt,
+            OrderedAtUtc = order.OrderedAt,
             ReceivedAtUtc = order.ReceivedAt,
+            LastChangedAtUtc = order.UpdatedAt,
             AcceptedAtUtc = order.AcceptedAt,
             DeliveredAtUtc = order.DeliveredAt,
             CancelledAtUtc = order.CancelledAt,
@@ -211,7 +220,7 @@ public sealed class OrderReadService : IOrderReadService
                     && o.DeliveredAt >= windowStartUtc
                     && o.DeliveredAt <= serverTimeUtc))
             .OrderBy(o => o.InternalStatus)
-            .ThenByDescending(o => o.ReceivedAt)
+            .ThenByDescending(o => o.OrderedAt)
             .ThenBy(o => o.Id)
             .Select(o => new
             {
@@ -219,14 +228,17 @@ public sealed class OrderReadService : IOrderReadService
                 o.ExternalOrderCode,
                 o.Platform,
                 o.InternalStatus,
+                o.CreatedAtPlatform,
                 o.ReceivedAt,
                 o.DeliveredAt,
                 o.CustomerName,
                 o.CustomerAddress,
                 o.CustomerNote,
                 o.TotalAmount,
+                o.ChangeVersion,
+                // OrderItemOrdering's order: provider position, stored time, Id.
                 Items = o.Items
-                    .OrderBy(i => i.Id)
+                    .OrderBy(i => i.Sequence).ThenBy(i => i.CreatedAt).ThenBy(i => i.Id)
                     .Select(i => new LiveScreenLineItemDto(i.ProductName, i.Quantity, i.Notes))
                     .ToList()
             })
@@ -243,7 +255,11 @@ public sealed class OrderReadService : IOrderReadService
             o.CustomerAddress ?? string.Empty,
             string.IsNullOrWhiteSpace(o.CustomerNote) ? null : o.CustomerNote.Trim(),
             o.TotalAmount,
-            o.Items)).ToList();
+            o.Items)
+        {
+            ChangeVersion = o.ChangeVersion,
+            PlacedAtUtc = o.CreatedAtPlatform is null ? null : SpecifyUtc(o.CreatedAtPlatform.Value)
+        }).ToList();
 
         var utcServer = SpecifyUtc(serverTimeUtc);
         var turkeyToday = DateOnly.FromDateTime(
@@ -251,10 +267,12 @@ public sealed class OrderReadService : IOrderReadService
         OrdersReceivedAtQueryRange.MapLocalDatesToUtcRange(turkeyToday, turkeyToday, out var todayStartUtc, out var todayEndUtc);
         var todayStart = todayStartUtc ?? throw new InvalidOperationException("Turkey local day did not map to a UTC start.");
         var todayEnd = todayEndUtc ?? throw new InvalidOperationException("Turkey local day did not map to a UTC end.");
-        var receivedToday = db.Orders.AsNoTracking()
-            .Where(o => o.ReceivedAt >= todayStart && o.ReceivedAt < todayEnd);
-        var todayOrderCount = await receivedToday.CountAsync(ct);
-        var cancelledOrderCount = await receivedToday.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
+        // Orders of today by order time, like the Orders list and Dashboard (WAS-125): a recovery import of yesterday's
+        // order does not count as today's.
+        var orderedToday = db.Orders.AsNoTracking()
+            .Where(o => o.OrderedAt >= todayStart && o.OrderedAt < todayEnd);
+        var todayOrderCount = await orderedToday.CountAsync(ct);
+        var cancelledOrderCount = await orderedToday.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
 
         return new LiveScreenSnapshotResult(utcServer, orders, todayOrderCount, cancelledOrderCount);
     }

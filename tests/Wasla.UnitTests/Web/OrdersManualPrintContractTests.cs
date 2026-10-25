@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Web;
@@ -382,7 +383,7 @@ public sealed class OrdersManualPrintContractTests
     {
         public FixedTenant(Guid tenantId)
         {
-            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
         }
 
         public ResolvedTenantDto? CurrentTenant { get; }

@@ -21,9 +21,6 @@
   <data name="Pricing.Subtitle" xml:space="preserve">
     <value>Online sipariş yönetimine tek panelden başlayın. Ödeme entegrasyonu yakında eklenecek.</value>
   </data>
-  <data name="Pricing.ViewPlans" xml:space="preserve">
-    <value>Planları Gör</value>
-  </data>
   <data name="Pricing.Recommended" xml:space="preserve">
     <value>Önerilen</value>
   </data>
@@ -63,9 +60,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Küçük restoranlar ve ilk kurulum için</value>
   </data>
-  <data name="Pricing.Plan.Starter.Price" xml:space="preserve">
-    <value>300 TL / ay</value>
-  </data>
   <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
     <value>1 aktif Print Bridge cihazı</value>
   </data>
@@ -89,9 +83,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Aktif restoranlar için</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Price" xml:space="preserve">
-    <value>600 TL / ay</value>
   </data>
   <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
     <value>3 aktif Print Bridge cihazı</value>
@@ -119,9 +110,6 @@
   </data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Yoğun restoranlar ve daha büyük operasyonlar için</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Price" xml:space="preserve">
-    <value>1.200 TL / ay</value>
   </data>
   <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
     <value>10 aktif Print Bridge cihazı</value>
@@ -171,9 +159,6 @@
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
     <value>Özel anlaşma ve limitler</value>
   </data>
-  <data name="Signup.StartNow" xml:space="preserve">
-    <value>Hemen Başla</value>
-  </data>
   <data name="Signup.Title" xml:space="preserve">
     <value>Wasla hesabı oluştur</value>
   </data>
@@ -191,9 +176,6 @@
   </data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
     <value>Bu paketle:</value>
-  </data>
-  <data name="Signup.YearlyAdvantageNote" xml:space="preserve">
-    <value>Yıllık ödemede 2 ay avantajlı fiyat.</value>
   </data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
     <value>Özel teklif</value>
@@ -221,6 +203,9 @@
   </data>
   <data name="Signup.BillingNote" xml:space="preserve">
     <value>Ödeme entegrasyonu henüz aktif değil. Bir sonraki ekranda ödeme akışı simüle edilecek.</value>
+  </data>
+  <data name="Signup.BillingNoteAwaitingPayment" xml:space="preserve">
+    <value>Çevrim içi kayıt sırasında ödeme alınmaz. Gönderdikten sonra kaydınız ödeme bekler; restoran paneliniz yalnızca ödeme alındıktan sonra hazırlanır.</value>
   </data>
   <data name="Signup.BusinessName" xml:space="preserve">
     <value>İşletme / restoran adı</value>
@@ -348,11 +333,17 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve">
     <value>Kaydı tamamla ve ödemeye geç</value>
   </data>
+  <data name="Signup.SubmitRegistration" xml:space="preserve">
+    <value>Kaydı gönder</value>
+  </data>
   <data name="Signup.PendingTitle" xml:space="preserve">
     <value>Hesabınız neredeyse hazır</value>
   </data>
   <data name="Signup.PendingSubtitle" xml:space="preserve">
     <value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value>
+  </data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Bilgilerinizi aldık. Kaydınız ödeme bekliyor.</value>
   </data>
   <data name="Signup.PendingCheckoutNote" xml:space="preserve">
     <value>Ödeme tamamlandıktan sonra restoran paneliniz hazırlanır.</value>
@@ -362,6 +353,9 @@
   </data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve">
     <value>Ödemeye devam et</value>
+  </data>
+  <data name="Signup.ViewRegistrationSummary" xml:space="preserve">
+    <value>Kayıt özetini görüntüle</value>
   </data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
     <value>Restoranınız</value>
@@ -532,8 +526,14 @@
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Ödeme özeti</value>
   </data>
+  <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve">
+    <value>Kayıt özeti</value>
+  </data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve">
     <value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value>
+  </data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve">
+    <value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu sayfada ödeme alınmaz; kaydınız ödeme alınana kadar beklemede kalır.</value>
   </data>
   <data name="Checkout.SectionPackageInfo" xml:space="preserve">
     <value>Paket bilgileri</value>
@@ -546,9 +546,6 @@
   </data>
   <data name="Checkout.AddressSummary" xml:space="preserve">
     <value>Adres</value>
-  </data>
-  <data name="Checkout.MonthlyReferencePrice" xml:space="preserve">
-    <value>Aylık referans fiyat</value>
   </data>
   <data name="Checkout.TotalAmount" xml:space="preserve">
     <value>Toplam tutar</value>
@@ -601,6 +598,15 @@
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve">
     <value>Restoran paneliniz oluşturulmadı. İsterseniz ödeme adımını tekrar deneyebilirsiniz.</value>
   </data>
+  <data name="Checkout.StatusPaymentReceived" xml:space="preserve">
+    <value>Bu kayıt için ödeme alındı.</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve">
+    <value>Ödeme tamamlanmadı</value>
+  </data>
+  <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve">
+    <value>Bu kayıt için ödeme tamamlanmadı, bu nedenle restoran paneliniz oluşturulmadı.</value>
+  </data>
   <data name="Checkout.CancelledTitle" xml:space="preserve">
     <value>Kayıt iptal edildi</value>
   </data>
@@ -609,6 +615,9 @@
   </data>
   <data name="Checkout.TryAgain" xml:space="preserve">
     <value>Ödeme adımına dön</value>
+  </data>
+  <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve">
+    <value>Kayıt özetine dön</value>
   </data>
   <data name="Checkout.RegisterAgain" xml:space="preserve">
     <value>Yeniden kayıt ol</value>
@@ -692,10 +701,10 @@
     <value>Cihaz tokenı oluşturup kopyalayın.</value>
   </data>
   <data name="PrintBridge.SetupStep4" xml:space="preserve">
-    <value>Print Bridge'de Ayarlar'ı açın; Wasla Web Panel Linki ile cihaz tokenını yapıştırın.</value>
+    <value>Print Bridge'de "Wasla'ya bağlan" düğmesine tıklayın (Ayarlar'da, Wasla bağlantısı bölümünde); Wasla Web Panel Linki ile cihaz tokenını yapıştırın.</value>
   </data>
   <data name="PrintBridge.SetupStep5" xml:space="preserve">
-    <value>"Bağlantıyı kaydet" düğmesine, ardından "Bağlantıyı test et" düğmesine tıklayın.</value>
+    <value>"Bağlan ve kaydet" düğmesine tıklayın. Print Bridge bağlantıyı kaydetmeden önce kontrol eder.</value>
   </data>
   <data name="PrintBridge.SetupStep6" xml:space="preserve">
     <value>Yazıcınızı seçip kaydedin.</value>
@@ -766,11 +775,8 @@
   <data name="PrintBridge.PackageNotPreparedHint" xml:space="preserve">
     <value>Taşınabilir paket dağıtım paketlemesi tamamlandığında buradan indirilebilir olacaktır.</value>
   </data>
-  <data name="Landing.Title" xml:space="preserve">
+  <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
-  </data>
-  <data name="Landing.Subtitle" xml:space="preserve">
-    <value>Çoklu platform sipariş yönetimi</value>
   </data>
   <data name="TenantNotFound.PageTitle" xml:space="preserve">
     <value>Bu Wasla adresi aktif değil</value>
@@ -806,7 +812,7 @@
     <value>Panel girişi için restoranınıza özel Wasla adresini kullanmalısınız.</value>
   </data>
   <data name="TenantAddressRequired.Example" xml:space="preserve">
-    <value>Örnek: bahce-tadi.wasla.local</value>
+    <value>Örnek: {0}</value>
   </data>
   <data name="TenantAddressRequired.BackToSignup" xml:space="preserve">
     <value>Kayıt sayfasına dön</value>
@@ -858,7 +864,7 @@
   <data name="PrintBridge.FirstInstall.Connect.Manual.Body" xml:space="preserve"><value>Wasla Web Panel Linki ile bir cihaz tokenını Print Bridge'in Ayarlar ekranına kendiniz girersiniz. Uygulama otomatik açılmazsa bunu kullanın.</value></data>
   <data name="PrintBridge.FirstInstall.Connect.Title" xml:space="preserve"><value>Bağlantı yöntemini seçin</value></data>
   <data name="PrintBridge.FirstInstall.Printer.Title" xml:space="preserve"><value>Yazıcınızı seçin ve test edin</value></data>
-  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, Yazıcı yapılandırması bölümünde fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.FirstInstall.Printer.Body" xml:space="preserve"><value>Print Bridge'de Yazıcı sekmesini açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
   <data name="PrintBridge.FirstInstall.Continue.Body" xml:space="preserve"><value>Wasla bağlantıyı doğruladığında bu sayfanın üstündeki rehberli kurulum paneli "{0}" seçeneğini gösterir. Sırada cihaz rehberi, ardından sipariş eğitimi var.</value></data>
   <data name="PrintBridge.Manual.Title" xml:space="preserve"><value>Wasla Web Panel Linki ve cihaz tokenı</value></data>
   <data name="PrintBridge.Manual.Intro" xml:space="preserve"><value>Print Bridge bu sayfadan açılmıyorsa bunu kullanın. Print Bridge'in Ayarlar ekranı tam olarak bu iki bilgiyi ister.</value></data>
@@ -876,7 +882,7 @@
   <data name="PrintBridge.Manual.ShowToken" xml:space="preserve"><value>Tokenı göster</value></data>
   <data name="PrintBridge.Manual.HideToken" xml:space="preserve"><value>Tokenı gizle</value></data>
   <data name="PrintBridge.Manual.DeviceTokenCopied" xml:space="preserve"><value>Cihaz tokenı kopyalandı.</value></data>
-  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Şimdi Print Bridge'de Ayarlar'ı açın, iki bilgiyi aynı adlı alanlara yapıştırın, "Bağlantıyı kaydet" ve ardından "Bağlantıyı test et" düğmesine tıklayın.</value></data>
+  <data name="PrintBridge.Manual.Next" xml:space="preserve"><value>Şimdi Print Bridge'i açıp "Wasla'ya bağlan" düğmesine tıklayın (Ayarlar'da, Wasla bağlantısı bölümünde), iki bilgiyi aynı adlı alanlara yapıştırın ve "Bağlan ve kaydet" düğmesine tıklayın.</value></data>
   <data name="PrintBridge.Manual.NotConnectedYet" xml:space="preserve"><value>Token oluşturmak veya kopyalamak Print Bridge'i bağlamaz. Bağlantı ancak Wasla, Print Bridge'den gelen bağlantıyı doğruladıktan sonra tamamlanmış sayılır.</value></data>
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla, Print Bridge bağlantısını doğruladı. Bu sayfanın üstündeki rehberli kurulum panelinden devam edebilirsiniz.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla bağlantıyı henüz doğrulamadı. Print Bridge'de "Bağlantıyı test et" düğmesine tıklayın, ardından yeniden kontrol etmek için bu sayfayı yenileyin.</value></data>
@@ -915,7 +921,7 @@
   <data name="PrintBridge.TokenMissing" xml:space="preserve"><value>Token yok</value></data>
   <data name="PrintBridge.SetupReconnectAction" xml:space="preserve"><value>Kurulum / yeniden bağlama</value></data>
   <data name="PrintBridge.RecentPrintActivity" xml:space="preserve"><value>Son yazdırma hareketleri</value></data>
-  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Ham cihaz token'ı ve token hash'i bu sayfada gösterilmez.</value></data>
+  <data name="PrintBridge.DeviceTokenSafeNote" xml:space="preserve"><value>Mevcut cihaz tokenı bir daha gösterilemez. Token yenile yeni bir token oluşturur ve eski token hemen geçersiz olur. Yeni token yalnızca bir kez gösterilir ve maskeli başlar: Tokenı göster / Tokenı gizle yalnızca görünümünü değiştirir; Token kopyala, token maskeliyken de çalışır. Tokenı güvenli bir yerde saklayın; kutuyu kapattıktan, sayfadan ayrıldıktan veya sayfayı yeniledikten sonra bir daha gösterilemez.</value></data>
   <data name="PrintBridge.DeviceIdentity" xml:space="preserve"><value>Kimlik</value></data>
   <data name="PrintBridge.DeviceActions" xml:space="preserve"><value>Cihaz işlemleri</value></data>
   <data name="PrintBridge.EnableDevice" xml:space="preserve"><value>Cihazı etkinleştir</value></data>
@@ -985,11 +991,13 @@
   <data name="Auth.ForgotPassword.HelpText" xml:space="preserve"><value>Hesabınızla ilişkili e-posta adresini girin.</value></data>
   <data name="Auth.ForgotPassword.SendResetLink" xml:space="preserve"><value>Sıfırlama bağlantısı gönder</value></data>
   <data name="Auth.ForgotPassword.ConfirmationTitle" xml:space="preserve"><value>E-postanızı kontrol edin</value></data>
-  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.</value></data>
-  <data name="Auth.ForgotPassword.UserNotFound" xml:space="preserve"><value>Bu e-posta adresiyle bu restorana ait bir kullanıcı bulunamadı.</value></data>
-  <data name="Auth.ForgotPassword.UserInactive" xml:space="preserve"><value>Bu kullanıcı hesabı aktif değil. Restoran yöneticinizle iletişime geçin.</value></data>
-  <data name="Auth.ForgotPassword.EmailDeliveryFailed" xml:space="preserve"><value>Şifre sıfırlama e-postası şu anda gönderilemedi. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Auth.ForgotPassword.ConfirmationDescription" xml:space="preserve"><value>Bu e-posta adresiyle kayıtlı aktif bir hesap varsa, şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.</value></data>
   <data name="Auth.ForgotPassword.TooManyAttempts" xml:space="preserve"><value>Çok fazla şifre sıfırlama denemesi yapıldı. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Auth.Login.TooManyAttempts" xml:space="preserve"><value>Çok fazla giriş denemesi yapıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.</value></data>
+  <data name="Signup.TooManyAttempts" xml:space="preserve"><value>Çok fazla kayıt denemesi yapıldı. Lütfen daha sonra tekrar deneyin veya daha önce başlattığınız kaydı tamamlayın.</value></data>
+  <data name="Signup.UnavailableTitle" xml:space="preserve"><value>Online kayıt henüz açık değil</value></data>
+  <data name="Signup.UnavailableBody" xml:space="preserve"><value>Wasla'ya şu anda bu sayfadan kayıt olunamıyor. Restoranınızda Wasla'yı kullanmaya başlamak isterseniz bize ulaşın; başlamanız için size yardımcı olalım.</value></data>
+  <data name="Checkout.TooManyAttempts" xml:space="preserve"><value>Bu kayıt için çok fazla istek yapıldı. Lütfen birkaç dakika bekleyip tekrar deneyin.</value></data>
   <data name="Auth.ResetPassword.Title" xml:space="preserve"><value>Şifreyi sıfırla</value></data>
   <data name="Auth.ResetPassword.NewPassword" xml:space="preserve"><value>Yeni şifre</value></data>
   <data name="Auth.ResetPassword.ConfirmNewPassword" xml:space="preserve"><value>Yeni şifre tekrarı</value></data>
@@ -999,7 +1007,7 @@
   <data name="Auth.ReturnToLogin" xml:space="preserve"><value>Girişe dön</value></data>
   <data name="Auth.AccessDenied.Title" xml:space="preserve"><value>Erişim reddedildi</value></data>
   <data name="Auth.AccessDenied.Description" xml:space="preserve"><value>Giriş yaptınız, ancak bu sayfa veya işlem için yetkiniz yok.</value></data>
-  <data name="Auth.AccessDenied.BackToOrders" xml:space="preserve"><value>Siparişlere dön</value></data>
+  <data name="Auth.AccessDenied.GoToStartPage" xml:space="preserve"><value>Başlangıç sayfama git</value></data>
   <data name="Navigation.UserSettings" xml:space="preserve"><value>Kullanıcılar</value></data>
   <data name="Layout.OpenNavigation" xml:space="preserve"><value>Menüyü aç</value></data>
   <data name="Layout.CloseNavigation" xml:space="preserve"><value>Menüyü kapat</value></data>
@@ -1049,6 +1057,7 @@
   <data name="TenantUsers.InvalidRole" xml:space="preserve"><value>Geçersiz rol seçildi.</value></data>
   <data name="TenantUsers.UserNotFound" xml:space="preserve"><value>Kullanıcı bulunamadı.</value></data>
   <data name="TenantUsers.LastOwnerBlocked" xml:space="preserve"><value>Son Owner devre dışı bırakılamaz veya rolü değiştirilemez.</value></data>
+  <data name="TenantUsers.SelfChangeBlocked" xml:space="preserve"><value>Kendi rolünüzü veya aktiflik durumunuzu değiştiremezsiniz. Bunu başka bir Owner yapabilir.</value></data>
   <data name="TenantUsers.UpdateFailed" xml:space="preserve"><value>Kullanıcı güncellenemedi.</value></data>
   <data name="Validation.EmailRequired" xml:space="preserve"><value>E-posta gereklidir.</value></data>
   <data name="Validation.EmailInvalid" xml:space="preserve"><value>Geçerli bir e-posta adresi girin.</value></data>
@@ -1065,6 +1074,9 @@
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
   <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
+  <data name="Orders.Print.Printing" xml:space="preserve"><value>Yazdırılıyor…</value></data>
+  <data name="Orders.Print.Status.Printed" xml:space="preserve"><value>Fiş yazıcıya gönderildi</value></data>
+  <data name="Orders.Print.Status.Failed" xml:space="preserve"><value>Fiş yazdırılamadı</value></data>
   <data name="TenantUsers.SummaryRegion" xml:space="preserve"><value>Kullanıcı özeti</value></data>
   <data name="TenantUsers.SummaryTotal" xml:space="preserve"><value>Toplam</value></data>
   <data name="TenantUsers.SummaryActive" xml:space="preserve"><value>Aktif</value></data>
@@ -1083,6 +1095,11 @@
   <data name="Notification.StopSoundButton" xml:space="preserve"><value>Sesi durdur</value></data>
   <data name="PlatformConnections.NoteRole" xml:space="preserve"><value>Bu restorana bağlı sipariş platformlarını yönetin.</value></data>
   <data name="Orders.LiveDisplay.LiveStatus" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.NotConnected" xml:space="preserve"><value>Platform bağlı değil</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.SyncDisabled" xml:space="preserve"><value>Senkronizasyon kapalı</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.Issue" xml:space="preserve"><value>Bağlantı sorunu</value></data>
+  <data name="Orders.LiveDisplay.SyncStatus.IssueWithPlatforms" xml:space="preserve"><value>Bağlantı sorunu: {0}</value></data>
+  <data name="Orders.LiveDisplay.LastSync" xml:space="preserve"><value>Son başarılı senkronizasyon</value></data>
   <data name="Orders.LiveDisplay.NotificationSound" xml:space="preserve"><value>Bildirim sesi</value></data>
   <data name="Orders.LiveScreen.ConnectionStale" xml:space="preserve"><value>Canlı siparişler yenilenemedi. Son güncelleme gösteriliyor.</value></data>
   <data name="Orders.LiveScreen.SessionExpired" xml:space="preserve"><value>Oturum süresi doldu. Devam etmek için sayfayı yenileyin.</value></data>
@@ -1090,6 +1107,8 @@
   <data name="Orders.LiveScreen.ViewBoard" xml:space="preserve"><value>Pano</value></data>
   <data name="Orders.LiveScreen.Completed" xml:space="preserve"><value>Tamamlanan</value></data>
   <data name="Orders.LiveScreen.EmptyColumn" xml:space="preserve"><value>Sipariş yok</value></data>
+  <data name="Orders.LiveScreen.GroupShowing" xml:space="preserve"><value>{1} siparişin {0} tanesi gösteriliyor</value></data>
+  <data name="Orders.LiveScreen.GroupShowMore" xml:space="preserve"><value>{0} sipariş daha göster</value></data>
   <data name="Orders.LiveScreen.ElapsedHoursMinutes" xml:space="preserve"><value>{0} sa {1} dk</value></data>
   <data name="Orders.LiveScreen.ColumnOrder" xml:space="preserve"><value>Sipariş</value></data>
   <data name="Orders.LiveScreen.ColumnElapsed" xml:space="preserve"><value>Süre</value></data>
@@ -1149,9 +1168,9 @@
   <data name="Setup.Title" xml:space="preserve"><value>Wasla'yı kullanıma hazırla</value></data>
   <data name="Setup.Progress" xml:space="preserve"><value>{0} / {1} tamamlandı</value></data>
   <data name="Setup.ProgressLabel" xml:space="preserve"><value>Kurulum ilerlemesi</value></data>
-  <data name="Setup.ProgressCaption" xml:space="preserve"><value>İlerleme zorunlu adımları sayar. Yazıcı isteğe bağlıdır ve hazır olmayı engellemez.</value></data>
+  <data name="Setup.ProgressCaption" xml:space="preserve"><value>İlerleme iki zorunlu adımı sayar: bir sipariş platformu ve Wasla Print Bridge. Diğer adımlar isteğe bağlıdır.</value></data>
   <data name="Setup.ReadyTitle" xml:space="preserve"><value>Wasla hazır</value></data>
-  <data name="Setup.ReadyBody" xml:space="preserve"><value>Sipariş platformunuz bağlı ve operasyon ekranınız kullanıma hazır.</value></data>
+  <data name="Setup.ReadyBody" xml:space="preserve"><value>Sipariş platformunuz ve Wasla Print Bridge bağlı; operasyon ekranınız kullanıma hazır.</value></data>
   <data name="Setup.OpenLiveScreen" xml:space="preserve"><value>Live Screen'i aç</value></data>
   <data name="Setup.AddTeamMember" xml:space="preserve"><value>Ekip üyesi ekle</value></data>
   <data name="Setup.FinishSetup" xml:space="preserve"><value>Kurulumu tamamla</value></data>
@@ -1177,11 +1196,15 @@
   <data name="Setup.Platform.Action" xml:space="preserve"><value>Platform bağla</value></data>
   <data name="Setup.Platform.ConnectedOne" xml:space="preserve"><value>{0} bağlı</value></data>
   <data name="Setup.Platform.ConnectedMany" xml:space="preserve"><value>{0} platform bağlı</value></data>
-  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Sipariş bildirimlerini ayarla</value></data>
-  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Bildirim sesi kapalı veya henüz kaydedilmedi.</value></data>
-  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Ses denemesini bildirim ayarlarından yapabilirsiniz.</value></data>
-  <data name="Setup.Notifications.Action" xml:space="preserve"><value>Bildirimleri ayarla</value></data>
+  <data name="Setup.Notifications.Title" xml:space="preserve"><value>Sipariş bildirimleri</value></data>
+  <data name="Setup.Notifications.Incomplete" xml:space="preserve"><value>Bildirim sesi kapalı</value></data>
+  <data name="Setup.Notifications.Hint" xml:space="preserve"><value>Ses, tarayıcı bildirimi ve yeni sipariş vurgusu Canlı Ekran'daki ayarlar menüsünden değiştirilir.</value></data>
   <data name="Setup.Notifications.Complete" xml:space="preserve"><value>Bildirim sesi açık</value></data>
+  <data name="Notification.BrowserPermission.Default" xml:space="preserve"><value>Tarayıcı bildirimleri isteğe bağlıdır. Açtığınızda tarayıcınız bir kez izin ister. Ses ve vurgu bunlar olmadan da çalışır.</value></data>
+  <data name="Notification.BrowserPermission.Granted" xml:space="preserve"><value>Bu tarayıcı Wasla bildirimlerine izin veriyor.</value></data>
+  <data name="Notification.BrowserPermission.Denied" xml:space="preserve"><value>Bu tarayıcı Wasla bildirimlerini engelliyor. İzin vermek için tarayıcı ayarlarından bu sitenin iznini değiştirin. Ses ve vurgu yine çalışır.</value></data>
+  <data name="Notification.BrowserPermission.Unsupported" xml:space="preserve"><value>Bu tarayıcı bildirimleri desteklemiyor. Ses ve vurgu yine çalışır.</value></data>
+  <data name="GuidedSetup.Training.Notifications.Body" xml:space="preserve"><value>Gerçek bir sipariş geldiğinde Canlı Ekran yeni sipariş sesini çalar ve kartını vurgular; deneme siparişleri sessizdir. Başka bir pencere öndeyken de yeni siparişleri görmek için tarayıcı bildirimlerini açabilirsiniz. Tarayıcınız o zaman bir kez izin ister; ses ve vurgu her durumda çalışır.</value></data>
   <data name="Setup.Printing.Title" xml:space="preserve"><value>Fiş yazıcısını bağla</value></data>
   <data name="Setup.Printing.Complete" xml:space="preserve"><value>Yazıcı bağlı</value></data>
   <data name="Setup.Printing.Action" xml:space="preserve"><value>Yazıcıyı bağla</value></data>
@@ -1354,7 +1377,7 @@
   <data name="Help.PrintBridge.Step2" xml:space="preserve"><value>ZIP dosyasını bir klasöre çıkarın.</value></data>
   <data name="Help.PrintBridge.Step3" xml:space="preserve"><value>Wasla.PrintBridge.exe dosyasını bir kez çalıştırın. Windows .NET 8 Desktop Runtime isterse kurun.</value></data>
   <data name="Help.PrintBridge.Step4" xml:space="preserve"><value>Kurulum sayfasında bağlantı yöntemini seçin: "{0}" uygulamayı açıp otomatik bağlar (önerilir); ya da manuel bağlanıp bir cihaz tokenını Wasla Web Panel Linki ile birlikte Print Bridge Ayarlar'ına yapıştırın. Cihaz tokenını kimseyle paylaşmayın.</value></data>
-  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>Print Bridge'de Ayarlar'ı açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
+  <data name="Help.PrintBridge.Step5" xml:space="preserve"><value>Print Bridge'de Yazıcı sekmesini açın, fiş yazıcınızı seçin, "Yazıcıyı kaydet" ve ardından "Yazıcıyı test et" düğmesine tıklayın.</value></data>
   <data name="Help.PrintBridge.Step6" xml:space="preserve"><value>Wasla bağlantıyı doğruladıktan sonra cihazınızı tanıyın: cihaz sayfası bağlantıyı gösterir; tokenı yenilemek veya cihazı kaldırmak da oradan yapılır. Ayrıntılar için "{0}" bölümüne bakın.</value></data>
   <data name="Help.PrintBridgeDevices.Title" xml:space="preserve"><value>Print Bridge cihazlarını yönetme</value></data>
   <data name="Help.PrintBridgeDevices.Intro" xml:space="preserve"><value>Her Print Bridge kurulumu, Print Bridge Cihazları listesinde bir cihaz olarak görünür. Cihazı yeniden adlandırmak, bağlantısını kontrol etmek, tokenını yenilemek veya cihazı kaldırmak için cihazın detaylarını açın.</value></data>
@@ -1364,10 +1387,11 @@
   <data name="Help.PrintBridgeDevices.Status.Body" xml:space="preserve"><value>"Bağlı", Wasla'nın bu kurulumdan son bir dakika içinde haber aldığı anlamına gelir. Son görülme, kurulumun en son ne zaman bağlandığını gösterir; daha eski bir zaman genellikle uygulamanın veya bilgisayarın kapalı olduğunu gösterir.</value></data>
   <data name="Help.PrintBridgeDevices.Token.Title" xml:space="preserve"><value>Cihaz tokenı</value></data>
   <data name="Help.PrintBridgeDevices.Token.Body" xml:space="preserve"><value>Cihaz tokenı, bu kurulumun Wasla'ya bağlanmasını ve yazdırma işlerini almasını sağlar. Wasla tokenın kendisini saklamaz; bu yüzden oluşturulduktan sonra bir daha gösterilemez.</value></data>
+  <data name="Help.PrintBridgeDevices.Token.Display" xml:space="preserve"><value>Yeni bir token maskeli olarak ve yalnızca bir kez gösterilir. Kontrol etmek için Tokenı göster / Tokenı gizle düğmesini, Print Bridge uygulamasına yapıştırmak için kopyalama düğmesini kullanın; kopyalama, token maskeli kalırken de çalışır.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.Title" xml:space="preserve"><value>Token yenile</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.New" xml:space="preserve"><value>Bu cihaz için yeni bir cihaz tokenı oluşturur.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.OldStops" xml:space="preserve"><value>Eski token hemen geçersiz olur; bu kurulum yeni tokenı alana kadar yazdıramaz.</value></data>
-  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Yeni tokenı Print Bridge uygulamasında Ayarlar ekranına girin, ardından bağlantıyı kaydedip test edin.</value></data>
+  <data name="Help.PrintBridgeDevices.Regenerate.EnterAgain" xml:space="preserve"><value>Print Bridge uygulamasında Ayarlar'ı açın, Wasla bağlantısı bölümünde yeni tokenı girin ve "Bağlan ve kaydet" düğmesine tıklayın.</value></data>
   <data name="Help.PrintBridgeDevices.Regenerate.ShownOnce" xml:space="preserve"><value>Yeni token yalnızca bir kez gösterilir.</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Title" xml:space="preserve"><value>Cihazı kaldır</value></data>
   <data name="Help.PrintBridgeDevices.Remove.Access" xml:space="preserve"><value>Bu cihazın Wasla erişimini sonlandırır; tokenı artık çalışmaz.</value></data>
@@ -1611,12 +1635,12 @@
   <data name="Admin.Ops.Guidance.DatabaseTimedOut" xml:space="preserve"><value>Restoran veritabanı birkaç saniye içinde yanıt vermedi. SQL Server&apos;ın çalıştığını, bu veritabanının var olduğunu ve yapılandırılmış girişi kabul ettiğini kontrol edip sayfayı yenileyin.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseConfigurationUnreadable" xml:space="preserve"><value>Kayıtlı bağlantı bilgisi çözülemedi. Bu sunucunun, restoranı oluşturan sunucuyla aynı ENCRYPTION_MASTER_KEY değerini kullandığını kontrol edin.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseReadFailed" xml:space="preserve"><value>Beklenmeyen bir hata nedeniyle restoran veritabanı kontrol edilemedi. Bu restoran için sunucu kayıtlarına bakın.</value></data>
-  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>Restoran veritabanında bu sürümün ihtiyaç duyduğu geçişler eksik. Yayın sürecine uyarak CLI ile uygulayın (migrate-customer veya migrate-all-customers); o zamana kadar yeni sütunları kullanan özellikler hata verebilir.</value></data>
+  <data name="Admin.Ops.Guidance.MigrationsPending" xml:space="preserve"><value>Restoran veritabanında bu sürümün ihtiyaç duyduğu geçişler eksik. Yayın sürecine uyarak CLI ile uygulayın (migrate-tenant veya migrate-all-tenants); o zamana kadar yeni sütunları kullanan özellikler hata verebilir.</value></data>
   <data name="Admin.Ops.Guidance.DatabaseAheadOfApplication" xml:space="preserve"><value>Restoran veritabanında bu uygulama sürümünün bilmediği geçişler var. Daha yeni bir sürüm geçiş yapmış olabilir; hangi sürümün yayında olduğunu kontrol edin.</value></data>
   <data name="Admin.Ops.Guidance.LastMigrationFailed" xml:space="preserve"><value>Bu restoran için kaydedilen son geçiş başarısız oldu. CLI ile migration-status çalıştırın ve bu restoranın geçişini yeniden deneyin.</value></data>
   <data name="Admin.Ops.Guidance.HealthReadIncomplete" xml:space="preserve"><value>Bazı bölümler okunamadı. Genellikle bekleyen bir geçiş neden olur; sunucu kayıtlarına bakın.</value></data>
   <data name="Admin.Ops.Guidance.TenantInSetup" xml:space="preserve"><value>Restoran hâlâ Kurulum modunda: siparişler senkronize edilir ancak bir sahip rehberli kurulumu tamamlayana veya atlayana kadar hiçbir şey otomatik onaylanmaz veya yazdırılmaz.</value></data>
-  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>Restoranın aktif sahibi yok. Ayarları, bağlantıları ve cihazları yalnızca sahip yönetebilir; gerekirse CLI ile (seed-customer-admin) bir sahip ekleyin.</value></data>
+  <data name="Admin.Ops.Guidance.NoActiveOwner" xml:space="preserve"><value>Restoranın aktif sahibi yok. Ayarları, bağlantıları ve cihazları yalnızca sahip yönetebilir; gerekirse CLI ile (seed-tenant-admin) bir sahip ekleyin.</value></data>
   <data name="Admin.Ops.Guidance.NoPlatformConnections" xml:space="preserve"><value>Bağlı teslimat platformu yok, bu nedenle sipariş gelemez. Sahip, Platform bağlantıları bölümünden bağlantı ekler.</value></data>
   <data name="Admin.Ops.Guidance.AllConnectionsDisabled" xml:space="preserve"><value>Tüm platform bağlantıları devre dışı, bu nedenle sipariş alınmıyor. Bunun bilinçli olup olmadığını sahiple teyit edin.</value></data>
   <data name="Admin.Ops.Guidance.OrderSyncDisabled" xml:space="preserve"><value>Restoran ayarlarında sipariş senkronizasyonu kapalı; Worker bu restoranı atlar. Mevcut siparişler görünür kalır.</value></data>
@@ -1632,4 +1656,206 @@
   <data name="Admin.Ops.Guidance.PrintJobsFailed" xml:space="preserve"><value>Son 24 saatte bazı yazdırma işleri başarısız oldu. Sahip, Print Bridge bilgisayarındaki yazıcıyı kontrol edebilir.</value></data>
   <data name="Admin.Ops.Guidance.RegistrationNotProvisioned" xml:space="preserve"><value>Bağlı kayıt başvurusu oluşturuldu olarak işaretli değil. Durumunu incelemek için açın; elle değiştirmeyin.</value></data>
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Şu anda dikkat gerektiren bir şey yok.</value></data>
+  <data name="Settings.ReceiptContent.RequiredFieldsDescription" xml:space="preserve"><value>Fişlerde her zaman yer alır.</value></data>
+  <data name="Settings.RestaurantLogo.Title" xml:space="preserve"><value>Restoran logosu</value></data>
+  <data name="Settings.RestaurantLogo.Description" xml:space="preserve"><value>Logo, Canlı Ekran başlığında restoran adının yanında gösterilir. Logo yoksa varsayılan mağaza simgesi kullanılır.</value></data>
+  <data name="Settings.RestaurantLogo.Current" xml:space="preserve"><value>Mevcut logo</value></data>
+  <data name="Settings.RestaurantLogo.None" xml:space="preserve"><value>Logo yüklenmedi</value></data>
+  <data name="Settings.RestaurantLogo.Preview" xml:space="preserve"><value>Önizleme — henüz kaydedilmedi</value></data>
+  <data name="Settings.RestaurantLogo.CurrentAlt" xml:space="preserve"><value>Mevcut restoran logosu</value></data>
+  <data name="Settings.RestaurantLogo.PreviewAlt" xml:space="preserve"><value>Seçilen logonun önizlemesi</value></data>
+  <data name="Settings.RestaurantLogo.ChooseFile" xml:space="preserve"><value>Logo dosyası seçin</value></data>
+  <data name="Settings.RestaurantLogo.ChooseReplacement" xml:space="preserve"><value>Yeni logo dosyası seçin</value></data>
+  <data name="Settings.RestaurantLogo.Requirements" xml:space="preserve"><value>PNG, JPEG veya WebP; en fazla {0} MB ve {1} × {1} piksel. En iyi sonuç için şeffaf arka planlı (PNG veya WebP), kare ve sade bir simge kullanın.</value></data>
+  <data name="Settings.RestaurantLogo.Upload" xml:space="preserve"><value>Logoyu kaydet</value></data>
+  <data name="Settings.RestaurantLogo.Replace" xml:space="preserve"><value>Logoyu değiştir</value></data>
+  <data name="Settings.RestaurantLogo.Remove" xml:space="preserve"><value>Logoyu kaldır</value></data>
+  <data name="Settings.RestaurantLogo.Saved" xml:space="preserve"><value>Logo kaydedildi.</value></data>
+  <data name="Settings.RestaurantLogo.Removed" xml:space="preserve"><value>Logo kaldırıldı.</value></data>
+  <data name="Settings.RestaurantLogo.Error.Required" xml:space="preserve"><value>Bir logo dosyası seçin.</value></data>
+  <data name="Settings.RestaurantLogo.Error.TooLarge" xml:space="preserve"><value>Logo dosyası en fazla {0} MB olabilir.</value></data>
+  <data name="Settings.RestaurantLogo.Error.UnsupportedFormat" xml:space="preserve"><value>Yalnızca PNG, JPEG veya WebP görselleri yüklenebilir.</value></data>
+  <data name="Settings.RestaurantLogo.Error.Invalid" xml:space="preserve"><value>Bu dosya geçerli bir görsel olarak okunamadı.</value></data>
+  <data name="Settings.RestaurantLogo.Error.Dimensions" xml:space="preserve"><value>Logo en fazla {0} × {0} piksel olabilir.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Title" xml:space="preserve"><value>Logo arka planı</value></data>
+  <data name="Settings.RestaurantLogo.Background.Description" xml:space="preserve"><value>Logonun Canlı Ekran başlığında hangi zeminde görüneceğini seçin. Yüklenen görsel değiştirilmez.</value></data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAware" xml:space="preserve"><value>Temaya uyumlu</value></data>
+  <data name="Settings.RestaurantLogo.Background.ThemeAwareDescription" xml:space="preserve"><value>Aydınlık temada şeffaf; karanlık temada logonun arkasında hafif açık bir zemin. Koyu logolar iki temada da okunur.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Transparent" xml:space="preserve"><value>Şeffaf</value></data>
+  <data name="Settings.RestaurantLogo.Background.TransparentDescription" xml:space="preserve"><value>Her iki temada da arka plan yok.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Light" xml:space="preserve"><value>Açık</value></data>
+  <data name="Settings.RestaurantLogo.Background.LightDescription" xml:space="preserve"><value>Her iki temada da hafif açık bir zemin.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Dark" xml:space="preserve"><value>Koyu</value></data>
+  <data name="Settings.RestaurantLogo.Background.DarkDescription" xml:space="preserve"><value>Her iki temada da hafif koyu bir zemin. Açık veya beyaz logolar için uygundur.</value></data>
+  <data name="Settings.RestaurantLogo.Background.Recommended" xml:space="preserve"><value>Önerilen</value></data>
+  <data name="Settings.RestaurantLogo.Background.PreviewLight" xml:space="preserve"><value>Aydınlık tema</value></data>
+  <data name="Settings.RestaurantLogo.Background.PreviewDark" xml:space="preserve"><value>Karanlık tema</value></data>
+  <data name="Settings.RestaurantLogo.Background.Save" xml:space="preserve"><value>Arka planı kaydet</value></data>
+  <data name="Settings.RestaurantLogo.Background.Saved" xml:space="preserve"><value>Logo arka planı kaydedildi.</value></data>
+  <data name="Settings.RestaurantLogo.Background.NoLogo" xml:space="preserve"><value>Önce bir logo yükleyin.</value></data>
+  <data name="PlatformConnections.ShowApiKey" xml:space="preserve">
+    <value>API Key değerini göster</value>
+  </data>
+  <data name="PlatformConnections.ShowApiSecret" xml:space="preserve">
+    <value>API Secret değerini göster</value>
+  </data>
+  <data name="PlatformConnections.CredentialSaved" xml:space="preserve">
+    <value>Kayıtlı bir değer var; hiçbir zaman gösterilmez.</value>
+  </data>
+  <data name="PlatformConnections.CredentialMissing" xml:space="preserve">
+    <value>Kayıtlı değer yok. Bağlanmak için bir değer girin.</value>
+  </data>
+  <data name="PlatformConnections.CredentialsReenter" xml:space="preserve">
+    <value>Güvenliğiniz için girdiğiniz API bilgileri temizlendi ve hiçbir değişiklik kaydedilmedi. Lütfen yeniden girin.</value>
+  </data>
+  <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
+    <value>Bu tablodaki güncellemeler, metin seçtiğiniz veya tablodaki bir denetimi kullandığınız sürece duraklatılır.</value>
+  </data>
+  <data name="Admin.PlanPrices.Title" xml:space="preserve">
+    <value>Plan fiyatları</value>
+  </data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve">
+    <value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Fiyatlar düzenlenmez; daha sonraki bir tarihten geçerli yeni bir fiyat planlayın.</value>
+  </data>
+  <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve">
+    <value>Şu anda geçerli fiyatlar</value>
+  </data>
+  <data name="Admin.PlanPrices.Plan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="Admin.PlanPrices.Period" xml:space="preserve">
+    <value>Ödeme dönemi</value>
+  </data>
+  <data name="Admin.PlanPrices.Amount" xml:space="preserve">
+    <value>Tutar</value>
+  </data>
+  <data name="Admin.PlanPrices.Vat" xml:space="preserve">
+    <value>KDV</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveFrom" xml:space="preserve">
+    <value>Geçerlilik başlangıcı</value>
+  </data>
+  <data name="Admin.PlanPrices.NextScheduled" xml:space="preserve">
+    <value>Sonraki planlanan</value>
+  </data>
+  <data name="Admin.PlanPrices.Status" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Admin.PlanPrices.NoPrice" xml:space="preserve">
+    <value>Fiyat yok — ödeme başlatılamaz</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.InEffect" xml:space="preserve">
+    <value>Geçerli</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.Scheduled" xml:space="preserve">
+    <value>Planlandı</value>
+  </data>
+  <data name="Admin.PlanPrices.Status.Superseded" xml:space="preserve">
+    <value>Yerini yenisi aldı</value>
+  </data>
+  <data name="Admin.PlanPrices.HistoryHeading" xml:space="preserve">
+    <value>Tüm fiyatlar</value>
+  </data>
+  <data name="Admin.PlanPrices.HistoryEmpty" xml:space="preserve">
+    <value>Henüz fiyat belirlenmedi.</value>
+  </data>
+  <data name="Admin.PlanPrices.FormHeading" xml:space="preserve">
+    <value>Fiyat planla</value>
+  </data>
+  <data name="Admin.PlanPrices.AmountKurus" xml:space="preserve">
+    <value>Tutar (kuruş)</value>
+  </data>
+  <data name="Admin.PlanPrices.AmountKurusHelp" xml:space="preserve">
+    <value>Tam sayı kuruş: 29990, 299,90 TL demektir.</value>
+  </data>
+  <data name="Admin.PlanPrices.KurusValue" xml:space="preserve">
+    <value>{0} kuruş</value>
+  </data>
+  <data name="Admin.PlanPrices.VatQuestion" xml:space="preserve">
+    <value>Bu tutar KDV dahil mi?</value>
+  </data>
+  <data name="Admin.PlanPrices.VatYes" xml:space="preserve">
+    <value>Evet, KDV dahil</value>
+  </data>
+  <data name="Admin.PlanPrices.VatNo" xml:space="preserve">
+    <value>Hayır, KDV hariç</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveDate" xml:space="preserve">
+    <value>Geçerlilik tarihi</value>
+  </data>
+  <data name="Admin.PlanPrices.EffectiveDateHelp" xml:space="preserve">
+    <value>Bu tarihte Türkiye saatiyle 00:00'dan itibaren. Bugünün tarihi hemen geçerli olur.</value>
+  </data>
+  <data name="Admin.PlanPrices.Save" xml:space="preserve">
+    <value>Fiyatı planla</value>
+  </data>
+  <data name="Admin.PlanPrices.SelectPlaceholder" xml:space="preserve">
+    <value>Seçin…</value>
+  </data>
+  <data name="Admin.PlanPrices.Saved" xml:space="preserve">
+    <value>Fiyat kaydedildi.</value>
+  </data>
+  <data name="Admin.PlanPrices.Withdraw" xml:space="preserve">
+    <value>Geri çek</value>
+  </data>
+  <data name="Admin.PlanPrices.Withdrawn" xml:space="preserve">
+    <value>Planlanan fiyat geri çekildi.</value>
+  </data>
+  <data name="Admin.PlanPrices.WithdrawRefused" xml:space="preserve">
+    <value>Yalnızca henüz geçerli olmayan bir fiyat geri çekilebilir.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Summary" xml:space="preserve">
+    <value>Fiyat kaydedilmedi. Aşağıdaki alanları kontrol edin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Plan" xml:space="preserve">
+    <value>Çevrimiçi satın alınabilen bir plan seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Period" xml:space="preserve">
+    <value>Aylık veya Yıllık seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountRequired" xml:space="preserve">
+    <value>Tutarı kuruş olarak girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountInvalid" xml:space="preserve">
+    <value>Nokta veya virgül olmadan tam sayı kuruş girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.AmountRange" xml:space="preserve">
+    <value>Tutar 1 ile 1.000.000.000 kuruş arasında olmalıdır.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.VatRequired" xml:space="preserve">
+    <value>Tutarın KDV dahil olup olmadığını seçin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DateRequired" xml:space="preserve">
+    <value>Fiyatın geçerli olacağı tarihi girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve">
+    <value>Geçerli bir tarih girin.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve">
+    <value>Tarih geçmişte olamaz.</value>
+  </data>
+  <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve">
+    <value>Bu plan ve ödeme dönemi için o tarihte başlayan bir fiyat zaten var.</value>
+  </data>
+  <data name="Billing.VatIncluded" xml:space="preserve">
+    <value>KDV dahil</value>
+  </data>
+  <data name="Billing.VatExcluded" xml:space="preserve">
+    <value>KDV hariç</value>
+  </data>
+  <data name="Billing.CurrencyTry" xml:space="preserve">
+    <value>TL</value>
+  </data>
+  <data name="Billing.PriceNotSet" xml:space="preserve">
+    <value>Bu planın fiyatı henüz belirlenmedi.</value>
+  </data>
+  <data name="Pricing.PricePerMonth" xml:space="preserve">
+    <value>{0} / ay</value>
+  </data>
+  <data name="Pricing.PricePerYear" xml:space="preserve">
+    <value>{0} / yıl</value>
+  </data>
+  <data name="Pricing.YearlySaving" xml:space="preserve">
+    <value>Yıllık ödeme, 12 aylık ödemeden {0} daha az.</value>
+  </data>
 </root>

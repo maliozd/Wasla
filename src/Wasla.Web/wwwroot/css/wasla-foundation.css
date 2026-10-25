@@ -82,6 +82,82 @@ body.wasla-tenant-shell {
   background: var(--wasla-canvas);
 }
 
+/* Dark values for the same tokens. The block above re-declares the shared --color-* and --bs-* tokens on the body,
+   which would otherwise override the dark ones wasla-theme.css sets on [data-bs-theme="dark"]; redefining the
+   foundation tokens here lets every token-driven rule resolve to dark. Values are the existing dark palette of
+   wasla-theme.css (also used by the Live Screen), with two exceptions: muted text uses the dark sidebar muted value so
+   that small text keeps at least 4.5:1 on every dark surface, and the hover orange is a darker step (white text on a
+   hovered button 3.5:1 instead of 2.5:1, and still at least 4.6:1 as hover text on dark surfaces). */
+[data-bs-theme="dark"] body.wasla-tenant-shell {
+  --wasla-accent: #f26b3a;
+  --wasla-accent-hover: #e35f2e;
+  --color-accent-hover: #e35f2e;
+  --wasla-primary-dark: #e35f2e;
+  --wasla-accent-soft: rgba(242, 107, 58, 0.14);
+  --wasla-accent-border: rgba(242, 107, 58, 0.35);
+  --wasla-accent-text: #ffffff;
+  /* Emphasised orange text (guided setup eyebrows); light mode uses its fallback in the component CSS. */
+  --wasla-accent-strong: #f26b3a;
+
+  --wasla-canvas: #0f1115;
+  --wasla-surface: #171a21;
+  --wasla-surface-elevated: #1c2028;
+  --wasla-surface-muted: #141820;
+
+  --wasla-border: rgba(255, 255, 255, 0.08);
+  --wasla-border-strong: rgba(255, 255, 255, 0.14);
+
+  --wasla-text: #f3f4f6;
+  --wasla-text-secondary: #aeb4c0;
+  --wasla-text-muted: #8b939f;
+
+  --wasla-success: #86efac;
+  --wasla-success-soft: rgba(34, 197, 94, 0.14);
+  --wasla-warning: #fcd34d;
+  --wasla-warning-soft: rgba(245, 158, 11, 0.14);
+  --wasla-danger: #fca5a5;
+  --wasla-danger-soft: rgba(239, 68, 68, 0.14);
+  --wasla-info: #93c5fd;
+  --wasla-info-soft: rgba(59, 130, 246, 0.14);
+
+  --wasla-focus: rgba(242, 107, 58, 0.45);
+  --wasla-shadow-sm: none;
+  --wasla-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  --color-sidebar-bg: #111318;
+  --color-sidebar-hover: rgba(242, 107, 58, 0.10);
+
+  color-scheme: dark;
+}
+
+/* Bootstrap utilities that stay light (or too dark to read) in Bootstrap's own dark mode, as used by tenant views. */
+[data-bs-theme="dark"] body.wasla-tenant-shell .text-danger {
+  color: var(--wasla-danger) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant-shell .text-bg-light {
+  background-color: var(--wasla-surface-muted) !important;
+  color: var(--wasla-text) !important;
+}
+
+[data-bs-theme="dark"] body.wasla-tenant-shell .btn-light {
+  --bs-btn-bg: var(--wasla-surface-muted);
+  --bs-btn-border-color: var(--wasla-border-strong);
+  --bs-btn-color: var(--wasla-text);
+  --bs-btn-hover-bg: var(--wasla-surface-elevated);
+  --bs-btn-hover-border-color: var(--wasla-border-strong);
+  --bs-btn-hover-color: var(--wasla-text);
+  --bs-btn-active-bg: var(--wasla-surface-elevated);
+  --bs-btn-active-border-color: var(--wasla-border-strong);
+  --bs-btn-active-color: var(--wasla-text);
+}
+
+[data-bs-theme="dark"] body.wasla-tenant-shell .table-light {
+  --bs-table-bg: var(--wasla-surface-muted);
+  --bs-table-color: var(--wasla-text);
+  --bs-table-border-color: var(--wasla-border);
+}
+
 body.wasla-tenant.wasla-app.wasla-tenant-shell :focus-visible {
   outline: 2px solid var(--wasla-accent);
   outline-offset: 2px;
@@ -104,32 +180,34 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand {
   min-width: 0;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.7rem;
-  height: 1.7rem;
+/* Canonical logo (images/brand/wasla-logo.svg): fixed height, width follows the aspect ratio. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-logo--sidebar {
+  display: block;
+  width: auto;
+  height: 2rem;
+  max-width: 100%;
   flex-shrink: 0;
-  border-radius: 0.45rem;
-  background: var(--wasla-accent);
-  color: var(--wasla-accent-text);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand .brand-text {
-  color: var(--wasla-text) !important;
-  font-size: 1.2rem;
-  font-weight: 700;
+/* Brand block: the logo centred with the tenant name centred under it. The collapse toggle keeps its
+   place at the end of the logo row, taken out of the flow so it does not push the logo off centre. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-row {
+  position: relative;
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-collapse-btn {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 0;
+  transform: translateY(-50%);
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-tenant-name {
-  margin-top: 0.45rem;
-  padding-inline-start: 0.1rem;
+  margin-top: 0.55rem;
+  text-align: center;
   color: var(--wasla-text-muted) !important;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
@@ -265,12 +343,27 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-toggle.ac
   border-inline-start: 0 !important;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
-  margin-inline: auto;
+/* Collapsed rail: the full logo shrinks to the rail width instead of widening the sidebar. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-area {
+  padding-inline: 0.5rem;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand {
+  justify-content: center;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-logo--sidebar {
+  width: 100%;
+  height: auto;
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
   flex-direction: column;
+}
+
+body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-collapse-btn {
+  position: static;
+  transform: none;
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active,
@@ -292,10 +385,8 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-
   display: none;
 }
 
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
+/* Link and control text is not hidden here: it stays their accessible name (see the collapsed desktop sidebar below). */
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
-body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-user-label {
   display: none !important;
 }
@@ -408,9 +499,15 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
     font-weight: 650;
   }
 
+  /* Room for the close button at the end, mirrored at the start so the logo and name stay centred. */
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-area {
     position: relative;
-    padding-inline-end: 4.25rem;
+    padding-inline: 4.25rem;
+  }
+
+  /* The collapse toggle is hidden here; the close button is placed against the brand area, not the row. */
+  body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-brand-row {
+    position: static;
   }
 
   body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-tenant-nav-close {
@@ -511,13 +608,19 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
 
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-row {
     flex-direction: row;
+    justify-content: center;
   }
 
-  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-mark {
-    margin-inline: 0;
+  /* The drawer is always full width: keep the expanded, centred brand block and the close button's room. */
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-brand-area {
+    padding-inline: 4.25rem;
   }
 
-  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .brand-text,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-logo--sidebar {
+    width: auto;
+    height: 2rem;
+  }
+
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-tenant-name,
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
   body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label,
@@ -574,6 +677,23 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
     width: var(--wasla-sidebar-collapsed-width) !important;
     min-width: var(--wasla-sidebar-collapsed-width) !important;
     max-width: var(--wasla-sidebar-collapsed-width) !important;
+  }
+
+  /*
+    The collapsed sidebar shows icons only. The link and control text is their accessible name, so it is visually
+    hidden (Bootstrap's visually-hidden technique), never display:none, which would leave the control unnamed (WAS-132).
+  */
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-text,
+  body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-action-label {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
   }
 
   html[dir="ltr"] body.wasla-tenant.wasla-app.wasla-tenant-shell .app-main,
@@ -877,6 +997,18 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
 .wasla-table__datetime {
   min-width: 5.5rem;
   white-space: normal;
+}
+
+/* WAS-125: an order time, with a smaller line under it naming Wasla's import time when that stands in for the
+   provider's time or came much later. Each line follows the cell's text alignment (end, or start when stacked). */
+.wasla-order-time {
+  display: inline-block;
+}
+
+.wasla-order-time__source {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--wasla-text-muted);
 }
 
 .wasla-table__amount {
@@ -1238,6 +1370,19 @@ button.wasla-table__sort {
 .wasla-role--kitchen { background: #e7ecd6; color: #4a5424; border-color: #c9d3a4; }
 .wasla-role--viewer { background: #e7e4e0; color: #4d4742; border-color: #cfc9c2; }
 
+/* Dark: the same hues as quiet tints with light text (at least 7:1 on the dark surfaces). */
+[data-bs-theme="dark"] .wasla-avatar--0 { background: rgba(232, 115, 66, 0.2); color: #f3b48f; }
+[data-bs-theme="dark"] .wasla-avatar--1 { background: rgba(140, 158, 76, 0.22); color: #cbd99c; }
+[data-bs-theme="dark"] .wasla-avatar--2 { background: rgba(84, 134, 156, 0.24); color: #a9cbd8; }
+[data-bs-theme="dark"] .wasla-avatar--3 { background: rgba(176, 134, 82, 0.22); color: #e0c29b; }
+[data-bs-theme="dark"] .wasla-avatar--4 { background: rgba(156, 104, 154, 0.24); color: #dbb6da; }
+
+[data-bs-theme="dark"] .wasla-role--owner { background: rgba(232, 115, 66, 0.16); color: #f6b894; border-color: rgba(232, 115, 66, 0.38); }
+[data-bs-theme="dark"] .wasla-role--manager { background: rgba(190, 150, 80, 0.16); color: #e6c995; border-color: rgba(190, 150, 80, 0.38); }
+[data-bs-theme="dark"] .wasla-role--cashier { background: rgba(60, 160, 130, 0.16); color: #9fdcc8; border-color: rgba(60, 160, 130, 0.38); }
+[data-bs-theme="dark"] .wasla-role--kitchen { background: rgba(140, 160, 70, 0.16); color: #cddc9a; border-color: rgba(140, 160, 70, 0.38); }
+[data-bs-theme="dark"] .wasla-role--viewer { background: rgba(255, 255, 255, 0.06); color: #d6d0c9; border-color: rgba(255, 255, 255, 0.16); }
+
 .wasla-status {
   display: inline-flex;
   align-items: center;
@@ -1516,6 +1661,12 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-connections {
   border-radius: var(--wasla-radius-sm);
   background: var(--wasla-surface-elevated);
   color: var(--wasla-text);
+}
+
+/* A field with a control beside it (a credential's reveal button) shares its row with that control. */
+.wasla-manage-form .input-group > .form-control {
+  width: 1%;
+  min-width: 0;
 }
 
 .wasla-manage-form .form-text {

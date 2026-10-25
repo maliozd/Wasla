@@ -1,0 +1,31 @@
+@model Wasla.Web.Models.Marketing.MarketingCtaPanelModel
+@using Wasla.Web.Models.Marketing
+@* Closing call to action (Figma "Final CTA panel"). The Figma panel uses a temporary photo; until an approved
+   photo exists the panel is the solid ink surface of the design system. *@
+<section class="wm-final" aria-labelledby="@Model.Id">
+    <div class="wm-container">
+        <div class="wm-final__panel wm-on-dark">
+            <h2 class="wm-final__title" id="@Model.Id">@Model.Title</h2>
+            <p class="wm-final__lead">@Model.Lead</p>
+            <div class="wm-actions">
+                @foreach (var action in Model.Actions)
+                {
+                    var css = action.Style switch
+                    {
+                        MarketingLinkStyle.Primary => "wm-btn wm-btn--primary",
+                        MarketingLinkStyle.SecondaryOnDark => "wm-btn wm-btn--secondary-dark",
+                        MarketingLinkStyle.TertiaryOnDark => "wm-btn wm-btn--tertiary-dark",
+                        _ => "wm-btn wm-btn--secondary"
+                    };
+                    <a class="@css" href="@action.Href" rel="@(action.External ? "noopener" : null)">
+                        @action.Text
+                        @if (action.Style == MarketingLinkStyle.TertiaryOnDark)
+                        {
+                            <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                        }
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</section>

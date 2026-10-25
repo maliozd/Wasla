@@ -1,4 +1,4 @@
-﻿dotnet run --project src/Wasla.Cli -- add-customer `
+﻿dotnet run --project src/Wasla.Cli -- add-tenant `
   --name "SushiM" `
   --slug "sushim" `
   --domain "sushim.wasla.local" `
@@ -9,7 +9,7 @@
 
 hardalburger.wasla.local
 
-dotnet run --project src/Wasla.Cli -- add-customer `
+dotnet run --project src/Wasla.Cli -- add-tenant `
   --name "Hardal Burger" `
   --slug "hardalburger" `
   --domain "hardalburger.wasla.local" `
@@ -17,7 +17,7 @@ dotnet run --project src/Wasla.Cli -- add-customer `
   --admin-password "Test123!" `
   --admin-name "Hardal Admin"
 
-dotnet run --project src/Wasla.Cli -- add-customer `
+dotnet run --project src/Wasla.Cli -- add-tenant `
   --name "PilavcÄ± Rahim" `
   --slug "pilavci-rahim" `
   --domain "pilavcirahim.wasla.local" `

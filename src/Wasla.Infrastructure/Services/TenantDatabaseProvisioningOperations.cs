@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Domain.Entities.Central;
@@ -26,7 +24,6 @@ public interface ITenantDatabaseProvisioningOperations
 
 public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatabaseProvisioningOperations
 {
-    private static readonly Regex SqlDbNameRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
     private readonly ILogger<SqlServerTenantDatabaseProvisioningOperations> _logger;
 
     public SqlServerTenantDatabaseProvisioningOperations(
@@ -42,9 +39,15 @@ public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatab
         string databaseName,
         CancellationToken ct)
     {
-        await EnsureDatabaseExistsAsync(server, sqlAuth, databaseName, ct).ConfigureAwait(false);
+        // Never adopts a database it did not create for this registration (WAS-93).
+        var claim = await SqlServerTenantDatabases
+            .ClaimAsync(server, sqlAuth, databaseName, TenantDatabaseOwnership.ForRegistration(registration.Id), ct)
+            .ConfigureAwait(false);
+        _logger.LogInformation(
+            "Tenant database {DatabaseName} for registration {RegistrationId}: {Claim}.",
+            databaseName, registration.Id, claim);
 
-        var customerConnString = BuildConnectionString(server, sqlAuth, databaseName);
+        var customerConnString = SqlServerTenantDatabases.BuildConnectionString(server, sqlAuth, databaseName);
         var tenantOptions = new DbContextOptionsBuilder<TenantDbContext>()
             .UseSqlServer(customerConnString)
             .Options;
@@ -86,61 +89,5 @@ public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatab
         }
 
         return new TenantDatabaseProvisioningWork(customerConnString, migrationNow, ownerCreated);
-    }
-
-    private static async Task EnsureDatabaseExistsAsync(string server, string sqlAuth, string dbName, CancellationToken ct)
-    {
-        if (!SqlDbNameRegex.IsMatch(dbName))
-            throw new InvalidOperationException($"Invalid database name: {dbName}");
-
-        var masterCs = BuildConnectionString(server, sqlAuth, "master");
-        await using var conn = new SqlConnection(masterCs);
-        await conn.OpenAsync(ct).ConfigureAwait(false);
-
-        const string checkSql = "SELECT COUNT(*) FROM sys.databases WHERE name = @name;";
-        await using (var check = new SqlCommand(checkSql, conn))
-        {
-            check.Parameters.AddWithValue("@name", dbName);
-            var count = Convert.ToInt32(await check.ExecuteScalarAsync(ct).ConfigureAwait(false)!);
-            if (count > 0) return;
-        }
-
-        var escaped = dbName.Replace("]", "]]", StringComparison.Ordinal);
-        var createSql = $"CREATE DATABASE [{escaped}]";
-        await using var create = new SqlCommand(createSql, conn);
-        create.CommandTimeout = 120;
-        await create.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-    }
-
-    private static string BuildConnectionString(string server, string sqlAuth, string database)
-    {
-        if (string.Equals(sqlAuth, "trusted", StringComparison.OrdinalIgnoreCase))
-        {
-            return new SqlConnectionStringBuilder
-            {
-                DataSource = server,
-                InitialCatalog = database,
-                IntegratedSecurity = true,
-                TrustServerCertificate = true
-            }.ConnectionString;
-        }
-
-        if (sqlAuth.StartsWith("sql:", StringComparison.OrdinalIgnoreCase))
-        {
-            var rest = sqlAuth[4..];
-            var idx = rest.IndexOf(':');
-            if (idx <= 0)
-                throw new InvalidOperationException("Invalid sqlAuth format. Use 'trusted' or 'sql:username:password'.");
-            return new SqlConnectionStringBuilder
-            {
-                DataSource = server,
-                InitialCatalog = database,
-                UserID = rest[..idx],
-                Password = rest[(idx + 1)..],
-                TrustServerCertificate = true
-            }.ConnectionString;
-        }
-
-        throw new InvalidOperationException("Invalid sqlAuth. Use 'trusted' or 'sql:username:password'.");
     }
 }

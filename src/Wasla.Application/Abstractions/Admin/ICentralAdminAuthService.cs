@@ -5,7 +5,8 @@ public sealed record CentralAdminLoginResult(
     Guid? UserId,
     string? Email,
     string? DisplayName,
-    string? ErrorCode);
+    string? ErrorCode,
+    Guid? SecurityStamp);
 
 public interface ICentralAdminAuthService
 {

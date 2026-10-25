@@ -136,7 +136,7 @@ public sealed class TenantSetupStatusService : ITenantSetupStatusService
             LogSourceFailure("TenantDatabase", tenantId, ex);
             return new TenantDatabaseFacts(
                 new PlatformConnectionFacts(false, Array.Empty<PlatformConnectionFact>()),
-                new NotificationSetupFacts(false, false, false),
+                new NotificationSetupFacts(false, false),
                 false,
                 new TeamMembershipFacts(false, Array.Empty<TenantTeamMemberFact>()));
         }
@@ -195,15 +195,14 @@ public sealed class TenantSetupStatusService : ITenantSetupStatusService
                 .FirstOrDefaultAsync(ct)
                 .ConfigureAwait(false);
 
-            if (saved is null)
-                return new NotificationSetupFacts(true, false, false);
-
-            return new NotificationSetupFacts(true, true, saved.NewOrderSoundEnabled);
+            // No saved row: the user gets the defaults UserNotificationSettingsService serves and the Live Screen
+            // shows, where the new-order sound is on. Not having saved settings is not "off".
+            return new NotificationSetupFacts(true, saved?.NewOrderSoundEnabled ?? true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             LogSourceFailure("Notifications", tenantId, ex);
-            return new NotificationSetupFacts(false, false, false);
+            return new NotificationSetupFacts(false, false);
         }
     }
 

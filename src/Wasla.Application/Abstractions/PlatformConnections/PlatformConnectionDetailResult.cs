@@ -9,5 +9,8 @@ public sealed record PlatformConnectionDetailResult(
     bool IsActive,
     int SyncIntervalSeconds,
     string? SupplierId,
-    string? ExecutorEmail);
+    string? ExecutorEmail,
+    // Whether each credential is stored. The credentials themselves are never returned.
+    bool HasApiKey,
+    bool HasApiSecret);
 

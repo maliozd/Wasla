@@ -1,0 +1,423 @@
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@using Wasla.Web.Ui
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.Pos.MetaTitle"].Value,
+        L["Marketing.Pos.MetaDescription"].Value,
+        PublicSiteUrls.PosPath);
+    string Money(decimal amount) => OrderUiHelper.FormatMoney(amount);
+    string Table(int number) => L["Marketing.Mock.Table", number].Value;
+
+    // Floor plan of the concept UI: table number, state and meta text.
+    var floor = new (int Number, string State, string Meta)[]
+    {
+        (1, "", L["Marketing.Mock.TableFree"].Value),
+        (2, "occupied", L["Marketing.Mock.GuestsMinutes", 2, 12].Value),
+        (3, "bill", L["Marketing.Mock.TableBill"].Value),
+        (4, "occupied", L["Marketing.Mock.GuestsMinutes", 2, 18].Value),
+        (5, "", L["Marketing.Mock.TableFree"].Value),
+        (6, "selected", L["Marketing.Mock.GuestsMinutes", 4, 42].Value),
+        (7, "occupied", L["Marketing.Mock.GuestsMinutes", 3, 25].Value),
+        (8, "", L["Marketing.Mock.TableFree"].Value),
+        (9, "bill", L["Marketing.Mock.TableBill"].Value),
+        (10, "", L["Marketing.Mock.TableFree"].Value),
+        (11, "occupied", L["Marketing.Mock.GuestsMinutes", 6, 8].Value),
+        (12, "", L["Marketing.Mock.TableFree"].Value)
+    };
+}
+@* Wasla POS marketing page (Figma 18:2). Wasla POS is not implemented in this solution and is not for sale: the page
+   says "coming soon" in the hero, every product screen is labelled concept UI, and the calls to action lead only to
+   the confirmed Instagram account and to Wasla Orders. Photos marked temporary in Figma are not used. *@
+
+<section class="wm-hero" aria-labelledby="pos-page-title">
+    <div class="wm-container wm-hero__grid">
+        <div class="wm-hero__copy">
+            <p class="wm-hero__soon"><span class="wm-soon">@L["Marketing.ComingSoon"]</span></p>
+            <h1 class="wm-h1" id="pos-page-title">@L["Marketing.Pos.HeroTitle"] <span class="wm-h1__accent">@L["Marketing.Pos.HeroTitleAccent"]</span></h1>
+            <p class="wm-hero__lead">@L["Marketing.Pos.HeroLead"]</p>
+            <p class="wm-pos-notice" role="note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Marketing.Pos.Notice"]</span></p>
+            <div class="wm-actions">
+                <a class="wm-btn wm-btn--primary" href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.Cta.FollowInstagram"]</a>
+                <a class="wm-btn wm-btn--secondary" href="#features">@L["Marketing.Cta.ExplorePosFeatures"]</a>
+            </div>
+            <ul class="wm-checks wm-checks--inline mt-4">
+                <li>@L["Marketing.Pos.HeroPoint1"]</li>
+                <li>@L["Marketing.Pos.HeroPoint2"]</li>
+                <li>@L["Marketing.Pos.HeroPoint3"]</li>
+            </ul>
+        </div>
+
+        <div>
+            <div class="wm-pos-hero-visual wm-mock" aria-hidden="true">
+                <div class="wm-pos-hero-visual__backdrop"></div>
+                <div class="wm-tablet">
+                    <div class="wm-tablet__screen">
+                        <div class="wm-tablet__bar">
+                            @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--hub", Decorative = true })
+                            <span class="wm-seg">
+                                <span class="is-selected">@L["Marketing.Mock.ServiceTable"]</span>
+                                <span>@L["Marketing.Mock.ServiceTakeaway"]</span>
+                                <span>@L["Marketing.Mock.ServiceQuickSale"]</span>
+                                <span>@L["Marketing.Mock.ServicePickup"]</span>
+                            </span>
+                            <span class="wm-tablet__meta">@Table(6) · @L["Marketing.Mock.Guests", 4] <span class="wm-ui-time">19:52</span></span>
+                        </div>
+                        <div class="wm-tablet__body">
+                            <div class="wm-cats">
+                                <span class="wm-cat">@L["Marketing.Mock.CatSoups"]</span>
+                                <span class="wm-cat is-selected">@L["Marketing.Mock.CatKebabs"]</span>
+                                <span class="wm-cat">@L["Marketing.Mock.CatPide"]</span>
+                                <span class="wm-cat">@L["Marketing.Mock.CatDrinks"]</span>
+                                <span class="wm-cat">@L["Marketing.Mock.CatDesserts"]</span>
+                            </div>
+                            <div class="wm-products-grid">
+                                <span class="wm-product-tile is-selected"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemAdana"]</span><span class="wm-product-tile__foot">@Money(320m)<span class="wm-count">2</span></span></span>
+                                <span class="wm-product-tile"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemUrfa"]</span><span class="wm-product-tile__foot">@Money(320m)</span></span>
+                                <span class="wm-product-tile"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemIskender"]</span><span class="wm-product-tile__foot">@Money(360m)</span></span>
+                                <span class="wm-product-tile"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemBeyti"]</span><span class="wm-product-tile__foot">@Money(380m)</span></span>
+                                <span class="wm-product-tile"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemChicken"]</span><span class="wm-product-tile__foot">@Money(280m)</span></span>
+                                <span class="wm-product-tile is-unavailable"><span class="wm-product-tile__name">@L["Marketing.Mock.ItemLamb"]</span><span class="wm-product-tile__foot">@Money(420m)<span class="wm-product-tile__flag">@L["Marketing.Mock.SoldOut"]</span></span></span>
+                            </div>
+                            <div class="wm-ticket">
+                                <div class="wm-ticket__head"><span class="wm-ui-title">@Table(6)</span><span class="wm-badge wm-badge--orange">@L["Marketing.Mock.Open"]</span></div>
+                                <div class="wm-ticket__line"><span class="wm-ticket__qty">2×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAdana"]<span class="wm-ticket__note">@L["Marketing.Mock.NotSpicy"]</span></span><span>@Money(640m)</span></div>
+                                <div class="wm-ticket__line"><span class="wm-ticket__qty">1×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemLentilSoup"]</span><span>@Money(85m)</span></div>
+                                <div class="wm-ticket__line"><span class="wm-ticket__qty">4×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAyran"]</span><span>@Money(140m)</span></div>
+                                <div class="wm-ticket__total"><span>@L["Common.Total"]</span><strong>@Money(865m)</strong></div>
+                                <div class="wm-ticket__actions"><span class="wm-mini-btn">@L["Marketing.Mock.SendToKitchen"]</span><span class="wm-mini-btn wm-mini-btn--action">@L["Marketing.Mock.TakePayment"]</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wm-float wm-float--takeaway">
+                    <span class="wm-icon-tile wm-icon-tile--xs"><i class="bi bi-bag"></i></span>
+                    <span class="wm-float__text"><span class="wm-ui-title">@L["Marketing.Mock.TakeawayOrder"]</span><span>@L["Marketing.Mock.PreparingMinutes", 12]</span></span>
+                </div>
+                <div class="wm-float wm-float--paid">
+                    <span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--success"><i class="bi bi-credit-card"></i></span>
+                    <span class="wm-float__text"><span class="wm-ui-title">@L["Marketing.Mock.PaidByCard"]</span><span>@Table(4) · @Money(1240m)</span></span>
+                </div>
+            </div>
+            <p class="wm-concept-label"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Marketing.ConceptUi"]</p>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="features" aria-labelledby="services-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="services-title">@L["Marketing.Pos.ServicesTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.ServicesLead"]</p>
+        </div>
+        <div class="wm-service-panel">
+            <div class="wm-service">
+                <h3 class="wm-service__title"><span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--white" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>@L["Marketing.Pos.ServiceTableTitle"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-window__row"><span class="wm-table wm-table--occupied" style="inline-size: 116px"><span class="wm-table__name">@Table(7)</span><span class="wm-table__meta">@L["Marketing.Mock.GuestsMinutes", 3, 25]</span></span></div>
+                    <div class="wm-line-item"><span><span class="wm-ticket__qty">2×</span> @L["Marketing.Mock.ItemLahmacun"]</span><strong>@Money(190m)</strong></div>
+                    <div class="wm-line-item"><span><span class="wm-ticket__qty">1×</span> @L["Marketing.Mock.ItemMixedPide"]</span><strong>@Money(290m)</strong></div>
+                    <div class="wm-line-item"><span class="wm-ui-caption">@L["Marketing.Mock.TableTotal"]</span><strong>@Money(480m)</strong></div>
+                </div>
+                <p class="wm-text-s">@L["Marketing.Pos.ServiceTableText"]</p>
+            </div>
+            <div class="wm-service">
+                <h3 class="wm-service__title"><span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--white" aria-hidden="true"><i class="bi bi-bag"></i></span>@L["Marketing.Pos.ServiceTakeawayTitle"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-window__row" style="background: var(--wm-orange-soft)"><span class="wm-ui-code">#P-031</span><span class="wm-badge wm-badge--blue">@L["OrderStatus.Preparing"]</span></div>
+                    <div class="wm-kv"><span>@L["Marketing.Mock.Customer"]</span><span>Ahmet Y.</span></div>
+                    <div class="wm-kv"><span>@L["Marketing.Mock.Phone"]</span><span>0532 *** ** 41</span></div>
+                    <div class="wm-kv"><span>@L["Marketing.Mock.Address"]</span><span>Moda Cd. No: 12, Kadıköy</span></div>
+                </div>
+                <p class="wm-text-s">@L["Marketing.Pos.ServiceTakeawayText"]</p>
+            </div>
+            <div class="wm-service">
+                <h3 class="wm-service__title"><span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--white" aria-hidden="true"><i class="bi bi-lightning-charge"></i></span>@L["Marketing.Pos.ServiceQuickTitle"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-quick-grid">
+                        <span class="wm-quick-item"><span>@L["Marketing.Mock.ItemTea"]</span><span>@Money(20m)</span></span>
+                        <span class="wm-quick-item"><span>@L["Marketing.Mock.ItemWater"]</span><span>@Money(15m)</span></span>
+                        <span class="wm-quick-item"><span>@L["Marketing.Mock.ItemSimit"]</span><span>@Money(25m)</span></span>
+                        <span class="wm-quick-item"><span>@L["Marketing.Mock.ItemAyran"]</span><span>@Money(35m)</span></span>
+                    </div>
+                    <div class="wm-window__row"><span class="wm-ui-title" style="flex: 1">@Money(95m)</span><span class="wm-mini-btn">@L["PaymentMethod.Cash"]</span><span class="wm-mini-btn wm-mini-btn--action">@L["Marketing.Mock.Card"]</span></div>
+                </div>
+                <p class="wm-text-s">@L["Marketing.Pos.ServiceQuickText"]</p>
+            </div>
+            <div class="wm-service">
+                <h3 class="wm-service__title"><span class="wm-icon-tile wm-icon-tile--xs wm-icon-tile--white" aria-hidden="true"><i class="bi bi-clock-history"></i></span>@L["Marketing.Pos.ServicePickupTitle"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-window__row"><span class="wm-ui-title" style="flex: 1">@L["Marketing.Mock.PickupAt"]</span><span class="wm-badge wm-badge--green">@L["OrderStatus.ReadyForPickup"]</span></div>
+                    <div class="wm-window__row"><span class="wm-ui-strong" style="flex: 1">Zeynep A.</span><span class="wm-ui-caption">@L["Marketing.Mock.ItemsAmount", 3, Money(410m)]</span></div>
+                    <div class="wm-window__row"><span class="wm-mini-btn wm-mini-btn--action" style="flex: 1">@L["Marketing.Mock.MarkDelivered"]</span></div>
+                </div>
+                <p class="wm-text-s">@L["Marketing.Pos.ServicePickupText"]</p>
+            </div>
+        </div>
+        <p class="wm-concept-label"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Marketing.ConceptUi"]</p>
+    </div>
+</section>
+
+<section class="wm-section wm-section--ink wm-on-dark" id="tables" aria-labelledby="tables-title">
+    <div class="wm-container wm-split">
+        <div class="wm-split__copy">
+            <h2 class="wm-h2" id="tables-title">@L["Marketing.Pos.TablesTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.TablesLead"]</p>
+            <ul class="wm-checks">
+                <li>@L["Marketing.Pos.TablesPoint1"]</li>
+                <li>@L["Marketing.Pos.TablesPoint2"]</li>
+                <li>@L["Marketing.Pos.TablesPoint3"]</li>
+                <li>@L["Marketing.Pos.TablesPoint4"]</li>
+            </ul>
+        </div>
+        <div>
+            <div class="wm-floor wm-mock" aria-hidden="true">
+                <div>
+                    <span class="wm-seg"><span class="is-selected">@L["Marketing.Mock.Hall"]</span><span>@L["Marketing.Mock.Garden"]</span><span>@L["Marketing.Mock.Terrace"]</span></span>
+                    <div class="wm-floor__tables">
+                        @foreach (var table in floor)
+                        {
+                            <span class="wm-table@(table.State.Length > 0 ? " wm-table--" + table.State : string.Empty)"><span class="wm-table__name">@Table(table.Number)</span><span class="wm-table__meta">@table.Meta</span></span>
+                        }
+                    </div>
+                    <ul class="wm-legend">
+                        <li>@L["Marketing.Mock.TableFree"]</li>
+                        <li class="is-occupied">@L["Marketing.Mock.TableOccupied"]</li>
+                        <li class="is-bill">@L["Marketing.Mock.TableBill"]</li>
+                        <li class="is-selected">@L["Marketing.Mock.TableSelected"]</li>
+                    </ul>
+                </div>
+                <div class="wm-floor__detail">
+                    <div class="wm-floor__detail-head"><span class="wm-ui-title d-block">@Table(6)</span><span class="wm-ui-caption">@L["Marketing.Mock.GuestsMinutes", 4, 42] · Murat</span></div>
+                    <div class="wm-ticket__line"><span class="wm-ticket__qty">2×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAdana"]<span class="wm-ticket__note">@L["Marketing.Mock.NotSpicy"]</span></span><span>@Money(640m)</span></div>
+                    <div class="wm-ticket__line"><span class="wm-ticket__qty">1×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemLentilSoup"]</span><span>@Money(85m)</span></div>
+                    <div class="wm-ticket__line"><span class="wm-ticket__qty">4×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAyran"]</span><span>@Money(140m)</span></div>
+                    <div class="wm-ticket__total"><span>@L["Common.Total"]</span><strong>@Money(865m)</strong></div>
+                    <div class="wm-stack-actions">
+                        <span class="wm-mini-btn">@L["Marketing.Mock.AddOrder"]</span>
+                        <span class="wm-mini-btn">@L["Marketing.Mock.PrintBill"]</span>
+                        <span class="wm-mini-btn wm-mini-btn--action">@L["Marketing.Mock.TakePayment"]</span>
+                    </div>
+                </div>
+            </div>
+            <p class="wm-concept-label"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Marketing.ConceptUi"]</p>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--canvas" id="touch" aria-labelledby="touch-title">
+    <div class="wm-container wm-split wm-split--touch">
+        <div class="wm-split__copy">
+            <h2 class="wm-h2" id="touch-title">@L["Marketing.Pos.TouchTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.TouchLead"]</p>
+            <ul class="wm-checks">
+                <li>@L["Marketing.Pos.TouchPoint1"]</li>
+                <li>@L["Marketing.Pos.TouchPoint2"]</li>
+                <li>@L["Marketing.Pos.TouchPoint3"]</li>
+                <li>@L["Marketing.Pos.TouchPoint4"]</li>
+            </ul>
+            <p class="wm-note mt-3">@L["Marketing.Pos.TouchNote"]</p>
+        </div>
+        <div class="wm-sheet wm-mock" aria-hidden="true">
+            <div class="wm-sheet__head">
+                <span><span class="wm-ui-title d-block" style="font-size: 1.0625rem">@L["Marketing.Mock.ItemAdana"]</span><span class="wm-ui-caption">@L["Marketing.Mock.CatKebabs"] · @Money(320m)</span></span>
+                <span class="wm-sheet__close"><i class="bi bi-x-lg"></i></span>
+            </div>
+            <p class="wm-sheet__label">@L["Marketing.Mock.Portion"]</p>
+            <div class="wm-options"><span class="wm-option is-selected"><i class="bi bi-check2"></i>@L["Marketing.Mock.PortionOne"]</span><span class="wm-option">@L["Marketing.Mock.PortionOneHalf"] +@Money(120m)</span></div>
+            <p class="wm-sheet__label">@L["Marketing.Mock.Spice"]</p>
+            <div class="wm-options"><span class="wm-option is-selected"><i class="bi bi-check2"></i>@L["Marketing.Mock.NotSpicy"]</span><span class="wm-option">@L["Marketing.Mock.MildSpicy"]</span><span class="wm-option">@L["Marketing.Mock.Spicy"]</span></div>
+            <p class="wm-sheet__label">@L["Marketing.Mock.Extras"]</p>
+            <div class="wm-options"><span class="wm-option is-selected"><i class="bi bi-check2"></i>@L["Marketing.Mock.RoastedPepper"] +@Money(20m)</span><span class="wm-option">@L["Marketing.Mock.ExtraLavash"] +@Money(15m)</span></div>
+            <p class="wm-sheet__label">@L["Marketing.Mock.Note"]</p>
+            <div class="wm-field">@L["Marketing.Mock.NoOnion"]</div>
+            <div class="wm-sheet__foot">
+                <span class="wm-stepper"><span>−</span><span>2</span><span>+</span></span>
+                <span class="wm-sheet__add">@L["Marketing.Mock.AddToCart", Money(680m)]</span>
+            </div>
+        </div>
+        <div class="wm-cart wm-mock" aria-hidden="true">
+            <div class="wm-cart__head"><span class="wm-ui-title">@L["Marketing.Mock.CartFor", Table(6)]</span><span class="wm-ui-caption">@L["Marketing.Mock.ItemCount", 3]</span></div>
+            <div class="wm-ticket__line"><span class="wm-ticket__qty">2×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAdana"]<span class="wm-ticket__note">@L["Marketing.Mock.NotSpicy"] · @L["Marketing.Mock.RoastedPepper"] · @L["Marketing.Mock.NoOnion"]</span></span><span>@Money(680m)</span></div>
+            <div class="wm-ticket__line"><span class="wm-ticket__qty">1×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemLentilSoup"]</span><span>@Money(85m)</span></div>
+            <div class="wm-ticket__line"><span class="wm-ticket__qty">4×</span><span class="wm-ticket__name">@L["Marketing.Mock.ItemAyran"]</span><span>@Money(140m)</span></div>
+            <div class="wm-ticket__total"><span>@L["Common.Total"]</span><strong>@Money(905m)</strong></div>
+            <div class="wm-cart__quick">
+                <span class="wm-ui-caption">@L["Marketing.Mock.QuickAdd"]</span>
+                <div class="wm-ticket__actions"><span class="wm-mini-btn">+ @L["Marketing.Mock.ItemAyran"]</span><span class="wm-mini-btn">+ @L["Marketing.Mock.ItemTea"]</span><span class="wm-mini-btn">+ @L["Marketing.Mock.ItemLavash"]</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="menu" aria-labelledby="menu-title">
+    <div class="wm-container wm-split wm-split--reverse">
+        <div class="wm-menu-admin wm-mock" aria-hidden="true">
+            <div class="wm-menu-admin__tools">
+                <span class="wm-menu-admin__search"><i class="bi bi-search"></i>@L["Marketing.Mock.SearchProduct"]</span>
+                <span class="wm-mini-btn">@L["Marketing.Mock.AllCategories"] <i class="bi bi-chevron-down ms-1"></i></span>
+                <span class="wm-mini-btn wm-mini-btn--action">+ @L["Marketing.Mock.AddProduct"]</span>
+            </div>
+            <div class="wm-menu-admin__table">
+                <div class="wm-menu-admin__row wm-menu-admin__row--head"><span>@L["Marketing.Mock.ColProduct"]</span><span>@L["Marketing.Mock.ColCategory"]</span><span>@L["Marketing.Mock.ColPrice"]</span><span>@L["Marketing.Mock.ColStatus"]</span></div>
+                <div class="wm-menu-admin__row wm-menu-admin__row--editing"><strong>@L["Marketing.Mock.ItemAdana"]</strong><span>@L["Marketing.Mock.CatKebabs"]</span><span>@Money(320m)</span><span class="wm-toggle">@L["Marketing.Mock.Available"]</span></div>
+                <div class="wm-menu-admin__row"><strong>@L["Marketing.Mock.ItemUrfa"]</strong><span>@L["Marketing.Mock.CatKebabs"]</span><span>@Money(320m)</span><span class="wm-toggle">@L["Marketing.Mock.Available"]</span></div>
+                <div class="wm-menu-admin__row"><strong>@L["Marketing.Mock.ItemLamb"]</strong><span>@L["Marketing.Mock.CatKebabs"]</span><span>@Money(420m)</span><span class="wm-toggle wm-toggle--off">@L["Marketing.Mock.SoldOut"]</span></div>
+                <div class="wm-menu-admin__row"><strong>@L["Marketing.Mock.ItemLentilSoup"]</strong><span>@L["Marketing.Mock.CatSoups"]</span><span>@Money(85m)</span><span class="wm-toggle">@L["Marketing.Mock.Available"]</span></div>
+                <div class="wm-menu-admin__row"><strong>@L["Marketing.Mock.ItemKunefe"]</strong><span>@L["Marketing.Mock.CatDesserts"]</span><span>@Money(180m)</span><span class="wm-toggle">@L["Marketing.Mock.Available"]</span></div>
+            </div>
+        </div>
+        <div class="wm-split__copy">
+            <h2 class="wm-h2" id="menu-title">@L["Marketing.Pos.MenuTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.MenuLead"]</p>
+            <ul class="wm-checks">
+                <li>@L["Marketing.Pos.MenuPoint1"]</li>
+                <li>@L["Marketing.Pos.MenuPoint2"]</li>
+                <li>@L["Marketing.Pos.MenuPoint3"]</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--peach" id="payment" aria-labelledby="payment-title">
+    <div class="wm-container">
+        <div class="wm-section-heading">
+            <h2 class="wm-h2" id="payment-title">@L["Marketing.Pos.PaymentTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.PaymentLead"]</p>
+        </div>
+        <ol class="wm-flow">
+            <li class="wm-flow__stage">
+                <h3 class="wm-flow__label">@L["Marketing.Pos.PaymentStageBill"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-window__row" style="background: var(--wm-surface-muted)"><span class="wm-ui-title" style="flex: 1">@Table(6)</span><span class="wm-ui-caption">@L["Marketing.Mock.Guests", 4]</span></div>
+                    <div class="wm-line-item"><span>@L["Marketing.Mock.Subtotal"]</span><strong>@Money(905m)</strong></div>
+                    <div class="wm-line-item"><span>@L["Marketing.Mock.Service"]</span><strong>@L["Marketing.Mock.NotIncluded"]</strong></div>
+                    <div class="wm-line-item"><span>@L["Marketing.Mock.AmountDue"]</span><strong style="font-size: 0.9375rem">@Money(905m)</strong></div>
+                </div>
+            </li>
+            <li class="wm-flow__arrow" aria-hidden="true"><i class="bi bi-arrow-right wm-flip-rtl"></i></li>
+            <li class="wm-flow__stage">
+                <h3 class="wm-flow__label">@L["Marketing.Pos.PaymentStageMethod"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-pay-option"><i class="bi bi-cash"></i>@L["PaymentMethod.Cash"]</div>
+                    <div class="wm-pay-option is-selected"><i class="bi bi-credit-card"></i>@L["Marketing.Mock.Card"]<i class="bi bi-check-circle-fill"></i></div>
+                    <div class="wm-line-item" style="border: 0"><span class="wm-ui-caption">@L["Marketing.Mock.AmountByCard", Money(905m)]</span></div>
+                </div>
+            </li>
+            <li class="wm-flow__arrow" aria-hidden="true"><i class="bi bi-arrow-right wm-flip-rtl"></i></li>
+            <li class="wm-flow__stage">
+                <h3 class="wm-flow__label">@L["Marketing.Pos.PaymentStageReceipt"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-receipt">@Table(6) · @L["Marketing.Mock.Bill"]
+13.10.2026  20:31
+- - - - - - - - - - - -
+2x @L["Marketing.Mock.ItemAdana"]
+1x @L["Marketing.Mock.ItemLentilSoup"]
+4x @L["Marketing.Mock.ItemAyran"]
+@L["Common.Total"]  @Money(905m)
+@L["Marketing.Mock.Card"]</div>
+                    <div class="wm-window__row"><i class="bi bi-printer" style="color: var(--wm-success)"></i><span class="wm-ui-caption">@L["Marketing.Mock.SentToPrinter"]</span></div>
+                </div>
+            </li>
+            <li class="wm-flow__arrow" aria-hidden="true"><i class="bi bi-arrow-right wm-flip-rtl"></i></li>
+            <li class="wm-flow__stage">
+                <h3 class="wm-flow__label">@L["Marketing.Pos.PaymentStageClose"]</h3>
+                <div class="wm-window wm-mock" aria-hidden="true">
+                    <div class="wm-closed">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span class="wm-ui-title">@L["Marketing.Mock.TableClosed", Table(6)]</span>
+                        <span class="wm-table"><span class="wm-table__name">@Table(6)</span><span class="wm-table__meta">@L["Marketing.Mock.TableFree"]</span></span>
+                    </div>
+                </div>
+            </li>
+        </ol>
+        <p class="wm-concept-label"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Marketing.ConceptUi"]</p>
+    </div>
+</section>
+
+<section class="wm-section wm-section--canvas wm-kitchen" id="kitchen" aria-labelledby="kitchen-title">
+    <div class="wm-container">
+        <div class="wm-section-heading wm-section-heading--wide">
+            <h2 class="wm-h2" id="kitchen-title">@L["Marketing.Pos.KitchenTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.KitchenLead"]</p>
+        </div>
+        <ol class="wm-kitchen-flow">
+            <li class="wm-kitchen-step"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i><span class="wm-kitchen-step__title">@L["Marketing.Pos.KitchenStepPos"]</span><span class="wm-kitchen-step__meta">@L["Marketing.Pos.KitchenStepPosMeta"]</span></li>
+            <li class="wm-kitchen-arrow" aria-hidden="true"><i class="bi bi-arrow-right wm-flip-rtl"></i></li>
+            <li class="wm-kitchen-step"><i class="bi bi-receipt" aria-hidden="true"></i><span class="wm-kitchen-step__title">@L["Marketing.Pos.KitchenStepTicket"]</span><span class="wm-kitchen-step__meta">@L["Marketing.Pos.KitchenStepTicketMeta"]</span></li>
+            <li class="wm-kitchen-arrow" aria-hidden="true"><i class="bi bi-arrow-right wm-flip-rtl"></i></li>
+            <li class="wm-kitchen-step"><i class="bi bi-printer" aria-hidden="true"></i><span class="wm-kitchen-step__title">@L["Marketing.Pos.KitchenStepPrinter"]</span><span class="wm-kitchen-step__meta">@L["Marketing.Pos.KitchenStepPrinterMeta"]</span></li>
+        </ol>
+        <div class="wm-receipt wm-mock" aria-hidden="true">@L["Marketing.Mock.KitchenTicketHeader", Table(6)]
+19:52 · Murat
+- - - - - - - - - - - - - -
+2x @L["Marketing.Mock.ItemAdana"]
+   @L["Marketing.Mock.NotSpicy"], @L["Marketing.Mock.RoastedPepper"]
+   @L["Marketing.Mock.Note"]: @L["Marketing.Mock.NoOnion"]
+1x @L["Marketing.Mock.ItemLentilSoup"]</div>
+    </div>
+</section>
+
+<section class="wm-section wm-section--white" id="ecosystem" aria-labelledby="ecosystem-title">
+    <div class="wm-container">
+        <div class="wm-section-heading wm-section-heading--wide">
+            <h2 class="wm-h2" id="ecosystem-title">@L["Marketing.Pos.EcosystemTitle"]</h2>
+            <p class="wm-lead">@L["Marketing.Pos.EcosystemLead"]</p>
+        </div>
+        <div class="wm-eco">
+            <div class="wm-eco__channels">
+                <div class="wm-eco__channel">
+                    <div class="wm-eco__source">
+                        <h3 class="wm-eco__source-title">@L["Marketing.Home.ChannelOnlineTitle"]</h3>
+                        <ul class="wm-eco__tags">
+                            <li>@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("yemeksepeti"))</li>
+                            <li>@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("trendyolgo"))</li>
+                            <li>@await Html.PartialAsync("_MarketingPlatformMark", new MarketingPlatformMarkModel("getiryemek"))</li>
+                        </ul>
+                    </div>
+                    <span class="wm-eco__line" aria-hidden="true"></span>
+                    <span class="wm-eco__product"><i class="bi bi-display" aria-hidden="true"></i>@L["Marketing.Product.Orders"]</span>
+                </div>
+                <div class="wm-eco__channel">
+                    <div class="wm-eco__source">
+                        <h3 class="wm-eco__source-title">@L["Marketing.Pos.EcosystemInStore"]</h3>
+                        <ul class="wm-eco__tags">
+                            <li>@L["Marketing.Mock.ServiceTable"]</li>
+                            <li>@L["Marketing.Mock.ServiceTakeaway"]</li>
+                            <li>@L["Marketing.Mock.ServicePickup"]</li>
+                            <li>@L["Marketing.Mock.ServiceQuickSale"]</li>
+                        </ul>
+                    </div>
+                    <span class="wm-eco__line" aria-hidden="true"></span>
+                    <span class="wm-eco__product wm-eco__product--ink"><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></span>
+                </div>
+            </div>
+            <i class="bi bi-arrow-right wm-eco__arrow" aria-hidden="true"></i>
+            <div class="wm-eco__op">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--hub", Decorative = true })
+                <h3 class="wm-eco__op-title">@L["Marketing.Pos.EcosystemOperation"]</h3>
+                <ul>
+                    <li><i class="bi bi-journal-text" aria-hidden="true"></i>@L["Marketing.Pos.EcosystemKitchen"]</li>
+                    <li><i class="bi bi-printer" aria-hidden="true"></i>@L["Marketing.Home.ReceiptAndPrinter"]</li>
+                    <li><i class="bi bi-people" aria-hidden="true"></i>@L["Marketing.Pos.EcosystemTeam"]</li>
+                </ul>
+            </div>
+        </div>
+        <p class="wm-note mt-3">@L["Marketing.Home.IntegrationsNote"]</p>
+        <div class="wm-after-eco">
+            <a class="wm-btn wm-btn--tertiary" href="/#orders">@L["Marketing.Cta.ExploreOrders"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></a>
+        </div>
+    </div>
+</section>
+
+@await Html.PartialAsync("_MarketingCtaPanel", new MarketingCtaPanelModel(
+    "pos-final-title",
+    L["Marketing.Pos.FinalTitle"].Value,
+    L["Marketing.Pos.FinalLead"].Value,
+    new[]
+    {
+        new MarketingLink(L["Marketing.Cta.FollowInstagram"].Value, PublicSiteUrls.InstagramUrl, MarketingLinkStyle.Primary, External: true),
+        new MarketingLink(L["Marketing.Cta.ExploreOrders"].Value, "/#orders", MarketingLinkStyle.SecondaryOnDark)
+    }))

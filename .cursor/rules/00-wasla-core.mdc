@@ -41,8 +41,8 @@ Keep solutions practical, conservative, and MVP-focused.
 - `TenantDb` stores operational restaurant data.
 - EF Core contexts are `CentralDbContext` and `TenantDbContext`.
 - Tenant resolution uses `TenantResolutionMiddleware`, claim `TenantId`, and HttpContext item `CurrentTenant`.
-- Central/public development hosts are `localhost`, `wasla.local`, and `www.wasla.local`.
-- Tenant development hosts use `{slug}.wasla.local`, for example `sushim.wasla.local`.
+- Host roles (WAS-66, `docs/architecture/tenancy.md`): marketing `wasla.tr` (Development `localhost`, `wasla.local`, `www.wasla.local`), application entry `app.wasla.tr` (Development `app.wasla.local`), tenants `{slug}.app.wasla.tr` (Development `{slug}.app.wasla.local`, for example `sushim.app.wasla.local`).
+- Classify hosts with `WaslaHostClassifier`; never match tenant hosts with `Contains`, loose `EndsWith` or unvalidated splitting.
 - End-customer order fields such as `CustomerName`, `CustomerPhone`, and `CustomerAddress` refer to the restaurant's buyer and should not be renamed to Tenant.
 
 ## Git workflow
@@ -93,14 +93,16 @@ Keep solutions practical, conservative, and MVP-focused.
 
 ## Naming and legacy compatibility
 
-- New code must use `Wasla` naming.
-- Do not introduce new `OrderHub` namespaces, classes, configuration sections, directories, mutex names, ProgramData paths, download paths, or user-facing text.
-- Do not add legacy `OrderHub` migration or compatibility logic unless the user explicitly asks for a migration task.
-- Do not add methods such as `MigrateLegacyOrderHubSettings` during unrelated fixes.
-- Existing historical migration records may remain if changing them would be unsafe.
+- Canonical names and the clean-break policy live in `docs/product/terminology.md`; follow it.
+- New code, configuration, documentation and tests use `Wasla` product naming and `Tenant` for tenant concepts. Restaurant-facing UI says "Restaurant" in the localized form.
+- `Customer` naming is valid only for the real person placing an order (for example `CustomerName`, `CustomerPhone`, `CustomerAddress`, customer notes).
+- Do not reintroduce the former product name or tenant-meaning Customer names anywhere, including tests, in any form (literal, fragmented, encoded, character classes or reconstructed at runtime).
+- Add no compatibility layer for retired names: no aliases, fallback keys, dual reads or writes, redirects for retired routes, old cookie names, old paths, classic Print Bridge fallback or compatibility commands.
+- Clean-break tests assert the canonical surface positively; no negative tests that name retired identifiers and no test-file allowlists.
+- Retired names that still exist are removed by their owning clean-break issue, not during unrelated fixes.
+- The exact historical migration files listed in `docs/product/terminology.md` are the only exception. Do not edit them, do not add files to that list, and do not generate migrations that contain retired names.
 - Internal settings should use current canonical property names.
 - For Print Bridge, use `ServerUrl`, not new `BaseUrl` aliases.
-- Do not silently create new backwards-compatibility layers.
 
 ## Print Bridge
 

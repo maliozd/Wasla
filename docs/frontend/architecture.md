@@ -79,6 +79,8 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 ### Formatters and density
 
 - Live Screen money uses `Intl.NumberFormat` with `currency: "TRY"` and `currencyDisplay: "narrowSymbol"` so visible amounts show `₺`. UI culture changes separators and placement, not the business currency. Do not print the literal code `TRY` or concatenate `₺` in those formatters. See [../orders/live-screen.md](../orders/live-screen.md).
+- Server-rendered order amounts (Dashboard, the Orders list, order details) use `OrderUiHelper.FormatMoney`: the culture's number format with `OrderCurrency` (`Wasla.Application.Orders`, code `TRY`, symbol `₺`) as the currency (WAS-44). Never `ToString("C")`, which takes the currency from the culture (`$` in en-US, `₽` in ru-RU). The Live Screen detail markup keeps a plain number (`OrderUiHelper.FormatAmount`) in `data-money` elements for the browser formatter to replace. The two formatters agree on the symbol, separators and placement. In Arabic, `Intl` prints Arabic-Indic digits and .NET prints Latin digits, as for every other server-rendered number.
+- Dates use the Gregorian calendar in every UI culture (WAS-130). `SupportedCultures` builds each request culture with `GregorianCulture.For`, so ar-SA keeps its language, month names and right-to-left layout but not its default Umm al-Qura calendar. Browser formatters pass `calendar: "gregory"` to `Intl.DateTimeFormat` instead of relying on the browser's default for the language; they keep the culture's digits. Machine-readable dates (date input values, filter query strings, `todayYmd`) are invariant `yyyy-MM-dd` through `OrdersReceivedAtQueryRange.FormatWebDate` and are parsed only by `TryParseWebDate`, never with the request culture.
 - Operational screens favor compact Bootstrap controls and Wasla-owned classes; management screens use filter cards and dense tables.
 
 ### Responsive, RTL, accessibility
@@ -86,6 +88,9 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 - Viewport meta on layouts; Live Screen has narrow Focus behavior.
 - RTL: `dir="rtl"` + `wwwroot/css/rtl.css` (+ logical properties in foundation/theme where applied).
 - Focus-visible styles on key controls; `aria-pressed` on view switch; live regions for connection/sound status.
+- A label's `for` names the id the input actually renders (an explicit `id` overrides the one `asp-for` would give it).
+- The collapsed tenant sidebar shows icons only: link and control text is visually hidden, never `display: none`, so it stays the accessible name; decorative icons are `aria-hidden` (WAS-132).
+- A region rebuilt from polled markup is replaced only when its markup changed, and not while the user is selecting text in it or would lose the focused control; see the Print Bridge Devices page in [../integrations/print-bridge.md](../integrations/print-bridge.md#devices-page-presence-web-panel).
 - `prefers-reduced-motion`: Live view transitions and several theme animations disable/simplify when reduce is set.
 
 ### Browser-local vs server settings
@@ -94,16 +99,35 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 | --- | --- |
 | Notification sound enabled, sound name, volume, browser notification flag, highlight prefs | Server (notification settings endpoints) |
 | Live view mode | `localStorage` (`Wasla.liveScreen.viewMode`) |
-| Theme light/dark preference | `localStorage` (`Wasla.theme`) |
+| Tenant app light/dark choice | `localStorage` (`Wasla.tenant.theme`); see [Theme](#theme) |
+| Central Admin light/dark choice | `localStorage` (`Wasla.theme`); see [Theme](#theme) |
 | Sound unlock flag write | `localStorage` (`Wasla.soundUnlocked`) — written; not restored on load today |
 | Orders debug badge | `localStorage` (`Wasla.ordersDebug`) |
+
+### Theme
+
+`wwwroot/js/theme-preference.js` is the only code that resolves, applies and stores the light/dark theme. Each layout loads it synchronously in `<head>`, before the stylesheets, and names its app on `<html data-wasla-theme-scope>`: `tenant` for `_TenantLayout` and `_OrdersDisplayLayout` (Live Screen), `admin` for `_AdminLayout`. It sets `data-bs-theme` on `<html>`, and on `<body>` as soon as the parser inserts it, so the first frame is painted in the resolved theme. `theme-mode.js` only drives the toggle buttons (`.wasla-theme-toggle`).
+
+**Scope: browser, per app.** The choice is stored in the browser, not on the user or the tenant. That matches the architecture: there is no per-user preference store in CentralDb or TenantDb, the theme must be known before the first frame (a server or user setting would need a request or a database read on every page), operational devices such as a kitchen Live Screen are often shared by several users, and each tenant host is its own origin, so one tenant's choice never reaches another tenant's pages. Central Admin is served under `/admin` on the marketing, application and tenant hosts (not on unknown host names, WAS-66), so it can share an origin with the tenant app; the two apps use separate keys and never read or write each other's.
+
+**Tenant app precedence:**
+
+1. An explicit choice (`Wasla.tenant.theme` is `light` or `dark`), made with the toggle, applies on every tenant page, after reloads and in new browser sessions, until the user toggles again or clears site data.
+2. Without one, the operating-system theme (`prefers-color-scheme`) applies, and a later system change updates open pages.
+3. A system change never overwrites an explicit choice. There is no "follow the system again" control; clearing site data returns to it.
+
+Open pages of the app follow a choice made in another tab (the `storage` event), so an open Live Screen follows the panel. Any other stored value is ignored. The tenant app does not read the old shared `Wasla.theme` key. Its value is not a reliable tenant choice: the previous script wrote `light` there whenever nothing was stored yet, and the tenant app and Central Admin both wrote to it, so a stored value may have come from either app. A user who had chosen dark before this change gets the system theme until they choose again.
+
+**Central Admin** keeps its existing precedence under its existing key: its stored choice, otherwise light. It does not follow the system theme. Like the tenant app, it now follows a choice made in another Admin tab and no longer writes the key when a page loads, only when the toggle is used.
+
+Not themed: every page that does not use one of the three layouts above has no theme script and no dark styles, so it stays light. That includes the tenant sign-in, forgot-password and reset-password pages, the Central Admin sign-in page, the error page, the public landing, tenant-not-found and tenant-address-required pages, and the signup and status layouts. How the tenant app and the Live Screen are painted in dark mode, and what stays light on purpose, is in [design-system.md](design-system.md#dark-mode-in-the-tenant-app).
 
 ---
 
 ## Future
 
 - Continue modular vanilla JS; avoid a second parallel orders UI framework.
-- Any SignalR consumer should reuse shared print/action components — see [../future/printjob-status-signalr.md](../future/printjob-status-signalr.md). Live Screen order polling remains until a deliberate phase.
+- The live channel (`wasla-realtime.js`, one connection per page) has two consumers: `orders-print-status.js` (the shared print action) and `orders-live-realtime.js` (Live Screen invalidation through the snapshot coordinator); see [../architecture/realtime.md](../architecture/realtime.md). A further consumer should subscribe to it and read its state from the server, not render from the notification. Live Screen polling remains as the safety net.
 
 ---
 
@@ -115,4 +139,5 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 | Live layout | `Areas/Tenant/Views/Shared/_OrdersDisplayLayout.cshtml` |
 | Orders JS | `wwwroot/js/orders/*.js` |
 | RTL | `wwwroot/css/rtl.css` |
+| Public marketing header, footer and menus | `Views/Shared/_PublicLayout.cshtml`, `wwwroot/js/wasla-marketing.js`; see [design-system.md](design-system.md#public-marketing-site) |
 | Localization | `Wasla.Web/Resources/SharedResource*.resx` |

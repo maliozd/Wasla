@@ -237,10 +237,10 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
         var orders = new RecordingOrders();
-        var controller = CreateController(new FixedTenant(new ResolvedTenantDto(tenantId, "Sushi M", "sushi-m", "sushi-m.wasla.local")), orders);
+        var controller = CreateController(new FixedTenant(new ResolvedTenantDto(tenantId, "Sushi M", "sushi-m", "sushi-m.app.wasla.local")), orders);
 
         var modes = new Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests.FakeTenantModes();
-        var result = await controller.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None);
+        var result = await controller.LiveData(guidedSetup: null!, operationalModes: modes, platformConnections: new FakePlatformConnections(), CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var snapshot = Assert.IsType<LiveScreenSnapshotResult>(ok.Value);
@@ -250,10 +250,10 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         Assert.Equal([tenantId], modes.ReadTenants);
 
         var missingTenant = CreateController(new FixedTenant(null), orders);
-        Assert.IsType<NotFoundResult>(await missingTenant.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None));
+        Assert.IsType<NotFoundResult>(await missingTenant.LiveData(guidedSetup: null!, operationalModes: modes, platformConnections: new FakePlatformConnections(), CancellationToken.None));
 
         orders.Failure = new InvalidOperationException("database unavailable");
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.LiveData(guidedSetup: null!, operationalModes: modes, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.LiveData(guidedSetup: null!, operationalModes: modes, platformConnections: new FakePlatformConnections(), CancellationToken.None));
         Assert.Equal([tenantId], modes.ReadTenants);
     }
 
@@ -467,6 +467,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
@@ -22,23 +24,29 @@ public sealed class AuthController : Controller
 
     private readonly ICurrentTenantService _currentTenant;
     private readonly IAuthValidationService _authValidation;
+    private readonly ITenantLoginRecorder _loginRecorder;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly ITenantPasswordResetService _passwordReset;
+    private readonly ITenantLandingPageResolver _landingPages;
     private readonly IWebHostEnvironment _environment;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public AuthController(
         ICurrentTenantService currentTenant,
         IAuthValidationService authValidation,
+        ITenantLoginRecorder loginRecorder,
         ISignupCompletionTokenService signupCompletionTokens,
         ITenantPasswordResetService passwordReset,
+        ITenantLandingPageResolver landingPages,
         IWebHostEnvironment environment,
         IStringLocalizer<SharedResource> localizer)
     {
         _currentTenant = currentTenant;
         _authValidation = authValidation;
+        _loginRecorder = loginRecorder;
         _signupCompletionTokens = signupCompletionTokens;
         _passwordReset = passwordReset;
+        _landingPages = landingPages;
         _environment = environment;
         _localizer = localizer;
     }
@@ -55,10 +63,10 @@ public sealed class AuthController : Controller
             && Guid.TryParse(auth.Principal.FindFirstValue("TenantId"), out var claimTenantId)
             && claimTenantId == tenant.Id)
         {
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-
-            return Redirect("/dashboard");
+            // Already signed in: go where the user may go. With no such page the form is shown, so this never loops.
+            var destination = await _landingPages.ResolveAsync(auth.Principal, returnUrl, HttpContext);
+            if (destination is not null)
+                return Redirect(destination);
         }
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -66,13 +74,18 @@ public sealed class AuthController : Controller
 
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [HttpGet("access-denied")]
-    public IActionResult AccessDenied()
+    public async Task<IActionResult> AccessDenied()
     {
-        return View();
+        // The recovery link is the user's own landing page; the denied path (ReturnUrl) is not shown or followed.
+        return View(new AccessDeniedViewModel
+        {
+            LandingPageUrl = await _landingPages.GetLandingPageAsync(User, HttpContext)
+        });
     }
 
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.TenantLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct)
     {
@@ -93,12 +106,15 @@ public sealed class AuthController : Controller
         }
 
         ExpireTenantAuthCookies();
-        await SignInSessionAsync(session, model.RememberMe, ct);
+        var principal = await SignInSessionAsync(session, model.RememberMe, ct);
 
-        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            return Redirect(model.ReturnUrl);
+        // A login is a password sign-in that established the session. Credential checks alone
+        // (/api/auth/validate), the signup welcome link and cookie authentication do not record one.
+        await _loginRecorder.RecordSuccessfulLoginAsync(tenant.Id, session.UserId, ct);
 
-        return Redirect("/dashboard");
+        // A safe local ReturnUrl the new session may open, otherwise the role's landing page (WAS-113). A session that
+        // may open neither (obsolete Staff) goes back to the login page, where its rejected cookie is not followed.
+        return Redirect(await _landingPages.ResolveAsync(principal, model.ReturnUrl, HttpContext) ?? "/auth/login");
     }
 
     [AllowAnonymous]
@@ -112,14 +128,19 @@ public sealed class AuthController : Controller
         }
 
         var payload = _signupCompletionTokens.ValidateAndConsume(token);
-        if (payload is null || payload.CustomerId != tenant.Id)
+        // The session is built from the user's current row (role, active state, security stamp), not from the
+        // values the link was issued with.
+        var session = payload is null || payload.CustomerId != tenant.Id
+            ? null
+            : await _authValidation.GetActiveSessionAsync(tenant.Id, payload.UserId, ct);
+        if (session is null)
         {
             TempData["AuthMessage"] = _localizer["Auth.WelcomeInvalid"].Value;
             return Redirect("/auth/login");
         }
 
-        await SignInSessionAsync(payload, rememberMe: false, ct);
-        return Redirect("/dashboard");
+        var principal = await SignInSessionAsync(session, rememberMe: false, ct);
+        return Redirect(await _landingPages.GetLandingPageAsync(principal, HttpContext) ?? "/auth/login");
     }
 
     [AllowAnonymous]
@@ -146,35 +167,17 @@ public sealed class AuthController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        var result = await _passwordReset.RequestResetAsync(
+        // Only an active user gets a token and an email; the service logs every other outcome. The page is the same
+        // confirmation for an existing, unknown or inactive email and for a failed delivery, so it never reveals
+        // whether an account exists.
+        _ = await _passwordReset.RequestResetAsync(
             tenant.Id,
             model.Email,
             rawToken => TenantWelcomeUrlBuilder.BuildPasswordResetUrl(Request, _environment, tenant.PrimaryDomain, rawToken),
             System.Globalization.CultureInfo.CurrentUICulture.Name,
             ct).ConfigureAwait(false);
 
-        return result.Status switch
-        {
-            TenantPasswordResetRequestStatus.EmailSent => View(new ForgotPasswordViewModel
-            {
-                EmailSent = true
-            }),
-            TenantPasswordResetRequestStatus.UserInactive => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.UserInactive"),
-            TenantPasswordResetRequestStatus.EmailDeliveryFailed => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.EmailDeliveryFailed"),
-            _ => ForgotPasswordError(
-                model,
-                "Auth.ForgotPassword.UserNotFound")
-        };
-    }
-
-    private ViewResult ForgotPasswordError(ForgotPasswordViewModel model, string resourceKey)
-    {
-        ModelState.AddModelError(string.Empty, _localizer[resourceKey].Value);
-        return View(model);
+        return View(new ForgotPasswordViewModel { EmailSent = true });
     }
 
     [AllowAnonymous]
@@ -231,28 +234,18 @@ public sealed class AuthController : Controller
         return View(model);
     }
 
-    private async Task SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
-    {
-        await SignInSessionAsync(new SignupCompletionPayload(
-            session.CustomerId,
-            session.UserId,
-            session.Email,
-            session.FullName,
-            session.Role), rememberMe, ct);
-    }
-
-    private async Task SignInSessionAsync(SignupCompletionPayload session, bool rememberMe, CancellationToken ct)
+    private async Task<ClaimsPrincipal> SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
         _ = ct;
-        var claims = new List<Claim>
+        // Tenant, user, role and security stamp are revalidated on every request (TenantCookieEvents).
+        var claims = new List<Claim>(TenantSessionClaims.Create(
+            session.CustomerId,
+            session.UserId,
+            session.Role,
+            session.SecurityStamp))
         {
-            new("TenantId", session.CustomerId.ToString()),
-            new("UserId", session.UserId.ToString()),
             new("Email", session.Email),
-            new("Role", session.Role.ToString()),
-            new(ClaimTypes.NameIdentifier, session.UserId.ToString()),
             new(ClaimTypes.Email, session.Email),
-            new(ClaimTypes.Role, session.Role.ToString()),
             new(ClaimTypes.Name, session.FullName),
         };
 
@@ -263,6 +256,7 @@ public sealed class AuthController : Controller
             AuthSchemes.Tenant,
             principal,
             AuthCookiePersistence.Create(rememberMe, AuthCookiePersistence.TenantPersistentDuration));
+        return principal;
     }
 
     private static bool IsClearlyMalformedResetToken(string? token)
@@ -290,7 +284,6 @@ public sealed class AuthController : Controller
         };
 
         Response.Cookies.Delete(TenantAuthCookieNames.Active, options);
-        Response.Cookies.Delete(TenantAuthCookieNames.LegacyOrderHub, options);
     }
 }
 

@@ -16,6 +16,10 @@
         @Html.AntiForgeryToken()
         <div class="wasla-surface wasla-manage-form__surface">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            @if (Model.CredentialsNeedReentry)
+            {
+                <div class="alert alert-warning" role="status">@L["PlatformConnections.CredentialsReenter"]</div>
+            }
 
             <div class="wasla-manage-form__grid">
                 <div class="wasla-manage-form__field">
@@ -58,15 +62,29 @@
                     <span class="text-danger" asp-validation-for="ExecutorEmail"></span>
                 </div>
 
+                @* Provider credentials: masked, never pre-filled (a failed submission clears them in the controller) and not
+                   autocompleted as a Wasla login. The reveal control only shows what was typed into this form. *@
                 <div class="wasla-manage-form__field wasla-manage-form__field--wide">
                     <label class="form-label" asp-for="ApiKey"></label>
-                    <input class="form-control" asp-for="ApiKey" />
+                    <div class="input-group">
+                        <input class="form-control" asp-for="ApiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr" />
+                        <button class="btn btn-outline-secondary" type="button" data-credential-toggle aria-controls="ApiKey" aria-pressed="false"
+                                aria-label="@L["PlatformConnections.ShowApiKey"]" title="@L["PlatformConnections.ShowApiKey"]" hidden>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <span class="text-danger" asp-validation-for="ApiKey"></span>
                 </div>
 
                 <div class="wasla-manage-form__field wasla-manage-form__field--wide">
                     <label class="form-label" asp-for="ApiSecret"></label>
-                    <input class="form-control" asp-for="ApiSecret" />
+                    <div class="input-group">
+                        <input class="form-control" asp-for="ApiSecret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" dir="ltr" />
+                        <button class="btn btn-outline-secondary" type="button" data-credential-toggle aria-controls="ApiSecret" aria-pressed="false"
+                                aria-label="@L["PlatformConnections.ShowApiSecret"]" title="@L["PlatformConnections.ShowApiSecret"]" hidden>
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                     <span class="text-danger" asp-validation-for="ApiSecret"></span>
                 </div>
 

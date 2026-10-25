@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Refuses to start a Wasla process whose effective environment would fall back to a Development value (WAS-76/77).
+# Runs as the service account in ExecStartPre, with the environment systemd built from /etc/wasla/*.env.
+# Every message names a key, never its value.
+set -euo pipefail
+
+process=${1:-}
+case "$process" in
+  web|api|worker) ;;
+  *) printf 'Usage: %s web|api|worker\n' "$0" >&2; exit 2 ;;
+esac
+
+root=${WASLA_ROOT:-/opt/wasla}
+failures=0
+fail() { printf 'wasla-preflight(%s): %s\n' "$process" "$1" >&2; failures=$((failures + 1)); }
+value() { printenv "$1" 2>/dev/null || true; }
+require() { [[ -n "$(value "$1")" ]] || fail "$1 is not set."; }
+require_equal() { [[ "$(value "$1")" == "$2" ]] || fail "$1 must be $2."; }
+
+require_equal ASPNETCORE_ENVIRONMENT Production
+require_equal DOTNET_ENVIRONMENT Production
+require_equal Platforms__ProviderMode Real
+require_equal Platform__TrendyolGo__BaseUrl https://api.tgoapis.com
+require_equal Wasla__TenantOnboarding__PublicSignupEnabled false
+
+key=$(value ENCRYPTION_MASTER_KEY)
+if [[ -z "$key" ]]; then
+  fail 'ENCRYPTION_MASTER_KEY is not set.'
+elif [[ "$(printf '%s' "$key" | base64 -d 2>/dev/null | wc -c)" != 32 ]]; then
+  fail 'ENCRYPTION_MASTER_KEY is not Base64 of 32 bytes.'
+fi
+unset key
+
+central=$(value ConnectionStrings__CentralDb)
+central_lower=${central,,}
+if [[ -z "$central" ]]; then
+  fail 'ConnectionStrings__CentralDb is not set (the committed appsettings.json would use LocalDB).'
+else
+  [[ "$central_lower" != *localdb* ]] || fail 'ConnectionStrings__CentralDb names LocalDB.'
+  [[ "$central_lower" != *trusted_connection=true* && "$central_lower" != *"integrated security=true"* ]] \
+    || fail 'ConnectionStrings__CentralDb uses Windows authentication.'
+  [[ "$central_lower" == *"user id="* ]] || fail 'ConnectionStrings__CentralDb names no SQL login.'
+  [[ "$central_lower" != *"user id=sa;"* ]] || fail 'ConnectionStrings__CentralDb uses sa.'
+fi
+unset central central_lower
+
+port=$(value Realtime__Internal__Port)
+[[ "$port" =~ ^[0-9]+$ ]] || fail 'Realtime__Internal__Port is not set to a port number.'
+secret=$(value Realtime__Internal__Secret)
+(( ${#secret} >= 32 )) || fail 'Realtime__Internal__Secret is not set or shorter than 32 characters.'
+unset secret
+
+[[ "$(value ASPNETCORE_FORWARDEDHEADERS_ENABLED)" != true ]] || fail 'ASPNETCORE_FORWARDEDHEADERS_ENABLED must not be true; list TrustedProxies instead.'
+
+# No Development host, URL or certificate anywhere in the Wasla settings.
+while IFS='=' read -r name rest; do
+  case "$name" in
+    Wasla__*|ConnectionStrings__*|Platform__*|Platforms__*|TrustedProxies__*|Kestrel__*|ASPNETCORE_URLS|DataProtection__*) ;;
+    *) continue ;;
+  esac
+  lower=${rest,,}
+  [[ "$name" != Kestrel__Certificates__* ]] || fail "$name configures a Kestrel certificate; TLS ends at Nginx."
+  [[ "$lower" != *.pfx* ]] || fail "$name names a PFX file."
+  [[ "$lower" != *wasla.local* ]] || fail "$name names a wasla.local host."
+  [[ "$lower" != *stageapi.* ]] || fail "$name names a provider stage endpoint."
+  if [[ "$name" != ASPNETCORE_URLS ]]; then
+    [[ "$lower" != *localhost* ]] || fail "$name names localhost."
+  fi
+done < <(env)
+
+release=$(readlink -f "$root/current" 2>/dev/null || true)
+if [[ -z "$release" || "$release" != "$root"/releases/* || ! -f "$release/RELEASE" ]]; then
+  fail "$root/current does not point at an installed release."
+else
+  production_json="$release/$process/appsettings.Production.json"
+  [[ -f "$production_json" ]] || fail "$process/appsettings.Production.json is missing from the release."
+  [[ ! -f "$production_json" ]] || ! grep -qi 'stageapi\.' "$production_json" \
+    || fail "$process/appsettings.Production.json names a provider stage endpoint."
+fi
+
+if [[ "$process" != worker ]]; then
+  require Wasla__TenantOnboarding__MarketingBaseDomain
+  require Wasla__TenantOnboarding__ApplicationBaseDomain
+  require TrustedProxies__KnownProxies__0
+  [[ "$(value ASPNETCORE_URLS)" =~ ^http://127\.0\.0\.1:[0-9]+$ ]] || fail 'ASPNETCORE_URLS must be one http://127.0.0.1:<port> address.'
+
+  keys=$(value DataProtection__KeyPath)
+  if [[ -z "$keys" ]]; then
+    fail 'DataProtection__KeyPath is not set (keys would be lost or kept in a default location).'
+  elif [[ ! -d "$keys" || ! -w "$keys" ]]; then
+    fail 'DataProtection__KeyPath is not an existing directory this account can write.'
+  elif [[ "$(stat -c '%u %a' "$keys")" != "$(id -u) 700" ]]; then
+    fail 'DataProtection__KeyPath must be owned by this account with mode 700.'
+  fi
+
+  if [[ "$process" == web && -n "$release" && ! -d "$release/web/wwwroot" ]]; then
+    fail 'web/wwwroot is missing from the release (no CSS, scripts or sounds would be served).'
+  fi
+fi
+
+if (( failures > 0 )); then
+  printf 'wasla-preflight(%s): %d problem(s); the process is not started.\n' "$process" "$failures" >&2
+  exit 1
+fi
+printf 'wasla-preflight(%s): configuration checks passed for release %s.\n' "$process" "$(basename "$release")"

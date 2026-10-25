@@ -108,6 +108,18 @@
             </div>
             <p class="wasla-guided-training__note"
                data-training-when="@courierSteps" hidden="@HiddenFor(courierSteps)">@L["GuidedSetup.Training.CourierNote"]</p>
+            @*
+                When the practice order arrives: how real orders get attention and what the browser permission is for.
+                Nothing asks for permission here; the button opens the shared notification settings, where only turning
+                browser notifications on asks the browser.
+            *@
+            <div class="wasla-guided-training__note"
+                 data-training-when="@GuidedTrainingSteps.PracticeNew" hidden="@HiddenFor(GuidedTrainingSteps.PracticeNew)" data-training-notifications>
+                <p class="mb-2">@L["GuidedSetup.Training.Notifications.Body"]</p>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-notification-settings-open>
+                    <i class="bi bi-bell me-1" aria-hidden="true"></i>@L["Notification.Settings"]
+                </button>
+            </div>
             <p class="wasla-guided-training__note">
                 @L["GuidedSetup.Training.HelpNote"]
                 <a href="/help" target="_blank" rel="noopener">@L["Help.Title"]</a>

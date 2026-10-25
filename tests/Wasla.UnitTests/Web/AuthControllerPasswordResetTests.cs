@@ -52,7 +52,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task ForgotPasswordPost_EmailSentShowsDedicatedConfirmationState()
     {
-        var tenant = Tenant(Guid.NewGuid(), "sushim.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "sushim.app.wasla.local");
         var service = new FakeTenantPasswordResetService
         {
             RequestResult = TenantPasswordResetRequestResult.EmailSent()
@@ -71,17 +71,17 @@ public sealed class AuthControllerPasswordResetTests
         Assert.True(string.IsNullOrEmpty(model.Email));
         Assert.Equal(tenant.Id, service.LastRequestTenantId);
         Assert.Equal("owner@example.test", service.LastRequestEmail);
-        Assert.Equal("http://sushim.wasla.local:5200/auth/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", service.LastGeneratedResetUrl);
+        Assert.Equal("http://sushim.app.wasla.local:5200/auth/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", service.LastGeneratedResetUrl);
         Assert.Empty(controller.TempData);
     }
 
+    // WAS-90: an unknown or inactive email and a failed delivery get the confirmation a sent email gets, so the page
+    // never reveals whether an account exists. The rendered pages are compared in ForgotPasswordEnumerationTests.
     [Theory]
-    [InlineData(TenantPasswordResetRequestStatus.UserNotFound, "No user for this restaurant was found with this email address.")]
-    [InlineData(TenantPasswordResetRequestStatus.UserInactive, "This user account is not active. Contact your restaurant administrator.")]
-    [InlineData(TenantPasswordResetRequestStatus.EmailDeliveryFailed, "The password reset email could not be sent right now. Please try again later.")]
-    public async Task ForgotPasswordPost_NonSentOutcomesRemainOnFormWithSafeMessage(
-        TenantPasswordResetRequestStatus status,
-        string expectedMessage)
+    [InlineData(TenantPasswordResetRequestStatus.UserNotFound)]
+    [InlineData(TenantPasswordResetRequestStatus.UserInactive)]
+    [InlineData(TenantPasswordResetRequestStatus.EmailDeliveryFailed)]
+    public async Task ForgotPasswordPost_NonSentOutcomesShowTheSameConfirmation(TenantPasswordResetRequestStatus status)
     {
         var controller = CreateController(service: new FakeTenantPasswordResetService
         {
@@ -98,17 +98,19 @@ public sealed class AuthControllerPasswordResetTests
             TestContext.Current.CancellationToken);
 
         var view = Assert.IsType<ViewResult>(result);
+        Assert.Null(view.ViewName);
+        Assert.Null(view.StatusCode);
         var model = Assert.IsType<ForgotPasswordViewModel>(view.Model);
-        Assert.False(model.EmailSent);
-        Assert.Equal("owner@example.test", model.Email);
-        Assert.Contains(controller.ModelState[string.Empty]!.Errors, e => e.ErrorMessage == expectedMessage);
+        Assert.True(model.EmailSent);
+        Assert.True(string.IsNullOrEmpty(model.Email));
+        Assert.True(controller.ModelState.IsValid);
         Assert.Empty(controller.TempData);
     }
 
     [Fact]
     public async Task ForgotPasswordPost_UsesCurrentTenantNotPostedTenantId()
     {
-        var currentTenant = Tenant(Guid.NewGuid(), "current.wasla.local");
+        var currentTenant = Tenant(Guid.NewGuid(), "current.app.wasla.local");
         var postedTenantId = Guid.NewGuid();
         var service = new FakeTenantPasswordResetService();
         var controller = CreateController(tenant: currentTenant, service: service);
@@ -138,7 +140,7 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task ResetPasswordPost_ValidPostPassesCurrentTenantToService()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var service = new FakeTenantPasswordResetService { ResetResult = TenantPasswordResetResult.Success() };
         var controller = CreateController(tenant: tenant, service: service);
 
@@ -207,11 +209,11 @@ public sealed class AuthControllerPasswordResetTests
         var production = BuildRequest("https", "admin.wasla.com", 5443);
 
         Assert.Equal(
-            "http://tenant.wasla.local:5200/auth/reset-password?token=abc%2B%2F%3D",
-            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(dev, new TestWebHostEnvironment("Development"), "tenant.wasla.local", "abc+/="));
+            "http://tenant.app.wasla.local:5200/auth/reset-password?token=abc%2B%2F%3D",
+            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(dev, new TestWebHostEnvironment("Development"), "tenant.app.wasla.local", "abc+/="));
         Assert.Equal(
-            "https://tenant.wasla.local:5443/auth/reset-password?token=abc",
-            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(staging, new TestWebHostEnvironment("Staging"), "tenant.wasla.local", "abc"));
+            "https://tenant.app.wasla.local:5443/auth/reset-password?token=abc",
+            TenantWelcomeUrlBuilder.BuildPasswordResetUrl(staging, new TestWebHostEnvironment("Staging"), "tenant.app.wasla.local", "abc"));
         Assert.Equal(
             "https://tenant.wasla.com/auth/reset-password?token=abc",
             TenantWelcomeUrlBuilder.BuildPasswordResetUrl(production, new TestWebHostEnvironment("Production"), "tenant.wasla.com", "abc"));
@@ -220,11 +222,11 @@ public sealed class AuthControllerPasswordResetTests
     [Fact]
     public async Task LoginPost_ValidCredentialsSignsInTenantSchemeWithPersistentClaims()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var userId = Guid.NewGuid();
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
         };
         var auth = new CapturingAuthenticationService();
         var controller = CreateController(tenant: tenant, authValidation: authValidation, authenticationService: auth);
@@ -249,12 +251,12 @@ public sealed class AuthControllerPasswordResetTests
     }
 
     [Fact]
-    public async Task LoginPost_ValidCredentialsExpiresLegacyCookieBeforeFreshSignIn()
+    public async Task LoginPost_ValidCredentialsExpiresTheActiveTenantCookieBeforeFreshSignIn()
     {
-        var tenant = Tenant(Guid.NewGuid(), "tenant.wasla.local");
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
         var authValidation = new FakeAuthValidationService
         {
-            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner)
+            Result = new AuthSessionResult(tenant.Id, Guid.NewGuid(), "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
         };
         var controller = CreateController(tenant: tenant, authValidation: authValidation);
 
@@ -264,15 +266,17 @@ public sealed class AuthControllerPasswordResetTests
             Password = "Password123!"
         }, TestContext.Current.CancellationToken);
 
-        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
+        Assert.StartsWith(".Wasla.TenantAuth=;", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task Logout_ExpiresActiveAndLegacyTenantCookies()
+    public async Task Logout_ExpiresOnlyTheActiveTenantCookie()
     {
         var auth = new CapturingAuthenticationService();
         var controller = CreateController(authenticationService: auth);
@@ -283,11 +287,13 @@ public sealed class AuthControllerPasswordResetTests
         Assert.Equal("/auth/login", redirect.Url);
         Assert.Contains(AuthSchemes.Tenant, auth.SignOutSchemes);
 
-        var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
-        Assert.Contains($"{TenantAuthCookieNames.Active}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains($"{TenantAuthCookieNames.LegacyOrderHub}=", setCookieHeaders, StringComparison.Ordinal);
-        Assert.Contains("expires=", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/", setCookieHeaders, StringComparison.OrdinalIgnoreCase);
+        var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
+        Assert.StartsWith(".Wasla.TenantAuth=;", setCookie, StringComparison.Ordinal);
+        Assert.Contains("expires=", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", setCookie, StringComparison.OrdinalIgnoreCase);
     }
 
     private static AuthController CreateController(
@@ -299,7 +305,7 @@ public sealed class AuthControllerPasswordResetTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
-        httpContext.Request.Host = new HostString("tenant.wasla.local", 443);
+        httpContext.Request.Host = new HostString("tenant.app.wasla.local", 443);
         if (authValidation is not null || authenticationService is not null)
         {
             httpContext.RequestServices = new ServiceCollection()
@@ -308,10 +314,12 @@ public sealed class AuthControllerPasswordResetTests
         }
 
         var controller = new AuthController(
-            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.wasla.local")),
+            new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
+            new NoopLoginRecorder(),
             new FakeSignupCompletionTokenService(),
             service ?? new FakeTenantPasswordResetService(),
+            new DashboardLandingPages(),
             new TestWebHostEnvironment(environmentName),
             new FakeStringLocalizer());
 
@@ -379,11 +387,19 @@ public sealed class AuthControllerPasswordResetTests
         }
     }
 
+    private sealed class NoopLoginRecorder : ITenantLoginRecorder
+    {
+        public Task RecordSuccessfulLoginAsync(Guid tenantId, Guid userId, CancellationToken ct) => Task.CompletedTask;
+    }
+
     private sealed class FakeAuthValidationService : IAuthValidationService
     {
         public AuthSessionResult? Result { get; set; }
 
         public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
+            Task.FromResult(Result);
+
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
             Task.FromResult(Result);
     }
 
@@ -435,9 +451,6 @@ public sealed class AuthControllerPasswordResetTests
     {
         private static readonly Dictionary<string, string> Values = new(StringComparer.Ordinal)
         {
-            ["Auth.ForgotPassword.UserNotFound"] = "No user for this restaurant was found with this email address.",
-            ["Auth.ForgotPassword.UserInactive"] = "This user account is not active. Contact your restaurant administrator.",
-            ["Auth.ForgotPassword.EmailDeliveryFailed"] = "The password reset email could not be sent right now. Please try again later.",
             ["Auth.ResetPassword.Updated"] = "Your password has been updated.",
             ["Auth.ResetPassword.InvalidOrExpired"] = "The password reset link is invalid or has expired.",
             ["Validation.PasswordMinLength"] = "Password must be at least 8 characters."

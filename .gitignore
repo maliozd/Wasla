@@ -356,7 +356,7 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
-# OrderHub local build verification output (alternate dotnet build -o path)
+# Wasla local build verification output (alternate dotnet build -o path)
 .build-verify/
 .build-out/
 
@@ -367,10 +367,10 @@ src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/*.zip
 !scripts/release/
 !scripts/release/**
 
-# OrderHub local HTTPS certificates (mkcert / setup-local-https.ps1)
+# Wasla local HTTPS certificates (mkcert / setup-local-https.ps1)
 .certs/
 
-# OrderHub Print Bridge local overrides (never commit secrets)
+# Wasla local appsettings overrides (never commit secrets)
 appsettings.Local.json
 **/appsettings.Local.json
 
@@ -407,3 +407,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Linux deployment scripts and name-only environment examples (WAS-76); real environment files stay ignored.
+!deploy/linux/bin/
+!deploy/linux/env/*.env.example

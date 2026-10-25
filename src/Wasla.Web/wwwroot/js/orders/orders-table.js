@@ -31,14 +31,14 @@
     );
   }
 
-  /** Default live: page 1, receivedAt desc, and date range is "today" (incl. empty URL: server uses today). */
+  /** Default live: page 1, orderedAt (order time, WAS-125) desc, and date range is "today" (incl. empty URL: server uses today). */
   function isDefaultLiveOrdersView() {
     if (isLiveDisplayPage()) return true;
     const p = new URLSearchParams(global.location.search);
-    const sortBy = (p.get("sortBy") || p.get("sort") || "receivedAt").toLowerCase();
+    const sortBy = (p.get("sortBy") || p.get("sort") || "orderedAt").toLowerCase();
     const sortDirection = (p.get("sortDirection") || p.get("dir") || "desc").toLowerCase();
     const page = (p.get("page") || "1").trim();
-    if (page !== "1" || sortBy !== "receivedat" || sortDirection !== "desc") return false;
+    if (page !== "1" || sortBy !== "orderedat" || sortDirection !== "desc") return false;
 
     const s = p.get("startDate");
     const e = p.get("endDate");

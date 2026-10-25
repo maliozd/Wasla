@@ -8,8 +8,9 @@
   "use strict";
 
   // The whole user list is rendered on the page (no pagination), so sorting is client-side and stable.
-  // Keys: name (display name, else email), role (permission level: Owner first), created (date added).
-  var FIRST_DIRECTION = { name: "asc", role: "asc", created: "desc" };
+  // Keys: name (display name, else email), role (permission level: Owner first), created (date added),
+  // last-login (stored UTC login time; users who never logged in stay last in both directions).
+  var FIRST_DIRECTION = { name: "asc", role: "asc", created: "desc", "last-login": "desc" };
 
   function fold(value) {
     return String(value || "")
@@ -25,16 +26,23 @@
     return function (other) {
       if (key === "role") return Number(row.role) - Number(other.role);
       if (key === "created") return String(row.created).localeCompare(String(other.created));
+      if (key === "last-login") {
+        // Same-format ISO 8601 UTC values ("O", ending in "Z") order chronologically as plain strings.
+        var mine = String(row.lastLogin);
+        var theirs = String(other.lastLogin);
+        return mine < theirs ? -1 : mine > theirs ? 1 : 0;
+      }
       return collator.compare(row.name, other.name);
     };
   }
 
   /**
-   * Compares two rows ({ name, role, created, email, index }) by key and direction. Ties fall back to
-   * the email (unique per user) and then the rendered position, so the order never depends on chance.
+   * Compares two rows ({ name, role, created, lastLogin, email, index }) by key and direction. Ties fall
+   * back to the email (unique per user) and then the rendered position, so the order never depends on chance.
    */
   function compareRows(a, b, key, direction, collator) {
     var c = collator || new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+    if (key === "last-login" && !a.lastLogin !== !b.lastLogin) return a.lastLogin ? -1 : 1;
     var result = primary(a, key, c)(b);
     if (direction === "desc") result = -result;
     if (result !== 0) return result;
@@ -69,6 +77,7 @@
         name: row.getAttribute("data-sort-name") || "",
         role: row.getAttribute("data-sort-role") || "0",
         created: row.getAttribute("data-sort-created") || "",
+        lastLogin: row.getAttribute("data-sort-last-login") || "",
         email: row.getAttribute("data-sort-email") || "",
         index: index
       };

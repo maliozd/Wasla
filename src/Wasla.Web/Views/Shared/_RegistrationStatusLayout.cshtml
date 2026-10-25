@@ -21,6 +21,10 @@
     }
 </head>
 <body class="wasla-landing">
+    @* Logo only, not a link: on a tenant host "/" is not the central Wasla homepage. *@
+    <header class="pt-4 pt-md-5">
+        @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--status" })
+    </header>
     <main>
         @RenderBody()
     </main>

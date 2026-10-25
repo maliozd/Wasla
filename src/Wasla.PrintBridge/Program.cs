@@ -54,8 +54,14 @@ internal static class Program
         var services = PrintBridgeAppServices.Build();
 
         // Register/repair the per-user protocol handler on each launch (no admin rights required).
+        // An isolated Debug instance (WASLA_PRINTBRIDGE_DATA_ROOT) must not take over the real install's
+        // protocol handler or setup pipe.
         var startupLogger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Startup");
-        PrintBridgeProtocolRegistrar.RegisterOrRepair(startupLogger);
+        var isolated = PrintBridgePaths.IsIsolatedDevelopmentRoot;
+        if (isolated)
+            startupLogger.LogWarning("Isolated development data root in use; protocol handler and setup IPC are disabled.");
+        else
+            PrintBridgeProtocolRegistrar.RegisterOrRepair(startupLogger);
 
         var context = new TrayApplicationContext(services);
 
@@ -63,7 +69,8 @@ internal static class Program
         using var channel = new SetupInstanceChannel(
             services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.SetupIpc"));
         channel.UriReceived += uri => context.HandleSetupUri(uri);
-        channel.StartListening();
+        if (!isolated)
+            channel.StartListening();
 
         // Process a setup URI supplied on this launch once the message loop is running.
         if (!string.IsNullOrWhiteSpace(setupUri))

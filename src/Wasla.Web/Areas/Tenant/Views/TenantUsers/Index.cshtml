@@ -113,7 +113,12 @@
                                     <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
                                 </button>
                             </th>
-                            <th class="wasla-col--secondary" scope="col">@L["TenantUsers.LastLogin"]</th>
+                            <th scope="col" class="wasla-table__sortable wasla-col--secondary">
+                                <button type="button" class="wasla-table__sort" data-users-sort="last-login">
+                                    <span>@L["TenantUsers.LastLogin"]</span>
+                                    <i class="bi bi-arrow-down-up wasla-table__sort-icon" aria-hidden="true"></i>
+                                </button>
+                            </th>
                             <th scope="col">@L["TenantUsers.Actions"]</th>
                         </tr>
                     </thead>
@@ -129,6 +134,7 @@
                                 data-sort-name="@(string.IsNullOrWhiteSpace(user.FullName) ? user.Email : user.FullName)"
                                 data-sort-role="@((int)user.Role)"
                                 data-sort-created="@user.CreatedAt.ToString("O", CultureInfo.InvariantCulture)"
+                                data-sort-last-login="@(user.LastLoginAt is { } lastLoginAt ? UtcTimestampPresentation.ToIso(lastLoginAt) : string.Empty)"
                                 data-sort-email="@user.Email"
                                 data-role="@user.Role.ToString()"
                                 data-status="@(user.IsActive ? "active" : "inactive")"
@@ -160,7 +166,7 @@
                                 </td>
                                 <td class="wasla-nowrap wasla-col--secondary" data-label="@L["TenantUsers.LastLogin"]">
                                     <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.LastLogin"]</span>
-                                    @(user.LastLoginAt?.ToString("g") ?? L["TenantUsers.LastLoginNotRecorded"].Value)
+                                    <partial name="_LastLogin" model="user.LastLoginAt" />
                                 </td>
                                 <td data-label="@L["TenantUsers.Actions"]">
                                     <span class="wasla-table__cell-label" aria-hidden="true">@L["TenantUsers.Actions"]</span>

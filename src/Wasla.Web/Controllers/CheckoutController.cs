@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Onboarding.Checkout;
@@ -9,6 +10,7 @@ using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
+using Wasla.Infrastructure.Security.RateLimiting;
 using Wasla.Web.Models.Checkout;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
@@ -17,13 +19,13 @@ namespace Wasla.Web.Controllers;
 
 [AllowAnonymous]
 [Route("checkout")]
-public sealed class CheckoutController : Controller
+public sealed class CheckoutController : Controller, IAuthenticationRateLimitResponder
 {
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
-    private readonly CustomerOnboardingOptions _onboardingOptions;
+    private readonly TenantOnboardingOptions _onboardingOptions;
     private readonly SignupRegistrationOwnership _ownership;
 
     public CheckoutController(
@@ -31,7 +33,7 @@ public sealed class CheckoutController : Controller
         IWaslaPlanCatalog planCatalog,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
-        IOptions<CustomerOnboardingOptions> onboardingOptions,
+        IOptions<TenantOnboardingOptions> onboardingOptions,
         IDataProtectionProvider dataProtection)
     {
         _pendingRegistrations = pendingRegistrations;
@@ -61,7 +63,10 @@ public sealed class CheckoutController : Controller
         return View(MapReviewViewModel(details));
     }
 
+    // Every POST that changes a registration is limited per client network before it reads or writes it
+    // (AuthenticationRateLimiting:SignupCheckout).
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupCheckout)]
     [HttpPost("simulate-success/{id:guid}")]
     public async Task<IActionResult> SimulateSuccess(Guid id, CancellationToken ct)
     {
@@ -73,6 +78,7 @@ public sealed class CheckoutController : Controller
     }
 
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupCheckout)]
     [HttpPost("simulate-failed/{id:guid}")]
     public async Task<IActionResult> SimulateFailed(Guid id, CancellationToken ct)
     {
@@ -85,6 +91,7 @@ public sealed class CheckoutController : Controller
 
     // Cancelling releases the slug, so without ownership proof it must not change anything.
     [ValidateAntiForgeryToken]
+    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupCheckout)]
     [HttpPost("cancel/{id:guid}")]
     public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
     {
@@ -134,7 +141,11 @@ public sealed class CheckoutController : Controller
             return RedirectToAction(nameof(Review), new { id });
 
         // Public page: it carries only the ID and shows generic text.
-        return View(new CheckoutResultViewModel { RegistrationId = details.Id });
+        return View(new CheckoutResultViewModel
+        {
+            RegistrationId = details.Id,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable
+        });
     }
 
     [HttpGet("cancelled/{id:guid}")]
@@ -151,9 +162,25 @@ public sealed class CheckoutController : Controller
         return View(new CheckoutResultViewModel { RegistrationId = details.Id });
     }
 
-    // The payment simulator is a local-development tool. Anywhere else it would let an anonymous
-    // request mark a registration as paid, which makes it eligible for provisioning.
-    private bool IsPaymentSimulatorAvailable => _environment.IsDevelopment();
+    /// <summary>
+    /// A rate-limited registration change: a short localized page with a link back to the summary, status 429.
+    /// Nothing about the registration is read, so the page is the same whoever asks.
+    /// </summary>
+    Task<IActionResult> IAuthenticationRateLimitResponder.RateLimitedAsync(ActionExecutingContext context)
+    {
+        var id = context.ActionArguments.TryGetValue("id", out var value) && value is Guid registrationId
+            ? registrationId
+            : Guid.Empty;
+        var result = View("TooManyRequests", new CheckoutResultViewModel
+        {
+            RegistrationId = id,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable
+        });
+        result.StatusCode = StatusCodes.Status429TooManyRequests;
+        return Task.FromResult<IActionResult>(result);
+    }
+
+    private bool IsPaymentSimulatorAvailable => CheckoutPaymentSimulator.IsAvailable(_environment);
 
     private bool IsOwner(Guid registrationId) => _ownership.IsOwner(Request, registrationId);
 
@@ -198,7 +225,9 @@ public sealed class CheckoutController : Controller
 
         string? statusNoticeKey = details.Status switch
         {
-            PendingRegistrationStatus.PaymentSucceeded => "Checkout.StatusAlreadyPaid",
+            PendingRegistrationStatus.PaymentSucceeded => IsPaymentSimulatorAvailable
+                ? "Checkout.StatusAlreadyPaid"
+                : "Checkout.StatusPaymentReceived",
             PendingRegistrationStatus.Cancelled => "Checkout.StatusCancelled",
             PendingRegistrationStatus.Provisioned => "Checkout.StatusProvisioned",
             PendingRegistrationStatus.Expired => "Checkout.StatusExpired",
@@ -219,10 +248,10 @@ public sealed class CheckoutController : Controller
             OwnerEmail = details.OwnerEmail,
             OwnerPhone = details.OwnerPhone,
             AddressSummary = BuildAddressSummary(details),
-            MonthlyPriceTry = details.MonthlyPriceTry,
-            TotalPriceTry = details.TotalPriceTry,
+            Price = details.Price,
             IsYearlyBilling = details.IsYearlyBilling,
             Status = details.Status,
+            IsPaymentSimulatorAvailable = IsPaymentSimulatorAvailable,
             CanSimulatePayment = canSimulate,
             CanCancel = canCancel,
             StatusNoticeKey = statusNoticeKey

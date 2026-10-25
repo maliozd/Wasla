@@ -20,6 +20,19 @@
     if (btn) btn.addEventListener("click", closeLiveDisplay);
   }
 
+  // The settings menu and order training open the shared notification settings modal. Delegated, so a control
+  // the page renders later (the training panel's step note) needs no binding of its own.
+  function initNotificationSettingsTriggers() {
+    document.addEventListener("click", function (event) {
+      const trigger = event.target && event.target.closest
+        ? event.target.closest("[data-notification-settings-open]")
+        : null;
+      if (!trigger || !O.notificationSettings || typeof O.notificationSettings.show !== "function") return;
+      event.preventDefault();
+      O.notificationSettings.show(trigger);
+    });
+  }
+
   function seedLiveScreenSummary() {
     const host = document.getElementById("ordersLiveScreenHost");
     if (!host) return;
@@ -42,6 +55,7 @@
   async function initLiveDisplayPage() {
     document.body.classList.add("wasla-orders-view-kitchen");
     initCloseButton();
+    initNotificationSettingsTriggers();
     seedLiveScreenSummary();
     if (O.audio && typeof O.audio.initAudioUnlock === "function") {
       O.audio.initAudioUnlock();

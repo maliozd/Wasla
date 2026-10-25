@@ -4,7 +4,7 @@
 
 This document lists what must be configured to run Wasla in a non-local environment: processes, databases, secrets, domains, provider mode, Print Bridge, logging, and health endpoints.
 
-It corrects stale names from older checklists (e.g. treating `BaseUrl` as the Print Bridge setup field, or OrderHub as the current product name). It does **not** embed real secrets or placeholder passwords.
+It corrects stale names from older checklists (e.g. treating `BaseUrl` as the Print Bridge setup field, or the former product name as the current one). It does **not** embed real secrets or placeholder passwords.
 
 Older matrix: `docs/deployment-config.md` (superseded for day-to-day ops; not deleted).
 
@@ -20,11 +20,17 @@ Older matrix: `docs/deployment-config.md` (superseded for day-to-day ops; not de
 
 Web must **not** start/stop Worker OS processes, Windows services, Docker containers, or systemd units.
 
+### Web content root and web root
+
+Start `Wasla.Web` with its content root set to the folder that contains its `wwwroot`: the publish folder for a published build (run it from that folder or pass `--contentRoot`), the project folder for `dotnet run --project src/Wasla.Web`. ASP.NET Core leaves `WebRootPath` null when the content root has no `wwwroot`, and then serves no CSS, scripts or notification sounds, except in Development, where the static web assets manifest still maps the project's `wwwroot` (for example when the binary is started from `bin/`). Notification settings read the sound list through the same web root file provider and fall back to the default `/sounds/<name>.mp3` entries instead of failing (WAS-122); the files themselves are only served when the web root is correct.
+
 ## Databases
 
 - **CentralDb**: tenant registry, memberships, signup/provisioning, central admins, Print Bridge device registry. Connection: `ConnectionStrings:CentralDb` / `ConnectionStrings__CentralDb`.
 - **Per-tenant DBs**: operational data for one restaurant location. Connection strings stored encrypted on the tenant row; decrypted with `ENCRYPTION_MASTER_KEY`. Several locations are several tenants. See [../architecture/tenancy.md](../architecture/tenancy.md).
-- CLI provisioning / migrations use `CustomerDb:ServerInstance` (`CustomerDb__ServerInstance`) when creating or migrating tenant databases.
+- CLI provisioning and Central Admin provisioning use `TenantDb:ServerInstance` (`TenantDb__ServerInstance`) when creating tenant databases.
+- Tenant databases are created only on an explicitly configured SQL Server (WAS-93): `--sql-server`, then `TenantDb:ServerInstance` (WAS-136). No other key is read. There is no built-in default and the committed base `appsettings.json` files name none (LocalDB is set only in the Development files), so a deployment that sets neither cannot provision: Central Admin and `provision-signup-request` report "No SQL Server instance is configured" before any database work. Before WAS-93 the CLI's base `appsettings.json`, loaded after environment variables, replaced the environment's tenant server with LocalDB.
+- The CLI's environment variables override its JSON files, and its base `appsettings.json` no longer names a CentralDb: set `ConnectionStrings__CentralDb` for every CLI run outside Development ([cli.md](cli.md#configuration-sources)). Before WAS-93 the CLI's base file supplied LocalDB and also overrode `ConnectionStrings__CentralDb` from the environment.
 
 Apply schema with CLI — see [migrations.md](migrations.md). Provisioning applies tenant migrations inside provisioning; not via middleware.
 
@@ -34,13 +40,24 @@ Web, Worker and Api share one EF model. Tenant migrations run only through the C
 
 For every release that contains a CentralDb or TenantDb migration:
 
-1. Stop, or keep on the previous version, every Web, Worker and Api instance.
-2. Run `migrate-central`, then `migrate-all-customers`.
-3. If either command exits non-zero, **stop the rollout**. `migrate-all-customers` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun until it exits `0`.
-4. Confirm with `migration-status` that every active tenant shows `Pending: 0`.
-5. Only then deploy and start the new Web, Worker and Api versions.
+1. Back up CentralDb and every tenant database; stop provisioning new tenants during the migration window. Stop, or keep on the previous version where that version is schema-compatible, every Web, Worker and Api instance. Some releases below require stopping the previous version too.
+2. Run `scripts/release/migrate-before-start.sh` with **this release's published CLI DLL** and the command that starts the new Web, Worker and Api versions, separated by `--`. Use the same environment and migration credentials intended for this release. The script runs `migrate-central`, then unrestricted `migrate-all-tenants`, then `migration-status --require-current`; it executes the start command only if all three exit `0`.
+3. If any step exits non-zero, **stop the rollout**. `migrate-all-tenants` continues past a failed tenant and then exits `1`; fix the failed tenants and rerun the gate until it succeeds. A failed start command also returns non-zero. Do not manually start the new version after a failed gate.
+4. Record the CLI's per-database results and the version being deployed. If schema changes are incompatible with the previous binaries, keep them stopped during repair. Do not assume that rolling back application binaries rolls back a partly applied migration; use the release-specific recovery plan and verified backup.
 
-Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release procedure must enforce it.
+The gate is an entry point for a deployment operator or the future controlled CD pipeline (WAS-75); it does not install services or deploy binaries. On the Linux VDS, `deploy/linux/bin/wasla-install-release` runs this gate with the release's own CLI before it switches `/opt/wasla/current` and starts the services, and every unit runs `migration-status --require-current` again before each start ([linux-vds-runbook.md](linux-vds-runbook.md)). The caller must route *every* new-version start through this script; bypassing it defeats the gate. Provisioning stays paused between the final status check and the start so a newly added tenant cannot escape verification. If there are no schema changes, a release still may use the gate; all three commands are idempotent.
+
+Never start the new Web or Worker against partially migrated tenants. The application does not check this itself; the release entry point must enforce it.
+
+Example: `AddAppUserLastLoginAt` (WAS-46) adds the nullable `AppUsers.LastLoginAt` column. Tenant login reads only the columns it needs, and a failed last-login write is logged without blocking the login, so a tenant that missed the migration can still sign in. That is a safety margin, not a reason to change the order: the Users page, user management and password reset read full `AppUsers` rows and fail on that tenant until `migrate-all-tenants` has run.
+
+Example without that margin: `AddAppUserSecurityStamp` (WAS-89) adds `AppUsers.SecurityStamp` and gives every existing user a new value. Tenant login and the check every tenant request makes against its session read that column, so on a tenant that missed the migration no one can sign in and every signed-in request fails closed with the error page until `migrate-all-tenants` has run. Sessions issued before the release carry no stamp, so every tenant user signs in again once. See [../architecture/authentication.md](../architecture/authentication.md#tenant-session-revalidation).
+
+For this release, stop the previous Web version before `migrate-all-tenants` runs (do not use the "keep on the previous version" option of step 1 for Web), and never run it next to the new Web. The previous version changes passwords and active states without replacing the stamp, so a password it changes, or a user it deactivates and reactivates, keeps that user's sessions on the new Web valid. A user it creates after the migration gets the column's all-zero default stamp, which never opens a session, so that user cannot sign in until their password is reset or changed on the new version.
+
+Example: `AddOrderItemSequence` (WAS-44) adds `OrderItems.Sequence` and `OrderItemOptions.Sequence` (`int`, default 0) and backfills nothing. Order sync, order details, the Orders list, the Live Screen snapshot, receipt creation and reprints all use these columns. On a tenant that missed the migration, those fail until `migrate-all-tenants` has run. Existing rows keep 0 and are shown in the fallback order (stored time, then Id) described in [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting). Order sync compares item order, so on its first poll after the release, every order the provider still returns whose fallback order differs from the provider's is updated once. That is one write and one live notification per order, which stores its positions; no receipt is created. The column has a database default, so a previous build that does not know it can still write items to a migrated tenant. That build compares items without their order and writes positions as 0, so do not run it next to the new Worker.
+
+Example in CentralDb: `AddCentralAdminSecurityStamp` (WAS-37) adds `CentralAdminUsers.SecurityStamp` and gives every existing central admin a new value. Admin login and the check every Central Admin request makes read that column, so a new Web started before `migrate-central` cannot sign in central admins, and every signed-in Admin request fails closed with the error page. Central Admin cookies issued before the release carry no stamp, so every central admin signs in again once. After `migrate-central`, reset central admin passwords only with the new CLI: an older CLI changes the hash without replacing the stamp, so the admin's existing sessions would survive that reset. See [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation).
 
 ## Required secrets and keys
 
@@ -49,39 +66,88 @@ Never start the new Web or Worker against partially migrated tenants. The applic
 | `ENCRYPTION_MASTER_KEY` | Web, Worker, API, most CLI | Base64 32-byte key. Required at startup for secret decrypt. Never commit. |
 | Data Protection key folder | Web, API | Persist ASP.NET Data Protection keys across restarts/instances. |
 
-### Data Protection path debt (API)
+### Data Protection key folder (API)
 
-Committed `src/Wasla.Api/appsettings.json` still contains:
-
-`DataProtection:KeyPath` = `C:\OrderHub-keys`
-
-That path is **current legacy configuration debt**. Prefer overriding with `DataProtection__KeyPath` to a Wasla-named folder in real deployments. If the configured value is empty, API `Program.cs` defaults to `C:\Wasla-keys`.
-
-Do not change the committed path as part of documentation-only work.
+No committed configuration sets `DataProtection:KeyPath` for the API. When it is unset the API keeps its keys in `C:\Wasla-keys` on Windows and uses the framework's default key storage on other operating systems (`src/Wasla.Api/Security/ApiDataProtection.cs`, WAS-141). Set `DataProtection__KeyPath` explicitly in real deployments.
 
 Web persists keys only when `DataProtection:KeyPath` is set.
 
 ### Auth nuance for deployers
 
-API uses cookie authentication with its own scheme registration. Do **not** assume a Web login session cookie automatically authorizes API requests across hosts. Plan API access separately from Web sessions.
+API registers the same tenant cookie scheme as Web. Do **not** assume a Web login session cookie automatically authorizes API requests across hosts: the cookie is host-only, and by default the two processes have different Data Protection keys. Plan API access separately from Web sessions.
+
+Sharing the key ring, by pointing both `DataProtection__KeyPath` values at one folder, is allowed. When the keys are shared, any Web tenant cookie is readable by the API. Since WAS-94 the API revalidates such a session exactly as Web does (current user, active state, security stamp, role and the tenant from the host) and applies the same role policies; see [../architecture/authentication.md](../architecture/authentication.md#when-a-web-session-reaches-the-api).
+
+Two consequences for a release or a rollback:
+
+- **Never run a pre-WAS-94 API with keys shared with Web.** That API accepts a deactivated, demoted or password-reset user's old Web cookie and has no role checks on its writes. Rolling the API back to such a build restores that exposure. If the API must be rolled back, give it its own key folder first.
+- **The API now reads `AppUsers.SecurityStamp` on every cookie-authenticated request.** Against a tenant database that misses the `AddAppUserSecurityStamp` migration, those requests fail closed with 503. Requests without a tenant cookie, and Print Bridge device requests, are not affected. The [release order](#release-order-migrate-every-database-first) already covers this.
 
 Central admins are created with CLI `add-central-admin`, not `CentralAdmin__Email` / `CentralAdmin__PasswordHash`.
 
 ## Domains and HTTPS
 
-- Public / marketing host and `{slug}.<MarketingBaseDomain>` tenant hosts.
-- Config section for onboarding remains `OrderHub:CustomerOnboarding` (legacy section name debt): `MarketingBaseDomain`, `ServerInstance`, `SqlAuth`, optional `TrialDays`.
+Wasla Orders uses three host roles (WAS-66). The application implements them. DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS for the single-VDS deployment are in [linux-vds-runbook.md](linux-vds-runbook.md).
+
+| Role | Host | Setting |
+|------|------|---------|
+| Marketing site, signup, checkout | `wasla.tr` (and `www.wasla.tr`, which the proxy redirects permanently to the apex) | `Wasla__TenantOnboarding__MarketingBaseDomain` = `wasla.tr` |
+| Application entry (asks for the tenant address) | `app.wasla.tr` | `Wasla__TenantOnboarding__ApplicationBaseDomain` = `app.wasla.tr` |
+| Tenant | `{slug}.app.wasla.tr` | Built from `ApplicationBaseDomain` at signup and stored as the tenant's `PrimaryDomain` |
+
+- Set both domains for Web and Api, as bare host names (no scheme, port or path). Outside Development they refuse to start when either is not set or is a Development-only name (`localhost`, `.local`, `.localhost`, `.test`, `.example`, `.invalid`, `.internal`, `.lan`, `.home.arpa`); in every environment when either is malformed, when they are equal, when the application domain is the `www.` host, or when the marketing domain is under the application domain. The error names the key and the environment variable. The committed base `appsettings.json` names no domain; only `appsettings.Development.json` sets `wasla.local` and `app.wasla.local`. Wasla.Worker and the CLI do not need them. The full contract and the host and path policy: [../architecture/tenancy.md](../architecture/tenancy.md#host-contract-was-66).
+- Health probes (`/health/live`, `/health/ready`) of Web and Api answer on any host name, so a probe may use the IP, `localhost` or the public host. Everything else treats `localhost` and IP addresses as invalid hosts outside Development: Central Admin (`/admin`) and the Print Bridge API answer only on the marketing, application and tenant hosts, signup and checkout only on the marketing host, and the proxy must therefore pass the public `Host` header for every non-probe request.
+- Wasla.Api resolves tenants under the same contract: only `{slug}.app.wasla.tr` is a tenant; any other host gets 404 "Tenant not found" without a CentralDb lookup.
+- The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
+- Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`, and `PublicSignupEnabled` (default `true`), which production sets to `false` until billing exists so that `/signup` says online registration is not open yet and creates nothing ([../architecture/tenancy.md](../architecture/tenancy.md#signup-and-checkout-access)). The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+- The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
+- Cookies stay host-only: the tenant session, Central Admin session, antiforgery and signup-ownership cookies set no `Domain`, so a tenant's session is never sent to another tenant, to `app.wasla.tr` or to `wasla.tr`.
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
 - Print Bridge and browsers need a trusted certificate chain on real domains.
+
+**Expected DNS and TLS shape:**
+
+| Record | Points to |
+|--------|-----------|
+| `wasla.tr` | The Web server (marketing) |
+| `www.wasla.tr` | The same server, redirected permanently to `wasla.tr` by the proxy |
+| `app.wasla.tr` | The Web server (application entry) |
+| `*.app.wasla.tr` | The Web server (tenant hosts) |
+
+The tenant hosts need a wildcard certificate for `*.app.wasla.tr` in addition to `wasla.tr`, `www.wasla.tr` and `app.wasla.tr`; a wildcard covers one label only, which matches the tenant host contract. Obtaining and renewing it is part of the deployment. Until the DNS provider supports automated DNS-01 validation, the pilot uses one HTTP-01 certificate that names each tenant host; every new tenant host is added to it ([linux-vds-runbook.md](linux-vds-runbook.md#tls-certificate)).
 
 Useful URL overrides (env `__` form):
 
 | Variable | Role |
 |----------|------|
-| `OrderHub__ApiBaseUrl` | Public API URL used when generating Print Bridge setup helpers |
-| `OrderHub__CustomerWebBaseUrl` / `OrderHub__PublicWebBaseUrl` | Optional fixed public Web URLs behind proxies |
+| `Wasla__ApiBaseUrl` | Public API URL for Print Bridge setup helpers (committed as `http://localhost:59451`; no current page reads it) |
+| `Wasla__TenantWebBaseUrl`, else `Wasla__PublicWebBaseUrl` | Optional fixed Web URL that the Print Bridge setup page hands out as `ServerUrl` behind proxies; without either it uses the request's scheme and host |
 
 Do not leave production pointing at `localhost` or LocalDB.
+
+## Reverse proxy and client address
+
+The Nginx configuration of the single-VDS deployment is `deploy/linux/nginx/wasla-https.conf`. Web and Api take the client address from the TCP connection unless the proxies in front of them are listed under `TrustedProxies` (`src/Wasla.Infrastructure/Security/TrustedProxies.cs`, WAS-90). Login rate limits are partitioned by that address ([../architecture/authentication.md](../architecture/authentication.md#credential-rate-limiting)), so this setting decides whether clients are told apart.
+
+| Key | Meaning |
+|-----|---------|
+| `TrustedProxies:KnownProxies` | Proxy addresses, for example `127.0.0.1` (and `::1` if it connects over IPv6) for a proxy on the same server |
+| `TrustedProxies:KnownNetworks` | Proxy networks in CIDR form, for example `10.0.0.0/24` |
+| `TrustedProxies:ForwardLimit` | Proxy hops to read from the right of `X-Forwarded-For`; default `1` (one proxy) |
+
+With no entries the forwarded-headers middleware is not added at all: `X-Forwarded-For` and `X-Forwarded-Proto` are ignored, and a client cannot choose its address by sending them. With entries, both headers are applied only when the connecting peer is one of them. The configured list replaces ASP.NET Core's loopback defaults. `X-Forwarded-Host` is never applied: tenants are resolved from the `Host` header, which the proxy must pass through unchanged.
+
+The proxy must append the address it saw, for example nginx `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` (or overwrite the header with `$remote_addr`), and send `X-Forwarded-Proto` when it terminates TLS. Otherwise HTTPS redirection and `Request.IsHttps` checks (for example the Print Bridge setup exchange) see plain HTTP. With `ForwardLimit` 1 only the rightmost entry counts, so whatever a client put in front of it is ignored.
+
+The process refuses to start when:
+
+- an entry does not parse, is an unspecified address (`0.0.0.0`, `::`), or is a `/0` network (every address);
+- `ForwardLimit` is outside 1–10;
+- `ASPNETCORE_FORWARDEDHEADERS_ENABLED` is `true`. That switch makes ASP.NET Core trust forwarded headers from every peer. List the proxies instead.
+
+At startup each process logs either "No trusted proxies configured…" or the number of trusted proxies and networks.
+
+If a proxy is deployed but not listed, every request appears to come from the proxy. All clients of a tenant then share one login allowance, which can lock legitimate users out for a window. Configure `TrustedProxies` in the same change that puts a proxy in front of Web or Api; the single-VDS deployment lists its local Nginx as `127.0.0.1` ([linux-vds-runbook.md](linux-vds-runbook.md)). Rate-limit counters are kept per process. Several instances behind a load balancer each count separately, and none of this is a distributed limit.
 
 ## Provider mode
 
@@ -102,11 +168,62 @@ Details: [../integrations/food-platforms.md](../integrations/food-platforms.md).
 
 ## Print Bridge
 
-Desktop clients use **`ServerUrl`** + device token. Config section may still be named `OrderHub` (legacy). ProgramData: `C:\ProgramData\Wasla\PrintBridge`.
+Desktop clients use **`ServerUrl`** + device token in the `Wasla` settings section. Devices set up before WAS-135 must be paired again; there is no migration ([../integrations/print-bridge.md](../integrations/print-bridge.md#settings-sections)). ProgramData: `C:\ProgramData\Wasla\PrintBridge`.
 
-**Download package.** The tenant setup page (including guided setup's first install) offers the portable Windows ZIP through `GET /print-bridge/download/package` (same origin, no query values, `CanManageDeviceSecurity`). The ZIP is not in the repository: build it with `scripts/release/package-print-bridge.ps1` and either set `OrderHub:PrintBridgeDownload:PackagePath` to the file or place it at `wwwroot/downloads/wasla-print-bridge/` under the name in `OrderHub:PrintBridgeDownload:PackageFileName` (default `Wasla.PrintBridge-win-x64.zip`). Without the file the page shows a "coming soon" state and no download link. The package is portable (extract and run `Wasla.PrintBridge.exe`; the first run registers the `wasla-printbridge://` link) and needs the .NET 8 Desktop Runtime unless built with `-SelfContained`.
+**Download package.** The tenant setup page (including guided setup's first install) offers the portable Windows ZIP through `GET /print-bridge/download/package` (same origin, no query values, `CanManageDeviceSecurity`). The ZIP is not in the repository: build it with `scripts/release/package-print-bridge.ps1` and either set `Wasla:PrintBridgeDownload:PackagePath` to the file or place it at `wwwroot/downloads/wasla-print-bridge/` under the name in `Wasla:PrintBridgeDownload:PackageFileName` (default `Wasla.PrintBridge-win-x64.zip`). A relative `PackagePath` is resolved against Web's content root. The default location needs a web root: start Web with its content root set to the folder that contains `wwwroot` (the publish folder, or the project folder for `dotnet run`). Without one, ASP.NET Core leaves `WebRootPath` null and the default package counts as missing (WAS-128); a configured `PackagePath` still works. Without the file the page shows a "coming soon" state and no download link anywhere on it, and the download route returns 404. The package is portable (extract and run `Wasla.PrintBridge.exe`; the first run registers the `wasla-printbridge://` link) and needs the .NET 8 Desktop Runtime unless built with `-SelfContained`. The package contains the WebView2 desktop app, the only Print Bridge window (`shell-ui/`, WebView2 SDK assemblies and loaders). It needs the Microsoft Edge WebView2 Runtime, which the package does not install (WAS-55); without it the tray shows a notice asking to install the runtime and keeps printing.
+
+**Moving a device to another server.** Open the new setup link when no receipt is being printed. While a print job is still being completed, Print Bridge refuses the link and says so. Nothing is changed and the code is not used up, so the same link works once printing has finished (WAS-58). Edit `appsettings.json` by hand only while Print Bridge is closed.
+
+**Exiting Print Bridge.** Use **Exit** in the tray menu. Without a print job in progress the process ends within about a second. With one, Exit waits up to 10 seconds for it to be printed and reported, then ends anyway; a job still unfinished at that point stays in Printing on the server and needs attention in Wasla (WAS-56, WAS-59). To confirm the exit: the tray icon is gone, Task Manager (Details) shows no `Wasla.PrintBridge.exe`, and the log ends with "Print Bridge shutdown complete; the application exits.".
 
 See [../integrations/print-bridge.md](../integrations/print-bridge.md).
+
+## Live notifications
+
+Receipt print status (WAS-23) and Live Screen order invalidation (WAS-24) reach open tenant pages through a SignalR hub in Wasla.Web (`/hubs/tenant-events`). Every Live Screen keeps one connection open while it is shown. Wasla.Worker and Wasla.Api pass their changes to Web over a loopback-only internal channel. Design and failure behavior: [../architecture/realtime.md](../architecture/realtime.md).
+
+**Reverse proxy (Nginx).** The hub is served on each tenant's own host, like every tenant page: no extra domain, CORS or certificate. The proxy must allow the WebSocket upgrade on the hub path and keep the connection open longer than the default 60 seconds of inactivity (SignalR sends a keep-alive every 15 seconds). For example, in the server block that forwards `{slug}.app.wasla.tr` to Web:
+
+```nginx
+location /hubs/ {
+    proxy_pass http://127.0.0.1:5200;   # Web's local port
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;                       # tenant resolution reads Host
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+    proxy_buffering off;                               # Server-Sent Events fallback
+}
+```
+
+The `Host` and forwarded headers are the same as for every other location ([Reverse proxy and client address](#reverse-proxy-and-client-address)). Without the upgrade headers the browser falls back to Server-Sent Events or long polling, which still work. If every transport is blocked, open detail panels fall back to reading the print status every 10 seconds. The proxy must not forward `/internal/` (Web does not serve it on its public port anyway).
+
+**Internal channel.** Set the same values for Web, Worker and Api, as environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `Realtime__Internal__Port` | A free local port, for example `5290`. Web listens on `127.0.0.1` only; do not open it in the firewall or the proxy. |
+| `Realtime__Internal__Secret` | A random secret of at least 32 printable ASCII characters without spaces, for example 32 random bytes in Base64. Store it with the other server-side secrets (on the Linux VDS, `/etc/wasla/secrets.env`); never commit it. |
+| `Realtime__Internal__TimeoutSeconds` | Optional, default 3. |
+| `Realtime__Internal__Disabled` | Only for an environment that is polling-only on purpose: `true`, with no `Port`. Set it for Web, Worker and Api. |
+
+**Startup policy (WAS-103).** Outside Development, Worker and Api refuse to start when `Realtime:Internal` is missing; the error names `Port`, `Secret` and `Disabled`. Configure the channel, or set `Realtime__Internal__Disabled=true` to run polling-only. Development keeps starting without the section (with a warning). In every environment and every process, an incomplete channel (`Port` without a secret of at least 32 characters, or `Secret` without `Port`) or an invalid one (a port outside 1–65535, a timeout outside 0.1–10, a secret with spaces or non-ASCII characters, or `Disabled=true` together with `Port`) refuses to start. Web starts without its listener (missing or disabled) and logs a warning naming the key. Errors and warnings name keys, never the secret. The full table and the reasons, including why Api follows the Worker's policy: [../architecture/realtime.md](../architecture/realtime.md#startup-policy-was-103).
+
+Without the channel nothing is pushed from Worker and Api (ingested orders, automatic approvals and receipts, Bridge reports sent to Api). A Web without its listener keeps connected Live Screens polling every 10 seconds, so new platform orders, their sound and browser notification show within 10 seconds, as before WAS-24; with the listener on, connected Live Screens poll every 30 seconds and rely on the channel. Open print panels show Worker and Api changes on their fallback reads only while disconnected, otherwise on reopen or reload. Each process checks only its own configuration: a Worker or Api whose port or secret differs from Web's starts, its sends are refused or unreachable, and connected Live Screens can then show Worker orders up to 30 seconds late. Set the same values for all three processes and check the startup logs below. To rotate the secret, change it for all three processes and restart them; notifications between the restarts are refused and logged, nothing else fails.
+
+**Session checks.** `Realtime__SessionRevalidationSeconds` (Web, default 60, 1–600) sets how often an open connection's session is checked again ([../architecture/authentication.md](../architecture/authentication.md#long-lived-live-connections)).
+
+**One Web instance.** Connections live in Web's memory. Running more than one Web instance behind a load balancer needs a SignalR backplane and sticky routing, neither of which is set up; the internal channel would also reach only one instance. Run exactly one Web. The decision, the multi-instance topology and the thresholds that should trigger it: [../architecture/realtime-scale-out.md](../architecture/realtime-scale-out.md).
+
+**Metrics.** Web, Worker and Api record the `Wasla.Realtime` meter (connections, reconnects, closures, session checks, sends and their duration, internal-channel failures and pauses). Read it on the server with `dotnet-counters`; nothing is exported ([observability.md](observability.md#live-notification-metrics)). A Web restart drops every live connection; browsers reconnect over about the next 45 seconds with random spreading and read their state once connected.
+
+**Release order.** The tenant migration `AddPrintJobStatusVersion` (WAS-23) adds `PrintJobs.StatusVersion` (bigint, existing rows 0). Receipt creation, Print Bridge reports and the order detail pages read or write it, so follow [Release order](#release-order-migrate-every-database-first): stop every Web, Worker and Api instance of the previous version (a previous Worker or Api would create jobs at version 0 and change status without raising it, which breaks the order of versions for those orders), migrate every tenant, and only then start the new Web, Worker and Api. Rolling back the application leaves the column in place and unused.
+
+The tenant migration `AddOrderChangeVersion` (WAS-24) adds `Orders.ChangeVersion` (bigint, existing rows 0). Ingestion, every order action and the Live Screen snapshot read or write it, so the same order applies: stop every previous Web, Worker and Api, migrate every tenant, then start the new versions. A previous process would change orders without raising the version or announcing them, so open Live Screens would show those changes only at their next poll, and versions would no longer count every change.
+
+At startup each process logs its channel state (category `Wasla.Realtime`). Wasla.Worker and Wasla.Api: an information line when `Realtime:Internal` is configured, a warning naming `Realtime:Internal:Disabled` when the environment is polling-only, and in Development a warning that `Realtime:Internal` is not configured. Wasla.Web: the listener's loopback address when it accepts internal notifications, otherwise a warning that `Realtime:Internal:Port` is not set or `Realtime:Internal:Disabled` is true, and that connected Live Screens keep polling every 10 seconds.
 
 ## Logging and health
 
@@ -132,18 +249,27 @@ DataProtection__KeyPath
 Platforms__ProviderMode
 Platform__TrendyolGo__BaseUrl
 Platform__Yemeksepeti__BaseUrl
-OrderHub__CustomerOnboarding__MarketingBaseDomain
-OrderHub__CustomerOnboarding__ServerInstance
-OrderHub__CustomerOnboarding__SqlAuth
-OrderHub__ApiBaseUrl
-CustomerDb__ServerInstance   # CLI
+Wasla__TenantOnboarding__MarketingBaseDomain   # Web and Api, required outside Development: wasla.tr in production
+Wasla__TenantOnboarding__ApplicationBaseDomain # Web and Api, required outside Development: app.wasla.tr; tenants are {slug}.app.wasla.tr
+Wasla__TenantOnboarding__SqlAuth
+Wasla__ApiBaseUrl
+Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy
+TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
+AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
+Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
+Wasla__TenantOnboarding__PublicSignupEnabled # Web reads it: false in production until billing exists (default true); the Linux VDS preflight requires false for every process; see tenancy.md
+TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
+Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
+Realtime__Internal__Secret                   # secret, at least 32 characters
+Realtime__Internal__Disabled                 # true only for a polling-only environment (no Port); required then outside Development
+Realtime__SessionRevalidationSeconds         # Web, optional, default 60
+TenantDb__ServerInstance                     # CLI and Web: SQL Server for new tenant databases; no default
 ```
 
 ## Known gaps
 
-- No OpenTelemetry exporter / metrics stack (see [observability.md](observability.md)).
+- No OpenTelemetry exporter or metrics stack; the `Wasla.Realtime` meter is read locally with `dotnet-counters` (see [observability.md](observability.md#live-notification-metrics)).
 - Worker has no HTTP health endpoint for orchestrators.
-- Legacy names remain in config (`OrderHub` sections, `C:\OrderHub-keys`, `migrate-customer` command names).
 
 ## Related docs
 

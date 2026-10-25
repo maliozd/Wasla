@@ -33,10 +33,23 @@ public sealed class OrderListViewModel
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public OrderStatus Status { get; set; }
+        /// <summary>When Wasla first stored the order (UTC).</summary>
         public DateTime ReceivedAtUtc { get; set; }
 
         /// <summary>Received time in Turkey local zone for table display (DB stores UTC in <see cref="ReceivedAtUtc" />).</summary>
         public DateTime ReceivedAtLocal { get; set; }
+
+        /// <summary>Operational order time (UTC, WAS-125): the provider's creation time, otherwise <see cref="ReceivedAtUtc"/>.</summary>
+        public DateTime OrderedAtUtc { get; set; }
+
+        /// <summary><see cref="OrderedAtUtc"/> in Turkey local time, for display.</summary>
+        public DateTime OrderedAtLocal { get; set; }
+
+        /// <summary>False when the provider sent no creation time and <see cref="OrderedAtUtc"/> is the import time.</summary>
+        public bool OrderedAtIsFromPlatform { get; set; }
+
+        /// <summary>Show the import time beside the order time: Wasla received the order much later than it was placed.</summary>
+        public bool ShowReceivedSeparately { get; set; }
 
         /// <summary>Display-only: number of line items on the order.</summary>
         public int ItemCount { get; set; }

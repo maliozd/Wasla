@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using FluentValidation;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Auth;
+using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Branches;
 using Wasla.Application.Abstractions.Dashboard;
 using Wasla.Application.Abstractions.DevelopmentTools;
@@ -13,6 +15,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
@@ -32,6 +35,7 @@ using Wasla.Infrastructure.Platform.Mock;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
@@ -54,13 +58,19 @@ public static class ServiceCollectionExtensions
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
-        services.Configure<CustomerOnboardingOptions>(configuration.GetSection(CustomerOnboardingOptions.SectionName));
+        services.AddOptions<TenantOnboardingOptions>()
+            .Bind(configuration.GetSection(TenantOnboardingOptions.SectionName))
+            .ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantOnboardingOptions>, TenantOnboardingOptionsValidator>());
 
         services.AddWaslaEmail(configuration);
 
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddSingleton<ISignupCompletionTokenService, SignupCompletionTokenService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
+        services.AddScoped<IBillingSubscriptionStore, BillingSubscriptionStore>();
+        services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 
@@ -79,7 +89,8 @@ public static class ServiceCollectionExtensions
             //   Yemeksepeti → real YemeksepetiFoodPlatformClient (OAuth2 + Partner Picking API)
             //   GetirYemek  → still mock (real client not yet implemented)
             //   TrendyolYemek → real TrendyolGoFoodPlatformClient (Basic auth + Trendyol GO API)
-            services.AddHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
+            // Each real provider has its own named HttpClient (see ProviderHttpClientRegistration).
+            services.AddProviderHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<YemeksepetiOptions>>().Value;
                 client.BaseAddress = new Uri(opts.BaseUrl);
@@ -89,21 +100,27 @@ public static class ServiceCollectionExtensions
 
             services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
 
-            services.AddHttpClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>((sp, client) =>
+            // One limiter per process: every Trendyol GO client instance (typed clients are transient) and every
+            // tenant share its request budget.
+            services.AddSingleton<TrendyolRequestRateLimiter>();
+            services.AddProviderHttpClient(TrendyolGoFoodPlatformClient.TrendyolGoHttpClientName, (sp, client) =>
             {
                 var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
                 client.BaseAddress = new Uri(opts.BaseUrl);
                 client.Timeout = opts.RequestTimeout;
-            });
+            }).AddTypedClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>();
         }
 
         services.AddScoped<ITenantResolver, TenantResolver>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
+        services.AddScoped<ITenantLoginRecorder, TenantLoginRecorder>();
+        services.AddScoped<ITenantSessionValidator, TenantSessionValidator>();
         services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
         services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
         services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();
         services.AddScoped<ICentralAdminAuthService, CentralAdminAuthService>();
+        services.AddScoped<ICentralAdminSessionValidator, CentralAdminSessionValidator>();
         services.AddScoped<ICentralAdminTenantService, CentralAdminTenantService>();
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddOptions<TenantOperationalHealthOptions>();
@@ -124,6 +141,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderSyncSettingsService, OrderSyncSettingsService>();
         services.AddScoped<ITenantOrderSettingsService, TenantOrderSettingsService>();
         services.AddScoped<IReceiptTemplateSettingsService, ReceiptTemplateSettingsService>();
+        services.AddScoped<IRestaurantLogoService, RestaurantLogoService>();
         services.AddScoped<IOrderAutoApproveService, OrderAutoApproveService>();
         services.AddScoped<IOrderReceiptCreationService, OrderReceiptCreationService>();
         services.AddScoped<IReceiptPrintJobService, ReceiptPrintJobService>();
@@ -140,6 +158,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantDevelopmentResetService, TenantDevelopmentResetService>();
         services.AddScoped<IPrintJobHistoryService, PrintJobHistoryService>();
         services.AddScoped<IManualOrderPrintService, ManualOrderPrintService>();
+        // Live change notifications: dropped unless the host registers a channel (Wasla.Web's SignalR hub, or the
+        // internal channel to Wasla.Web in Wasla.Worker and Wasla.Api).
+        services.TryAddSingleton<ITenantChangeNotifier>(NullTenantChangeNotifier.Instance);
 
         return services;
     }

@@ -1,0 +1,11 @@
+# Nightly local backup of the Wasla production databases (WAS-79). A failure leaves the unit failed
+# (systemctl --failed, journalctl -u wasla-backup). Local only; off-site copies are not set up yet.
+[Unit]
+Description=Wasla production database backup (local)
+After=mssql-server.service
+Requires=mssql-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/wasla/bin/wasla-backup
+SyslogIdentifier=wasla-backup

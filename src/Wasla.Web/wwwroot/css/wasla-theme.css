@@ -220,6 +220,14 @@ body.wasla-tenant.wasla-app .app-wrapper {
   max-width: 100%;
 }
 
+/* AdminLTE 4.0.0-rc3 sets .fade{display:block} under reduced motion, which lays every closed (opacity 0) modal over the
+   page and its controls. Closed modals stay hidden; Bootstrap still shows an opening modal with an inline display. */
+@media (prefers-reduced-motion: reduce) {
+  .modal.fade:not(.show) {
+    display: none;
+  }
+}
+
 /* Tenant shell: no top navbar — sidebar is full viewport height. */
 body.wasla-tenant.wasla-app {
   --wasla-topbar-h: 0px;
@@ -469,12 +477,6 @@ body.wasla-tenant.wasla-app .wasla-sidebar-brand-row {
   gap: 0.5rem;
 }
 
-body.wasla-tenant.wasla-app .wasla-sidebar-brand .brand-text {
-  font-size: 1.3125rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
 body.wasla-tenant.wasla-app .wasla-sidebar-tenant-name {
   margin-top: 0.3rem;
   font-size: 0.8125rem;
@@ -680,12 +682,9 @@ body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
   font-weight: 500;
 }
 
-/* Collapsed sidebar */
-body.wasla-tenant.wasla-app.sidebar-collapsed .brand-text,
+/* Collapsed sidebar. Link and control text stays their accessible name: wasla-foundation.css hides it visually. */
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
 body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
-body.wasla-tenant.wasla-app.sidebar-collapsed .app-sidebar .nav-text,
-body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-label,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-footer .footer-label,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user-label {
   display: none;
@@ -698,10 +697,6 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-area {
 
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand-row {
   justify-content: center;
-}
-
-body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-brand .brand-text {
-  display: none;
 }
 
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-action-btn {
@@ -1876,9 +1871,11 @@ body.wasla-tenant.wasla-app .table thead th {
   border-color: transparent;
 }
 
+/* The Trendyol GO wordmark has black lettering, so its badge keeps a light plate in dark mode
+   (as the Getir wordmark keeps its own purple plate). */
 [data-bs-theme="dark"] .platform-badge--trendyol {
-  background: rgba(247, 124, 0, .16);
-  border-color: rgba(247, 124, 0, .28);
+  background: #f4efe8;
+  border-color: rgba(247, 124, 0, .45);
 }
 
 .wasla-orders-actions {
@@ -2214,20 +2211,13 @@ body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-car
   border-radius: .75rem;
 }
 
+/* Decorative (aria-hidden) canonical logo; the aspect ratio matches the SVG viewBox. */
 .wasla-live-empty__mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 8rem;
+  max-width: 100%;
+  aspect-ratio: 184.3 / 68.1;
   margin: 0 0 1rem;
-  border-radius: 1.15rem;
-  background: var(--color-accent);
-  color: var(--color-accent-text, #fff);
-  font-size: 2.35rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: .02em;
+  background: url("../images/brand/wasla-logo.svg") center / contain no-repeat;
 }
 
 .wasla-live-empty__title {
@@ -2323,6 +2313,159 @@ body.wasla-orders-live-display .wasla-live-display-header {
   line-height: 1;
 }
 
+/* The restaurant's own logo (WAS-127): drawn in the same 3rem box as the storefront icon, with no border, on the
+   background style the Owner chose (Account Settings). The uploaded image is never changed; the style is only these
+   classes, so a theme switch restyles the logo without requesting it again.
+   - theme-aware (default): transparent in the light theme, a subtle light surface in the dark theme;
+   - transparent: no background in either theme;
+   - light / dark: a subtle light / dark surface in both themes.
+   The surfaces come from custom properties set on the nearest [data-bs-theme] element, so the light and dark previews
+   on Account Settings show each theme whatever theme the page itself is in. A surface keeps a hairline padding and an
+   inset 1px ring at very low opacity, never a raised edge, so it does not read as a button. Without the --logo class
+   (no logo, or a logo that failed to load) none of this applies and the storefront tile is shown. */
+:root,
+[data-bs-theme="light"] {
+  --wasla-logo-surface-light: #ffffff;
+  --wasla-logo-ring-light: rgba(17, 24, 39, 0.06);
+  --wasla-logo-surface-dark: #23262c;
+  --wasla-logo-ring-dark: rgba(17, 24, 39, 0.12);
+  --wasla-logo-surface-theme-aware: transparent;
+  --wasla-logo-shadow-theme-aware: none;
+  --wasla-logo-padding-theme-aware: 0;
+}
+
+[data-bs-theme="dark"] {
+  --wasla-logo-surface-light: #ece9e4;
+  --wasla-logo-ring-light: rgba(255, 255, 255, 0.10);
+  --wasla-logo-surface-dark: #23262c;
+  --wasla-logo-ring-dark: rgba(255, 255, 255, 0.07);
+  --wasla-logo-surface-theme-aware: #ece9e4;
+  --wasla-logo-shadow-theme-aware: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+  --wasla-logo-padding-theme-aware: .15rem;
+}
+
+.wasla-live-display-identity__mark--logo {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wasla-live-display-identity__mark.wasla-live-display-identity__mark--logo.wasla-logo-bg--theme-aware {
+  padding: var(--wasla-logo-padding-theme-aware);
+  background: var(--wasla-logo-surface-theme-aware);
+  box-shadow: var(--wasla-logo-shadow-theme-aware);
+}
+
+.wasla-live-display-identity__mark.wasla-live-display-identity__mark--logo.wasla-logo-bg--transparent {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wasla-live-display-identity__mark.wasla-live-display-identity__mark--logo.wasla-logo-bg--light {
+  padding: .15rem;
+  background: var(--wasla-logo-surface-light);
+  box-shadow: inset 0 0 0 1px var(--wasla-logo-ring-light);
+}
+
+.wasla-live-display-identity__mark.wasla-live-display-identity__mark--logo.wasla-logo-bg--dark {
+  padding: .15rem;
+  background: var(--wasla-logo-surface-dark);
+  box-shadow: inset 0 0 0 1px var(--wasla-logo-ring-dark);
+}
+
+/* Account Settings: the Live Screen header as it looks in each theme, side by side. */
+.wasla-logo-theme-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: .75rem;
+  max-width: 36rem;
+}
+
+.wasla-logo-theme-preview {
+  margin: 0;
+}
+
+.wasla-logo-theme-preview__header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  padding: .75rem;
+  border-radius: .75rem;
+  border: 1px solid var(--bs-border-color-translucent);
+}
+
+.wasla-logo-theme-preview__header[data-bs-theme="light"] {
+  background: #f3f4f6;
+  color: #1f2328;
+}
+
+.wasla-logo-theme-preview__header[data-bs-theme="dark"] {
+  background: #16181c;
+  color: #eef0f3;
+}
+
+.wasla-logo-theme-preview__name {
+  min-width: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.wasla-logo-background-options .form-check {
+  margin-bottom: .5rem;
+}
+
+.wasla-live-display-identity__logo,
+.wasla-restaurant-logo-frame__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: .45rem;
+}
+
+.wasla-restaurant-logo-settings__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.wasla-restaurant-logo-settings__preview {
+  flex: 0 0 auto;
+  max-width: 9rem;
+}
+
+.wasla-restaurant-logo-settings__controls {
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 32rem;
+}
+
+.wasla-restaurant-logo-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid #f0d3bf;
+  border-radius: 1rem;
+  background: #fff4ec;
+  color: #e07a45;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.wasla-restaurant-logo-frame--logo {
+  overflow: hidden;
+  padding: .35rem;
+  border-color: #e4ddd6;
+  background: #fff;
+}
+
 .wasla-live-display-identity__copy {
   display: flex;
   flex-direction: column;
@@ -2350,6 +2493,7 @@ body.wasla-orders-live-display .wasla-live-display-header {
   display: inline-flex;
   align-items: center;
   gap: .28rem;
+  max-width: 100%;
   padding-block: .08rem;
   padding-inline: .28rem .42rem;
   border: 0;
@@ -2366,6 +2510,30 @@ body.wasla-orders-live-display .wasla-live-display-header {
   height: .4rem;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* Platform sync states other than Live (orders-platform-sync-status.js). Each has its own words and icon, so the
+   meaning never depends on color: waiting for the first snapshot and switched off are muted, an issue is a warning. */
+.wasla-live-display-status--pending,
+.wasla-live-display-status--off {
+  background: #eef0f2;
+  color: #495057;
+}
+
+.wasla-live-display-status--issue {
+  background: #fdf0d5;
+  color: #8a5a00;
+}
+
+.wasla-live-display-status__icon {
+  font-size: .7rem;
+  line-height: 1;
+}
+
+.wasla-live-screen-page .wasla-live-display-last-sync:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
 }
 
 .wasla-live-screen-page .wasla-live-display-header__subtitle,
@@ -2479,15 +2647,29 @@ body.wasla-orders-live-display .wasla-live-display-header {
   overflow-wrap: anywhere;
 }
 
-[data-bs-theme="dark"] .wasla-live-display-identity__mark {
+[data-bs-theme="dark"] .wasla-live-display-identity__mark,
+[data-bs-theme="dark"] .wasla-restaurant-logo-frame {
   background: rgba(224, 122, 69, 0.14);
   border-color: rgba(224, 122, 69, 0.35);
   color: #f0a27a;
+}
+[data-bs-theme="dark"] .wasla-restaurant-logo-frame--logo {
+  background: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 [data-bs-theme="dark"] .wasla-live-summary__label { color: #b7aea6; }
 [data-bs-theme="dark"] .wasla-live-display-status {
   color: #9ed9b4;
   background: rgba(31, 138, 76, 0.18);
+}
+[data-bs-theme="dark"] .wasla-live-display-status--pending,
+[data-bs-theme="dark"] .wasla-live-display-status--off {
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.12);
+}
+[data-bs-theme="dark"] .wasla-live-display-status--issue {
+  color: #f3c76b;
+  background: rgba(243, 199, 107, 0.14);
 }
 [data-bs-theme="dark"] .wasla-live-summary {
   border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
@@ -4495,24 +4677,60 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
   color: #c4b5fd;
 }
 
-/* Links */
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item) {
+/* Links (Wasla buttons rendered as links keep their own colors) */
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.wasla-btn):not(.nav-link):not(.dropdown-item) {
   color: color-mix(in srgb, var(--color-accent) 88%, #fff);
 }
 
-[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.nav-link):not(.dropdown-item):hover {
+[data-bs-theme="dark"] body.wasla-tenant.wasla-app a:not(.btn):not(.wasla-btn):not(.nav-link):not(.dropdown-item):hover {
   color: var(--color-accent-hover);
 }
 
 /* Live Display */
 [data-bs-theme="dark"] body.wasla-orders-live-display {
   background: var(--color-bg);
+  /* Muted text (counts, notes, hints, received times) at least 4.5:1 on the Live Screen surfaces. The aliases are
+     repeated here because they resolve on <html>; Central Admin keeps the shared value. */
+  --color-text-muted: #8b939f;
+  --wasla-muted: #8b939f;
+  --bs-secondary-color: #8b939f;
+  /* The order-training panel uses foundation token names, which the Live Screen (no foundation) does not define:
+     their dark values, as on the tenant shell. In light mode the panel keeps its light fallbacks. */
+  --wasla-accent: #f26b3a;
+  --wasla-accent-soft: rgba(242, 107, 58, 0.14);
+  --wasla-accent-strong: #f26b3a;
+  --wasla-focus: rgba(242, 107, 58, 0.45);
+  --wasla-shadow-sm: none;
+  --wasla-text-secondary: #aeb4c0;
+  --wasla-success: #86efac;
+  --wasla-warning: #fcd34d;
+  --wasla-warning-soft: rgba(245, 158, 11, 0.14);
+  --wasla-info: #93c5fd;
+}
+
+[data-bs-theme="dark"] .wasla-live-list-row__received {
+  color: var(--color-text-muted);
+}
+
+/* Column and group counts sit on status-tinted headers. */
+[data-bs-theme="dark"] .wasla-live-board__count,
+[data-bs-theme="dark"] .wasla-live-group__count,
+[data-bs-theme="dark"] .wasla-live-focus__count {
+  color: var(--color-text-secondary);
 }
 
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-header,
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-fs-header {
   background: color-mix(in srgb, var(--color-bg) 94%, transparent);
   border-bottom-color: var(--color-border);
+}
+
+/* Reject on cards, list rows and the detail panel: the light rules use a fixed dark red. */
+[data-bs-theme="dark"] .wasla-live-board .wasla-orders-actions .btn-outline-danger,
+[data-bs-theme="dark"] .wasla-live-groups .wasla-orders-actions .btn-outline-danger,
+[data-bs-theme="dark"] .wasla-live-detail__actions .btn-outline-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 [data-bs-theme="dark"] body.wasla-orders-live-display .wasla-live-display-kbd {
@@ -4547,6 +4765,33 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
 }
 @media (min-width: 768px) {
     .wasla-live-board { width: max(100%, calc(5 * 280px + 4 * .75rem)); }
+}
+/* From 768 px up to the Board's own width (five 280 px columns, the page padding and a scrollbar) the columns are wider
+   than the screen. The host then fills the screen below the header and scrolls both ways, so its horizontal scrollbar
+   stays on screen instead of under the last card of the longest column (WAS-5). Phones keep the stacked columns and
+   wider screens keep the page scroll. */
+@media (min-width: 768px) and (max-width: 1499.98px) {
+    body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--board) .wasla-orders-live-display-root {
+        block-size: 100dvh;
+    }
+    body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--board {
+        flex: 1 1 0;
+        min-block-size: 18rem;
+        overscroll-behavior-x: contain;
+    }
+}
+/* A column, List group or Focus queue group with more orders than one page: how many are shown, and the next page. */
+.wasla-live-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-block: .75rem 0;
+}
+.wasla-live-more__status {
+    margin: 0;
+    font-size: .8125rem;
+    color: var(--wasla-text, #212529);
 }
 .wasla-live-board__column {
     min-width: 0;
@@ -4970,6 +5215,10 @@ body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__de
     color: #146c43;
     font-size: .75rem;
     line-height: 1.3;
+}
+[data-bs-theme="dark"] .wasla-live-display-sound-active {
+    background: var(--color-success-soft);
+    color: #9ed9b4;
 }
 .wasla-live-board :focus-visible { outline: 3px solid var(--bs-primary, #0d6efd); outline-offset: 3px; }
 /* Board cards: one block size on desktop and tablet for every status (New, Preparing, Ready, OnTheWay, Delivered),
@@ -5697,6 +5946,12 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
     background: transparent;
     border-color: transparent;
     box-shadow: none;
+}
+/* The black Trendyol GO wordmark keeps its light plate in dark mode here too. */
+[data-bs-theme="dark"] .wasla-live-list-row__headline .platform-badge--trendyol {
+    padding: .1rem .4rem;
+    background: #f4efe8;
+    border-color: rgba(247, 124, 0, .45);
 }
 @media (max-width: 1199.98px) {
     .wasla-live-screen-host--list .wasla-live-screen-card {

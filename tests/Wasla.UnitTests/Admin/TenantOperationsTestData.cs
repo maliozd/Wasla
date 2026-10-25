@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Wasla.Domain.Entities.Central;
@@ -22,6 +21,7 @@ internal static class SecretMarkers
     public const string TokenHash = "TOKENHASH-SECRET-91bc";
     public const string AdminPasswordHash = "ADMIN-PWHASH-SECRET-4d2e";
     public const string RegistrationPasswordHash = "REG-PWHASH-SECRET-5e1f";
+    public const string SimulatedPaymentReference = "SIMPAY-SECRET-7d6c";
     public const string TenantUserPasswordHash = "USER-PWHASH-SECRET-6a0b";
     public const string ApiKey = "APIKEY-SECRET-0c9d";
     public const string ApiSecret = "APISECRET-SECRET-8e7f";
@@ -40,6 +40,7 @@ internal static class SecretMarkers
         TokenHash,
         AdminPasswordHash,
         RegistrationPasswordHash,
+        SimulatedPaymentReference,
         TenantUserPasswordHash,
         ApiKey,
         ApiSecret,
@@ -144,7 +145,7 @@ internal sealed class CentralTestDatabase : IDisposable
             Id = Guid.NewGuid(),
             Name = name ?? $"Restaurant {slug}",
             Slug = slug,
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_Tenant_{slug}",
             EncryptedConnectionString = encryptedConnectionString,
             IsActive = isActive,
@@ -206,7 +207,7 @@ internal sealed class CentralTestDatabase : IDisposable
             BillingPeriod = "Monthly",
             BusinessName = $"Registration {slug}",
             Slug = slug,
-            PrimaryDomain = $"{slug}.wasla.local",
+            PrimaryDomain = $"{slug}.app.wasla.local",
             DatabaseName = $"Wasla_Tenant_{slug}",
             BusinessPhone = "5551112233",
             Country = "TR",
@@ -215,6 +216,7 @@ internal sealed class CentralTestDatabase : IDisposable
             OwnerFullName = "Owner Person",
             OwnerEmail = $"{slug}@example.test",
             PasswordHash = SecretMarkers.RegistrationPasswordHash,
+            SimulatedPaymentReference = SecretMarkers.SimulatedPaymentReference,
             Status = status,
             CreatedAtUtc = createdAt ?? new DateTime(2026, 1, 1, 9, 0, 0, DateTimeKind.Utc),
             PaymentSucceededAtUtc = paymentSucceededAt,
@@ -226,9 +228,9 @@ internal sealed class CentralTestDatabase : IDisposable
         return registration;
     }
 
+    // Pooling=False: closing a connection closes the file, so there is no pool to clear (see OwnedSqlitePools).
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         try { File.Delete(_path); } catch (IOException) { }
     }
 }
@@ -304,9 +306,9 @@ internal sealed class RecordingTenantDbFactory : ITenantDbContextFactory, IDispo
     private DbContextOptions<TenantDbContext> Options(string connectionString) =>
         new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(connectionString).AddInterceptors(Counter).Options;
 
+    // Pooling=False: closing a connection closes the file, so there is no pool to clear (see OwnedSqlitePools).
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         try { Directory.Delete(_directory, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }

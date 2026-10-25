@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
-using Wasla.Domain.Enums;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Security;
@@ -14,6 +13,7 @@ using Wasla.Web.DevelopmentTools;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
+using Wasla.Web.Realtime;
 using Wasla.Web.Security;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
@@ -28,25 +28,7 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
-builder.Services.Configure<RequestLocalizationOptions>(options =>
-{
-    var supported = SupportedCultures.AllCultureInfos;
-
-    options.DefaultRequestCulture = new RequestCulture(SupportedCultures.Default);
-    options.SupportedCultures = supported.ToList();
-    options.SupportedUICultures = supported.ToList();
-
-    // Provider priority:
-    // 1) Cookie
-    // 2) Accept-Language
-    // 3) Default fallback
-
-    options.RequestCultureProviders = new List<IRequestCultureProvider>
-    {
-        new CookieRequestCultureProvider(),
-        new AcceptLanguageHeaderRequestCultureProvider()
-    };
-});
+builder.Services.Configure<RequestLocalizationOptions>(WaslaRequestLocalization.Configure);
 
 var dataProtection = builder.Services.AddDataProtection()
     .SetApplicationName("Wasla");
@@ -85,56 +67,20 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = AuthSchemes.Tenant;
     options.DefaultAuthenticateScheme = AuthSchemes.Tenant;
     options.DefaultChallengeScheme = AuthSchemes.Tenant;
-}).AddCookie(AuthSchemes.Tenant, options =>
-{
-    options.Cookie.Name = TenantAuthCookieNames.Active;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.Path = "/";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = authCookieSecurePolicy;
-    options.LoginPath = "/auth/login";
-    options.LogoutPath = "/auth/logout";
-    options.AccessDeniedPath = "/auth/access-denied";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    options.SlidingExpiration = true;
 })
-.AddCookie(AuthSchemes.CentralAdmin, options =>
-{
-    options.Cookie.Name = CentralAdminAuthCookieNames.Active;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.Path = "/";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = authCookieSecurePolicy;
-    options.LoginPath = "/admin/login";
-    options.LogoutPath = "/admin/logout";
-    options.AccessDeniedPath = "/admin/login";
-    options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    options.SlidingExpiration = true;
-});
+// Tenant cookie scheme; every tenant request is revalidated against the user in the tenant database.
+.AddWaslaTenantCookie(authCookieSecurePolicy)
+// Central Admin cookie scheme; every Central Admin request is revalidated against the admin in CentralDb.
+.AddWaslaCentralAdminCookie(authCookieSecurePolicy);
 
 builder.Services.AddScoped<IAuthorizationHandler, TenantRoleAuthorizationHandler>();
 builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
+// Post-login destination: a safe ReturnUrl the user may open, otherwise the role's landing page (WAS-113).
+builder.Services.AddWaslaTenantLandingPages();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddTenantRolePolicy(TenantPolicies.TenantOwner, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.TenantManagerOrOwner, UserRole.Owner, UserRole.Manager);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantUsers, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageTenantSettings, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManagePrintBridgeDevices, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageDeviceSecurity, UserRole.Owner);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    options.AddTenantRolePolicy(TenantPolicies.CanManageOrders, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier);
-    options.AddTenantRolePolicy(TenantPolicies.CanManualPrint, UserRole.Owner, UserRole.Manager, UserRole.Cashier);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewLiveScreen, UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer);
-    options.AddTenantRolePolicy(TenantPolicies.CanViewReports, UserRole.Owner, UserRole.Manager, UserRole.Viewer);
-    options.AddPolicy("ManagePlatformConnections", policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.Requirements.Add(new TenantRoleRequirement(UserRole.Owner));
-    });
-});
+// Tenant role policies, shared with Wasla.Api (WaslaTenantPolicies.AllowedRoles).
+builder.Services.AddAuthorization(options => options.AddWaslaTenantRolePolicies());
 
 // Rate limit automatic Print Bridge setup code exchange attempts (per client IP).
 builder.Services.AddRateLimiter(options =>
@@ -167,6 +113,15 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Tenant and Central Admin login attempts per tenant and client network (AuthenticationRateLimiting section).
+builder.Services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+
+// X-Forwarded-For / X-Forwarded-Proto only from the proxies listed under TrustedProxies.
+builder.Services.AddWaslaTrustedProxies(builder.Configuration);
+
+// Unknown tenant hosts: one CentralDb lookup per host per short TTL, bounded in size (TenantResolution:MissCache).
+builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
+
 // Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
 var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
 builder.Services.Configure<DevelopmentToolsOptions>(developmentToolsSection);
@@ -184,7 +139,12 @@ builder.Services
 
 builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+// Marketing and application host domains: outside Development they must be set to public host names (WAS-66).
+builder.Services.AddWaslaHostDomains(builder.Configuration, builder.Environment);
 builder.Services.AddWaslaHealthChecks();
+
+// Live tenant notifications: the SignalR hub and, with Realtime:Internal, the loopback listener for Worker and Api.
+builder.Services.AddWaslaRealtime(builder.Configuration);
 
 var app = builder.Build();
 
@@ -192,7 +152,10 @@ app.Logger.LogInformation(
     "Environment={Environment}, AuthCookieSecurePolicy={SecurePolicy}",
     app.Environment.EnvironmentName,
     authCookieSecurePolicy);
+app.Services.LogInternalListenerState(builder.Configuration);
 
+// First, so that everything after it (rate-limit partitions, HTTPS redirection, logs) sees the forwarded client.
+app.UseWaslaTrustedProxies();
 app.UseMiddleware<RequestDiagnosticsMiddleware>();
 app.UseWaslaExceptionHandling(app.Environment);
 
@@ -213,6 +176,9 @@ app.UseRequestLocalization(locOptions.Value);
 
 app.UseRouting();
 
+// Live hub requests from another origin are refused before any tenant or session work.
+app.UseWaslaRealtimeOriginCheck();
+
 app.UseRateLimiter();
 
 app.UseMiddleware<TenantResolutionMiddleware>();
@@ -229,5 +195,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapWaslaHealthChecks();
+app.MapWaslaRealtime();
+app.EnableWaslaTenantLandingPages();
 
 app.Run();

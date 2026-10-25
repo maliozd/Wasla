@@ -70,3 +70,46 @@ test("the Turkish-aware fold used by the filter is unchanged", () => {
   assert.equal(users.fold("İSTANBUL"), users.fold("istanbul"));
   assert.equal(users.fold("Işık"), "isik");
 });
+
+// data-sort-last-login holds the stored UTC value (ISO 8601, "Z"); it is empty when no login was recorded.
+function loginRows() {
+  return [
+    { name: "A", role: "1", created: "", lastLogin: "2026-10-05T08:00:00.0000000Z", email: "a@example.test", index: 0 },
+    { name: "B", role: "1", created: "", lastLogin: "", email: "b@example.test", index: 1 },
+    { name: "C", role: "1", created: "", lastLogin: "2026-10-06T09:15:30.0000000Z", email: "c@example.test", index: 2 },
+    { name: "D", role: "1", created: "", lastLogin: "2025-12-31T23:59:59.9990000Z", email: "d@example.test", index: 3 },
+    { name: "E", role: "1", created: "", lastLogin: "", email: "e@example.test", index: 4 },
+    { name: "F", role: "1", created: "", lastLogin: "2026-10-06T09:15:30.0000000Z", email: "f@example.test", index: 5 }
+  ];
+}
+
+function loginOrder(direction) {
+  return loginRows()
+    .sort((a, b) => users.compareRows(a, b, "last-login", direction, collator))
+    .map((row) => row.email);
+}
+
+test("last login sorts by the stored UTC value, newest first by default", () => {
+  assert.equal(users.nextDirection("last-login", "name", "asc"), "desc");
+  assert.deepEqual(loginOrder("desc"), [
+    "c@example.test", "f@example.test", "a@example.test", "d@example.test", "b@example.test", "e@example.test"
+  ]);
+  assert.deepEqual(loginOrder("asc"), [
+    "d@example.test", "a@example.test", "c@example.test", "f@example.test", "b@example.test", "e@example.test"
+  ]);
+});
+
+test("users who never logged in stay last in both directions, ordered by email", () => {
+  for (const direction of ["asc", "desc"]) {
+    const order = loginOrder(direction);
+    assert.deepEqual(order.slice(-2), ["b@example.test", "e@example.test"]);
+  }
+});
+
+test("last login ignores the culture-formatted cell text and compares the ISO value only", () => {
+  // A year boundary: "31.12.2025" would sort after "05.10.2026" as text; the ISO value does not.
+  const older = { name: "x", role: "1", created: "", lastLogin: "2025-12-31T23:59:59.9990000Z", email: "x@example.test", index: 0 };
+  const newer = { name: "y", role: "1", created: "", lastLogin: "2026-01-01T00:00:00.0000000Z", email: "y@example.test", index: 1 };
+  assert.ok(users.compareRows(older, newer, "last-login", "asc", collator) < 0);
+  assert.ok(users.compareRows(older, newer, "last-login", "desc", collator) > 0);
+});

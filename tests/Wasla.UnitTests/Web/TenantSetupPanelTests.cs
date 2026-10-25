@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Web;
@@ -76,7 +77,9 @@ public sealed class TenantSetupPanelTests
         Assert.Contains("action=\"/dashboard/complete-setup\"", panel, StringComparison.Ordinal);
         Assert.Contains("Model.ShowAddTeamMember", panel, StringComparison.Ordinal);
         Assert.Contains("\"/platform-connections\"", mapper, StringComparison.Ordinal);
-        Assert.Contains("\"/settings/orders\"", mapper, StringComparison.Ordinal);
+        // Notification preferences are changed on the Live Screen (WAS-13); the checklist only shows the effective sound.
+        Assert.DoesNotContain("\"/settings/orders\"", mapper, StringComparison.Ordinal);
+        Assert.Contains("@if (!string.IsNullOrEmpty(step.ActionHref))", panel, StringComparison.Ordinal);
         Assert.Contains("\"/print-bridge/setup\"", mapper, StringComparison.Ordinal);
         Assert.Contains("\"/settings/account\"", mapper, StringComparison.Ordinal);
         Assert.Contains("href=\"/orders/live-display\"", panel, StringComparison.Ordinal);
@@ -91,10 +94,17 @@ public sealed class TenantSetupPanelTests
     {
         var auth = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "AuthController.cs");
         var onboarding = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Controllers", "OnboardingController.cs");
+        var welcomeStart = auth.IndexOf("public async Task<IActionResult> Welcome(", StringComparison.Ordinal);
+        Assert.True(welcomeStart >= 0, "No Welcome action.");
+        var welcome = auth[welcomeStart..auth.IndexOf("[AllowAnonymous]", welcomeStart, StringComparison.Ordinal)];
 
-        Assert.Contains("return Redirect(\"/dashboard\");", auth, StringComparison.Ordinal);
+        // The welcome link sends the new user to their authorized landing page (WAS-113). The signup user is an Owner,
+        // whose landing page is the Dashboard with the setup panel, never the static onboarding cards. The HTTP
+        // behaviour is covered by TenantPostLoginRedirectTests.WelcomeLink_LandsOnTheCurrentRolesLandingPage.
+        Assert.Contains("_landingPages.GetLandingPageAsync(principal, HttpContext)", welcome, StringComparison.Ordinal);
+        Assert.Equal("/dashboard", TenantLandingPageResolver.LandingPages[0]);
+        Assert.DoesNotContain("/onboarding", welcome, StringComparison.Ordinal);
         Assert.Contains("Redirect(\"/dashboard\")", onboarding, StringComparison.Ordinal);
-        Assert.DoesNotContain("return Redirect(\"/onboarding\");", auth, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -177,7 +187,7 @@ public sealed class TenantSetupPanelTests
     {
         public FixedCurrentTenantService(Guid tenantId)
         {
-            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.wasla.local");
+            CurrentTenant = new ResolvedTenantDto(tenantId, "Tenant", "tenant", "tenant.app.wasla.local");
         }
 
         public ResolvedTenantDto? CurrentTenant { get; }

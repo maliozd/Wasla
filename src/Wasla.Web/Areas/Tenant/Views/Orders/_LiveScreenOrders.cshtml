@@ -25,9 +25,9 @@
 
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"].Value;
 
-    string FormatElapsed(DateTime receivedAtUtc)
+    string FormatElapsed(DateTime sinceUtc)
     {
-        var minutes = Math.Max(0, (int)Math.Floor((utcNow - receivedAtUtc).TotalMinutes));
+        var minutes = Math.Max(0, (int)Math.Floor((utcNow - sinceUtc).TotalMinutes));
         return L["Orders.LiveScreen.ElapsedMinutes", minutes].Value;
     }
 }
@@ -59,11 +59,13 @@ else
                 OrderStatus.Cancelled => 6,
                 _ => 7
             })
-            .ThenByDescending(x => x.ReceivedAtUtc))
+            .ThenByDescending(x => x.OrderedAtUtc))
         {
             var muted = o.Status is OrderStatus.Delivered or OrderStatus.Cancelled or OrderStatus.Failed;
-            var receivedDisplay = OrderUiHelper.FormatReceivedAtLocal(o.ReceivedAtLocal, turkeyToday);
-            var elapsed = FormatElapsed(o.ReceivedAtUtc);
+            // WAS-125: the order time; without a provider time the import time stands in under its own label.
+            var orderTimeDisplay = OrderUiHelper.FormatReceivedAtLocal(o.OrderedAtLocal, turkeyToday);
+            var orderTimeCaption = o.OrderedAtIsFromPlatform ? L["Orders.OrderTime"] : L["Orders.ReceivedAt"];
+            var elapsed = FormatElapsed(o.OrderedAtUtc);
             <article class="orders-card orders-card--kitchen wasla-orders-card wasla-orders-card--kitchen wasla-live-screen-card@(muted ? " orders-card--muted" : "")"
                      role="listitem"
                      data-order-id="@o.Id"
@@ -117,8 +119,8 @@ else
                             @o.TotalAmount.ToString("N2", CultureInfo.CurrentCulture)
                         </div>
                         <div class="orders-card-meta__row">
-                            <span class="orders-card-meta__label">@L["Orders.ReceivedAt"]:</span>
-                            @receivedDisplay
+                            <span class="orders-card-meta__label">@orderTimeCaption:</span>
+                            @orderTimeDisplay
                             <span class="wasla-live-screen-card__elapsed text-muted">· @elapsed</span>
                         </div>
                     </div>

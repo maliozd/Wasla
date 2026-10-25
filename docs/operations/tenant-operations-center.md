@@ -45,6 +45,7 @@ Print Bridge presence uses the canonical `PrintBridgeConnectionStatusCalculator`
 ## Secret redaction
 
 - Queries project only displayed columns. Encrypted connection strings, token hashes, password hashes, provider API keys and secrets, supplier ids, executor e-mails, IP addresses, installation ids and print payloads are never selected. The connection-details check returns a boolean computed in the database.
+- The Pending Registrations pages (`/admin/pending-registrations` and its detail, WAS-38) follow the same rule with one CentralDb query each. Neither selects the registration's password hash or simulated payment reference, or a tenant's connection string. The list selects the owner's name but no contact fields and reads no tenant row; the detail selects the contact and address fields it shows plus the linked tenant's primary domain, and its provision action uses that same projection. Provisioning reads the full registration only inside `PendingRegistrationProvisioningService`.
 - `LastMigrationResult`, sync error messages and integration error messages contain raw exception text and are never shown; only their outcome (succeeded/failed/not recorded) is.
 - Logs for failed health reads contain the tenant id, the state, the exception type name and the SQL error number. Never the message.
 - Tests plant marker secrets in every sensitive column and assert they appear in no rendered page, response model or selected SQL.
@@ -53,22 +54,20 @@ Print Bridge presence uses the canonical `PrintBridgeConnectionStatusCalculator`
 
 The pages use the existing central-admin attribute `[Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]`. Anonymous requests and tenant sessions (even with a forged role claim) are redirected to `/admin/login`. Unknown ids, registration ids and malformed ids return 404.
 
+Every Central Admin request is revalidated against the admin's row in CentralDb (WAS-37): a session whose admin was deactivated or deleted, or whose password was reset, is signed out and redirected to `/admin/login` on its next request. The check reads only `CentralAdminUsers`, never a tenant database. If CentralDb cannot be read during that check, the request gets the global error page instead of the Admin error panel. See [../architecture/authentication.md](../architecture/authentication.md#central-admin-session-revalidation).
+
 ## Troubleshooting
 
 | Observation | Next step |
 |-------------|-----------|
 | Database unavailable or timed out | Check SQL Server, that the tenant database exists and accepts the configured login; run `migration-status` |
 | Connection details unreadable | Check that this server uses the `ENCRYPTION_MASTER_KEY` that provisioned the tenant |
-| Migrations pending | Apply with `migrate-customer` / `migrate-all-customers` following [deployment.md](deployment.md#release-order-migrate-every-database-first) |
+| Migrations pending | Apply with `migrate-tenant` / `migrate-all-tenants` following [deployment.md](deployment.md#release-order-migrate-every-database-first) |
 | Sync overdue or never synced | Check that `Wasla.Worker` is running |
 | Paused after repeated failures | Check the platform's status; the owner verifies the connection's credentials |
 | Print Bridge offline with queued jobs | The restaurant checks the Print Bridge computer; jobs are picked up on reconnect |
 
 The page only reads. It never migrates, repairs, retries, provisions or changes payment, provider or device state.
-
-## Security follow-up (high priority, not implemented)
-
-**Production security requirement:** Central Admin authorization is scheme-only. Any valid `.Wasla.CentralAdminAuth` cookie is accepted; the account is not re-checked against CentralDb. A central admin who is deactivated (or whose password is reset) keeps access until the cookie expires (8 hours sliding; 1 day with remember-me). Future work must add active-admin revalidation (for example cookie validation against `CentralAdminUsers.IsActive` with a security stamp) or a named policy backed by the CentralDb account state, with tests that deactivate an admin during an active session and expect the next request to be rejected. See also [../architecture/authentication.md](../architecture/authentication.md#current-limitation).
 
 ## Source map
 

@@ -1,0 +1,28 @@
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = L["Signup.UnavailableTitle"];
+}
+@* Shown instead of the signup form while Wasla:TenantOnboarding:PublicSignupEnabled is false (WAS-76). It has no form:
+   nothing on this page creates a registration. No sales mailbox is published yet; the confirmed Instagram account is
+   the contact channel, as on the Enterprise plan card. *@
+<div class="wasla-signup-page py-4 py-md-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm wasla-signup-card" data-signup-unavailable>
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <div class="mb-3 text-secondary">
+                            <i class="bi bi-hourglass-split" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                        </div>
+                        <h1 class="h4 fw-bold mb-2">@L["Signup.UnavailableTitle"]</h1>
+                        <p class="text-secondary mb-4">@L["Signup.UnavailableBody"]</p>
+                        <a class="btn btn-primary rounded-pill" href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.Cta.ContactInstagram"]</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

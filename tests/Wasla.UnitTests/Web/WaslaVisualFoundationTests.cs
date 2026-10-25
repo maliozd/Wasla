@@ -80,7 +80,8 @@ public sealed class WaslaVisualFoundationTests
         Assert.Contains("TenantUsers.Role.{user.Role}", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.Active", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.Inactive", index, StringComparison.Ordinal);
-        Assert.Contains("TenantUsers.LastLoginNotRecorded", index, StringComparison.Ordinal);
+        // The "Not recorded" empty state lives in the _LastLogin partial shared with the details page.
+        Assert.Contains("<partial name=\"_LastLogin\"", index, StringComparison.Ordinal);
         Assert.Contains("data-users-filter", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.EmptyTitle", index, StringComparison.Ordinal);
         Assert.Contains("TenantUsers.NoResultsTitle", index, StringComparison.Ordinal);
@@ -336,12 +337,14 @@ public sealed class WaslaVisualFoundationTests
         var openMain = js.IndexOf("setMainInert(true)", openStart, StringComparison.Ordinal);
         Assert.True(openStart >= 0 && openReveal > openStart && openChrome > openReveal && openMain > openChrome);
 
+        // The trigger is inside main, so main stops being inert before focus moves to the trigger (WAS-84), and focus
+        // leaves the drawer before the drawer becomes inert.
         var closeStart = js.IndexOf("function closeNav(restoreFocus)", StringComparison.Ordinal);
-        var closeFocus = js.IndexOf("moveFocusToTrigger()", closeStart, StringComparison.Ordinal);
         var closeMain = js.IndexOf("setMainInert(false)", closeStart, StringComparison.Ordinal);
+        var closeFocus = js.IndexOf("moveFocusToTrigger()", closeStart, StringComparison.Ordinal);
         var closeHide = js.IndexOf("hideSidebarAfterFocusMoved()", closeStart, StringComparison.Ordinal);
         var closeChrome = js.IndexOf("setOpenChrome(false)", closeStart, StringComparison.Ordinal);
-        Assert.True(closeStart >= 0 && closeFocus > closeStart && closeMain > closeFocus && closeHide > closeMain && closeChrome > closeHide);
+        Assert.True(closeStart >= 0 && closeMain > closeStart && closeFocus > closeMain && closeHide > closeFocus && closeChrome > closeHide);
 
         Assert.Contains("id=\"tenantNavBackdrop\"", layout, StringComparison.Ordinal);
         Assert.Contains("id=\"app-sidebar-tenant\"", layout, StringComparison.Ordinal);

@@ -27,8 +27,8 @@
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center wasla-logo-mark rounded-3 mb-3">
-                    <i class="bi bi-basket2-fill text-white fs-4"></i>
+                <div class="mb-3">
+                    @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--auth" })
                 </div>
                 <h1 class="h4 mb-1">@L["Admin.LoginTitle"]</h1>
                 <p class="text-muted small mb-0">@L["Admin.LoginSubtitle"]</p>
@@ -36,6 +36,10 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
+                    @if (ViewData[Wasla.Web.Security.WebAuthenticationRateLimiting.RateLimitedViewDataKey] is true)
+                    {
+                        <div class="alert alert-warning" role="alert">@L["Auth.Login.TooManyAttempts"]</div>
+                    }
                     <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
 
                     <form method="post" action="/admin/login">
@@ -48,7 +52,7 @@
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" asp-for="Password"></label>
+                            <label class="form-label" asp-for="Password" for="admin-login-password"></label>
                             <div class="input-group">
                                 <input class="form-control" asp-for="Password" type="password" autocomplete="current-password" id="admin-login-password" />
                                 <button class="btn btn-outline-secondary" type="button" id="admin-toggle-password"

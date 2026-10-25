@@ -1,6 +1,23 @@
-﻿using Wasla.Application.Time;
+﻿using System.Globalization;
+using Wasla.Application.Time;
 
 namespace Wasla.Application.Orders;
+
+/// <summary>
+/// The web Orders filter's dates as submitted. <see cref="StartDate"/> and <see cref="EndDate"/> are the valid values
+/// (shown again in the form); the UTC bounds are set only when the whole filter is valid.
+/// </summary>
+public sealed record OrdersWebDateFilter(
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    bool StartInvalid,
+    bool EndInvalid,
+    bool Inverted,
+    DateTime? UtcStartInclusive,
+    DateTime? UtcEndExclusive)
+{
+    public bool IsValid => !StartInvalid && !EndInvalid && !Inverted;
+}
 
 /// <summary>
 /// Maps restaurant local calendar dates to UTC bounds for filtering <c>Order.ReceivedAt</c> (stored as UTC).
@@ -70,23 +87,69 @@ public static class OrdersReceivedAtQueryRange
     }
 
     /// <summary>
-    /// Parses yyyy-MM-dd query strings and builds the UTC range. When both strings are missing, both parsed values are null.
+    /// The machine-readable date of the web filter: what an HTML date input submits and renders, in every UI culture and
+    /// always in the Gregorian calendar.
     /// </summary>
-    public static (DateTime? UtcStartInclusive, DateTime? UtcEndExclusive) FromWebQueryStrings(
-        string? startDate,
-        string? endDate,
-        out DateOnly? startParsed,
-        out DateOnly? endParsed)
-    {
-        startParsed = null;
-        endParsed = null;
-        if (!string.IsNullOrWhiteSpace(startDate) && DateOnly.TryParse(startDate, out var s))
-            startParsed = s;
-        if (!string.IsNullOrWhiteSpace(endDate) && DateOnly.TryParse(endDate, out var e))
-            endParsed = e;
+    public const string WebDateFormat = "yyyy-MM-dd";
 
-        MapLocalDatesToUtcRange(startParsed, endParsed, out var utcStart, out var utcEnd);
-        return (utcStart, utcEnd);
+    // No order has an order time before 2000 (OrderSyncService.PlausibleProviderTime), and Hijri years (14xx) cannot pass
+    // for Gregorian ones.
+    private static readonly DateOnly MinWebDate = new(2000, 1, 1);
+
+    public static string FormatWebDate(DateOnly date) => date.ToString(WebDateFormat, CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Strict <see cref="WebDateFormat"/> parsing, independent of the request culture: no culture format that could mean
+    /// two different days, no other digits and no other calendar.
+    /// </summary>
+    public static bool TryParseWebDate(string? value, out DateOnly date) =>
+        DateOnly.TryParseExact(value, WebDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
+        && date >= MinWebDate;
+
+    /// <summary>
+    /// An end day is queried up to its next local midnight, converted to UTC. That midnight must exist (9999-12-31 has no
+    /// next day) and its UTC instant must be representable, which a zone behind UTC could push past
+    /// <see cref="DateTime.MaxValue"/>. A start day's midnight always converts: dates start at 2000, and a zone behind
+    /// UTC moves 9999-12-31 00:00 by at most a few hours.
+    /// </summary>
+    private static bool HasRepresentableEndBoundary(DateOnly end, TimeZoneInfo tz)
+    {
+        if (end == DateOnly.MaxValue)
+            return false;
+
+        var nextMidnight = end.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        var offset = tz.GetUtcOffset(nextMidnight);
+        return offset >= TimeSpan.Zero || DateTime.MaxValue - nextMidnight >= offset.Negate();
+    }
+
+    /// <summary>
+    /// Parses the web filter's optional start and end dates. A missing value leaves that side open; a value that is not a
+    /// valid date, or an end before the start, makes the filter invalid and leaves the UTC range empty, so a caller never
+    /// queries with fewer bounds than were supplied.
+    /// </summary>
+    public static OrdersWebDateFilter ParseWebQueryStrings(string? startDate, string? endDate)
+    {
+        var startSupplied = !string.IsNullOrWhiteSpace(startDate);
+        var endSupplied = !string.IsNullOrWhiteSpace(endDate);
+        DateOnly? start = startSupplied && TryParseWebDate(startDate, out var s) ? s : null;
+        DateOnly? end = endSupplied && TryParseWebDate(endDate, out var e)
+                        && HasRepresentableEndBoundary(e, TimeZoneHelper.ResolveTurkeyTimeZone())
+            ? e
+            : null;
+
+        var filter = new OrdersWebDateFilter(
+            start,
+            end,
+            StartInvalid: startSupplied && start is null,
+            EndInvalid: endSupplied && end is null,
+            Inverted: start > end,
+            UtcStartInclusive: null,
+            UtcEndExclusive: null);
+        if (!filter.IsValid)
+            return filter;
+
+        MapLocalDatesToUtcRange(start, end, out var utcStart, out var utcEnd);
+        return filter with { UtcStartInclusive = utcStart, UtcEndExclusive = utcEnd };
     }
 
     /// <summary>

@@ -9,6 +9,7 @@ using Wasla.Application.Demos;
 using Wasla.Domain.Enums;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.GuidedSetup;
+using Wasla.UnitTests.Orders;
 using Wasla.Web.Security;
 using static Wasla.UnitTests.GuidedSetup.GuidedSetupCoordinatorTests;
 
@@ -20,7 +21,7 @@ namespace Wasla.UnitTests.Demos;
 /// </summary>
 public sealed class LiveDataDemoLookupTests
 {
-    private static readonly ResolvedTenantDto Tenant = new(Guid.NewGuid(), "Demo Tenant", "demo-tenant", "demo-tenant.wasla.local");
+    private static readonly ResolvedTenantDto Tenant = new(Guid.NewGuid(), "Demo Tenant", "demo-tenant", "demo-tenant.app.wasla.local");
 
     [Fact]
     public async Task ANonOwner_DoesNotTriggerTheDemoLookup()
@@ -28,7 +29,7 @@ public sealed class LiveDataDemoLookupTests
         var demos = new CountingDemos();
         var controller = CreateController(demos, isOwner: false);
 
-        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), CancellationToken.None);
+        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), new FakePlatformConnections(), CancellationToken.None);
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal(0, demos.LookupCount);
@@ -41,7 +42,7 @@ public sealed class LiveDataDemoLookupTests
         var userId = Guid.NewGuid();
         var controller = CreateController(demos, isOwner: true, userId);
 
-        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), CancellationToken.None);
+        var result = await controller.LiveData(NoTraining(), new FakeTenantModes(), new FakePlatformConnections(), CancellationToken.None);
 
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal(1, demos.LookupCount);

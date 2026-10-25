@@ -10,6 +10,7 @@ public record OrderListItemDto(
     decimal TotalAmount,
     OrderStatusDto InternalStatus,
     string PlatformStatus,
-    DateTime CreatedAtPlatform,
-    DateTime ReceivedAt);
+    DateTime? CreatedAtPlatform,
+    DateTime ReceivedAt,
+    DateTime OrderedAt);
 

@@ -7,25 +7,9 @@ namespace Wasla.PrintBridge.Tests;
 public sealed class PrintBridgeDeviceIdentityTests
 {
     [Fact]
-    public void LocalDeviceLabel_PrefersLocalDeviceName()
-    {
-        var label = PrintBridgeRuntimeStatus.ResolveLocalDeviceLabel("  Mali Vivobook  ", "DESKTOP-CTFGHRE");
-
-        Assert.Equal("Mali Vivobook", label);
-    }
-
-    [Fact]
-    public void LocalDeviceLabel_FallsBackToMachineName()
-    {
-        var label = PrintBridgeRuntimeStatus.ResolveLocalDeviceLabel(" ", "DESKTOP-CTFGHRE");
-
-        Assert.Equal("DESKTOP-CTFGHRE", label);
-    }
-
-    [Fact]
     public void DeviceIdentityValidation_DoesNotAlterConnectionPrinterOrLanguageValues()
     {
-        var hub = new WaslaOptions
+        var connection = new WaslaOptions
         {
             ServerUrl = "https://sushi-m.wasla.local:7200",
             AgentToken = "token-value"
@@ -43,8 +27,8 @@ public sealed class PrintBridgeDeviceIdentityTests
 
         Assert.True(ok);
         Assert.Null(errorKey);
-        Assert.Equal("https://sushi-m.wasla.local:7200", hub.ServerUrl);
-        Assert.Equal("token-value", hub.AgentToken);
+        Assert.Equal("https://sushi-m.wasla.local:7200", connection.ServerUrl);
+        Assert.Equal("token-value", connection.AgentToken);
         Assert.Equal("Kitchen printer", bridge.PrinterName);
         Assert.Equal("Mali Vivobook", bridge.BridgeName);
         Assert.Equal("Server Device", bridge.DisplayName);

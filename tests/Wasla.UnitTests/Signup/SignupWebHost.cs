@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,9 @@ using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Infrastructure.Diagnostics;
+using Wasla.Application.Abstractions.Billing;
+using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Plans;
@@ -25,6 +29,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
 using Wasla.Web.Controllers;
 using Wasla.Web.Middleware;
+using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Signup;
 
@@ -59,7 +64,9 @@ internal sealed class SignupWebHost : IAsyncDisposable
         SqliteConnection centralDb,
         string keyRingPath,
         string environmentName = "Production",
-        string applicationName = "Wasla")
+        string applicationName = "Wasla",
+        IReadOnlyDictionary<string, string?>? configuration = null,
+        Action<IServiceCollection>? configureServices = null)
     {
         var contentRoot = Directory.CreateTempSubdirectory("wasla-signup-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -97,13 +104,27 @@ internal sealed class SignupWebHost : IAsyncDisposable
             .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(centralDb));
-        services.Configure<CustomerOnboardingOptions>(_ => { });
+        // Wasla:TenantOnboarding from the test's configuration, otherwise the Development domains (WAS-66).
+        services.Configure<TenantOnboardingOptions>(builder.Configuration.GetSection(TenantOnboardingOptions.SectionName));
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IBillingPlanPriceReader, BillingPlanPriceReader>();
         services.AddScoped<ITenantResolver, TenantResolver>();
         // The signup validator is not under test here; the controller's own checks still run.
         services.AddSingleton<IValidator<PendingRegistrationRequest>>(new InlineValidator<PendingRegistrationRequest>());
+
+        // The signup/checkout limits and the unknown-host cache Program.cs registers. A class shares one host and posts
+        // from one loopback address, so the limits are raised unless a test passes its own; SignupRateLimitTests covers them.
+        builder.Configuration["AuthenticationRateLimiting:SignupSubmission:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = "1000";
+        if (configuration is not null)
+            builder.Configuration.AddInMemoryCollection(configuration);
+        services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+        services.AddWaslaTenantHostMissCache(builder.Configuration);
+        services.AddWaslaHealthChecks();
+        configureServices?.Invoke(services);
 
         var app = builder.Build();
         app.UseRequestLocalization();
@@ -111,6 +132,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
         app.UseMiddleware<TenantResolutionMiddleware>();
         app.MapControllers();
         app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+        app.MapWaslaHealthChecks();
 
         await app.StartAsync();
         return new SignupWebHost(app, contentRoot, new Uri(app.Urls.First()));
@@ -174,6 +196,15 @@ internal sealed class TestBrowser : IDisposable
     public Task<TestResponse> GetAsync(string path, string host = SignupWebHost.CentralHost) =>
         SendAsync(new HttpRequestMessage(HttpMethod.Get, path), host);
 
+    /// <summary>A GET with extra request headers, for example forwarded headers a client sends itself.</summary>
+    public Task<TestResponse> SendWithHeadersAsync(string path, string host, params (string Name, string Value)[] headers)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, path);
+        foreach (var (name, value) in headers)
+            request.Headers.TryAddWithoutValidation(name, value);
+        return SendAsync(request, host);
+    }
+
     public Task<TestResponse> PostFormAsync(
         string path,
         IEnumerable<KeyValuePair<string, string>> fields,
@@ -214,7 +245,8 @@ internal sealed class TestBrowser : IDisposable
             response.Headers.Location?.OriginalString,
             setCookies.ToList(),
             response.Headers.CacheControl?.ToString(),
-            response.Content.Headers.ContentType?.MediaType);
+            response.Content.Headers.ContentType?.MediaType,
+            response.Headers.RetryAfter?.Delta);
     }
 
     public void Dispose() => _client.Dispose();
@@ -226,4 +258,5 @@ internal sealed record TestResponse(
     string? Location,
     IReadOnlyList<SetCookieHeaderValue> SetCookies,
     string? CacheControl,
-    string? ContentType);
+    string? ContentType,
+    TimeSpan? RetryAfter = null);

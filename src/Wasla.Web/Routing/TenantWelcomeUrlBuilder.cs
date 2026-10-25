@@ -82,30 +82,72 @@ public static class TenantWelcomeUrlBuilder
     public static string BuildCentralHomepageUrl(
         HttpRequest request,
         IWebHostEnvironment environment,
-        string marketingBaseDomain)
+        string marketingBaseDomain) =>
+        BuildCentralUrl(request, environment, marketingBaseDomain, "/");
+
+    /// <summary>The signup page on the marketing host; the host comes from configuration, never from the request.</summary>
+    public static string BuildCentralSignupUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string marketingBaseDomain) =>
+        BuildCentralUrl(request, environment, marketingBaseDomain, "/signup");
+
+    private static string BuildCentralUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string marketingBaseDomain,
+        string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(marketingBaseDomain);
 
         var builder = new UriBuilder
         {
             Scheme = request.Scheme,
-            Host = ResolveCentralHost(request, marketingBaseDomain),
-            Path = "/",
+            Host = ResolveCentralHost(request, environment, marketingBaseDomain),
+            Path = path,
             Port = ResolvePort(request, environment)
         };
 
         return builder.Uri.AbsoluteUri;
     }
 
-    private static string ResolveCentralHost(HttpRequest request, string marketingBaseDomain)
+    /// <summary>
+    /// The application entry's sign-in (WAS-66): <c>/auth/login</c> on the configured application domain, which asks for
+    /// the tenant address. The host comes from configuration, never from the request; in Development a request on <c>localhost</c>
+    /// (a local run without host names) stays on <c>localhost</c>.
+    /// </summary>
+    public static string BuildApplicationLoginUrl(
+        HttpRequest request,
+        IWebHostEnvironment environment,
+        string applicationBaseDomain)
     {
-        if (string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
-            return "localhost";
+        ArgumentException.ThrowIfNullOrWhiteSpace(applicationBaseDomain);
 
-        return marketingBaseDomain.Trim().TrimStart('.');
+        var builder = new UriBuilder
+        {
+            Scheme = request.Scheme,
+            Host = ResolveCentralHost(request, environment, applicationBaseDomain),
+            Path = "/auth/login",
+            Port = ResolvePort(request, environment)
+        };
+
+        return builder.Uri.AbsoluteUri;
     }
 
-    private static int ResolvePort(HttpRequest request, IWebHostEnvironment environment)
+    /// <summary>
+    /// The configured domain. Only in Development does a request on <c>localhost</c> keep <c>localhost</c>, so a local run
+    /// works without host names; elsewhere the request host never decides (WAS-66).
+    /// </summary>
+    private static string ResolveCentralHost(HttpRequest request, IWebHostEnvironment environment, string configuredDomain)
+    {
+        if (environment.IsDevelopment() && string.Equals(request.Host.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            return "localhost";
+
+        return configuredDomain.Trim().TrimStart('.');
+    }
+
+    /// <summary>The request's port only in Development and Staging, so a client cannot choose it elsewhere.</summary>
+    internal static int ResolvePort(HttpRequest request, IWebHostEnvironment environment)
     {
         var port = request.Host.Port;
         if (!port.HasValue)

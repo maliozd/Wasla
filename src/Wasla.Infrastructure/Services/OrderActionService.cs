@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -14,14 +16,17 @@ public sealed class OrderActionService : IOrderActionService
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderActionService> _logger;
     private readonly IEnumerable<IFoodPlatformClient> _clients;
+    private readonly ITenantChangeNotifier _notifier;
 
     public OrderActionService(
         ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
+        ITenantChangeNotifier notifier,
         ILogger<OrderActionService> logger)
     {
         _dbFactory = dbFactory;
         _clients = clients;
+        _notifier = notifier;
         _logger = logger;
     }
 
@@ -33,19 +38,14 @@ public sealed class OrderActionService : IOrderActionService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
 
-        var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
-        if (order is null) return false;
-
-        // Only allow actions while still New to avoid clobbering worker-driven updates.
-        if (order.InternalStatus != OrderStatus.New) return false;
-
-        order.InternalStatus = newStatus;
-        if (newStatus == OrderStatus.Accepted) order.AcceptedAt ??= DateTime.UtcNow;
-        if (newStatus == OrderStatus.Cancelled) order.CancelledAt ??= DateTime.UtcNow;
-
-        var rows = await db.SaveChangesAsync(ct);
-        _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} rows={Rows}", orderId, newStatus, rows);
-        return rows > 0;
+        // Only allow actions while still New to avoid clobbering worker-driven updates. The write itself checks that,
+        // so of simultaneous callers only one changes the order.
+        var version = await CommitTransitionAsync(db, orderId, OrderStatus.New, newStatus, ct);
+        _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} saved={Saved}", orderId, newStatus, version is not null);
+        if (version is not { } changed)
+            return false;
+        await PublishChangedAsync(customerId, orderId, changed);
+        return true;
     }
 
     public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
@@ -60,18 +60,24 @@ public sealed class OrderActionService : IOrderActionService
 
     private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, CancellationToken ct)
     {
+        if (target is not (OrderStatus.Accepted or OrderStatus.Cancelled))
+            return new OrderActionResult(false, "Orders.ActionFailed");
+
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
 
+        // Claim the order's transition before reading it: another action on the same order, from any process, is
+        // refused here and never reaches the provider (WAS-104).
+        await using var claim = await OrderActionLock.TryAcquireAsync(db, orderId, ct);
+        if (claim is null)
+            return Contested(orderId, target);
+
         var order = await db.Orders
-            .Include(o => o.Items)
+            .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
         if (order is null) return new OrderActionResult(false, "Orders.ActionFailed");
 
         if (order.InternalStatus != OrderStatus.New)
             return new OrderActionResult(false, "Orders.InvalidStatusForAction");
-
-        if (target is not (OrderStatus.Accepted or OrderStatus.Cancelled))
-            return new OrderActionResult(false, "Orders.ActionFailed");
 
         // Choose a connection for the platform. We don't persist connection-id on Order yet (MVP),
         // so we use the first active connection for this platform.
@@ -87,15 +93,18 @@ public sealed class OrderActionService : IOrderActionService
         if (client is null)
             return new OrderActionResult(false, "Orders.ActionFailed");
 
+        // From here the action owns the transition. The provider call and the local write that records it no longer
+        // follow the request: an aborted request must not leave a provider change without its local status. The
+        // provider HTTP clients bound the call with their own timeouts.
         try
         {
             if (target == OrderStatus.Accepted)
             {
-                await client.AcceptOrderAsync(connection, order.ExternalOrderId, preparationMinutes: 0, ct);
+                await client.AcceptOrderAsync(connection, order.ExternalOrderId, preparationMinutes: 0, CancellationToken.None);
             }
             else
             {
-                await client.RejectOrderAsync(connection, order.ExternalOrderId, Array.Empty<string>(), reasonId: 0, ct);
+                await client.RejectOrderAsync(connection, order.ExternalOrderId, Array.Empty<string>(), reasonId: 0, CancellationToken.None);
             }
         }
         catch (Exception ex)
@@ -104,13 +113,10 @@ public sealed class OrderActionService : IOrderActionService
             return new OrderActionResult(false, target == OrderStatus.Accepted ? "Orders.ApproveFailed" : "Orders.RejectFailed");
         }
 
-        order.InternalStatus = target;
-        if (target == OrderStatus.Accepted) order.AcceptedAt ??= DateTime.UtcNow;
-        if (target == OrderStatus.Cancelled) order.CancelledAt ??= DateTime.UtcNow;
+        if (await CommitTransitionAsync(db, orderId, OrderStatus.New, target, CancellationToken.None) is not { } version)
+            return StatusChangedAfterProviderCall(orderId, order.Platform, OrderStatus.New, target);
 
-        var rows = await db.SaveChangesAsync(ct);
-        if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
-
+        await PublishChangedAsync(customerId, orderId, version);
         return new OrderActionResult(true, target == OrderStatus.Accepted ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
 
@@ -191,7 +197,11 @@ public sealed class OrderActionService : IOrderActionService
     {
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
 
-        var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        await using var claim = await OrderActionLock.TryAcquireAsync(db, orderId, ct);
+        if (claim is null)
+            return Contested(orderId, nextStatus);
+
+        var order = await db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId, ct);
         if (order is null) return new OrderActionResult(false, "Orders.ActionFailed");
 
         if (order.InternalStatus != requiredCurrent)
@@ -213,10 +223,11 @@ public sealed class OrderActionService : IOrderActionService
         if (client is null)
             return new OrderActionResult(false, "Orders.OrderActionFailed");
 
+        // The action owns the transition: as in ExecuteAsync, the provider call and its local write ignore the request token.
         try
         {
             if (platformCall is not null)
-                await platformCall(client, connection, order, ct);
+                await platformCall(client, connection, order, CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -230,14 +241,84 @@ public sealed class OrderActionService : IOrderActionService
             return new OrderActionResult(false, "Orders.OrderActionFailed");
         }
 
-        order.InternalStatus = nextStatus;
-        if (nextStatus == OrderStatus.Delivered)
-            order.DeliveredAt ??= DateTime.UtcNow;
+        if (await CommitTransitionAsync(db, orderId, requiredCurrent, nextStatus, CancellationToken.None) is not { } version)
+            return StatusChangedAfterProviderCall(orderId, order.Platform, requiredCurrent, nextStatus);
 
-        var rows = await db.SaveChangesAsync(ct);
-        if (rows <= 0) return new OrderActionResult(false, "Orders.ActionFailed");
-
+        await PublishChangedAsync(customerId, orderId, version);
         return new OrderActionResult(true, successKey);
     }
+
+    /// <summary>
+    /// Moves the order from <paramref name="requiredCurrent"/> to <paramref name="nextStatus"/> and raises its
+    /// <c>ChangeVersion</c> in one short transaction (provider calls happen before it), and returns the new version.
+    /// The update only applies while the order is still in <paramref name="requiredCurrent"/>, so of simultaneous
+    /// writers exactly one changes it, and a status Worker sync applied meanwhile is never overwritten. Null when the
+    /// order was no longer in that status; then nothing is committed. The transition's timestamp is set only if empty.
+    /// </summary>
+    private static async Task<long?> CommitTransitionAsync(
+        TenantDbContext db,
+        Guid orderId,
+        OrderStatus requiredCurrent,
+        OrderStatus nextStatus,
+        CancellationToken ct)
+    {
+        var nowUtc = DateTime.UtcNow;
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var claimed = db.Orders.Where(o => o.Id == orderId && o.InternalStatus == requiredCurrent);
+        var rows = nextStatus switch
+        {
+            OrderStatus.Accepted => await claimed.ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.InternalStatus, nextStatus)
+                .SetProperty(o => o.AcceptedAt, o => o.AcceptedAt ?? nowUtc)
+                .SetProperty(o => o.UpdatedAt, nowUtc), ct),
+            OrderStatus.Cancelled => await claimed.ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.InternalStatus, nextStatus)
+                .SetProperty(o => o.CancelledAt, o => o.CancelledAt ?? nowUtc)
+                .SetProperty(o => o.UpdatedAt, nowUtc), ct),
+            OrderStatus.Delivered => await claimed.ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.InternalStatus, nextStatus)
+                .SetProperty(o => o.DeliveredAt, o => o.DeliveredAt ?? nowUtc)
+                .SetProperty(o => o.UpdatedAt, nowUtc), ct),
+            _ => await claimed.ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.InternalStatus, nextStatus)
+                .SetProperty(o => o.UpdatedAt, nowUtc), ct)
+        };
+        if (rows <= 0)
+        {
+            await tx.RollbackAsync(ct);
+            return null;
+        }
+
+        var version = await OrderChangeVersions.NextAsync(db, orderId, ct);
+        await tx.CommitAsync(ct);
+        return version;
+    }
+
+    // Another action on the same order holds its transition: this one changes nothing and calls no provider.
+    private OrderActionResult Contested(Guid orderId, OrderStatus target)
+    {
+        _logger.LogInformation(
+            "Order action refused: another action on the order is in progress. OrderId={OrderId} Target={Target}",
+            orderId,
+            target);
+        return new OrderActionResult(false, "Orders.InvalidStatusForAction");
+    }
+
+    // The provider call succeeded, but the order left the required status meanwhile (Worker sync applied a provider
+    // status). The local status the sync wrote stands; this action records and publishes nothing.
+    private OrderActionResult StatusChangedAfterProviderCall(Guid orderId, FoodPlatform platform, OrderStatus from, OrderStatus to)
+    {
+        _logger.LogWarning(
+            "Order status changed during the provider call; the local transition was not applied. OrderId={OrderId} Platform={Platform} {From}->{To}",
+            orderId,
+            platform,
+            from,
+            to);
+        return new OrderActionResult(false, "Orders.InvalidStatusForAction");
+    }
+
+    // After the save committed the status change: open Live Screens read their snapshot again. Never fails the action.
+    private Task PublishChangedAsync(Guid customerId, Guid orderId, long version) =>
+        TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(orderId, version), _logger);
 }
 

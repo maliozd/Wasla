@@ -19,6 +19,7 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.10" />
@@ -27,16 +28,43 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Wasla.Application\Wasla.Application.csproj" />
+		<ProjectReference Include="..\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Wasla.PrintBridge.Tests" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="appsettings.Development.json">
+	</ItemGroup>
+
+	<!-- The WebView2 package always references its WPF wrapper. The shell uses the WinForms control only,
+	     so drop that reference: it conflicts with the WinForms WindowsBase (MSB3277) and would ship unused. -->
+	<Target Name="ExcludeWebView2WpfReference" BeforeTargets="ResolveAssemblyReferences">
+		<ItemGroup>
+			<Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+		</ItemGroup>
+	</Target>
+
+	<!-- WebView2 status shell page (WAS-53). Served only from the shell-ui folder next to the executable. -->
+	<ItemGroup>
+		<None Include="WebShell\Assets\**\*" Link="shell-ui\%(RecursiveDir)%(Filename)%(Extension)">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>
+	</ItemGroup>
+
+	<!-- The canonical Wasla logo is owned by Wasla.Web and linked here, not copied, so both apps ship the same file:
+	     shell-ui/wasla-logo.svg for the WebView2 page, and an embedded copy for the native windows (WaslaLogo). -->
+	<ItemGroup>
+		<None Include="..\Wasla.Web\wwwroot\images\brand\wasla-logo.svg" Link="shell-ui\wasla-logo.svg">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
+		<EmbeddedResource Include="..\Wasla.Web\wwwroot\images\brand\wasla-logo.svg" Link="Brand\wasla-logo.svg" LogicalName="Wasla.PrintBridge.Brand.wasla-logo.svg" />
 	</ItemGroup>
 
 </Project>

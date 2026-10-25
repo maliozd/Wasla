@@ -9,6 +9,7 @@ using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Printing;
@@ -44,7 +45,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             Id = _tenant,
             Name = "Setup Mode Restaurant",
             Slug = "setup-mode",
-            PrimaryDomain = "setup-mode.wasla.local",
+            PrimaryDomain = "setup-mode.app.wasla.local",
             DatabaseName = "unused",
             EncryptedConnectionString = "unused",
             EncryptionKeyVersion = 1,
@@ -209,13 +210,14 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new OrderAutoApproveService(_tenants, _approvals, ReceiptCreation(), NullLogger<OrderAutoApproveService>.Instance),
             ReceiptCreation(),
+            NullTenantChangeNotifier.Instance,
             NullLogger<OrderSyncService>.Instance);
 
     private OrderReceiptCreationService ReceiptCreation() =>
         new(_tenants, Central(), ReceiptJobs(), NullLogger<OrderReceiptCreationService>.Instance);
 
     private ReceiptPrintJobService ReceiptJobs() =>
-        new(_tenants, new DefaultTemplates(), NullLogger<ReceiptPrintJobService>.Instance);
+        new(_tenants, new DefaultTemplates(), NullTenantChangeNotifier.Instance, NullLogger<ReceiptPrintJobService>.Instance);
 
     private CentralDbContext Central() =>
         new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_centralConnection).Options);
@@ -273,8 +275,9 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         public IReadOnlyCollection<ExternalOrderDto> Orders { get; set; } = [];
 
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(Orders);
 
         public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>

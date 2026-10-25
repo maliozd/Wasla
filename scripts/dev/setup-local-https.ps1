@@ -10,9 +10,6 @@
     Creates .certs/wasla-local.pem, wasla-local-key.pem, and wasla-local.pfx
     for *.wasla.local, wasla.local, localhost, and 127.0.0.1.
     Generated files are gitignored and must not be committed.
-
-    Legacy: older setups may still have .certs/orderhub-local.* from the OrderHub era.
-    Those files are not used by current Kestrel config; regenerate with this script.
 #>
 param(
     [string] $PfxPassword = "wasla-dev"

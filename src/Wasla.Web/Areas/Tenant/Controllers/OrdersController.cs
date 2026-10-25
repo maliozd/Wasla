@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Application.Abstractions.Orders;
+using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
@@ -76,7 +77,7 @@ public sealed class OrdersController : BaseController
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] string? search,
-        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortBy = OrderListSort.OrderedAt,
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
@@ -239,7 +240,7 @@ public sealed class OrdersController : BaseController
         [FromQuery] string? startDate,
         [FromQuery] string? endDate,
         [FromQuery] string? search,
-        [FromQuery] string? sortBy = "receivedAt",
+        [FromQuery] string? sortBy = OrderListSort.OrderedAt,
         [FromQuery] string? sortDirection = "desc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
@@ -268,10 +269,10 @@ public sealed class OrdersController : BaseController
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var today = OrdersReceivedAtQueryRange.FormatWebDate(OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
-            sortBy: "receivedAt", sortDirection: "desc", page: 1, pageSize: 100,
+            sortBy: OrderListSort.OrderedAt, sortDirection: "desc", page: 1, pageSize: 100,
             useHistoryDefaults: false,
             addDateValidationErrors: false, logDateFilterAs: null, ct,
             includeLineItems: true);
@@ -281,15 +282,18 @@ public sealed class OrdersController : BaseController
 
     [HttpGet("live-display")]
     [Authorize(Policy = TenantPolicies.CanViewLiveScreen)]
-    public async Task<IActionResult> LiveDisplay([FromServices] IGuidedSetupCoordinator guidedSetup, CancellationToken ct = default)
+    public async Task<IActionResult> LiveDisplay(
+        [FromServices] IGuidedSetupCoordinator guidedSetup,
+        [FromServices] IRestaurantLogoService restaurantLogos,
+        CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var today = OrdersReceivedAtQueryRange.GetTurkeyLocalToday().ToString("yyyy-MM-dd");
+        var today = OrdersReceivedAtQueryRange.FormatWebDate(OrdersReceivedAtQueryRange.GetTurkeyLocalToday());
         var vm = await BuildOrderListViewModelAsync(
             tenant.Id, null, null, today, today, search: null,
-            sortBy: "receivedAt",
+            sortBy: OrderListSort.OrderedAt,
             sortDirection: "desc",
             page: 1, pageSize: 100,
             useHistoryDefaults: false,
@@ -304,7 +308,25 @@ public sealed class OrdersController : BaseController
             vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
 
         ViewData["CustomerName"] = tenant.Name;
+        var logo = await ReadRestaurantLogoAsync(restaurantLogos, tenant.Id, ct);
+        ViewData["RestaurantLogoUrl"] = Url.RestaurantLogo(logo?.Version);
+        if (logo is not null)
+            ViewData["RestaurantLogoBackgroundClass"] = RestaurantLogoBackgrounds.CssClass(logo.Background);
         return View("LiveDisplay", vm);
+    }
+
+    // The logo is decoration: a failed read shows the storefront icon and never breaks the Live Screen.
+    private async Task<RestaurantLogoSummary?> ReadRestaurantLogoAsync(IRestaurantLogoService logos, Guid tenantId, CancellationToken ct)
+    {
+        try
+        {
+            return await logos.GetCurrentAsync(tenantId, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Could not read the restaurant logo for tenant {TenantId}; the Live Screen shows the default icon", tenantId);
+            return null;
+        }
     }
 
     /// <summary>
@@ -322,6 +344,7 @@ public sealed class OrdersController : BaseController
     public async Task<IActionResult> LiveData(
         [FromServices] IGuidedSetupCoordinator guidedSetup,
         [FromServices] ITenantOperationalModeService operationalModes,
+        [FromServices] IPlatformConnectionService platformConnections,
         CancellationToken ct = default)
     {
         var tenant = _currentTenant.CurrentTenant;
@@ -332,15 +355,35 @@ public sealed class OrdersController : BaseController
         // The settings menu's automation indicators, for everyone who may view the Live Screen: read-only effective
         // states (Active, Off, PendingSetup), never the settings themselves. From the server on every poll, so
         // Setup → Live shows up without a reload. The settings endpoints keep their own Manager/Owner policy.
+        TenantAutomationStatus? automation = null;
         try
         {
-            var automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
+            automation = await operationalModes.GetAutomationStatusAsync(tenant.Id, ct);
             snapshot = snapshot with { Automation = LiveScreenAutomationStatus.From(automation) };
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // The indicators keep their last state; the orders are unaffected.
             _logger.LogWarning("Automation status could not be read: {ExceptionType}", ex.GetType().Name);
+        }
+
+        // The header's connection indicator, for the same users: from this tenant's platform connection records on
+        // every poll, never from the page or this request succeeding. Without the Order Sync setting it cannot be told,
+        // so it stays null and the page shows a connection issue; the orders are unaffected.
+        if (automation is not null)
+        {
+            try
+            {
+                var connections = await platformConnections.GetListAsync(tenant.Id, ct);
+                snapshot = snapshot with
+                {
+                    Sync = LiveScreenSyncRules.Evaluate(connections, automation.OrderSyncConfigured, snapshot.ServerTimeUtc)
+                };
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning("Platform sync status could not be read: {ExceptionType}", ex.GetType().Name);
+            }
         }
 
         var userIdValue = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
@@ -405,30 +448,36 @@ public sealed class OrdersController : BaseController
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
 
-        var (startUtc, endUtc, startDateParsed, endDateParsed) = ParseDateFilters(startDate, endDate);
+        var dates = OrdersReceivedAtQueryRange.ParseWebQueryStrings(startDate, endDate);
+        var (startUtc, endUtc, startDateParsed, endDateParsed) = (dates.UtcStartInclusive, dates.UtcEndExclusive, dates.StartDate, dates.EndDate);
         var trimmedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 
         if (addDateValidationErrors)
         {
-            if (startUtc is null && !string.IsNullOrWhiteSpace(startDate))
+            if (dates.StartInvalid)
                 ModelState.AddModelError("startDate", _localizer["Orders.InvalidStartDate"].Value);
-            if (endUtc is null && !string.IsNullOrWhiteSpace(endDate))
+            if (dates.EndInvalid)
                 ModelState.AddModelError("endDate", _localizer["Orders.InvalidEndDate"].Value);
+            if (dates.Inverted)
+                ModelState.AddModelError("endDate", _localizer["Orders.InvalidDateRange"].Value);
         }
 
-        var result = await _orders.GetListAsync(
-            customerId,
-            platform,
-            status,
-            startUtc,
-            endUtc,
-            sortBy,
-            sortDirection,
-            safePage,
-            safePageSize,
-            trimmedSearch,
-            ct,
-            includeLineItems);
+        // A supplied date that cannot be used never widens the query: nothing is listed until the filter is corrected.
+        var result = dates.IsValid
+            ? await _orders.GetListAsync(
+                customerId,
+                platform,
+                status,
+                startUtc,
+                endUtc,
+                sortBy,
+                sortDirection,
+                safePage,
+                safePageSize,
+                trimmedSearch,
+                ct,
+                includeLineItems)
+            : new OrderListResult { Items = [], TotalCount = 0, Page = safePage, PageSize = safePageSize };
 
         if (logDateFilterAs is not null)
         {
@@ -525,13 +574,18 @@ public sealed class OrdersController : BaseController
             ServiceFee = order.ServiceFee,
             PaymentMethod = order.PaymentMethod,
             CreatedAtPlatformUtc = order.CreatedAtPlatformUtc,
+            PlatformModifiedAtUtc = order.PlatformModifiedAtUtc,
+            OrderedAtUtc = order.OrderedAtUtc,
             ReceivedAtUtc = order.ReceivedAtUtc,
             ReceivedAtLocal = receivedLocal,
+            LastChangedAtUtc = order.LastChangedAtUtc,
             AcceptedAtUtc = order.AcceptedAtUtc,
             AcceptedAtLocal = acceptedLocal,
             BackUrl = "/orders",
             ReceiptPrintInProgress = printState.HasActiveJob,
             ReceiptCanReprint = printState.CanReprint,
+            ReceiptLatestStatus = printState.LatestStatus,
+            ReceiptPrintVersion = printState.Version,
             Items = order.Items.Select(i => new OrderDetailViewModel.ItemRow
             {
                 ProductName = i.ProductName,
@@ -546,6 +600,26 @@ public sealed class OrdersController : BaseController
                 }).ToList()
             }).ToList()
         };
+    }
+
+    /// <summary>
+    /// The order's current receipt print state, as the shared print action shows it. Read-only. Open detail panels and
+    /// the full details page read it again when a live print notification arrives, after a reconnect, and every few
+    /// seconds while the live connection is down; the notification itself is never trusted as the state.
+    /// </summary>
+    [HttpGet("{id:guid}/print-state")]
+    [Authorize(Policy = TenantPolicies.CanManualPrint)]
+    public async Task<IActionResult> PrintState(Guid id, CancellationToken ct)
+    {
+        var tenant = _currentTenant.CurrentTenant;
+        if (tenant is null) return NotFound();
+
+        var state = await _manualPrint.FindReceiptPrintStateAsync(tenant.Id, id, ct);
+        if (state is null) return NotFound();
+
+        Response.Headers.CacheControl = "no-store";
+        var model = OrderPrintActionModel.From(id, state);
+        return Ok(new { orderId = id, version = model.Version, mode = model.Mode, outcome = model.Outcome });
     }
 
     /// <summary>
@@ -701,6 +775,12 @@ public sealed class OrdersController : BaseController
                 ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
                     DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),
                     timeZone),
+                OrderedAtUtc = o.OrderedAtUtc,
+                OrderedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(o.OrderedAtUtc, DateTimeKind.Utc),
+                    timeZone),
+                OrderedAtIsFromPlatform = o.CreatedAtPlatformUtc.HasValue,
+                ShowReceivedSeparately = OrderUiHelper.ShowReceivedSeparately(o.CreatedAtPlatformUtc, o.ReceivedAtUtc),
                 ItemCount = o.ItemCount,
                 FirstProductName = o.FirstProductName,
                 DisplayImageUrl = OrderProductImageHelper.ResolveDisplayImageUrl(null, imageSeed),
@@ -769,7 +849,7 @@ public sealed class OrdersController : BaseController
         if (string.IsNullOrWhiteSpace(startDate) && string.IsNullOrWhiteSpace(endDate))
         {
             var y = OrdersReceivedAtQueryRange.GetTurkeyLocalToday();
-            var s = y.ToString("yyyy-MM-dd");
+            var s = OrdersReceivedAtQueryRange.FormatWebDate(y);
             startDate = s;
             endDate = s;
         }
@@ -783,8 +863,8 @@ public sealed class OrdersController : BaseController
         if (useHistoryDefaults)
         {
             var (historyStart, historyEnd) = OrdersReceivedAtQueryRange.GetDefaultHistoryRange();
-            startDate = historyStart.ToString("yyyy-MM-dd");
-            endDate = historyEnd.ToString("yyyy-MM-dd");
+            startDate = OrdersReceivedAtQueryRange.FormatWebDate(historyStart);
+            endDate = OrdersReceivedAtQueryRange.FormatWebDate(historyEnd);
         }
         else
         {
@@ -792,23 +872,16 @@ public sealed class OrdersController : BaseController
         }
     }
 
-    private static (DateTime? StartUtc, DateTime? EndUtc, DateOnly? StartDate, DateOnly? EndDate) ParseDateFilters(
-        string? startDate, string? endDate)
-    {
-        var (startUtc, endUtc) = OrdersReceivedAtQueryRange.FromWebQueryStrings(startDate, endDate, out var start, out var end);
-        return (startUtc, endUtc, start, end);
-    }
-
     private static string NormalizeSortDirection(string? sortDirection) =>
         string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
     private static string NormalizeSortBy(string? sortBy)
     {
-        var s = string.IsNullOrWhiteSpace(sortBy) ? "receivedAt" : sortBy.Trim();
+        var s = string.IsNullOrWhiteSpace(sortBy) ? OrderListSort.OrderedAt : sortBy.Trim();
         return s switch
         {
-            "receivedAt" or "platform" or "status" or "customerName" or "totalAmount" => s,
-            _ => "receivedAt"
+            OrderListSort.OrderedAt or OrderListSort.ReceivedAt or "platform" or "status" or "customerName" or "totalAmount" => s,
+            _ => OrderListSort.OrderedAt
         };
     }
 }

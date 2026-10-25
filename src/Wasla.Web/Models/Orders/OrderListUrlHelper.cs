@@ -1,4 +1,6 @@
-﻿namespace Wasla.Web.Models.Orders;
+﻿using Wasla.Application.Orders;
+
+namespace Wasla.Web.Models.Orders;
 
 public static class OrderListUrlHelper
 {
@@ -16,9 +18,9 @@ public static class OrderListUrlHelper
         if (filters.Status.HasValue)
             pairs.Add(new("status", filters.Status.Value.ToString()));
         if (filters.StartDate.HasValue)
-            pairs.Add(new("startDate", filters.StartDate.Value.ToString("yyyy-MM-dd")));
+            pairs.Add(new("startDate", OrdersReceivedAtQueryRange.FormatWebDate(filters.StartDate.Value)));
         if (filters.EndDate.HasValue)
-            pairs.Add(new("endDate", filters.EndDate.Value.ToString("yyyy-MM-dd")));
+            pairs.Add(new("endDate", OrdersReceivedAtQueryRange.FormatWebDate(filters.EndDate.Value)));
         if (!string.IsNullOrWhiteSpace(filters.Search))
             pairs.Add(new("search", filters.Search.Trim()));
 
@@ -51,7 +53,8 @@ public static class OrderListUrlHelper
         }
         else
         {
-            nextDir = sortBy == "receivedAt" ? "desc" : "asc";
+            // Time columns start newest first.
+            nextDir = sortBy is Wasla.Application.Orders.OrderListSort.OrderedAt or Wasla.Application.Orders.OrderListSort.ReceivedAt ? "desc" : "asc";
         }
 
         SortHeaderDirection? direction = null;

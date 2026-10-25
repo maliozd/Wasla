@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Switches /opt/wasla/current back to an installed release and restarts Web, Api and Worker (WAS-76).
+#
+#   sudo wasla-rollback [<commit-sha>]     # default: the release recorded in /opt/wasla/previous-release
+#
+# Rolling back binaries does not roll back database migrations. Each service's start runs
+# `migration-status --require-current` with the target release's CLI, so a release older than the applied schema
+# refuses to start ("unknown" migrations). Then restore the databases from the pre-release backup, or decide
+# explicitly that the schema is compatible (see the runbook); this script never bypasses that check.
+set -euo pipefail
+
+root=${WASLA_ROOT:-/opt/wasla}
+services=(wasla-web wasla-api wasla-worker)
+die() { printf 'wasla-rollback: %s\n' "$1" >&2; exit "${2:-2}"; }
+
+[[ $EUID -eq 0 ]] || die 'run with sudo.'
+target=${1:-$(cat "$root/previous-release" 2>/dev/null || true)}
+[[ "$target" =~ ^[0-9a-f]{40}$ ]] || die 'no target release: pass a commit SHA or record one in previous-release.'
+[[ -f "$root/releases/$target/RELEASE" ]] || die "release $target is not installed."
+
+current=$(basename "$(readlink -f "$root/current")")
+[[ "$current" != "$target" ]] || die "release $target is already current."
+
+systemctl stop "${services[@]}"
+ln -sfn "releases/$target" "$root/current.new"
+mv -T "$root/current.new" "$root/current"
+printf '%s\n' "$current" > "$root/previous-release"
+printf '%s now points at release %s (was %s).\n' "$root/current" "$target" "$current"
+
+if ! systemctl start "${services[@]}"; then
+  printf 'A service did not start. If its migration check failed, the schema is ahead of release %s:\n' "$target" >&2
+  printf '  journalctl -u wasla-web -n 50 --no-pager\n' >&2
+  printf 'Switch forward again with: sudo wasla-rollback %s\n' "$current" >&2
+  exit 1
+fi
+printf 'Rolled back to %s.\n' "$target"

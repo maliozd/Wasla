@@ -10,6 +10,7 @@ using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
@@ -234,7 +235,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     }
 
     private OrderActionService CreateActions(RecordingPlatformClient client) =>
-        new(_tenantDb, [client], NullLogger<OrderActionService>.Instance);
+        new(_tenantDb, [client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
     private OrderReceiptCreationService CreateReceipts() =>
         new(
@@ -243,6 +244,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             new ReceiptPrintJobService(
                 _tenantDb,
                 new FixedReceiptTemplateSettings(),
+                NullTenantChangeNotifier.Instance,
                 NullLogger<ReceiptPrintJobService>.Instance),
             NullLogger<OrderReceiptCreationService>.Instance);
 
@@ -341,7 +343,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             Id = _tenantId,
             Name = name,
             Slug = "sushi-m",
-            PrimaryDomain = "sushi-m.wasla.local",
+            PrimaryDomain = "sushi-m.app.wasla.local",
             DatabaseName = "Wasla_SushiM",
             EncryptedConnectionString = "enc",
             CreatedAt = DateTime.UtcNow,
@@ -378,11 +380,13 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     private sealed class RecordingPlatformClient : IFoodPlatformClient
     {
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
+            OrderFetchWindow window,
             CancellationToken ct) =>
             Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
 
@@ -522,6 +526,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
                 builder.ToTable("Orders");
                 builder.HasKey(x => x.Id);
                 builder.HasIndex(x => x.IdempotencyKey).IsUnique();
+                builder.Property(x => x.OrderedAt).HasComputedColumnSql(Wasla.Infrastructure.Persistence.Tenant.Configurations.OrderConfiguration.OrderedAtSql, stored: true);
                 builder.HasMany(x => x.Items).WithOne(x => x.Order).HasForeignKey(x => x.OrderId);
             });
 

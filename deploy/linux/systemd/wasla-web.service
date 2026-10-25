@@ -1,0 +1,49 @@
+# Wasla.Web on the single Linux VDS (WAS-76). Installed to /etc/systemd/system/ by deploy/linux/bin/wasla-install-host.
+# Nginx is the only public listener; Web listens on loopback only. Secrets come from root-only environment files
+# that systemd reads before it drops to the wasla account; nothing secret is written in this unit.
+[Unit]
+Description=Wasla Web (Wasla Orders MVC/Razor, tenant hosts, SignalR hub)
+After=network-online.target mssql-server.service
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+[Service]
+Type=exec
+User=wasla
+Group=wasla
+EnvironmentFile=/etc/wasla/wasla.env
+EnvironmentFile=/etc/wasla/secrets.env
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5200
+Environment=DataProtection__KeyPath=/var/lib/wasla/keys/web
+Environment=WASLA_PROCESS=web
+WorkingDirectory=/var/log/wasla/web
+# Refuses to start on a missing or Development-only setting, then on a database whose schema this release does not
+# match (pending, unknown or unreadable). Every start, including after a reboot or a manual restart, passes both.
+ExecStartPre=/opt/wasla/bin/wasla-preflight web
+ExecStartPre=/usr/bin/dotnet /opt/wasla/current/cli/Wasla.Cli.dll migration-status --require-current
+ExecStart=/usr/bin/dotnet /opt/wasla/current/web/Wasla.Web.dll --contentRoot /opt/wasla/current/web
+Restart=on-failure
+RestartSec=10
+# SIGTERM starts the host's graceful shutdown (open requests and SignalR connections end within the host's timeout).
+KillSignal=SIGTERM
+TimeoutStartSec=120
+TimeoutStopSec=40
+SyslogIdentifier=wasla-web
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/wasla/keys/web /var/log/wasla/web
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

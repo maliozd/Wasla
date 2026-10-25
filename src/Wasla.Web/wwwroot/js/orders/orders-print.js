@@ -1,9 +1,7 @@
 // Manual receipt printing. Posts to the existing Orders print endpoint, which queues a job on the
 // Print Bridge pipeline. Success means "queued", never "printed on paper".
-// Phase 2B5 temporary: the clicked button goes to queued immediately; the open UI does not
-// receive later PrintJob transitions (Pending/Printing/Printed/Failed). Reopen the lazy Live
-// modal for a fresh snapshot; the full details page requires reload. SignalR follow-up
-// acceptance criteria: docs/orders-printjob-status-signalr.md.
+// The clicked button goes to queued at once. Later PrintJob transitions (Printing, Printed, Failed) reach the open
+// panel through orders-print-status.js, which reads the server state again (docs/architecture/realtime.md).
 (function (global) {
   "use strict";
 
@@ -11,6 +9,7 @@
   if (!O) return;
 
   const inFlight = {};
+  const settled = {};
 
   function localize(key) {
     return (typeof O.getMessage === "function" ? O.getMessage(key) : null) || key;
@@ -48,6 +47,13 @@
     btn.setAttribute("data-print-mode", "queued");
     btn.disabled = true;
     setLabel(btn, btn.getAttribute("data-label-queued") || localize("orderPrintInQueue"));
+    // The previous receipt's outcome no longer describes what is shown.
+    const root = btn.closest ? btn.closest("[data-print-action-for]") : null;
+    const outcome = root ? root.querySelector("[data-print-outcome]") : null;
+    if (outcome) {
+      outcome.setAttribute("data-print-outcome", "none");
+      if (outcome.textContent !== "") outcome.textContent = "";
+    }
   }
 
   function restore(btn, mode) {
@@ -106,6 +112,9 @@
       if (O.isDebugEnabled()) O.debugWarn("manual order print failed", error);
     } finally {
       delete inFlight[orderId];
+      settled[orderId] = (settled[orderId] || 0) + 1;
+      // Read the server's state now that this submit is settled (a live notification may have been held back).
+      if (O.printStatus && typeof O.printStatus.refresh === "function") O.printStatus.refresh(orderId);
     }
   }
 
@@ -128,7 +137,11 @@
   }
 
   O.print = {
-    submit: submit
+    submit: submit,
+    /** A manual print of this order is being submitted; status refreshes wait for it. */
+    isBusy: function (orderId) { return !!inFlight[orderId]; },
+    /** How many manual print submits of this order have finished; a status read started before one is not shown. */
+    submitGeneration: function (orderId) { return settled[orderId] || 0; }
   };
 
   document.addEventListener("DOMContentLoaded", init);
