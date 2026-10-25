@@ -6,13 +6,16 @@ namespace Wasla.UnitTests.Web;
 
 /// <summary>
 /// GitHub #72 in a real headless Chromium browser against <see cref="TenantVisualWebHost"/> (real controllers, views,
-/// stylesheets and scripts). The Live Screen's Settings button shows its localized label beside the gear and has the
-/// height, radius and vertical centre of the Board / List / Focus selector beside it. In its popover each group heading
+/// stylesheets and scripts). The Live Screen's settings gear is a square button named "Settings" (aria-label and
+/// tooltip) with the height, radius and vertical centre of the Board / List / Focus selector before it, and the Wasla
+/// logo comes last in the header. In its popover each group heading
 /// shares one row with a compact Settings action: the Notifications one opens the shared notification settings modal
 /// from the keyboard and gives focus back to the Settings button, the Automation one links to order settings for Owners
-/// and Managers only, and no separate bottom block remains. Checked in Turkish, Russian and Arabic (right to left), in
-/// light and dark mode, at desktop and phone widths. Skips only when no Chromium browser is installed or Bootstrap cannot
-/// be loaded from its CDN.
+/// and Managers only, and no separate bottom block remains. Below the header, the order summary is one unboxed row of
+/// icon, count and label per metric, with the snapshot's counts in the page culture's digits and grouping, Today's first
+/// in the reading direction, and on phones wrapping only between metrics. Checked in Turkish, Russian and Arabic (right
+/// to left), in light and dark mode, at desktop and phone widths. Skips only when no Chromium browser is installed or
+/// Bootstrap cannot be loaded from its CDN.
 /// </summary>
 [Trait("Category", "Browser")]
 public sealed class LiveScreenSettingsLayoutBrowserTests
@@ -55,13 +58,16 @@ public sealed class LiveScreenSettingsLayoutBrowserTests
               const t = toggle.getBoundingClientRect(), s = views.getBoundingClientRect();
               const rtl = document.documentElement.getAttribute('dir') === 'rtl';
               const width = document.documentElement.clientWidth;
+              const logo = document.querySelector('.wasla-live-display-brand').getBoundingClientRect();
               return {
                 dir: document.documentElement.getAttribute('dir') || 'ltr',
                 overflow: document.documentElement.scrollWidth > width,
                 text: toggle.textContent.trim(),
-                toggleHeight: t.height, viewsHeight: s.height,
+                title: toggle.getAttribute('title'),
+                toggleHeight: t.height, toggleWidth: t.width, viewsHeight: s.height,
                 centreOffset: Math.abs((t.top + t.height / 2) - (s.top + s.height / 2)),
-                gap: rtl ? t.left - s.right : s.left - t.right,
+                gap: rtl ? s.left - t.right : t.left - s.right,
+                logoLast: rtl ? logo.right <= t.left + 1 : logo.left >= t.right - 1,
                 toggleRadius: getComputedStyle(toggle).borderTopLeftRadius, viewsRadius: getComputedStyle(views).borderTopLeftRadius,
                 onScreen: t.left >= 0 && t.right <= width && s.left >= 0 && s.right <= width
               };
@@ -70,15 +76,19 @@ public sealed class LiveScreenSettingsLayoutBrowserTests
 
         Assert.Equal(direction, toolbar.GetProperty("dir").GetString());
         Assert.False(toolbar.GetProperty("overflow").GetBoolean(), $"{label}: the page scrolls sideways.");
-        Assert.Equal(settings, toolbar.GetProperty("text").GetString());
+        // A gear button: no visible words, named "Settings" by its aria-label and tooltip, square and as tall as the switch.
+        Assert.Equal("", toolbar.GetProperty("text").GetString());
+        Assert.Equal(settings, toolbar.GetProperty("title").GetString());
+        Assert.InRange(toolbar.GetProperty("toggleWidth").GetDouble() - toolbar.GetProperty("toggleHeight").GetDouble(), -0.5, 0.5);
         Assert.InRange(toolbar.GetProperty("toggleHeight").GetDouble() - toolbar.GetProperty("viewsHeight").GetDouble(), -0.5, 0.5);
+        Assert.True(toolbar.GetProperty("logoLast").GetBoolean(), $"{label}: the Wasla logo is not after the settings gear.");
         Assert.Equal(toolbar.GetProperty("viewsRadius").GetString(), toolbar.GetProperty("toggleRadius").GetString());
         Assert.True(toolbar.GetProperty("onScreen").GetBoolean(), $"{label}: the Settings button or the view selector is off screen.");
         if (width >= 992)
         {
-            // Side by side on one line, separated by the toolbar's gap (the Stop sound button between them is hidden).
-            Assert.True(toolbar.GetProperty("centreOffset").GetDouble() <= 1, $"{label}: the Settings button is not centred on the view selector.");
-            Assert.InRange(toolbar.GetProperty("gap").GetDouble(), 6, 10);
+            // The gear follows the switch on one line, separated by the header's gap.
+            Assert.True(toolbar.GetProperty("centreOffset").GetDouble() <= 1, $"{label}: the settings gear is not centred on the view selector.");
+            Assert.InRange(toolbar.GetProperty("gap").GetDouble(), 10, 14);
         }
 
         var toggleNode = Assert.Single(await browser.AccessibleNodesAsync("#ordersLiveDisplaySettingsToggle", ct));
@@ -176,6 +186,82 @@ public sealed class LiveScreenSettingsLayoutBrowserTests
         Assert.True(menu.GetProperty("notifications").GetBoolean());
         Assert.True(menu.GetProperty("automationHeading").GetBoolean());
         Assert.Equal(0, menu.GetProperty("automationLinks").GetInt32());
+    }
+
+    public static TheoryData<string, string, string, int> SummaryLayouts() => new()
+    {
+        { "tr-TR", "ltr", "light", 1440 },
+        { "ru-RU", "ltr", "dark", 1024 },
+        { "ar-SA", "rtl", "dark", 1024 },
+        { "tr-TR", "ltr", "light", 390 },
+        { "ar-SA", "rtl", "light", 390 }
+    };
+
+    [Theory]
+    [MemberData(nameof(SummaryLayouts))]
+    public async Task Summary_IsAnUnboxedRowOfCultureFormattedCounts_ThatWrapsOnlyBetweenMetrics(
+        string culture, string direction, string theme, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var label = $"{culture} {theme} {width}px";
+        await using var host = await TenantVisualWebHost.StartAsync();
+        await using var browser = await OpenLiveScreenAsync(host, culture, width, theme, ct);
+
+        var summary = await browser.EvaluateAsync<JsonElement>("""
+            (async () => {
+              const data = await (await fetch('/orders/live-data', { headers: { Accept: 'application/json' } })).json();
+              const activeStatuses = ['New', 'Accepted', 'Preparing', 'ReadyForPickup', 'OnTheWay'];
+              const active = data.orders.filter(o => !o.isDemo && activeStatuses.includes(o.status)).length;
+              const format = new Intl.NumberFormat(document.documentElement.lang);
+              const row = document.querySelector('.wasla-live-summary');
+              const metrics = [...row.querySelectorAll('.wasla-live-summary__metric')];
+              const box = e => e.getBoundingClientRect();
+              const rtl = document.documentElement.getAttribute('dir') === 'rtl';
+              const first = box(metrics[0]);
+              return {
+                dir: document.documentElement.getAttribute('dir') || 'ltr',
+                overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+                rowHeight: box(row).height,
+                lines: new Set(metrics.map(m => Math.round(box(m).top))).size,
+                todayAtStart: metrics.every(m => rtl ? box(m).right <= first.right + 1 : box(m).left >= first.left - 1),
+                labelsOneLine: metrics.every(m => m.querySelector('.wasla-live-summary__label').getClientRects().length === 1
+                  && box(m.querySelector('.wasla-live-summary__label')).height < 24),
+                boxed: metrics.some(m => { const c = getComputedStyle(m); return c.borderTopStyle !== 'none' || c.backgroundColor !== 'rgba(0, 0, 0, 0)'; }),
+                values: metrics.map(m => m.querySelector('.wasla-live-summary__value').textContent),
+                expected: [format.format(data.todayOrderCount), format.format(active), format.format(data.cancelledOrderCount)],
+                zero: metrics.map(m => m.classList.contains('is-zero')),
+                expectedZero: [data.todayOrderCount === 0, active === 0, data.cancelledOrderCount === 0],
+                icons: metrics.map(m => { const c = getComputedStyle(m.querySelector('.wasla-live-summary__icon'), '::before'); return c.maskImage || c.webkitMaskImage; }),
+                cancelledIcon: getComputedStyle(metrics[2].querySelector('.wasla-live-summary__icon'), '::before').backgroundColor,
+                todayIcon: getComputedStyle(metrics[0].querySelector('.wasla-live-summary__icon'), '::before').backgroundColor
+              };
+            })()
+            """, ct);
+
+        Assert.Equal(direction, summary.GetProperty("dir").GetString());
+        Assert.False(summary.GetProperty("overflow").GetBoolean(), $"{label}: the page scrolls sideways.");
+        // No box, border or fill: the summary never reads as a button, filter or view switch.
+        Assert.False(summary.GetProperty("boxed").GetBoolean(), $"{label}: a metric has a border or a background.");
+        // Counts in the culture's digits and grouping, the same numbers as the snapshot; a 0 is quiet.
+        Assert.Equal(
+            summary.GetProperty("expected").EnumerateArray().Select(v => v.GetString()),
+            summary.GetProperty("values").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal(
+            summary.GetProperty("expectedZero").EnumerateArray().Select(v => v.GetBoolean()),
+            summary.GetProperty("zero").EnumerateArray().Select(v => v.GetBoolean()));
+        foreach (var (icon, name) in summary.GetProperty("icons").EnumerateArray().Zip(new[] { "today", "active", "cancelled" }))
+            Assert.Contains($"metric-{name}.svg", icon.GetString(), StringComparison.Ordinal);
+        if (!summary.GetProperty("zero")[2].GetBoolean())
+            Assert.NotEqual(summary.GetProperty("todayIcon").GetString(), summary.GetProperty("cancelledIcon").GetString());
+        // Today's orders come first in the reading direction, and no label breaks inside itself.
+        Assert.True(summary.GetProperty("todayAtStart").GetBoolean(), $"{label}: today's orders are not at the start of the row.");
+        Assert.True(summary.GetProperty("labelsOneLine").GetBoolean(), $"{label}: a label wraps.");
+        if (width >= 1024)
+        {
+            Assert.Equal(1, summary.GetProperty("lines").GetInt32());
+            Assert.True(summary.GetProperty("rowHeight").GetDouble() <= 26, $"{label}: the row is {summary.GetProperty("rowHeight").GetDouble()} px tall.");
+        }
+        Assert.Null(host.ServerErrors);
     }
 
     private static void AssertNamed(IReadOnlyList<AccessibleNode> nodes, string role, string settings, string heading, string culture)

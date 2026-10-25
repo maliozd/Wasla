@@ -4694,4 +4694,7 @@
   <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
     <value>Этого соединения с платформой больше нет. Ничего не изменено.</value>
   </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} ещё</value>
+  </data>
 </root>

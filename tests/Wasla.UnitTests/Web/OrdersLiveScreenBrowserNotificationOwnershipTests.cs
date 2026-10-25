@@ -74,7 +74,7 @@ public sealed class OrdersLiveScreenBrowserNotificationOwnershipTests
         var training = Read("Areas", "Tenant", "Views", "Orders", "_GuidedTrainingPanel.cshtml");
         var modal = Read("Areas", "Tenant", "Views", "NotificationSettings", "_NotificationSettingsModal.cshtml");
 
-        var menu = liveView[liveView.IndexOf("id=\"ordersLiveDisplaySettingsMenu\"", StringComparison.Ordinal)..liveView.IndexOf("id=\"ordersLiveDisplayStopSound\"", StringComparison.Ordinal)];
+        var menu = liveView[liveView.IndexOf("id=\"ordersLiveDisplaySettingsMenu\"", StringComparison.Ordinal)..liveView.IndexOf("class=\"wasla-live-display-brand\"", StringComparison.Ordinal)];
         var entry = menu.IndexOf("data-notification-settings-open", StringComparison.Ordinal);
         Assert.True(entry >= 0, "The settings menu has no notification settings entry.");
         // Every Live Screen user changes their own preferences; only the automation group's order-settings link needs

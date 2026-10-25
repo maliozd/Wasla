@@ -2546,85 +2546,6 @@ body.wasla-orders-live-display .wasla-live-display-header {
   margin-inline-start: .25rem;
 }
 
-.wasla-live-screen-page .wasla-live-display-summary {
-  display: flex;
-  align-items: stretch;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0;
-}
-
-.wasla-live-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  width: max-content;
-  max-width: 100%;
-  min-height: 0;
-  background: var(--wasla-surface, #fff);
-  border: 1px solid #ece7e2;
-  border-radius: .7rem;
-  box-shadow: 0 1px 2px rgba(40, 32, 24, 0.04);
-  overflow: hidden;
-  cursor: default;
-}
-
-.wasla-live-summary__metric {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: .55rem;
-  min-width: 0;
-  padding-block: .45rem;
-  padding-inline: .8rem;
-  cursor: default;
-}
-
-.wasla-live-summary__metric + .wasla-live-summary__metric {
-  border-inline-start: 1px solid #efeae5;
-}
-
-.wasla-live-summary__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.7rem;
-  height: 1.7rem;
-  flex: 0 0 auto;
-  border-radius: .4rem;
-  font-size: .85rem;
-  line-height: 1;
-}
-
-.wasla-live-summary__icon--today { background: #eef3f8; color: #5d7390; }
-.wasla-live-summary__icon--active { background: #e7f6ee; color: #1f8a4c; }
-.wasla-live-summary__icon--cancelled { background: #fdeeee; color: #d4534e; }
-
-.wasla-live-summary__text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: .05rem;
-  min-width: 0;
-}
-
-.wasla-live-summary__value {
-  min-width: 1.5ch;
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums;
-  color: var(--wasla-text, #1f1a17);
-}
-
-.wasla-live-summary__label {
-  font-size: .6875rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: #8d8680;
-  overflow-wrap: anywhere;
-}
-
 [data-bs-theme="dark"] .wasla-live-display-identity__mark,
 [data-bs-theme="dark"] .wasla-restaurant-logo-frame {
   background: rgba(224, 122, 69, 0.14);
@@ -2635,7 +2556,6 @@ body.wasla-orders-live-display .wasla-live-display-header {
   background: #fff;
   border-color: rgba(255, 255, 255, 0.25);
 }
-[data-bs-theme="dark"] .wasla-live-summary__label { color: #b7aea6; }
 [data-bs-theme="dark"] .wasla-live-display-status {
   color: #9ed9b4;
   background: rgba(31, 138, 76, 0.18);
@@ -2649,17 +2569,6 @@ body.wasla-orders-live-display .wasla-live-display-header {
   color: #f3c76b;
   background: rgba(243, 199, 107, 0.14);
 }
-[data-bs-theme="dark"] .wasla-live-summary {
-  border-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
-  box-shadow: none;
-}
-[data-bs-theme="dark"] .wasla-live-summary__metric + .wasla-live-summary__metric {
-  border-inline-start-color: color-mix(in srgb, var(--wasla-border) 80%, transparent);
-}
-[data-bs-theme="dark"] .wasla-live-summary__icon--today { background: rgba(93, 115, 144, 0.2); color: #b7c7da; }
-[data-bs-theme="dark"] .wasla-live-summary__icon--active { background: rgba(31, 138, 76, 0.18); color: #9ed9b4; }
-[data-bs-theme="dark"] .wasla-live-summary__icon--cancelled { background: rgba(212, 83, 78, 0.18); color: #f0a8a4; }
-
 .wasla-orders-sound-enable-btn {
   font-weight: 600;
 }
@@ -2932,13 +2841,6 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   background: color-mix(in srgb, var(--wasla-surface) 90%, var(--wasla-muted));
   color: var(--wasla-text);
   box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--wasla-border) 60%, transparent);
-}
-
-.wasla-live-display-close-btn {
-  font-size: 0.8125rem;
-  padding: 0.2rem 0.55rem;
-  line-height: 1.35;
-  white-space: nowrap;
 }
 
 .wasla-live-screen-page .wasla-live-settings {
@@ -4777,7 +4679,7 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
 }
 .wasla-live-board {
     display: grid;
-    grid-template-columns: repeat(5, minmax(280px, 1fr));
+    grid-template-columns: repeat(5, minmax(15rem, 1fr));
     align-items: start;
     gap: .75rem;
     padding: .25rem .25rem .75rem;
@@ -4788,13 +4690,13 @@ body.wasla-orders-live-display .wasla-live-screen-host.wasla-live-screen-host--b
     min-width: 0;
 }
 @media (min-width: 768px) {
-    .wasla-live-board { width: max(100%, calc(5 * 280px + 4 * .75rem)); }
+    .wasla-live-board { width: max(100%, calc(5 * 15rem + 4 * .75rem)); }
 }
-/* From 768 px up to the Board's own width (five 280 px columns, the page padding and a scrollbar) the columns are wider
+/* From 768 px up to the Board's own width (five 15rem columns, the page padding and a scrollbar) the columns are wider
    than the screen. The host then fills the screen below the header and scrolls both ways, so its horizontal scrollbar
    stays on screen instead of under the last card of the longest column (WAS-5). Phones keep the stacked columns and
    wider screens keep the page scroll. */
-@media (min-width: 768px) and (max-width: 1499.98px) {
+@media (min-width: 768px) and (max-width: 1299.98px) {
     body.wasla-orders-live-display:has(#ordersLiveScreenHost.wasla-live-screen-host--board) .wasla-orders-live-display-root {
         block-size: 100dvh;
     }
@@ -5245,15 +5147,15 @@ body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__de
     color: #9ed9b4;
 }
 .wasla-live-board :focus-visible { outline: 3px solid var(--bs-primary, #0d6efd); outline-offset: 3px; }
-/* Board cards: one block size on desktop and tablet for every status (New, Preparing, Ready, OnTheWay, Delivered),
-   whatever their content or actions. Identity and status stay at the top, the note and the product preview fill a
-   stable middle, and the price and actions sit on the bottom edge. The preview keeps its own cap and "more in details"
-   line; when a card has more than fits (a long note, wrapped actions, the practice-order countdown) only the preview
-   gives way, so nothing overlaps or leaves the card. Phones keep content-sized cards with a shared minimum. Other
-   views (List, Focus, the detail modal) are not Board cards and keep their own sizing. */
+/* Board cards: one block size at every width for every status (New, Preparing, Ready, OnTheWay, Delivered), whatever
+   their content or actions, so a long order never makes one card taller than its neighbours. Identity and status stay
+   at the top, the note and the product preview fill a stable middle, and the actions, price and Details sit on the
+   bottom edge (the regions are arranged in wasla-live-screen.css). The preview shows whole product rows and "+N" for
+   the rest; when a card has more than fits (a long note, the practice-order countdown) only the preview gives way, so
+   nothing overlaps or leaves the card. The detail modal shows the whole order. Other views (List, Focus, the detail
+   modal) are not Board cards and keep their own sizing. */
 .wasla-live-board {
-    --wasla-live-board-card-block-size: 20.5rem;
-    --wasla-live-board-card-min-block-size: 15rem;
+    --wasla-live-board-card-block-size: 18rem;
 }
 .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-dash-status {
     max-inline-size: 100%;
@@ -5268,57 +5170,40 @@ body.wasla-orders-live-display .wasla-live-board .btn.wasla-live-screen-card__de
 .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-demo-countdown {
     margin-block: 0;
 }
-@media (min-width: 768px) {
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] {
-        flex: none;
-        block-size: var(--wasla-live-board-card-block-size);
-        contain-intrinsic-size: auto var(--wasla-live-board-card-block-size);
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] > .orders-card-body {
-        flex: 1 1 auto;
-        min-block-size: 0;
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__identity,
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-order-note,
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary,
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .orders-card-actions,
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__more {
-        flex: none;
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-block-size: 0;
-        overflow: hidden;
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__viewport {
-        flex: 0 1 auto;
-        min-block-size: 0;
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary {
-        margin-block-start: auto;
-    }
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] {
+    flex: none;
+    block-size: var(--wasla-live-board-card-block-size);
+    contain-intrinsic-size: auto var(--wasla-live-board-card-block-size);
 }
-@media (max-width: 767.98px) {
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] {
-        min-block-size: var(--wasla-live-board-card-min-block-size);
-    }
-    .wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary {
-        margin-block-start: auto;
-    }
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] > .orders-card-body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__identity,
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-order-note,
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary,
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .orders-card-actions,
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__more {
+    flex: none;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: hidden;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-board-items__viewport {
+    flex: 0 1 auto;
+    min-block-size: 0;
+}
+.wasla-live-board .wasla-live-screen-card[data-live-layout="board"] .wasla-live-card__secondary {
+    margin-block-start: auto;
 }
 @media (max-width: 767.98px) {
     .wasla-live-board { grid-template-columns: minmax(0, 1fr); }
     .wasla-live-board .wasla-live-card__identity { gap: 6px; }
     .wasla-live-screen-page .wasla-live-display-header { position: static; }
-    .wasla-live-summary { width: 100%; }
-    .wasla-live-summary__metric {
-        flex: 1 1 7.5rem;
-        min-width: 0;
-        padding-block: .4rem;
-        padding-inline: .55rem;
-    }
     .wasla-live-screen-view-switch { width: 100%; }
     .wasla-live-screen-view-switch__option { flex: 1 1 0; min-width: 0; padding-inline: .45rem; }
     .wasla-live-screen-view-switch__option span { overflow-wrap: anywhere; }

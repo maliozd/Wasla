@@ -1948,4 +1948,7 @@
   <data name="PlatformConnections.AlreadyRemoved" xml:space="preserve">
     <value>Bu platform bağlantısı artık yok. Hiçbir şey değiştirilmedi.</value>
   </data>
+  <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
+    <value>+{0} ürün daha</value>
+  </data>
 </root>
