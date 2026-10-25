@@ -20,8 +20,44 @@ public sealed class AdminPlanPricesViewModel
 
     public string? ErrorMessage { get; init; }
 
+    /// <summary>The referenced price a prefilled schedule form replaces (GitHub #64); null for a plain new price.</summary>
+    public BillingPlanPriceRow? Superseding { get; init; }
+
     public string PlanName(string planCode) =>
         Plans.FirstOrDefault(p => p.Code == planCode)?.DisplayName ?? planCode;
+}
+
+/// <summary>The correction page of one price (GitHub #64): its values, references, history and the form.</summary>
+public sealed class AdminPlanPriceCorrectionViewModel
+{
+    public required BillingPlanPriceDetail Detail { get; init; }
+
+    public required string PlanName { get; init; }
+
+    public AdminPlanPriceCorrectionForm Form { get; init; } = new();
+
+    public IReadOnlyDictionary<BillingPlanPriceField, string> Errors { get; init; } =
+        new Dictionary<BillingPlanPriceField, string>();
+
+    public string? ErrorMessage { get; init; }
+
+    /// <summary>Only a referenced price that is in effect can be superseded; an older one is history.</summary>
+    public bool CanSupersede => Detail.Price.IsReferenced && Detail.Price.State == BillingPlanPriceState.InEffect;
+}
+
+/// <summary>The correction form exactly as posted; the Application service validates it.</summary>
+public sealed class AdminPlanPriceCorrectionForm
+{
+    /// <summary>The price's revision when the form was loaded.</summary>
+    public string? Revision { get; set; }
+
+    public string? AmountKurus { get; set; }
+
+    /// <summary><c>true</c>, <c>false</c>, or nothing when no choice was made.</summary>
+    public string? VatIncluded { get; set; }
+
+    /// <summary><c>yyyy-MM-dd</c> from the date input, in every UI culture.</summary>
+    public string? EffectiveDate { get; set; }
 }
 
 public sealed record AdminPlanOption(string Code, string DisplayName);

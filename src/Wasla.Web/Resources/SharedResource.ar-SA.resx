@@ -4157,6 +4157,30 @@
   <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>أدخل تاريخًا صالحًا.</value></data>
   <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>لا يمكن أن يكون التاريخ في الماضي.</value></data>
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>يوجد بالفعل سعر لهذه الباقة وفترة الفوترة يسري في ذلك التاريخ.</value></data>
+  <data name="Admin.PlanPrices.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.PlanPrices.Correct" xml:space="preserve"><value>تصحيح</value></data>
+  <data name="Admin.PlanPrices.Supersede" xml:space="preserve"><value>استبدال بسعر جديد</value></data>
+  <data name="Admin.PlanPrices.ReferencedCount" xml:space="preserve"><value>مستخدم في {0} من الاشتراكات؛ لا يمكن تغييره</value></data>
+  <data name="Admin.PlanPrices.CorrectTitle" xml:space="preserve"><value>تصحيح سعر</value></data>
+  <data name="Admin.PlanPrices.CorrectIntro" xml:space="preserve"><value>تصحّح سعرًا في مكانه ما دام لا يستخدمه أي اشتراك بعد. تبقى الباقة وفترة الفوترة كما هي؛ ويُتحقق من المبلغ وضريبة القيمة المضافة وتاريخ البدء بقواعد السعر الجديد نفسها. يُسجَّل التصحيح باسمك مع القيم السابقة والجديدة.</value></data>
+  <data name="Admin.PlanPrices.CurrentValues" xml:space="preserve"><value>القيم الحالية</value></data>
+  <data name="Admin.PlanPrices.Currency" xml:space="preserve"><value>العملة</value></data>
+  <data name="Admin.PlanPrices.CorrectEffectiveDateHelp" xml:space="preserve"><value>اختر تاريخ اليوم أو تاريخًا لاحقًا بتوقيت تركيا، أو أبقِ التاريخ الحالي للسعر. يبدأ السعر عند الساعة 00:00 بتوقيت تركيا في ذلك التاريخ.</value></data>
+  <data name="Admin.PlanPrices.SaveCorrection" xml:space="preserve"><value>حفظ التصحيح</value></data>
+  <data name="Admin.PlanPrices.BackToList" xml:space="preserve"><value>العودة إلى الأسعار</value></data>
+  <data name="Admin.PlanPrices.Corrected" xml:space="preserve"><value>تم تصحيح السعر.</value></data>
+  <data name="Admin.PlanPrices.CorrectionUnchanged" xml:space="preserve"><value>لا يوجد تغيير؛ بقي السعر كما كان.</value></data>
+  <data name="Admin.PlanPrices.NotFound" xml:space="preserve"><value>لم يُعثر على السعر.</value></data>
+  <data name="Admin.PlanPrices.ReferencedExplanation" xml:space="preserve"><value>هذا السعر مستخدم في {0} من الاشتراكات، لذلك لا يمكن تغييره. بدلًا من ذلك، جدوِل سعرًا جديدًا للباقة وفترة الفوترة نفسيهما؛ ويبقى هذا السعر في السجل كما هو.</value></data>
+  <data name="Admin.PlanPrices.CorrectionRefusedReferenced" xml:space="preserve"><value>لم يُحفظ التصحيح: بدأ استخدام هذا السعر في {0} من الاشتراكات في هذه الأثناء. استبدله بسعر جديد بدلًا من ذلك.</value></data>
+  <data name="Admin.PlanPrices.CorrectionStale" xml:space="preserve"><value>لم يُحفظ التصحيح: غيّر مسؤول آخر هذا السعر في هذه الأثناء. راجع القيم الحالية وحاول مرة أخرى.</value></data>
+  <data name="Admin.PlanPrices.SupersedeNotice" xml:space="preserve"><value>أنت تجدول سعرًا جديدًا ليحل محل {0}. لا يتغير السعر الحالي ويبقى في السجل؛ ويسري السعر الجديد من التاريخ الذي تختاره.</value></data>
+  <data name="Admin.PlanPrices.CorrectionHistory" xml:space="preserve"><value>سجل التصحيحات</value></data>
+  <data name="Admin.PlanPrices.CorrectedAt" xml:space="preserve"><value>الوقت (تركيا)</value></data>
+  <data name="Admin.PlanPrices.CorrectedBy" xml:space="preserve"><value>المسؤول</value></data>
+  <data name="Admin.PlanPrices.PreviousValues" xml:space="preserve"><value>قبل</value></data>
+  <data name="Admin.PlanPrices.NewValues" xml:space="preserve"><value>بعد</value></data>
+  <data name="Admin.PlanPrices.UnknownAdmin" xml:space="preserve"><value>مسؤول لم يعد موجودًا</value></data>
   <data name="Billing.VatIncluded" xml:space="preserve"><value>شامل ضريبة القيمة المضافة</value></data>
   <data name="Billing.VatExcluded" xml:space="preserve"><value>غير شامل ضريبة القيمة المضافة</value></data>
   <data name="Billing.CurrencyTry" xml:space="preserve"><value>ليرة تركية</value></data>

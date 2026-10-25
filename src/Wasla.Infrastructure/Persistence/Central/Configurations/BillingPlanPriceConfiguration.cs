@@ -7,8 +7,10 @@ using Wasla.Domain.Entities.Central;
 namespace Wasla.Infrastructure.Persistence.Central.Configurations;
 
 /// <summary>
-/// WAS-147. Wasla's plan prices: one row per plan, period and effective time, immutable, positive. A subscription
-/// references the row it was priced from, so a referenced row cannot be deleted.
+/// WAS-147. Wasla's plan prices: one row per plan, period and effective time, positive. A subscription references the
+/// row it was priced from, so a referenced row cannot be deleted. EF refuses a tracked change to any column; the only
+/// change is the conditional correction of an unreferenced row (GitHub #64, <c>BillingPlanPriceAdminService</c>), which
+/// raises <see cref="BillingPlanPrice.Revision"/>.
 /// </summary>
 public sealed class BillingPlanPriceConfiguration : IEntityTypeConfiguration<BillingPlanPrice>
 {
@@ -27,6 +29,7 @@ public sealed class BillingPlanPriceConfiguration : IEntityTypeConfiguration<Bil
         builder.Property(x => x.BillingPeriod).IsRequired().HasMaxLength(BillingSubscription.BillingPeriodMaxLength);
         builder.Property(x => x.Amount).HasPrecision(18, 2);
         builder.Property(x => x.Currency).IsRequired().HasMaxLength(BillingPrice.CurrencyLength).IsFixedLength().IsUnicode(false);
+        builder.Property(x => x.Revision).IsConcurrencyToken();
         builder.Ignore(x => x.Price);
 
         foreach (var property in builder.Metadata.GetProperties().Where(p => !p.IsPrimaryKey()))

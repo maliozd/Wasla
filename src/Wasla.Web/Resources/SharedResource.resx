@@ -1843,6 +1843,78 @@
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve">
     <value>Bu plan ve ödeme dönemi için o tarihte başlayan bir fiyat zaten var.</value>
   </data>
+  <data name="Admin.PlanPrices.Actions" xml:space="preserve">
+    <value>İşlemler</value>
+  </data>
+  <data name="Admin.PlanPrices.Correct" xml:space="preserve">
+    <value>Düzelt</value>
+  </data>
+  <data name="Admin.PlanPrices.Supersede" xml:space="preserve">
+    <value>Yeni fiyatla değiştir</value>
+  </data>
+  <data name="Admin.PlanPrices.ReferencedCount" xml:space="preserve">
+    <value>{0} abonelikte kullanılıyor; değiştirilemez</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectTitle" xml:space="preserve">
+    <value>Fiyatı düzelt</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectIntro" xml:space="preserve">
+    <value>Henüz hiçbir aboneliğin kullanmadığı bir fiyatı yerinde düzeltirsiniz. Plan ve ödeme dönemi değişmez; tutar, KDV ve başlangıç tarihi yeni fiyat eklerken geçerli kurallarla denetlenir. Düzeltme, önceki ve yeni değerleriyle adınıza kaydedilir.</value>
+  </data>
+  <data name="Admin.PlanPrices.CurrentValues" xml:space="preserve">
+    <value>Şu anki değerler</value>
+  </data>
+  <data name="Admin.PlanPrices.Currency" xml:space="preserve">
+    <value>Para birimi</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectEffectiveDateHelp" xml:space="preserve">
+    <value>Bugün veya sonraki bir Türkiye tarihi seçin ya da fiyatın mevcut tarihini koruyun. Fiyat o tarihte 00:00'da (Türkiye saati) başlar.</value>
+  </data>
+  <data name="Admin.PlanPrices.SaveCorrection" xml:space="preserve">
+    <value>Düzeltmeyi kaydet</value>
+  </data>
+  <data name="Admin.PlanPrices.BackToList" xml:space="preserve">
+    <value>Fiyatlara dön</value>
+  </data>
+  <data name="Admin.PlanPrices.Corrected" xml:space="preserve">
+    <value>Fiyat düzeltildi.</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectionUnchanged" xml:space="preserve">
+    <value>Değişiklik yok; fiyat olduğu gibi kaldı.</value>
+  </data>
+  <data name="Admin.PlanPrices.NotFound" xml:space="preserve">
+    <value>Fiyat bulunamadı.</value>
+  </data>
+  <data name="Admin.PlanPrices.ReferencedExplanation" xml:space="preserve">
+    <value>Bu fiyat {0} abonelikte kullanılıyor, bu yüzden değiştirilemez. Bunun yerine aynı plan ve ödeme dönemi için yeni bir fiyat planlayın; bu fiyat geçmişte olduğu gibi kalır.</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectionRefusedReferenced" xml:space="preserve">
+    <value>Düzeltme kaydedilmedi: bu fiyat bu arada {0} abonelikte kullanılmaya başladı. Bunun yerine yeni bir fiyatla değiştirin.</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectionStale" xml:space="preserve">
+    <value>Düzeltme kaydedilmedi: fiyat bu arada başka bir yönetici tarafından değiştirildi. Güncel değerleri kontrol edip yeniden deneyin.</value>
+  </data>
+  <data name="Admin.PlanPrices.SupersedeNotice" xml:space="preserve">
+    <value>{0} yerine yeni bir fiyat planlıyorsunuz. Mevcut fiyat değişmez ve geçmişte kalır; yeni fiyat seçtiğiniz tarihte geçerli olur.</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectionHistory" xml:space="preserve">
+    <value>Düzeltme geçmişi</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectedAt" xml:space="preserve">
+    <value>Zaman (Türkiye)</value>
+  </data>
+  <data name="Admin.PlanPrices.CorrectedBy" xml:space="preserve">
+    <value>Yönetici</value>
+  </data>
+  <data name="Admin.PlanPrices.PreviousValues" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="Admin.PlanPrices.NewValues" xml:space="preserve">
+    <value>Yeni</value>
+  </data>
+  <data name="Admin.PlanPrices.UnknownAdmin" xml:space="preserve">
+    <value>Artık olmayan yönetici</value>
+  </data>
   <data name="Billing.VatIncluded" xml:space="preserve">
     <value>KDV dahil</value>
   </data>
