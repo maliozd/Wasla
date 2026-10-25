@@ -83,10 +83,22 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
                 scope.Environment,
                 planPrice,
                 now);
+            await using var transaction = await _central.Database.BeginTransactionAsync(ct);
+
+            // The subscription becomes a reference to the price row (BillingPlanPriceReferences). Lock the row at the
+            // revision read above first: a Central Admin correction committed since then fails the lock and the next
+            // pass prices from the corrected row, and a correction that comes later waits and then sees this reference.
+            if (!await BillingPlanPriceReferences.TryLockUnchangedAsync(_central, planPrice.Id, planPrice.Revision, ct))
+            {
+                await transaction.RollbackAsync(ct);
+                continue;
+            }
+
             _central.BillingSubscriptions.Add(subscription);
             try
             {
                 await _central.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
                 _logger.LogInformation(
                     "Billing subscription started. SubscriptionId={SubscriptionId} RegistrationId={RegistrationId}",
                     subscription.Id,
@@ -96,6 +108,7 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
             catch (DbUpdateException ex) when (IsUniqueViolation(ex))
             {
                 // A concurrent start for the same registration won; the next pass reads it.
+                await transaction.RollbackAsync(ct);
                 Detach(subscription);
             }
         }
@@ -346,7 +359,7 @@ public sealed class BillingSubscriptionStore : IBillingSubscriptionStore
     };
 
     /// <summary>A duplicate key on SQL Server (2601, 2627) or SQLite; every other database error is rethrown.</summary>
-    internal static bool IsUniqueViolation(DbUpdateException exception)
+    internal static bool IsUniqueViolation(Exception exception)
     {
         for (Exception? current = exception; current is not null; current = current.InnerException)
         {

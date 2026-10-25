@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Services;
@@ -28,6 +29,12 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
     /// <summary>Each distinct <paramref name="instance"/> has its own connection pool, as separate processes would.</summary>
     public CentralDbContext Open(string instance = "Inspector") => new(new DbContextOptionsBuilder<CentralDbContext>()
         .UseSqlServer(ConnectionString(DatabaseName, instance))
+        .Options);
+
+    /// <summary>A context of its own connection pool whose commands pass through <paramref name="interceptors"/>.</summary>
+    public CentralDbContext Open(string instance, params IInterceptor[] interceptors) => new(new DbContextOptionsBuilder<CentralDbContext>()
+        .UseSqlServer(ConnectionString(DatabaseName, instance))
+        .AddInterceptors(interceptors)
         .Options);
 
     public BillingSubscriptionStore Store(CentralDbContext db) => new(db, Time, NullLogger<BillingSubscriptionStore>.Instance);

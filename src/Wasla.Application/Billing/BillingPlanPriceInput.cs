@@ -8,7 +8,9 @@ namespace Wasla.Application.Billing;
 
 /// <summary>
 /// Validates a scheduled plan price from the Central Admin form (WAS-147) and converts it: a whole number of kuruş to a
-/// TRY amount, and a Türkiye calendar date to the UTC instant of 00:00 Türkiye time on that date.
+/// TRY amount, and a Türkiye calendar date to the UTC instant of 00:00 Türkiye time on that date. A correction of an
+/// unreferenced price (GitHub #64) uses the same rules; it may keep the date the price already has even when that date
+/// is past, but it cannot move a price to another past date.
 /// </summary>
 public static class BillingPlanPriceInput
 {
@@ -23,7 +25,8 @@ public static class BillingPlanPriceInput
         BillingPlanPriceScheduleCommand command,
         IReadOnlyCollection<string> selfServicePlanCodes,
         DateOnly todayInTurkey,
-        out ValidBillingPlanPrice? valid)
+        out ValidBillingPlanPrice? valid,
+        DateOnly? keptEffectiveDate = null)
     {
         var errors = new List<BillingPlanPriceValidationError>();
         valid = null;
@@ -55,7 +58,7 @@ public static class BillingPlanPriceInput
             errors.Add(new(BillingPlanPriceField.EffectiveDate, BillingPlanPriceError.DateRequired));
         else if (!DateOnly.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out effectiveDate))
             errors.Add(new(BillingPlanPriceField.EffectiveDate, BillingPlanPriceError.DateInvalid));
-        else if (effectiveDate < todayInTurkey)
+        else if (effectiveDate < todayInTurkey && effectiveDate != keptEffectiveDate)
             errors.Add(new(BillingPlanPriceField.EffectiveDate, BillingPlanPriceError.DateInPast));
 
         if (errors.Count == 0)

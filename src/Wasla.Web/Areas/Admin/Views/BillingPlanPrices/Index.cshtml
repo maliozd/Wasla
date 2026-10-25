@@ -90,6 +90,14 @@
         <div class="card-body">
             <h2 id="plan-prices-form" class="h6 fw-semibold mb-3">@L["Admin.PlanPrices.FormHeading"]</h2>
 
+            @if (Model.Superseding is { } superseded)
+            {
+                <div class="alert alert-info" role="status" data-supersedes="@superseded.Id">
+                    @string.Format(CultureInfo.CurrentCulture, L["Admin.PlanPrices.SupersedeNotice"].Value,
+                        $"{Model.PlanName(superseded.PlanCode)}, {L[AdminPlanPricePresenter.PeriodKey(superseded.BillingPeriod)].Value}, {Amount(superseded.AmountKurus)}, {Date(superseded.EffectiveDateInTurkey)}")
+                </div>
+            }
+
             @if (hasErrors)
             {
                 <div id="plan-price-errors" class="alert alert-danger" role="alert">
@@ -196,7 +204,7 @@
                                 <th scope="col">@L["Admin.PlanPrices.Vat"]</th>
                                 <th scope="col">@L["Admin.PlanPrices.EffectiveFrom"]</th>
                                 <th scope="col">@L["Admin.PlanPrices.Status"]</th>
-                                <th scope="col"><span class="visually-hidden">@L["Admin.PlanPrices.Withdraw"]</span></th>
+                                <th scope="col"><span class="visually-hidden">@L["Admin.PlanPrices.Actions"]</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -210,6 +218,24 @@
                                     <td>@Date(price.EffectiveDateInTurkey)</td>
                                     <td><partial name="_AdminStatusBadge" model="AdminPlanPricePresenter.State(price.State)" /></td>
                                     <td class="text-end">
+                                        @{
+                                            var rowLabel = $"{Model.PlanName(price.PlanCode)}, {L[AdminPlanPricePresenter.PeriodKey(price.BillingPeriod)].Value}, {Date(price.EffectiveDateInTurkey)}";
+                                        }
+                                        @if (price.IsReferenced)
+                                        {
+                                            @* A referenced price is history: it never changes. The one in effect is replaced by a new price. *@
+                                            <span class="text-muted small d-inline-block me-1" data-referenced="@price.ReferenceCount">@string.Format(CultureInfo.CurrentCulture, L["Admin.PlanPrices.ReferencedCount"].Value, price.ReferenceCount.ToString("N0", CultureInfo.CurrentCulture))</span>
+                                            @if (price.State == BillingPlanPriceState.InEffect)
+                                            {
+                                                <a href="/admin/billing/plan-prices/@price.Id/supersede" class="btn btn-sm btn-outline-primary"
+                                                   aria-label="@L["Admin.PlanPrices.Supersede"]: @rowLabel">@L["Admin.PlanPrices.Supersede"]</a>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <a href="/admin/billing/plan-prices/@price.Id/correct" class="btn btn-sm btn-outline-secondary"
+                                               aria-label="@L["Admin.PlanPrices.Correct"]: @rowLabel">@L["Admin.PlanPrices.Correct"]</a>
+                                        }
                                         @if (price.State == BillingPlanPriceState.Scheduled)
                                         {
                                             <form method="post" action="/admin/billing/plan-prices/@price.Id/withdraw" class="d-inline">
