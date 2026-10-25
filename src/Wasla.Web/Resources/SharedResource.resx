@@ -1721,7 +1721,7 @@
     <value>Plan fiyatları</value>
   </data>
   <data name="Admin.PlanPrices.Intro" xml:space="preserve">
-    <value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Fiyatlar düzenlenmez; daha sonraki bir tarihten geçerli yeni bir fiyat planlayın.</value>
+    <value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Henüz hiçbir abonelikte kullanılmayan bir fiyat düzeltilebilir; abonelikte kullanılan bir fiyat değiştirilmez, yerine daha sonraki bir tarihten geçerli yeni bir fiyat planlanır.</value>
   </data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve">
     <value>Şu anda geçerli fiyatlar</value>

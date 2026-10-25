@@ -4116,7 +4116,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} kapatıldı</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>MUTFAK · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Plan fiyatları</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Fiyatlar düzenlenmez; daha sonraki bir tarihten geçerli yeni bir fiyat planlayın.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Ödeme, kaydın planı ve ödeme dönemi için o anda geçerli olan fiyatı tahsil eder. Fiyatı olmayan plan ve dönem için ödeme başlatılamaz. Henüz hiçbir abonelikte kullanılmayan bir fiyat düzeltilebilir; abonelikte kullanılan bir fiyat değiştirilmez, yerine daha sonraki bir tarihten geçerli yeni bir fiyat planlanır.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Şu anda geçerli fiyatlar</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Ödeme dönemi</value></data>

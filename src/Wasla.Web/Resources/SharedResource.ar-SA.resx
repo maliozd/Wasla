@@ -4116,7 +4116,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>تم إغلاق {0}</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>المطبخ · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>أسعار الباقات</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>يحصّل الدفع السعر الساري لباقة التسجيل وفترة الفوترة. لا يمكن بدء الدفع لباقة وفترة بلا سعر. لا تُعدَّل الأسعار أبدًا: جدوِل سعرًا جديدًا من تاريخ لاحق.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>يحصّل الدفع السعر الساري لباقة التسجيل وفترة الفوترة. لا يمكن بدء الدفع لباقة وفترة بلا سعر. يمكن تصحيح سعر لا يستخدمه أي اشتراك بعد؛ أما السعر المستخدم فلا يتغير أبدًا، ويُستبدل بجدولة سعر جديد من تاريخ لاحق.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>الأسعار السارية الآن</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>الباقة</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>فترة الفوترة</value></data>
