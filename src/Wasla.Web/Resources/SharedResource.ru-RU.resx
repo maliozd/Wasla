@@ -4610,7 +4610,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} закрыт</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>КУХНЯ · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Цены тарифов</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цены не изменяются: запланируйте новую цену с более поздней даты.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>При оплате списывается цена, действующая для тарифа и периода оплаты регистрации. Для тарифа и периода без цены оплату начать нельзя. Цену, которая ещё не используется ни в одной подписке, можно исправить; цена, которая уже используется, не изменяется, и вместо неё планируется новая цена с более поздней даты.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Действующие цены</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Тариф</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Период оплаты</value></data>

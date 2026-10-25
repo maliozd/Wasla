@@ -4116,7 +4116,7 @@
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} closed</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>KITCHEN · {0}</value></data>
   <data name="Admin.PlanPrices.Title" xml:space="preserve"><value>Plan prices</value></data>
-  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Checkout charges the price in effect for the registration's plan and billing period. A plan and period without a price cannot start a checkout. Prices are never edited: schedule a new price from a later date.</value></data>
+  <data name="Admin.PlanPrices.Intro" xml:space="preserve"><value>Checkout charges the price in effect for the registration's plan and billing period. A plan and period without a price cannot start a checkout. A price that no subscription uses yet can be corrected; a price already in use never changes and is replaced by scheduling a new price from a later date.</value></data>
   <data name="Admin.PlanPrices.CurrentHeading" xml:space="preserve"><value>Prices in effect now</value></data>
   <data name="Admin.PlanPrices.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Admin.PlanPrices.Period" xml:space="preserve"><value>Billing period</value></data>
