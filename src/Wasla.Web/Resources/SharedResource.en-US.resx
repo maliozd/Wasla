@@ -4155,6 +4155,30 @@
   <data name="Admin.PlanPrices.Error.DateInvalid" xml:space="preserve"><value>Enter a valid date.</value></data>
   <data name="Admin.PlanPrices.Error.DatePast" xml:space="preserve"><value>The date cannot be in the past.</value></data>
   <data name="Admin.PlanPrices.Error.Duplicate" xml:space="preserve"><value>A price for this plan and billing period already takes effect on that date.</value></data>
+  <data name="Admin.PlanPrices.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.PlanPrices.Correct" xml:space="preserve"><value>Correct</value></data>
+  <data name="Admin.PlanPrices.Supersede" xml:space="preserve"><value>Replace with a new price</value></data>
+  <data name="Admin.PlanPrices.ReferencedCount" xml:space="preserve"><value>Used by {0} subscription(s); cannot be changed</value></data>
+  <data name="Admin.PlanPrices.CorrectTitle" xml:space="preserve"><value>Correct a price</value></data>
+  <data name="Admin.PlanPrices.CorrectIntro" xml:space="preserve"><value>You correct a price in place while no subscription uses it yet. The plan and billing period stay the same; the amount, VAT and start date are checked with the same rules as a new price. The correction is recorded under your name with the previous and new values.</value></data>
+  <data name="Admin.PlanPrices.CurrentValues" xml:space="preserve"><value>Current values</value></data>
+  <data name="Admin.PlanPrices.Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Admin.PlanPrices.CorrectEffectiveDateHelp" xml:space="preserve"><value>Choose today or a later date in Türkiye, or keep the price's current date. The price starts at 00:00 Türkiye time on that date.</value></data>
+  <data name="Admin.PlanPrices.SaveCorrection" xml:space="preserve"><value>Save correction</value></data>
+  <data name="Admin.PlanPrices.BackToList" xml:space="preserve"><value>Back to prices</value></data>
+  <data name="Admin.PlanPrices.Corrected" xml:space="preserve"><value>The price was corrected.</value></data>
+  <data name="Admin.PlanPrices.CorrectionUnchanged" xml:space="preserve"><value>Nothing changed; the price stays as it was.</value></data>
+  <data name="Admin.PlanPrices.NotFound" xml:space="preserve"><value>The price was not found.</value></data>
+  <data name="Admin.PlanPrices.ReferencedExplanation" xml:space="preserve"><value>This price is used by {0} subscription(s), so it cannot be changed. Schedule a new price for the same plan and billing period instead; this price stays in the history as it is.</value></data>
+  <data name="Admin.PlanPrices.CorrectionRefusedReferenced" xml:space="preserve"><value>The correction was not saved: this price started being used by {0} subscription(s) in the meantime. Replace it with a new price instead.</value></data>
+  <data name="Admin.PlanPrices.CorrectionStale" xml:space="preserve"><value>The correction was not saved: another admin changed this price in the meantime. Check the current values and try again.</value></data>
+  <data name="Admin.PlanPrices.SupersedeNotice" xml:space="preserve"><value>You are scheduling a new price to replace {0}. The current price does not change and stays in the history; the new price applies from the date you choose.</value></data>
+  <data name="Admin.PlanPrices.CorrectionHistory" xml:space="preserve"><value>Correction history</value></data>
+  <data name="Admin.PlanPrices.CorrectedAt" xml:space="preserve"><value>Time (Türkiye)</value></data>
+  <data name="Admin.PlanPrices.CorrectedBy" xml:space="preserve"><value>Admin</value></data>
+  <data name="Admin.PlanPrices.PreviousValues" xml:space="preserve"><value>Before</value></data>
+  <data name="Admin.PlanPrices.NewValues" xml:space="preserve"><value>After</value></data>
+  <data name="Admin.PlanPrices.UnknownAdmin" xml:space="preserve"><value>Admin no longer exists</value></data>
   <data name="Billing.VatIncluded" xml:space="preserve"><value>VAT included</value></data>
   <data name="Billing.VatExcluded" xml:space="preserve"><value>VAT not included</value></data>
   <data name="Billing.CurrencyTry" xml:space="preserve"><value>TL</value></data>

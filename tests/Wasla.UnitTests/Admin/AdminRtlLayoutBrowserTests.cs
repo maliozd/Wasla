@@ -42,6 +42,8 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
     private readonly RecordingTenantDbFactory _tenants = new();
     private AdminWebHost _host = null!;
     private Guid _tenantId;
+    private Guid _correctablePriceId;
+    private Guid _referencedPriceId;
 
     public async ValueTask InitializeAsync()
     {
@@ -51,7 +53,29 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
         _central.AddRegistration("rtl-waiting", Wasla.Domain.Enums.PendingRegistrationStatus.PaymentSucceeded, paymentSucceededAt: DateTime.UtcNow.AddHours(-2));
         _tenants.CreateTenantDatabase(tenant.Id);
         _tenants.Seed(tenant.Id, db => TenantSeed.HealthyTenant(db, DateTime.UtcNow));
+        SeedPlanPrices();
         _host = await AdminWebHost.StartAsync(_central, _tenants);
+    }
+
+    /// <summary>A scheduled price that can be corrected and one in effect that a subscription references (GitHub #64).</summary>
+    private void SeedPlanPrices()
+    {
+        using var db = _central.CreateContext();
+        var today = Wasla.Application.Billing.BillingPlanPriceInput.TurkeyDate(DateTime.UtcNow);
+        var scheduled = Wasla.Domain.Entities.Central.BillingPlanPrice.Create(
+            "Starter", "Monthly", new Wasla.Domain.Billing.BillingPrice(499.90m, "TRY"), true,
+            Wasla.Application.Billing.BillingPlanPriceInput.EffectiveFromUtc(today.AddDays(5)), Guid.NewGuid(), DateTime.UtcNow);
+        var inEffect = Wasla.Domain.Entities.Central.BillingPlanPrice.Create(
+            "Pro", "Yearly", new Wasla.Domain.Billing.BillingPrice(9999.00m, "TRY"), false,
+            Wasla.Application.Billing.BillingPlanPriceInput.EffectiveFromUtc(today.AddDays(-3)), Guid.NewGuid(), DateTime.UtcNow);
+        var registration = Wasla.UnitTests.Billing.BillingTestData.Registration();
+        db.BillingPlanPrices.AddRange(scheduled, inEffect);
+        db.PendingRegistrations.Add(registration);
+        db.BillingSubscriptions.Add(Wasla.Domain.Entities.Central.BillingSubscription.StartPending(
+            registration.Id, Wasla.Domain.Enums.BillingProvider.Iyzico, Wasla.Domain.Enums.BillingEnvironment.Sandbox, inEffect, DateTime.UtcNow));
+        db.SaveChanges();
+        _correctablePriceId = scheduled.Id;
+        _referencedPriceId = inEffect.Id;
     }
 
     public async ValueTask DisposeAsync()
@@ -78,7 +102,10 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
                          "/admin/customers?sort=name&dir=asc",
                          $"/admin/customers/{_tenantId}",
                          "/admin/pending-registrations",
-                         "/admin/billing/plan-prices"
+                         "/admin/billing/plan-prices",
+                         $"/admin/billing/plan-prices/{_correctablePriceId}/correct",
+                         $"/admin/billing/plan-prices/{_referencedPriceId}/correct",
+                         $"/admin/billing/plan-prices/{_referencedPriceId}/supersede"
                      })
             {
                 var page = $"{path} at {width}px ({culture})";
