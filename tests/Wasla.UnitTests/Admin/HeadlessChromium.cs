@@ -300,6 +300,43 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         catch (InvalidOperationException ex) { return "page state unavailable (" + ex.Message + ")"; }
     }
 
+    /// <summary>
+    /// Waits until a navigation the page started itself (a form post, a link) has replaced the document that set
+    /// <c>window[oldDocumentMarker]</c>, and the new document has finished loading: the same budget and the same timeout
+    /// message as <see cref="NavigateAsync(Uri, CancellationToken)"/>. The marker tells the new document from the one being
+    /// left, which can still change (live updates) until it is replaced. On timeout the message says whether the page
+    /// never left or what the new document still waits for.
+    /// </summary>
+    public async Task WaitForNavigationAsync(string oldDocumentMarker, CancellationToken ct)
+    {
+        var marker = JsonSerializer.Serialize(oldDocumentMarker);
+        var deadline = DateTime.UtcNow + NavigationTimeout;
+        while (true)
+        {
+            try
+            {
+                if (await EvaluateAsync<bool>($"!window[{marker}] && document.readyState === 'complete'", ct))
+                    return;
+            }
+            catch (InvalidOperationException)
+            {
+                // The document is being replaced.
+            }
+
+            if (DateTime.UtcNow > deadline)
+            {
+                bool left;
+                try { left = !await EvaluateAsync<bool>($"!!window[{marker}]", ct); }
+                catch (InvalidOperationException) { left = true; }
+                throw new TimeoutException(left
+                    ? $"The new document did not finish loading: {await DescribeLoadAsync(ct)}"
+                    : $"The page never left ({await DescribeLoadAsync(ct)}).");
+            }
+
+            await Task.Delay(100, ct);
+        }
+    }
+
     /// <summary>Polls a boolean expression until it is true or the time runs out.</summary>
     public async Task<bool> WaitForAsync(string expression, TimeSpan timeout, CancellationToken ct)
     {
