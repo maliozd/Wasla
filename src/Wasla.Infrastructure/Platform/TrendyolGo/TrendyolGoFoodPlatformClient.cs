@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
@@ -444,7 +445,11 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             RawPayloadJson: JsonSerializer.Serialize(package, JsonOptions),
             Items: items,
             CustomerNote: package.CustomerNote,
-            ModifiedAtUtc: modifiedAtUtc);
+            ModifiedAtUtc: modifiedAtUtc)
+        {
+            ProviderSupplierId = package.SupplierId,
+            ProviderStoreId = package.StoreId
+        };
     }
 
     private static DateTime? FromEpochMilliseconds(long? value)
@@ -593,6 +598,19 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private sealed class TrendyolGoPackage
     {
         public string? Id { get; set; }
+
+        /// <summary>
+        /// A JSON number in the documented package model. Read as text, and a value of any other shape reads as null, so
+        /// a change of its JSON type cannot fail the whole page (compare <see cref="TrendyolGoLineItem.LineItemId"/>,
+        /// WAS-126). Optional: ingestion only refuses a value that contradicts the connection.
+        /// </summary>
+        [JsonConverter(typeof(IdentifierAsTextConverter))]
+        public string? SupplierId { get; set; }
+
+        /// <summary>The package's store, read like <see cref="SupplierId"/>.</summary>
+        [JsonConverter(typeof(IdentifierAsTextConverter))]
+        public string? StoreId { get; set; }
+
         public string? OrderCode { get; set; }
         public string? OrderNumber { get; set; }
         public long? PackageCreationDate { get; set; }
@@ -604,6 +622,40 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         public List<TrendyolGoLine>? Lines { get; set; }
         public TrendyolGoPayment? Payment { get; set; }
         public string? CustomerNote { get; set; }
+    }
+
+    /// <summary>
+    /// Reads an identifier given as a JSON number or string as its text; null, an object or an array reads as null.
+    /// Writes digits back as a number, so the stored raw payload keeps the documented shape.
+    /// </summary>
+    private sealed class IdentifierAsTextConverter : JsonConverter<string?>
+    {
+        public override bool HandleNull => true;
+
+        public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.Number:
+                    return Encoding.UTF8.GetString(reader.HasValueSequence ? System.Buffers.BuffersExtensions.ToArray(reader.ValueSequence) : reader.ValueSpan);
+                case JsonTokenType.String:
+                    var text = reader.GetString();
+                    return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+                default:
+                    reader.Skip();
+                    return null;
+            }
+        }
+
+        public override void Write(Utf8JsonWriter writer, string? value, JsonSerializerOptions options)
+        {
+            if (value is null)
+                writer.WriteNullValue();
+            else if (value.Length > 0 && value.All(char.IsAsciiDigit))
+                writer.WriteRawValue(value);
+            else
+                writer.WriteStringValue(value);
+        }
     }
 
     private sealed class TrendyolGoCustomer

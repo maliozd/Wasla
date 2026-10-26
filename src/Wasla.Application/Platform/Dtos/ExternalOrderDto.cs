@@ -25,5 +25,19 @@ public sealed record ExternalOrderDto(
     string RawPayloadJson,
     IReadOnlyCollection<ExternalOrderItemDto> Items,
     string? CustomerNote = null,
-    DateTime? ModifiedAtUtc = null);
+    DateTime? ModifiedAtUtc = null)
+{
+    /// <summary>
+    /// The provider account (Trendyol GO <c>supplierId</c>) the payload says the order belongs to, as text, when the
+    /// payload has one. Ingestion compares it with the connection the order was fetched for and refuses a confirmed
+    /// mismatch; a missing value is not a mismatch.
+    /// </summary>
+    public string? ProviderSupplierId { get; init; }
+
+    /// <summary>
+    /// The provider store (Trendyol GO <c>storeId</c>) the payload says the order belongs to, as text, when the payload
+    /// has one. Compared like <see cref="ProviderSupplierId"/>.
+    /// </summary>
+    public string? ProviderStoreId { get; init; }
+}
 

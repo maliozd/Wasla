@@ -67,9 +67,25 @@ internal sealed class OrderIngestion
             return new OrderUpsertResult(false, false, true, false, null);
         }
 
-        var input = $"{external.Platform}:{external.ExternalOrderId}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        var key = Convert.ToBase64String(hash);
+        if (ContradictsConnection(connection, external) is { } field)
+        {
+            // The provider says this order is not the connection's: storing it would show another location's order to
+            // this tenant. Nothing is written; the window still completes, because the order is not this tenant's.
+            _logger.LogWarning(
+                "Provider order refused: its {Field} does not match the connection it was fetched for, so it was not stored. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ConnectionStoreId={ConnectionStoreId}, ProviderStoreId={ProviderStoreId}, ConnectionSupplierId={ConnectionSupplierId}, ProviderSupplierId={ProviderSupplierId}, ExternalOrderId={ExternalOrderId}",
+                field,
+                customerId,
+                connection.Id,
+                connection.Platform,
+                connection.StoreId,
+                external.ProviderStoreId,
+                connection.SupplierId,
+                external.ProviderSupplierId,
+                external.ExternalOrderId);
+            return new OrderUpsertResult(false, false, true, false, external.ExternalOrderId);
+        }
+
+        var key = IdempotencyKey(external.Platform, external.ExternalOrderId);
 
         var nowUtc = DateTime.UtcNow;
         external = WithPlausibleProviderTimes(external, nowUtc);
@@ -158,21 +174,10 @@ internal sealed class OrderIngestion
         await using var tx = await db.Database.BeginTransactionAsync(ct)
             .ConfigureAwait(false);
 
-        // An operator action or another Worker may have committed a status or items since the reads above (WAS-123).
-        // Lock the order row first with the UpdatedAt write this update makes anyway, then read the row and its items
-        // again: the comparison and the merge below start from what is committed, and nothing can change it before this
-        // transaction commits. The lock write never moves UpdatedAt back past a writer that committed during the wait.
-        await db.Orders
-            .Where(o => o.Id == existing.Id)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.UpdatedAt, o => o.UpdatedAt > nowUtc ? o.UpdatedAt : nowUtc), ct)
-            .ConfigureAwait(false);
-        await db.Entry(existing).ReloadAsync(ct).ConfigureAwait(false);
+        // An operator action or another Worker may have committed a status or items since the reads above (WAS-123):
+        // the comparison and the merge below start from the row and items read again under the row lock.
+        nowUtc = await LockAndRereadOrderAsync(db, existing, nowUtc, ct).ConfigureAwait(false);
         persistedItems = await LoadPersistedItemSnapshotsAsync(db, existing.Id, ct).ConfigureAwait(false);
-
-        // The change is applied now, after any wait for the lock, and never before the order's last committed change.
-        nowUtc = DateTime.UtcNow;
-        if (nowUtc < existing.UpdatedAt)
-            nowUtc = existing.UpdatedAt;
 
         if (IsSemanticallyUnchanged(existing, persistedItems, external, newStatus))
         {
@@ -286,6 +291,145 @@ internal sealed class OrderIngestion
             existing.PlatformStatus);
 
         return new OrderUpsertResult(false, true, false, false, existing.ExternalOrderId);
+    }
+
+    /// <summary>
+    /// Applies a status-only observation: the provider reports that an order it already sent reached a status, without
+    /// the order itself. It never creates an order (an unknown order is left to the full observation that polling
+    /// fetches), never replaces items and never touches customer, money or time fields. The status goes through the
+    /// same row lock, merge (stale and terminal rules), milestones, change version, notification and provider-accepted
+    /// receipt as a full observation; the provider status text is stored only when the merge moves the order on.
+    /// </summary>
+    /// <remarks>
+    /// No production caller yet. The adapter that turns a provider event into <paramref name="observation"/> must use
+    /// a verified provider contract; this method does not interpret provider event names (WAS-18, WAS-175).
+    /// </remarks>
+    internal async Task<OrderUpsertResult> ApplyStatusObservationAsync(
+        Guid customerId,
+        TenantDbContext db,
+        PlatformConnection connection,
+        OrderStatusObservation observation,
+        bool milestonesObservedLive,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(observation.ExternalOrderId) || observation.Platform != connection.Platform)
+        {
+            _logger.LogWarning(
+                "Status observation refused: it has no order id or another platform than its connection. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ObservationPlatform={ObservationPlatform}",
+                customerId,
+                connection.Id,
+                connection.Platform,
+                observation.Platform);
+            return new OrderUpsertResult(false, false, true, false, null);
+        }
+
+        var key = IdempotencyKey(observation.Platform, observation.ExternalOrderId);
+        var existing = await db.Orders
+            .FirstOrDefaultAsync(o => o.IdempotencyKey == key, ct)
+            .ConfigureAwait(false);
+        if (existing is null)
+        {
+            _logger.LogInformation(
+                "Status observation for an order Wasla has not stored was not applied; polling imports the full order. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ExternalOrderId={ExternalOrderId}, ObservedStatus={ObservedStatus}",
+                customerId,
+                connection.Id,
+                observation.Platform,
+                observation.ExternalOrderId,
+                observation.Status);
+            return new OrderUpsertResult(false, false, true, false, observation.ExternalOrderId);
+        }
+
+        if (MergeInternalStatusForSync(existing.InternalStatus, observation.Status) == existing.InternalStatus)
+        {
+            db.Entry(existing).State = EntityState.Detached;
+            return new OrderUpsertResult(false, false, false, true, existing.ExternalOrderId);
+        }
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
+        var nowUtc = await LockAndRereadOrderAsync(db, existing, DateTime.UtcNow, ct).ConfigureAwait(false);
+
+        var oldStatus = existing.InternalStatus;
+        var mergedStatus = MergeInternalStatusForSync(oldStatus, observation.Status);
+        if (mergedStatus == oldStatus)
+        {
+            // A writer committed this status or a later one meanwhile: nothing to apply.
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            db.Entry(existing).State = EntityState.Detached;
+            return new OrderUpsertResult(false, false, false, true, existing.ExternalOrderId);
+        }
+
+        existing.InternalStatus = mergedStatus;
+        if (!string.IsNullOrWhiteSpace(observation.PlatformStatus))
+            existing.PlatformStatus = observation.PlatformStatus;
+        existing.UpdatedAt = nowUtc;
+        ApplyStatusTransitionTimestamps(existing, oldStatus, mergedStatus, nowUtc, milestonesObservedLive);
+
+        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
+        await tx.CommitAsync(ct).ConfigureAwait(false);
+        await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(existing.Id, changeVersion), _logger)
+            .ConfigureAwait(false);
+
+        await TryCreateReceiptIfProviderAcceptedAsync(customerId, existing.Id, oldStatus, mergedStatus, ct).ConfigureAwait(false);
+
+        _logger.LogDebug(
+            "Applied status observation to order {ExternalOrderId}. Status {OldStatus} -> {MergedStatus} (observed {ObservedStatus})",
+            existing.ExternalOrderId,
+            oldStatus,
+            mergedStatus,
+            observation.Status);
+
+        return new OrderUpsertResult(false, true, false, false, existing.ExternalOrderId);
+    }
+
+    /// <summary>SHA-256 of <c>"{Platform}:{ExternalOrderId}"</c>, Base64: the order's idempotency key in its tenant.</summary>
+    internal static string IdempotencyKey(FoodPlatform platform, string externalOrderId) =>
+        Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes($"{platform}:{externalOrderId}")));
+
+    /// <summary>
+    /// Inside the caller's transaction: locks the order row with the <c>UpdatedAt</c> write the update makes anyway, then
+    /// reads the row again, so the comparison and the merge start from what is committed and nothing changes it before
+    /// the commit (WAS-123). The lock write never moves <c>UpdatedAt</c> back past a writer that committed during the
+    /// wait. Returns the time to apply the change at: now, after any wait for the lock, and never before the order's
+    /// last committed change.
+    /// </summary>
+    private static async Task<DateTime> LockAndRereadOrderAsync(TenantDbContext db, Order existing, DateTime nowUtc, CancellationToken ct)
+    {
+        await db.Orders
+            .Where(o => o.Id == existing.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.UpdatedAt, o => o.UpdatedAt > nowUtc ? o.UpdatedAt : nowUtc), ct)
+            .ConfigureAwait(false);
+        await db.Entry(existing).ReloadAsync(ct).ConfigureAwait(false);
+
+        var appliedAt = DateTime.UtcNow;
+        return appliedAt < existing.UpdatedAt ? existing.UpdatedAt : appliedAt;
+    }
+
+    /// <summary>
+    /// Which part of a full observation contradicts the tenant connection it was fetched for: "platform", "store" or
+    /// "supplier"; null when nothing does. Only a value the payload actually reports is compared, with the connection's
+    /// configured value (trimmed, exact): an optional identifier the payload leaves out, or one the connection does not
+    /// set, is not a mismatch. A Trendyol GO connection without <c>SupplierId</c> polls with its <c>StoreId</c> as the
+    /// supplier id; its supplier is then not compared, its store still is.
+    /// </summary>
+    /// <remarks>
+    /// This guards an order that was fetched with the tenant's own credentials and connection. It does not, and cannot,
+    /// decide which tenant a previously unseen webhook event belongs to (WAS-175).
+    /// </remarks>
+    internal static string? ContradictsConnection(PlatformConnection connection, ExternalOrderDto external)
+    {
+        if (external.Platform != connection.Platform)
+            return "platform";
+        if (Differs(external.ProviderStoreId, connection.StoreId))
+            return "store";
+        if (Differs(external.ProviderSupplierId, connection.SupplierId))
+            return "supplier";
+        return null;
+
+        static bool Differs(string? reported, string? configured) =>
+            !string.IsNullOrWhiteSpace(reported)
+            && !string.IsNullOrWhiteSpace(configured)
+            && !string.Equals(reported.Trim(), configured.Trim(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -814,3 +958,16 @@ internal sealed class OrderIngestion
         string? Notes,
         ComparableOption[] Options);
 }
+
+/// <summary>
+/// A status-only provider observation (WAS-18): the provider reports that an order it already sent reached
+/// <paramref name="Status"/>, without the order's contents. Applied by
+/// <see cref="OrderIngestion.ApplyStatusObservationAsync"/>; it can never create an order or change its items or customer
+/// fields. <paramref name="Status"/> is the Wasla status the provider adapter derived from a verified provider contract.
+/// </summary>
+/// <param name="PlatformStatus">The provider's status text to show, or null to keep the stored one.</param>
+internal sealed record OrderStatusObservation(
+    FoodPlatform Platform,
+    string ExternalOrderId,
+    OrderStatus Status,
+    string? PlatformStatus);
