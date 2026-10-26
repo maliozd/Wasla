@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Sync;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -150,9 +149,9 @@ public sealed class TrendyolGoMealWebhookInbox
 
         // Only created carries the seller and store. Either one that names another seller or store is refused; a missing
         // one is not, because processing never trusts the payload: it reads the package back with the connection.
-        if (envelope.SupplierId is { } supplier && !OrderIngestion.SameProviderIdentifier(supplier, _options.SellerId!))
+        if (envelope.SupplierId is { } supplier && !_options.IsPilotSeller(supplier))
             return (ProviderWebhookEventStatus.Rejected, "SellerMismatch");
-        if (envelope.StoreId is { } store && !OrderIngestion.SameProviderIdentifier(store, _options.StoreId!))
+        if (envelope.StoreId is { } store && !_options.IsPilotStore(store))
             return (ProviderWebhookEventStatus.Rejected, "StoreMismatch");
 
         return (ProviderWebhookEventStatus.Pending, null);

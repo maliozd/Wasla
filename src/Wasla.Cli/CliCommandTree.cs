@@ -440,6 +440,48 @@ internal static class CliCommandTree
                 context.GetCancellationToken());
         });
 
+        // --- meal-webhook-integrator (Trendyol GO Meal webhook stage pilot) ---
+        var mealWebhookIntegrator = new Command(
+            "meal-webhook-integrator",
+            "Create, show, enable or disable the Trendyol GO Meal webhook stage pilot's integrator, or request a webhook test order.");
+        var optMwiAction = new Option<string>("--action", "create, show, enable, disable or test-order") { IsRequired = true };
+        var optMwiName = new Option<string>("--name", "Integrator name (alphanumeric, unique at Trendyol GO)") { IsRequired = true };
+        var optMwiBaseUrl = new Option<string?>("--base-url", "create only: the https base URL Trendyol GO posts events under");
+        var optMwiTokenFile = new Option<string>("--token-file", "File that holds the integrator token (written by create, read by the others)") { IsRequired = true };
+        mealWebhookIntegrator.AddOption(optMwiAction);
+        mealWebhookIntegrator.AddOption(optMwiName);
+        mealWebhookIntegrator.AddOption(optMwiBaseUrl);
+        mealWebhookIntegrator.AddOption(optMwiTokenFile);
+        mealWebhookIntegrator.SetHandler(async (InvocationContext context) =>
+        {
+            var p = context.ParseResult;
+            context.ExitCode = await CliMealWebhookCommands.IntegratorAsync(
+                host,
+                p.GetValueForOption(optMwiAction)!,
+                p.GetValueForOption(optMwiName)!,
+                p.GetValueForOption(optMwiBaseUrl),
+                p.GetValueForOption(optMwiTokenFile)!,
+                context.GetCancellationToken());
+        });
+
+        // --- meal-webhook-inbox (Trendyol GO Meal webhook stage pilot) ---
+        var mealWebhookInbox = new Command(
+            "meal-webhook-inbox",
+            "List the Trendyol GO Meal webhook stage pilot's received events (no payloads), or replay one.");
+        var optMwbLimit = new Option<int>("--limit", () => 20, "How many of the newest events to list");
+        var optMwbReplay = new Option<string?>("--replay", "Event id of a Failed or Processed event to process again");
+        mealWebhookInbox.AddOption(optMwbLimit);
+        mealWebhookInbox.AddOption(optMwbReplay);
+        mealWebhookInbox.SetHandler(async (InvocationContext context) =>
+        {
+            var p = context.ParseResult;
+            context.ExitCode = await CliMealWebhookCommands.InboxAsync(
+                host,
+                p.GetValueForOption(optMwbLimit),
+                p.GetValueForOption(optMwbReplay),
+                context.GetCancellationToken());
+        });
+
         return new RootCommand("Wasla CLI — operational tool for tenant onboarding, migrations, and secrets.")
         {
             addTenant,
@@ -464,7 +506,9 @@ internal static class CliCommandTree
             createUser,
             generatePrintBridgeToken,
             seedPrintJob,
-            listPrintJobs
+            listPrintJobs,
+            mealWebhookIntegrator,
+            mealWebhookInbox
         };
     }
 }

@@ -23,6 +23,7 @@ Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `t
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |
 | [integrations/food-platforms.md](integrations/food-platforms.md) | Trendyol GO, Yemeksepeti, Getir, Mock/Real |
 | [integrations/provider-webhooks.md](integrations/provider-webhooks.md) | Decision: provider webhook evidence, polling as reconciliation, provider questions (WAS-17) |
+| [integrations/trendyol-go-meal-webhook-stage-pilot.md](integrations/trendyol-go-meal-webhook-stage-pilot.md) | Trendyol GO Meal webhook stage pilot: one configured seller, receiver, inbox, processing, stage test |
 | [integrations/print-bridge.md](integrations/print-bridge.md) | Desktop printing client |
 | [frontend/architecture.md](frontend/architecture.md) | Razor, Bootstrap, vanilla JS |
 | [frontend/design-system.md](frontend/design-system.md) | Tokens; `wasla-foundation.css` is the foundation |

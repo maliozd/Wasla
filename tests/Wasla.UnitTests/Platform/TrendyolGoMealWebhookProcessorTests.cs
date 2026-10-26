@@ -303,6 +303,27 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         Assert.Equal("Reconciled", Assert.Single(await EventsAsync()).Outcome);
     }
 
+    [Fact]
+    public async Task Inspection_ShowsDeliveryProcessingAndTheMatchedOrder_WithoutThePayload()
+    {
+        _client.Set(Package("pkg-inspect", "Picking"));
+        await AcceptAsync("created", Created("pkg-inspect"));
+        await AcceptAsync("created", Created("pkg-inspect"));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        await using var db = await _tenants.CreateAsync(_tenantId, Ct);
+        var view = Assert.Single(await TrendyolGoMealWebhookInspection.ListAsync(db, 20, Ct));
+
+        Assert.Equal("created", view.EventType);
+        Assert.Equal("pkg-inspect", view.ExternalOrderId);
+        Assert.Equal(2, view.DeliveryCount);
+        Assert.Equal(ProviderWebhookEventStatus.Processed, view.Status);
+        Assert.Equal("Reconciled", view.Outcome);
+        Assert.Equal("946511491", view.OrderCode);
+        Assert.Equal(OrderStatus.Accepted, view.OrderStatus);
+        Assert.DoesNotContain("Gündoğdu", view.ToString(), StringComparison.Ordinal);
+    }
+
     // ---- Helpers ----
 
     private void Seed(string storeId, string? supplierId, bool orderSyncEnabled, bool replace = false)

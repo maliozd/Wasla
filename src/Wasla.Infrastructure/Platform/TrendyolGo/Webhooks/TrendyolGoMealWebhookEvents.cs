@@ -6,7 +6,7 @@ namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 /// of the integrator's <c>destinationUrl</c> for it. Types not listed there (for example <c>storeChanged</c> or
 /// <c>sellerChanged</c>, named in older notes) are stored for inspection and never processed.
 /// </summary>
-internal static class TrendyolGoMealWebhookEvents
+public static class TrendyolGoMealWebhookEvents
 {
     public const string Created = "created";
     public const string PickupEtaCalculated = "pickupEtaCalculated";

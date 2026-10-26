@@ -105,8 +105,13 @@ public sealed class TrendyolGoMealWebhookProcessor
     /// </summary>
     public async Task<bool> ReplayAsync(Guid eventId, CancellationToken ct)
     {
-        var now = Now();
         await using var db = await _tenants.CreateAsync(_options.TenantId, ct).ConfigureAwait(false);
+        return await ReplayAsync(db, eventId, Now(), ct).ConfigureAwait(false);
+    }
+
+    /// <summary><see cref="ReplayAsync(Guid, CancellationToken)"/> on a given tenant database (the CLI's).</summary>
+    public static async Task<bool> ReplayAsync(TenantDbContext db, Guid eventId, DateTime now, CancellationToken ct)
+    {
         var changed = await db.ProviderWebhookEvents
             .Where(e => e.Id == eventId
                         && (e.Status == ProviderWebhookEventStatus.Failed || e.Status == ProviderWebhookEventStatus.Processed))
@@ -230,13 +235,7 @@ public sealed class TrendyolGoMealWebhookProcessor
         if (connection is null || !connection.IsActive)
             throw new InvalidOperationException("The configured platform connection is missing or inactive.");
 
-        var seller = string.IsNullOrWhiteSpace(connection.SupplierId) ? connection.StoreId : connection.SupplierId;
-        var matches = connection.Platform == FoodPlatform.TrendyolYemek
-                      && !string.IsNullOrWhiteSpace(seller)
-                      && OrderIngestion.SameProviderIdentifier(seller, _options.SellerId!)
-                      && !string.IsNullOrWhiteSpace(connection.StoreId)
-                      && OrderIngestion.SameProviderIdentifier(connection.StoreId, _options.StoreId!);
-        if (matches)
+        if (_options.IsPilotConnection(connection))
             return null;
 
         _logger.LogError(

@@ -1,5 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
+using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Sync;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -41,6 +44,26 @@ public sealed class TrendyolGoMealWebhookPilotOptions
 
     /// <summary>The largest request body accepted, in bytes.</summary>
     public int MaxBodyBytes { get; set; } = 256 * 1024;
+
+    /// <summary>Whether a seller id is the configured seller (all-digit ids compare as numbers).</summary>
+    public bool IsPilotSeller(string? sellerId) =>
+        !string.IsNullOrWhiteSpace(sellerId) && !string.IsNullOrWhiteSpace(SellerId)
+        && OrderIngestion.SameProviderIdentifier(sellerId, SellerId);
+
+    /// <summary>Whether a store id is the configured store (all-digit ids compare as numbers).</summary>
+    public bool IsPilotStore(string? storeId) =>
+        !string.IsNullOrWhiteSpace(storeId) && !string.IsNullOrWhiteSpace(StoreId)
+        && OrderIngestion.SameProviderIdentifier(storeId, StoreId);
+
+    /// <summary>
+    /// Whether <paramref name="connection"/> is the pilot's: the configured, active Trendyol GO connection of the configured
+    /// seller (its <c>SupplierId</c>, or its <c>StoreId</c> when it has none, as polling uses it) and store.
+    /// </summary>
+    public bool IsPilotConnection(PlatformConnection? connection) =>
+        connection is { IsActive: true, Platform: FoodPlatform.TrendyolYemek }
+        && connection.Id == PlatformConnectionId
+        && IsPilotSeller(string.IsNullOrWhiteSpace(connection.SupplierId) ? connection.StoreId : connection.SupplierId)
+        && IsPilotStore(connection.StoreId);
 }
 
 /// <summary>Refuses an enabled pilot whose configuration is incomplete, ambiguous or not on the stage API.</summary>
