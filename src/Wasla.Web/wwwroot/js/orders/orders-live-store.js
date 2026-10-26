@@ -150,11 +150,40 @@
   }
 
   /**
-   * True for an isolated trainee's snapshot: the tenant is still in setup and this user is in order training, so the
-   * server left real orders out and sent only how many arrived.
+   * True for an isolated trainee's snapshot: this user is in order training, so the server left real orders out of
+   * the board and sent only how many are waiting and their ids.
    */
   function isIsolatedSnapshot(snapshot) {
     return !!(snapshot && snapshot.training && snapshot.training.isolated === true);
+  }
+
+  /**
+   * The orders new-order detection follows: the snapshot's orders and, during isolated training, the real orders kept
+   * off the board (ids only). One known-id set covers both, so training neither hides a new real order nor makes its
+   * end replay the backlog.
+   */
+  function trackedOrders(snapshot) {
+    const orders = snapshot.orders || [];
+    if (!isIsolatedSnapshot(snapshot) || !Array.isArray(snapshot.training.realOrderIds)) return orders;
+    const tracked = orders.slice();
+    const ids = snapshot.training.realOrderIds;
+    for (let i = 0; i < ids.length; i++) tracked.push({ id: ids[i] });
+    return tracked;
+  }
+
+  /**
+   * How many real orders are active: the header's count. During isolated training the server counts the ones kept
+   * off the board by the same rule; practice orders never count.
+   */
+  function activeRealOrderCount(snapshot) {
+    if (isIsolatedSnapshot(snapshot)) return snapshot.training.waitingRealOrders;
+    let active = 0;
+    const orders = snapshot.orders || [];
+    for (let i = 0; i < orders.length; i++) {
+      if (orders[i].isDemo) continue;
+      if (ACTIVE_STATUSES[orders[i].status]) active += 1;
+    }
+    return active;
   }
 
   const SUPPORTED_STATUSES = {
@@ -199,7 +228,12 @@
     if (snapshot.training != null) {
       const training = snapshot.training;
       if (typeof training !== "object" || Array.isArray(training)) return { ok: false, reason: "training" };
-      if (!isWholeNumber(training.realOrdersReceived)) return { ok: false, reason: "training" };
+      if (!isWholeNumber(training.waitingRealOrders)) return { ok: false, reason: "training" };
+      if (!Array.isArray(training.realOrderIds)) return { ok: false, reason: "training" };
+      if (training.waitingRealOrders > training.realOrderIds.length) return { ok: false, reason: "training" };
+      for (let i = 0; i < training.realOrderIds.length; i++) {
+        if (!isGuid(training.realOrderIds[i])) return { ok: false, reason: "training" };
+      }
     }
     const seen = new Set();
     for (let i = 0; i < snapshot.orders.length; i++) {
@@ -257,10 +291,17 @@
     let retryAttempt = 0;
     let stopped = false;
     let baselineReady = false;
-    // Whether the last accepted snapshot was an isolated trainee's (see isIsolatedSnapshot).
-    let lastIsolated = false;
     let lastSnapshot = null;
     let pendingMutations = 0;
+
+    // Orders the previous Live Screen page in this tab already knew when it left through an order-training form (see
+    // readKnownOrderHandoff). They stand in for the first snapshot's baseline, so an order that arrived during that
+    // navigation is announced once and the known backlog is not.
+    const handedOver = Array.isArray(options.initialKnownIds) ? options.initialKnownIds : [];
+    if (handedOver.length) {
+      for (let i = 0; i < handedOver.length; i++) known.add(String(handedOver[i]));
+      baselineReady = true;
+    }
 
     function clearTimer() {
       if (timer) options.clearTimeout(timer);
@@ -369,12 +410,13 @@
             return { applied: false, reason: "error", kept: lastSnapshot };
           }
 
-          // The first snapshot is the baseline: orders already there are not announced. So is the first snapshot after
-          // entering or leaving isolated order training (e.g. the tenant went live): the real orders it reveals arrived
-          // earlier and get no sound, browser notification or highlight. Only orders after that are new.
+          // The first snapshot is the baseline: orders already there are not announced. Isolated order training keeps
+          // following the real orders by id, so a real order that arrives during training is new once, and entering or
+          // leaving training (in this tab or another) is no baseline: the backlog it reveals is already known.
           const isolated = isIsolatedSnapshot(result.snapshot);
-          const isBaseline = !baselineReady || isolated !== lastIsolated;
-          const newIds = collectNewIds(known, result.snapshot.orders, !isBaseline);
+          const isBaseline = !baselineReady;
+          const tracked = trackedOrders(result.snapshot);
+          const newIds = collectNewIds(known, tracked, !isBaseline);
           const meta = {
             newIds: newIds,
             isBaseline: isBaseline,
@@ -393,9 +435,8 @@
               options.onStatus("stale");
               return { applied: false, reason: "render", kept: lastSnapshot };
             }
-            rememberOrderIds(known, result.snapshot.orders);
+            rememberOrderIds(known, tracked);
             baselineReady = true;
-            lastIsolated = isolated;
             lastSnapshot = result.snapshot;
             retryAttempt = 0;
             ticket.outcome = "ok";
@@ -452,8 +493,54 @@
       intervalMs: function () { return intervalMs; },
       start: function () { return start("start"); },
       lastSnapshot: function () { return lastSnapshot; },
-      isBaselineReady: function () { return baselineReady; }
+      isBaselineReady: function () { return baselineReady; },
+      /** The ids new-order detection already knows; empty before the baseline. */
+      knownIds: function () { return baselineReady ? Array.from(known) : []; }
     };
+  }
+
+  /**
+   * Order training's forms on the Live Screen (start practice, complete, end) post and come straight back to the Live
+   * Screen, whose first snapshot would otherwise be a silent baseline: a real order that arrived during that
+   * navigation would never be announced (WAS-117). The leaving page hands its known ids to the next page of the same
+   * tab for a short time. Only this tab, only once, and only right after such a form: a reload, a new tab or a later
+   * visit keeps the silent first snapshot.
+   */
+  const KNOWN_ORDER_HANDOFF_KEY = "Wasla.liveScreen.knownOrderHandoff";
+  const KNOWN_ORDER_HANDOFF_MAX_AGE_MS = 60000;
+
+  function writeKnownOrderHandoff(storage, ids, nowMs) {
+    if (!storage || !Array.isArray(ids) || !ids.length) return false;
+    try {
+      storage.setItem(KNOWN_ORDER_HANDOFF_KEY, JSON.stringify({ savedAt: nowMs, ids: ids }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** Reads and removes the handoff; null when there is none, it is older than a minute, or it is not a list of ids. */
+  function readKnownOrderHandoff(storage, nowMs) {
+    if (!storage) return null;
+    let raw = null;
+    try {
+      raw = storage.getItem(KNOWN_ORDER_HANDOFF_KEY);
+      storage.removeItem(KNOWN_ORDER_HANDOFF_KEY);
+    } catch (e) {
+      return null;
+    }
+    if (!raw) return null;
+    let handoff;
+    try {
+      handoff = JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+    if (!handoff || typeof handoff.savedAt !== "number" || !Array.isArray(handoff.ids) || !handoff.ids.length) return null;
+    const age = nowMs - handoff.savedAt;
+    if (!(age >= 0 && age <= KNOWN_ORDER_HANDOFF_MAX_AGE_MS)) return null;
+    for (let i = 0; i < handoff.ids.length; i++) if (!isGuid(handoff.ids[i])) return null;
+    return handoff.ids;
   }
 
   function isLoginRedirect(response) {
@@ -492,6 +579,11 @@
     hasPlacedTime: hasPlacedTime,
     collectNewIds: collectNewIds,
     isIsolatedSnapshot: isIsolatedSnapshot,
+    trackedOrders: trackedOrders,
+    activeRealOrderCount: activeRealOrderCount,
+    writeKnownOrderHandoff: writeKnownOrderHandoff,
+    readKnownOrderHandoff: readKnownOrderHandoff,
+    KNOWN_ORDER_HANDOFF_MAX_AGE_MS: KNOWN_ORDER_HANDOFF_MAX_AGE_MS,
     validateSnapshot: validateSnapshot,
     looksLikeHtml: looksLikeHtml,
     nextBackoffMs: nextBackoffMs,
@@ -643,15 +735,14 @@ function attachBrowser(O, global, api) {
   }
 
   function setSummary(snapshot) {
-    let active = 0;
-    const orders = snapshot.orders || [];
-    for (let i = 0; i < orders.length; i++) {
-      if (orders[i].isDemo) continue;
-      if (api.ACTIVE_STATUSES[orders[i].status]) active += 1;
-    }
-    setSummaryCount("ordersLiveDisplayActiveCount", active);
+    setSummaryCount("ordersLiveDisplayActiveCount", api.activeRealOrderCount(snapshot));
     setSummaryCount("ordersLiveDisplayTodayCount", snapshot.todayOrderCount);
     setSummaryCount("ordersLiveDisplayCancelledCount", snapshot.cancelledOrderCount);
+    // During order training the board holds only the practice order, so the count is labelled as the real orders
+    // waiting outside it rather than as the board's active orders.
+    const label = document.getElementById("ordersLiveDisplayActiveLabel");
+    const text = message(api.isIsolatedSnapshot(snapshot) ? "liveScreenWaitingRealOrders" : "liveScreenActiveOrders");
+    if (label && text && label.textContent !== text) label.textContent = text;
   }
 
   /** Writes a summary count in the page culture's format; a 0 gives its metric the quiet is-zero colours. */
@@ -1711,6 +1802,9 @@ function attachBrowser(O, global, api) {
     if (kind === "selectOrder") {
       title.textContent = message("selectOrder");
       description.textContent = message("selectOrderDescription");
+    } else if (kind === "practice") {
+      title.textContent = message("noPracticeOrder");
+      description.textContent = message("noPracticeOrderDescription");
     } else {
       title.textContent = message("noDisplayableOrders");
       description.textContent = message("noDisplayableOrdersDescription");
@@ -1742,10 +1836,13 @@ function attachBrowser(O, global, api) {
 
   function showAcceptedEmpty(host) {
     removeLivePresentations(host);
+    // During order training the board holds only the practice order, so its empty state speaks of that order and never
+    // says the restaurant has no orders (WAS-117).
+    const kind = api.isIsolatedSnapshot(renderedSnapshot) ? "practice" : "none";
     const existing = hostEmpty(host);
-    if (existing && existing.getAttribute("data-live-empty") === "none") return existing;
+    if (existing && existing.getAttribute("data-live-empty") === kind) return existing;
     if (existing) existing.remove();
-    const empty = createBrandedEmpty("none");
+    const empty = createBrandedEmpty(kind);
     host.appendChild(empty);
     return empty;
   }
@@ -2654,14 +2751,18 @@ function attachBrowser(O, global, api) {
     if (meta.isBaseline || !meta.newIds || !meta.newIds.length) return;
 
     try {
-      if (O.table && typeof O.table.markOrdersAsRecentlyNew === "function") {
-        O.table.markOrdersAsRecentlyNew(meta.newIds);
-        O.table.applyNewOrderVisualState();
-        O.table.scheduleNewOrderHighlightCleanup();
+      // During isolated order training the new real order has no card on the practice board to highlight or show;
+      // its sound and browser notification below are the same as outside training.
+      if (!meta.isolated) {
+        if (O.table && typeof O.table.markOrdersAsRecentlyNew === "function") {
+          O.table.markOrdersAsRecentlyNew(meta.newIds);
+          O.table.applyNewOrderVisualState();
+          O.table.scheduleNewOrderHighlightCleanup();
+        }
+        document.dispatchEvent(new CustomEvent("wasla:real-order-arrived", {
+          detail: { orderId: String(meta.newIds[0]) }
+        }));
       }
-      document.dispatchEvent(new CustomEvent("wasla:real-order-arrived", {
-        detail: { orderId: String(meta.newIds[0]) }
-      }));
 
       const settings = O.state && O.state.notificationSettings;
       if (settings && settings.newOrderSoundEnabled && O.audio && typeof O.audio.playSoundNow === "function") {
@@ -2698,12 +2799,31 @@ function attachBrowser(O, global, api) {
       fetchSnapshot: fetchSnapshot,
       onStatus: onStatus,
       onAccepted: onAccepted,
-      onNotify: onNotify
+      onNotify: onNotify,
+      initialKnownIds: api.readKnownOrderHandoff(sessionStore(), Date.now())
     });
     return coordinator;
   }
 
+  function sessionStore() {
+    try {
+      return global.sessionStorage || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Order training's forms (start practice, complete, end) leave this page for the Live Screen again: hand the ids this
+  // page already knows to that next page (see readKnownOrderHandoff).
+  function onTrainingFormSubmit(ev) {
+    const form = ev && ev.target;
+    if (!form || typeof form.matches !== "function" || !form.matches("form[data-guided-setup-form]")) return;
+    if (!coordinator) return;
+    api.writeKnownOrderHandoff(sessionStore(), coordinator.knownIds(), Date.now());
+  }
+
   if (typeof document.addEventListener === "function") {
+    document.addEventListener("submit", onTrainingFormSubmit);
     document.addEventListener("wasla:order-action-completed", onOrderAction);
     // Delegated once: the "Show more" controls are rebuilt with their column.
     document.addEventListener("click", function (ev) {

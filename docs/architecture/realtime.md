@@ -314,7 +314,8 @@ snapshot coordinator (`O.liveStore`); it renders nothing itself.
   are unchanged.
 - New-order detection, sound, browser notifications and the "silent first snapshot" baseline stay in the coordinator,
   so an order is announced once however many invalidations arrive. During isolated order training the snapshot
-  leaves real orders out; an invalidation only updates the real-order count faster. Training is not paused or advanced.
+  leaves real orders off the board and carries their ids and waiting count; an invalidation makes the count and the
+  one announcement of a new real order come sooner (WAS-117). Training is not paused or advanced.
 - `pagehide` disposes the module only when the page is really unloading; a page kept in the back/forward cache keeps
   it, and the reconnect on `pageshow` reads the snapshot.
 

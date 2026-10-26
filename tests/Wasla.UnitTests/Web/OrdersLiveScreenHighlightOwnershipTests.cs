@@ -64,13 +64,15 @@ public sealed class OrdersLiveScreenHighlightOwnershipTests
     {
         var storeJs = ReadWwwroot("js", "orders", "orders-live-store.js");
 
-        // New ids are collected only outside a baseline (the first snapshot, or entering/leaving isolated order training).
-        Assert.Contains("const isBaseline = !baselineReady || isolated !== lastIsolated;", storeJs, StringComparison.Ordinal);
-        Assert.Contains("const newIds = collectNewIds(known, result.snapshot.orders, !isBaseline);", storeJs, StringComparison.Ordinal);
+        // New ids are collected only outside the baseline (the first snapshot), over the snapshot's orders and, during
+        // isolated order training, the hidden real orders' ids (WAS-117); entering or leaving training is no baseline.
+        Assert.Contains("const isBaseline = !baselineReady;", storeJs, StringComparison.Ordinal);
+        Assert.Contains("const tracked = trackedOrders(result.snapshot);", storeJs, StringComparison.Ordinal);
+        Assert.Contains("const newIds = collectNewIds(known, tracked, !isBaseline);", storeJs, StringComparison.Ordinal);
         Assert.Contains("if (meta.isBaseline || !meta.newIds || !meta.newIds.length) return;", storeJs, StringComparison.Ordinal);
         Assert.Contains("if (accepted && accepted.accepted === false)", storeJs, StringComparison.Ordinal);
         var acceptIndex = storeJs.IndexOf("options.onAccepted(result.snapshot", StringComparison.Ordinal);
-        var rememberIndex = storeJs.IndexOf("rememberOrderIds(known, result.snapshot.orders)", StringComparison.Ordinal);
+        var rememberIndex = storeJs.IndexOf("rememberOrderIds(known, tracked)", StringComparison.Ordinal);
         Assert.True(acceptIndex >= 0 && rememberIndex > acceptIndex);
     }
 
