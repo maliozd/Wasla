@@ -33,30 +33,10 @@
     });
   }
 
-  function seedLiveScreenSummary() {
-    const host = document.getElementById("ordersLiveScreenHost");
-    if (!host) return;
-    const meta = host.querySelector(".orders-live-screen-meta");
-    if (!meta) return;
-
-    [
-      ["ordersLiveDisplayTodayCount", "data-total-count"]
-    ].forEach(function (pair) {
-      const el = document.getElementById(pair[0]);
-      if (!el) return;
-      const v = meta.getAttribute(pair[1]);
-      if (v == null) return;
-      const n = parseInt(String(v), 10);
-      if (isNaN(n)) return;
-      el.textContent = String(n);
-    });
-  }
-
   async function initLiveDisplayPage() {
     document.body.classList.add("wasla-orders-view-kitchen");
     initCloseButton();
     initNotificationSettingsTriggers();
-    seedLiveScreenSummary();
     if (O.audio && typeof O.audio.initAudioUnlock === "function") {
       O.audio.initAudioUnlock();
     }
