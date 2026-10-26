@@ -336,31 +336,6 @@
     });
   }
 
-  function updateLiveScreenSummaryFromTmp(tmp) {
-    if (!isLiveDisplayPage() || !tmp) return;
-    try {
-      const meta = tmp.querySelector(".orders-live-screen-meta");
-      if (!meta) return;
-      [
-        ["ordersLiveDisplayTodayCount", "data-total-count"],
-        ["ordersLiveDisplayActiveCount", "data-active-count"],
-        ["ordersLiveDisplayCancelledCount", "data-cancelled-count"]
-      ].forEach(function (pair) {
-        const el = document.getElementById(pair[0]);
-        if (!el) return;
-        const v = meta.getAttribute(pair[1]);
-        if (v == null) return;
-        const n = parseInt(String(v), 10);
-        if (isNaN(n)) return;
-        el.textContent = String(n);
-      });
-    } catch (e) {
-      if (O.isDebugEnabled()) {
-        O.debugWarn("updateLiveScreenSummaryFromTmp failed", e);
-      }
-    }
-  }
-
   function buildPollUrl() {
     const u = new URL(global.location.origin + O.opts.tableUrl);
     u.search = global.location.search || "";

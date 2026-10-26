@@ -15,14 +15,6 @@
     var turkeyToday = Model.TurkeyLocalToday;
     var utcNow = DateTime.UtcNow;
 
-    var activeCount = Model.Orders.Count(o =>
-        o.Status is OrderStatus.New
-            or OrderStatus.Accepted
-            or OrderStatus.Preparing
-            or OrderStatus.ReadyForPickup
-            or OrderStatus.OnTheWay);
-    var cancelledCount = Model.Orders.Count(o => o.Status == OrderStatus.Cancelled);
-
     string StatusLabel(OrderStatus s) => L[$"OrderStatus.{s}"].Value;
 
     string FormatElapsed(DateTime sinceUtc)
@@ -31,11 +23,6 @@
         return L["Orders.LiveScreen.ElapsedMinutes", minutes].Value;
     }
 }
-
-<div class="orders-live-screen-meta d-none"
-     data-total-count="@Model.TotalCount"
-     data-active-count="@activeCount"
-     data-cancelled-count="@cancelledCount"></div>
 
 @if (Model.Orders.Count == 0)
 {
