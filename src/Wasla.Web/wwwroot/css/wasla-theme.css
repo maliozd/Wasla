@@ -5981,12 +5981,6 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
 [data-bs-theme="dark"] .wasla-live-detail-order-note__label { color: #e6c98a; }
 [data-bs-theme="dark"] .wasla-live-detail-order-note__text { color: #f6efe4; }
 .wasla-live-focus .wasla-live-detail-order-note { display: none; }
-#ordersLiveDetailModal .modal-body { overflow-x: hidden; }
-#ordersLiveDetailModal .wasla-live-detail__items {
-    width: 100%;
-    max-width: 100%;
-}
-#ordersLiveDetailModal .wasla-live-detail__surcharge { white-space: nowrap; }
 .wasla-live-detail__body {
     display: flex;
     flex-direction: column;

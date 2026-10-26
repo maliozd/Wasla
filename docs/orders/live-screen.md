@@ -60,7 +60,7 @@ Authorization: Live Screen actions use `CanViewLiveScreen` where applied on thos
 - Each Board column, List group and Focus queue group renders at most one page of orders; see [Large active-order sets](#large-active-order-sets-was-5)
 - List rows show at most five product lines; a longer order shows four and "+N" for the rest, so one large order does not make its row several times taller. The order note sits under the customer (three lines), and the total, elapsed and action columns have fixed widths, so every row lines up
 - Every order in every view carries a stripe in its status colour on its leading edge (`wasla-live-screen.css`), next to the existing status badge and the status-tinted column or group header, which leads with its status icon (`images/live-screen/status-*.svg`, the Live Screen set from Figma, drawn as a mask in the column's status colour)
-- Focus queue rows put the order code and elapsed time on the first line, the platform and status on the second, and the product summary below. Focus queue rows show at most two lines of product summary (CSS line clamp); the full text stays in the button's accessible name and `title`, and the selected order lists every item. In the Focus detail panel, item prices share one column at the panel edge and the action bar stays pinned at the bottom of the panel while a long item list scrolls (`.wasla-live-focus .wasla-live-detail__*` in `wasla-theme.css`). The detail header (modal and Focus) shows the code, the platform under it, then status, elapsed time and order time. In the Focus panel the action bar keeps equal space above and below its buttons
+- Focus queue rows put the order code and elapsed time on the first line, the platform and status on the second, and the product summary below. Focus queue rows show at most two lines of product summary (CSS line clamp); the full text stays in the button's accessible name and `title`, and the selected order lists every item. In the Focus detail panel, item prices share one column at the panel edge and the action bar stays pinned at the bottom of the panel while a long item list scrolls (`.wasla-live-focus .wasla-live-detail__*` in `wasla-theme.css`). The Focus detail header shows the code, the platform under it, then status, elapsed time and order time (the modal's header is described under [Detail modal layout](#detail-modal-layout)). In the Focus panel the action bar keeps equal space above and below its buttons
 
 ### Snapshot coordinator (one poll)
 
@@ -95,6 +95,20 @@ Measured in headless Edge on a developer machine with a deterministic copy of th
 - Focus: same helper into the focus detail container with cancellation/retry
 - Document-level click delegation (cards are replaced on poll)
 - The receipt print action inside an open modal or Focus panel follows the server's print status live (Pending, Printing, the outcome) for users who may print manually, and reads it every 10 seconds only while the live connection is down. Closed details are never polled ([../architecture/realtime.md](../architecture/realtime.md))
+
+### Detail modal layout
+
+The modal follows the approved Figma section "Wasla Orders · Order Detail Modal Exploration" (node `232:2324`). Markup: `_OrderDetailPanel.cshtml` inside the shell in `LiveDisplay.cshtml`; styles: the "Order detail modal" section of `wasla-live-screen.css`, scoped to `.wasla-order-detail-modal`.
+
+- From 768 px: a dialog up to 1,120 px wide. The header holds the Wasla mark, the title and Close, then the order identity: platform badge and order code as one unit, the status badge with its Live Screen icon, and on the far side the provider's order time and the elapsed time. Below it two columns: the order note and products on the leading side, and a side panel (340 px, 300 px below 1,200 px) with the customer, phone, address, payment method and, at its foot, the fees and total. Only the products column scrolls; the header, side panel and action bar stay in place.
+- Product rows: a quantity chip (accented when 2 or more, with the unit price `OrderItem.UnitPrice` under the line total), options with their surcharges, and the item note as a small warm tag.
+- Totals: only the authoritative values from the order: delivery fee and service fee when not 0, and the total. There is no subtotal row, because the model has no authoritative subtotal and adding up lines would ignore provider discounts. Payment status (`Order.PaymentStatus`) is not in the view model, so the modal does not show it.
+- Order time: only the provider's time (`CreatedAtPlatformUtc`). Without one the modal says "Sipariş tarihi bilinmiyor" (`Orders.Details.OrderTimeUnknown`) and shows no elapsed time; it never shows the import time ("Wasla'ya alındı").
+- Action bar: print (with its last outcome) and "Siparişi aç" on the leading side, the lifecycle action at the far end. The DOM order, and so the tab order, is unchanged: lifecycle first.
+- Below 768 px: full screen and one column, an app bar with a back arrow (Close), the title and the Wasla mark; print and "Siparişi aç" close the scroll, and the lifecycle buttons stay in a sticky bar at its end, so the last content is never under the bar.
+- Arabic mirrors the whole layout; order codes, phone numbers and amounts keep left-to-right reading.
+- The Focus view loads the same partial and keeps its own look (`wasla-theme.css`): elements marked `data-detail-modal-only` (the side-panel summary, unit prices, the unknown-time line) are hidden outside the modal, and the import-time lines and the totals under the products remain for Focus.
+- Browser checks: `OrderDetailModalBrowserTests`.
 
 ### Lifecycle actions on Live Screen
 

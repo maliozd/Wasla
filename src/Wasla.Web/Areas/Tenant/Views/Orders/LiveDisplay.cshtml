@@ -250,10 +250,13 @@
     </div>
 </div>
 
-<div class="modal fade" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+@* Order detail: two columns from 768 px (only the products scroll), a full-screen single column below it. The panel
+   markup comes from _OrderDetailPanel; wasla-live-screen.css styles it under .wasla-order-detail-modal. *@
+<div class="modal fade wasla-order-detail-modal" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
         <div class="modal-content">
             <div class="modal-header">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--order-detail", Decorative = true })
                 <h2 class="modal-title h6 mb-0" id="ordersLiveDetailModalTitle">@L["Orders.Details.Title"]</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
             </div>

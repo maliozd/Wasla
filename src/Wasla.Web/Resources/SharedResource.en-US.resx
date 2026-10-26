@@ -786,6 +786,9 @@
   <data name="Orders.Details.Received" xml:space="preserve">
     <value>Received in Wasla</value>
   </data>
+  <data name="Orders.Details.OrderTimeUnknown" xml:space="preserve">
+    <value>Order time unknown</value>
+  </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Payment Method</value>
   </data>
