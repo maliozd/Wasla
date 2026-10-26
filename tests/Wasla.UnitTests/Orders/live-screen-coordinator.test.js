@@ -2995,7 +2995,7 @@ test("order detail money uses the shared TRY formatter without touching notes", 
   assert.deepEqual(loaded, ["modal", "focus"]);
 });
 
-// Order training while the tenant is in setup -------------------------------------------------------------
+// Order training (WAS-117) -----------------------------------------------------------------------------------
 
 function notifyingHarness() {
   const time = clock();
@@ -3019,11 +3019,17 @@ function notifyingHarness() {
 
 const PRACTICE = guid(900);
 
-/** A snapshot with the practice order and the given real orders; isolated: an isolated trainee's snapshot. */
-function trainingSnapshot(realIds, isolated, realOrdersReceived) {
-  const body = snapshot([PRACTICE].concat(realIds));
+/**
+ * A snapshot with the practice order and the given real orders. Isolated: as the server sends it to the Owner in
+ * order training, with the real orders off the board and only their ids and waiting (active) count kept; waiting
+ * defaults to every real order (they are all New here).
+ */
+function trainingSnapshot(realIds, isolated, waiting) {
+  const body = snapshot([PRACTICE].concat(isolated ? [] : realIds));
   body.orders[0].isDemo = true;
-  body.training = isolated ? { isolated: true, realOrdersReceived: realOrdersReceived || 0 } : null;
+  body.training = isolated
+    ? { isolated: true, waitingRealOrders: waiting == null ? realIds.length : waiting, realOrderIds: realIds.slice() }
+    : null;
   return body;
 }
 
@@ -3033,118 +3039,148 @@ async function poll(h, body) {
   await flush();
 }
 
-test("isolated order training: real orders never reach the trainee, so nothing is announced while the count grows", async function () {
-  const h = notifyingHarness();
+async function startWith(h, body) {
   h.coordinator.start();
   await flush();
-  await poll(h, trainingSnapshot([], true, 0));
-  for (let received = 1; received <= 3; received++) {
-    await h.time.advance(10000);
-    await poll(h, trainingSnapshot([], true, received));
-  }
+  await poll(h, body);
+}
 
-  assert.deepEqual(h.notified, [], "no sound, browser notification or highlight");
-  assert.equal(h.accepted.length, 4);
-  assert.ok(h.accepted.every(function (meta) { return meta.newIds.length === 0 && meta.isolated === true; }));
+async function next(h, body) {
+  await h.time.advance(10000);
+  await poll(h, body);
+}
+
+test("during order training a real order is announced exactly once, while the board stays practice-only", async function () {
+  const h = notifyingHarness();
+  await startWith(h, trainingSnapshot([guid(1)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2)], true));
+  // Repeated polls, as after a live invalidation, duplicates or a reconnect read: nothing more.
+  await next(h, trainingSnapshot([guid(1), guid(2)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3)], true));
+
+  assert.deepEqual(h.notified, [[guid(2)], [guid(3)]]);
+  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, false, false, false, false]);
+  assert.ok(h.accepted.every(function (meta) { return meta.isolated === true; }), "the meta says the board is isolated");
 });
 
-test("the first snapshot after the tenant goes live is a silent baseline, then new orders notify normally", async function () {
+test("orders that were there before training are not new when training starts; one that arrives then is", async function () {
   const h = notifyingHarness();
-  h.coordinator.start();
-  await flush();
-  await poll(h, trainingSnapshot([], true, 2));
+  await startWith(h, snapshot([guid(1), guid(2)]));
+  // The Owner starts training (or resumes it) in another tab: the same page is isolated now.
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3)], true));
 
-  // Completed or skipped in another tab: the same page now receives the real orders that arrived during training.
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([guid(1), guid(2)], false));
-  assert.equal(h.accepted[1].isBaseline, true);
-  assert.deepEqual(h.accepted[1].newIds, []);
-  assert.deepEqual(h.notified, [], "the revealed orders get no sound, notification or highlight");
-
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([guid(1), guid(2), guid(3)], false));
-  assert.equal(h.accepted[2].isBaseline, false);
-  assert.deepEqual(h.notified, [[guid(3)]], "a genuinely new order behaves normally");
+  assert.equal(h.accepted[1].isBaseline, false, "entering training is no baseline");
+  assert.deepEqual(h.notified, [[guid(3)]], "the backlog is not replayed and the arrival is not lost");
 });
 
-test("entering isolated order training is a silent baseline as well", async function () {
+test("finishing or skipping training in another tab neither replays the backlog nor loses an order that arrived meanwhile", async function () {
   const h = notifyingHarness();
-  h.coordinator.start();
-  await flush();
-  await poll(h, snapshot([guid(1)]));
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([], true, 1));
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([], true, 2));
+  await startWith(h, trainingSnapshot([guid(1), guid(2)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3)], true));
+  // The first normal snapshot holds the whole backlog plus an order that arrived since the last training read.
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3), guid(4)], false));
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3), guid(4)], false));
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3), guid(4), guid(5)], false));
 
-  assert.equal(h.accepted[1].isBaseline, true);
-  assert.deepEqual(h.notified, []);
+  assert.deepEqual(h.notified, [[guid(3)], [guid(4)], [guid(5)]]);
+  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, false, false, false, false]);
+});
+
+test("pausing and resuming training (out of isolation and back) announces only orders that are genuinely new", async function () {
+  const h = notifyingHarness();
+  await startWith(h, trainingSnapshot([guid(1)], true));
+  await next(h, trainingSnapshot([guid(1)], false));
+  await next(h, trainingSnapshot([guid(1), guid(2)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2)], false));
+  await next(h, trainingSnapshot([guid(1), guid(2)], true));
+
+  assert.deepEqual(h.notified, [[guid(2)]]);
+});
+
+test("a reload or a new tab during training starts from a silent baseline that already knows the hidden orders", async function () {
+  const reloaded = notifyingHarness();
+  await startWith(reloaded, trainingSnapshot([guid(1), guid(2)], true));
+  await next(reloaded, trainingSnapshot([guid(1), guid(2)], false));
+  await next(reloaded, trainingSnapshot([guid(1), guid(2), guid(3)], false));
+
+  assert.equal(reloaded.accepted[0].isBaseline, true);
+  assert.deepEqual(reloaded.notified, [[guid(3)]], "after training only the new order is announced");
+});
+
+test("several tabs: each training tab and a colleague's screen announce the same new real order once each", async function () {
+  const firstTab = notifyingHarness();
+  const secondTab = notifyingHarness();
+  const colleague = notifyingHarness();
+  await startWith(firstTab, trainingSnapshot([guid(1)], true));
+  await startWith(secondTab, trainingSnapshot([guid(1)], true));
+  await startWith(colleague, snapshot([guid(1)]));
+
+  // The same real order arrives for all three; the first tab then finishes training, the second follows.
+  await next(firstTab, trainingSnapshot([guid(1), guid(2)], true));
+  await next(secondTab, trainingSnapshot([guid(1), guid(2)], true));
+  await next(colleague, snapshot([guid(1), guid(2)]));
+  await next(firstTab, trainingSnapshot([guid(1), guid(2)], false));
+  await next(secondTab, trainingSnapshot([guid(1), guid(2)], false));
+
+  assert.deepEqual(firstTab.notified, [[guid(2)]]);
+  assert.deepEqual(secondTab.notified, [[guid(2)]]);
+  assert.deepEqual(colleague.notified, [[guid(2)]], "the colleague keeps the normal new-order behaviour");
 });
 
 test("the practice order itself is never announced", async function () {
   const h = notifyingHarness();
-  h.coordinator.start();
-  await flush();
-  await poll(h, snapshot([]));
-  await h.time.advance(10000);
-  const withPractice = snapshot([]);
-  withPractice.orders = trainingSnapshot([], false).orders;
-  await poll(h, withPractice);
+  await startWith(h, snapshot([]));
+  await next(h, trainingSnapshot([], false));
+  await next(h, trainingSnapshot([], true));
 
   assert.deepEqual(h.notified, []);
 });
 
-test("a training section must carry a whole-number count, and only an isolated one counts as isolation", function () {
-  assert.equal(store.validateSnapshot(trainingSnapshot([], true, 3)).ok, true);
-  assert.equal(store.validateSnapshot(trainingSnapshot([], false)).ok, true);
-  const negative = trainingSnapshot([], true, 1);
-  negative.training.realOrdersReceived = -1;
-  assert.equal(store.validateSnapshot(negative).reason, "training");
-  const text = trainingSnapshot([], true, 1);
-  text.training.realOrdersReceived = "2";
-  assert.equal(store.validateSnapshot(text).reason, "training");
+test("the header counts the real orders waiting outside the practice board, never the practice order", function () {
+  // Three real orders hidden by training, one of them already delivered: two are waiting.
+  assert.equal(store.activeRealOrderCount(trainingSnapshot([guid(1), guid(2), guid(3)], true, 2)), 2);
+  assert.equal(store.activeRealOrderCount(trainingSnapshot([], true)), 0, "the practice order is not a waiting real order");
 
-  assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], true, 0)), true);
+  const normal = trainingSnapshot([guid(1), guid(2), guid(3)], false);
+  normal.orders[3].status = "Delivered";
+  assert.equal(store.activeRealOrderCount(normal), 2, "the same count once training ends");
+  assert.equal(store.activeRealOrderCount(snapshot([guid(1)])), 1);
+});
+
+test("new-order detection follows the hidden real orders by id only during isolated training", function () {
+  const isolated = trainingSnapshot([guid(1), guid(2)], true);
+  assert.deepEqual(store.trackedOrders(isolated).map(function (order) { return order.id; }), [PRACTICE, guid(1), guid(2)]);
+  const normal = trainingSnapshot([guid(1)], false);
+  assert.equal(store.trackedOrders(normal), normal.orders);
+  // Only an isolated section counts as isolation.
+  const notIsolated = trainingSnapshot([], false);
+  notIsolated.training = { isolated: false, waitingRealOrders: 1, realOrderIds: [guid(5)] };
+  assert.deepEqual(store.trackedOrders(notIsolated).map(function (order) { return order.id; }), [PRACTICE]);
+});
+
+test("a training section must carry a whole waiting count no larger than its list of order ids", function () {
+  assert.equal(store.validateSnapshot(trainingSnapshot([guid(1), guid(2)], true)).ok, true);
+  assert.equal(store.validateSnapshot(trainingSnapshot([], true)).ok, true);
+  assert.equal(store.validateSnapshot(trainingSnapshot([], false)).ok, true);
+  const invalid = [
+    function (t) { t.waitingRealOrders = -1; },
+    function (t) { t.waitingRealOrders = "2"; },
+    function (t) { t.waitingRealOrders = 3; },
+    function (t) { delete t.realOrderIds; },
+    function (t) { t.realOrderIds = [guid(1), "TY-123"]; },
+    function (t) { delete t.waitingRealOrders; t.realOrdersReceived = 2; }
+  ];
+  invalid.forEach(function (change) {
+    const body = trainingSnapshot([guid(1), guid(2)], true);
+    change(body.training);
+    assert.equal(store.validateSnapshot(body).reason, "training");
+  });
+
+  assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], true)), true);
   assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], false)), false);
   assert.equal(store.isIsolatedSnapshot({ training: { isolated: "true" } }), false);
   assert.equal(store.isIsolatedSnapshot(snapshot([])), false);
-});
-
-test("leaving isolated order training is exactly one silent baseline, in a setup or an already-live restaurant", async function () {
-  const h = notifyingHarness();
-  h.coordinator.start();
-  await flush();
-  await poll(h, trainingSnapshot([], true, 1));
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([guid(1), guid(2)], false));
-  for (let i = 0; i < 3; i++) {
-    await h.time.advance(10000);
-    await poll(h, trainingSnapshot([guid(1), guid(2)], false));
-  }
-  await h.time.advance(10000);
-  await poll(h, trainingSnapshot([guid(1), guid(2), guid(7)], false));
-
-  assert.deepEqual(h.accepted.map(function (meta) { return meta.isBaseline; }), [true, true, false, false, false, false]);
-  assert.deepEqual(h.notified, [[guid(7)]]);
-});
-
-test("in the same restaurant a colleague's Live Screen announces a new order while the training Owner's does not", async function () {
-  const trainee = notifyingHarness();
-  const colleague = notifyingHarness();
-  trainee.coordinator.start();
-  colleague.coordinator.start();
-  await flush();
-  await poll(trainee, trainingSnapshot([], true, 0));
-  await poll(colleague, snapshot([guid(1)]));
-
-  // The same real order arrives for both.
-  await trainee.time.advance(10000);
-  await colleague.time.advance(10000);
-  await poll(trainee, trainingSnapshot([], true, 1));
-  await poll(colleague, snapshot([guid(1), guid(2)]));
-
-  assert.deepEqual(trainee.notified, [], "no sound, browser notification or highlight for the trainee");
-  assert.deepEqual(colleague.notified, [[guid(2)]], "the colleague keeps the normal new-order behaviour");
 });
 
 // Automation status in the snapshot ------------------------------------------------------------------------
@@ -3175,19 +3211,21 @@ test("Setup → Live changes only the automation section: same orders, no sound,
   assert.deepEqual(h.notified, [[guid(3)]], "a genuinely new order still notifies normally");
 });
 
-test("Setup → Live together with the end of isolated training is one silent baseline; existing orders are not new", async function () {
+test("Setup → Live together with the end of isolated training: existing orders are not new, a new one is", async function () {
   const h = notifyingHarness();
   h.coordinator.start();
   await flush();
-  await poll(h, withAutomation(trainingSnapshot([], true, 2), "PendingSetup", "Off"));
+  await poll(h, withAutomation(trainingSnapshot([guid(1), guid(2)], true), "PendingSetup", "Off"));
 
   // The Owner completes in another tab: the same poll ends isolation and makes automatic approval active.
   await h.time.advance(10000);
   await poll(h, withAutomation(trainingSnapshot([guid(1), guid(2)], false), "Active", "Off"));
+  await h.time.advance(10000);
+  await poll(h, withAutomation(trainingSnapshot([guid(1), guid(2), guid(3)], false), "Active", "Off"));
 
-  assert.equal(h.accepted[1].isBaseline, true);
+  assert.equal(h.accepted[1].isBaseline, false);
   assert.deepEqual(h.accepted[1].newIds, []);
-  assert.deepEqual(h.notified, [], "the revealed orders and the status change get no sound, notification or highlight");
+  assert.deepEqual(h.notified, [[guid(3)]], "the revealed orders and the status change are not announced; a new order is");
 });
 
 test("a transient status-read failure keeps polling the orders and announces nothing", async function () {

@@ -209,7 +209,9 @@
             <div class="wasla-live-summary__metric is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"></span>
                 <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
-                <span class="wasla-live-summary__label">@L["Orders.ActiveOrders"]</span>
+                @* During order training the board holds only the practice order: this count is the real orders waiting
+                   outside it, and its label says so (the store keeps it in step with each snapshot). *@
+                <span class="wasla-live-summary__label" id="ordersLiveDisplayActiveLabel">@(Model.GuidedTraining is null ? L["Orders.ActiveOrders"] : L["Orders.LiveScreen.WaitingRealOrders"])</span>
             </div>
             <div class="wasla-live-summary__metric wasla-live-summary__metric--cancelled is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"></span>
@@ -396,6 +398,8 @@
                 ["liveScreenStale"] = L["Orders.LiveScreen.ConnectionStale"].Value,
                 ["liveScreenSessionExpired"] = L["Orders.LiveScreen.SessionExpired"].Value,
                 ["liveScreenCountUnavailable"] = L["Orders.LiveScreen.CountUnavailable"].Value,
+                ["liveScreenActiveOrders"] = L["Orders.ActiveOrders"].Value,
+                ["liveScreenWaitingRealOrders"] = L["Orders.LiveScreen.WaitingRealOrders"].Value,
                 ["ordersApprove"] = L["Orders.Approve"].Value,
                 ["ordersReject"] = L["Orders.Reject"].Value,
                 ["ordersStartPreparing"] = L["Orders.StartPreparing"].Value,

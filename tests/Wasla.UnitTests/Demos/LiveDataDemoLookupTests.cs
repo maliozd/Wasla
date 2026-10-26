@@ -96,9 +96,6 @@ public sealed class LiveDataDemoLookupTests
 
         public Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) =>
             throw new NotSupportedException();
-
-        public Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct) =>
-            throw new NotSupportedException();
     }
 
     private sealed class PolicyResult : IAuthorizationService

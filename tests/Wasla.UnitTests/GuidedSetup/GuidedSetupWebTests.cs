@@ -911,19 +911,27 @@ public sealed partial class GuidedSetupWebTests
     }
 
     [Fact]
-    public void RealOrdersCopy_IsTheAgreedTurkish_AndEveryCultureHasASingularAndAPlural()
+    public void RealOrdersCopy_IsTheWaitingBacklogInTurkish_AndEveryCultureHasASingularAPluralAndAHeaderLabel()
     {
+        // WAS-117: the copy counts the real orders waiting (the header's count), says that new ones are still announced,
+        // and when the hidden ones appear.
         foreach (var turkish in new[] { Load(""), Load(".tr-TR") })
         {
-            Assert.Equal("Siz eğitimdeyken gerçek bir sipariş geldi", turkish["GuidedSetup.Training.RealOrders.TitleOne"]);
-            Assert.Equal("Siz eğitimdeyken {0} gerçek sipariş geldi", turkish["GuidedSetup.Training.RealOrders.TitleMany"]);
-            Assert.Equal("Eğitime devam edebilirsiniz. Siparişi platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.", turkish["GuidedSetup.Training.RealOrders.BodyOne"]);
-            Assert.Equal("Eğitime devam edebilirsiniz. Siparişleri platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.", turkish["GuidedSetup.Training.RealOrders.BodyMany"]);
+            Assert.Equal("Bekleyen bir gerçek sipariş var", turkish["GuidedSetup.Training.RealOrders.TitleOne"]);
+            Assert.Equal("Bekleyen {0} gerçek sipariş var", turkish["GuidedSetup.Training.RealOrders.TitleMany"]);
+            Assert.Equal("Gerçek siparişler bu alıştırma ekranında gösterilmez, ancak yeni gelenler bildirim ayarlarınıza göre yine bildirilir. Siparişi platform panelinizden yönetebilirsiniz; eğitim sona erdiğinde Canlı Ekran'da görünür.", turkish["GuidedSetup.Training.RealOrders.BodyOne"]);
+            Assert.Equal("Gerçek siparişler bu alıştırma ekranında gösterilmez, ancak yeni gelenler bildirim ayarlarınıza göre yine bildirilir. Siparişleri platform panelinizden yönetebilirsiniz; eğitim sona erdiğinde Canlı Ekran'da görünürler.", turkish["GuidedSetup.Training.RealOrders.BodyMany"]);
+            Assert.Equal("Bekleyen Gerçek Siparişler", turkish["Orders.LiveScreen.WaitingRealOrders"]);
         }
 
         foreach (var culture in Cultures)
         {
             var resources = Load(culture);
+            // The header's training label is its own text, never the board's "Active orders".
+            Assert.False(string.IsNullOrWhiteSpace(resources["Orders.LiveScreen.WaitingRealOrders"]));
+            Assert.DoesNotContain("{", resources["Orders.LiveScreen.WaitingRealOrders"], StringComparison.Ordinal);
+            if (resources.TryGetValue("Orders.ActiveOrders", out var active))
+                Assert.NotEqual(active, resources["Orders.LiveScreen.WaitingRealOrders"]);
             Assert.DoesNotContain("{", resources["GuidedSetup.Training.RealOrders.TitleOne"], StringComparison.Ordinal);
             Assert.Single(PlaceholderPattern().Matches(resources["GuidedSetup.Training.RealOrders.TitleMany"]));
             Assert.Contains("{0}", resources["GuidedSetup.Training.RealOrders.TitleMany"], StringComparison.Ordinal);

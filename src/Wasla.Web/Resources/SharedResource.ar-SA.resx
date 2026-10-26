@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
     <value>هذا الإجمالي غير موجود في لقطة الشاشة المباشرة.</value>
   </data>
+  <data name="Orders.LiveScreen.WaitingRealOrders" xml:space="preserve">
+    <value>الطلبات الحقيقية المنتظرة</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>طباعة</value>
   </data>
@@ -3681,10 +3684,10 @@
   <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>اكتمل التدريب على الطلبات وانتهى الإعداد الموجّه. تبقى أدلة الاستخدام متاحة في المساعدة والأدلة.</value></data>
   <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>تعذّر بدء الطلب التجريبي. يُرجى المحاولة مرة أخرى.</value></data>
   <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>يمكنك إكمال التدريب بعد تسليم الطلب التجريبي.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>وصل طلب حقيقي أثناء تدريبك</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>وصلت طلبات حقيقية أثناء تدريبك، وعددها: {0}</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>يمكنك متابعة التدريب. يمكنك إدارة الطلب من لوحة المنصة الخاصة بك. ستظهر الطلبات النشطة على الشاشة المباشرة عند اكتمال التدريب.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>يمكنك متابعة التدريب. يمكنك إدارة الطلبات من لوحة المنصة الخاصة بك. ستظهر الطلبات النشطة على الشاشة المباشرة عند اكتمال التدريب.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>يوجد طلب حقيقي قيد الانتظار</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>توجد طلبات حقيقية قيد الانتظار، وعددها: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>لا تظهر الطلبات الحقيقية على شاشة التدريب هذه، لكن يتم التنبيه بالطلبات الجديدة وفق إعدادات الإشعارات لديك. يمكنك إدارة الطلب من لوحة المنصة الخاصة بك، وسيظهر على الشاشة المباشرة عند انتهاء التدريب.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>لا تظهر الطلبات الحقيقية على شاشة التدريب هذه، لكن يتم التنبيه بالطلبات الجديدة وفق إعدادات الإشعارات لديك. يمكنك إدارة الطلبات من لوحة المنصة الخاصة بك، وستظهر على الشاشة المباشرة عند انتهاء التدريب.</value></data>
   <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>المتابعة إلى Print Bridge</value></data>
   <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>المتابعة إلى التدريب على الطلبات</value></data>
   <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>لم تكتمل هذه الخطوة بعد. يمكنك إكمال الإعداد أو اختيار إعداده لاحقًا.</value></data>

@@ -150,11 +150,40 @@
   }
 
   /**
-   * True for an isolated trainee's snapshot: the tenant is still in setup and this user is in order training, so the
-   * server left real orders out and sent only how many arrived.
+   * True for an isolated trainee's snapshot: this user is in order training, so the server left real orders out of
+   * the board and sent only how many are waiting and their ids.
    */
   function isIsolatedSnapshot(snapshot) {
     return !!(snapshot && snapshot.training && snapshot.training.isolated === true);
+  }
+
+  /**
+   * The orders new-order detection follows: the snapshot's orders and, during isolated training, the real orders kept
+   * off the board (ids only). One known-id set covers both, so training neither hides a new real order nor makes its
+   * end replay the backlog.
+   */
+  function trackedOrders(snapshot) {
+    const orders = snapshot.orders || [];
+    if (!isIsolatedSnapshot(snapshot) || !Array.isArray(snapshot.training.realOrderIds)) return orders;
+    const tracked = orders.slice();
+    const ids = snapshot.training.realOrderIds;
+    for (let i = 0; i < ids.length; i++) tracked.push({ id: ids[i] });
+    return tracked;
+  }
+
+  /**
+   * How many real orders are active: the header's count. During isolated training the server counts the ones kept
+   * off the board by the same rule; practice orders never count.
+   */
+  function activeRealOrderCount(snapshot) {
+    if (isIsolatedSnapshot(snapshot)) return snapshot.training.waitingRealOrders;
+    let active = 0;
+    const orders = snapshot.orders || [];
+    for (let i = 0; i < orders.length; i++) {
+      if (orders[i].isDemo) continue;
+      if (ACTIVE_STATUSES[orders[i].status]) active += 1;
+    }
+    return active;
   }
 
   const SUPPORTED_STATUSES = {
@@ -199,7 +228,12 @@
     if (snapshot.training != null) {
       const training = snapshot.training;
       if (typeof training !== "object" || Array.isArray(training)) return { ok: false, reason: "training" };
-      if (!isWholeNumber(training.realOrdersReceived)) return { ok: false, reason: "training" };
+      if (!isWholeNumber(training.waitingRealOrders)) return { ok: false, reason: "training" };
+      if (!Array.isArray(training.realOrderIds)) return { ok: false, reason: "training" };
+      if (training.waitingRealOrders > training.realOrderIds.length) return { ok: false, reason: "training" };
+      for (let i = 0; i < training.realOrderIds.length; i++) {
+        if (!isGuid(training.realOrderIds[i])) return { ok: false, reason: "training" };
+      }
     }
     const seen = new Set();
     for (let i = 0; i < snapshot.orders.length; i++) {
@@ -257,8 +291,6 @@
     let retryAttempt = 0;
     let stopped = false;
     let baselineReady = false;
-    // Whether the last accepted snapshot was an isolated trainee's (see isIsolatedSnapshot).
-    let lastIsolated = false;
     let lastSnapshot = null;
     let pendingMutations = 0;
 
@@ -369,12 +401,13 @@
             return { applied: false, reason: "error", kept: lastSnapshot };
           }
 
-          // The first snapshot is the baseline: orders already there are not announced. So is the first snapshot after
-          // entering or leaving isolated order training (e.g. the tenant went live): the real orders it reveals arrived
-          // earlier and get no sound, browser notification or highlight. Only orders after that are new.
+          // The first snapshot is the baseline: orders already there are not announced. Isolated order training keeps
+          // following the real orders by id, so a real order that arrives during training is new once, and entering or
+          // leaving training (in this tab or another) is no baseline: the backlog it reveals is already known.
           const isolated = isIsolatedSnapshot(result.snapshot);
-          const isBaseline = !baselineReady || isolated !== lastIsolated;
-          const newIds = collectNewIds(known, result.snapshot.orders, !isBaseline);
+          const isBaseline = !baselineReady;
+          const tracked = trackedOrders(result.snapshot);
+          const newIds = collectNewIds(known, tracked, !isBaseline);
           const meta = {
             newIds: newIds,
             isBaseline: isBaseline,
@@ -393,9 +426,8 @@
               options.onStatus("stale");
               return { applied: false, reason: "render", kept: lastSnapshot };
             }
-            rememberOrderIds(known, result.snapshot.orders);
+            rememberOrderIds(known, tracked);
             baselineReady = true;
-            lastIsolated = isolated;
             lastSnapshot = result.snapshot;
             retryAttempt = 0;
             ticket.outcome = "ok";
@@ -492,6 +524,8 @@
     hasPlacedTime: hasPlacedTime,
     collectNewIds: collectNewIds,
     isIsolatedSnapshot: isIsolatedSnapshot,
+    trackedOrders: trackedOrders,
+    activeRealOrderCount: activeRealOrderCount,
     validateSnapshot: validateSnapshot,
     looksLikeHtml: looksLikeHtml,
     nextBackoffMs: nextBackoffMs,
@@ -643,15 +677,14 @@ function attachBrowser(O, global, api) {
   }
 
   function setSummary(snapshot) {
-    let active = 0;
-    const orders = snapshot.orders || [];
-    for (let i = 0; i < orders.length; i++) {
-      if (orders[i].isDemo) continue;
-      if (api.ACTIVE_STATUSES[orders[i].status]) active += 1;
-    }
-    setSummaryCount("ordersLiveDisplayActiveCount", active);
+    setSummaryCount("ordersLiveDisplayActiveCount", api.activeRealOrderCount(snapshot));
     setSummaryCount("ordersLiveDisplayTodayCount", snapshot.todayOrderCount);
     setSummaryCount("ordersLiveDisplayCancelledCount", snapshot.cancelledOrderCount);
+    // During order training the board holds only the practice order, so the count is labelled as the real orders
+    // waiting outside it rather than as the board's active orders.
+    const label = document.getElementById("ordersLiveDisplayActiveLabel");
+    const text = message(api.isIsolatedSnapshot(snapshot) ? "liveScreenWaitingRealOrders" : "liveScreenActiveOrders");
+    if (label && text && label.textContent !== text) label.textContent = text;
   }
 
   /** Writes a summary count in the page culture's format; a 0 gives its metric the quiet is-zero colours. */
@@ -2654,14 +2687,18 @@ function attachBrowser(O, global, api) {
     if (meta.isBaseline || !meta.newIds || !meta.newIds.length) return;
 
     try {
-      if (O.table && typeof O.table.markOrdersAsRecentlyNew === "function") {
-        O.table.markOrdersAsRecentlyNew(meta.newIds);
-        O.table.applyNewOrderVisualState();
-        O.table.scheduleNewOrderHighlightCleanup();
+      // During isolated order training the new real order has no card on the practice board to highlight or show;
+      // its sound and browser notification below are the same as outside training.
+      if (!meta.isolated) {
+        if (O.table && typeof O.table.markOrdersAsRecentlyNew === "function") {
+          O.table.markOrdersAsRecentlyNew(meta.newIds);
+          O.table.applyNewOrderVisualState();
+          O.table.scheduleNewOrderHighlightCleanup();
+        }
+        document.dispatchEvent(new CustomEvent("wasla:real-order-arrived", {
+          detail: { orderId: String(meta.newIds[0]) }
+        }));
       }
-      document.dispatchEvent(new CustomEvent("wasla:real-order-arrived", {
-        detail: { orderId: String(meta.newIds[0]) }
-      }));
 
       const settings = O.state && O.state.notificationSettings;
       if (settings && settings.newOrderSoundEnabled && O.audio && typeof O.audio.playSoundNow === "function") {

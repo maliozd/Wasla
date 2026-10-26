@@ -191,7 +191,7 @@ public sealed class LiveScreenRealtimeBrowserTests
     }
 
     [Fact]
-    public async Task DuringOrderTraining_ARealOrderIsCountedQuickly_ButNeverPausesTrainingOrIsAnnounced()
+    public async Task DuringOrderTraining_ARealOrderIsCountedAndAnnouncedOnce_WithoutShowingItsCardOrPausingTraining()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var host = await StartHostAsync(tenantInSetup: true);
@@ -200,17 +200,27 @@ public sealed class LiveScreenRealtimeBrowserTests
             $"The order training panel is not shown. {host.ServerErrors}");
         Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
 
+        // WAS-117: the seeded real backlog stays off the practice board but is counted in the header, under its own label.
+        Assert.True(await browser.WaitForAsync($"{WaitingCount} >= 3", TimeSpan.FromSeconds(10), ct),
+            $"The header does not count the real orders waiting during training. {host.ServerErrors}");
+        var waiting = await browser.EvaluateAsync<int>(WaitingCount, ct);
+        Assert.Equal("Waiting Real Orders", await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveLabel').textContent.trim()", ct));
+        // Only real orders link to their details page: none is on the practice board.
+        Assert.Equal(0, await browser.EvaluateAsync<int>("document.querySelectorAll('#ordersLiveScreenHost a[href^=\"/orders/details/\"]').length", ct));
+
         var orderId = await InsertNewOrderAsync(host, "RT-TRAINING-1", ct);
         await AnnounceAsync(host, orderId, ct);
 
+        Assert.True(await browser.WaitForAsync("window.__notifications === 1", Push, ct),
+            "A real order that arrived during training was not announced without polling.");
+        Assert.True(await browser.WaitForAsync($"{WaitingCount} === {waiting + 1}", Push, ct), "The waiting count did not include the new real order.");
         Assert.True(await browser.WaitForAsync("(() => { const box = document.querySelector('[data-training-real-orders-box]'); return !!box && !box.hidden; })()", Push, ct),
-            "The real order was not counted in the training panel without polling.");
+            "The training panel does not report the waiting real orders.");
         Assert.False(await browser.EvaluateAsync<bool>(CardShown(orderId), ct));
-        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__notifications", ct));
         var trainingBefore = await browser.EvaluateAsync<string>(TrainingState, ct);
 
-        // Duplicates of the event, a dropped connection, and a back/forward-cache restore: still no pause, no step
-        // change, no announcement, and the real order is still only counted.
+        // Duplicates of the event, a dropped connection, and a back/forward-cache restore: no second announcement, no
+        // pause or step change, and the real order is still only counted.
         for (var i = 0; i < 5; i++)
             await AnnounceAsync(host, orderId, ct);
         await browser.EvaluateAsync<bool>("(window.WaslaRealtime.get().stop(), true)", ct);
@@ -221,15 +231,20 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'connected'", Push, ct));
         var second = await InsertNewOrderAsync(host, "RT-TRAINING-2", ct);
         await AnnounceAsync(host, second, ct);
+        Assert.True(await browser.WaitForAsync("window.__notifications === 2", Push, ct), "The second real order was not announced.");
         await Task.Delay(TimeSpan.FromSeconds(2), ct);
 
         Assert.Equal(trainingBefore, await browser.EvaluateAsync<string>(TrainingState, ct));
-        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        Assert.Equal(2, await browser.EvaluateAsync<int>("window.__notifications", ct));
+        Assert.Equal(waiting + 2, await browser.EvaluateAsync<int>(WaitingCount, ct));
         Assert.False(await browser.EvaluateAsync<bool>(CardShown(second), ct));
         // The pause flow removed in 7bd1bca does not come back in any form.
         Assert.True(await browser.EvaluateAsync<bool>(
             "!document.querySelector('[data-training-pause], [data-training-resume], [data-training-show-active], .is-paused')", ct));
     }
+
+    // The header's active count as a number (en-US digits).
+    private const string WaitingCount = "Number(document.getElementById('ordersLiveDisplayActiveCount').textContent.replace(/[^0-9]/g, ''))";
 
     // The training panel's step and visibility, which a pause would change.
     private const string TrainingState =
