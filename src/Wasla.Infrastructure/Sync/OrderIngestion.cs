@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
@@ -91,45 +92,61 @@ internal sealed class OrderIngestion
                 milestonesObservedLive: milestonesObservedLive);
 
             order.ChangeVersion = OrderChangeVersions.Initial;
-            db.Orders.Add(order);
-            await db.SaveChangesAsync(ct).ConfigureAwait(false);
-            // The new order is committed: open Live Screens read their snapshot again.
-            await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(order.Id, order.ChangeVersion), _logger)
-                .ConfigureAwait(false);
-
-            _logger.LogDebug(
-                "Inserted order. OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}, Status={Status}, ReceivedAtUtc={ReceivedAtUtc}",
-                order.Id,
-                order.ExternalOrderId,
-                order.Platform,
-                order.InternalStatus,
-                order.ReceivedAt);
-
-            try
+            if (await TryInsertNewOrderAsync(db, order, ct).ConfigureAwait(false))
             {
-                await _autoApprove.ProcessNewlyInsertedOrderAsync(
+                // The new order is committed: open Live Screens read their snapshot again.
+                await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(order.Id, order.ChangeVersion), _logger)
+                    .ConfigureAwait(false);
+
+                _logger.LogDebug(
+                    "Inserted order. OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}, Status={Status}, ReceivedAtUtc={ReceivedAtUtc}",
+                    order.Id,
+                    order.ExternalOrderId,
+                    order.Platform,
+                    order.InternalStatus,
+                    order.ReceivedAt);
+
+                try
+                {
+                    await _autoApprove.ProcessNewlyInsertedOrderAsync(
+                        customerId,
+                        order.Id,
+                        order.InternalStatus,
+                        ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Auto-approve processing failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
+                        customerId,
+                        order.Id);
+                }
+
+                await TryCreateReceiptIfProviderAcceptedAsync(
                     customerId,
                     order.Id,
-                    order.InternalStatus,
+                    oldStatus: null,
+                    newStatus: order.InternalStatus,
                     ct).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Auto-approve processing failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
-                    customerId,
-                    order.Id);
+
+                return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
             }
 
-            await TryCreateReceiptIfProviderAcceptedAsync(
+            // Another caller inserted this order after the read above and committed first (another Worker, or a second
+            // observation of the same package). Its insert ran the new-order side effects; this observation is applied
+            // to the stored order like any repeated one: unchanged, or through the locked update and the status merge.
+            existing = await db.Orders
+                .FirstOrDefaultAsync(o => o.IdempotencyKey == key, ct)
+                .ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The order's identity was taken by a concurrent insert, but the order cannot be read.");
+
+            _logger.LogInformation(
+                "Order was stored by a concurrent sync; this observation is applied to it. CustomerId={CustomerId}, OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}",
                 customerId,
-                order.Id,
-                oldStatus: null,
-                newStatus: order.InternalStatus,
-                ct).ConfigureAwait(false);
-
-            return new OrderUpsertResult(true, false, false, false, order.ExternalOrderId);
+                existing.Id,
+                existing.ExternalOrderId,
+                existing.Platform);
         }
 
         // Read child rows before any transaction. An unchanged order must not open the
@@ -269,6 +286,72 @@ internal sealed class OrderIngestion
             existing.PlatformStatus);
 
         return new OrderUpsertResult(false, true, false, false, existing.ExternalOrderId);
+    }
+
+    /// <summary>
+    /// Inserts a new order graph (order, items, options) and returns true, or returns false when the database refused it
+    /// because an order with the same identity (<c>Platform</c> + <c>ExternalOrderId</c>, see
+    /// <see cref="IsOrderIdentityConflict"/>) was committed by a concurrent insert. Every other failure is thrown.
+    /// </summary>
+    /// <remarks>
+    /// The insert is <c>SaveChanges</c> in its own transaction, never one the caller opened: SQL Server holds the second
+    /// insert on the first one's key lock until that transaction ends, and reports the duplicate key only when the first
+    /// one committed (a rollback lets the second insert succeed). So a refused insert means the winner's order is
+    /// committed and readable. EF Core rolls its own transaction back before it throws and leaves the refused graph
+    /// tracked as Added; detaching that graph returns the context to the state it had before the insert, with no
+    /// transaction open, so the caller can read the winner's order and update it on the same context.
+    /// </remarks>
+    private static async Task<bool> TryInsertNewOrderAsync(TenantDbContext db, Order order, CancellationToken ct)
+    {
+        if (db.Database.CurrentTransaction is not null)
+            throw new InvalidOperationException("A new order is inserted in its own transaction, not inside the caller's.");
+
+        db.Orders.Add(order);
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+            return true;
+        }
+        catch (DbUpdateException ex) when (IsOrderIdentityConflict(ex))
+        {
+            // Snapshot the graph first: detaching an entity fixes up the navigations it is listed in.
+            object[] graph = [order, .. order.Items, .. order.Items.SelectMany(i => i.Options)];
+            foreach (var entity in graph)
+                db.Entry(entity).State = EntityState.Detached;
+
+            if (db.Database.CurrentTransaction is not null)
+                throw new InvalidOperationException("The refused order insert left a transaction open.", ex);
+
+            return false;
+        }
+    }
+
+    /// <summary>The order indexes that make <c>Platform</c> + <c>ExternalOrderId</c> one order per tenant database.</summary>
+    private static readonly string[] OrderIdentityIndexes = ["IX_Orders_IdempotencyKey", "IX_Orders_Platform_ExternalOrderId"];
+
+    /// <summary>
+    /// True only for a duplicate key on one of the order identity indexes: SQL Server error 2601 or 2627 naming
+    /// <c>IX_Orders_IdempotencyKey</c> or <c>IX_Orders_Platform_ExternalOrderId</c>, or SQLite's unique-constraint message
+    /// for the same columns. Any other duplicate key, constraint or database error is not a concurrent insert of this
+    /// order and must fail the caller.
+    /// </summary>
+    internal static bool IsOrderIdentityConflict(DbUpdateException exception)
+    {
+        for (Exception? current = exception.InnerException; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sql)
+            {
+                return sql.Number is 2601 or 2627
+                    && OrderIdentityIndexes.Any(index => sql.Errors[0].Message.Contains($"'{index}'", StringComparison.Ordinal));
+            }
+
+            // SQLite (unit tests only; Infrastructure does not reference its provider).
+            if (current.Message.Contains("UNIQUE constraint failed: Orders.IdempotencyKey", StringComparison.Ordinal)
+                || current.Message.Contains("UNIQUE constraint failed: Orders.Platform, Orders.ExternalOrderId", StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 
     private async Task TryCreateReceiptIfProviderAcceptedAsync(
