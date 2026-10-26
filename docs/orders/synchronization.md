@@ -321,10 +321,10 @@ The status-only path takes a Wasla `OrderStatus` that a provider adapter derives
 
 ### Ownership of fetched orders
 
-The documented Trendyol GO package carries `supplierId` and `storeId`. The client reads them as text (`ExternalOrderDto.ProviderSupplierId`, `ProviderStoreId`); any other JSON shape reads as null, so a type change cannot fail the page. Ingestion refuses an order when:
+The documented Trendyol GO package carries `supplierId` and `storeId`. The client reads them as text (`ExternalOrderDto.ProviderSupplierId`, `ProviderStoreId`); any other JSON shape reads as null, so a type change cannot fail the page. In the stored raw payload a value goes back as a number only when it is a valid JSON number; a string such as `"00123"` stays a string. Ingestion refuses an order when:
 
 - its platform differs from the connection's;
-- it reports a store and the connection's `StoreId` differs (trimmed, exact);
+- it reports a store and the connection's `StoreId` differs (trimmed and exact, except that two all-digit values compare as numbers: a JSON number `123` matches a store typed in as `00123`);
 - it reports a supplier and the connection's `SupplierId` is set and differs. A connection without `SupplierId` polls with its `StoreId` as the supplier id; its supplier is not compared.
 
 A missing optional identifier is not a mismatch. A refused order is not written, counts as skipped, and is logged with the field and the identifiers (no customer data). The window still completes and the checkpoint moves: the order is not this tenant's.

@@ -408,7 +408,8 @@ internal sealed class OrderIngestion
     /// <summary>
     /// Which part of a full observation contradicts the tenant connection it was fetched for: "platform", "store" or
     /// "supplier"; null when nothing does. Only a value the payload actually reports is compared, with the connection's
-    /// configured value (trimmed, exact): an optional identifier the payload leaves out, or one the connection does not
+    /// configured value (trimmed; exact, except that two all-digit values compare as numbers, so "00123" is 123): an
+    /// optional identifier the payload leaves out, or one the connection does not
     /// set, is not a mismatch. A Trendyol GO connection without <c>SupplierId</c> polls with its <c>StoreId</c> as the
     /// supplier id; its supplier is then not compared, its store still is.
     /// </summary>
@@ -429,7 +430,17 @@ internal sealed class OrderIngestion
         static bool Differs(string? reported, string? configured) =>
             !string.IsNullOrWhiteSpace(reported)
             && !string.IsNullOrWhiteSpace(configured)
-            && !string.Equals(reported.Trim(), configured.Trim(), StringComparison.Ordinal);
+            && !string.Equals(Canonical(reported), Canonical(configured), StringComparison.Ordinal);
+
+        // A provider id may arrive as a JSON number (123) while the connection stores the text typed in ("00123").
+        static string Canonical(string value)
+        {
+            var trimmed = value.Trim();
+            if (!trimmed.All(char.IsAsciiDigit))
+                return trimmed;
+            var digits = trimmed.TrimStart('0');
+            return digits.Length == 0 ? "0" : digits;
+        }
     }
 
     /// <summary>

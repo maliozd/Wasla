@@ -626,7 +626,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     /// <summary>
     /// Reads an identifier given as a JSON number or string as its text; null, an object or an array reads as null.
-    /// Writes digits back as a number, so the stored raw payload keeps the documented shape.
+    /// Writes a canonical integer (digits without a leading zero, or "0") back as a number, so the stored raw payload
+    /// keeps the documented shape; anything else, such as "00123", is written as a string, because it is not a valid
+    /// JSON number and writing it raw would fail the whole page.
     /// </summary>
     private sealed class IdentifierAsTextConverter : JsonConverter<string?>
     {
@@ -651,7 +653,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         {
             if (value is null)
                 writer.WriteNullValue();
-            else if (value.Length > 0 && value.All(char.IsAsciiDigit))
+            else if (value.Length > 0 && value.All(char.IsAsciiDigit) && (value.Length == 1 || value[0] != '0'))
                 writer.WriteRawValue(value);
             else
                 writer.WriteStringValue(value);

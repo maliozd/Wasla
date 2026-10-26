@@ -210,6 +210,10 @@ public sealed class TrendyolGoPackageContractTests
     [InlineData("\"900001\"", "\" 900002 \"", Supplier, Store)]
     [InlineData("null", "{ \"id\": 900002 }", null, null)]
     [InlineData("[900001]", "\"\"", null, null)]
+    // Digits with a leading zero are a valid JSON string but not a valid JSON number: the stored raw payload must not
+    // write them back as one.
+    [InlineData("\"00123\"", "\"0900002\"", "00123", "0900002")]
+    [InlineData("\"0\"", "\"-12\"", "0", "-12")]
     public async Task Fetch_IdentifiersOfAnotherJsonShape_DoNotFailThePage(string supplierJson, string storeJson, string? supplier, string? store)
     {
         var page = Page
