@@ -3347,6 +3347,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Ayrıntıları ve işlemleri görmek için listeden bir sipariş seçin.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Şu anda gösterilecek sipariş yok</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Siparişler geldiğinde burada görünecek.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>Bu ekranda deneme siparişi yok</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Eğitim sırasında gerçek siparişler burada gösterilmez; eğitim sona erdiğinde burada görünürler.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Siparişlere dön</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Yeniden dene</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Siparişler</value></data>

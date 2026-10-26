@@ -246,6 +246,69 @@ public sealed class LiveScreenRealtimeBrowserTests
     // The header's active count as a number (en-US digits).
     private const string WaitingCount = "Number(document.getElementById('ordersLiveDisplayActiveCount').textContent.replace(/[^0-9]/g, ''))";
 
+    [Fact]
+    public async Task EndingTrainingOnTheLiveScreen_AnnouncesARealOrderThatArrivedJustBefore_WithoutReplayingTheBacklog()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await StartHostAsync(tenantInSetup: true);
+        await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct, waitForCards: false, AnnouncementLog);
+        Assert.True(await browser.WaitForAsync($"{WaitingCount} >= 3", TimeSpan.FromSeconds(10), ct),
+            $"The training Live Screen did not render its first snapshot. {host.ServerErrors}");
+        var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+
+        // A real order is stored (and not announced live) after this page's last read: only the next page can see it.
+        var orderId = await InsertNewOrderAsync(host, "RT-TRAINING-END", ct);
+        Assert.Equal(reads, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+
+        // The Owner ends training from the Live Screen (the End dialog's confirmed form); the server opens the normal
+        // Live Screen, whose first snapshot holds the whole backlog and the new order.
+        await browser.EvaluateAsync<bool>("(window.__leftTraining = true)", ct);
+        await browser.EvaluateAsync<bool>("(document.querySelector('#waslaGuidedSetupEndDialog form[action=\"/guided-setup/end\"]').requestSubmit(), true)", ct);
+        await browser.WaitForNavigationAsync("__leftTraining", ct);
+        Assert.True(await browser.WaitForAsync(CardShown(orderId), TimeSpan.FromSeconds(10), ct),
+            $"The normal Live Screen did not show the order after training ended. {host.ServerErrors}");
+        Assert.True(await browser.WaitForAsync("JSON.parse(sessionStorage.getItem('__announced') || '[]').length >= 1", Push, ct),
+            "The real order that arrived just before training ended was never announced.");
+        await Task.Delay(TimeSpan.FromSeconds(1), ct);
+
+        // Exactly that order, once: the backlog the trainee already knew is not announced as new.
+        Assert.Equal($"[\"{orderId}\"]", await browser.EvaluateAsync<string>("sessionStorage.getItem('__announced')", ct));
+        Assert.Equal(1, await browser.EvaluateAsync<int>("Number(sessionStorage.getItem('__notified') || 0)", ct));
+        Assert.Equal("Active Orders", await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveLabel').textContent.trim()", ct));
+    }
+
+    // Records, across page loads in this tab, each order the Live Screen announced and each notification attempt.
+    private const string AnnouncementLog = """
+        document.addEventListener('wasla:real-order-arrived', function (event) {
+          const log = JSON.parse(sessionStorage.getItem('__announced') || '[]');
+          log.push(event.detail.orderId);
+          sessionStorage.setItem('__announced', JSON.stringify(log));
+        });
+        (function () {
+          let orders;
+          Object.defineProperty(window, 'WaslaOrders', {
+            configurable: true,
+            get: function () { return orders; },
+            set: function (value) {
+              orders = value;
+              let audio;
+              Object.defineProperty(value, 'audio', {
+                configurable: true,
+                get: function () { return audio; },
+                set: function (next) {
+                  audio = next;
+                  const show = next.showBrowserNotificationIfAllowed;
+                  next.showBrowserNotificationIfAllowed = function () {
+                    sessionStorage.setItem('__notified', String(Number(sessionStorage.getItem('__notified') || 0) + 1));
+                    return show && show.apply(this, arguments);
+                  };
+                }
+              });
+            }
+          });
+        })();
+        """;
+
     // The training panel's step and visibility, which a pause would change.
     private const string TrainingState =
         "(() => { const s = document.querySelector('[data-guided-training]'); return s ? `${s.getAttribute('data-step')}|${s.hidden}|${document.querySelector('[data-training-panel]')?.hidden}` : 'none'; })()";
@@ -263,7 +326,8 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync(CardShown(orderId), Push, ct), $"The Kitchen screen did not show the new order. {host.ServerErrors}");
     }
 
-    private static async Task<HeadlessChromium> OpenLiveScreenAsync(TenantVisualWebHost host, string culture, string? signInAs, CancellationToken ct, bool waitForCards = true)
+    private static async Task<HeadlessChromium> OpenLiveScreenAsync(
+        TenantVisualWebHost host, string culture, string? signInAs, CancellationToken ct, bool waitForCards = true, string? moreInstrumentation = null)
     {
         var browser = await host.BrowserAsync(culture, 1280, 900, mobile: false, ct, signInAs);
         if (browser is null)
@@ -273,6 +337,8 @@ public sealed class LiveScreenRealtimeBrowserTests
         return await browser.SetUpAsync(async started =>
         {
             await started.AddScriptBeforePageScriptsAsync(Instrumentation, ct);
+            if (moreInstrumentation is not null)
+                await started.AddScriptBeforePageScriptsAsync(moreInstrumentation, ct);
             try
             {
                 await started.NavigateAsync(new Uri(host.BaseAddress, "/orders/live-display"), ct);

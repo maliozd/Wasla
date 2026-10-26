@@ -12,8 +12,8 @@ namespace Wasla.UnitTests.Web;
 /// with its Owner in order training and real orders waiting. Training kept the real orders off the practice board but
 /// the header said "Active orders 0", so an owner could read it as no work waiting. The header must count the real
 /// orders waiting, under its own label, the training status line must report the same number in the page's language,
-/// and both must stay readable right to left and on a phone. Skips only when no Chromium browser is installed or
-/// Bootstrap cannot be loaded from its CDN.
+/// the empty practice board must not say the restaurant has no orders, and all of it must stay readable right to left
+/// and on a phone. Skips only when no Chromium browser is installed or Bootstrap cannot be loaded from its CDN.
 /// </summary>
 [Trait("Category", "Browser")]
 public sealed class LiveScreenTrainingBacklogBrowserTests : IAsyncLifetime
@@ -64,7 +64,13 @@ public sealed class LiveScreenTrainingBacklogBrowserTests : IAsyncLifetime
               const body = document.querySelector('[data-training-real-orders-body]');
               const box = document.querySelector('[data-training-real-orders-box]').getBoundingClientRect();
               const labelBox = label.getBoundingClientRect();
+              const empty = document.querySelector('#ordersLiveScreenHost .wasla-live-empty');
+              const emptyBox = empty ? empty.getBoundingClientRect() : null;
               return {
+                emptyKind: empty ? empty.getAttribute('data-live-empty') : null,
+                emptyTitle: empty ? empty.querySelector('.wasla-live-empty__title').textContent.trim() : null,
+                emptyText: empty ? empty.querySelector('.wasla-live-empty__text').textContent.trim() : null,
+                emptyInside: !!emptyBox && emptyBox.width > 0 && emptyBox.left >= 0 && emptyBox.right <= document.documentElement.clientWidth + 1,
                 label: label.textContent.trim(),
                 title: title.textContent.trim(),
                 body: body.textContent.trim(),
@@ -89,6 +95,12 @@ public sealed class LiveScreenTrainingBacklogBrowserTests : IAsyncLifetime
         Assert.Equal(Resource(culture, waiting == 1 ? "GuidedSetup.Training.RealOrders.BodyOne" : "GuidedSetup.Training.RealOrders.BodyMany"), page.GetProperty("body").GetString());
         // Training isolation itself is unchanged: no real order card on the practice board.
         Assert.Equal(0, page.GetProperty("realCards").GetInt32());
+        // The empty practice board speaks of the practice order, never "no orders" while real orders wait.
+        Assert.Equal("practice", page.GetProperty("emptyKind").GetString());
+        Assert.Equal(Resource(culture, "Orders.LiveScreen.NoPracticeOrder"), page.GetProperty("emptyTitle").GetString());
+        Assert.Equal(Resource(culture, "Orders.LiveScreen.NoPracticeOrderDescription"), page.GetProperty("emptyText").GetString());
+        Assert.NotEqual(Resource(culture, "Orders.LiveScreen.NoDisplayableOrders"), page.GetProperty("emptyTitle").GetString());
+        Assert.True(page.GetProperty("emptyInside").GetBoolean(), $"{culture} {width}px: the empty practice board leaves the screen");
 
         Assert.Equal(direction, page.GetProperty("dir").GetString());
         Assert.True(page.GetProperty("labelVisible").GetBoolean(), $"{culture} {width}px: the waiting label is off screen");

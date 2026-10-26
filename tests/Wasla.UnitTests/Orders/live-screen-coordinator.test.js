@@ -1833,6 +1833,31 @@ test("narrow Focus shows the queue until an order is chosen", () => {
   } finally { h.restore(); }
 });
 
+test("during order training an empty board speaks of the practice order, never of the restaurant's orders", () => {
+  const h = boardHarness();
+  try {
+    ["board", "list", "focus"].forEach(function (view) {
+      h.view(view);
+      // Training with real orders waiting and no practice order on the board yet.
+      const training = snapshot([]);
+      training.training = { isolated: true, waitingRealOrders: 2, realOrderIds: [guid(1), guid(2)] };
+      h.browser.renderSnapshot(training);
+      const empty = h.host.querySelector(".wasla-live-empty");
+      assert.equal(empty.getAttribute("data-live-empty"), "practice", view);
+      assert.equal(empty.querySelector(".wasla-live-empty__title").textContent, "noPracticeOrder");
+      assert.equal(empty.querySelector(".wasla-live-empty__text").textContent, "noPracticeOrderDescription");
+      assert.equal(h.host.querySelectorAll(".wasla-live-empty").length, 1);
+
+      // Once training ends, an empty Live Screen says what it always said.
+      h.browser.renderSnapshot(snapshot([]));
+      const after = h.host.querySelector(".wasla-live-empty");
+      assert.equal(after.getAttribute("data-live-empty"), "none", view);
+      assert.equal(after.querySelector(".wasla-live-empty__title").textContent, "noDisplayableOrders");
+      assert.equal(h.host.querySelectorAll(".wasla-live-empty").length, 1);
+    });
+  } finally { h.restore(); }
+});
+
 test("an empty Focus snapshot uses one branded empty state and the next order restores Focus", () => {
   const h = boardHarness();
   try {
@@ -3181,6 +3206,107 @@ test("a training section must carry a whole waiting count no larger than its lis
   assert.equal(store.isIsolatedSnapshot(trainingSnapshot([], false)), false);
   assert.equal(store.isIsolatedSnapshot({ training: { isolated: "true" } }), false);
   assert.equal(store.isIsolatedSnapshot(snapshot([])), false);
+});
+
+// Leaving through an order-training form (WAS-117) ----------------------------------------------------------
+
+function memoryStorage() {
+  const items = new Map();
+  return {
+    getItem: function (key) { return items.has(key) ? items.get(key) : null; },
+    setItem: function (key, value) { items.set(key, String(value)); },
+    removeItem: function (key) { items.delete(key); },
+    size: function () { return items.size; }
+  };
+}
+
+function handedOverHarness(initialKnownIds) {
+  const time = clock();
+  const http = deferredFetch();
+  const accepted = [];
+  const notified = [];
+  const coordinator = store.createRefreshCoordinator({
+    intervalMs: 10000,
+    timeoutMs: 15000,
+    setTimeout: time.setTimeout,
+    clearTimeout: time.clearTimeout,
+    createAbortController: function () { return { abort: http.abort }; },
+    fetchSnapshot: http.fetch,
+    onStatus: function () {},
+    onAccepted: function (body, meta) { accepted.push(meta); },
+    onNotify: function (body, meta) { notified.push(meta.newIds.slice()); },
+    initialKnownIds: initialKnownIds
+  });
+  return { time: time, http: http, accepted: accepted, notified: notified, coordinator: coordinator };
+}
+
+test("without a handoff the first snapshot after the form post is a silent baseline, so an order in the gap is lost", async function () {
+  // The defect the handoff closes: the trainee's page knew guid(1) and guid(2); guid(3) arrived during the navigation.
+  const next = handedOverHarness(null);
+  await startWith(next, trainingSnapshot([guid(1), guid(2), guid(3)], false));
+
+  assert.equal(next.accepted[0].isBaseline, true);
+  assert.deepEqual(next.notified, []);
+});
+
+test("ending or completing training hands the known orders over: only the order that arrived meanwhile is announced", async function () {
+  const leaving = notifyingHarness();
+  await startWith(leaving, trainingSnapshot([guid(1)], true));
+  await next(leaving, trainingSnapshot([guid(1), guid(2)], true));
+  const storage = memoryStorage();
+  assert.equal(store.writeKnownOrderHandoff(storage, leaving.coordinator.knownIds(), 1000), true);
+
+  // The redirected page: the whole backlog plus guid(3), which arrived after the last training read.
+  const arriving = handedOverHarness(store.readKnownOrderHandoff(storage, 3000));
+  await startWith(arriving, trainingSnapshot([guid(1), guid(2), guid(3)], false));
+  await next(arriving, trainingSnapshot([guid(1), guid(2), guid(3)], false));
+
+  assert.deepEqual(leaving.notified, [[guid(2)]]);
+  assert.equal(arriving.accepted[0].isBaseline, false);
+  assert.deepEqual(arriving.notified, [[guid(3)]], "announced once, and the backlog is not replayed");
+  assert.equal(storage.size(), 0, "the handoff is used once");
+});
+
+test("starting the practice order hands over as well: a real order that arrived during that reload is announced", async function () {
+  const storage = memoryStorage();
+  store.writeKnownOrderHandoff(storage, [guid(1)], 0);
+  const arriving = handedOverHarness(store.readKnownOrderHandoff(storage, 500));
+  await startWith(arriving, trainingSnapshot([guid(1), guid(2)], true));
+
+  assert.deepEqual(arriving.notified, [[guid(2)]]);
+});
+
+test("a handoff is read once, only within a minute, and only as a list of order ids", function () {
+  const storage = memoryStorage();
+  assert.equal(store.readKnownOrderHandoff(storage, 0), null, "nothing handed over: a normal silent first snapshot");
+
+  store.writeKnownOrderHandoff(storage, [guid(1)], 0);
+  assert.deepEqual(store.readKnownOrderHandoff(storage, store.KNOWN_ORDER_HANDOFF_MAX_AGE_MS), [guid(1)]);
+  assert.equal(store.readKnownOrderHandoff(storage, store.KNOWN_ORDER_HANDOFF_MAX_AGE_MS), null, "a reload after it is silent again");
+
+  store.writeKnownOrderHandoff(storage, [guid(1)], 0);
+  assert.equal(store.readKnownOrderHandoff(storage, store.KNOWN_ORDER_HANDOFF_MAX_AGE_MS + 1), null, "too old");
+  assert.equal(storage.size(), 0, "a stale handoff is removed too");
+  store.writeKnownOrderHandoff(storage, [guid(1)], 5000);
+  assert.equal(store.readKnownOrderHandoff(storage, 4000), null, "from the future");
+
+  storage.setItem("Wasla.liveScreen.knownOrderHandoff", JSON.stringify({ savedAt: 0, ids: [guid(1), "TY-1"] }));
+  assert.equal(store.readKnownOrderHandoff(storage, 0), null);
+  storage.setItem("Wasla.liveScreen.knownOrderHandoff", "not json");
+  assert.equal(store.readKnownOrderHandoff(storage, 0), null);
+
+  assert.equal(store.writeKnownOrderHandoff(storage, [], 0), false, "a page before its baseline hands nothing over");
+  const blocked = { setItem: function () { throw new Error("blocked"); }, getItem: function () { throw new Error("blocked"); } };
+  assert.equal(store.writeKnownOrderHandoff(blocked, [guid(1)], 0), false);
+  assert.equal(store.readKnownOrderHandoff(blocked, 0), null, "unavailable storage keeps the silent first snapshot");
+  assert.equal(store.readKnownOrderHandoff(null, 0), null);
+});
+
+test("a page knows no ids before its first snapshot, so it cannot hand over an empty baseline", async function () {
+  const h = notifyingHarness();
+  assert.deepEqual(h.coordinator.knownIds(), []);
+  await startWith(h, trainingSnapshot([guid(1)], true));
+  assert.deepEqual(h.coordinator.knownIds().sort(), [PRACTICE, guid(1)].sort());
 });
 
 // Automation status in the snapshot ------------------------------------------------------------------------

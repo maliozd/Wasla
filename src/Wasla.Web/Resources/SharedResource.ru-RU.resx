@@ -3841,6 +3841,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Выберите заказ из списка, чтобы увидеть подробности и действия.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Сейчас нет заказов для отображения</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Заказы появятся здесь, когда поступят.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>На этом экране нет тренировочного заказа</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Во время обучения реальные заказы здесь не показываются; они появятся здесь, когда обучение закончится.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>

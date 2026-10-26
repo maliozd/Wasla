@@ -3347,6 +3347,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>اختر طلبًا من القائمة لعرض التفاصيل والإجراءات.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>لا توجد طلبات للعرض الآن</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>ستظهر الطلبات هنا عند وصولها.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>لا يوجد طلب تجريبي على هذه الشاشة</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>لا تظهر الطلبات الحقيقية هنا أثناء التدريب، وستظهر هنا عند انتهاء التدريب.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>العودة إلى الطلبات</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>إعادة المحاولة</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>الطلبات</value></data>

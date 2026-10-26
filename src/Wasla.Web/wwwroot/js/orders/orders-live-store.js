@@ -294,6 +294,15 @@
     let lastSnapshot = null;
     let pendingMutations = 0;
 
+    // Orders the previous Live Screen page in this tab already knew when it left through an order-training form (see
+    // readKnownOrderHandoff). They stand in for the first snapshot's baseline, so an order that arrived during that
+    // navigation is announced once and the known backlog is not.
+    const handedOver = Array.isArray(options.initialKnownIds) ? options.initialKnownIds : [];
+    if (handedOver.length) {
+      for (let i = 0; i < handedOver.length; i++) known.add(String(handedOver[i]));
+      baselineReady = true;
+    }
+
     function clearTimer() {
       if (timer) options.clearTimeout(timer);
       timer = null;
@@ -484,8 +493,54 @@
       intervalMs: function () { return intervalMs; },
       start: function () { return start("start"); },
       lastSnapshot: function () { return lastSnapshot; },
-      isBaselineReady: function () { return baselineReady; }
+      isBaselineReady: function () { return baselineReady; },
+      /** The ids new-order detection already knows; empty before the baseline. */
+      knownIds: function () { return baselineReady ? Array.from(known) : []; }
     };
+  }
+
+  /**
+   * Order training's forms on the Live Screen (start practice, complete, end) post and come straight back to the Live
+   * Screen, whose first snapshot would otherwise be a silent baseline: a real order that arrived during that
+   * navigation would never be announced (WAS-117). The leaving page hands its known ids to the next page of the same
+   * tab for a short time. Only this tab, only once, and only right after such a form: a reload, a new tab or a later
+   * visit keeps the silent first snapshot.
+   */
+  const KNOWN_ORDER_HANDOFF_KEY = "Wasla.liveScreen.knownOrderHandoff";
+  const KNOWN_ORDER_HANDOFF_MAX_AGE_MS = 60000;
+
+  function writeKnownOrderHandoff(storage, ids, nowMs) {
+    if (!storage || !Array.isArray(ids) || !ids.length) return false;
+    try {
+      storage.setItem(KNOWN_ORDER_HANDOFF_KEY, JSON.stringify({ savedAt: nowMs, ids: ids }));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** Reads and removes the handoff; null when there is none, it is older than a minute, or it is not a list of ids. */
+  function readKnownOrderHandoff(storage, nowMs) {
+    if (!storage) return null;
+    let raw = null;
+    try {
+      raw = storage.getItem(KNOWN_ORDER_HANDOFF_KEY);
+      storage.removeItem(KNOWN_ORDER_HANDOFF_KEY);
+    } catch (e) {
+      return null;
+    }
+    if (!raw) return null;
+    let handoff;
+    try {
+      handoff = JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+    if (!handoff || typeof handoff.savedAt !== "number" || !Array.isArray(handoff.ids) || !handoff.ids.length) return null;
+    const age = nowMs - handoff.savedAt;
+    if (!(age >= 0 && age <= KNOWN_ORDER_HANDOFF_MAX_AGE_MS)) return null;
+    for (let i = 0; i < handoff.ids.length; i++) if (!isGuid(handoff.ids[i])) return null;
+    return handoff.ids;
   }
 
   function isLoginRedirect(response) {
@@ -526,6 +581,9 @@
     isIsolatedSnapshot: isIsolatedSnapshot,
     trackedOrders: trackedOrders,
     activeRealOrderCount: activeRealOrderCount,
+    writeKnownOrderHandoff: writeKnownOrderHandoff,
+    readKnownOrderHandoff: readKnownOrderHandoff,
+    KNOWN_ORDER_HANDOFF_MAX_AGE_MS: KNOWN_ORDER_HANDOFF_MAX_AGE_MS,
     validateSnapshot: validateSnapshot,
     looksLikeHtml: looksLikeHtml,
     nextBackoffMs: nextBackoffMs,
@@ -1744,6 +1802,9 @@ function attachBrowser(O, global, api) {
     if (kind === "selectOrder") {
       title.textContent = message("selectOrder");
       description.textContent = message("selectOrderDescription");
+    } else if (kind === "practice") {
+      title.textContent = message("noPracticeOrder");
+      description.textContent = message("noPracticeOrderDescription");
     } else {
       title.textContent = message("noDisplayableOrders");
       description.textContent = message("noDisplayableOrdersDescription");
@@ -1775,10 +1836,13 @@ function attachBrowser(O, global, api) {
 
   function showAcceptedEmpty(host) {
     removeLivePresentations(host);
+    // During order training the board holds only the practice order, so its empty state speaks of that order and never
+    // says the restaurant has no orders (WAS-117).
+    const kind = api.isIsolatedSnapshot(renderedSnapshot) ? "practice" : "none";
     const existing = hostEmpty(host);
-    if (existing && existing.getAttribute("data-live-empty") === "none") return existing;
+    if (existing && existing.getAttribute("data-live-empty") === kind) return existing;
     if (existing) existing.remove();
-    const empty = createBrandedEmpty("none");
+    const empty = createBrandedEmpty(kind);
     host.appendChild(empty);
     return empty;
   }
@@ -2735,12 +2799,31 @@ function attachBrowser(O, global, api) {
       fetchSnapshot: fetchSnapshot,
       onStatus: onStatus,
       onAccepted: onAccepted,
-      onNotify: onNotify
+      onNotify: onNotify,
+      initialKnownIds: api.readKnownOrderHandoff(sessionStore(), Date.now())
     });
     return coordinator;
   }
 
+  function sessionStore() {
+    try {
+      return global.sessionStorage || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Order training's forms (start practice, complete, end) leave this page for the Live Screen again: hand the ids this
+  // page already knows to that next page (see readKnownOrderHandoff).
+  function onTrainingFormSubmit(ev) {
+    const form = ev && ev.target;
+    if (!form || typeof form.matches !== "function" || !form.matches("form[data-guided-setup-form]")) return;
+    if (!coordinator) return;
+    api.writeKnownOrderHandoff(sessionStore(), coordinator.knownIds(), Date.now());
+  }
+
   if (typeof document.addEventListener === "function") {
+    document.addEventListener("submit", onTrainingFormSubmit);
     document.addEventListener("wasla:order-action-completed", onOrderAction);
     // Delegated once: the "Show more" controls are rebuilt with their column.
     document.addEventListener("click", function (ev) {
