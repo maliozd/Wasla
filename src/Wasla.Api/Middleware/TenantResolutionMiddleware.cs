@@ -37,7 +37,9 @@ public sealed class TenantResolutionMiddleware
         ILogger<TenantResolutionMiddleware> logger)
     {
         var path = context.Request.Path.Value ?? string.Empty;
-        if (IsUnder(path, "/swagger") || IsUnder(path, "/health"))
+        // The Trendyol GO Meal webhook stage pilot never uses the host: its one tenant comes from configuration, and the
+        // receiver answers 404 while the pilot is off.
+        if (IsUnder(path, "/swagger") || IsUnder(path, "/health") || IsUnder(path, "/api/webhooks/trendyol-go/meal"))
         {
             await _next(context);
             return;

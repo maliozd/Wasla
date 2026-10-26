@@ -430,17 +430,24 @@ internal sealed class OrderIngestion
         static bool Differs(string? reported, string? configured) =>
             !string.IsNullOrWhiteSpace(reported)
             && !string.IsNullOrWhiteSpace(configured)
-            && !string.Equals(Canonical(reported), Canonical(configured), StringComparison.Ordinal);
+            && !SameProviderIdentifier(reported, configured);
+    }
 
-        // A provider id may arrive as a JSON number (123) while the connection stores the text typed in ("00123").
-        static string Canonical(string value)
-        {
-            var trimmed = value.Trim();
-            if (!trimmed.All(char.IsAsciiDigit))
-                return trimmed;
-            var digits = trimmed.TrimStart('0');
-            return digits.Length == 0 ? "0" : digits;
-        }
+    /// <summary>
+    /// Whether two provider identifiers name the same thing: trimmed and exact, except that two all-digit values compare
+    /// as numbers, because a provider id may arrive as a JSON number (123) while the connection stores the text typed in
+    /// ("00123").
+    /// </summary>
+    internal static bool SameProviderIdentifier(string first, string second) =>
+        string.Equals(CanonicalIdentifier(first), CanonicalIdentifier(second), StringComparison.Ordinal);
+
+    private static string CanonicalIdentifier(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length == 0 || !trimmed.All(char.IsAsciiDigit))
+            return trimmed;
+        var digits = trimmed.TrimStart('0');
+        return digits.Length == 0 ? "0" : digits;
     }
 
     /// <summary>
