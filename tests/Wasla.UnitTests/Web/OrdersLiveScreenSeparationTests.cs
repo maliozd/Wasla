@@ -353,6 +353,8 @@ public sealed class OrdersLiveScreenSeparationTests
                 "Orders.LiveScreen.SelectOrderDescription",
                 "Orders.LiveScreen.NoDisplayableOrders",
                 "Orders.LiveScreen.NoDisplayableOrdersDescription",
+                "Orders.LiveScreen.NoPracticeOrder",
+                "Orders.LiveScreen.NoPracticeOrderDescription",
                 "Orders.LiveScreen.BackToQueue",
                 "Orders.LiveScreen.DetailRetry",
                 "Orders.LiveScreen.Queue",

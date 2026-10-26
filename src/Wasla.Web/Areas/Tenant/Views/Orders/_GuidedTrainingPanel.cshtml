@@ -42,8 +42,8 @@
                     action = GuidedSetupCopy.TrainingStepAction(key)
                 };
             }),
-        // Real orders that arrive during this Owner's training are only counted: singular and plural copy;
-        // the count from the Live Screen snapshot is filled in by the page.
+        // Real orders waiting outside this Owner's practice board are only counted: singular and plural copy;
+        // the count from the Live Screen snapshot (the header's count) is filled in by the page.
         realOrders = new
         {
             titleOne = L["GuidedSetup.Training.RealOrders.TitleOne"].Value,
@@ -93,7 +93,7 @@
                         data-bs-target="#waslaGuidedSetupEndDialog">@L["GuidedSetup.End"]</button>
             </div>
             @*
-                Real orders that arrived while the tenant is still in setup: only their number, in one polite status line
+                Real orders waiting outside the practice board: only their number, in one polite status line
                 below the training actions. It is updated in place (never a toast), never takes focus, and is empty and
                 hidden while there are none. The live region itself stays in the page so each new count is announced.
             *@

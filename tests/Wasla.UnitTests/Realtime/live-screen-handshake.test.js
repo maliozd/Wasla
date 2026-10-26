@@ -1,7 +1,7 @@
 // WAS-24: the page's live connection, the Live Screen invalidation and the snapshot coordinator together. The hub's
 // ready message (sent after the groups are joined) is what makes the page "connected"; until then the Live Screen keeps
-// its normal polling rate and reads nothing extra. Order training stays isolated: real-order events, duplicates,
-// reconnects and restores refresh the snapshot but never announce a hidden real order.
+// its normal polling rate and reads nothing extra. Order training keeps real orders off the board, and real-order
+// events, duplicates, reconnects and restores refresh the snapshot and announce each new real order once (WAS-117).
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const realtime = require("../../../src/Wasla.Web/wwwroot/js/realtime/wasla-realtime.js");
@@ -165,31 +165,33 @@ test("a ready that arrives after stop does not mark the page connected", async f
   assert.equal(p.calls.reads, 0);
 });
 
-// Snapshots as the server sends them during isolated order training: no real orders, only their count.
-function trainingSnapshot(realOrdersReceived) {
+// Snapshots as the server sends them during isolated order training: no real order on the board, only the ids of
+// the hidden ones and how many are waiting.
+function trainingSnapshot(realOrderIds) {
   return {
     serverTimeUtc: "2026-10-13T10:00:00Z",
     orders: [],
     todayOrderCount: 0,
     cancelledOrderCount: 0,
-    training: { isolated: true, realOrdersReceived: realOrdersReceived }
+    training: { isolated: true, waitingRealOrders: realOrderIds.length, realOrderIds: realOrderIds.slice() }
   };
 }
 
-test("during order training, real-order events, duplicates, reconnects and restores never announce a hidden order", async function () {
+test("during order training, real-order events, duplicates, reconnects and restores announce a hidden real order once", async function () {
   const c = clock();
   const announced = [];
   const accepted = [];
-  let received = 0;
+  const realOrder = "8a1f0c6e-0000-4000-8000-0000000000aa";
+  let hidden = [];
   const coordinator = store.createRefreshCoordinator({
     intervalMs: 10000,
     timeoutMs: 15000,
     setTimeout: c.setTimeout,
     clearTimeout: c.clearTimeout,
     createAbortController: function () { return { signal: {}, abort: function () {} }; },
-    fetchSnapshot: function () { return Promise.resolve({ kind: "ok", snapshot: trainingSnapshot(received) }); },
+    fetchSnapshot: function () { return Promise.resolve({ kind: "ok", snapshot: trainingSnapshot(hidden) }); },
     onStatus: function () {},
-    onAccepted: function (snapshot, meta) { accepted.push([snapshot.training.realOrdersReceived, meta.isBaseline]); return { accepted: true }; },
+    onAccepted: function (snapshot, meta) { accepted.push([snapshot.training.waitingRealOrders, meta.isBaseline]); return { accepted: true }; },
     onNotify: function (snapshot, meta) { announced.push(meta.newIds); }
   });
   const p = page({ requestRefresh: function () { return coordinator.requestRefresh(); } });
@@ -199,13 +201,13 @@ test("during order training, real-order events, duplicates, reconnects and resto
   p.signalR.ready();
   await flush();
 
-  // A real order arrives: the event (and three duplicates of it) refresh the count, nothing is announced.
-  received = 1;
-  for (let i = 0; i < 4; i++) p.signalR.send({ type: "OrderChanged", orderId: "8a1f0c6e-0000-4000-8000-0000000000aa", version: 1 });
+  // A real order arrives: the event (and three duplicates of it) refresh the count and announce it once.
+  hidden = [realOrder];
+  for (let i = 0; i < 4; i++) p.signalR.send({ type: "OrderChanged", orderId: realOrder, version: 1 });
   p.c.advance(invalidation.SETTLE_MS);
   await flush();
 
-  // A drop and reconnect, then a back/forward-cache style stop and start.
+  // A drop and reconnect, then a back/forward-cache style stop and start: each reads again, none announces again.
   p.signalR.drop();
   p.signalR.reconnected();
   p.signalR.ready();
@@ -217,7 +219,8 @@ test("during order training, real-order events, duplicates, reconnects and resto
   p.signalR.ready();
   await flush();
 
-  assert.deepEqual(announced, []);
-  assert.ok(accepted.some(function (a) { return a[0] === 1; }), "the real-order count was not refreshed");
+  assert.deepEqual(announced, [[realOrder]]);
+  assert.ok(accepted.some(function (a) { return a[0] === 1; }), "the waiting real-order count was not refreshed");
   assert.ok(accepted.every(function (a) { return a[0] <= 1; }));
+  assert.equal(accepted.filter(function (a) { return a[1]; }).length, 1, "only the first snapshot is a baseline");
 });

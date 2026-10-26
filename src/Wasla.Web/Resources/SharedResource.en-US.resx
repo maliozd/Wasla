@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
     <value>This total is not included in the live snapshot.</value>
   </data>
+  <data name="Orders.LiveScreen.WaitingRealOrders" xml:space="preserve">
+    <value>Waiting Real Orders</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Print</value>
   </data>
@@ -3347,6 +3350,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Select an order from the list to see its details and actions.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>No orders to show right now</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Orders will appear here when they arrive.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>No practice order on this screen</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Real orders are not shown here during training; they appear here when training ends.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Back to orders</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Try again</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Orders</value></data>
@@ -3684,10 +3689,10 @@
   <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Order training is complete, and guided setup is finished. How-to guides stay available in Help and Guides.</value></data>
   <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>The practice order couldn't be started. Please try again.</value></data>
   <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>You can complete the training once the practice order has been delivered.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>A real order arrived while you were training</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>{0} real orders arrived while you were training</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>You can continue training. You can manage the order from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>You can continue training. You can manage the orders from your platform panel. Active orders will be shown on the Live Screen once training is complete.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>A real order is waiting</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>{0} real orders are waiting</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Real orders are not shown on this practice screen, but new ones are still announced as your notification settings say. You can manage the order from your platform panel; it appears on the Live Screen when training ends.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Real orders are not shown on this practice screen, but new ones are still announced as your notification settings say. You can manage the orders from your platform panel; they appear on the Live Screen when training ends.</value></data>
   <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Continue to Print Bridge</value></data>
   <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Continue to order training</value></data>
   <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>This step isn't finished yet. You can finish the setup or choose to set it up later.</value></data>

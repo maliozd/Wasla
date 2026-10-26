@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
     <value>Bu toplam canlı görüntüde yok.</value>
   </data>
+  <data name="Orders.LiveScreen.WaitingRealOrders" xml:space="preserve">
+    <value>Bekleyen Gerçek Siparişler</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Yazdır</value>
   </data>
@@ -3347,6 +3350,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Ayrıntıları ve işlemleri görmek için listeden bir sipariş seçin.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Şu anda gösterilecek sipariş yok</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Siparişler geldiğinde burada görünecek.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>Bu ekranda deneme siparişi yok</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Eğitim sırasında gerçek siparişler burada gösterilmez; eğitim sona erdiğinde burada görünürler.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Siparişlere dön</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Yeniden dene</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Siparişler</value></data>
@@ -3684,10 +3689,10 @@
   <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Sipariş eğitimi tamamlandı ve rehberli kurulum bitti. Nasıl yapılır rehberleri Yardım ve Rehberler'de kalmaya devam ediyor.</value></data>
   <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Deneme siparişi başlatılamadı. Lütfen tekrar deneyin.</value></data>
   <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Eğitimi, deneme siparişi teslim edildikten sonra tamamlayabilirsiniz.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Siz eğitimdeyken gerçek bir sipariş geldi</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Siz eğitimdeyken {0} gerçek sipariş geldi</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Eğitime devam edebilirsiniz. Siparişi platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Eğitime devam edebilirsiniz. Siparişleri platform panelinizden yönetebilirsiniz. Eğitim tamamlandığında aktif siparişler Canlı Ekran'da gösterilecektir.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Bekleyen bir gerçek sipariş var</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Bekleyen {0} gerçek sipariş var</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Gerçek siparişler bu alıştırma ekranında gösterilmez, ancak yeni gelenler bildirim ayarlarınıza göre yine bildirilir. Siparişi platform panelinizden yönetebilirsiniz; eğitim sona erdiğinde Canlı Ekran'da görünür.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Gerçek siparişler bu alıştırma ekranında gösterilmez, ancak yeni gelenler bildirim ayarlarınıza göre yine bildirilir. Siparişleri platform panelinizden yönetebilirsiniz; eğitim sona erdiğinde Canlı Ekran'da görünürler.</value></data>
   <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Print Bridge kurulumuna devam et</value></data>
   <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Sipariş eğitimine devam et</value></data>
   <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Bu adım henüz tamamlanmadı. Kurulumu bitirebilir ya da daha sonra kurmayı seçebilirsiniz.</value></data>

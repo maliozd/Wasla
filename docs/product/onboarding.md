@@ -17,7 +17,7 @@ A user's guided setup is their own choice and position. It never records that a 
 
 | Concern | Decided by | Effect |
 | --- | --- | --- |
-| Live Screen isolation during order training | The current user being in order training (per user) | Only that user's Live Screen hides real orders and shows their count ([../orders/live-screen.md](../orders/live-screen.md)) |
+| Live Screen isolation during order training | The current user being in order training (per user) | Only that user's Live Screen keeps real orders off its board; it shows how many are waiting and still announces new ones ([../orders/live-screen.md](../orders/live-screen.md)) |
 | Automatic acceptance and automatic receipts | The tenant's operational mode only | Suppressed while Setup ([../orders/synchronization.md](../orders/synchronization.md#operational-mode-setup)); shown as pending, not off ([below](#configured-and-effective-automation)) |
 
 An Owner who trains in an already-live restaurant is isolated on their own Live Screen; the tenant stays Live, synchronization and automation keep running, and every other user sees and handles real orders as usual.

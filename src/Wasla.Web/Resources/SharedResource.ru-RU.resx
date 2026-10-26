@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
     <value>Этот итог не входит в оперативный снимок.</value>
   </data>
+  <data name="Orders.LiveScreen.WaitingRealOrders" xml:space="preserve">
+    <value>Ожидающие реальные заказы</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Печать</value>
   </data>
@@ -3841,6 +3844,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Выберите заказ из списка, чтобы увидеть подробности и действия.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Сейчас нет заказов для отображения</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Заказы появятся здесь, когда поступят.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>На этом экране нет тренировочного заказа</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Во время обучения реальные заказы здесь не показываются; они появятся здесь, когда обучение закончится.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>
@@ -4178,10 +4183,10 @@
   <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Обучение работе с заказами пройдено, пошаговая настройка завершена. Руководства по-прежнему доступны в разделе «Помощь и руководства».</value></data>
   <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Не удалось запустить тренировочный заказ. Попробуйте ещё раз.</value></data>
   <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Обучение можно завершить после доставки тренировочного заказа.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Пока вы проходили обучение, пришёл реальный заказ</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Пока вы проходили обучение, пришли реальные заказы: {0}</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Вы можете продолжить обучение. Заказ можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Вы можете продолжить обучение. Заказы можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Ожидает реальный заказ</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Ожидают реальные заказы: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Реальные заказы не показываются на этом учебном экране, но о новых вы по-прежнему получаете уведомления по своим настройкам. Заказ можно обработать в панели платформы; он появится на живом экране, когда обучение закончится.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Реальные заказы не показываются на этом учебном экране, но о новых вы по-прежнему получаете уведомления по своим настройкам. Заказы можно обработать в панели платформы; они появятся на живом экране, когда обучение закончится.</value></data>
   <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Перейти к Print Bridge</value></data>
   <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Перейти к обучению работе с заказами</value></data>
   <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Этот шаг ещё не завершён. Завершите настройку или выберите настройку позже.</value></data>

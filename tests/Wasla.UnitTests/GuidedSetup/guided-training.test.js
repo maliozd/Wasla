@@ -98,10 +98,10 @@ function isShown(el) {
 }
 
 const REAL_ORDERS = {
-  titleOne: "A real order arrived while you were training",
-  titleMany: "{0} real orders arrived while you were training",
-  bodyOne: "You can continue training. You can manage the order from your platform panel.",
-  bodyMany: "You can continue training. You can manage the orders from your platform panel."
+  titleOne: "A real order is waiting",
+  titleMany: "{0} real orders are waiting",
+  bodyOne: "Real orders are not shown on this practice screen. You can manage the order from your platform panel.",
+  bodyMany: "Real orders are not shown on this practice screen. You can manage the orders from your platform panel."
 };
 
 /** One Live Screen page view with the training panel, mirroring _GuidedTrainingPanel.cshtml's hooks. */
@@ -218,7 +218,12 @@ function page(options = {}) {
 
 const demo = (status, id = "demo-1") => ({ id, status, isDemo: true });
 const real = (id, status) => ({ id, status, isDemo: false });
-const isolated = (count) => ({ isolated: true, realOrdersReceived: count });
+/** An isolated trainee's training section: <count> real orders waiting (active) of the hidden ones. */
+const isolated = (count) => ({
+  isolated: true,
+  waitingRealOrders: count,
+  realOrderIds: Array.from({ length: count }, (_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`)
+});
 
 // Pure rules ------------------------------------------------------------------------------------
 
@@ -235,19 +240,30 @@ test("before the practice starts, an earlier delivered demo cannot jump to compl
   assert.equal(training.nextStep(STEPS, "intro", demo("Delivered")), "intro");
 });
 
-test("the real-order count comes only from an isolated trainee's snapshot", () => {
+test("the waiting real-order count comes only from an isolated trainee's snapshot", () => {
   assert.equal(training.realOrderCount(isolated(3)), 3);
   assert.equal(training.realOrderCount(isolated(0)), 0);
   assert.equal(training.realOrderCount(null), 0, "a normal snapshot (e.g. after the tenant went live)");
-  assert.equal(training.realOrderCount({ isolated: false, realOrdersReceived: 4 }), 0);
-  assert.equal(training.realOrderCount({ isolated: true, realOrdersReceived: "4" }), 0);
-  assert.equal(training.realOrderCount({ isolated: true, realOrdersReceived: -1 }), 0);
+  assert.equal(training.realOrderCount({ isolated: false, waitingRealOrders: 4, realOrderIds: [] }), 0);
+  assert.equal(training.realOrderCount({ isolated: true, waitingRealOrders: "4", realOrderIds: [] }), 0);
+  assert.equal(training.realOrderCount({ isolated: true, waitingRealOrders: -1, realOrderIds: [] }), 0);
+  // Waiting, not arrived: real orders that are hidden but already delivered do not count.
+  assert.equal(training.realOrderCount({ isolated: true, waitingRealOrders: 1, realOrderIds: isolated(3).realOrderIds }), 1);
 });
 
 test("the real-orders copy has a singular, a plural with the count filled in, and nothing at zero", () => {
   assert.equal(training.realOrdersText(REAL_ORDERS, 0), null);
   assert.deepEqual(training.realOrdersText(REAL_ORDERS, 1), { title: REAL_ORDERS.titleOne, body: REAL_ORDERS.bodyOne });
-  assert.deepEqual(training.realOrdersText(REAL_ORDERS, 4), { title: "4 real orders arrived while you were training", body: REAL_ORDERS.bodyMany });
+  assert.deepEqual(training.realOrdersText(REAL_ORDERS, 4), { title: "4 real orders are waiting", body: REAL_ORDERS.bodyMany });
+});
+
+test("the waiting count is written in the page's digits, as the Live Screen header writes it", () => {
+  const arabic = training.countFormatter({ documentElement: { getAttribute: () => "ar-SA" } });
+  assert.equal(arabic(1234), new Intl.NumberFormat("ar-SA").format(1234));
+  assert.equal(training.realOrdersText(REAL_ORDERS, 1234, arabic).title, new Intl.NumberFormat("ar-SA").format(1234) + " real orders are waiting");
+  const turkish = training.countFormatter({ documentElement: { getAttribute: () => "tr-TR" } });
+  assert.equal(training.realOrdersText(REAL_ORDERS, 1234, turkish).title, "1.234 real orders are waiting");
+  assert.equal(training.countFormatter({ documentElement: { getAttribute: () => "not a culture" } })(7), "7");
 });
 
 test("Escape closes the panel only when no dialog, menu or text field owns the key", () => {
@@ -416,7 +432,7 @@ test("more real orders update the same status line in place, never adding anothe
   const boxesBefore = p.section.querySelectorAll("[data-training-real-orders-box]").length;
 
   p.render([demo("New")], null, isolated(2));
-  assert.equal(p.banner().title, "2 real orders arrived while you were training");
+  assert.equal(p.banner().title, "2 real orders are waiting");
   assert.equal(p.banner().body, REAL_ORDERS.bodyMany);
   p.render([demo("New")], null, isolated(5));
   p.render([demo("New")], null, isolated(5));
@@ -424,7 +440,7 @@ test("more real orders update the same status line in place, never adding anothe
   assert.equal(p.banner().box, box, "the same element");
   assert.equal(p.section.querySelectorAll("[data-training-real-orders-box]").length, boxesBefore);
   assert.equal(p.section.querySelectorAll("[role='status']").length, 1, "one live region for the count");
-  assert.equal(p.banner().title, "5 real orders arrived while you were training");
+  assert.equal(p.banner().title, "5 real orders are waiting");
 });
 
 test("the status line shows only the count: no customer or order detail ever reaches it", () => {
@@ -456,7 +472,7 @@ test("a hidden guide keeps its status line hidden with it, and reopening shows t
   p.render([demo("New")], null, isolated(2));
   p.q("[data-training-reopen]").click();
   assert.equal(isShown(p.banner().box), true);
-  assert.equal(p.banner().title, "2 real orders arrived while you were training");
+  assert.equal(p.banner().title, "2 real orders are waiting");
 });
 
 // Escape and focus --------------------------------------------------------------------------------
