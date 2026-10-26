@@ -38,7 +38,8 @@ Each tenant has at most one connection per platform. `StoreId` is provider confi
 Primary sources:
 
 - `src/Wasla.Worker/Jobs/OrderSyncWorker.cs`
-- `src/Wasla.Infrastructure/Sync/OrderSyncService.cs`
+- `src/Wasla.Infrastructure/Sync/OrderSyncService.cs` (the polling pass: windows, checkpoints, connection health)
+- `src/Wasla.Infrastructure/Sync/OrderIngestion.cs` (what happens to one observed order; see [Shared ingestion](#shared-ingestion-was-18))
 - `src/Wasla.Infrastructure/Sync/OrderFetchWindowPlanner.cs`
 - `src/Wasla.Infrastructure/Sync/OrderSyncCycleRunner.cs`
 - `src/Wasla.Infrastructure/Platform/TrendyolGo/TrendyolGoFoodPlatformClient.cs`
@@ -58,6 +59,8 @@ Polling is a safety net only if it sees every change, so it must:
 - Tolerate overlapping and repeated results without duplicating orders or side effects.
 
 For Trendyol GO this is described in [Checkpoint and outage recovery](#checkpoint-and-outage-recovery). Yemeksepeti does not meet the second point yet (see [Known gaps](#known-gaps)).
+
+Polling already writes through the path a future webhook adapter would use ([Shared ingestion](#shared-ingestion-was-18)). No endpoint receives provider events, and routing a previously unseen event to a tenant stays blocked on WAS-175.
 
 ## Worker cycle
 
@@ -295,9 +298,40 @@ A blank id is not entered in that map, so blank ids are not collapsed together. 
 
 ## After the fetch
 
-`OrderSyncService` skips an order whose `ExternalOrderId` is missing or blank. It does not insert it.
+Each fetched order goes to `OrderIngestion.IngestPackageAsync` with the tenant's database and the connection it was fetched for.
 
-Orders that have an id are upserted by `Platform` + `ExternalOrderId` (`IdempotencyKey`). That database rule is separate from the page-level duplicate check above.
+- An order whose `ExternalOrderId` is missing or blank is skipped. It is not inserted.
+- An order whose own platform, store or supplier contradicts the connection is refused (see [Ownership of fetched orders](#ownership-of-fetched-orders)).
+- Every other order is upserted by `Platform` + `ExternalOrderId` (`IdempotencyKey`). That database rule is separate from the page-level duplicate check above.
+
+## Shared ingestion (WAS-18)
+
+Source: `src/Wasla.Infrastructure/Sync/OrderIngestion.cs`.
+
+`OrderSyncService` is the polling caller. It owns the provider fetch, the windows, the checkpoint, the failure counters and the circuit. `OrderIngestion` owns what happens to one observed order: provider observation → normalization (plausible provider times, the status mapper) → tenant/store validation → idempotent order write → guarded lifecycle transition with its side effects (auto-approve, the provider-accepted receipt, the live notification). It writes only to the tenant database it is given, so an order stays in the tenant whose connection fetched it.
+
+Two kinds of observation:
+
+| Observation | Entry point | Unknown order | Stored order |
+| --- | --- | --- | --- |
+| Full package (polling today; a vetted `created` adapter later) | `IngestPackageAsync` | Inserted | Every field, items and options compared, then updated through the locked re-read and the status merge |
+| Status only (no production caller yet) | `ApplyStatusObservationAsync` | **Not created**; polling imports the full order | Only the status moves, through the same lock, merge, milestones, change version, notification and receipt rule. Items, customer, money and time fields are never touched; the provider status text is stored only when the merge moves the order on |
+
+The status-only path takes a Wasla `OrderStatus` that a provider adapter derives from a verified provider contract. It does not interpret webhook event names, and no Trendyol GO event is mapped yet.
+
+### Ownership of fetched orders
+
+The documented Trendyol GO package carries `supplierId` and `storeId`. The client reads them as text (`ExternalOrderDto.ProviderSupplierId`, `ProviderStoreId`); any other JSON shape reads as null, so a type change cannot fail the page. Ingestion refuses an order when:
+
+- its platform differs from the connection's;
+- it reports a store and the connection's `StoreId` differs (trimmed, exact);
+- it reports a supplier and the connection's `SupplierId` is set and differs. A connection without `SupplierId` polls with its `StoreId` as the supplier id; its supplier is not compared.
+
+A missing optional identifier is not a mismatch. A refused order is not written, counts as skipped, and is logged with the field and the identifiers (no customer data). The window still completes and the checkpoint moves: the order is not this tenant's.
+
+This guards orders fetched with the tenant's own credentials. It does not decide which tenant a previously unseen webhook event belongs to (WAS-175).
+
+`PlatformConnectionService.UpdateAsync` refuses an edit that blanks `StoreId` (`Validation.StoreIdRequired`), like create; the Web edit form already required it.
 
 ### Getir
 
@@ -318,9 +352,23 @@ Rules:
 - Provider internal status is **merged** with local progress so stale provider statuses cannot undo operator progress (see `MergeInternalStatusForSync`). The merge starts from the status read inside the update transaction after the order row is locked, so a status an operator action or another Worker committed after sync's first read is kept (WAS-123, see [lifecycle.md](./lifecycle.md#child-replace-on-real-updates)).
 - Missing `ExternalOrderId` skips the order (counted as skipped).
 
+### Concurrent first observations
+
+Two callers can both read that a package has no order and both insert it: two Worker passes today, a webhook processor next to polling later.
+
+- The insert is `SaveChanges` in its own transaction, never one the caller opened. SQL Server holds the second insert on the first one's key lock until that transaction ends and reports the duplicate key only if the first one committed, so a refused insert means the winner's order is committed and readable.
+- Only a duplicate key on the order identity indexes (`IX_Orders_IdempotencyKey`, `IX_Orders_Platform_ExternalOrderId`; SQL Server 2601/2627) counts. EF Core has rolled its own transaction back; the refused graph is detached, and the context is checked to have no open transaction.
+- The loser reads the winner's order and applies its observation like a repeated one: unchanged, or through the locked update and the status merge.
+- Auto-approve, the provider-accepted receipt and the new order's live notification run only after a successful insert. The winner runs them once and the loser never does. The loser's connection pass succeeds: no failure counter, no `IntegrationError`, no circuit.
+- Any other database error still fails the connection, and the checkpoint does not move.
+
+Before WAS-18 the loser's insert failed that connection's pass and counted towards its circuit (five failures pause polling for five minutes).
+
+A process that stops after the insert commits and before the side effects run does not replay them; a later observation finds the stored order. That gap is tracked separately (WAS-178).
+
 ### Unchanged-order short circuit
 
-Source: `OrderSyncService.IsSemanticallyUnchanged`.
+Source: `OrderIngestion.IsSemanticallyUnchanged`.
 
 Before opening a mutation transaction:
 
@@ -344,7 +392,7 @@ This is **not** first-page-only fetch, and **not** always-rewrite-on-every-sync.
 
 The checkpoint overlap, the hot window and the history windows that cover the same time, a retried window and an attempt that follows a failure all return packages Wasla has already stored. None of them creates a second order or repeats a side effect:
 
-- The upsert finds the existing row by `IdempotencyKey`. No second `Order` row is inserted.
+- The upsert finds the existing row by `IdempotencyKey`. No second `Order` row is inserted, also when two callers insert at the same moment ([Concurrent first observations](#concurrent-first-observations)).
 - A repeated result with no change takes the unchanged short circuit: nothing is written.
 - The auto-approve hook runs only when a row is inserted. The provider-accepted receipt is created only when the merged status changes to `Accepted`. A repeated result triggers neither, so recovery overlap alone prints no extra receipt.
 - The status merge keeps a terminal (`Delivered`, `Cancelled`, `Failed`) or further-progressed status when older provider data arrives. This is the same `MergeInternalStatusForSync` rule used for every sync; the client has no status rules of its own.
@@ -366,6 +414,8 @@ Safe diagnostics for polling and recovery. These fields may be logged: tenant an
 | Warning | `Provider throttled the request; retrying the same page` (client, HTTP 429) | `StatusCode`, `Page`, `Attempt`, `RetryDelayMs`, `RetryDelaySource` |
 | Error | `Platform connection sync failed` | Adds `Pass` (`Current` or `Backfill`), `WindowStartUtc`, `WindowEndUtc` (the failing window; empty when the failure was outside a window) and `CheckpointUtc` (the next run starts five minutes before it) |
 | Warning | `Provider pagination failed` (client) | `Reason`, `PagesFetched`, `OrdersFetched`, `ReportedTotalPages` |
+| Warning | `Provider order refused: its {Field} does not match the connection it was fetched for` | `Field` (`platform`, `store` or `supplier`), `CustomerId`, `ConnectionId`, `Platform`, connection and provider `StoreId` / `SupplierId`, `ExternalOrderId` |
+| Information | `Order was stored by a concurrent sync; this observation is applied to it` | `CustomerId`, `OrderId`, `ExternalOrderId`, `Platform` |
 | Debug | `Provider returned {OrderCount} orders` and `Provider fetch completed` | Window boundaries, pages, counts, elapsed time |
 
 See also [../operations/observability.md](../operations/observability.md#order-sync-recovery-diagnostics).
@@ -375,6 +425,7 @@ See also [../operations/observability.md](../operations/observability.md#order-s
 - Yemeksepeti partner endpoint path still carries a TODO to confirm against official Partner API docs.
 - Getir has no real fetch client yet.
 - Webhooks are not implemented for any platform; polling is the only ingestion path (see [Webhooks and polling](#webhooks-and-polling)).
+- New-order side effects (auto-approve, the provider-accepted receipt) are not replayed if the process stops between the insert's commit and those effects (WAS-178).
 - Yemeksepeti polling is not checkpointed and still uses a fixed one-hour lookback.
 - Trendyol GO's maximum date range, retention, bound inclusivity, sort order and the scope of its 50-requests-per-10-seconds limit are undocumented and not yet verified against the Stage API. The scope needs written confirmation from Trendyol GO.
 - The request limiter and the cycle scheduling are per Worker process. Running several Worker instances needs a distributed request limiter and tenant leases; neither exists. For 300+ tenants, webhooks (not polling) must carry real-time orders.

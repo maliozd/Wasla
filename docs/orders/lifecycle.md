@@ -55,7 +55,7 @@ Every time is stored as a UTC instant and converted only for display.
 - **Primary time.** Orders (column, default sort `orderedAt` newest first, date filter), Dashboard (today's figures and latest orders), Live Screen (card time, elapsed time, order within a group, today's counts) and the API Dashboard all use `OrderedAt`. Sorting by `receivedAt` is still accepted and sorts by `ReceivedAt`.
 - **Recovery imports.** An order Wasla received at least 10 minutes after it was placed (`OrderUiHelper.ReceivedSeparatelyAfter`) shows its import time on a second line under the order time on Orders and in the Live Screen detail panel. A recovery poll that imports yesterday's orders at 02:19 therefore lists them at yesterday's time and does not count them as today's.
 - **Fallback.** Without a provider creation time (a provider that sends none, an implausible value, a practice order) the import time stands in under its own label, "Received in Wasla", with a hint that the platform sent no order time. It is never shown or stored as the provider's time.
-- **Plausible provider times** (`OrderSyncService.PlausibleProviderTime`): not before 2000-01-01 and at most 5 minutes after Wasla's clock (`ProviderClockTolerance`). Others are dropped with a warning that names the platform and the external order id only. Clients never substitute the server's clock: Trendyol GO maps a missing or non-positive epoch to null, Yemeksepeti accepts only epoch milliseconds or a date with an explicit offset, and mock updates send no creation time.
+- **Plausible provider times** (`OrderIngestion.PlausibleProviderTime`): not before 2000-01-01 and at most 5 minutes after Wasla's clock (`ProviderClockTolerance`). Others are dropped with a warning that names the platform and the external order id only. Clients never substitute the server's clock: Trendyol GO maps a missing or non-positive epoch to null, Yemeksepeti accepts only epoch milliseconds or a date with an explicit offset, and mock updates send no creation time.
 - **Time zone.** Wasla has no tenant time zone yet. Display and local-day boundaries use `TimeZoneHelper.ResolveTurkeyTimeZone()` (`Europe/Istanbul`) on the server and `Intl.DateTimeFormat` with that zone on the Live Screen. A per-tenant zone needs a tenant setting first; until then every tenant is treated as Türkiye.
 - **Orders date filter.** `startDate` and `endDate` are Türkiye-local days in invariant Gregorian `yyyy-MM-dd`, the format a date input submits, in every UI language (`OrdersReceivedAtQueryRange.ParseWebQueryStrings`). The start day counts from its local midnight; the end day runs up to, not including, the next local midnight. Without either date the page shows today; one date leaves the other side open. A value that is not such a date from 2000-01-01 on (no order time is earlier), an end day whose next local midnight cannot be represented in UTC (9999-12-31), or an end before the start, shows a localized message (`Orders.InvalidStartDate`, `Orders.InvalidEndDate`, `Orders.InvalidDateRange`) and lists nothing; the query never runs with fewer bounds than were supplied (WAS-130). The API keeps its own `DateTime` parameters (`FromApiDateTimes`), which still swap an inverted range.
 - **Legacy rows.** Orders stored before WAS-125 keep the `CreatedAtPlatform` value their client stored: Trendyol GO's `packageCreationDate`; the mock's synthetic time; for Yemeksepeti, possibly the server clock at fetch time (its old fallback), which cannot be told apart and is shown as the order time. The migration only clears values before 2000 (a missing Trendyol GO value was stored as 1970-01-01), so those orders fall back to their import time. No other backfill runs.
@@ -77,7 +77,7 @@ Every time is stored as a UTC instant and converted only for display.
 ### Idempotency and parent row
 
 - Idempotency key = SHA-256 Base64 of `"{Platform}:{ExternalOrderId}"`, stored as `Order.IdempotencyKey`.
-- Upsert looks up by that key (`OrderSyncService.UpsertOrderAsync`).
+- Upsert looks up by that key (`OrderIngestion.IngestPackageAsync`). Two callers inserting the same new order at once leave one row, and only the winner runs the new-order side effects ([synchronization.md](./synchronization.md#concurrent-first-observations)).
 - On update, the parent `Order` row is kept: same `Id`, same entity identity; `CreatedAt` is not rewritten by the update path (only domain timestamps such as `AcceptedAt` / `DeliveredAt` / `CancelledAt` / `UpdatedAt` change when a real update runs).
 
 ### Operator transitions (`OrderActionService`)
@@ -136,7 +136,7 @@ When a semantic change is detected, sync opens a transaction and first locks the
 
 ### Unchanged-order short circuit
 
-Implemented in `src/Wasla.Infrastructure/Sync/OrderSyncService.cs`.
+Implemented in `src/Wasla.Infrastructure/Sync/OrderIngestion.cs`.
 
 Behavior when `IsSemanticallyUnchanged` returns true:
 
@@ -172,4 +172,4 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 | Operator actions | `src/Wasla.Infrastructure/Services/OrderActionService.cs` |
 | HTTP actions | `src/Wasla.Web/Areas/Tenant/Controllers/OrdersController.cs` |
 | Status mapping | `src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs` |
-| Sync upsert / merge / short circuit | `src/Wasla.Infrastructure/Sync/OrderSyncService.cs` |
+| Sync upsert / merge / short circuit | `src/Wasla.Infrastructure/Sync/OrderIngestion.cs` (polling caller: `OrderSyncService.cs`) |
