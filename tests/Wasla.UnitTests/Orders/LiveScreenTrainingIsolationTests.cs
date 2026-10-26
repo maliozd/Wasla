@@ -11,6 +11,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Demos;
 using Wasla.Application.GuidedSetup;
+using Wasla.Application.Orders;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
@@ -25,9 +26,10 @@ namespace Wasla.UnitTests.Orders;
 
 /// <summary>
 /// The Live Screen snapshot during order training. Training is Owner-only, and isolation is per user: whenever the
-/// current Owner is in order training their snapshot leaves real orders out and carries only how many arrived since
-/// they started, whatever the tenant's operational mode. Everyone else keeps the normal snapshot, and the tenant's mode
-/// (which alone governs automation) never depends on it. Runs the real guided-setup and order-read services on SQLite.
+/// current Owner is in order training their snapshot leaves real orders off the board and carries only how many are
+/// waiting and their ids (WAS-117), whatever the tenant's operational mode. Everyone else keeps the normal snapshot, and
+/// the tenant's mode (which alone governs automation) never depends on it. Runs the real guided-setup and order-read
+/// services on SQLite.
 /// </summary>
 public sealed class LiveScreenTrainingIsolationTests : IDisposable
 {
@@ -49,23 +51,64 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
     // Scenario A: a new tenant (Setup) ------------------------------------------------------------------------
 
     [Fact]
-    public async Task SetupTenant_TheTrainingOwner_SeesOnlyThePracticeOrder_AndHowManyRealOrdersArrived()
+    public async Task SetupTenant_TheTrainingOwner_SeesOnlyThePracticeOrder_AndEveryRealOrderWaiting()
     {
         await TenantAsync(TenantOperationalMode.Setup);
-        await Seed("before-training", OrderStatus.New, _clock.UtcNow.AddMinutes(-30));
+        var before = await Seed("before-training", OrderStatus.New, _clock.UtcNow.AddMinutes(-30));
         await GuidedSetup().StartAsync(_tenant, _owner, TrainingStart, Ct);
-        await Seed("during-1", OrderStatus.New, _clock.UtcNow.AddMinutes(1));
-        await Seed("during-2", OrderStatus.Cancelled, _clock.UtcNow.AddMinutes(2));
+        var during = await Seed("during-1", OrderStatus.New, _clock.UtcNow.AddMinutes(-2));
+        await Seed("during-2", OrderStatus.Cancelled, _clock.UtcNow.AddMinutes(-1));
         _demos.ForLiveScreen = PracticeOrder();
 
         var snapshot = await LiveDataAsync(_owner, Owner);
 
         var order = Assert.Single(snapshot.Orders);
         Assert.True(order.IsDemo);
-        // Counted from the Owner's own training start by the canonical received time: the earlier order does not count.
-        Assert.Equal(2, snapshot.Training!.RealOrdersReceived);
+        // The real backlog, not only what arrived since training began: an order waiting from before still waits.
+        Assert.Equal(2, snapshot.Training!.WaitingRealOrders);
+        Assert.Equal(new[] { before, during }.Order(), snapshot.Training.RealOrderIds.Order());
         Assert.True(snapshot.Training.Isolated);
         Assert.Equal(3, (await Orders().GetListAsync(_tenant, null, null, null, null, "receivedAt", "desc", 1, 50, null, Ct)).TotalCount);
+    }
+
+    [Fact]
+    public async Task BeforeDuringAndAfterTraining_TheWaitingCountTodaysCountAndTheBacklogAgree()
+    {
+        await TenantAsync(TenantOperationalMode.Setup);
+        var before = await Seed("before", OrderStatus.Accepted, _clock.UtcNow.AddMinutes(-40));
+        await GuidedSetup().StartAsync(_tenant, _owner, TrainingStart, Ct);
+        _demos.ForLiveScreen = PracticeOrder();
+        var first = await LiveDataAsync(_owner, Owner);
+        Assert.Equal(1, first.Training!.WaitingRealOrders);
+        Assert.Equal([before], first.Training.RealOrderIds);
+
+        // Real orders keep arriving during training: a new one, one moving on, one cancelled, one just delivered.
+        var arrived = await Seed("during-new", OrderStatus.New, _clock.UtcNow.AddMinutes(-3));
+        var preparing = await Seed("during-preparing", OrderStatus.Preparing, _clock.UtcNow.AddMinutes(-2));
+        await Seed("during-cancelled", OrderStatus.Cancelled, _clock.UtcNow.AddMinutes(-2));
+        var delivered = await Seed("during-delivered", OrderStatus.Delivered, _clock.UtcNow.AddMinutes(-5), deliveredAt: _clock.UtcNow.AddMinutes(-1));
+
+        var trainee = await LiveDataAsync(_owner, Owner);
+        _demos.ForLiveScreen = null;
+        var colleague = await LiveDataAsync(_cashier, Kitchen);
+
+        // The trainee's waiting count is the active count a colleague's header shows, today's count is the same, and the
+        // ids are exactly the orders the colleague sees, so nothing is lost or shown twice when training ends.
+        Assert.Equal(3, trainee.Training!.WaitingRealOrders);
+        Assert.Equal(colleague.Orders.Count(o => LiveScreenVisibility.IsActive(o.Status)), trainee.Training.WaitingRealOrders);
+        Assert.Equal(colleague.TodayOrderCount, trainee.TodayOrderCount);
+        Assert.Equal(colleague.CancelledOrderCount, trainee.CancelledOrderCount);
+        Assert.Equal(colleague.Orders.Select(o => o.Id).Order(), trainee.Training.RealOrderIds.Order());
+        Assert.Equal(new[] { before, arrived, preparing, delivered }.Order(), trainee.Training.RealOrderIds.Order());
+        Assert.True(Assert.Single(trainee.Orders).IsDemo);
+
+        await CompleteTrainingAsync(_owner);
+
+        var after = await LiveDataAsync(_owner, Owner);
+        Assert.Null(after.Training);
+        Assert.Equal(trainee.Training.RealOrderIds.Order(), after.Orders.Select(o => o.Id).Order());
+        Assert.Equal(trainee.Training.WaitingRealOrders, after.Orders.Count(o => LiveScreenVisibility.IsActive(o.Status)));
+        Assert.Equal(trainee.TodayOrderCount, after.TodayOrderCount);
     }
 
     [Fact]
@@ -120,7 +163,7 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
         Assert.Equal(TenantOperationalMode.Live, await _tenants.ModeAsync(_tenant));
         var trainee = await LiveDataAsync(_secondOwner, Owner);
         Assert.True(Assert.Single(trainee.Orders).IsDemo, "only the practice order");
-        Assert.Equal(1, trainee.Training!.RealOrdersReceived);
+        Assert.Equal(2, trainee.Training!.WaitingRealOrders);
 
         // The rest of the restaurant keeps operating on the same orders.
         _demos.ForLiveScreen = null;
@@ -159,19 +202,21 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
     [Theory]
     [InlineData(TenantOperationalMode.Setup)]
     [InlineData(TenantOperationalMode.Live)]
-    public async Task InEitherMode_TheCountCoversOrdersSinceTheOwnerStarted_AndCarriesNoOrderDetail(TenantOperationalMode mode)
+    public async Task InEitherMode_TrainingCarriesTheWaitingCountAndIdsOnly_AndNoOrderDetail(TenantOperationalMode mode)
     {
         await TenantAsync(mode);
         await GuidedSetup().StartAsync(_tenant, _owner, TrainingStart, Ct);
-        await Seed("secret-order", OrderStatus.New, _clock.UtcNow.AddMinutes(1), customer: "Ayşe Yılmaz");
-        await Seed("second", OrderStatus.Delivered, _clock.UtcNow.AddMinutes(2), deliveredAt: _clock.UtcNow.AddMinutes(3));
+        var waiting = await Seed("secret-order", OrderStatus.New, _clock.UtcNow.AddMinutes(-2), customer: "Ayşe Yılmaz");
+        var delivered = await Seed("second", OrderStatus.Delivered, _clock.UtcNow.AddMinutes(-3), deliveredAt: _clock.UtcNow.AddMinutes(-1));
 
         var json = JsonSerializer.Serialize(await LiveDataAsync(_owner, Owner), new JsonSerializerOptions(JsonSerializerDefaults.Web));
         using var document = JsonDocument.Parse(json);
 
         var training = document.RootElement.GetProperty("training");
-        Assert.Equal(new[] { "isolated", "realOrdersReceived" }, training.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
-        Assert.Equal(2, training.GetProperty("realOrdersReceived").GetInt32());
+        Assert.Equal(new[] { "isolated", "realOrderIds", "waitingRealOrders" }, training.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
+        // The delivered order is still on the Live Screen (its recent window), so it is followed, but it is not waiting.
+        Assert.Equal(1, training.GetProperty("waitingRealOrders").GetInt32());
+        Assert.Equal(new[] { waiting, delivered }.Order(), training.GetProperty("realOrderIds").EnumerateArray().Select(id => id.GetGuid()).Order());
         Assert.Equal(0, document.RootElement.GetProperty("orders").GetArrayLength());
         Assert.DoesNotContain("Ayşe", json, StringComparison.Ordinal);
         Assert.DoesNotContain("secret-order", json, StringComparison.Ordinal);

@@ -11,14 +11,7 @@ namespace Wasla.Infrastructure.Services;
 public sealed class OrderReadService : IOrderReadService
 {
     private static readonly TimeSpan RecentDeliveredWindow = LiveScreenVisibility.RecentDeliveredWindow;
-    private static readonly OrderStatus[] ActiveStatuses =
-    [
-        OrderStatus.New,
-        OrderStatus.Accepted,
-        OrderStatus.Preparing,
-        OrderStatus.ReadyForPickup,
-        OrderStatus.OnTheWay
-    ];
+    private static readonly OrderStatus[] ActiveStatuses = LiveScreenVisibility.ActiveStatuses;
 
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly TimeProvider _timeProvider;
@@ -275,13 +268,6 @@ public sealed class OrderReadService : IOrderReadService
         var cancelledOrderCount = await orderedToday.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
 
         return new LiveScreenSnapshotResult(utcServer, orders, todayOrderCount, cancelledOrderCount);
-    }
-
-    public async Task<int> CountReceivedSinceAsync(Guid customerId, DateTime sinceUtc, CancellationToken ct)
-    {
-        var since = sinceUtc.Kind == DateTimeKind.Local ? sinceUtc.ToUniversalTime() : SpecifyUtc(sinceUtc);
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
-        return await db.Orders.AsNoTracking().CountAsync(o => o.ReceivedAt >= since, ct);
     }
 
     private static DateTime SpecifyUtc(DateTime value) =>

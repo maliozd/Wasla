@@ -111,7 +111,7 @@ public sealed record GuidedSetupDashboard(GuidedSetupDashboardViewModel? Card, b
 /// <summary>Where to go after a command, and an optional localized message key.</summary>
 public sealed record GuidedSetupCommandResult(string RedirectUrl, string? SuccessMessageKey = null, string? ErrorMessageKey = null);
 
-/// <summary>An isolated trainee's Live Screen: real orders received since <paramref name="TrainingStartedAtUtc"/> are only counted.</summary>
+/// <summary>An isolated trainee's Live Screen (in guided setup since <paramref name="TrainingStartedAtUtc"/>): real orders stay off the practice board.</summary>
 public sealed record GuidedTrainingIsolation(DateTime TrainingStartedAtUtc);
 
 /// <summary>A setup section's live state for its page: whether it is the user's current section, and ready.</summary>

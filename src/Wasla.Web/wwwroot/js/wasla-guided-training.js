@@ -1,9 +1,10 @@
 // Order training on the Live Screen (guided setup, section "live-screen-demo").
 // The server decides the starting step from the saved position and the practice order; this script only follows
 // the practice order through Live Screen snapshots and points at it. Real orders never pause or move training:
-// while the tenant is still in setup the server leaves them out of this user's snapshot and sends only how many
-// arrived, which one quiet status line reports. It never changes journey state: Start practice and Complete are
-// ordinary form posts, and the courier steps come from Wasla.Worker. Rendering a snapshot never sends a request.
+// the server leaves them out of this trainee's board and sends how many are waiting, which one quiet status line
+// reports (their new-order sound and browser notification stay with the Live Screen store). It never changes journey
+// state: Start practice and Complete are ordinary form posts, and the courier steps come from Wasla.Worker. Rendering a
+// snapshot never sends a request.
 (function (root, factory) {
   var api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -74,23 +75,39 @@
   }
 
   /**
-   * How many real orders arrived during training, from the snapshot's training section. Only an isolated
-   * trainee's snapshot carries one; anything else (including after the tenant went live) is 0.
+   * How many real orders are waiting (active) outside the practice board, from the snapshot's training section: the
+   * same number as the header's count. Only an isolated trainee's snapshot carries one; anything else is 0.
    */
   function realOrderCount(training) {
     if (!training || training.isolated !== true) return 0;
-    var count = training.realOrdersReceived;
+    var count = training.waitingRealOrders;
     return typeof count === "number" && isFinite(count) && count > 0 ? Math.floor(count) : 0;
   }
 
   /**
    * The real-orders status copy for <count>: singular for one, the plural title with the count filled in for more,
-   * nothing for none. Only the count is ever shown; no order or customer detail reaches this text.
+   * nothing for none. <format> writes the count as the header does (the page culture's digits); without it, plain
+   * digits. Only the count is ever shown; no order or customer detail reaches this text.
    */
-  function realOrdersText(copy, count) {
+  function realOrdersText(copy, count, format) {
     if (!copy || !(count >= 1)) return null;
     if (count === 1) return { title: copy.titleOne || "", body: copy.bodyOne || "" };
-    return { title: String(copy.titleMany || "").replace("{0}", String(count)), body: copy.bodyMany || "" };
+    var written = typeof format === "function" ? format(count) : String(count);
+    return { title: String(copy.titleMany || "").replace("{0}", written), body: copy.bodyMany || "" };
+  }
+
+  /** Formats a count in <doc>'s language, like the Live Screen header; plain digits when Intl cannot. */
+  function countFormatter(doc) {
+    var lang = doc && doc.documentElement ? doc.documentElement.getAttribute("lang") : null;
+    var format = null;
+    try {
+      format = new Intl.NumberFormat(lang || "tr-TR");
+    } catch (e) {
+      format = null;
+    }
+    return function (count) {
+      return format ? format.format(count) : String(count);
+    };
   }
 
   /** Escape closes the panel only when nothing else (a dialog, a menu, a text field) owns the key. */
@@ -127,6 +144,7 @@
     var announcer = section.querySelector("[data-training-announce]");
     var title = section.querySelector("[data-training-title]");
     var realOrders = section.querySelector("[data-training-real-orders-box]");
+    var formatCount = countFormatter(doc);
 
     var state = {
       step: indexOf(steps, config.step) >= 0 ? config.step : INTRO,
@@ -184,7 +202,7 @@
      */
     function renderRealOrders() {
       if (!realOrders) return;
-      var text = realOrdersText(config.realOrders, state.realOrders);
+      var text = realOrdersText(config.realOrders, state.realOrders, formatCount);
       realOrders.hidden = !text;
       setText(realOrders.querySelector("[data-training-real-orders-title]"), text ? text.title : "");
       setText(realOrders.querySelector("[data-training-real-orders-body]"), text ? text.body : "");
@@ -403,6 +421,7 @@
     shownOn: shownOn,
     realOrderCount: realOrderCount,
     realOrdersText: realOrdersText,
+    countFormatter: countFormatter,
     escapeClosesPanel: escapeClosesPanel,
     createController: createController,
     boot: boot

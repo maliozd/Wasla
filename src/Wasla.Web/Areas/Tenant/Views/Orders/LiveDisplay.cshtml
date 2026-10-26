@@ -209,7 +209,9 @@
             <div class="wasla-live-summary__metric is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"></span>
                 <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
-                <span class="wasla-live-summary__label">@L["Orders.ActiveOrders"]</span>
+                @* During order training the board holds only the practice order: this count is the real orders waiting
+                   outside it, and its label says so (the store keeps it in step with each snapshot). *@
+                <span class="wasla-live-summary__label" id="ordersLiveDisplayActiveLabel">@(Model.GuidedTraining is null ? L["Orders.ActiveOrders"] : L["Orders.LiveScreen.WaitingRealOrders"])</span>
             </div>
             <div class="wasla-live-summary__metric wasla-live-summary__metric--cancelled is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"></span>
@@ -248,10 +250,13 @@
     </div>
 </div>
 
-<div class="modal fade" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+@* Order detail: two columns from 768 px (only the products scroll), a full-screen single column below it. The panel
+   markup comes from _OrderDetailPanel; wasla-live-screen.css styles it under .wasla-order-detail-modal. *@
+<div class="modal fade wasla-order-detail-modal" id="ordersLiveDetailModal" tabindex="-1" aria-hidden="true" aria-labelledby="ordersLiveDetailModalTitle">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
         <div class="modal-content">
             <div class="modal-header">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--order-detail", Decorative = true })
                 <h2 class="modal-title h6 mb-0" id="ordersLiveDetailModalTitle">@L["Orders.Details.Title"]</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Close"]"></button>
             </div>
@@ -396,6 +401,8 @@
                 ["liveScreenStale"] = L["Orders.LiveScreen.ConnectionStale"].Value,
                 ["liveScreenSessionExpired"] = L["Orders.LiveScreen.SessionExpired"].Value,
                 ["liveScreenCountUnavailable"] = L["Orders.LiveScreen.CountUnavailable"].Value,
+                ["liveScreenActiveOrders"] = L["Orders.ActiveOrders"].Value,
+                ["liveScreenWaitingRealOrders"] = L["Orders.LiveScreen.WaitingRealOrders"].Value,
                 ["ordersApprove"] = L["Orders.Approve"].Value,
                 ["ordersReject"] = L["Orders.Reject"].Value,
                 ["ordersStartPreparing"] = L["Orders.StartPreparing"].Value,
@@ -406,6 +413,8 @@
                 ["selectOrderDescription"] = L["Orders.LiveScreen.SelectOrderDescription"].Value,
                 ["noDisplayableOrders"] = L["Orders.LiveScreen.NoDisplayableOrders"].Value,
                 ["noDisplayableOrdersDescription"] = L["Orders.LiveScreen.NoDisplayableOrdersDescription"].Value,
+                ["noPracticeOrder"] = L["Orders.LiveScreen.NoPracticeOrder"].Value,
+                ["noPracticeOrderDescription"] = L["Orders.LiveScreen.NoPracticeOrderDescription"].Value,
                 ["backToQueue"] = L["Orders.LiveScreen.BackToQueue"].Value,
                 ["detailRetry"] = L["Orders.LiveScreen.DetailRetry"].Value,
                 ["focusQueue"] = L["Orders.LiveScreen.Queue"].Value,
