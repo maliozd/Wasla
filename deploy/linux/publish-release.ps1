@@ -22,6 +22,18 @@ param(
 # would otherwise turn git's progress output on stderr into a terminating error.
 $ErrorActionPreference = 'Continue'
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+
+# The tar that writes the archive. On Windows it is always the system's own tar.exe (bsdtar, Windows 10 1803 and
+# later): a PowerShell started from Git Bash inherits a PATH with Git's GNU tar first, and GNU tar reads the archive's
+# "C:\..." path as a remote host:path and fails. Elsewhere it is the tar on PATH.
+function Resolve-ArchiveTool {
+    if ($env:OS -eq 'Windows_NT') {
+        $tool = Join-Path $env:SystemRoot 'System32\tar.exe'
+        if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "The Windows tar.exe was not found at $tool (Windows 10 1803 or later is required)." }
+        return $tool
+    }
+    return (Get-Command tar -CommandType Application | Select-Object -First 1).Source
+}
 $repo = (git rev-parse --show-toplevel).Trim()
 $work = Join-Path ([IO.Path]::GetTempPath()) "wasla-release-$Commit"
 $out = Join-Path $work 'out'
@@ -70,8 +82,9 @@ try {
     if ($crlf) { throw "CRLF line endings in: $($crlf.Name -join ', ')" }
 
     New-Item -ItemType Directory -Force $artifacts | Out-Null
-    tar -czf $archive -C $out .
-    if ($LASTEXITCODE -ne 0) { throw 'tar failed.' }
+    $tar = Resolve-ArchiveTool
+    & $tar -czf $archive -C $out .
+    if ($LASTEXITCODE -ne 0) { throw "tar failed ($tar)." }
     $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
     Write-Host "Release archive: $archive"
     Write-Host "SHA-256: $hash"
