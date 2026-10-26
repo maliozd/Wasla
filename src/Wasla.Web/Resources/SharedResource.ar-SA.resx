@@ -783,6 +783,9 @@
   <data name="Orders.Details.Received" xml:space="preserve">
     <value>وصل إلى Wasla</value>
   </data>
+  <data name="Orders.Details.OrderTimeUnknown" xml:space="preserve">
+    <value>وقت الطلب غير معروف</value>
+  </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>طريقة الدفع</value>
   </data>

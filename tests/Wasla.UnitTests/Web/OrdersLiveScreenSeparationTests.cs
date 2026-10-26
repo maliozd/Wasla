@@ -409,7 +409,8 @@ public sealed class OrdersLiveScreenSeparationTests
         var noteAt = panel.IndexOf("wasla-live-detail-order-note", StringComparison.Ordinal);
         var bodyAt = panel.IndexOf("wasla-live-detail__body", StringComparison.Ordinal);
         var itemNoteAt = panel.IndexOf("wasla-live-detail__note", StringComparison.Ordinal);
-        Assert.True(noteAt > 0 && bodyAt > noteAt && itemNoteAt > bodyAt);
+        // The order note opens the products column (inside the body, above the first item), so it scrolls with them.
+        Assert.True(bodyAt > 0 && noteAt > bodyAt && itemNoteAt > noteAt);
 
         Assert.Contains("!string.IsNullOrWhiteSpace(Model.CustomerNote)", panel, StringComparison.Ordinal);
         Assert.Contains("@L[\"Orders.LiveScreen.OrderNote\"]", panel, StringComparison.Ordinal);

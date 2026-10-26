@@ -972,3 +972,870 @@ html[dir="rtl"] .wasla-live-screen-page .wasla-live-board .wasla-live-screen-car
 [data-bs-theme="dark"] .wasla-live-screen-page .wasla-live-settings .wasla-live-settings-menu {
   box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
 }
+
+/* ===============================================================================================================
+   Order detail modal (#ordersLiveDetailModal). Approved design: Figma "Wasla Orders · Order Detail Modal
+   Exploration" (node 232:2324). Two columns from 768 px: the products scroll on their own while the header, the
+   customer and payment panel and the action bar stay put. Below 768 px the dialog is full screen, one column, with the
+   lifecycle buttons in a sticky bar at the bottom of the scroll.
+
+   _OrderDetailPanel is also the Focus view's detail, styled in wasla-theme.css. Everything here is scoped to
+   .wasla-order-detail-modal; elements marked data-detail-modal-only (the summary, unit prices and the unknown order
+   time) are hidden everywhere else. The import-time lines stay for Focus and are hidden here: the modal shows only
+   the provider's order time. Restaurant and customer text keeps its own direction (unicode-bidi: plaintext) and sits
+   on the dialog's start side (the text-align rules after the colour tokens), so a Turkish name in the Arabic dialog
+   reads left to right and still lines up on the right.
+   =============================================================================================================== */
+.wasla-live-detail [data-detail-modal-only] { display: none; }
+.wasla-live-detail__main { min-width: 0; }
+
+.wasla-order-detail-modal {
+  --od-surface: var(--color-surface, #fff);
+  --od-panel: color-mix(in srgb, var(--color-surface-muted, #f3f4f6) 60%, var(--color-surface, #fff));
+  --od-inset: var(--color-surface, #fff);
+  --od-subtle: var(--color-surface-muted, #f3f4f6);
+  --od-line: var(--color-border, #e5e7eb);
+  --od-line-strong: var(--color-border-strong, #d1d5db);
+  --od-text: var(--color-text, #2c2c2c);
+  --od-muted: var(--color-text-secondary, #4b5563);
+  --od-faint: var(--color-text-muted, #6c6c6c);
+  --od-accent-ink: #c2410c;
+  --od-accent-soft: var(--color-accent-soft, rgba(255, 107, 53, .12));
+  /* Darker than --color-accent so white button text keeps 4.5:1 (5.2:1). */
+  --od-primary-action: #c2410c;
+  --od-primary-action-hover: #a8380a;
+  --od-danger: #b02a37;
+  --od-danger-line: var(--color-danger-border, rgba(220, 53, 69, .28));
+  --od-link: var(--color-info, #0d6efd);
+  --od-note-bg: #fff7ef;
+  --od-note-line: #ead3b8;
+  --od-note-label: #8a5a32;
+  --od-note-text: #3f342c;
+  --od-panel-width: 21.25rem;
+  --od-focus: 3px solid var(--color-accent, #ff6b35);
+  --od-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6.5 9.5 17 4 11.5'/%3E%3C/svg%3E");
+  --od-icon-x: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E");
+  --od-icon-user: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6'/%3E%3C/svg%3E");
+  --od-icon-phone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16.4v2.7a1.8 1.8 0 0 1-2 1.8 17.8 17.8 0 0 1-7.8-2.8 17.5 17.5 0 0 1-5.4-5.4A17.8 17.8 0 0 1 3 4.9 1.8 1.8 0 0 1 4.8 3h2.7a1.8 1.8 0 0 1 1.8 1.5c.1.9.3 1.7.6 2.5a1.8 1.8 0 0 1-.4 1.9L8.3 10.1a14.4 14.4 0 0 0 5.4 5.4l1.2-1.2a1.8 1.8 0 0 1 1.9-.4c.8.3 1.6.5 2.5.6a1.8 1.8 0 0 1 1.7 1.9Z'/%3E%3C/svg%3E");
+  --od-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 10c0 5.2-7 11-7 11s-7-5.8-7-11a7 7 0 0 1 14 0Z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E");
+  --od-icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z'/%3E%3Cpath d='M8 9h8M8 13h5'/%3E%3C/svg%3E");
+  --od-icon-payment: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5.5' width='18' height='13' rx='2'/%3E%3Cpath d='M3 10h18M7 14.5h3'/%3E%3C/svg%3E");
+  --od-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+}
+
+[data-bs-theme="dark"] .wasla-order-detail-modal {
+  --od-panel: var(--color-surface-muted, #141820);
+  --od-inset: var(--color-surface-elevated, #1c2028);
+  --od-subtle: rgba(255, 255, 255, .07);
+  /* --color-text-muted is below 4.5:1 on the dark surfaces, so secondary text uses the secondary tone here. */
+  --od-faint: var(--color-text-secondary, #aeb4c0);
+  --od-accent-ink: #ffa070;
+  --od-danger: var(--color-danger, #fca5a5);
+  --od-link: var(--color-info, #93c5fd);
+  --od-note-bg: rgba(232, 184, 122, .12);
+  --od-note-line: rgba(212, 168, 112, .4);
+  --od-note-label: #e6c98a;
+  --od-note-text: #f6efe4;
+}
+
+.wasla-order-detail-modal :is(.wasla-live-detail-order-note__text, .wasla-live-detail__product, .wasla-live-detail__options,
+  .wasla-live-detail__note, .wasla-live-detail__customer, .wasla-live-detail__fact--address dd) { text-align: left; }
+[dir="rtl"] .wasla-order-detail-modal :is(.wasla-live-detail-order-note__text, .wasla-live-detail__product,
+  .wasla-live-detail__options, .wasla-live-detail__note, .wasla-live-detail__customer, .wasla-live-detail__fact--address dd) {
+  text-align: right;
+}
+
+/* Shared icon slot: a mask painted in the current text colour. */
+.wasla-order-detail-modal .wasla-live-detail__received::before,
+.wasla-order-detail-modal .wasla-live-detail__time-unknown::before,
+.wasla-order-detail-modal .wasla-live-detail__head .wasla-dash-status::before,
+.wasla-order-detail-modal .wasla-live-detail-order-note::before,
+.wasla-order-detail-modal .wasla-live-detail__note::before,
+.wasla-order-detail-modal .wasla-live-detail__facts > .wasla-live-detail__section::before,
+.wasla-order-detail-modal .wasla-live-detail__fact::before,
+.wasla-order-detail-modal .wasla-live-detail__fact--payment dt::before,
+.wasla-order-detail-modal [data-order-action="approve"]::before,
+.wasla-order-detail-modal [data-order-action="reject"]::before,
+.wasla-order-detail-modal [data-order-action="mark-ready"]::before {
+  content: "";
+  flex: none;
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  background-color: currentColor;
+  -webkit-mask: var(--od-icon) center / contain no-repeat;
+  mask: var(--od-icon) center / contain no-repeat;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Dialog shell: Wasla mark, title and close button above the order identity
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-order-detail-modal .modal-content {
+  background: var(--od-surface);
+  color: var(--od-text);
+  overflow: hidden;
+}
+
+.wasla-order-detail-modal .modal-header {
+  gap: .625rem;
+  padding: 1rem 1rem 0 1.5rem;
+  border-bottom: 0;
+}
+
+.wasla-order-detail-modal .wasla-logo--order-detail {
+  flex: none;
+  height: 1.125rem;
+  width: auto;
+}
+
+.wasla-order-detail-modal .modal-title {
+  margin: 0;
+  padding-inline-start: .625rem;
+  border-inline-start: 1px solid var(--od-line);
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+  color: var(--od-muted);
+}
+
+.wasla-order-detail-modal .modal-header .btn-close {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+  margin-inline-start: auto;
+  padding: 0;
+  border-radius: .5rem;
+  background-size: .875rem;
+}
+
+.wasla-order-detail-modal .modal-header .btn-close:focus-visible {
+  outline: var(--od-focus);
+  outline-offset: 0;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.wasla-order-detail-modal .modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Loading and load-failure text written into the body by orders-live-detail-modal.js. */
+.wasla-order-detail-modal .modal-body > p {
+  margin: 0;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.wasla-order-detail-modal .wasla-live-detail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Order identity: platform and code as one unit, status, then the provider's order time and elapsed time
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-order-detail-modal .wasla-live-detail__head {
+  display: block;
+  margin: 0;
+  padding: .625rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--od-line);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .75rem;
+  min-width: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__platform { order: 1; display: flex; }
+.wasla-order-detail-modal .wasla-live-detail__meta { display: contents; }
+
+.wasla-order-detail-modal .wasla-live-detail__code {
+  order: 2;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 2rem;
+  letter-spacing: -.01em;
+  /* Order codes read left to right in every language. */
+  direction: ltr;
+  unicode-bidi: isolate;
+  overflow-wrap: anywhere;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__head .platform-badge {
+  min-height: 0;
+  gap: .25rem;
+  padding: .2rem .5rem;
+  border-radius: .375rem;
+  font-size: .75rem;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__head .platform-badge__icon {
+  height: 1rem;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__head .platform-badge--getiryemek .platform-badge__icon-wrap {
+  padding: 1px 5px;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__head .wasla-dash-status {
+  order: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  padding: .25rem .625rem .25rem .5rem;
+  border-radius: .5rem;
+  font-size: .8125rem;
+  line-height: 1.25rem;
+}
+
+.wasla-order-detail-modal .wasla-dash-status--new { --od-icon: url("../images/live-screen/status-new.svg"); }
+.wasla-order-detail-modal .wasla-dash-status--accepted { --od-icon: var(--od-icon-check); }
+.wasla-order-detail-modal .wasla-dash-status--progress { --od-icon: url("../images/live-screen/status-preparing.svg"); }
+.wasla-order-detail-modal .wasla-dash-status--ready { --od-icon: url("../images/live-screen/status-ready.svg"); }
+.wasla-order-detail-modal .wasla-dash-status--on-the-way { --od-icon: url("../images/live-screen/status-on-the-way.svg"); }
+.wasla-order-detail-modal .wasla-dash-status--delivered { --od-icon: url("../images/live-screen/status-completed.svg"); }
+.wasla-order-detail-modal .wasla-dash-status--cancelled,
+.wasla-order-detail-modal .wasla-dash-status--failed { --od-icon: var(--od-icon-x); }
+
+.wasla-order-detail-modal .wasla-live-detail__received,
+.wasla-order-detail-modal .wasla-live-detail__time-unknown {
+  order: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  margin: 0;
+  margin-inline-start: auto;
+  font-size: .875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: var(--od-muted);
+  --od-icon: var(--od-icon-clock);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__elapsed {
+  order: 5;
+  margin-inline-start: -.25rem;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--od-faint);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__elapsed::before {
+  content: "\00B7";
+  margin-inline-end: .375rem;
+}
+
+/* Only the provider's order time: never the import time, and no elapsed time counted from it. */
+.wasla-order-detail-modal [data-received-in-wasla],
+.wasla-order-detail-modal .wasla-live-detail[data-order-time-source="received"] [data-received],
+.wasla-order-detail-modal .wasla-live-detail[data-order-time-source="received"] [data-elapsed] {
+  display: none;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__time-unknown { display: inline-flex; }
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Body: products on the leading side, customer, payment and total in the side panel
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-order-detail-modal .wasla-live-detail__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--od-panel-width);
+  align-items: stretch;
+  gap: 0;
+  min-height: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wasla-order-detail-modal .wasla-live-detail-order-note {
+  --od-icon: var(--od-icon-note);
+  display: grid;
+  grid-template-columns: 1.125rem minmax(0, 1fr);
+  column-gap: .5rem;
+  row-gap: .125rem;
+  align-items: center;
+  margin: 0;
+  padding: .75rem .875rem;
+  border: 1px solid var(--od-note-line);
+  border-radius: .625rem;
+  background: var(--od-note-bg);
+  color: var(--od-note-label);
+}
+
+.wasla-order-detail-modal .wasla-live-detail-order-note::before { width: 1.125rem; height: 1.125rem; }
+
+.wasla-order-detail-modal .wasla-live-detail-order-note__label {
+  margin: 0;
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+  letter-spacing: 0;
+  color: var(--od-note-label);
+}
+
+.wasla-order-detail-modal .wasla-live-detail-order-note__text {
+  grid-column: 2;
+  font-size: .875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: var(--od-note-text);
+  unicode-bidi: plaintext;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__products {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__products > .wasla-live-detail__section {
+  margin: 0 0 .25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__items {
+  display: block;
+  width: auto;
+  max-width: 100%;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__item {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "qty name amount"
+    "qty opts unit"
+    "qty note .";
+  column-gap: .875rem;
+  row-gap: 0;
+  align-items: start;
+  padding: .75rem 0;
+  border-bottom: 1px solid var(--od-line);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__item:last-child { border-bottom: 0; }
+
+.wasla-order-detail-modal .wasla-live-detail__qty {
+  grid-area: qty;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 1.625rem;
+  padding: 0 .25rem;
+  border-radius: .375rem;
+  background: var(--od-subtle);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__qty::after { content: "\00D7"; }
+
+.wasla-order-detail-modal .wasla-live-detail__qty--multiple {
+  background: var(--od-accent-soft);
+  color: var(--od-accent-ink);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__product {
+  grid-area: name;
+  padding-top: .125rem;
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+  unicode-bidi: plaintext;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__amount {
+  grid-area: amount;
+  justify-self: end;
+  padding-top: .125rem;
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+  unicode-bidi: isolate;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__unit {
+  grid-area: unit;
+  display: block;
+  justify-self: end;
+  margin-top: .125rem;
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1rem;
+  white-space: nowrap;
+  color: var(--od-faint);
+  unicode-bidi: isolate;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__options {
+  grid-area: opts;
+  margin-top: .125rem;
+  font-size: .8125rem;
+  line-height: 1.25rem;
+  color: var(--od-muted);
+  unicode-bidi: plaintext;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__surcharge { white-space: nowrap; }
+
+.wasla-order-detail-modal .wasla-live-detail__note {
+  --od-icon: var(--od-icon-note);
+  grid-area: note;
+  justify-self: start;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: .375rem;
+  max-width: 100%;
+  margin: .375rem 0 0;
+  padding: .25rem .625rem .25rem .5rem;
+  border-radius: .375rem;
+  background: var(--od-note-bg);
+  font-size: .875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: var(--od-note-text);
+  unicode-bidi: plaintext;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__note::before {
+  margin-top: .125rem;
+  color: var(--od-note-label);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__empty { margin: .5rem 0 0; }
+
+/* The side panel's summary replaces the totals under the products here. */
+.wasla-order-detail-modal .wasla-live-detail__totals { display: none; }
+
+.wasla-order-detail-modal .wasla-live-detail__facts {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  min-height: 0;
+  margin: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  border-top: 0;
+  border-inline-start: 1px solid var(--od-line);
+  background: var(--od-panel);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__facts > .wasla-live-detail__section,
+.wasla-order-detail-modal .wasla-live-detail__fact--payment dt {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 0;
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.125rem;
+  color: var(--od-muted);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__facts > .wasla-live-detail__section { --od-icon: var(--od-icon-user); }
+.wasla-order-detail-modal .wasla-live-detail__fact--payment dt { --od-icon: var(--od-icon-payment); }
+
+.wasla-order-detail-modal .wasla-live-detail__facts > .wasla-live-detail__section::before,
+.wasla-order-detail-modal .wasla-live-detail__fact--payment dt::before {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__customer {
+  margin: 0;
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.375rem;
+  unicode-bidi: plaintext;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact-list {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  margin: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact--phone,
+.wasla-order-detail-modal .wasla-live-detail__fact--address {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  column-gap: .625rem;
+  align-items: start;
+  color: var(--od-faint);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact--phone { --od-icon: var(--od-icon-phone); }
+.wasla-order-detail-modal .wasla-live-detail__fact--address { --od-icon: var(--od-icon-pin); }
+.wasla-order-detail-modal .wasla-live-detail__fact--phone::before,
+.wasla-order-detail-modal .wasla-live-detail__fact--address::before { margin-top: .125rem; }
+.wasla-order-detail-modal .wasla-live-detail__fact--payment::before { content: none; }
+
+/* The icons name the phone and address rows; the labels stay for screen readers. */
+.wasla-order-detail-modal .wasla-live-detail__fact--phone dt,
+.wasla-order-detail-modal .wasla-live-detail__fact--address dt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact dd {
+  justify-self: start;
+  margin: 0;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: var(--od-text);
+  overflow-wrap: anywhere;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact--address dd { unicode-bidi: plaintext; }
+
+.wasla-order-detail-modal .wasla-live-detail__fact--phone a {
+  font-weight: 500;
+  color: var(--od-link);
+  text-decoration: none;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact--phone a:hover { text-decoration: underline; }
+
+.wasla-order-detail-modal .wasla-live-detail__fact--payment {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .375rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--od-line);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__fact--payment dd { font-weight: 500; }
+
+.wasla-order-detail-modal .wasla-live-detail__summary {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin: auto 0 0;
+  padding: .875rem 1rem;
+  border: 1px solid var(--od-line);
+  border-radius: .75rem;
+  background: var(--od-inset);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem .75rem;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary dt,
+.wasla-order-detail-modal .wasla-live-detail__summary dd { margin: 0; }
+
+.wasla-order-detail-modal .wasla-live-detail__summary-row dt {
+  font-size: .8125rem;
+  font-weight: 400;
+  color: var(--od-faint);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary dd {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  unicode-bidi: isolate;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary-row dd {
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary-total {
+  margin-top: .125rem;
+  padding-top: .625rem;
+  border-top: 1px solid var(--od-line);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary-total:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary-total dt {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__summary-total dd {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 2rem;
+  letter-spacing: -.01em;
+  color: var(--od-text);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Action bar: printing and the full order page on the leading side, the lifecycle action at the far end. The DOM
+   (and so the tab order) is unchanged: lifecycle first, then print and the order link.
+   --------------------------------------------------------------------------------------------------------------- */
+.wasla-order-detail-modal .wasla-live-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .625rem;
+  margin: 0;
+  padding: .875rem 1.5rem;
+  border-top: 1px solid var(--od-line);
+  background: var(--od-surface);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__actions .wasla-order-print { order: 1; }
+.wasla-order-detail-modal .wasla-live-detail__actions .wasla-live-detail__open { order: 2; }
+
+.wasla-order-detail-modal .wasla-live-detail__actions .wasla-orders-actions {
+  order: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .625rem;
+  margin-inline-start: auto;
+}
+
+.wasla-order-detail-modal [data-order-action="reject"] { order: 1; --od-icon: var(--od-icon-x); }
+.wasla-order-detail-modal [data-order-action="approve"] { order: 2; --od-icon: var(--od-icon-check); }
+.wasla-order-detail-modal [data-order-action="mark-ready"] { --od-icon: var(--od-icon-check); }
+
+.wasla-order-detail-modal .wasla-live-detail__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-height: 2.5rem;
+  padding: .5rem 1rem;
+  border-radius: .5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-align: center;
+  white-space: normal;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__actions .btn:focus-visible {
+  outline: var(--od-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.wasla-order-detail-modal .wasla-orders-actions .btn-success,
+.wasla-order-detail-modal .wasla-orders-actions .btn-primary { min-width: 9.25rem; }
+
+.wasla-order-detail-modal .wasla-orders-actions .btn-primary {
+  background-color: var(--od-primary-action);
+  border-color: var(--od-primary-action);
+  color: #fff;
+}
+
+.wasla-order-detail-modal .wasla-orders-actions .btn-primary:hover,
+.wasla-order-detail-modal .wasla-orders-actions .btn-primary:active {
+  background-color: var(--od-primary-action-hover);
+  border-color: var(--od-primary-action-hover);
+  color: #fff;
+}
+
+.wasla-order-detail-modal .wasla-live-detail__actions .btn-outline-danger,
+[data-bs-theme="dark"] .wasla-order-detail-modal .wasla-live-detail__actions .btn-outline-danger {
+  border: 1px solid var(--od-danger-line);
+  background: var(--od-surface);
+  color: var(--od-danger);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__actions .btn-outline-danger:hover {
+  background: var(--color-danger-soft, rgba(220, 53, 69, .12));
+  color: var(--od-danger);
+}
+
+.wasla-order-detail-modal .wasla-order-print-btn {
+  border-color: var(--od-line-strong);
+  background: var(--od-surface);
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-order-print-btn:hover:not(:disabled) {
+  background: var(--od-subtle);
+  border-color: var(--od-line-strong);
+  color: var(--od-text);
+}
+
+.wasla-order-detail-modal .wasla-order-print-btn .bi { margin: 0 !important; color: var(--od-muted); }
+.wasla-order-detail-modal .wasla-order-print__outcome { font-size: .75rem; font-weight: 500; }
+
+.wasla-order-detail-modal .wasla-live-detail__actions a.btn.wasla-live-detail__open {
+  gap: .5rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--od-muted);
+}
+
+.wasla-order-detail-modal .wasla-live-detail__actions a.btn.wasla-live-detail__open:hover {
+  border-color: transparent;
+  background: var(--od-subtle);
+  color: var(--od-text);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Sizes: 1120 px on desktop, a narrower side panel on tablets, full screen and one column on phones
+   --------------------------------------------------------------------------------------------------------------- */
+@media (min-width: 768px) {
+  .wasla-order-detail-modal .modal-dialog { max-width: min(70rem, calc(100vw - 5rem)); }
+
+  .wasla-order-detail-modal .modal-content {
+    border: 1px solid var(--od-line);
+    border-radius: 1rem;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, .08), 0 24px 64px -12px rgba(15, 23, 42, .22);
+  }
+
+  .wasla-order-detail-modal .modal-body { overflow: hidden; }
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .wasla-order-detail-modal { --od-panel-width: 18.75rem; }
+}
+
+@media (max-width: 767.98px) {
+  /* App bar: back arrow, title, Wasla mark. */
+  .wasla-order-detail-modal .modal-header {
+    min-height: 3.5rem;
+    padding: .5rem 1rem .5rem .25rem;
+    border-bottom: 1px solid var(--od-line);
+  }
+
+  .wasla-order-detail-modal .modal-header .btn-close {
+    order: -1;
+    margin-inline-start: 0;
+    background-size: 1.125rem;
+    --bs-btn-close-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5M11 18l-6-6 6-6'/%3E%3C/svg%3E");
+  }
+
+  [dir="rtl"] .wasla-order-detail-modal .modal-header .btn-close { transform: scaleX(-1); }
+
+  .wasla-order-detail-modal .modal-title {
+    flex: 1 1 auto;
+    padding: 0;
+    border: 0;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    text-align: center;
+    color: var(--od-text);
+  }
+
+  .wasla-order-detail-modal .wasla-logo--order-detail { order: 1; height: .875rem; }
+
+  .wasla-order-detail-modal .modal-body { display: block; overflow-y: auto; }
+
+  .wasla-order-detail-modal .wasla-live-detail {
+    grid-template-rows: none;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__head,
+  .wasla-order-detail-modal .wasla-live-detail__body { grid-column: 1 / -1; }
+
+  .wasla-order-detail-modal .wasla-live-detail__head { padding: .75rem 1rem 1rem; }
+
+  /* Platform and code on the first line, status and time on the next. */
+  .wasla-order-detail-modal .wasla-live-detail__headline::after {
+    content: "";
+    order: 2;
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__code { font-size: 1.25rem; line-height: 1.75rem; }
+
+  .wasla-order-detail-modal .wasla-live-detail__received,
+  .wasla-order-detail-modal .wasla-live-detail__time-unknown { margin-inline-start: 0; }
+
+  .wasla-order-detail-modal .wasla-live-detail__body { display: block; }
+  .wasla-order-detail-modal .wasla-live-detail__main { padding: 1rem; overflow: visible; }
+
+  .wasla-order-detail-modal .wasla-live-detail__facts {
+    gap: .75rem;
+    padding: 1.25rem 1rem;
+    overflow: visible;
+    border-inline-start: 0;
+    border-block: 1px solid var(--od-line);
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__summary { margin-top: .25rem; }
+
+  /* Print and the order link close the scroll; the lifecycle buttons stay in a sticky bar at its end, which also
+     keeps the last content clear of the bar. */
+  .wasla-order-detail-modal .wasla-live-detail__actions { display: contents; }
+
+  .wasla-order-detail-modal .wasla-live-detail__actions .wasla-order-print {
+    margin: 1rem 0 1.5rem;
+    margin-inline-start: 1rem;
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__actions .wasla-live-detail__open {
+    justify-self: start;
+    margin: 1rem 1rem 1.5rem .5rem;
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__actions .wasla-orders-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    grid-column: 1 / -1;
+    order: 4;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--od-line);
+    background: var(--od-surface);
+    box-shadow: 0 -6px 16px rgba(15, 23, 42, .08);
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__actions .wasla-orders-actions .btn {
+    flex: 1 1 auto;
+    min-height: 3rem;
+    min-width: 0;
+  }
+
+  .wasla-order-detail-modal .wasla-live-detail__actions [data-order-action="reject"] { flex: 0 1 8rem; }
+}

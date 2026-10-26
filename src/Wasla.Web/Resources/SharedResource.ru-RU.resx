@@ -783,6 +783,9 @@
   <data name="Orders.Details.Received" xml:space="preserve">
     <value>Получен в Wasla</value>
   </data>
+  <data name="Orders.Details.OrderTimeUnknown" xml:space="preserve">
+    <value>Время заказа неизвестно</value>
+  </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Способ оплаты</value>
   </data>
