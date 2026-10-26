@@ -180,7 +180,7 @@ Local runs follow the risk of the change. Run the affected tests and the tests o
 
 ## Realtime load tests
 
-`tests/Wasla.UnitTests/Realtime/RealtimeLoadTests.cs` (WAS-25) runs the live hub under bounded load: the real Web pipeline in-process and many lightweight .NET SignalR clients over WebSockets, one per "tab" of a signed-in user. It runs with the rest of `Wasla.UnitTests` in every CI run at its default size. Every wait has a timeout, every count an upper bound, and the tests stop only what they started (their own in-process host and clients; no browser).
+`tests/Wasla.UnitTests/Realtime/RealtimeLoadTests.cs` (WAS-25) runs the live hub under bounded load: the real Web pipeline in-process and many lightweight .NET SignalR clients over WebSockets, one per "tab" of a signed-in user. It runs with the rest of `Wasla.UnitTests` in every CI run at its default size, in its own collection (`RealtimeLoadCollection`) that runs alone: its server, clients and the notifier's send timeout share the process's thread pool, so another test class running at the same time would add its waits to the measured send times. Every wait has a timeout, every count an upper bound, and the tests stop only what they started (their own in-process host and clients; no browser).
 
 | Variable | Default | Allowed | Meaning |
 |----------|---------|---------|---------|

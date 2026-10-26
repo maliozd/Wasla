@@ -26,6 +26,7 @@ namespace Wasla.UnitTests.Realtime;
 /// send-time percentiles, memory and threads of the test process, which hosts both the server and the clients) go to
 /// the test output.
 /// </summary>
+[Collection(nameof(RealtimeLoadCollection))]
 public sealed class RealtimeLoadTests
 {
     private const string Secret = "test-only-load-secret-0123456789abcdefghij";
