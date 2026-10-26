@@ -22,7 +22,11 @@
     string InvariantAmount(decimal amount) => amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 }
 
-<div class="wasla-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status">
+@* The Live Screen modal and the Focus view load this same markup. The modal shows only the provider's order time and
+   the summary in its side panel (data-detail-modal-only); the Focus view keeps the import-time lines and the totals
+   under the products. wasla-live-screen.css decides which one each surface shows. *@
+<div class="wasla-live-detail" data-order-id="@Model.Id" data-order-status="@Model.Status"
+     data-order-time-source="@(Model.OrderedAtIsFromPlatform ? "platform" : "received")">
     <header class="wasla-live-detail__head">
         @* Code first, the platform on its own line below it, then status, elapsed time and order time together. *@
         <div class="wasla-live-detail__headline">
@@ -39,84 +43,94 @@
             {
                 <p class="wasla-live-detail__received" data-received-in-wasla>@L["Orders.Details.Received"] @receivedLabel</p>
             }
+            @if (!Model.OrderedAtIsFromPlatform)
+            {
+                <p class="wasla-live-detail__time-unknown" data-detail-modal-only data-order-time-unknown>@L["Orders.Details.OrderTimeUnknown"]</p>
+            }
         </div>
     </header>
 
-    @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
-    {
-        <div class="wasla-live-detail-order-note">
-            <span class="wasla-live-detail-order-note__label">@L["Orders.LiveScreen.OrderNote"]</span>
-            <p class="wasla-live-detail-order-note__text">@Model.CustomerNote</p>
-        </div>
-    }
-
     <div class="wasla-live-detail__body">
-        <section class="wasla-live-detail__products" aria-labelledby="live-detail-items-@Model.Id">
-            <h4 class="wasla-live-detail__section" id="live-detail-items-@Model.Id">@L["Orders.Details.Items"]</h4>
-            @if (Model.Items.Count == 0)
+        <div class="wasla-live-detail__main">
+            @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
             {
-                <p class="wasla-live-detail__empty">@L["Orders.Details.NoItemsFound"]</p>
-            }
-            else
-            {
-                <ul class="wasla-live-detail__items">
-                    @foreach (var i in Model.Items)
-                    {
-                        <li class="wasla-live-detail__item">
-                            <span class="wasla-live-detail__product">@i.ProductName</span>
-                            <span class="wasla-live-detail__qty">@i.Quantity</span>
-                            <span class="wasla-live-detail__amount" data-money="@InvariantAmount(i.TotalPrice)">@OrderUiHelper.FormatAmount(i.TotalPrice)</span>
-                            @if (i.Options.Count > 0)
-                            {
-                                <ul class="wasla-live-detail__options">
-                                    @foreach (var o in i.Options)
-                                    {
-                                        <li>
-                                            @o.Name
-                                            @if (o.Price > 0)
-                                            {
-                                                <span class="wasla-live-detail__surcharge" data-money="@InvariantAmount(o.Price)" data-money-wrap="surcharge">(+@OrderUiHelper.FormatAmount(o.Price))</span>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(i.Notes))
-                            {
-                                <p class="wasla-live-detail__note">@i.Notes</p>
-                            }
-                        </li>
-                    }
-                </ul>
+                <div class="wasla-live-detail-order-note">
+                    <span class="wasla-live-detail-order-note__label">@L["Orders.LiveScreen.OrderNote"]</span>
+                    <p class="wasla-live-detail-order-note__text">@Model.CustomerNote</p>
+                </div>
             }
 
-            <dl class="wasla-live-detail__totals">
-                @if (Model.DeliveryFee != 0)
+            <section class="wasla-live-detail__products" aria-labelledby="live-detail-items-@Model.Id">
+                <h4 class="wasla-live-detail__section" id="live-detail-items-@Model.Id">@L["Orders.Details.Items"]</h4>
+                @if (Model.Items.Count == 0)
                 {
-                    <div>
-                        <dt>@L["Orders.Details.DeliveryFee"]</dt>
-                        <dd data-money="@InvariantAmount(Model.DeliveryFee)">@OrderUiHelper.FormatAmount(Model.DeliveryFee)</dd>
-                    </div>
+                    <p class="wasla-live-detail__empty">@L["Orders.Details.NoItemsFound"]</p>
                 }
-                @if (Model.ServiceFee != 0)
+                else
                 {
-                    <div>
-                        <dt>@L["Orders.Details.ServiceFee"]</dt>
-                        <dd data-money="@InvariantAmount(Model.ServiceFee)">@OrderUiHelper.FormatAmount(Model.ServiceFee)</dd>
-                    </div>
+                    <ul class="wasla-live-detail__items">
+                        @foreach (var i in Model.Items)
+                        {
+                            <li class="wasla-live-detail__item">
+                                <span class="wasla-live-detail__product">@i.ProductName</span>
+                                <span class="wasla-live-detail__qty@(i.Quantity > 1 ? " wasla-live-detail__qty--multiple" : "")">@i.Quantity</span>
+                                <span class="wasla-live-detail__amount" data-money="@InvariantAmount(i.TotalPrice)">@OrderUiHelper.FormatAmount(i.TotalPrice)</span>
+                                @if (i.Quantity > 1)
+                                {
+                                    <span class="wasla-live-detail__unit" data-detail-modal-only><span class="wasla-live-detail__unit-qty">@i.Quantity ×</span> <span data-money="@InvariantAmount(i.UnitPrice)">@OrderUiHelper.FormatAmount(i.UnitPrice)</span></span>
+                                }
+                                @if (i.Options.Count > 0)
+                                {
+                                    <ul class="wasla-live-detail__options">
+                                        @foreach (var o in i.Options)
+                                        {
+                                            <li>
+                                                @o.Name
+                                                @if (o.Price > 0)
+                                                {
+                                                    <span class="wasla-live-detail__surcharge" data-money="@InvariantAmount(o.Price)" data-money-wrap="surcharge">(+@OrderUiHelper.FormatAmount(o.Price))</span>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(i.Notes))
+                                {
+                                    <p class="wasla-live-detail__note">@i.Notes</p>
+                                }
+                            </li>
+                        }
+                    </ul>
                 }
-                <div class="wasla-live-detail__grand">
-                    <dt>@L["Orders.Details.Total"]</dt>
-                    <dd data-money="@InvariantAmount(Model.TotalAmount)">@OrderUiHelper.FormatAmount(Model.TotalAmount)</dd>
-                </div>
-            </dl>
-        </section>
+
+                <dl class="wasla-live-detail__totals">
+                    @if (Model.DeliveryFee != 0)
+                    {
+                        <div>
+                            <dt>@L["Orders.Details.DeliveryFee"]</dt>
+                            <dd data-money="@InvariantAmount(Model.DeliveryFee)">@OrderUiHelper.FormatAmount(Model.DeliveryFee)</dd>
+                        </div>
+                    }
+                    @if (Model.ServiceFee != 0)
+                    {
+                        <div>
+                            <dt>@L["Orders.Details.ServiceFee"]</dt>
+                            <dd data-money="@InvariantAmount(Model.ServiceFee)">@OrderUiHelper.FormatAmount(Model.ServiceFee)</dd>
+                        </div>
+                    }
+                    <div class="wasla-live-detail__grand">
+                        <dt>@L["Orders.Details.Total"]</dt>
+                        <dd data-money="@InvariantAmount(Model.TotalAmount)">@OrderUiHelper.FormatAmount(Model.TotalAmount)</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
 
         <aside class="wasla-live-detail__facts" aria-labelledby="live-detail-customer-@Model.Id">
             <h4 class="wasla-live-detail__section" id="live-detail-customer-@Model.Id">@L["Orders.Details.Customer"]</h4>
             <p class="wasla-live-detail__customer">@OrderUiHelper.DisplayOrDash(Model.CustomerName)</p>
             <dl class="wasla-live-detail__fact-list">
-                <div>
+                <div class="wasla-live-detail__fact wasla-live-detail__fact--phone">
                     <dt>@L["Orders.Details.Phone"]</dt>
                     <dd dir="ltr">
                         @if (phoneTel is not null)
@@ -129,13 +143,36 @@
                         }
                     </dd>
                 </div>
-                <div>
+                <div class="wasla-live-detail__fact wasla-live-detail__fact--address">
                     <dt>@L["Orders.Details.Address"]</dt>
                     <dd>@OrderUiHelper.DisplayOrDash(Model.CustomerAddress)</dd>
                 </div>
-                <div>
+                <div class="wasla-live-detail__fact wasla-live-detail__fact--payment">
                     <dt>@L["Orders.Details.PaymentMethod"]</dt>
                     <dd>@OrderUiHelper.PaymentMethodLabel(Model.PaymentMethod, L)</dd>
+                </div>
+            </dl>
+
+            @* The same authoritative fees and total as the list above, placed at the foot of the modal's side panel.
+               No subtotal: the model has no authoritative one, and adding up lines would ignore provider discounts. *@
+            <dl class="wasla-live-detail__summary" data-detail-modal-only>
+                @if (Model.DeliveryFee != 0)
+                {
+                    <div class="wasla-live-detail__summary-row">
+                        <dt>@L["Orders.Details.DeliveryFee"]</dt>
+                        <dd data-money="@InvariantAmount(Model.DeliveryFee)">@OrderUiHelper.FormatAmount(Model.DeliveryFee)</dd>
+                    </div>
+                }
+                @if (Model.ServiceFee != 0)
+                {
+                    <div class="wasla-live-detail__summary-row">
+                        <dt>@L["Orders.Details.ServiceFee"]</dt>
+                        <dd data-money="@InvariantAmount(Model.ServiceFee)">@OrderUiHelper.FormatAmount(Model.ServiceFee)</dd>
+                    </div>
+                }
+                <div class="wasla-live-detail__summary-total">
+                    <dt>@L["Orders.Details.Total"]</dt>
+                    <dd data-money="@InvariantAmount(Model.TotalAmount)">@OrderUiHelper.FormatAmount(Model.TotalAmount)</dd>
                 </div>
             </dl>
         </aside>

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Wasla.Application.Abstractions.Setup;
+using Wasla.Application.Orders;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Abstractions.Orders;
@@ -85,12 +86,32 @@ public sealed record LiveScreenAutomationStatus(
 
 /// <summary>
 /// An isolated trainee's snapshot: real orders are left out of <see cref="LiveScreenSnapshotResult.Orders"/> (they
-/// are still synchronized and kept), and only how many arrived since the user started training is shown. No order
+/// are still synchronized and kept), so the practice board holds only the practice order. Training never hides the
+/// real backlog: <paramref name="WaitingRealOrders"/> is how many real orders are active (the count the header shows
+/// outside training), and <paramref name="RealOrderIds"/> are the ids of every real order the normal snapshot holds,
+/// so the Live Screen announces a new one exactly once, during training and after it. Ids only: no order or customer
 /// detail is carried here.
 /// </summary>
-public sealed record LiveScreenTrainingIsolation(int RealOrdersReceived)
+public sealed record LiveScreenTrainingIsolation(int WaitingRealOrders, IReadOnlyList<Guid> RealOrderIds)
 {
     public bool Isolated => true;
+
+    /// <summary>The isolation of <paramref name="snapshot"/>'s real orders, read before they leave its orders.</summary>
+    public static LiveScreenTrainingIsolation Of(LiveScreenSnapshotResult snapshot)
+    {
+        var ids = new List<Guid>(snapshot.Orders.Count);
+        var waiting = 0;
+        foreach (var order in snapshot.Orders)
+        {
+            if (order.IsDemo)
+                continue;
+            ids.Add(order.Id);
+            if (LiveScreenVisibility.IsActive(order.Status))
+                waiting++;
+        }
+
+        return new LiveScreenTrainingIsolation(waiting, ids);
+    }
 }
 
 public sealed record LiveScreenOrderDto(
