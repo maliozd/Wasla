@@ -145,6 +145,18 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         // Credentials: a blank value keeps the stored one, a non-blank value replaces only that credential. The
         // effective pair (stored plus replacements) is checked before any field is written, so a refused edit leaves
         // the whole row, credentials included, as it was. Replacements are stored exactly as sent.
+        // StoreId scopes the provider fetch and the ownership check of every fetched order (WAS-18). The create rule
+        // applies to edits too, before any field is written; the Web edit form already requires it.
+        if (string.IsNullOrWhiteSpace(command.StoreId))
+        {
+            return new CreatePlatformConnectionResult
+            {
+                Succeeded = false,
+                ErrorCode = "Validation",
+                ErrorMessage = "Validation.StoreIdRequired"
+            };
+        }
+
         var newApiKey = string.IsNullOrWhiteSpace(command.ApiKey) ? null : command.ApiKey;
         var newApiSecret = string.IsNullOrWhiteSpace(command.ApiSecret) ? null : command.ApiSecret;
         var credentialError =
