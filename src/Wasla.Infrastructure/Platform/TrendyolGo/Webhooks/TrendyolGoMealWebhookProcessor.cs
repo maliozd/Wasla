@@ -31,7 +31,11 @@ public sealed class TrendyolGoMealWebhookProcessor
     /// <summary>How long a claim lasts; an event whose processor stopped is taken up again after it.</summary>
     internal static readonly TimeSpan ClaimDuration = TimeSpan.FromMinutes(2);
 
-    /// <summary>The wait before each retry; its length is the number of attempts an event gets.</summary>
+    /// <summary>
+    /// The wait after each failed attempt, in order: after attempt <c>n</c> the event is retried after
+    /// <c>RetryDelays[n - 1]</c>. Every delay is used: an event gets <see cref="MaxAttempts"/> attempts (10 s, 30 s,
+    /// 1 min, 2 min and 5 min apart, about 8 min 40 s in all), and the failure of the last one makes it Failed.
+    /// </summary>
     internal static readonly TimeSpan[] RetryDelays =
     [
         TimeSpan.FromSeconds(10),
@@ -40,6 +44,16 @@ public sealed class TrendyolGoMealWebhookProcessor
         TimeSpan.FromMinutes(2),
         TimeSpan.FromMinutes(5)
     ];
+
+    /// <summary>The attempts an event gets: the first one and one retry after each delay.</summary>
+    internal static int MaxAttempts => RetryDelays.Length + 1;
+
+    /// <summary>
+    /// The wait before the next attempt after attempt <paramref name="failedAttempt"/> (1-based) failed, or null when it
+    /// was the last one and the event becomes Failed.
+    /// </summary>
+    internal static TimeSpan? RetryDelayAfter(int failedAttempt) =>
+        failedAttempt < MaxAttempts ? RetryDelays[Math.Max(failedAttempt, 1) - 1] : null;
 
     private readonly TrendyolGoMealWebhookPilotOptions _options;
     private readonly ITenantDbContextFactory _tenants;
@@ -277,7 +291,9 @@ public sealed class TrendyolGoMealWebhookProcessor
     {
         var now = Now();
         var attempt = stored.Attempts;
-        var exhausted = attempt >= RetryDelays.Length;
+        var retryAfter = RetryDelayAfter(attempt);
+        var exhausted = retryAfter is null;
+        var nextAttemptAt = now + (retryAfter ?? TimeSpan.Zero);
         var message = ex is PackageNotVisibleException
             ? "The reconciliation did not return the package yet."
             : OrderSyncService.SanitizeErrorMessage(ex);
@@ -287,7 +303,7 @@ public sealed class TrendyolGoMealWebhookProcessor
             .Where(e => e.Id == stored.Id && e.Status == ProviderWebhookEventStatus.Processing)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(e => e.Status, exhausted ? ProviderWebhookEventStatus.Failed : ProviderWebhookEventStatus.Pending)
-                .SetProperty(e => e.NextAttemptAt, exhausted ? now : now + RetryDelays[Math.Max(0, attempt - 1)])
+                .SetProperty(e => e.NextAttemptAt, nextAttemptAt)
                 .SetProperty(e => e.Outcome, ex is PackageNotVisibleException ? "PackageNotVisible" : "Error")
                 .SetProperty(e => e.LastError, message)
                 .SetProperty(e => e.LockedUntil, (DateTime?)null)

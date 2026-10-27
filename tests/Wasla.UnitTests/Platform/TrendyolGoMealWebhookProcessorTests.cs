@@ -186,26 +186,99 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     }
 
     [Fact]
-    public async Task EventForAPackageNoReconciliationReturns_IsRetried_ThenFailed_AndCreatesNothing()
+    public void RetrySchedule_UsesEveryDelay_ThenFails()
+    {
+        // Attempt n failed -> wait RetryDelays[n - 1]; the sixth failure is final.
+        Assert.Equal(
+            [TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(5)],
+            TrendyolGoMealWebhookProcessor.RetryDelays);
+        Assert.Equal(6, TrendyolGoMealWebhookProcessor.MaxAttempts);
+        Assert.Equal(
+            new TimeSpan?[] { TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(5), null, null },
+            Enumerable.Range(1, 7).Select(TrendyolGoMealWebhookProcessor.RetryDelayAfter));
+    }
+
+    [Fact]
+    public async Task EventForAPackageNoReconciliationReturns_IsRetriedAfterEachDelayExactly_ThenFailed_AndCreatesNothing()
     {
         _client.Set();
         await AcceptAsync("delivered", Thin("pkg-unknown"));
+        var received = _clock.GetUtcNow().UtcDateTime;
+        var attemptedAt = new List<TimeSpan>();
 
-        for (var attempt = 1; attempt <= TrendyolGoMealWebhookProcessor.RetryDelays.Length; attempt++)
+        for (var attempt = 1; attempt <= TrendyolGoMealWebhookProcessor.MaxAttempts; attempt++)
         {
             Assert.Equal(1, await Processor().ProcessDueAsync(10, Ct));
+            attemptedAt.Add(_clock.GetUtcNow().UtcDateTime - received);
             var stored = Assert.Single(await EventsAsync());
             Assert.Equal(attempt, stored.Attempts);
             Assert.Equal("PackageNotVisible", stored.Outcome);
-            Assert.Equal(attempt < TrendyolGoMealWebhookProcessor.RetryDelays.Length ? ProviderWebhookEventStatus.Pending : ProviderWebhookEventStatus.Failed, stored.Status);
-            // Not due again before its backoff ends.
+            Assert.Equal("The reconciliation did not return the package yet.", stored.LastError);
+            Assert.Null(stored.LockedUntil);
+
+            if (attempt == TrendyolGoMealWebhookProcessor.MaxAttempts)
+            {
+                Assert.Equal(ProviderWebhookEventStatus.Failed, stored.Status);
+                break;
+            }
+
+            var delay = TrendyolGoMealWebhookProcessor.RetryDelays[attempt - 1];
+            Assert.Equal(ProviderWebhookEventStatus.Pending, stored.Status);
+            Assert.Equal(_clock.GetUtcNow().UtcDateTime + delay, stored.NextAttemptAt);
+            // Not due a tick before its delay ends; due exactly when it ends.
+            _clock.Advance(delay - TimeSpan.FromTicks(1));
             Assert.Equal(0, await Processor().ProcessDueAsync(10, Ct));
-            _clock.Advance(TimeSpan.FromMinutes(10));
+            _clock.Advance(TimeSpan.FromTicks(1));
         }
 
+        Assert.Equal(
+            [TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40), TimeSpan.FromSeconds(100), TimeSpan.FromSeconds(220), TimeSpan.FromSeconds(520)],
+            attemptedAt);
+
+        // Failed is final: never taken up again however long it waits, until an operator replays it.
+        _clock.Advance(TimeSpan.FromDays(1));
+        Assert.Equal(0, await Processor().ProcessDueAsync(10, Ct));
+        Assert.Equal(TrendyolGoMealWebhookProcessor.MaxAttempts, Assert.Single(await EventsAsync()).Attempts);
         await using var db = await _tenants.CreateAsync(_tenantId, Ct);
         Assert.Empty(await db.Orders.ToListAsync(Ct));
         Assert.Empty(_notifier.All);
+    }
+
+    [Fact]
+    public async Task ReplayedFailedEvent_GetsTheWholeScheduleAgain()
+    {
+        _client.Set();
+        await AcceptAsync("delivered", Thin("pkg-replay"));
+        for (var attempt = 1; attempt <= TrendyolGoMealWebhookProcessor.MaxAttempts; attempt++)
+        {
+            await Processor().ProcessDueAsync(10, Ct);
+            _clock.Advance(TimeSpan.FromMinutes(5));
+        }
+
+        var failed = Assert.Single(await EventsAsync());
+        Assert.Equal(ProviderWebhookEventStatus.Failed, failed.Status);
+        Assert.True(await Processor().ReplayAsync(failed.Id, Ct));
+
+        Assert.Equal(1, await Processor().ProcessDueAsync(10, Ct));
+        var retried = Assert.Single(await EventsAsync());
+        Assert.Equal(1, retried.Attempts);
+        Assert.Equal(ProviderWebhookEventStatus.Pending, retried.Status);
+        Assert.Equal(_clock.GetUtcNow().UtcDateTime + TrendyolGoMealWebhookProcessor.RetryDelays[0], retried.NextAttemptAt);
+    }
+
+    [Fact]
+    public async Task EventWithoutAPlausibleTime_IsReconciledFromItsReceiptTime()
+    {
+        _client.Set(Package("pkg-no-time", "Created"));
+        await AcceptAsync("created", Created("pkg-no-time").Replace("\"timestamp\": 1734951413945", "\"timestamp\": 9223372036854775807", StringComparison.Ordinal));
+
+        Assert.Equal(1, await Processor().ProcessDueAsync(10, Ct));
+
+        var stored = Assert.Single(await EventsAsync());
+        Assert.Null(stored.EventTimestampUtc);
+        Assert.Equal("Reconciled", stored.Outcome);
+        var window = Assert.Single(_client.Windows);
+        Assert.True(window.StartUtc <= stored.ReceivedAt && stored.ReceivedAt <= window.EndUtc);
     }
 
     [Fact]

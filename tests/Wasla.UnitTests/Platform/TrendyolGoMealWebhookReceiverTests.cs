@@ -56,6 +56,7 @@ public sealed class TrendyolGoMealWebhookReceiverTests : IAsyncLifetime
             configuration["TrendyolGoMealWebhookPilot:HeaderName"] = HeaderName;
             configuration["TrendyolGoMealWebhookPilot:SecretSha256"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Secret)));
             configuration["TrendyolGoMealWebhookPilot:MaxBodyBytes"] = "4096";
+            configuration["TrendyolGoMealWebhookPilot:ReceiverBaseUrl"] = "https://app.wasla.test/api/webhooks/trendyol-go/meal";
             configuration["Platform:TrendyolGo:BaseUrl"] = "https://stageapi.tgoapis.com";
         }
 
@@ -157,6 +158,58 @@ public sealed class TrendyolGoMealWebhookReceiverTests : IAsyncLifetime
         var stored = Assert.Single(await EventsAsync());
         Assert.Equal(ProviderWebhookEventStatus.Rejected, stored.Status);
         Assert.Equal(outcome, stored.Outcome);
+    }
+
+    [Theory]
+    [InlineData("9223372036854775807")]   // long.MaxValue: past what a date can hold
+    [InlineData("253402300800000")]       // one millisecond past 9999-12-31T23:59:59.999Z
+    [InlineData("253402300799999")]       // the last representable instant: far in the future
+    [InlineData("32503680000000")]        // the year 3000
+    [InlineData("-1")]
+    [InlineData("0")]
+    [InlineData("946684799999")]          // just before 2000
+    [InlineData("1e30")]                  // not a 64-bit integer
+    [InlineData("1734951413945.5")]
+    [InlineData("\"1734951413945\"")]     // a string, not a number
+    [InlineData("null")]
+    public async Task InvalidOrImplausibleTimestamp_IsStoredWithoutAnEventTime_NeverAServerError(string timestamp)
+    {
+        await StartAsync(enabled: true);
+        var body = Created("pkg-time").Replace("\"timestamp\": 1734951413945", $"\"timestamp\": {timestamp}", StringComparison.Ordinal);
+
+        var first = await PostAsync("created", body, Secret);
+        var retry = await PostAsync("created", body, Secret);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
+        // Still one event for every delivery of it, and processed with its receipt time instead.
+        var stored = Assert.Single(await EventsAsync());
+        Assert.Equal(2, stored.DeliveryCount);
+        Assert.Null(stored.EventTimestampUtc);
+        Assert.Equal(ProviderWebhookEventStatus.Pending, stored.Status);
+    }
+
+    [Fact]
+    public void EventTime_AcceptsOnlyInstantsFrom2000UntilTheProviderClockTolerance()
+    {
+        var now = new DateTime(2026, 10, 27, 12, 0, 0, DateTimeKind.Utc);
+        var nowMs = new DateTimeOffset(now).ToUnixTimeMilliseconds();
+        var tolerance = (long)Wasla.Infrastructure.Sync.OrderIngestion.ProviderClockTolerance.TotalMilliseconds;
+
+        Assert.Equal(now, EventTime(nowMs));
+        Assert.Equal(now.AddMilliseconds(tolerance), EventTime(nowMs + tolerance));
+        Assert.Null(EventTime(nowMs + tolerance + 1));
+        Assert.Equal(new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc), EventTime(946684800000));
+        Assert.Null(EventTime(946684799999));
+        Assert.Null(EventTime(null));
+        Assert.Null(EventTime(0));
+        Assert.Null(EventTime(-1));
+        Assert.Null(EventTime(long.MinValue));
+        Assert.Null(EventTime(long.MaxValue));
+        Assert.Null(EventTime(DateTimeOffset.MaxValue.ToUnixTimeMilliseconds()));
+        Assert.Null(EventTime(DateTimeOffset.MaxValue.ToUnixTimeMilliseconds() + 1));
+
+        DateTime? EventTime(long? ms) => Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookInbox.EventTime(ms, now);
     }
 
     private async Task<List<ProviderWebhookEvent>> EventsAsync()

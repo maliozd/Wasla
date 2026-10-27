@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Sync;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -87,6 +88,14 @@ public sealed class TrendyolGoMealWebhookInbox
         var eventType = documentedType ?? Bounded(eventTypeSegment);
         var (status, outcome) = Classify(documentedType, envelope);
         var now = _time.GetUtcNow().UtcDateTime;
+        var eventTime = EventTime(envelope.TimestampMs, now);
+        if (envelope.TimestampMs is not null && eventTime is null)
+        {
+            _logger.LogWarning(
+                "Trendyol GO Meal webhook timestamp ignored as implausible; the event is stored with its receipt time. EventType={EventType}, ExternalOrderId={ExternalOrderId}",
+                eventType,
+                envelope.PackageId);
+        }
 
         var stored = new ProviderWebhookEvent
         {
@@ -94,7 +103,7 @@ public sealed class TrendyolGoMealWebhookInbox
             EventType = eventType,
             ExternalOrderId = envelope.PackageId,
             DedupKey = DedupKey(eventType, envelope.PackageId, envelope.TimestampMs, body.Span),
-            EventTimestampUtc = envelope.TimestampMs is { } ms ? DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime : null,
+            EventTimestampUtc = eventTime,
             ReceivedAt = now,
             LastDeliveredAt = now,
             DeliveryCount = 1,
@@ -157,9 +166,23 @@ public sealed class TrendyolGoMealWebhookInbox
         return (ProviderWebhookEventStatus.Pending, null);
     }
 
+    /// <summary>The largest Unix time in milliseconds a <see cref="DateTimeOffset"/> can hold (9999-12-31T23:59:59.999Z).</summary>
+    private static readonly long MaxUnixTimeMilliseconds = DateTimeOffset.MaxValue.ToUnixTimeMilliseconds();
+
+    /// <summary>
+    /// The event's provider time, or null when the <c>timestamp</c> is missing, outside what a date can hold, before
+    /// 2000 or more than the provider clock tolerance after <paramref name="nowUtc"/>
+    /// (<see cref="OrderIngestion.PlausibleProviderTime"/>). Never throws: a bad timestamp never refuses an event, which
+    /// is then stored with its receipt time. The dedup key still uses the raw value, so every delivery matches.
+    /// </summary>
+    internal static DateTime? EventTime(long? timestampMs, DateTime nowUtc) =>
+        timestampMs is { } ms and > 0 && ms <= MaxUnixTimeMilliseconds
+            ? OrderIngestion.PlausibleProviderTime(DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime, nowUtc)
+            : null;
+
     /// <summary>
     /// One event, whatever the number of deliveries: SHA-256 of the platform, the event type, the package id and the
-    /// provider's <c>timestamp</c>; for an event without one, of the exact body.
+    /// provider's <c>timestamp</c> as sent (plausible or not); for an event without one, of the exact body.
     /// </summary>
     internal static string DedupKey(string eventType, string packageId, long? timestampMs, ReadOnlySpan<byte> body)
     {
