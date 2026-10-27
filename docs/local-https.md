@@ -2,15 +2,19 @@
 
 ## Why the SSL error happens
 
-Wasla tenants use host-based URLs such as:
+Wasla tenants use host-based URLs under the application domain ([architecture/tenancy.md](architecture/tenancy.md#host-contract-was-66)), such as:
 
-- `https://bahce-tadi.wasla.local:7200`
-- `https://pilavcirahim.wasla.local:7200`
-- `https://sushim.wasla.local:7200`
+- `https://bahce-tadi.app.wasla.local:7200`
+- `https://pilavcirahim.app.wasla.local:7200`
+- `https://sushim.app.wasla.local:7200`
 
-The default ASP.NET Core development certificate is issued for `localhost`, not for `*.wasla.local`. Browsers and clients such as **Wasla Print Bridge** therefore reject the connection with errors like:
+The default ASP.NET Core development certificate is issued for `localhost`, not for these hosts. Browsers and clients such as **Wasla Print Bridge** therefore reject the connection with errors like:
 
 > NET::ERR_CERT_COMMON_NAME_INVALID
+
+Print Bridge logs the same failure as `RemoteCertificateNameMismatch`.
+
+A wildcard name covers exactly one label: `*.wasla.local` covers `app.wasla.local` and `www.wasla.local`, but **not** `sushim.app.wasla.local`. Tenant hosts need `*.app.wasla.local`. A certificate generated before WAS-66 (only `*.wasla.local`) must be regenerated.
 
 For local development, use a trusted certificate that covers your tenant domains. This repo provides a **mkcert**-based setup.
 
@@ -65,14 +69,14 @@ The script:
 3. Generates:
    - `.certs/wasla-local.pem`
    - `.certs/wasla-local-key.pem`
-   for `*.wasla.local`, `wasla.local`, `localhost`, and `127.0.0.1`
+   for `*.app.wasla.local`, `app.wasla.local`, `*.wasla.local`, `wasla.local`, `localhost`, and `127.0.0.1`
 4. Converts to `.certs/wasla-local.pfx` (password: `wasla-dev`)
 
 ### Manual mkcert commands
 
 ```powershell
 mkcert -install
-mkcert -cert-file .certs/wasla-local.pem -key-file .certs/wasla-local-key.pem "*.wasla.local" wasla.local localhost 127.0.0.1
+mkcert -cert-file .certs/wasla-local.pem -key-file .certs/wasla-local-key.pem "*.app.wasla.local" app.wasla.local "*.wasla.local" wasla.local localhost 127.0.0.1
 ```
 
 ### Manual PEM → PFX conversion
@@ -101,26 +105,16 @@ Old `.certs/orderhub-local.*` files may remain on disk from earlier setups; they
 
 ## 3. Configure Wasla.Web (Development)
 
-`src/Wasla.Web/appsettings.Development.json` includes Kestrel certificate settings:
-
-```json
-"Kestrel": {
-  "Certificates": {
-    "Default": {
-      "Path": "../../.certs/wasla-local.pfx",
-      "Password": "wasla-dev"
-    }
-  }
-}
-```
-
-The path is relative to the **Web project content root** (`src/Wasla.Web/`), which resolves to the repo-root `.certs/` folder when you run:
+The committed Web configuration names no HTTPS certificate. Point Kestrel at the PFX on your machine, for example with user environment variables (open a new terminal or restart Visual Studio afterwards):
 
 ```powershell
-dotnet run --project src\Wasla.Web\Wasla.Web.csproj
+setx Kestrel__Certificates__Default__Path "<repo root>\.certs\wasla-local.pfx"
+setx Kestrel__Certificates__Default__Password "wasla-dev"
 ```
 
-If you publish or run from a different output directory, copy the PFX or adjust the path locally (do not commit machine-specific absolute paths).
+Use an absolute path. Without these variables Kestrel serves the ASP.NET Core development certificate (`localhost` only). Do not commit machine-specific paths or passwords.
+
+If these variables already point at another PFX (for example one kept outside the repository), regenerate that file with the same names instead, or point the variables at the new one.
 
 `Properties/launchSettings.json` exposes:
 
@@ -140,18 +134,20 @@ Edit as Administrator:
 `C:\Windows\System32\drivers\etc\hosts`
 
 ```
-127.0.0.1 bahce-tadi.wasla.local
-127.0.0.1 pilavcirahim.wasla.local
-127.0.0.1 sushim.wasla.local
 127.0.0.1 wasla.local
+127.0.0.1 app.wasla.local
+127.0.0.1 bahce-tadi.app.wasla.local
+127.0.0.1 sushim.app.wasla.local
 ```
+
+There is no wildcard in the hosts file: add one line per tenant slug.
 
 ### Another PC on the LAN (optional)
 
 On the **client PC**, map the tenant hostname to the **Web host machine LAN IP**:
 
 ```
-192.168.1.50 bahce-tadi.wasla.local
+192.168.1.50 bahce-tadi.app.wasla.local
 ```
 
 On that client PC you must also trust the mkcert root CA (run `mkcert -install` there after copying/exporting the CA), or HTTPS will still fail.
@@ -164,38 +160,39 @@ On that client PC you must also trust the mkcert root CA (run `mkcert -install` 
 dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 ```
 
-Restart Web if it was already running so Kestrel reloads `.certs/wasla-local.pfx`.
+Restart Web if it was already running (in Visual Studio, stop and start debugging) so Kestrel reloads the PFX. Kestrel reads it only at startup.
 
 Open:
 
 - `https://wasla.local:7200`
 - `https://localhost:7200`
-- `https://bahce-tadi.wasla.local:7200/auth/login`
+- `https://bahce-tadi.app.wasla.local:7200/auth/login`
 
 ### Testing checklist
 
 - [ ] Run `.\scripts\dev\setup-local-https.ps1`
 - [ ] Hosts file entries added
+- [ ] Kestrel certificate variables point at the generated PFX
 - [ ] Run Web
 - [ ] Open `https://wasla.local:7200` — no certificate warning
-- [ ] Open `https://bahce-tadi.wasla.local:7200/auth/login` — no certificate warning
+- [ ] Open `https://bahce-tadi.app.wasla.local:7200/auth/login` — no certificate warning
 - [ ] Login succeeds and dashboard opens
-- [ ] Print Bridge **Test connection** succeeds (no SSL error)
+- [ ] Print Bridge **Check connection** succeeds (no SSL error)
 
 ---
 
 ## 6. Print Bridge over local HTTPS
 
-In the Print Bridge tray app **Settings**, set:
+Connect Print Bridge with a setup link from the tenant's device page, or in the app's connection dialog enter the tenant address as the server URL (`ServerUrl`, see [integrations/print-bridge.md](integrations/print-bridge.md#setup-canonical-fields)):
 
 ```
-BaseUrl: https://bahce-tadi.wasla.local:7200
+https://bahce-tadi.app.wasla.local:7200
 ```
 
 Requirements:
 
 - Windows trusts the mkcert root CA (`mkcert -install` on that PC)
-- Kestrel uses the generated PFX covering `*.wasla.local`
+- Kestrel uses the generated PFX covering `*.app.wasla.local`
 - Hosts file resolves the tenant domain to the Web host
 
 Print Bridge does **not** ignore SSL errors by default. Fix trust at the OS level with mkcert.
@@ -207,10 +204,10 @@ Print Bridge does **not** ignore SSL errors by default. Fix trust at the OS leve
 For quick tests without HTTPS, you can still use:
 
 ```
-http://bahce-tadi.wasla.local:5200
+http://bahce-tadi.app.wasla.local:5200
 ```
 
-Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Print Bridge can use the same HTTP BaseUrl locally. HTTPS is recommended when testing Print Bridge SSL behavior before production.
+Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Print Bridge can use the same HTTP server URL locally. HTTPS is recommended when testing Print Bridge SSL behavior before production.
 
 ---
 
@@ -219,8 +216,10 @@ Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Prin
 | Symptom | Likely cause |
 |--------|----------------|
 | Browser cert warning (`NET::ERR_CERT_COMMON_NAME_INVALID`) | Still using legacy `orderhub-local.pfx`, `mkcert -install` not run, wrong PFX path, or Web not restarted after regenerating cert |
-| Print Bridge SSL error | mkcert CA not trusted, wrong BaseUrl, or hosts entry missing |
-| Kestrel cannot load PFX | Script not run, or path wrong when using custom output folder |
+| Certificate warning or Print Bridge `RemoteCertificateNameMismatch` only on `{slug}.app.wasla.local` | Certificate generated before WAS-66 covers `*.wasla.local` but not `*.app.wasla.local`; regenerate and restart Web |
+| Print Bridge SSL error | mkcert CA not trusted, wrong server URL, or hosts entry missing |
+| Kestrel cannot load PFX | Script not run, or `Kestrel__Certificates__Default__Path` / `__Password` wrong |
+| Which certificate is Web serving? | Check `Kestrel__Certificates__Default__Path` in the user and machine environment; Kestrel uses that file, not `.certs/` by itself |
 | Login loop on HTTP | See auth cookie Development settings in `Program.cs` |
 
 Regenerate certificates by re-running `.\scripts\dev\setup-local-https.ps1`.

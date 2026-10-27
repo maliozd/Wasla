@@ -53,7 +53,7 @@ Quick start:
 Configuration:
 - Settings are saved under C:\ProgramData\Wasla\PrintBridge\appsettings.json
 - Do not share appsettings.json if it contains a device token.
-- BaseUrl and device token are entered in the app Settings UI, not in this package.
+- The server URL and device token are entered in the app's connection dialog, not in this package.
 
 Requirements:
 - Windows 10 or later
