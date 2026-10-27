@@ -27,10 +27,12 @@ public sealed class LiveScreenRealtimeBrowserTests
     private static readonly TimeSpan Push = TimeSpan.FromSeconds(5);
     private static Guid Tenant => TenantVisualWebHost.TenantId;
 
-    // Counts snapshot reads and SignalR connections built, before any page script runs.
+    // Counts snapshot reads, the snapshots shown and SignalR connections built, before any page script runs.
     private const string Instrumentation = """
         window.__liveDataReads = 0;
+        window.__liveRendered = 0;
         window.__connectionsBuilt = 0;
+        document.addEventListener('wasla:live-rendered', function () { window.__liveRendered++; });
         (function () {
           const fetch = window.fetch;
           window.fetch = function (input) {
@@ -246,14 +248,27 @@ public sealed class LiveScreenRealtimeBrowserTests
     // The header's active count as a number (en-US digits).
     private const string WaitingCount = "Number(document.getElementById('ordersLiveDisplayActiveCount').textContent.replace(/[^0-9]/g, ''))";
 
-    [Fact]
-    public async Task EndingTrainingOnTheLiveScreen_AnnouncesARealOrderThatArrivedJustBefore_WithoutReplayingTheBacklog()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EndingTrainingOnTheLiveScreen_AnnouncesARealOrderThatArrivedJustBefore_WithoutReplayingTheBacklog(bool slowSettings)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var host = await StartHostAsync(tenantInSetup: true);
+        // The store's own first read waits for the notification settings. When they are slow it comes after the read the
+        // live connection makes on connecting, so the first snapshot shown is not yet the page's last read (as on CI).
+        var settings = slowSettings ? host.HoldNextRequest("GET", "/notification-settings/current") : null;
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct, waitForCards: false, AnnouncementLog);
         Assert.True(await browser.WaitForAsync($"{WaitingCount} >= 3", TimeSpan.FromSeconds(10), ct),
             $"The training Live Screen did not render its first snapshot. {host.ServerErrors}");
+        if (settings is not null)
+        {
+            await settings.Reached.WaitAsync(TimeSpan.FromSeconds(10), ct);
+            settings.Release();
+        }
+
+        Assert.True(await browser.WaitForAsync(OpeningReadsShown, TimeSpan.FromSeconds(10), ct),
+            $"The training Live Screen's opening reads did not finish. {host.ServerErrors}");
         var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
 
         // A real order is stored (and not announced live) after this page's last read: only the next page can see it.
@@ -263,8 +278,10 @@ public sealed class LiveScreenRealtimeBrowserTests
         // The Owner ends training from the Live Screen (the End dialog's confirmed form); the server opens the normal
         // Live Screen, whose first snapshot holds the whole backlog and the new order.
         await browser.EvaluateAsync<bool>("(window.__leftTraining = true)", ct);
-        await browser.EvaluateAsync<bool>("(document.querySelector('#waslaGuidedSetupEndDialog form[action=\"/guided-setup/end\"]').requestSubmit(), true)", ct);
+        await browser.EvaluateAsync<bool>($"({EndForm}.requestSubmit(), true)", ct);
         await browser.WaitForNavigationAsync("__leftTraining", ct);
+        // Nothing was read on the training page between storing the order and handing its known orders over.
+        Assert.Equal(reads, await browser.EvaluateAsync<int>("Number(sessionStorage.getItem('__readsAtSubmit'))", ct));
         Assert.True(await browser.WaitForAsync(CardShown(orderId), TimeSpan.FromSeconds(10), ct),
             $"The normal Live Screen did not show the order after training ended. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync("JSON.parse(sessionStorage.getItem('__announced') || '[]').length >= 1", Push, ct),
@@ -277,13 +294,107 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.Equal("Active Orders", await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveLabel').textContent.trim()", ct));
     }
 
-    // Records, across page loads in this tab, each order the Live Screen announced and each notification attempt.
+    [Fact]
+    public async Task EndingTraining_ARealOrderThatArrivesWhileThePageIsBeingReplaced_IsAnnouncedOnceByTheNormalLiveScreen()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await StartHostAsync(tenantInSetup: true);
+        await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct, waitForCards: false, AnnouncementLog);
+        Assert.True(await browser.WaitForAsync(OpeningReadsShown, TimeSpan.FromSeconds(10), ct),
+            $"The training Live Screen's opening reads did not finish. {host.ServerErrors}");
+
+        // The Owner confirms End. The training page hands its known orders over on submit and runs on until the normal
+        // Live Screen replaces it, while the server ends training and a real order arrives. DevTools does not reach a page
+        // whose own navigation is under way, so the browser's navigation is held back once every page listener has seen
+        // the submit, training is ended with the End form's own POST, and the page then leaves through the form.
+        await browser.EvaluateAsync<bool>(HoldBackNextNavigation, ct);
+        await browser.EvaluateAsync<bool>("(window.__leftTraining = true)", ct);
+        await browser.EvaluateAsync<bool>($"({EndForm}.requestSubmit(), true)", ct);
+        Assert.Equal("opaqueredirect", await browser.EvaluateAsync<string>(
+            $"fetch({EndForm}.action, {{ method: 'POST', body: new FormData({EndForm}), redirect: 'manual' }}).then(r => r.type)", ct));
+
+        // The new order is announced as ingestion does after its commit. The training page still receives it and asks its
+        // store for a read, which would now get the normal snapshot with the order in it.
+        var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        var asked = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
+        var orderId = await InsertNewOrderAsync(host, "RT-TRAINING-GAP", ct);
+        await AnnounceAsync(host, orderId, ct);
+        Assert.True(await browser.WaitForAsync(
+                $"window.WaslaOrders.liveInvalidation.stats().reads > {asked} && window.__liveRendered === window.__liveDataReads", Push, ct),
+            $"The training page did not handle the new order's notification. {host.ServerErrors}");
+        var readsWhileLeaving = await browser.EvaluateAsync<int>("window.__liveDataReads", ct) - reads;
+
+        await browser.EvaluateAsync<bool>($"({EndForm}.submit(), true)", ct);
+        await browser.WaitForNavigationAsync("__leftTraining", ct);
+        Assert.True(await browser.WaitForAsync(OpeningReadsShown, TimeSpan.FromSeconds(10), ct),
+            $"The normal Live Screen's opening reads did not finish. {host.ServerErrors}");
+        Assert.True(await browser.EvaluateAsync<bool>(CardShown(orderId), ct), $"The normal Live Screen does not show the order. {host.ServerErrors}");
+        Assert.True(await browser.WaitForAsync("Number(sessionStorage.getItem('__notified') || 0) >= 1", Push, ct),
+            "The real order that arrived while training ended was never announced.");
+
+        // Once, by the normal Live Screen, and the backlog is not announced as new: the page being replaced read and
+        // announced nothing after it handed its known orders over.
+        Assert.Equal($"[\"{orderId}\"]", await browser.EvaluateAsync<string>("sessionStorage.getItem('__announced')", ct));
+        Assert.Equal(1, await browser.EvaluateAsync<int>("Number(sessionStorage.getItem('__notified') || 0)", ct));
+        Assert.Equal(0, readsWhileLeaving);
+        Assert.Equal("Active Orders", await browser.EvaluateAsync<string>("document.getElementById('ordersLiveDisplayActiveLabel').textContent.trim()", ct));
+    }
+
+    [Fact]
+    public async Task ATrainingPageThatHandedOver_AndComesBackFromTheBackForwardCache_FollowsRealOrdersAgain()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await StartHostAsync(tenantInSetup: true);
+        await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct, waitForCards: false, AnnouncementLog);
+        Assert.True(await browser.WaitForAsync(OpeningReadsShown, TimeSpan.FromSeconds(10), ct),
+            $"The training Live Screen's opening reads did not finish. {host.ServerErrors}");
+        var waiting = await browser.EvaluateAsync<int>(WaitingCount, ct);
+
+        // End is submitted and the page hands its known orders over (its navigation held back as above). The Owner then
+        // returns to it: the page is hidden and shown again from the back/forward cache, as in the tests above.
+        await browser.EvaluateAsync<bool>(HoldBackNextNavigation, ct);
+        await browser.EvaluateAsync<bool>($"({EndForm}.requestSubmit(), true)", ct);
+        Assert.True(await browser.EvaluateAsync<bool>("!!sessionStorage.getItem('Wasla.liveScreen.knownOrderHandoff')", ct),
+            "The training page did not hand its known orders over.");
+        var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        await browser.EvaluateAsync<bool>("(window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })), true)", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'disconnected'", Push, ct));
+        await browser.EvaluateAsync<bool>("(window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })), true)", ct);
+        Assert.True(await browser.WaitForAsync($"window.__liveDataReads > {reads} && window.__liveRendered === window.__liveDataReads", Push, ct),
+            $"The restored page did not read its snapshot. {host.ServerErrors}");
+        Assert.True(await browser.WaitForAsync("window.WaslaRealtime.get().state() === 'connected'", Push, ct));
+
+        // It is this tab's Live Screen again: a real order that arrives now is counted and announced once.
+        var orderId = await InsertNewOrderAsync(host, "RT-TRAINING-RESTORED", ct);
+        await AnnounceAsync(host, orderId, ct);
+        Assert.True(await browser.WaitForAsync($"{WaitingCount} === {waiting + 1}", Push, ct), "The restored page did not count the new real order.");
+        Assert.True(await browser.WaitForAsync("Number(sessionStorage.getItem('__notified') || 0) === 1", Push, ct),
+            "The restored page did not announce the new real order.");
+    }
+
+    // The End dialog's confirmed form on the Live Screen.
+    private const string EndForm = "document.querySelector('#waslaGuidedSetupEndDialog form[action=\"/guided-setup/end\"]')";
+
+    // Cancels the next form submission once every page listener has seen it (on window, last), so the page stays: the
+    // Live Screen store, listening on the document, still takes it for the page leaving.
+    private const string HoldBackNextNavigation = "(window.addEventListener('submit', function (event) { event.preventDefault(); }, { once: true }), true)";
+
+    // Both opening reads of a Live Screen page have been shown and none is under way: the read its live connection makes
+    // on connecting and the store's own first read, which waits for the notification settings, in either order. Needs
+    // AnnouncementLog.
+    private const string OpeningReadsShown = "window.__storeStarted === true && window.__liveRendered === window.__liveDataReads";
+
+    // Records, across page loads in this tab, each order the Live Screen announced, each notification attempt and the
+    // reads a page had started when a form was submitted; marks when the store's own first read was asked for.
     private const string AnnouncementLog = """
         document.addEventListener('wasla:real-order-arrived', function (event) {
           const log = JSON.parse(sessionStorage.getItem('__announced') || '[]');
           log.push(event.detail.orderId);
           sessionStorage.setItem('__announced', JSON.stringify(log));
         });
+        window.addEventListener('submit', function () {
+          sessionStorage.setItem('__readsAtSubmit', String(window.__liveDataReads));
+        }, true);
         (function () {
           let orders;
           Object.defineProperty(window, 'WaslaOrders', {
@@ -301,6 +412,19 @@ public sealed class LiveScreenRealtimeBrowserTests
                   next.showBrowserNotificationIfAllowed = function () {
                     sessionStorage.setItem('__notified', String(Number(sessionStorage.getItem('__notified') || 0) + 1));
                     return show && show.apply(this, arguments);
+                  };
+                }
+              });
+              let store;
+              Object.defineProperty(value, 'liveStore', {
+                configurable: true,
+                get: function () { return store; },
+                set: function (next) {
+                  store = next;
+                  const start = next.start;
+                  next.start = function () {
+                    window.__storeStarted = true;
+                    return start.apply(this, arguments);
                   };
                 }
               });
