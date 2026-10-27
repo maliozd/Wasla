@@ -61,6 +61,12 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
     public TenantDbContext Open(string instance = "Inspector") =>
         new(new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(ConnectionString(instance)).Options);
 
+    /// <summary>
+    /// Command timeout for creating and migrating the throwaway database. Several SQL Server test classes set up their
+    /// databases at the same time on one LocalDB, and on a busy CI runner that outlasted the 30-second default.
+    /// </summary>
+    private static readonly TimeSpan SetupCommandTimeout = TimeSpan.FromMinutes(3);
+
     public async ValueTask InitializeAsync()
     {
         await using (var master = new SqlConnection(MasterConnectionString()))
@@ -68,10 +74,12 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
             await master.OpenAsync();
             await using var create = master.CreateCommand();
             create.CommandText = $"CREATE DATABASE [{DatabaseName}];";
+            create.CommandTimeout = (int)SetupCommandTimeout.TotalSeconds;
             await create.ExecuteNonQueryAsync();
         }
 
         await using var db = Open("Setup");
+        db.Database.SetCommandTimeout(SetupCommandTimeout);
         await db.Database.MigrateAsync();
     }
 

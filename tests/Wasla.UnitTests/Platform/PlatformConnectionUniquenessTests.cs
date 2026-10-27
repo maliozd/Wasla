@@ -167,6 +167,39 @@ public sealed class PlatformConnectionUniquenessTests : IAsyncLifetime
         Assert.Null(row.ExecutorEmail);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task EditThatBlanksTheStoreId_IsRejectedWithoutMutation(string storeId)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var created = await _service.CreateAsync(_tenantId, Command(FoodPlatform.TrendyolYemek, "ty"), ct);
+
+        var updated = await _service.UpdateAsync(
+            _tenantId,
+            created.Id!.Value,
+            new UpdatePlatformConnectionCommand(
+                FoodPlatform.TrendyolYemek,
+                storeId,
+                false,
+                99,
+                "supplier",
+                "exec@example.com",
+                "new-key",
+                "new-secret"),
+            ct);
+
+        Assert.False(updated.Succeeded);
+        Assert.Equal("Validation", updated.ErrorCode);
+        Assert.Equal("Validation.StoreIdRequired", updated.ErrorMessage);
+        await using var db = CreateContext();
+        var row = await db.PlatformConnections.SingleAsync(ct);
+        Assert.Equal("ty", row.StoreId);
+        Assert.True(row.IsActive);
+        Assert.Equal("api-key", row.EncryptedApiKey);
+        Assert.Null(row.SupplierId);
+    }
+
     [Fact]
     public async Task InactiveConnection_StillBlocksAnotherRow_ForSameOrDifferentStoreId()
     {

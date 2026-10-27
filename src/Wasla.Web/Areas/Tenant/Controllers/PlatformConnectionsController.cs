@@ -121,7 +121,7 @@ public sealed class PlatformConnectionsController : BaseController
             }
             else if (string.Equals(result.ErrorCode, "Validation", StringComparison.Ordinal) && result.ErrorMessage is not null)
             {
-                // A resource key from the service's credential check; it names the problem, never the value.
+                // A resource key from the service's validation (store id, credentials); it names the problem, never the value.
                 ModelState.AddModelError(string.Empty, _localizer[result.ErrorMessage].Value);
             }
             else

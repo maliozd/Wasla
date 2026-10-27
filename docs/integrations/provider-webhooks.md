@@ -93,7 +93,7 @@ Neither provider gives those guarantees:
 
 **Decision:**
 
-1. One idempotent shared ingestion path for webhooks and polling (WAS-18). Its internal part can start now, with polling as its only caller.
+1. One idempotent shared ingestion path for webhooks and polling (WAS-18). Its first internal part is in place, with polling as its only caller ([../orders/synchronization.md](../orders/synchronization.md#shared-ingestion-was-18)).
 2. A durable webhook inbox (WAS-19).
 3. Polling stays as reconciliation (WAS-21).
 4. No external webhook endpoint and no central routing schema until a tenant discriminator is confirmed ([Tenant routing](#tenant-routing)).
