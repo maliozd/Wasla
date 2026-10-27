@@ -13,4 +13,8 @@ public sealed class MarketingController : Controller
 {
     [HttpGet(PublicSiteUrls.PosPath)]
     public IActionResult Pos() => View();
+
+    /// <summary>The privacy notice (KVKK Aydınlatma Metni) the contact form links to.</summary>
+    [HttpGet(PublicSiteUrls.PrivacyNoticePath)]
+    public IActionResult PrivacyNotice() => View();
 }

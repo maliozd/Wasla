@@ -1,0 +1,89 @@
+@model Wasla.Web.Areas.Admin.Models.AdminContactMessageListViewModel
+@using System.Globalization
+@using Wasla.Domain.Enums
+@{
+    ViewData["Title"] = L["Admin.ContactMessages.Title"].Value;
+
+    string StatusBadge(ContactMessageNotificationStatus s) => s switch
+    {
+        ContactMessageNotificationStatus.Sent => "text-bg-success",
+        ContactMessageNotificationStatus.Failed => "text-bg-danger",
+        ContactMessageNotificationStatus.NotConfigured => "text-bg-warning",
+        _ => "text-bg-secondary"
+    };
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 mb-1">@L["Admin.ContactMessages.Title"]</h1>
+        <p class="text-muted small mb-0">@L["Admin.ContactMessages.Subtitle"]</p>
+    </div>
+    <span class="text-muted small" data-contact-total="@Model.TotalCount">@L["Admin.ContactMessages.Total", Model.TotalCount]</span>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        @if (!Model.Items.Any())
+        {
+            <div class="text-center text-muted py-5 px-3">
+                <i class="bi bi-envelope-open fs-1 d-block mb-2 opacity-50" aria-hidden="true"></i>
+                <div class="fw-semibold">@L["Admin.ContactMessages.Empty"]</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>@L["Admin.ContactMessages.Received"]</th>
+                        <th>@L["Admin.ContactMessages.Sender"]</th>
+                        <th>@L["Admin.ContactMessages.Restaurant"]</th>
+                        <th>@L["Admin.ContactMessages.Topic"]</th>
+                        <th>@L["Admin.ContactMessages.EmailNotification"]</th>
+                        <th class="text-end">@L["Admin.Actions"]</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var m in Model.Items)
+                    {
+                        <tr>
+                            <td class="small text-muted text-nowrap"><time datetime="@m.CreatedAtUtc.ToString("O", CultureInfo.InvariantCulture)">@m.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</time></td>
+                            <td class="fw-medium">@m.FullName</td>
+                            <td class="small">@m.RestaurantName</td>
+                            <td class="small">@L[$"Contact.Topic.{m.Topic}"]</td>
+                            <td><span class="badge @StatusBadge(m.NotificationStatus)">@L[$"Admin.ContactMessages.Status.{m.NotificationStatus}"]</span></td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" href="/admin/contact-messages/@m.Id">@L["Admin.Details"]</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="d-flex align-items-center justify-content-between gap-2 mt-3" aria-label="@L["Admin.ContactMessages.Pagination"]">
+        @if (Model.Page > 1)
+        {
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page - 1)" rel="prev">@L["Admin.ContactMessages.Previous"]</a>
+        }
+        else
+        {
+            <span></span>
+        }
+        <span class="small text-muted">@L["Admin.ContactMessages.PageOf", Model.Page, Model.TotalPages]</span>
+        @if (Model.Page < Model.TotalPages)
+        {
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page + 1)" rel="next">@L["Admin.ContactMessages.Next"]</a>
+        }
+        else
+        {
+            <span></span>
+        }
+    </nav>
+}

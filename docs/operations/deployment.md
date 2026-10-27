@@ -254,6 +254,7 @@ Wasla__TenantOnboarding__ApplicationBaseDomain # Web and Api, required outside D
 Wasla__TenantOnboarding__SqlAuth
 Wasla__ApiBaseUrl
 Wasla__TenantWebBaseUrl                      # optional, Print Bridge ServerUrl behind a proxy
+Wasla__Contact__RecipientEmail               # Web, required: where contact form messages are e-mailed (committed: mehmetaliozdemir@wasla.tr); sent only when the Email section's Provider is Smtp
 TrustedProxies__KnownProxies__0              # Web and API behind a reverse proxy
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md

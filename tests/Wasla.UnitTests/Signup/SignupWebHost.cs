@@ -119,9 +119,14 @@ internal sealed class SignupWebHost : IAsyncDisposable
         // from one loopback address, so the limits are raised unless a test passes its own; SignupRateLimitTests covers them.
         builder.Configuration["AuthenticationRateLimiting:SignupSubmission:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:ContactSubmission:PermitLimit"] = "1000";
+        // The public contact page Program.cs registers; Email:Provider defaults to Log, so nothing is sent.
+        builder.Configuration["Wasla:Contact:RecipientEmail"] = "contact-inbox@wasla.test";
         if (configuration is not null)
             builder.Configuration.AddInMemoryCollection(configuration);
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
+        services.AddWaslaEmail(builder.Configuration);
+        services.AddWaslaContactMessages(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
         services.AddWaslaHealthChecks();
         configureServices?.Invoke(services);

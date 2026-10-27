@@ -153,7 +153,7 @@ Restore a tenant database (services stopped; as the SQL administrator): `RESTORE
 ## Known gaps
 
 - Off-site backups and a restore drill (WAS-79).
-- `Email:Provider` is `Log`: no email is sent (welcome, password reset) until SMTP credentials are configured.
+- `Email:Provider` is `Log`: no email is sent (welcome, password reset, contact form notifications) until SMTP credentials are configured. Contact form messages are still stored in CentralDb and listed in Central Admin (`/admin/contact-messages`), marked as not notified.
 - Payment and billing are not implemented, so public signup stays closed; tenants are added with the CLI.
 - One certificate names each tenant host (no wildcard yet).
 - Worker has no health endpoint; its state is in the journal and its log files.

@@ -3883,92 +3883,96 @@
   <data name="Marketing.SkipToContent" xml:space="preserve"><value>انتقل إلى المحتوى</value></data>
   <data name="Marketing.ComingSoon" xml:space="preserve"><value>قريبًا</value></data>
   <data name="Marketing.ConceptUi" xml:space="preserve"><value>واجهة تصورية: Wasla POS غير متاح بعد.</value></data>
+  <data name="Marketing.ConceptUiLabel" xml:space="preserve"><value>واجهة تصورية</value></data>
   <data name="Marketing.Nav.Label" xml:space="preserve"><value>القائمة الرئيسية</value></data>
   <data name="Marketing.Nav.OpenMenu" xml:space="preserve"><value>فتح القائمة</value></data>
   <data name="Marketing.Nav.CloseMenu" xml:space="preserve"><value>إغلاق القائمة</value></data>
+  <data name="Marketing.Nav.HowItWorks" xml:space="preserve"><value>كيف يعمل</value></data>
   <data name="Marketing.Nav.Products" xml:space="preserve"><value>المنتجات</value></data>
+  <data name="Marketing.PhotoCredit" xml:space="preserve"><value>صورة: {0} / Pexels</value></data>
+  <data name="Marketing.Platform.MigrosYemek" xml:space="preserve"><value>Migros Yemek</value></data>
   <data name="Marketing.Nav.Integrations" xml:space="preserve"><value>التكاملات</value></data>
   <data name="Marketing.Nav.Login" xml:space="preserve"><value>تسجيل الدخول</value></data>
   <data name="Marketing.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
-  <data name="Marketing.Product.OrdersShort" xml:space="preserve"><value>الطلبات عبر الإنترنت</value></data>
   <data name="Marketing.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
   <data name="Marketing.Product.PosShort" xml:space="preserve"><value>المبيعات داخل المطعم</value></data>
   <data name="Marketing.Product.PrintBridge" xml:space="preserve"><value>Wasla Print Bridge</value></data>
-  <data name="Marketing.Product.Family" xml:space="preserve"><value>عائلة منتجات Wasla</value></data>
   <data name="Marketing.Cta.Start" xml:space="preserve"><value>ابدأ الآن</value></data>
-  <data name="Marketing.Cta.ExploreProducts" xml:space="preserve"><value>اكتشف المنتجات</value></data>
+  <data name="Marketing.Cta.StartWithOrders" xml:space="preserve"><value>ابدأ مع Wasla Orders</value></data>
   <data name="Marketing.Cta.ExploreOrders" xml:space="preserve"><value>اكتشف Wasla Orders</value></data>
   <data name="Marketing.Cta.ExplorePos" xml:space="preserve"><value>اكتشف Wasla POS</value></data>
   <data name="Marketing.Cta.ExplorePosFeatures" xml:space="preserve"><value>اكتشف ميزات نقطة البيع</value></data>
-  <data name="Marketing.Cta.ViewPlans" xml:space="preserve"><value>عرض الخطط</value></data>
   <data name="Marketing.Cta.FollowInstagram" xml:space="preserve"><value>تابع آخر الأخبار على Instagram</value></data>
+  <data name="Marketing.Cta.SeeHowItWorks" xml:space="preserve"><value>شاهد كيف يعمل</value></data>
   <data name="Marketing.Cta.ContactInstagram" xml:space="preserve"><value>تواصل معنا عبر Instagram</value></data>
+  <data name="Marketing.Cta.ContactUs" xml:space="preserve"><value>تواصل معنا</value></data>
   <data name="Marketing.Footer.Tagline" xml:space="preserve"><value>برامج لإدارة الطلبات عبر الإنترنت والمبيعات داخل المطعم للمطاعم.</value></data>
-  <data name="Marketing.Footer.GetStarted" xml:space="preserve"><value>البدء</value></data>
+  <data name="Marketing.Footer.WriteOnInstagram" xml:space="preserve"><value>راسلنا على Instagram</value></data>
   <data name="Marketing.Footer.Contact" xml:space="preserve"><value>تواصل معنا</value></data>
-  <data name="Marketing.Footer.InstagramLabel" xml:space="preserve"><value>Instagram: {0}</value></data>
   <data name="Marketing.Footer.Copyright" xml:space="preserve"><value>© {0} Wasla. جميع الحقوق محفوظة.</value></data>
+  <data name="Marketing.Footer.DeliveryRestaurants" xml:space="preserve"><value>مطاعم التوصيل</value></data>
+  <data name="Marketing.Footer.Help" xml:space="preserve"><value>المساعدة والموارد</value></data>
+  <data name="Marketing.Footer.KitchenReceipts" xml:space="preserve"><value>إيصالات المطبخ والطباعة</value></data>
+  <data name="Marketing.Footer.LiveScreen" xml:space="preserve"><value>الشاشة المباشرة</value></data>
+  <data name="Marketing.Footer.MadeFor" xml:space="preserve"><value>يُطوَّر للمطاعم في تركيا.</value></data>
+  <data name="Marketing.Footer.OnlineOrderManagement" xml:space="preserve"><value>إدارة الطلبات عبر الإنترنت</value></data>
+  <data name="Marketing.Footer.PrintBridgeSetup" xml:space="preserve"><value>إعداد Print Bridge</value></data>
+  <data name="Marketing.Footer.Solutions" xml:space="preserve"><value>الحلول</value></data>
   <data name="Marketing.Home.MetaTitle" xml:space="preserve"><value>Wasla — برامج الطلبات عبر الإنترنت والمبيعات للمطاعم</value></data>
-  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>أدر طلبات المنصات عبر الإنترنت على شاشة واحدة مع Wasla Orders، مع الشاشة المباشرة والطباعة التلقائية للإيصالات. Wasla POS للمبيعات داخل المطعم قريبًا.</value></data>
-  <data name="Marketing.Home.HeroTitle" xml:space="preserve"><value>عمليات مطعمك بالكامل في مكان واحد:</value></data>
+  <data name="Marketing.Home.PlatformsLead" xml:space="preserve"><value>تجتمع الطلبات القادمة من منصات الطلب عبر الإنترنت في تدفّق واحد داخل Wasla Orders. تُظهر كل بطاقة المنصة التي جاء منها الطلب، وتُدار الموافقة والتحضير والتسليم من الشاشة نفسها.</value></data>
+  <data name="Marketing.Home.PlatformsNote" xml:space="preserve"><value>يربط كل مطعم متجرًا واحدًا على كل منصة.</value></data>
+  <data name="Marketing.Home.PlatformsTitleLine1" xml:space="preserve"><value>منصات مختلفة.</value></data>
+  <data name="Marketing.Home.PlatformsTitleLine2" xml:space="preserve"><value>وشاشة واحدة.</value></data>
+  <data name="Marketing.Home.PosCapability1" xml:space="preserve"><value>إدارة الطاولات والحسابات المفتوحة</value></data>
+  <data name="Marketing.Home.PosCapability2" xml:space="preserve"><value>بيع سريع باللمس</value></data>
+  <data name="Marketing.Home.PosCapability3" xml:space="preserve"><value>تدفق المطبخ وإيصالات المطبخ</value></data>
+  <data name="Marketing.Home.PosCapability4" xml:space="preserve"><value>الطلب من قائمة QR</value></data>
+  <data name="Marketing.Home.PosCapability5" xml:space="preserve"><value>استمرار البيع عند انقطاع الإنترنت</value></data>
+  <data name="Marketing.Home.PosLead" xml:space="preserve"><value>Wasla POS هو نظام نقاط البيع اللمسي الذي نطوّره لمبيعات الطاولات والتوصيل والاستلام والكاونتر. صُمّم ليعمل محليًا على أجهزة مطعمك حتى يستمر البيع عند انقطاع الإنترنت.</value></data>
+  <data name="Marketing.Home.PosTitle" xml:space="preserve"><value>منتج مستقل للمبيعات داخل الصالة.</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature1" xml:space="preserve"><value>يعمل مع الطابعة المثبتة في Windows</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature2" xml:space="preserve"><value>تُفعَّل الإيصالات التلقائية أو تُعطَّل من الإعدادات</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature3" xml:space="preserve"><value>يمكن إعادة طباعة الإيصال يدويًا عند الحاجة</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature4" xml:space="preserve"><value>تظهر حالة الطباعة في اللوحة</value></data>
+  <data name="Marketing.Home.PrintBridgeLead" xml:space="preserve"><value>Wasla Print Bridge تطبيق صغير يُثبَّت على حاسوب Windows في المطبخ. يضع إيصال الطلب الذي توافق عليه في قائمة الانتظار ويرسله إلى طابعتك، وتتابع حالة الطباعة من لوحة Wasla.</value></data>
+  <data name="Marketing.Home.PrintBridgeScreenshotAlt" xml:space="preserve"><value>شاشة النظرة العامة في تطبيق Wasla Print Bridge: الاتصال بالخادم متاح، والطابعة POS-80 جاهزة، وآخر مهمة طباعة #1042 تمت طباعتها.</value></data>
+  <data name="Marketing.Home.PrintBridgeTitle" xml:space="preserve"><value>يُرسَل الطلب المقبول إلى طابعة المطبخ تلقائيًا.</value></data>
+  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>اجمع طلبات المنصات عبر الإنترنت على شاشة واحدة مع Wasla Orders وتابعها. يُرسَل الطلب الذي توافق عليه تلقائيًا إلى طابعة المطبخ عبر Wasla Print Bridge.</value></data>
   <data name="Marketing.Home.HeroTitleAccent" xml:space="preserve"><value>Wasla.</value></data>
-  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>أدر طلبات المنصات عبر الإنترنت اليوم مع Wasla Orders، وWasla POS للمبيعات داخل المطعم قادم قريبًا. خدمة أكثر تنظيمًا وتشغيل أسرع وعائلة منتجات واحدة.</value></data>
-  <data name="Marketing.Home.ProductsTitle" xml:space="preserve"><value>منتجان، وعملية مطعم واحدة.</value></data>
-  <data name="Marketing.Home.ProductsLead" xml:space="preserve"><value>Wasla Orders للطلبات عبر الإنترنت، وWasla POS للمبيعات داخل المطعم. علامة واحدة ولغة تصميم واحدة وفريق دعم واحد.</value></data>
-  <data name="Marketing.Home.OrdersTagline" xml:space="preserve"><value>مركز إدارة طلباتك عبر الإنترنت.</value></data>
-  <data name="Marketing.Home.OrdersFeature1" xml:space="preserve"><value>طلبات المنصات</value></data>
-  <data name="Marketing.Home.OrdersFeature2" xml:space="preserve"><value>الشاشة المباشرة</value></data>
-  <data name="Marketing.Home.OrdersFeature3" xml:space="preserve"><value>طباعة الإيصالات تلقائيًا</value></data>
-  <data name="Marketing.Home.OrdersFeature4" xml:space="preserve"><value>سجل الطلبات</value></data>
+  <data name="Marketing.Home.HeroTitleLine1" xml:space="preserve"><value>وصل الطلب.</value></data>
+  <data name="Marketing.Home.HeroTitleLine2" xml:space="preserve"><value>والباقي على</value></data>
+  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>اجمع طلبات المنصات عبر الإنترنت على شاشة واحدة وتابع حالاتها. يُرسَل كل طلب توافق عليه إلى طابعة المطبخ تلقائيًا.</value></data>
   <data name="Marketing.Home.IntegrationsNote" xml:space="preserve"><value>يتم تفعيل تكاملات Yemeksepeti وTrendyol GO وGetirYemek تدريجيًا؛ ليست كل اتصالات المنصات مفعّلة بعد.</value></data>
-  <data name="Marketing.Home.PosTagline" xml:space="preserve"><value>نقطة بيع سريعة وحديثة للمبيعات داخل المطعم.</value></data>
-  <data name="Marketing.Home.PosFeature1" xml:space="preserve"><value>طلبات الطاولات والطلبات الخارجية</value></data>
-  <data name="Marketing.Home.PosFeature2" xml:space="preserve"><value>استخدام باللمس</value></data>
-  <data name="Marketing.Home.PosFeature3" xml:space="preserve"><value>القائمة وسير الدفع</value></data>
-  <data name="Marketing.Home.PosFeature4" xml:space="preserve"><value>العمليات داخل المطعم</value></data>
-  <data name="Marketing.Home.ChannelsTitle" xml:space="preserve"><value>تصلك الطلبات عبر قناتين.</value></data>
-  <data name="Marketing.Home.ChannelsLead" xml:space="preserve"><value>تتجمع طلبات المنصات عبر الإنترنت في Wasla Orders، وWasla POS لمبيعات الطاولات والكاونتر قادم قريبًا. صُمّم كلاهما ليعملا للمطبخ نفسه.</value></data>
+  <data name="Marketing.Home.LiveCaption" xml:space="preserve"><value>تصوير مبسّط للمنتج · طلبات نموذجية</value></data>
+  <data name="Marketing.Home.LiveEyebrow" xml:space="preserve"><value>Wasla Orders · الشاشة المباشرة</value></data>
+  <data name="Marketing.Home.LiveFeature1Text" xml:space="preserve"><value>ثلاثة عروض تناسب طريقة عمل فريقك.</value></data>
+  <data name="Marketing.Home.LiveFeature1Title" xml:space="preserve"><value>اللوحة والقائمة والتركيز</value></data>
+  <data name="Marketing.Home.LiveFeature2Text" xml:space="preserve"><value>صوت وتمييز وإشعار اختياري في المتصفح.</value></data>
+  <data name="Marketing.Home.LiveFeature2Title" xml:space="preserve"><value>تنبيه الطلب الجديد</value></data>
+  <data name="Marketing.Home.LiveFeature3Text" xml:space="preserve"><value>ابحث حسب المنصة والحالة والتاريخ.</value></data>
+  <data name="Marketing.Home.LiveFeature3Title" xml:space="preserve"><value>سجل الطلبات</value></data>
+  <data name="Marketing.Home.LiveFeature4Text" xml:space="preserve"><value>أنت تحدد من يرى ماذا ومن يغيّر ماذا.</value></data>
+  <data name="Marketing.Home.LiveFeature4Title" xml:space="preserve"><value>المستخدمون والأدوار</value></data>
+  <data name="Marketing.Home.LiveFeature5Text" xml:space="preserve"><value>واجهة بالتركية والإنجليزية والعربية والروسية.</value></data>
+  <data name="Marketing.Home.LiveFeature5Title" xml:space="preserve"><value>أربع لغات</value></data>
+  <data name="Marketing.Home.LiveLead" xml:space="preserve"><value>صُمّمت الشاشة المباشرة لتُقرأ من بعيد في ساعات الذروة: أرقام طلبات كبيرة وألوان للحالات وإجراء بلمسة واحدة. بدّل بين عروض اللوحة والقائمة والتركيز.</value></data>
+  <data name="Marketing.Home.LiveTitle" xml:space="preserve"><value>شاشة واحدة للمطبخ والكاونتر.</value></data>
   <data name="Marketing.Home.ChannelOnlineTitle" xml:space="preserve"><value>المنصات عبر الإنترنت</value></data>
-  <data name="Marketing.Home.ChannelOnlineDesc" xml:space="preserve"><value>طلبات التوصيل</value></data>
-  <data name="Marketing.Home.ChannelOnlineFoot" xml:space="preserve"><value>تُجمع في Wasla Orders</value></data>
-  <data name="Marketing.Home.ChannelInStoreTitle" xml:space="preserve"><value>المبيعات داخل المطعم</value></data>
-  <data name="Marketing.Home.ChannelInStoreDesc" xml:space="preserve"><value>الطاولات والطلبات الخارجية والاستلام والكاونتر</value></data>
-  <data name="Marketing.Home.ChannelInStoreFoot" xml:space="preserve"><value>تُستلم في Wasla POS</value></data>
-  <data name="Marketing.Home.SameKitchen" xml:space="preserve"><value>المطبخ نفسه</value></data>
   <data name="Marketing.Home.ReceiptAndPrinter" xml:space="preserve"><value>الإيصالات والطابعة</value></data>
-  <data name="Marketing.Home.RoutesTitle" xml:space="preserve"><value>أي منتج يناسبك؟</value></data>
-  <data name="Marketing.Home.RoutesLead" xml:space="preserve"><value>ابدأ بما تحتاجه؛ يمكن لعائلة المنتجات أن تنمو مع مطعمك.</value></data>
-  <data name="Marketing.Home.RouteOrdersNeed" xml:space="preserve"><value>أريد إدارة طلبات المنصات عبر الإنترنت فقط.</value></data>
-  <data name="Marketing.Home.RouteOrdersDetail" xml:space="preserve"><value>مصمم لجمع طلبات Yemeksepeti وTrendyol GO وGetirYemek على شاشة واحدة.</value></data>
-  <data name="Marketing.Home.RoutePosNeed" xml:space="preserve"><value>أريد المبيعات داخل المطعم وإدارة الطاولات.</value></data>
-  <data name="Marketing.Home.RoutePosDetail" xml:space="preserve"><value>نقطة بيع باللمس لمبيعات الطاولات والطلبات الخارجية والاستلام والكاونتر؛ قريبًا.</value></data>
-  <data name="Marketing.Home.RouteBothNeed" xml:space="preserve"><value>أريد تطوير العمليتين معًا.</value></data>
-  <data name="Marketing.Home.RouteBothDetail" xml:space="preserve"><value>ابدأ اليوم مع Wasla Orders، وتابع مع عائلة المنتجات نفسها عندما يصبح Wasla POS جاهزًا.</value></data>
-  <data name="Marketing.Home.ValuesTitle" xml:space="preserve"><value>النهج المشترك بين المنتجين.</value></data>
-  <data name="Marketing.Home.ValuesLead" xml:space="preserve"><value>تُصمَّم منتجات Wasla وفق المبادئ نفسها.</value></data>
-  <data name="Marketing.Home.ValueOperationTitle" xml:space="preserve"><value>تصميم يناسب عمليات المطعم</value></data>
-  <data name="Marketing.Home.ValueOperationText" xml:space="preserve"><value>تُصمَّم الشاشات للمطبخ والكاشير والخدمة: تُقرأ من بعيد وتُستخدم بسرعة في أوقات الذروة.</value></data>
-  <data name="Marketing.Home.ValueLearnTitle" xml:space="preserve"><value>واجهة سهلة التعلم</value></data>
-  <data name="Marketing.Home.ValueLearnText" xml:space="preserve"><value>شاشات بسيطة ليتمكن عضو الفريق الجديد من إنجاز المهام الأساسية في أول وردية.</value></data>
-  <data name="Marketing.Home.ValueLocalTitle" xml:space="preserve"><value>التركيز على الاحتياجات المحلية</value></data>
-  <data name="Marketing.Home.ValueLocalText" xml:space="preserve"><value>منصات الطلب في تركيا والتوصيل والاستخدام باللغة التركية تأتي أولًا.</value></data>
-  <data name="Marketing.Home.ValueSupportTitle" xml:space="preserve"><value>الإعداد والدعم</value></data>
-  <data name="Marketing.Home.ValueSupportText" xml:space="preserve"><value>نقوم بالإعداد معًا ونبقى إلى جانبك أثناء الاستخدام.</value></data>
-  <data name="Marketing.Home.ValueFamilyTitle" xml:space="preserve"><value>عائلة منتجات قابلة للنمو</value></data>
-  <data name="Marketing.Home.ValueFamilyText" xml:space="preserve"><value>تتطور Wasla لتصبح عائلة منتجات تمتد من الطلبات عبر الإنترنت إلى المبيعات داخل المطعم.</value></data>
-  <data name="Marketing.Home.TrustTitle" xml:space="preserve"><value>مطوَّر لمطاعم تركيا.</value></data>
-  <data name="Marketing.Home.TrustLead" xml:space="preserve"><value>سنشارك آراء العملاء والأرقام عندما تتوفر بيانات حقيقية. ما يمكننا قوله اليوم:</value></data>
-  <data name="Marketing.Home.TrustRestaurantsTitle" xml:space="preserve"><value>لعمليات المطاعم في تركيا</value></data>
-  <data name="Marketing.Home.TrustRestaurantsText" xml:space="preserve"><value>مصمم مع مراعاة مطبخ التوصيل والكاشير وخدمة الطاولات.</value></data>
-  <data name="Marketing.Home.TrustPlatformsTitle" xml:space="preserve"><value>التركيز على منصات الطلب المحلية</value></data>
-  <data name="Marketing.Home.TrustPlatformsText" xml:space="preserve"><value>نعمل على اتصالات Yemeksepeti وTrendyol GO وGetirYemek؛ ويتم تفعيل التكاملات تدريجيًا.</value></data>
-  <data name="Marketing.Home.TrustTurkishTitle" xml:space="preserve"><value>منتج ودعم باللغة التركية</value></data>
-  <data name="Marketing.Home.TrustTurkishText" xml:space="preserve"><value>الواجهة والدعم باللغة التركية، وفريقنا معك أثناء الإعداد.</value></data>
-  <data name="Marketing.Home.TrustPrintBridgeText" xml:space="preserve"><value>يرسل تطبيق مساعد مثبّت على حاسوب Windows الإيصالات إلى طابعتك.</value></data>
-  <data name="Marketing.Home.TrustLanguagesTitle" xml:space="preserve"><value>متعدد اللغات</value></data>
-  <data name="Marketing.Home.TrustLanguagesText" xml:space="preserve"><value>يجري تطوير دعم الواجهة باللغات التركية والإنجليزية والعربية والروسية.</value></data>
+  <data name="Marketing.Home.SimplifiedVisualization" xml:space="preserve"><value>تصوير مبسّط للمنتج</value></data>
+  <data name="Marketing.Home.Step1Text" xml:space="preserve"><value>يصل الطلب من المنصة المرتبطة إلى Wasla Orders. على الشاشة المباشرة ينبّه الصوت والتمييز الفريقَ حتى لا يفوته.</value></data>
+  <data name="Marketing.Home.Step1Title" xml:space="preserve"><value>يصل الطلب</value></data>
+  <data name="Marketing.Home.Step2Text" xml:space="preserve"><value>وافق على الطلب أو ارفضه بلمسة واحدة. تابع حالات جديد وقيد التحضير وجاهز وفي الطريق من الشاشة نفسها. ويمكن الموافقة تلقائيًا على الطلبات المؤهلة إن رغبت.</value></data>
+  <data name="Marketing.Home.Step2Title" xml:space="preserve"><value>وافق وتابِع</value></data>
+  <data name="Marketing.Home.Step3Text" xml:space="preserve"><value>يُرسَل إيصال الطلب المقبول إلى طابعة المطبخ عبر Wasla Print Bridge على حاسوبك الذي يعمل بنظام Windows. ويمكنك إعادة طباعته بنقرة واحدة عند الحاجة.</value></data>
+  <data name="Marketing.Home.Step3Title" xml:space="preserve"><value>يصل إلى المطبخ</value></data>
+  <data name="Marketing.Home.StepsLead" xml:space="preserve"><value>نُعدّ معك ربط المنصات وتثبيت Print Bridge والشاشة المباشرة. بعدها يبقى التدفق نفسه وبسيطًا في كل وردية.</value></data>
+  <data name="Marketing.Home.StepsTitle" xml:space="preserve"><value>من الطلب إلى المطبخ في ثلاث خطوات.</value></data>
   <data name="Marketing.Home.FinalTitle" xml:space="preserve"><value>اكتشف منتج Wasla المناسب لمطعمك.</value></data>
-  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders جاهز اليوم للطلبات عبر الإنترنت، وWasla POS للمبيعات داخل المطعم قريبًا.</value></data>
+  <data name="Marketing.Home.FlowStepKitchen" xml:space="preserve"><value>المطبخ</value></data>
+  <data name="Marketing.Home.FlowStepPlatforms" xml:space="preserve"><value>منصات الطلب</value></data>
+  <data name="Marketing.Home.HeroEyebrow" xml:space="preserve"><value>Wasla Orders · إدارة الطلبات عبر الإنترنت</value></data>
+  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders للطلبات عبر الإنترنت، وWasla POS للمبيعات داخل المطعم.</value></data>
   <data name="Marketing.Pos.MetaTitle" xml:space="preserve"><value>Wasla POS (قريبًا) — المبيعات داخل المطعم | Wasla</value></data>
   <data name="Marketing.Pos.MetaDescription" xml:space="preserve"><value>Wasla POS نقطة بيع باللمس للمطاعم قيد التطوير لمبيعات الطاولات والطلبات الخارجية والاستلام والكاونتر. لا يتوفر للبيع بعد.</value></data>
   <data name="Marketing.Pos.HeroTitle" xml:space="preserve"><value>من الطاولة إلى الكاشير، مبيعاتك داخل المطعم</value></data>
@@ -3995,6 +3999,37 @@
   <data name="Marketing.Pos.TablesPoint3" xml:space="preserve"><value>إضافة طلبات إلى الطاولة</value></data>
   <data name="Marketing.Pos.TablesPoint4" xml:space="preserve"><value>سير الحساب والدفع</value></data>
   <data name="Marketing.Pos.TouchTitle" xml:space="preserve"><value>طلب سريع باللمس.</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyHeading" xml:space="preserve"><value>تقديم الطلب</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyTextAfter" xml:space="preserve"><value>. ويُبتّ في طلبك مجانًا خلال 30 يومًا على الأكثر بحسب طبيعته.</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyTextBefore" xml:space="preserve"><value>يمكنك إرسال طلباتك المتعلقة بهذه الحقوق عبر البريد الإلكتروني إلى</value></data>
+  <data name="Marketing.PrivacyNotice.ControllerHeading" xml:space="preserve"><value>1. المسؤول عن البيانات</value></data>
+  <data name="Marketing.PrivacyNotice.ControllerText" xml:space="preserve"><value>تعالج Wasla بياناتك الشخصية بصفتها المسؤول عن البيانات.</value></data>
+  <data name="Marketing.PrivacyNotice.DataHeading" xml:space="preserve"><value>2. ما البيانات الشخصية التي نعالجها؟</value></data>
+  <data name="Marketing.PrivacyNotice.DataText" xml:space="preserve"><value>الاسم الكامل واسم المطعم والبريد الإلكتروني ورقم الهاتف (إن كتبته) والموضوع الذي اخترته ومحتوى رسالتك، التي تشاركها في نموذج التواصل.</value></data>
+  <data name="Marketing.PrivacyNotice.Eyebrow" xml:space="preserve"><value>قانوني</value></data>
+  <data name="Marketing.PrivacyNotice.Intro" xml:space="preserve"><value>أُعدّ هذا الإشعار وفقًا للمادة 10 من القانون رقم 6698 لحماية البيانات الشخصية (“KVKK”) لشرح كيفية معالجة البيانات الشخصية التي تشاركها معنا عبر نموذج التواصل في wasla.tr.</value></data>
+  <data name="Marketing.PrivacyNotice.LegalBasisHeading" xml:space="preserve"><value>4. طريقة الجمع والأساس القانوني</value></data>
+  <data name="Marketing.PrivacyNotice.LegalBasisText" xml:space="preserve"><value>تُجمع بياناتك إلكترونيًا عبر نموذج التواصل على wasla.tr. وتُعالَج استنادًا إلى الأسس القانونية في الفقرة 2 من المادة 5 من KVKK: ارتباطها المباشر بإبرام عقد أو تنفيذه (البند c)، والمصلحة المشروعة للمسؤول عن البيانات بشرط عدم الإضرار بحقوقك وحرياتك الأساسية (البند f).</value></data>
+  <data name="Marketing.PrivacyNotice.MetaDescription" xml:space="preserve"><value>كيف تعالج Wasla البيانات الشخصية التي تشاركها عبر نموذج التواصل، وفق قانون حماية البيانات الشخصية التركي (KVKK).</value></data>
+  <data name="Marketing.PrivacyNotice.MetaTitle" xml:space="preserve"><value>إشعار الخصوصية — Wasla</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose1" xml:space="preserve"><value>لاستلام طلب التواصل والرد عليه والعودة إليك</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose2" xml:space="preserve"><value>لتقديم المعلومات التي طلبتها عن Wasla Orders وWasla POS وPrint Bridge</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose3" xml:space="preserve"><value>للاحتفاظ بسجل المراسلات المتعلقة بطلبك</value></data>
+  <data name="Marketing.PrivacyNotice.PurposesHeading" xml:space="preserve"><value>3. لأي أغراض نعالج بياناتك؟</value></data>
+  <data name="Marketing.PrivacyNotice.RetentionHeading" xml:space="preserve"><value>6. كم من الوقت نحتفظ بها؟</value></data>
+  <data name="Marketing.PrivacyNotice.RetentionText" xml:space="preserve"><value>تُحفَظ بياناتك طوال المدة اللازمة للرد على طلبك والمدد التي تفرضها التشريعات ذات الصلة، ثم تُحذف أو تُتلف أو تُجعل مجهولة الهوية بانتهاء هذه المدد.</value></data>
+  <data name="Marketing.PrivacyNotice.Right1" xml:space="preserve"><value>معرفة ما إذا كانت بياناتك الشخصية تُعالَج، وطلب المعلومات عنها إن كانت كذلك</value></data>
+  <data name="Marketing.PrivacyNotice.Right2" xml:space="preserve"><value>معرفة غرض المعالجة وما إذا كانت البيانات تُستخدم وفقًا له</value></data>
+  <data name="Marketing.PrivacyNotice.Right3" xml:space="preserve"><value>معرفة الأطراف الثالثة داخل تركيا أو خارجها التي نُقلت إليها البيانات</value></data>
+  <data name="Marketing.PrivacyNotice.Right4" xml:space="preserve"><value>طلب تصحيح البيانات الناقصة أو غير الصحيحة، وحذفها أو إتلافها وفق الشروط الواردة في المادة 7 من KVKK، وإبلاغ الأطراف الثالثة التي نُقلت إليها البيانات بهذه الإجراءات</value></data>
+  <data name="Marketing.PrivacyNotice.Right5" xml:space="preserve"><value>الاعتراض على أي نتيجة ضدك ناتجة حصريًا عن التحليل بالأنظمة الآلية</value></data>
+  <data name="Marketing.PrivacyNotice.Right6" xml:space="preserve"><value>المطالبة بالتعويض إذا لحق بك ضرر بسبب المعالجة غير القانونية</value></data>
+  <data name="Marketing.PrivacyNotice.RightsHeading" xml:space="preserve"><value>7. حقوقك بموجب المادة 11 من KVKK</value></data>
+  <data name="Marketing.PrivacyNotice.Subtitle" xml:space="preserve"><value>حول البيانات الشخصية التي تشاركها عبر نموذج التواصل</value></data>
+  <data name="Marketing.PrivacyNotice.Title" xml:space="preserve"><value>إشعار الخصوصية</value></data>
+  <data name="Marketing.PrivacyNotice.TransfersHeading" xml:space="preserve"><value>5. لمن ننقل بياناتك؟</value></data>
+  <data name="Marketing.PrivacyNotice.TransfersText" xml:space="preserve"><value>قد تُشارَك بياناتك، بالقدر اللازم للرد على طلبك، مع مزوّدين نستخدم خدماتهم مثل البريد الإلكتروني والاستضافة. وإذا كانت خوادم هؤلاء المزوّدين خارج تركيا فإن النقل يتم وفقًا للمادة 9 من KVKK. كما قد تُنقل إلى الجهات العامة المخوّلة قانونًا عند طلبها.</value></data>
+  <data name="Marketing.PrivacyNotice.Updated" xml:space="preserve"><value>آخر تحديث · {0}</value></data>
   <data name="Marketing.Pos.TouchLead" xml:space="preserve"><value>مساحات لمس كبيرة وفئات واضحة وخيارات على شاشة واحدة. حتى في الذروة يُستقبل الطلب ببضع لمسات.</value></data>
   <data name="Marketing.Pos.TouchPoint1" xml:space="preserve"><value>فئات القائمة</value></data>
   <data name="Marketing.Pos.TouchPoint2" xml:space="preserve"><value>خيارات الأصناف</value></data>
@@ -4032,21 +4067,34 @@
   <data name="Marketing.Mock.OneFamily" xml:space="preserve"><value>عائلة منتجات واحدة</value></data>
   <data name="Marketing.Mock.SameTeam" xml:space="preserve"><value>المطعم نفسه، الفريق نفسه</value></data>
   <data name="Marketing.Mock.KitchenTicketPrinted" xml:space="preserve"><value>تمت طباعة تذكرة المطبخ</value></data>
+  <data name="Marketing.Mock.LocalModeReady" xml:space="preserve"><value>الوضع المحلي جاهز</value></data>
   <data name="Marketing.Mock.TableAndTakeaway" xml:space="preserve"><value>طلبات الطاولات والخارجية</value></data>
   <data name="Marketing.Mock.Hall" xml:space="preserve"><value>الصالة</value></data>
   <data name="Marketing.Mock.Garden" xml:space="preserve"><value>الحديقة</value></data>
   <data name="Marketing.Mock.Terrace" xml:space="preserve"><value>التراس</value></data>
+  <data name="Marketing.Mock.TodayUpdated" xml:space="preserve"><value>اليوم {0} · آخر تحديث {1}</value></data>
+  <data name="Marketing.Mock.WithCourier" xml:space="preserve"><value>مع المندوب</value></data>
   <data name="Marketing.Mock.Table" xml:space="preserve"><value>طاولة {0}</value></data>
   <data name="Marketing.Mock.Guests" xml:space="preserve"><value>{0} أشخاص</value></data>
   <data name="Marketing.Mock.GuestsMinutes" xml:space="preserve"><value>{0} أشخاص · {1} د</value></data>
+  <data name="Marketing.Mock.GuestsSelected" xml:space="preserve"><value>{0} أشخاص · محددة</value></data>
   <data name="Marketing.Mock.TableFree" xml:space="preserve"><value>فارغة</value></data>
   <data name="Marketing.Mock.TableOccupied" xml:space="preserve"><value>مشغولة</value></data>
   <data name="Marketing.Mock.TableBill" xml:space="preserve"><value>طُلب الحساب</value></data>
   <data name="Marketing.Mock.TableSelected" xml:space="preserve"><value>محددة</value></data>
   <data name="Marketing.Mock.TakePayment" xml:space="preserve"><value>استلام الدفع</value></data>
+  <data name="Marketing.Mock.Takeaway" xml:space="preserve"><value>توصيل</value></data>
   <data name="Marketing.Mock.OrderItems" xml:space="preserve"><value>2× لفافة أضنة، 1× عيران</value></data>
+  <data name="Marketing.Mock.OrderNumber" xml:space="preserve"><value>طلب {0}</value></data>
+  <data name="Marketing.Mock.OrderSummary" xml:space="preserve"><value>{0} · {1} أصناف · {2}</value></data>
   <data name="Marketing.Mock.Approve" xml:space="preserve"><value>قبول</value></data>
+  <data name="Marketing.Mock.Approved" xml:space="preserve"><value>تمت الموافقة</value></data>
+  <data name="Marketing.Mock.AreaGarden" xml:space="preserve"><value>الحديقة</value></data>
+  <data name="Marketing.Mock.AreaHall" xml:space="preserve"><value>الصالة</value></data>
+  <data name="Marketing.Mock.AreaQuickSale" xml:space="preserve"><value>بيع سريع</value></data>
+  <data name="Marketing.Mock.AreaTakeaway" xml:space="preserve"><value>توصيل</value></data>
   <data name="Marketing.Mock.ReceiptPlatform" xml:space="preserve"><value>YEMEKSEPETI · توصيل</value></data>
+  <data name="Marketing.Mock.ReceiptSentToPrinter" xml:space="preserve"><value>أُرسل الإيصال إلى الطابعة</value></data>
   <data name="Marketing.Mock.ItemAdana" xml:space="preserve"><value>كباب أضنة</value></data>
   <data name="Marketing.Mock.ItemUrfa" xml:space="preserve"><value>كباب أورفا</value></data>
   <data name="Marketing.Mock.ItemIskender" xml:space="preserve"><value>إسكندر</value></data>
@@ -4063,6 +4111,7 @@
   <data name="Marketing.Mock.ItemLavash" xml:space="preserve"><value>خبز لواش</value></data>
   <data name="Marketing.Mock.ItemKunefe" xml:space="preserve"><value>كنافة</value></data>
   <data name="Marketing.Mock.NewOrderAmount" xml:space="preserve"><value>طلب جديد · {0}</value></data>
+  <data name="Marketing.Mock.NewOrderCode" xml:space="preserve"><value>طلب جديد · {0}</value></data>
   <data name="Marketing.Mock.PhoneTakeaway" xml:space="preserve"><value>طلب خارجي ‎#P-031 · هاتف</value></data>
   <data name="Marketing.Mock.PickupAt" xml:space="preserve"><value>استلام · 19:30</value></data>
   <data name="Marketing.Mock.QuickSaleCounter" xml:space="preserve"><value>بيع سريع · الكاونتر</value></data>
@@ -4080,20 +4129,28 @@
   <data name="Marketing.Mock.Open" xml:space="preserve"><value>مفتوح</value></data>
   <data name="Marketing.Mock.NotSpicy" xml:space="preserve"><value>غير حار</value></data>
   <data name="Marketing.Mock.MildSpicy" xml:space="preserve"><value>حار قليلًا</value></data>
+  <data name="Marketing.Mock.MinutesAgo" xml:space="preserve"><value>{0} د</value></data>
+  <data name="Marketing.Mock.NewOrder" xml:space="preserve"><value>طلب جديد</value></data>
   <data name="Marketing.Mock.Spicy" xml:space="preserve"><value>حار</value></data>
-  <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>إلى المطبخ</value></data>
+  <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>أرسل إلى المطبخ</value></data>
+  <data name="Marketing.Mock.SentToKitchenPrinter" xml:space="preserve"><value>أُرسل إلى طابعة المطبخ</value></data>
   <data name="Marketing.Mock.TakeawayOrder" xml:space="preserve"><value>طلب خارجي ‎#P-031</value></data>
   <data name="Marketing.Mock.PreparingMinutes" xml:space="preserve"><value>قيد التحضير · {0} د</value></data>
   <data name="Marketing.Mock.PaidByCard" xml:space="preserve"><value>تم الدفع بالبطاقة</value></data>
   <data name="Marketing.Mock.Customer" xml:space="preserve"><value>العميل</value></data>
+  <data name="Marketing.Mock.Details" xml:space="preserve"><value>التفاصيل</value></data>
   <data name="Marketing.Mock.Phone" xml:space="preserve"><value>الهاتف</value></data>
   <data name="Marketing.Mock.Address" xml:space="preserve"><value>العنوان</value></data>
   <data name="Marketing.Mock.TableTotal" xml:space="preserve"><value>إجمالي الطاولة</value></data>
   <data name="Marketing.Mock.Card" xml:space="preserve"><value>بطاقة</value></data>
   <data name="Marketing.Mock.ItemsAmount" xml:space="preserve"><value>{0} أصناف · {1}</value></data>
+  <data name="Marketing.Mock.KitchenPrinter" xml:space="preserve"><value>طابعة المطبخ</value></data>
   <data name="Marketing.Mock.MarkDelivered" xml:space="preserve"><value>وضع علامة تم التسليم</value></data>
   <data name="Marketing.Mock.AddOrder" xml:space="preserve"><value>إضافة طلب</value></data>
   <data name="Marketing.Mock.PrintBill" xml:space="preserve"><value>طباعة الحساب</value></data>
+  <data name="Marketing.Mock.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Marketing.Mock.PrintBridgeConnected" xml:space="preserve"><value>Wasla Print Bridge · متصل</value></data>
+  <data name="Marketing.Mock.Queued" xml:space="preserve"><value>في قائمة الانتظار</value></data>
   <data name="Marketing.Mock.Portion" xml:space="preserve"><value>الحصة</value></data>
   <data name="Marketing.Mock.PortionOne" xml:space="preserve"><value>حصة واحدة</value></data>
   <data name="Marketing.Mock.PortionOneHalf" xml:space="preserve"><value>1.5 حصة</value></data>
@@ -4114,7 +4171,9 @@
   <data name="Marketing.Mock.ColCategory" xml:space="preserve"><value>الفئة</value></data>
   <data name="Marketing.Mock.ColPrice" xml:space="preserve"><value>السعر</value></data>
   <data name="Marketing.Mock.ColStatus" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Marketing.Mock.ConnectedKitchenPc" xml:space="preserve"><value>متصل · حاسوب المطبخ</value></data>
   <data name="Marketing.Mock.Subtotal" xml:space="preserve"><value>المجموع الفرعي</value></data>
+  <data name="Marketing.Mock.SyncOn" xml:space="preserve"><value>المزامنة مفعّلة</value></data>
   <data name="Marketing.Mock.Service" xml:space="preserve"><value>رسوم الخدمة</value></data>
   <data name="Marketing.Mock.NotIncluded" xml:space="preserve"><value>غير مشمولة</value></data>
   <data name="Marketing.Mock.AmountDue" xml:space="preserve"><value>المبلغ المستحق</value></data>
@@ -4217,4 +4276,74 @@
   <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
     <value>+{0} أخرى</value>
   </data>
+  <data name="Marketing.Contact.MetaTitle" xml:space="preserve"><value>تواصل معنا | Wasla</value></data>
+  <data name="Marketing.Contact.MetaDescription" xml:space="preserve"><value>راسلنا بخصوص Wasla Orders أو Wasla POS أو الإعداد. املأ النموذج أو تواصل معنا عبر البريد الإلكتروني أو الهاتف أو Instagram.</value></data>
+  <data name="Marketing.Contact.Eyebrow" xml:space="preserve"><value>تواصل معنا</value></data>
+  <data name="Marketing.Contact.Title" xml:space="preserve"><value>لنتحدث عن مطعمك.</value></data>
+  <data name="Marketing.Contact.Lead" xml:space="preserve"><value>هل لديك سؤال عن Wasla Orders أو Wasla POS أو الإعداد؟ املأ النموذج، وسنقرأ رسالتك ونرد عليك عبر البريد الإلكتروني أو الهاتف.</value></data>
+  <data name="Marketing.Contact.ChannelsTitle" xml:space="preserve"><value>أو تواصل معنا مباشرة</value></data>
+  <data name="Marketing.Contact.ChannelEmail" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Marketing.Contact.ChannelPhone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Marketing.Contact.ChannelInstagram" xml:space="preserve"><value>Instagram</value></data>
+  <data name="Contact.Form.Title" xml:space="preserve"><value>أرسل رسالة</value></data>
+  <data name="Contact.Form.RequiredHint" xml:space="preserve"><value>الحقول المميزة بنجمة (*) مطلوبة.</value></data>
+  <data name="Contact.Form.FullName" xml:space="preserve"><value>الاسم الكامل *</value></data>
+  <data name="Contact.Form.FullNamePlaceholder" xml:space="preserve"><value>اسمك واسم عائلتك</value></data>
+  <data name="Contact.Form.RestaurantName" xml:space="preserve"><value>اسم المطعم *</value></data>
+  <data name="Contact.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>مثال: مطعم الشام</value></data>
+  <data name="Contact.Form.Email" xml:space="preserve"><value>البريد الإلكتروني *</value></data>
+  <data name="Contact.Form.EmailPlaceholder" xml:space="preserve"><value>name@yourrestaurant.com</value></data>
+  <data name="Contact.Form.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Contact.Form.PhonePlaceholder" xml:space="preserve"><value>5XX XXX XX XX</value></data>
+  <data name="Contact.Form.Topic" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Contact.Form.Message" xml:space="preserve"><value>الرسالة *</value></data>
+  <data name="Contact.Form.MessagePlaceholder" xml:space="preserve"><value>أخبرنا باختصار عن مطعمك وسؤالك.</value></data>
+  <data name="Contact.Form.Consent" xml:space="preserve"><value>قرأت {0} بشأن معالجة بياناتي الشخصية للرد على طلبي.</value></data>
+  <data name="Contact.Form.ConsentLink" xml:space="preserve"><value>إشعار الخصوصية</value></data>
+  <data name="Contact.Form.HoneypotLabel" xml:space="preserve"><value>اترك هذا الحقل فارغًا</value></data>
+  <data name="Contact.Form.Submit" xml:space="preserve"><value>إرسال الرسالة</value></data>
+  <data name="Contact.Topic.WaslaOrders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Contact.Topic.WaslaPos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Contact.Topic.PrintBridgeSetup" xml:space="preserve"><value>إعداد Print Bridge</value></data>
+  <data name="Contact.Topic.Pricing" xml:space="preserve"><value>الأسعار</value></data>
+  <data name="Contact.Topic.Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Contact.Sent.Title" xml:space="preserve"><value>وصلتنا رسالتك.</value></data>
+  <data name="Contact.Sent.Body" xml:space="preserve"><value>شكرًا لك. سنقرأ رسالتك ونرد عليك عبر البريد الإلكتروني أو الهاتف.</value></data>
+  <data name="Contact.Sent.Home" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
+  <data name="Contact.Failed.Title" xml:space="preserve"><value>تعذّر إرسال رسالتك.</value></data>
+  <data name="Contact.Failed.Body" xml:space="preserve"><value>تحقق من اتصالك وحاول مرة أخرى، أو راسلنا على {0}.</value></data>
+  <data name="Contact.TooManyAttempts" xml:space="preserve"><value>تم إرسال عدد كبير من الرسائل خلال وقت قصير. يُرجى المحاولة لاحقًا أو مراسلتنا على {0}.</value></data>
+  <data name="Validation.RestaurantNameRequired" xml:space="preserve"><value>اسم المطعم مطلوب.</value></data>
+  <data name="Validation.ContactMessageRequired" xml:space="preserve"><value>يُرجى كتابة رسالتك.</value></data>
+  <data name="Validation.ContactMessageTooLong" xml:space="preserve"><value>يمكن أن تتكون الرسالة من 2000 حرف كحد أقصى.</value></data>
+  <data name="Validation.TooLong" xml:space="preserve"><value>هذا الحقل طويل جدًا.</value></data>
+  <data name="Validation.ContactPhoneInvalid" xml:space="preserve"><value>أدخل رقم هاتف صالحًا، مثل 532 123 45 67.</value></data>
+  <data name="Validation.ContactTopicInvalid" xml:space="preserve"><value>اختر موضوعًا.</value></data>
+  <data name="Validation.PrivacyNoticeRequired" xml:space="preserve"><value>أكّد أنك قرأت إشعار الخصوصية قبل الإرسال.</value></data>
+  <data name="Admin.ContactMessages.Title" xml:space="preserve"><value>رسائل التواصل</value></data>
+  <data name="Admin.ContactMessages.Subtitle" xml:space="preserve"><value>الرسائل الواردة من نموذج التواصل في الموقع، الأحدث أولًا.</value></data>
+  <data name="Admin.ContactMessages.Total" xml:space="preserve"><value>{0} رسالة</value></data>
+  <data name="Admin.ContactMessages.Empty" xml:space="preserve"><value>لا توجد رسائل بعد.</value></data>
+  <data name="Admin.ContactMessages.Received" xml:space="preserve"><value>تاريخ الاستلام</value></data>
+  <data name="Admin.ContactMessages.Sender" xml:space="preserve"><value>المرسل</value></data>
+  <data name="Admin.ContactMessages.Restaurant" xml:space="preserve"><value>المطعم</value></data>
+  <data name="Admin.ContactMessages.Topic" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.ContactMessages.EmailNotification" xml:space="preserve"><value>إشعار البريد الإلكتروني</value></data>
+  <data name="Admin.ContactMessages.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.ContactMessages.Status.Sent" xml:space="preserve"><value>أُرسل</value></data>
+  <data name="Admin.ContactMessages.Status.Failed" xml:space="preserve"><value>فشل الإرسال</value></data>
+  <data name="Admin.ContactMessages.Status.NotConfigured" xml:space="preserve"><value>SMTP غير مُعدّ</value></data>
+  <data name="Admin.ContactMessages.DetailTitle" xml:space="preserve"><value>رسالة تواصل</value></data>
+  <data name="Admin.ContactMessages.Reply" xml:space="preserve"><value>الرد عبر البريد الإلكتروني</value></data>
+  <data name="Admin.ContactMessages.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.ContactMessages.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.ContactMessages.NoPhone" xml:space="preserve"><value>غير مذكور</value></data>
+  <data name="Admin.ContactMessages.Message" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Admin.ContactMessages.Culture" xml:space="preserve"><value>لغة الصفحة</value></data>
+  <data name="Admin.ContactMessages.Back" xml:space="preserve"><value>كل الرسائل</value></data>
+  <data name="Admin.ContactMessages.NotFound" xml:space="preserve"><value>لم يتم العثور على الرسالة.</value></data>
+  <data name="Admin.ContactMessages.Pagination" xml:space="preserve"><value>الصفحات</value></data>
+  <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
 </root>

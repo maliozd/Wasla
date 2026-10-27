@@ -42,7 +42,8 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         Assert.Equal(HttpStatusCode.OK, page.Status);
         Assert.Contains("<link rel=\"canonical\" href=\"http://wasla.tr/\" />", page.Body);
         var links = Links(page.Body);
-        Assert.Equal(2, links.Count(l => l == "http://app.wasla.tr/auth/login"));
+        // The header's navigation, the header's narrow-screen link next to the menu button, and the footer.
+        Assert.Equal(3, links.Count(l => l == "http://app.wasla.tr/auth/login"));
         Assert.DoesNotContain(links, l => l.Contains("/auth/login", StringComparison.Ordinal) && !l.StartsWith("http://app.wasla.tr/", StringComparison.Ordinal));
         Assert.Contains("/signup", links);
         Assert.Contains("/pos", links);

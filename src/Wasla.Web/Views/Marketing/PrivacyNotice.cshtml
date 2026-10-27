@@ -1,0 +1,62 @@
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.PrivacyNotice.MetaTitle"].Value,
+        L["Marketing.PrivacyNotice.MetaDescription"].Value,
+        PublicSiteUrls.PrivacyNoticePath);
+    var updated = new DateTime(2026, 10, 27).ToString("d MMMM yyyy", CultureInfo.CurrentCulture);
+
+    // KVKK article 10 notice for the contact form. A draft to be reviewed before it is final; the headings follow the
+    // items the law requires (controller, data, purposes, collection and legal basis, transfers, retention, rights).
+    var sections = new[]
+    {
+        (Heading: "Marketing.PrivacyNotice.ControllerHeading", Paragraph: "Marketing.PrivacyNotice.ControllerText", Bullets: Array.Empty<string>()),
+        (Heading: "Marketing.PrivacyNotice.DataHeading", Paragraph: "Marketing.PrivacyNotice.DataText", Bullets: Array.Empty<string>()),
+        (Heading: "Marketing.PrivacyNotice.PurposesHeading", Paragraph: (string?)null, Bullets: new[] { "Marketing.PrivacyNotice.Purpose1", "Marketing.PrivacyNotice.Purpose2", "Marketing.PrivacyNotice.Purpose3" }),
+        (Heading: "Marketing.PrivacyNotice.LegalBasisHeading", Paragraph: "Marketing.PrivacyNotice.LegalBasisText", Bullets: Array.Empty<string>()),
+        (Heading: "Marketing.PrivacyNotice.TransfersHeading", Paragraph: "Marketing.PrivacyNotice.TransfersText", Bullets: Array.Empty<string>()),
+        (Heading: "Marketing.PrivacyNotice.RetentionHeading", Paragraph: "Marketing.PrivacyNotice.RetentionText", Bullets: Array.Empty<string>()),
+        (Heading: "Marketing.PrivacyNotice.RightsHeading", Paragraph: (string?)null, Bullets: new[] { "Marketing.PrivacyNotice.Right1", "Marketing.PrivacyNotice.Right2", "Marketing.PrivacyNotice.Right3", "Marketing.PrivacyNotice.Right4", "Marketing.PrivacyNotice.Right5", "Marketing.PrivacyNotice.Right6" })
+    };
+}
+@* KVKK privacy notice for the contact form (Figma "Aydınlatma Metni", section 06). *@
+<article class="wm-legal" aria-labelledby="privacy-title">
+    <div class="wm-container wm-legal__container">
+        <header class="wm-legal__head">
+            <p class="wm-eyebrow wm-eyebrow--chip">@L["Marketing.PrivacyNotice.Eyebrow"]</p>
+            <h1 class="wm-display-l" id="privacy-title">@L["Marketing.PrivacyNotice.Title"]</h1>
+            <p class="wm-body-l">@L["Marketing.PrivacyNotice.Subtitle"]</p>
+            <p class="wm-mono-caption">@L["Marketing.PrivacyNotice.Updated", updated]</p>
+        </header>
+        <p class="wm-body-l wm-legal__intro">@L["Marketing.PrivacyNotice.Intro"]</p>
+        @for (var i = 0; i < sections.Length; i++)
+        {
+            var section = sections[i];
+            <section class="wm-legal__section" aria-labelledby="privacy-section-@(i + 1)">
+                <h2 class="wm-heading-m" id="privacy-section-@(i + 1)">@L[section.Heading]</h2>
+                @if (section.Paragraph is not null)
+                {
+                    <p class="wm-body-m">@L[section.Paragraph]</p>
+                }
+                @if (section.Bullets.Length > 0)
+                {
+                    <ul class="wm-legal__list">
+                        @foreach (var bullet in section.Bullets)
+                        {
+                            <li>@L[bullet]</li>
+                        }
+                    </ul>
+                }
+            </section>
+        }
+        <section class="wm-legal__apply" aria-labelledby="privacy-apply">
+            <h2 class="wm-heading-m" id="privacy-apply">@L["Marketing.PrivacyNotice.ApplyHeading"]</h2>
+            @* "After" starts with its own space or punctuation, so nothing is written between the address and it. *@
+            <p class="wm-body-m">@L["Marketing.PrivacyNotice.ApplyTextBefore"] <a href="mailto:@PublicSiteUrls.ContactEmail">@PublicSiteUrls.ContactEmail</a>@L["Marketing.PrivacyNotice.ApplyTextAfter"]</p>
+        </section>
+    </div>
+</article>

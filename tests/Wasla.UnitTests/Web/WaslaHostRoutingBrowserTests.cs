@@ -47,8 +47,9 @@ public sealed class WaslaHostRoutingBrowserTests : IAsyncLifetime
             })()
             """, ct);
         Assert.Equal(dir, header.GetProperty("dir").GetString());
+        // The header's navigation, the header's narrow-screen link next to the menu button, and the footer.
         Assert.Equal(
-            new[] { "http://app.wasla.local/auth/login", "http://app.wasla.local/auth/login" },
+            new[] { "http://app.wasla.local/auth/login", "http://app.wasla.local/auth/login", "http://app.wasla.local/auth/login" },
             header.GetProperty("hrefs").EnumerateArray().Select(h => h.GetString()).ToArray());
 
         // A real click on the header's sign-in link.

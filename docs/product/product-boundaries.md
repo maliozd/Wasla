@@ -21,7 +21,7 @@ Wasla POS is intended for in-restaurant workflows such as tables, dine-in and ta
 
 This description records the product boundary. It does not claim that these features are implemented in the current solution.
 
-The public `/pos` page (WAS-155) is marketing for this direction only: it presents Wasla POS as coming soon, labels its screens as concept interface and offers no purchase or sign-up for it. It adds no POS module or behaviour to this solution.
+The public `/pos` page (WAS-155) is marketing for this direction only: it presents Wasla POS as coming soon, labels its screens as concept interface and offers no purchase or sign-up for it. The homepage's Wasla POS section (refined direction, 2026-10-27) describes the product as being built, without a "coming soon" label, labels its screen as concept interface and links only to `/pos` and Instagram. Neither adds a POS module or behaviour to this solution.
 
 The MVP scope, POS roles and payment boundary are defined in [pos-mvp.md](pos-mvp.md). How POS is built is decided in [../architecture/pos-application-boundary.md](../architecture/pos-application-boundary.md): a local-first product installed at the restaurant (POS Edge with a local database, POS Terminals on the restaurant network, synchronization with the Wasla cloud), built as separate applications in this repository and never a screen of Wasla Orders. Selling does not depend on the internet. The first build steps are in [pos-first-slice.md](pos-first-slice.md). None of it is implemented yet.
 
