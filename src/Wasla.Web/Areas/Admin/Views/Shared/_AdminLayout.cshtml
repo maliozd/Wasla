@@ -18,6 +18,7 @@
     string AdminCustomers() => requestPath.StartsWith("/admin/customers", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPendingRegs() => requestPath.StartsWith("/admin/pending-registrations", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPlanPrices() => requestPath.StartsWith("/admin/billing/plan-prices", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    string AdminContactMessages() => requestPath.StartsWith("/admin/contact-messages", StringComparison.OrdinalIgnoreCase) ? "active" : "";
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" data-wasla-theme-scope="admin">
@@ -121,6 +122,11 @@
                     <li class="nav-item">
                         <a class="nav-link @AdminPlanPrices()" href="/admin/billing/plan-prices">
                             <i class="bi bi-tags me-2"></i>@L["Admin.PlanPrices.Title"]
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @AdminContactMessages()" href="/admin/contact-messages">
+                            <i class="bi bi-envelope me-2"></i>@L["Admin.ContactMessages.Title"]
                         </a>
                     </li>
                     <li class="nav-item">

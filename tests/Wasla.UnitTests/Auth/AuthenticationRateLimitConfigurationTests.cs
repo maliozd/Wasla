@@ -66,6 +66,9 @@ public sealed class AuthenticationRateLimitConfigurationTests
         Assert.Equal((10, TimeSpan.FromMinutes(5)), (options.ApiCredentialValidation.PermitLimit, options.ApiCredentialValidation.Window));
         Assert.Equal((10, TimeSpan.FromHours(1)), (options.SignupSubmission.PermitLimit, options.SignupSubmission.Window));
         Assert.Equal((20, TimeSpan.FromMinutes(10)), (options.SignupCheckout.PermitLimit, options.SignupCheckout.Window));
+        Assert.Equal((5, TimeSpan.FromHours(1)), (options.ContactSubmission.PermitLimit, options.ContactSubmission.Window));
+        Assert.Same(options.ContactSubmission, options.For(AuthenticationRateLimitPolicies.ContactSubmission));
+        Assert.False(AuthenticationRateLimitPolicies.IsTenantScoped(AuthenticationRateLimitPolicies.ContactSubmission));
     }
 
     [Fact]
@@ -93,6 +96,8 @@ public sealed class AuthenticationRateLimitConfigurationTests
     [InlineData("TenantLogin", "Window", "1.00:00:01")]
     [InlineData("SignupSubmission", "PermitLimit", "0")]
     [InlineData("SignupCheckout", "Window", "00:00:00")]
+    [InlineData("ContactSubmission", "PermitLimit", "0")]
+    [InlineData("ContactSubmission", "Window", "2.00:00:00")]
     public void InvalidLimits_FailValidation(string policy, string setting, string value)
     {
         var exception = Assert.Throws<OptionsValidationException>(() => Bind(new Dictionary<string, string?>

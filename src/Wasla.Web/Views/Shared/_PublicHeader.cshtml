@@ -1,66 +1,47 @@
 ﻿@model string
 @using Microsoft.Extensions.Localization
-@using Wasla.Web.Models.Marketing
 @using Microsoft.Extensions.Options
 @using Wasla.Infrastructure.Options
+@using Wasla.Web.Models.Marketing
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IOptions<TenantOnboardingOptions> Onboarding
 @inject IWebHostEnvironment Environment
 @{
-    var returnUrl = Model ?? "/";
     // Sign-in leaves the marketing host for the configured application entry (WAS-66).
     var loginUrl = TenantWelcomeUrlBuilder.BuildApplicationLoginUrl(Context.Request, Environment, Onboarding.Value.ApplicationBaseDomain);
-    var onPosPage = string.Equals(Context.Request.Path.Value, PublicSiteUrls.PosPath, StringComparison.OrdinalIgnoreCase);
+    // The homepage lays the header over its hero photo; every other public page keeps the solid header.
+    var overlay = ViewData[PublicLayoutViewData.HeaderOverlay] is true;
 }
-@* Public site header (WAS-155, Figma "Site header"). The products and language menus open on click or keyboard;
-   below 1100 px the navigation folds into a menu button. Signup and sign-in lead to the existing flows. *@
-<header class="wm-header">
-    <div class="wm-container wm-header__bar">
+@* Public site header (Figma "Wasla Landing — Refined Direction", Site header). The links lead to sections of the
+   homepage and to the existing sign-in and signup flows; below 1100 px the navigation folds into a menu button. *@
+<header class="wm-header@(overlay ? " wm-header--overlay" : string.Empty)">
+    <div class="wm-container wm-container--wide wm-header__bar">
         <a class="wm-header__brand" href="/">
             @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
         </a>
+        <nav class="wm-nav" id="wm-site-nav" aria-label="@L["Marketing.Nav.Label"]">
+            <ul class="wm-nav__list">
+                <li class="wm-nav__item"><a class="wm-nav__link" href="/#orders">@L["Marketing.Product.Orders"]</a></li>
+                <li class="wm-nav__item"><a class="wm-nav__link" href="/#pos">@L["Marketing.Product.Pos"]</a></li>
+                <li class="wm-nav__item"><a class="wm-nav__link" href="/#how-it-works">@L["Marketing.Nav.HowItWorks"]</a></li>
+                <li class="wm-nav__item"><a class="wm-nav__link" href="/#platforms">@L["Marketing.Nav.Integrations"]</a></li>
+                <li class="wm-nav__item"><a class="wm-nav__link" href="/#pricing">@L["Pricing.NavTitle"]</a></li>
+            </ul>
+            <div class="wm-nav__end">
+                <a class="wm-nav__link wm-nav__login" href="@loginUrl">@L["Marketing.Nav.Login"]</a>
+                <a class="wm-btn wm-btn--primary wm-btn--m" asp-controller="Signup" asp-action="Index">
+                    @L["Marketing.Cta.Start"]
+                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                </a>
+            </div>
+        </nav>
+        @* Below 1100 px sign-in stays next to the menu button (Figma mobile header); the copy inside the folded menu is hidden then. *@
+        <a class="wm-header__login" href="@loginUrl">@L["Marketing.Nav.Login"]</a>
         <button class="wm-menu-toggle" type="button" data-wm-menu-toggle aria-controls="wm-site-nav" aria-expanded="false"
                 aria-label="@L["Marketing.Nav.OpenMenu"]" data-label-open="@L["Marketing.Nav.OpenMenu"]" data-label-close="@L["Marketing.Nav.CloseMenu"]">
             <i class="bi bi-list" aria-hidden="true"></i>
             <i class="bi bi-x-lg" aria-hidden="true"></i>
         </button>
-        <nav class="wm-nav" id="wm-site-nav" aria-label="@L["Marketing.Nav.Label"]">
-            <ul class="wm-nav__list">
-                <li class="wm-nav__item">
-                    <button class="wm-nav__link@(onPosPage ? " wm-nav__link--active" : string.Empty)" type="button" data-wm-disclosure aria-expanded="false" aria-controls="wm-products-menu">
-                        @L["Marketing.Nav.Products"]
-                        <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <ul class="wm-nav__menu" id="wm-products-menu" hidden>
-                        <li>
-                            <a class="wm-menu-link" href="/#orders">
-                                <span class="wm-icon-tile wm-icon-tile--s" aria-hidden="true"><i class="bi bi-display"></i></span>
-                                <span class="wm-menu-link__text">
-                                    <span class="wm-menu-link__title">@L["Marketing.Product.Orders"]</span>
-                                    <span class="wm-menu-link__desc">@L["Marketing.Product.OrdersShort"]</span>
-                                </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="wm-menu-link" href="@PublicSiteUrls.PosPath" aria-current="@(onPosPage ? "page" : null)">
-                                <span class="wm-icon-tile wm-icon-tile--s wm-icon-tile--ink" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
-                                <span class="wm-menu-link__text">
-                                    <span class="wm-menu-link__title">@L["Marketing.Product.Pos"] <span class="wm-soon">@L["Marketing.ComingSoon"]</span></span>
-                                    <span class="wm-menu-link__desc">@L["Marketing.Product.PosShort"]</span>
-                                </span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="wm-nav__item"><a class="wm-nav__link" href="/#channels">@L["Marketing.Nav.Integrations"]</a></li>
-                <li class="wm-nav__item"><a class="wm-nav__link" href="/#pricing">@L["Pricing.NavTitle"]</a></li>
-            </ul>
-            <div class="wm-nav__end">
-                @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-header-languages", ShowLanguageName: false))
-                <a class="wm-nav__link" href="@loginUrl">@L["Marketing.Nav.Login"]</a>
-                <a class="wm-btn wm-btn--primary wm-btn--m" asp-controller="Signup" asp-action="Index">@L["Marketing.Cta.Start"]</a>
-            </div>
-        </nav>
     </div>
 </header>

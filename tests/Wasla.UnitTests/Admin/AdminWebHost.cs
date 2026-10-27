@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Billing;
+using Wasla.Application.Abstractions.Contact;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
@@ -128,6 +129,7 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddScoped<ICentralAdminTenantOperationsService, CentralAdminTenantOperationsService>();
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
         services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
+        services.AddScoped<ICentralAdminContactMessageService, CentralAdminContactMessageService>();
         // Provisioning itself is covered by PendingRegistrationProvisioningServiceTests; by default it is never invoked.
         services.AddSingleton(provisioning ?? new NoProvisioning());
         services.AddSingleton<ITenantDbContextFactory>(tenants);

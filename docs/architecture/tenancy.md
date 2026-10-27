@@ -57,6 +57,7 @@ Main `DbSet` entities:
 | `PendingRegistration` | Signup / payment / provisioning pipeline |
 | `BillingPlanPrice` / `BillingSubscription` / `BillingPayment` | Wasla plan prices, subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
 | `PrintBridgeDevice` / `PrintBridgeSetupSession` | Print Bridge device registry (central) |
+| `ContactMessage` | Messages from the public contact form (`/contact`) and whether the Wasla team was e-mailed; read by Central Admin at `/admin/contact-messages`. Not tenant data: the sender is a prospective customer, not a tenant user |
 | Address/catalog helpers | `BusinessType`, `Country`, `City`, `District`, `Neighborhood`, `Street`, and related pending-registration join |
 
 ### Tenant registry entity

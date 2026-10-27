@@ -1,0 +1,206 @@
+@model Wasla.Web.Models.Marketing.ContactFormViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Domain.Entities.Central
+@using Wasla.Domain.Enums
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.Contact.MetaTitle"].Value,
+        L["Marketing.Contact.MetaDescription"].Value,
+        PublicSiteUrls.ContactPath);
+
+    var modelState = ViewData.ModelState;
+    bool HasError(string field) => modelState.TryGetValue(field, out var entry) && entry.Errors.Count > 0;
+    string? Described(string field, string? hintId = null)
+    {
+        var ids = new[] { hintId, HasError(field) ? $"contact-{Kebab(field)}-error" : null }.Where(id => id is not null);
+        var value = string.Join(' ', ids);
+        return value.Length == 0 ? null : value;
+    }
+    string? Invalid(string field) => HasError(field) ? "true" : null;
+    static string Kebab(string field) => field switch
+    {
+        nameof(ContactFormViewModel.FullName) => "full-name",
+        nameof(ContactFormViewModel.RestaurantName) => "restaurant-name",
+        nameof(ContactFormViewModel.PrivacyNoticeAcknowledged) => "privacy",
+        _ => field.ToLowerInvariant()
+    };
+
+    var formErrors = modelState.TryGetValue(string.Empty, out var formEntry) ? formEntry.Errors.Select(e => e.ErrorMessage).ToList() : [];
+    var consent = L["Contact.Form.Consent"].Value.Split("{0}", 2);
+    var failedBody = L["Contact.Failed.Body"].Value.Split("{0}", 2);
+}
+@* Public contact page (Figma "İletişim sayfası"). The form stores a message in CentralDb and emails the Wasla team;
+   the direct channels are the published email address, phone number and Instagram account. *@
+
+<section class="wm-contact" aria-labelledby="contact-title">
+    <div class="wm-container wm-container--wide wm-contact__grid">
+        <div class="wm-contact__intro">
+            <p class="wm-eyebrow wm-eyebrow--chip">@L["Marketing.Contact.Eyebrow"]</p>
+            <h1 class="wm-display-l" id="contact-title">@L["Marketing.Contact.Title"]</h1>
+            <p class="wm-body-l">@L["Marketing.Contact.Lead"]</p>
+        </div>
+
+        <div class="wm-form-card">
+            @if (Model.Sent)
+            {
+                <div class="wm-form-success" id="contact-sent" role="status" data-contact-state="sent">
+                    <span class="wm-form-success__icon" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
+                    <h2 class="wm-form-card__title">@L["Contact.Sent.Title"]</h2>
+                    <p class="wm-body-m">@L["Contact.Sent.Body"]</p>
+                    <a class="wm-btn wm-btn--secondary" href="/">@L["Contact.Sent.Home"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></a>
+                </div>
+            }
+            else
+            {
+                <form class="wm-form-card__form" id="contact-form" method="post" action="@PublicSiteUrls.ContactPath" aria-labelledby="contact-form-title" data-contact-state="form" novalidate>
+                    @Html.AntiForgeryToken()
+                    <div class="wm-form-card__head">
+                        <h2 class="wm-form-card__title" id="contact-form-title">@L["Contact.Form.Title"]</h2>
+                        <p class="wm-body-s wm-text-muted" id="contact-required-hint">@L["Contact.Form.RequiredHint"]</p>
+                    </div>
+
+                    @if (Model.SendFailed)
+                    {
+                        <div class="wm-form-alert" id="contact-failed" role="alert" data-contact-state="failed">
+                            <p class="m-0"><strong class="wm-form-alert__title">@L["Contact.Failed.Title"]</strong>@failedBody[0]<a href="mailto:@PublicSiteUrls.ContactEmail">@PublicSiteUrls.ContactEmail</a>@(failedBody.Length > 1 ? failedBody[1] : string.Empty)</p>
+                        </div>
+                    }
+
+                    @if (formErrors.Count > 0)
+                    {
+                        <div class="wm-form-alert" id="contact-form-errors" role="alert">
+                            <div>
+                                @foreach (var error in formErrors)
+                                {
+                                    <p class="m-0">@error</p>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="wm-form-row wm-form-row--two">
+                        <div class="wm-form-field">
+                            <label class="wm-form-field__label" for="contact-full-name">@L["Contact.Form.FullName"]</label>
+                            <input class="wm-input" id="contact-full-name" name="FullName" type="text" value="@Model.FullName"
+                                   placeholder="@L["Contact.Form.FullNamePlaceholder"]" autocomplete="name" required
+                                   maxlength="@ContactMessageLimits.FullNameMaxLength" aria-invalid="@Invalid(nameof(Model.FullName))"
+                                   aria-describedby="@Described(nameof(Model.FullName))" />
+                            <span class="wm-form-field__error" id="contact-full-name-error" asp-validation-for="FullName"></span>
+                        </div>
+                        <div class="wm-form-field">
+                            <label class="wm-form-field__label" for="contact-restaurant-name">@L["Contact.Form.RestaurantName"]</label>
+                            <input class="wm-input" id="contact-restaurant-name" name="RestaurantName" type="text" value="@Model.RestaurantName"
+                                   placeholder="@L["Contact.Form.RestaurantNamePlaceholder"]" autocomplete="organization" required
+                                   maxlength="@ContactMessageLimits.RestaurantNameMaxLength" aria-invalid="@Invalid(nameof(Model.RestaurantName))"
+                                   aria-describedby="@Described(nameof(Model.RestaurantName))" />
+                            <span class="wm-form-field__error" id="contact-restaurant-name-error" asp-validation-for="RestaurantName"></span>
+                        </div>
+                    </div>
+
+                    <div class="wm-form-row wm-form-row--two">
+                        <div class="wm-form-field">
+                            <label class="wm-form-field__label" for="contact-email">@L["Contact.Form.Email"]</label>
+                            <input class="wm-input" id="contact-email" name="Email" type="email" value="@Model.Email" dir="ltr"
+                                   placeholder="@L["Contact.Form.EmailPlaceholder"]" autocomplete="email" required
+                                   maxlength="@ContactMessageLimits.EmailMaxLength" aria-invalid="@Invalid(nameof(Model.Email))"
+                                   aria-describedby="@Described(nameof(Model.Email))" />
+                            <span class="wm-form-field__error" id="contact-email-error" asp-validation-for="Email"></span>
+                        </div>
+                        <div class="wm-form-field">
+                            <label class="wm-form-field__label" for="contact-phone">@L["Contact.Form.Phone"]</label>
+                            <div class="wm-phone" dir="ltr">
+                                <span class="wm-phone__prefix" aria-hidden="true">+90</span>
+                                <input class="wm-input" id="contact-phone" name="Phone" type="tel" inputmode="tel" value="@Model.Phone"
+                                       placeholder="@L["Contact.Form.PhonePlaceholder"]" autocomplete="tel-national" maxlength="32"
+                                       aria-invalid="@Invalid(nameof(Model.Phone))" aria-describedby="@Described(nameof(Model.Phone))" />
+                            </div>
+                            <span class="wm-form-field__error" id="contact-phone-error" asp-validation-for="Phone"></span>
+                        </div>
+                    </div>
+
+                    <fieldset class="wm-topic" aria-describedby="@Described(nameof(Model.Topic))">
+                        <legend class="wm-topic__legend">@L["Contact.Form.Topic"]</legend>
+                        <div class="wm-topic__options">
+                            @foreach (var topic in ContactFormViewModel.Topics)
+                            {
+                                var id = $"contact-topic-{topic}";
+                                <span class="wm-topic__option">
+                                    <input type="radio" id="@id" name="Topic" value="@topic" checked="@(Model.Topic == topic)" />
+                                    <label class="wm-topic__chip" for="@id"><i class="bi bi-check2" aria-hidden="true"></i>@L[$"Contact.Topic.{topic}"]</label>
+                                </span>
+                            }
+                        </div>
+                        <span class="wm-form-field__error" id="contact-topic-error" asp-validation-for="Topic"></span>
+                    </fieldset>
+
+                    <div class="wm-form-field">
+                        <label class="wm-form-field__label" for="contact-message">@L["Contact.Form.Message"]</label>
+                        <textarea class="wm-textarea" id="contact-message" name="Message" rows="5" required
+                                  placeholder="@L["Contact.Form.MessagePlaceholder"]" maxlength="@ContactMessageLimits.MessageMaxLength"
+                                  aria-invalid="@Invalid(nameof(Model.Message))" aria-describedby="@Described(nameof(Model.Message))">@Model.Message</textarea>
+                        <span class="wm-form-field__error" id="contact-message-error" asp-validation-for="Message"></span>
+                    </div>
+
+                    <div class="wm-form-field">
+                        <div class="wm-consent">
+                            <input type="checkbox" id="contact-privacy" name="PrivacyNoticeAcknowledged" value="true" required
+                                   checked="@Model.PrivacyNoticeAcknowledged" aria-invalid="@Invalid(nameof(Model.PrivacyNoticeAcknowledged))"
+                                   aria-describedby="@Described(nameof(Model.PrivacyNoticeAcknowledged))" />
+                            <label for="contact-privacy">@consent[0]<a href="@PublicSiteUrls.PrivacyNoticePath">@L["Contact.Form.ConsentLink"]</a>@(consent.Length > 1 ? consent[1] : string.Empty)</label>
+                        </div>
+                        <span class="wm-form-field__error" id="contact-privacy-error" asp-validation-for="PrivacyNoticeAcknowledged"></span>
+                    </div>
+
+                    @* Left empty by people; hidden from sight, keyboard and assistive technology. *@
+                    <div class="wm-visually-hidden wm-contact-form__trap" aria-hidden="true">
+                        <label for="contact-website">@L["Contact.Form.HoneypotLabel"]</label>
+                        <input type="text" id="contact-website" name="Website" value="" tabindex="-1" autocomplete="off" />
+                    </div>
+
+                    <div>
+                        <button class="wm-btn wm-btn--primary" type="submit">@L["Contact.Form.Submit"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></button>
+                    </div>
+                </form>
+            }
+        </div>
+
+        <div class="wm-contact__direct">
+            <h2 class="wm-heading-m wm-contact-channels__title" id="contact-direct-title">@L["Marketing.Contact.ChannelsTitle"]</h2>
+            <ul class="wm-contact-channels" aria-labelledby="contact-direct-title">
+                <li>
+                    <a class="wm-contact-channel wm-contact__channel" href="mailto:@PublicSiteUrls.ContactEmail" data-contact-channel="email">
+                        <span class="wm-contact-channel__icon" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+                        <span class="wm-contact-channel__text">
+                            <span class="wm-contact-channel__label">@L["Marketing.Contact.ChannelEmail"]</span>
+                            <span class="wm-contact-channel__value wm-ltr">@PublicSiteUrls.ContactEmail</span>
+                        </span>
+                        <i class="bi bi-arrow-up-right wm-contact-channel__arrow wm-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a class="wm-contact-channel wm-contact__channel" href="@PublicSiteUrls.ContactPhoneHref" data-contact-channel="phone">
+                        <span class="wm-contact-channel__icon" aria-hidden="true"><i class="bi bi-telephone"></i></span>
+                        <span class="wm-contact-channel__text">
+                            <span class="wm-contact-channel__label">@L["Marketing.Contact.ChannelPhone"]</span>
+                            <span class="wm-contact-channel__value wm-ltr" dir="ltr">@PublicSiteUrls.ContactPhoneDisplay</span>
+                        </span>
+                        <i class="bi bi-arrow-up-right wm-contact-channel__arrow wm-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                </li>
+                <li>
+                    <a class="wm-contact-channel wm-contact__channel" href="@PublicSiteUrls.InstagramUrl" rel="noopener" data-contact-channel="instagram">
+                        <span class="wm-contact-channel__icon" aria-hidden="true"><i class="bi bi-instagram"></i></span>
+                        <span class="wm-contact-channel__text">
+                            <span class="wm-contact-channel__label">@L["Marketing.Contact.ChannelInstagram"]</span>
+                            <span class="wm-contact-channel__value wm-ltr" dir="ltr">@@@PublicSiteUrls.InstagramHandle</span>
+                        </span>
+                        <i class="bi bi-arrow-up-right wm-contact-channel__arrow wm-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
