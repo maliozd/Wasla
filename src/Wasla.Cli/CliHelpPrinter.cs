@@ -327,10 +327,12 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Trendyol GO Meal webhook stage pilot only: runs against the stage API with the pilot's platform connection.");
                 Console.WriteLine("create prints the SHA-256 to configure as TrendyolGoMealWebhookPilot:SecretSha256 and writes the token to --token-file.");
-                Console.WriteLine("show and enable fail unless the integrator serves exactly the configured seller.");
+                Console.WriteLine("create registers TrendyolGoMealWebhookPilot:ReceiverBaseUrl, the documented event types and a 5000 ms timeout.");
+                Console.WriteLine("show, enable and test-order fail unless Get Integrator reports exactly that registration for exactly");
+                Console.WriteLine("the configured seller; enable reads the integrator back and disables it again if it differs.");
                 Console.WriteLine();
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  meal-webhook-integrator --action create --name <name> --base-url <https-url> --token-file <path>");
+                Console.WriteLine("  meal-webhook-integrator --action create --name <name> --token-file <path>");
                 Console.WriteLine("  meal-webhook-integrator --action show|enable|disable|test-order --name <name> --token-file <path>");
                 return;
 

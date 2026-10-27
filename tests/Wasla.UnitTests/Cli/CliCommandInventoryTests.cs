@@ -46,7 +46,7 @@ public sealed class CliCommandInventoryTests
         ["generate-print-bridge-token"] = ["--tenant-id", "--slug", "--name"],
         ["seed-print-job"] = ["--slug", "--tenant-id"],
         ["list-print-jobs"] = ["--slug", "--tenant-id"],
-        ["meal-webhook-integrator"] = ["--action", "--name", "--base-url", "--token-file"],
+        ["meal-webhook-integrator"] = ["--action", "--name", "--token-file"],
         ["meal-webhook-inbox"] = ["--limit", "--replay"],
     };
 

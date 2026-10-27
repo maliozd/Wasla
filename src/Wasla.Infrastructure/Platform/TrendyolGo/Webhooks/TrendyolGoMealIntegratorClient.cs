@@ -40,12 +40,8 @@ public sealed class TrendyolGoMealIntegratorClient
 
     public TrendyolGoMealIntegratorClient(HttpClient http, string agentName, string executorEmail, string sellerId, string sellerApiKey, string sellerApiSecret)
     {
-        if (http.BaseAddress is not { } baseAddress
-            || baseAddress.Scheme != Uri.UriSchemeHttps
-            || !string.Equals(baseAddress.Host, TrendyolGoMealWebhookPilotOptions.StageApiHost, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"The integrator client runs only against https://{TrendyolGoMealWebhookPilotOptions.StageApiHost}.");
-        }
+        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(http.BaseAddress))
+            throw new InvalidOperationException($"The integrator client runs only against exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}.");
 
         _http = http;
         _agentName = agentName;

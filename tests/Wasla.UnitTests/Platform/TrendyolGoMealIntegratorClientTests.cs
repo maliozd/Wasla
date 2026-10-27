@@ -44,7 +44,12 @@ public sealed class TrendyolGoMealIntegratorClientTests
     [Theory]
     [InlineData("https://api.tgoapis.com")]
     [InlineData("http://stageapi.tgoapis.com")]
-    public void ProductionOrPlainHttpApi_IsRefused(string baseUrl)
+    [InlineData("https://stageapi.tgoapis.com/integrator")]
+    [InlineData("https://stageapi.tgoapis.com:8443")]
+    [InlineData("https://user:pass@stageapi.tgoapis.com")]
+    [InlineData("https://stageapi.tgoapis.com/?x=1")]
+    [InlineData("https://stageapi.tgoapis.com/#x")]
+    public void AnythingButExactlyTheStageApi_IsRefused(string baseUrl)
     {
         Assert.Throws<InvalidOperationException>(() => Client(_ => new HttpResponseMessage(HttpStatusCode.OK), baseUrl));
     }

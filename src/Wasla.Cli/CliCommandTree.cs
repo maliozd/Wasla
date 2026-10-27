@@ -446,11 +446,9 @@ internal static class CliCommandTree
             "Create, show, enable or disable the Trendyol GO Meal webhook stage pilot's integrator, or request a webhook test order.");
         var optMwiAction = new Option<string>("--action", "create, show, enable, disable or test-order") { IsRequired = true };
         var optMwiName = new Option<string>("--name", "Integrator name (alphanumeric, unique at Trendyol GO)") { IsRequired = true };
-        var optMwiBaseUrl = new Option<string?>("--base-url", "create only: the https base URL Trendyol GO posts events under");
         var optMwiTokenFile = new Option<string>("--token-file", "File that holds the integrator token (written by create, read by the others)") { IsRequired = true };
         mealWebhookIntegrator.AddOption(optMwiAction);
         mealWebhookIntegrator.AddOption(optMwiName);
-        mealWebhookIntegrator.AddOption(optMwiBaseUrl);
         mealWebhookIntegrator.AddOption(optMwiTokenFile);
         mealWebhookIntegrator.SetHandler(async (InvocationContext context) =>
         {
@@ -459,7 +457,6 @@ internal static class CliCommandTree
                 host,
                 p.GetValueForOption(optMwiAction)!,
                 p.GetValueForOption(optMwiName)!,
-                p.GetValueForOption(optMwiBaseUrl),
                 p.GetValueForOption(optMwiTokenFile)!,
                 context.GetCancellationToken());
         });
