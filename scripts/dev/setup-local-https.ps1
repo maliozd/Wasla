@@ -8,7 +8,8 @@
         .\scripts\dev\setup-local-https.ps1
 
     Creates .certs/wasla-local.pem, wasla-local-key.pem, and wasla-local.pfx
-    for *.wasla.local, wasla.local, localhost, and 127.0.0.1.
+    for *.app.wasla.local, app.wasla.local, *.wasla.local, wasla.local, localhost, and 127.0.0.1.
+    A wildcard covers one label only, so tenant hosts ({slug}.app.wasla.local) need *.app.wasla.local.
     Generated files are gitignored and must not be committed.
 #>
 param(
@@ -84,6 +85,8 @@ $ErrorActionPreference = "Continue"
 & mkcert `
     -cert-file $pemFile `
     -key-file $keyFile `
+    "*.app.wasla.local" `
+    "app.wasla.local" `
     "*.wasla.local" `
     "wasla.local" `
     "localhost" `
@@ -165,23 +168,24 @@ Write-Host @"
      C:\Windows\System32\drivers\etc\hosts
 
    Example:
-     127.0.0.1 bahce-tadi.wasla.local
-     127.0.0.1 pilavcirahim.wasla.local
-     127.0.0.1 sushim.wasla.local
      127.0.0.1 wasla.local
+     127.0.0.1 app.wasla.local
+     127.0.0.1 bahce-tadi.app.wasla.local
 
-2. Ensure src/Wasla.Web/appsettings.Development.json contains Kestrel certificate config
-   pointing to ../../.certs/wasla-local.pfx (relative to the Web project directory).
+2. Point Kestrel at the PFX (the committed Web config names no certificate), for example
+   as user environment variables:
+     setx Kestrel__Certificates__Default__Path "$pfxFile"
+     setx Kestrel__Certificates__Default__Password "$PfxPassword"
 
 3. Run Web (restart if it was already running so Kestrel reloads the new PFX):
      dotnet run --project src\Wasla.Web\Wasla.Web.csproj
 
 4. Test in browser:
      https://wasla.local:7200
-     https://bahce-tadi.wasla.local:7200/auth/login
+     https://bahce-tadi.app.wasla.local:7200/auth/login
 
-5. Configure Print Bridge BaseUrl:
-     https://bahce-tadi.wasla.local:7200
+5. Connect Print Bridge with the tenant address as ServerUrl:
+     https://bahce-tadi.app.wasla.local:7200
 
 See docs/local-https.md for full details and LAN testing notes.
 "@
