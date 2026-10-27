@@ -2,7 +2,9 @@
 
 ## Purpose and scope
 
-This document describes the stage-only pilot that receives Trendyol GO **Meal** webhooks for exactly one explicitly configured seller, store, tenant and platform connection. It owns the pilot's configuration, receiver, durable inbox, processing rules, operator commands and stage test procedure.
+This document describes the pilot that receives Trendyol GO **Meal** webhooks from the Trendyol GO **stage** API for exactly one explicitly configured seller, store, tenant and platform connection. It owns the pilot's configuration, receiver, durable inbox, processing rules, operator commands and test procedure.
+
+"Stage" names the provider side only. On Wasla's side the pilot runs on the **existing Wasla deployment**, which is the test environment; there is no separate Wasla stage environment, host, database, account, service or certificate. What enabling it there requires is listed in [Existing deployment](#existing-deployment).
 
 It is **not** tenant routing. Routing a previously unseen event to one of many tenants stays blocked on WAS-175 ([provider-webhooks.md](provider-webhooks.md#tenant-routing)). The pilot needs no routing: every accepted event belongs to the one configured connection, and anything that contradicts it is refused. There is no CentralDb index. Production traffic is refused by configuration validation.
 
@@ -43,8 +45,14 @@ Section `TrendyolGoMealWebhookPilot`, read by Wasla.Api, Wasla.Worker and the CL
 | `HeaderName` | The header the integrator sends its secret in (default `X-Wasla-Webhook-Key`) |
 | `SecretSha256` | SHA-256 of the header secret as 64 hex digits. The secret itself is never configured or stored by Wasla |
 | `MaxBodyBytes` | Largest body accepted (default 262144) |
+| `ReceiverBaseUrl` | The public receiver URL the integrator is registered with: exactly `https://<host>/api/webhooks/trendyol-go/meal` |
 
-When `Enabled` is true, Api and Worker refuse to start unless every value is present and valid, and unless `Platform:TrendyolGo:BaseUrl` is `https://stageapi.tgoapis.com`. Production uses `https://api.tgoapis.com` and its preflight requires it, so the pilot cannot start next to production.
+When `Enabled` is true, Api and Worker refuse to start unless every value is present and valid:
+
+- `ReceiverBaseUrl` is `https://`, a DNS host name (not an IP address or a single label), and exactly the receiver path, with at most one trailing slash. User info, a port, a query or a fragment never match. It is shorter than 100 characters, as Trendyol GO requires.
+- `Platform:TrendyolGo:BaseUrl` is exactly `https://stageapi.tgoapis.com` (one trailing slash allowed). Any other scheme, host, port, path, query, fragment or user info is refused, `https://api.tgoapis.com` included.
+
+No committed settings file enables the pilot; a test checks every `appsettings*.json`.
 
 ## Receiver
 
@@ -66,7 +74,9 @@ The secret authenticates the integrator, not a seller.
 
 Bodies and headers are never logged; logs carry the event type, package id, status and outcome.
 
-**Deduplication.** The unique key is SHA-256 of the platform, the event type, the package id and the provider's `timestamp`. An event without a timestamp uses the body's SHA-256 instead. A repeated delivery returns 200 and raises the stored event's `DeliveryCount`.
+**Deduplication.** The unique key is SHA-256 of the platform, the event type, the package id and the provider's `timestamp` as sent. An event without an integer `timestamp` uses the body's SHA-256 instead. A repeated delivery returns 200 and raises the stored event's `DeliveryCount`.
+
+**Event time.** The `timestamp` becomes the event's time only when it is a positive 64-bit integer that a date can hold, not before 2000, and at most 5 minutes after Wasla's clock (the provider clock tolerance of the shared ingestion path). Anything else, such as a negative, zero, fractional, string, overflowing or far-future value, never refuses the event and never causes a server error. The event is stored without an event time, a warning names its type and package, and processing uses its receipt time instead.
 
 ## Processing
 
@@ -86,40 +96,57 @@ Bodies and headers are never logged; logs carry the event type, package id, stat
      - Otherwise the event is reconciled like the others.
 5. **Result:**
    - Processed with an outcome: `Reconciled`, `StatusApplied` or `StatusUnchanged`, plus the matched order id.
-   - A reconciliation that does not return the package, or any failure, is retried after 10 s, 30 s, 1 min and 2 min. After the fifth attempt the event is Failed and replayable, and polling still imports the order.
+   - A reconciliation that does not return the package, or any failure, is retried. An event gets 6 attempts: the first, then one after each delay of 10 s, 30 s, 1 min, 2 min and 5 min (about 8 min 40 s in all). When the sixth attempt fails the event is Failed. A Failed event is never taken up again until an operator replays it, which starts the whole schedule again. Polling still imports the order meanwhile.
 
 Every effect stays single. One package is one order, even when the reconciliation and a polling pass insert it at once. Auto-approve and the provider-accepted receipt run once, and every change raises one live notification.
 
 ## Operator commands
 
-Run on the stage host with the stage configuration (see [../operations/cli.md](../operations/cli.md#webhook-pilot)).
+Run with the deployment's own CLI and the pilot configuration (see [../operations/cli.md](../operations/cli.md#webhook-pilot)).
 
 ```text
-meal-webhook-integrator --action create --name <name> --base-url https://<stage-host>/api/webhooks/trendyol-go/meal --token-file <path>
+meal-webhook-integrator --action create --name <name> --token-file <path>
 meal-webhook-integrator --action show|enable|disable|test-order --name <name> --token-file <path>
 meal-webhook-inbox [--limit 20] [--replay <event-id>]
 ```
 
+Every integrator action requires `Platform:TrendyolGo:BaseUrl` to be exactly the stage API and `ReceiverBaseUrl` to be exact, as above.
+
 - **`create`.**
   - Takes the seller's credentials from the pilot's encrypted platform connection.
-  - Generates a 256-bit header secret and registers all seven documented events at `/{type}`.
+  - Registers `ReceiverBaseUrl` (there is no command-line URL), a 5000 ms timeout and all seven documented events at `/{type}`, with a newly generated 256-bit header secret.
   - Writes the integrator token to `--token-file`: a new file, owner read/write only, never overwritten.
   - Prints only the SHA-256 to configure as `SecretSha256`.
   - Neither the secret nor the token is shown.
-- **`show` and `enable`.** Both fail unless the integrator serves exactly the configured seller. The integrator's `secrets` are never read.
+- **`show`, `enable` and `test-order`.** Each reads Get Integrator and fails closed unless the registration is exactly the expected one:
+  - the base URL is `ReceiverBaseUrl`, with no user info, port, query or fragment;
+  - the timeout is 5000 ms;
+  - the integrator serves exactly the configured seller;
+  - exactly the seven documented events are registered, each to its own `/{type}`, and nothing else.
+
+  `show` prints every difference and exits 3. `enable` enables nothing while there is a difference; after enabling it reads the integrator back and disables it again unless it is then enabled with exactly that registration. `test-order` requests nothing unless the integrator is enabled with exactly that registration. The integrator's `secrets` are never read.
 - **`meal-webhook-inbox`.**
   - Lists each event's delivery count, status, attempts, outcome and last error.
   - For matched events it adds the matched order's id, code and status.
   - It never shows payloads.
 
-## Stage test procedure
+## Existing deployment
+
+The pilot runs on the existing Wasla deployment, not beside it. Read-only facts of that deployment that the pilot depends on (checked 2026-10-27; see [../operations/linux-vds-runbook.md](../operations/linux-vds-runbook.md)):
+
+- **Api exposure.** Wasla.Api listens on loopback only. Nginx publishes Wasla.Web on every Wasla host and has no location for the Api, so `/api/webhooks/trendyol-go/meal/...` reaches Wasla.Web today and answers 404. Receiving webhooks needs one Nginx location that forwards exactly that path prefix to the Api, with a body limit just above `MaxBodyBytes`.
+- **Provider API.** The deployment's `Platform__TrendyolGo__BaseUrl` is the production Trendyol GO API, and `wasla-preflight` refuses any other value. The pilot requires exactly the stage API in the same key, so it cannot be enabled there until one of two things is decided: either the deployment's Trendyol GO polling moves to the stage API (a preflight and environment change), or the pilot's one connection gets its own stage base URL (a code change). Until then the pilot stays off and fails closed.
+- **Tenant.** The pilot needs one tenant and one Trendyol GO connection for the stage seller. A tenant that serves a real restaurant would show stage test orders on its Live Screen.
+- **Schema.** The pilot adds the tenant migration `AddProviderWebhookEvents`. The deployment's processes refuse to start until every tenant database has it (`migration-status --require-current`).
+
+## Test procedure
 
 Prerequisites:
-- The stage stack runs with the pilot enabled.
-- The receiver's host answers over HTTPS.
-- The integrator is created, its `SecretSha256` is configured, `show` lists exactly the configured seller, and it is enabled.
+- The deployment runs a release with the pilot, its tenant migrations are applied, and the pilot is enabled for the configured tenant and connection.
+- The receiver URL answers over HTTPS through Nginx.
+- The integrator is created, its `SecretSha256` is configured, `show` reports exactly the expected registration, and it is enabled.
 
-1. **Health.** `GET https://<stage-host>/health/ready` answers 200. A POST to the receiver without the header answers 401.
+1. **Reachability.** A POST to `ReceiverBaseUrl` + `/created` without the header answers 401 from the Api (not 404 from Wasla.Web).
 2. **Test order.** Request one with `meal-webhook-integrator --action test-order`. This is the documented endpoint that sends Meal webhooks. A test order placed some other way, for example from the stage partner panel, is not documented to send a webhook. Use one only to observe what it does.
 3. **Delivery.** Within seconds `meal-webhook-inbox` lists a `created` event for the test package.
 4. **Processing.** It reaches Processed / `Reconciled` with an order id, code and status.
@@ -130,7 +157,7 @@ Record what was observed in [Stage observations](#stage-observations): headers, 
 
 ## Rollback
 
-- Set `TrendyolGoMealWebhookPilot__Enabled=false` and restart the stage Api and Worker: the receiver answers 404 and nothing is processed.
+- Set `TrendyolGoMealWebhookPilot__Enabled=false` and restart the deployment's Api and Worker: the receiver answers 404 and nothing is processed.
 - Disable the integrator with `--action disable`.
 - Polling is unaffected throughout, so no order is lost.
 - The `ProviderWebhookEvents` table stays and can be emptied by an operator.
