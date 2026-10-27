@@ -3302,6 +3302,55 @@ test("a handoff is read once, only within a minute, and only as a list of order 
   assert.equal(store.readKnownOrderHandoff(null, 0), null);
 });
 
+test("after handing its ids over the leaving page reads and announces nothing, so an order in the gap is announced once, by the next page", async function () {
+  const leaving = notifyingHarness();
+  await startWith(leaving, trainingSnapshot([guid(1)], true));
+  // A read is under way (a live invalidation, the page's own first read) when the Owner submits End.
+  leaving.coordinator.requestRefresh();
+  await flush();
+  const inFlight = leaving.http.pending;
+  const reads = leaving.http.calls;
+  const storage = memoryStorage();
+  assert.equal(store.writeKnownOrderHandoff(storage, leaving.coordinator.knownIds(), 1000), true);
+  leaving.coordinator.handOver();
+
+  // Until the next page replaces it, the server ends training and guid(2) arrives. Nothing the leaving page is asked
+  // for (the read under way, a live invalidation, its own first read, its poll) shows or announces it there.
+  inFlight.resolve({ kind: "ok", snapshot: trainingSnapshot([guid(1), guid(2)], false) });
+  await flush();
+  assert.equal((await leaving.coordinator.requestRefresh()).reason, "handed-over");
+  assert.equal((await leaving.coordinator.start()).reason, "handed-over");
+  await leaving.time.advance(60000);
+  await flush();
+  assert.equal(leaving.http.calls, reads, "no read after handing over");
+  assert.equal(leaving.accepted.length, 1);
+  assert.deepEqual(leaving.notified, [], "the leaving page announces nothing");
+
+  const arriving = handedOverHarness(store.readKnownOrderHandoff(storage, 3000));
+  await startWith(arriving, trainingSnapshot([guid(1), guid(2)], false));
+  await next(arriving, trainingSnapshot([guid(1), guid(2)], false));
+  assert.deepEqual(arriving.notified, [[guid(2)]], "announced once, by the next page, and the backlog is not replayed");
+});
+
+test("a page that handed over and is restored from the back/forward cache reads at once and follows orders again", async function () {
+  const h = notifyingHarness();
+  await startWith(h, trainingSnapshot([guid(1)], true));
+  h.coordinator.handOver();
+  const reads = h.http.calls;
+
+  h.coordinator.resume();
+  await flush();
+  assert.equal(h.http.calls, reads + 1, "it reads at once");
+  await poll(h, trainingSnapshot([guid(1), guid(2)], true));
+  await next(h, trainingSnapshot([guid(1), guid(2), guid(3)], true));
+  assert.deepEqual(h.notified, [[guid(2)], [guid(3)]], "what is new to it is announced once, and its poll runs again");
+
+  // A page that did not hand over is not restarted by a restore.
+  const calls = h.http.calls;
+  assert.equal((await h.coordinator.resume()).reason, "not-handed-over");
+  assert.equal(h.http.calls, calls);
+});
+
 test("a page knows no ids before its first snapshot, so it cannot hand over an empty baseline", async function () {
   const h = notifyingHarness();
   assert.deepEqual(h.coordinator.knownIds(), []);

@@ -58,14 +58,17 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
     private readonly CentralTestDatabase _central;
     private readonly RecordingTenantDbFactory _tenants;
     private readonly ServerErrorLog _serverErrors;
+    private readonly RequestHolds _holds;
 
-    private TenantVisualWebHost(WebApplication app, string contentRoot, CentralTestDatabase central, RecordingTenantDbFactory tenants, ServerErrorLog serverErrors)
+    private TenantVisualWebHost(
+        WebApplication app, string contentRoot, CentralTestDatabase central, RecordingTenantDbFactory tenants, ServerErrorLog serverErrors, RequestHolds holds)
     {
         _app = app;
         _contentRoot = contentRoot;
         _central = central;
         _tenants = tenants;
         _serverErrors = serverErrors;
+        _holds = holds;
         BaseAddress = new Uri(app.Urls.First());
     }
 
@@ -220,6 +223,14 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
                 throw;
             }
         });
+        var holds = new RequestHolds();
+        app.Use(async (http, next) =>
+        {
+            var hold = holds.Take(http.Request);
+            if (hold is not null)
+                await hold.WaitAsync(http);
+            await next(http);
+        });
         app.UseStaticFiles();
         app.UseRequestLocalization();
         app.UseRouting();
@@ -266,7 +277,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         app.EnableWaslaTenantLandingPages();
 
         await app.StartAsync();
-        return new TenantVisualWebHost(app, contentRoot, central, tenants, serverErrors);
+        return new TenantVisualWebHost(app, contentRoot, central, tenants, serverErrors, holds);
     }
 
     /// <summary>
@@ -290,6 +301,72 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         }
 
         public string? Describe() => _errors.IsEmpty ? null : $"{_errors.Count} server error(s), newest: {string.Join(" | ", _errors.Take(3))}";
+    }
+
+    /// <summary>
+    /// Holds the next <paramref name="method"/> request for <paramref name="path"/> before it is handled, until the hold is
+    /// released: the page waits for that answer as for a slow server, and the answer is made at the release.
+    /// </summary>
+    public RequestHold HoldNextRequest(string method, PathString path) => _holds.Add(method, path);
+
+    internal sealed class RequestHold(string method, PathString path)
+    {
+        private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Method { get; } = method;
+        public PathString Path { get; } = path;
+
+        /// <summary>Completes once the request has arrived and is held.</summary>
+        public Task Reached => _reached.Task;
+
+        public void Release() => _released.TrySetResult();
+
+        internal Task WaitAsync(HttpContext http)
+        {
+            _reached.TrySetResult();
+            return _released.Task.WaitAsync(http.RequestAborted);
+        }
+    }
+
+    private sealed class RequestHolds
+    {
+        private readonly object _gate = new();
+        private readonly List<RequestHold> _waiting = [];
+        private readonly List<RequestHold> _all = [];
+
+        public RequestHold Add(string method, PathString path)
+        {
+            var hold = new RequestHold(method, path);
+            lock (_gate)
+            {
+                _waiting.Add(hold);
+                _all.Add(hold);
+            }
+            return hold;
+        }
+
+        public RequestHold? Take(HttpRequest request)
+        {
+            lock (_gate)
+            {
+                var hold = _waiting.FirstOrDefault(h =>
+                    string.Equals(h.Method, request.Method, StringComparison.OrdinalIgnoreCase) && h.Path.Equals(request.Path, StringComparison.OrdinalIgnoreCase));
+                if (hold is not null)
+                    _waiting.Remove(hold);
+                return hold;
+            }
+        }
+
+        /// <summary>A test that failed while holding a request must not keep the host from stopping.</summary>
+        public void ReleaseAll()
+        {
+            lock (_gate)
+            {
+                foreach (var hold in _all)
+                    hold.Release();
+            }
+        }
     }
 
     /// <summary>
@@ -319,6 +396,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _holds.ReleaseAll();
         await _app.StopAsync();
         await _app.DisposeAsync();
         _tenants.Dispose();

@@ -293,6 +293,8 @@
     let baselineReady = false;
     let lastSnapshot = null;
     let pendingMutations = 0;
+    // Set once this page has handed its known ids to the next Live Screen page and is leaving (see handOver).
+    let leaving = false;
 
     // Orders the previous Live Screen page in this tab already knew when it left through an order-training form (see
     // readKnownOrderHandoff). They stand in for the first snapshot's baseline, so an order that arrived during that
@@ -309,7 +311,7 @@
     }
 
     function schedule(delay) {
-      if (stopped) return;
+      if (stopped || leaving) return;
       clearTimer();
       timer = options.setTimeout(function () {
         timer = null;
@@ -341,6 +343,7 @@
 
     function requestRefresh() {
       if (stopped) return Promise.resolve({ applied: false, reason: "stopped" });
+      if (leaving) return Promise.resolve({ applied: false, reason: "handed-over" });
       if (pendingMutations > 0) return Promise.resolve({ applied: false, reason: "pending-mutation" });
       if (current && !current.invalid) {
         current.followUp = true;
@@ -351,6 +354,7 @@
 
     function start(reason) {
       if (stopped) return Promise.resolve({ applied: false, reason: "stopped" });
+      if (leaving) return Promise.resolve({ applied: false, reason: "handed-over" });
       if (pendingMutations > 0) return Promise.resolve({ applied: false, reason: "pending-mutation" });
       if (current && !current.invalid) {
         current.followUp = true;
@@ -486,6 +490,23 @@
       if (timer && shorter) schedule(intervalMs);
     }
 
+    /**
+     * This page has handed its known ids to the next Live Screen page of this tab and is leaving. Until it is replaced
+     * it reads and announces nothing, and a read under way is dropped: an order it has not announced by now is not in
+     * the handoff, so the next page announces it, once (WAS-117).
+     */
+    function handOver() {
+      leaving = true;
+      invalidateInFlight();
+    }
+
+    /** The page stays after all (restored from the back/forward cache): it reads at once and follows orders again. */
+    function resume() {
+      if (!leaving) return Promise.resolve({ applied: false, reason: "not-handed-over" });
+      leaving = false;
+      return start("resume");
+    }
+
     return {
       beginMutation: beginMutation,
       requestRefresh: requestRefresh,
@@ -495,7 +516,9 @@
       lastSnapshot: function () { return lastSnapshot; },
       isBaselineReady: function () { return baselineReady; },
       /** The ids new-order detection already knows; empty before the baseline. */
-      knownIds: function () { return baselineReady ? Array.from(known) : []; }
+      knownIds: function () { return baselineReady ? Array.from(known) : []; },
+      handOver: handOver,
+      resume: resume
     };
   }
 
@@ -503,8 +526,9 @@
    * Order training's forms on the Live Screen (start practice, complete, end) post and come straight back to the Live
    * Screen, whose first snapshot would otherwise be a silent baseline: a real order that arrived during that
    * navigation would never be announced (WAS-117). The leaving page hands its known ids to the next page of the same
-   * tab for a short time. Only this tab, only once, and only right after such a form: a reload, a new tab or a later
-   * visit keeps the silent first snapshot.
+   * tab for a short time, and from then on announces nothing itself (handOver), so an order it has not announced is
+   * the next page's to announce. Only this tab, only once, and only right after such a form: a reload, a new tab or a
+   * later visit keeps the silent first snapshot.
    */
   const KNOWN_ORDER_HANDOFF_KEY = "Wasla.liveScreen.knownOrderHandoff";
   const KNOWN_ORDER_HANDOFF_MAX_AGE_MS = 60000;
@@ -2814,12 +2838,21 @@ function attachBrowser(O, global, api) {
   }
 
   // Order training's forms (start practice, complete, end) leave this page for the Live Screen again: hand the ids this
-  // page already knows to that next page (see readKnownOrderHandoff).
+  // page already knows to that next page (see readKnownOrderHandoff). The page keeps running until the next one replaces
+  // it and the server may already have ended training, so it reads nothing more: what it would announce now, the next
+  // page announces once instead.
   function onTrainingFormSubmit(ev) {
     const form = ev && ev.target;
     if (!form || typeof form.matches !== "function" || !form.matches("form[data-guided-setup-form]")) return;
-    if (!coordinator) return;
-    api.writeKnownOrderHandoff(sessionStore(), coordinator.knownIds(), Date.now());
+    if (!coordinator || ev.defaultPrevented) return;
+    if (api.writeKnownOrderHandoff(sessionStore(), coordinator.knownIds(), Date.now())) coordinator.handOver();
+  }
+
+  if (global && typeof global.addEventListener === "function") {
+    // A page that handed over and comes back from the back/forward cache is this tab's Live Screen again.
+    global.addEventListener("pageshow", function (ev) {
+      if (ev && ev.persisted && coordinator) coordinator.resume();
+    });
   }
 
   if (typeof document.addEventListener === "function") {
