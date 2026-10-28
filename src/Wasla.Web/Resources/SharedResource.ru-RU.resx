@@ -4292,7 +4292,7 @@
   <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
   <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Состояние аккаунта</value></data>
   <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Сводка состояния</value></data>
-  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>откроется в новой вкладке</value></data>
+  <data name="Common.OpensInNewTab" xml:space="preserve"><value>откроется в новой вкладке</value></data>
   <data name="Admin.Ops.Membership" xml:space="preserve"><value>Подписка</value></data>
   <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Пробный период</value></data>
   <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Активна</value></data>

@@ -28,9 +28,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="@PublicSiteUrls.InstagramUrl" rel="noopener">
+                    <a href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-instagram" aria-hidden="true"></i>
-                        <span><span class="wm-visually-hidden">Instagram: </span>@@@PublicSiteUrls.InstagramHandle</span>
+                        <span><span class="wm-visually-hidden">Instagram: </span>@@@PublicSiteUrls.InstagramHandle</span><span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span>
                     </a>
                 </li>
             </ul>
@@ -49,9 +49,9 @@
                     @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
                 </a>
                 <p class="wm-footer__tagline">@L["Marketing.Footer.Tagline"]</p>
-                <a class="wm-footer__social" href="@PublicSiteUrls.InstagramUrl" rel="noopener">
+                <a class="wm-footer__social" href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer">
                     <i class="bi bi-instagram" aria-hidden="true"></i>
-                    <span><span class="wm-visually-hidden">Instagram: </span>@@@PublicSiteUrls.InstagramHandle</span>
+                    <span><span class="wm-visually-hidden">Instagram: </span>@@@PublicSiteUrls.InstagramHandle</span><span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span>
                 </a>
                 <div class="wm-footer__tools">
                     @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-footer-languages", ShowLanguageName: true))
@@ -97,7 +97,7 @@
                     <h2 class="wm-footer__heading" id="wm-footer-contact">@L["Marketing.Footer.Contact"]</h2>
                     <ul class="wm-footer__links">
                         <li><a href="@PublicSiteUrls.ContactPath">@L["Marketing.Cta.ContactUs"]</a></li>
-                        <li><a href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.Footer.WriteOnInstagram"]</a></li>
+                        <li><a href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer">@L["Marketing.Footer.WriteOnInstagram"]<span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span></a></li>
                         <li><a href="@loginUrl">@L["Marketing.Nav.Login"]</a></li>
                         <li><a asp-controller="Signup" asp-action="Index">@L["Marketing.Cta.Start"]</a></li>
                     </ul>
