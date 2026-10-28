@@ -100,6 +100,7 @@ Wasla Orders uses three host roles (WAS-66). The application implements them. DN
 - Wasla.Api resolves tenants under the same contract: only `{slug}.app.wasla.tr` is a tenant; any other host gets 404 "Tenant not found" without a CentralDb lookup.
 - The tenant address is fixed when a registration is submitted. Changing `ApplicationBaseDomain` later does not move existing tenants; their stored `PrimaryDomain` keeps the old host, which the new contract no longer resolves.
 - Other onboarding settings are in `Wasla:TenantOnboarding`: `SqlAuth` (`trusted` or `sql:username:password`), optional `TrialDays`, `PendingRegistrationExpiryDays` and `MaxActivePendingRegistrationsPerOwnerEmail`, and `PublicSignupEnabled` (default `true`), which production sets to `false` until billing exists so that `/signup` says online registration is not open yet and creates nothing ([../architecture/tenancy.md](../architecture/tenancy.md#signup-and-checkout-access)). The tenant SQL Server is `TenantDb:ServerInstance` (see [Databases](#databases)).
+- `Wasla:MarketingSite:FullSiteEnabled` (Web, default `false`) publishes the full marketing site. While it is `false`, the marketing host shows only the coming-soon page at `/` and `/pos`, `/contact` and `/privacy-notice` answer 404. No deployment sets it yet ([../frontend/design-system.md](../frontend/design-system.md#public-marketing-site)).
 - The proxy must pass the original `Host` header through unchanged; tenants are resolved from it and `X-Forwarded-Host` is never applied ([Reverse proxy and client address](#reverse-proxy-and-client-address)).
 - Cookies stay host-only: the tenant session, Central Admin session, antiforgery and signup-ownership cookies set no `Domain`, so a tenant's session is never sent to another tenant, to `app.wasla.tr` or to `wasla.tr`.
 - Production should force HTTPS (Web enables HSTS + HTTPS redirection outside Development).
@@ -259,6 +260,7 @@ TrustedProxies__KnownProxies__0              # Web and API behind a reverse prox
 AuthenticationRateLimiting__TenantLogin__PermitLimit   # optional; see authentication.md
 Wasla__TenantOnboarding__MaxActivePendingRegistrationsPerOwnerEmail   # optional, default 3; see tenancy.md
 Wasla__TenantOnboarding__PublicSignupEnabled # Web reads it: false in production until billing exists (default true); the Linux VDS preflight requires false for every process; see tenancy.md
+Wasla__MarketingSite__FullSiteEnabled        # optional, Web, default false: only the coming-soon page is published; see design-system.md
 TenantResolution__MissCache__Ttl             # optional, default 00:01:00; see tenancy.md
 Realtime__Internal__Port                     # Web, Worker, Api: loopback channel to Web; see Live notifications
 Realtime__Internal__Secret                   # secret, at least 32 characters

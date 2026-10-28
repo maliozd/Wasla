@@ -94,7 +94,7 @@ Wasla Orders answers on three kinds of host. Two settings in `Wasla:TenantOnboar
 
 | Host | Production | Development | Role |
 |------|------------|-------------|------|
-| Marketing | `wasla.tr` (`MarketingBaseDomain`), plus `www.wasla.tr` | `wasla.local`, `www.wasla.local`, and in Development only `localhost` and IP addresses | Public marketing site (homepage, `/pos`), signup, checkout. `/auth` asks for the tenant address |
+| Marketing | `wasla.tr` (`MarketingBaseDomain`), plus `www.wasla.tr` | `wasla.local`, `www.wasla.local`, and in Development only `localhost` and IP addresses | Public marketing site (homepage, `/pos`; only the coming-soon page until `Wasla:MarketingSite:FullSiteEnabled`), signup, checkout. `/auth` asks for the tenant address |
 | Application | `app.wasla.tr` (`ApplicationBaseDomain`) | `app.wasla.local` | Central entry into Wasla Orders. Neither a tenant nor the marketing site (see the [host and path policy](#host-and-path-policy)) |
 | Tenant | `{slug}.app.wasla.tr` | `{slug}.app.wasla.local` | One tenant, resolved by its stored `PrimaryDomain` |
 

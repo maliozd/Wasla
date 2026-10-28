@@ -219,7 +219,11 @@ public sealed partial class ContactPageWebTests : IAsyncLifetime
         IReadOnlyDictionary<string, string?>? configuration = null,
         Action<IServiceCollection>? configureServices = null)
     {
-        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: configuration, configureServices: configureServices);
+        // The contact page belongs to the full marketing site, which is published here.
+        var settings = new Dictionary<string, string?>(SignupWebHost.FullMarketingSite);
+        foreach (var (key, value) in configuration ?? new Dictionary<string, string?>())
+            settings[key] = value;
+        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: settings, configureServices: configureServices);
         return _host;
     }
 

@@ -15,9 +15,11 @@ namespace Wasla.Web.Controllers;
 /// <summary>
 /// The public contact page. A message is stored in CentralDb and emailed to the Wasla team
 /// (<see cref="IContactMessageService"/>); Central Admin lists it. After a stored message the page redirects to itself
-/// and shows the thank-you state, so a reload does not send it again.
+/// and shows the thank-you state, so a reload does not send it again. The page is part of the full marketing site and
+/// answers 404, for GET and POST, until it is published (<see cref="MarketingSiteOptions"/>).
 /// </summary>
 [AllowAnonymous]
+[FullMarketingSiteRequired]
 public sealed class ContactController : Controller, IAuthenticationRateLimitResponder
 {
     /// <summary>The TempData flag the redirect after a stored message carries to the page.</summary>

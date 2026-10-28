@@ -14,6 +14,7 @@ using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
 using Wasla.Web.Realtime;
+using Wasla.Web.Routing;
 using Wasla.Web.Security;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
@@ -121,6 +122,9 @@ builder.Services.AddWaslaTrustedProxies(builder.Configuration);
 
 // Unknown tenant hosts: one CentralDb lookup per host per short TTL, bounded in size (TenantResolution:MissCache).
 builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
+
+// The marketing host shows only the coming-soon page until Wasla:MarketingSite:FullSiteEnabled publishes the full site.
+builder.Services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
 
 // Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
 var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);

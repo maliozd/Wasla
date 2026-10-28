@@ -47,7 +47,8 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
     {
         _connection.Open();
         await SignupWebHost.CreateCentralDbAsync(_connection);
-        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configureServices: s => s.AddSingleton<TimeProvider>(_clock));
+        // The public pricing section is part of the full marketing site, which is published here.
+        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: SignupWebHost.FullMarketingSite, configureServices: s => s.AddSingleton<TimeProvider>(_clock));
     }
 
     public async ValueTask DisposeAsync()
@@ -183,6 +184,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         await using var failing = await SignupWebHost.StartAsync(
             _connection,
             keyRing,
+            configuration: SignupWebHost.FullMarketingSite,
             configureServices: s => s.AddScoped<IBillingPlanPriceReader, UnreachablePrices>());
         using var browser = failing.NewBrowser();
 

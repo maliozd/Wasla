@@ -13,7 +13,8 @@ namespace Wasla.UnitTests.Web;
 /// <summary>
 /// The public marketing site (WAS-155, refined direction) rendered by the real controllers, layout, partials and
 /// resources: the homepage, the Wasla POS page, the contact page and the privacy notice in every culture, their search
-/// metadata, and where every link leads.
+/// metadata, and where every link leads. The full site is published here (<c>Wasla:MarketingSite:FullSiteEnabled</c>);
+/// <see cref="ComingSoonPageTests"/> covers the default, the coming-soon page.
 /// </summary>
 public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarketingSiteTests.Host>
 {
@@ -371,7 +372,7 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         {
             _connection.Open();
             await SignupWebHost.CreateCentralDbAsync(_connection);
-            Web = await SignupWebHost.StartAsync(_connection, _keyRing);
+            Web = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: SignupWebHost.FullMarketingSite);
         }
 
         public async ValueTask DisposeAsync()

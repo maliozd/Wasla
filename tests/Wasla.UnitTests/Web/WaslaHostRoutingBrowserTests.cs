@@ -47,15 +47,15 @@ public sealed class WaslaHostRoutingBrowserTests : IAsyncLifetime
             })()
             """, ct);
         Assert.Equal(dir, header.GetProperty("dir").GetString());
-        // The header's navigation, the header's narrow-screen link next to the menu button, and the footer.
+        // The homepage is the coming-soon page by default: sign-in is in its header only.
         Assert.Equal(
-            new[] { "http://app.wasla.local/auth/login", "http://app.wasla.local/auth/login", "http://app.wasla.local/auth/login" },
+            new[] { "http://app.wasla.local/auth/login" },
             header.GetProperty("hrefs").EnumerateArray().Select(h => h.GetString()).ToArray());
 
         // A real click on the header's sign-in link.
         var center = await browser.EvaluateAsync<JsonElement>("""
             (() => {
-              const r = document.querySelector('.wm-nav__end a[href$="/auth/login"]').getBoundingClientRect();
+              const r = document.querySelector('.wm-header a[href$="/auth/login"]').getBoundingClientRect();
               return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
             })()
             """, ct);

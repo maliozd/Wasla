@@ -6,11 +6,37 @@
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IOptions<TenantOnboardingOptions> Onboarding
+@inject IOptions<MarketingSiteOptions> MarketingSite
 @inject IWebHostEnvironment Environment
 @{
     var returnUrl = Model ?? "/";
     // Sign-in leaves the marketing host for the configured application entry (WAS-66).
     var loginUrl = TenantWelcomeUrlBuilder.BuildApplicationLoginUrl(Context.Request, Environment, Onboarding.Value.ApplicationBaseDomain);
+}
+@if (!MarketingSite.Value.FullSiteEnabled)
+{
+    @* While only the coming-soon page is published the footer names no product, platform or page that is closed: the
+       copyright, the contact e-mail and Instagram. *@
+    <footer class="wm-footer wm-footer--soon">
+        <div class="wm-container wm-container--wide wm-footer__soon">
+            <p class="m-0">@L["Marketing.Footer.Copyright", DateTime.UtcNow.Year]</p>
+            <ul class="wm-footer__soon-links">
+                <li>
+                    <a href="mailto:@PublicSiteUrls.ContactEmail">
+                        <i class="bi bi-envelope" aria-hidden="true"></i>
+                        <span>@PublicSiteUrls.ContactEmail</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@PublicSiteUrls.InstagramUrl" rel="noopener">
+                        <i class="bi bi-instagram" aria-hidden="true"></i>
+                        <span><span class="wm-visually-hidden">Instagram: </span>@@@PublicSiteUrls.InstagramHandle</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </footer>
+    return;
 }
 @* Public site footer (Figma "Wasla Landing — Refined Direction", Site footer). Every link leads to an existing page or
    homepage section; destinations that do not exist yet (a help centre, FAQ, other social accounts) are left out
