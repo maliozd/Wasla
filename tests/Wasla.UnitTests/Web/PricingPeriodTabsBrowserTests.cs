@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Billing;
 using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Auth;
+using Wasla.UnitTests.Signup;
 using static Wasla.UnitTests.Web.PricingPeriodTabsRenderedTests;
 
 namespace Wasla.UnitTests.Web;
@@ -26,7 +27,10 @@ public sealed class PricingPeriodTabsBrowserTests : IAsyncLifetime
     private TenantSessionWebHost _host = null!;
 
     public async ValueTask InitializeAsync() =>
-        _host = await TenantSessionWebHost.StartAsync(configureServices: services =>
+        _host = await TenantSessionWebHost.StartAsync(
+            // The homepage pricing section is part of the full marketing site, which is published here.
+            configuration: SignupWebHost.FullMarketingSite,
+            configureServices: services =>
             services.AddSingleton<IBillingPlanPriceReader>(new FixedPlanPrices { Quotes = MixedPrices }));
 
     public async ValueTask DisposeAsync() => await _host.DisposeAsync();

@@ -398,8 +398,10 @@ public sealed class OrdersController : BaseController
             var currentUserOrderTraining = await guidedSetup.GetLiveScreenIsolationAsync(tenant.Id, userId, User!, ct);
             if (currentUserOrderTraining is not null)
             {
-                var received = await _orders.CountReceivedSinceAsync(tenant.Id, currentUserOrderTraining.TrainingStartedAtUtc, ct);
-                snapshot = snapshot with { Orders = [], Training = new LiveScreenTrainingIsolation(received) };
+                // Real orders leave the practice board, never the trainee's awareness: how many are waiting and their
+                // ids (for the one announcement per new order) come from this same snapshot.
+                var isolation = LiveScreenTrainingIsolation.Of(snapshot);
+                snapshot = snapshot with { Orders = [], Training = isolation };
             }
 
             try

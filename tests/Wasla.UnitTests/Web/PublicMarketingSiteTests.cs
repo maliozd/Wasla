@@ -11,14 +11,19 @@ using Wasla.Web.Routing;
 namespace Wasla.UnitTests.Web;
 
 /// <summary>
-/// The public marketing site (WAS-155) rendered by the real controllers, layout, partials and resources: the
-/// homepage and the Wasla POS page in every culture, their search metadata, and where every link leads.
+/// The public marketing site (WAS-155, refined direction) rendered by the real controllers, layout, partials and
+/// resources: the homepage, the Wasla POS page, the contact page and the privacy notice in every culture, their search
+/// metadata, and where every link leads. The full site is published here (<c>Wasla:MarketingSite:FullSiteEnabled</c>);
+/// <see cref="ComingSoonPageTests"/> covers the default, the coming-soon page.
 /// </summary>
 public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarketingSiteTests.Host>
 {
     public static readonly TheoryData<string> Cultures = new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
 
-    private static readonly string[] MarketingPaths = ["/", PublicSiteUrls.PosPath];
+    private static readonly string[] MarketingPaths = ["/", PublicSiteUrls.PosPath, PublicSiteUrls.ContactPath, PublicSiteUrls.PrivacyNoticePath];
+
+    /// <summary>The pages with decorative product mockups.</summary>
+    private static readonly string[] MockupPaths = ["/", PublicSiteUrls.PosPath];
 
     /// <summary>Sign-in on the configured application entry (WAS-66): the host's Development domains, no port in Production.</summary>
     private const string ApplicationLoginUrl = "http://app.wasla.local/auth/login";
@@ -39,6 +44,36 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         Assert.Equal(HttpStatusCode.OK, page.Status);
         AssertDocument(page.Body, culture, "Marketing.Home.MetaTitle", "Marketing.Home.MetaDescription", "http://wasla.local/");
         Assert.Contains(Encoded(Text(culture, "Marketing.Home.HeroTitleAccent")), page.Body);
+    }
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task Homepage_ShowsNoComingSoonOrIntegrationStatus_AndLabelsThePosScreenAsConcept(string culture)
+    {
+        var page = await GetAsync("/", culture);
+
+        // The user's decision for the refined direction: no "coming soon" next to Wasla POS (its section, the header and
+        // the footer) and no status for the platform integrations; the POS screen keeps its concept label. The word
+        // itself may appear in unrelated copy (the Arabic billing note), so only those parts are checked.
+        var soon = Encoded(Text(culture, "Marketing.ComingSoon"));
+        Assert.DoesNotContain(soon, Between(page.Body, "<section class=\"wm-section wm-section--peach wm-pos-teaser\" id=\"pos\"", "</section>"));
+        Assert.DoesNotContain(soon, Between(page.Body, "<header class=\"wm-header", "</header>"));
+        Assert.DoesNotContain(soon, Between(page.Body, "<footer class=\"wm-footer\"", "</footer>"));
+        Assert.DoesNotContain("wm-soon", page.Body);
+        Assert.Contains(Encoded(Text(culture, "Marketing.ConceptUiLabel")), page.Body);
+        Assert.Contains(Encoded(Text(culture, "Marketing.Platform.MigrosYemek")), page.Body);
+    }
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task PrivacyNotice_HasItsMetadataOneHeadingAndTheApplicationAddress(string culture)
+    {
+        var page = await GetAsync(PublicSiteUrls.PrivacyNoticePath, culture);
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        AssertDocument(page.Body, culture, "Marketing.PrivacyNotice.MetaTitle", "Marketing.PrivacyNotice.MetaDescription", "http://wasla.local/privacy-notice");
+        Assert.Contains(Encoded(Text(culture, "Marketing.PrivacyNotice.ControllerText")), page.Body);
+        Assert.Contains($"href=\"mailto:{PublicSiteUrls.ContactEmail}\"", page.Body);
     }
 
     [Theory]
@@ -70,7 +105,7 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
     }
 
     [Fact]
-    public async Task CallsToAction_LeadToSignupSignInPosAndPricing()
+    public async Task CallsToAction_LeadToSignupSignInPosPricingAndContact()
     {
         var home = await GetAsync("/", "tr-TR");
         var pos = await GetAsync(PublicSiteUrls.PosPath, "tr-TR");
@@ -80,11 +115,16 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         Assert.Contains("/signup?plan=Starter", homeLinks);
         Assert.Contains("/signup?plan=Pro", homeLinks);
         Assert.Contains("/signup?plan=ProPlus", homeLinks);
-        Assert.Equal(2, homeLinks.Count(l => l == ApplicationLoginUrl));
+        // The header's navigation, the header's narrow-screen link next to the menu button, and the footer.
+        Assert.Equal(3, homeLinks.Count(l => l == ApplicationLoginUrl));
         Assert.DoesNotContain("/auth/login", homeLinks);
         Assert.Contains(PublicSiteUrls.PosPath, homeLinks);
-        Assert.Contains("#pricing", homeLinks);
+        Assert.Contains("/#pricing", homeLinks);
+        Assert.Contains("#how-it-works", homeLinks);
+        // "Bize ulaşın" in the closing call to action and the footer, and the contact-sales plan, lead to the contact page.
+        Assert.True(homeLinks.Count(l => l == PublicSiteUrls.ContactPath) >= 3);
         Assert.Contains("/#orders", Links(pos.Body));
+        Assert.Contains(PublicSiteUrls.ContactPath, Links(pos.Body));
         Assert.Contains(PublicSiteUrls.InstagramUrl, Links(pos.Body));
     }
 
@@ -98,7 +138,9 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
 
         foreach (var (path, body) in pages)
         {
-            foreach (var link in Links(body).Where(l => !l.StartsWith("https://", StringComparison.Ordinal)))
+            foreach (var link in Links(body).Where(l => !l.StartsWith("https://", StringComparison.Ordinal)
+                                                      && !l.StartsWith("mailto:", StringComparison.Ordinal)
+                                                      && !l.StartsWith("tel:", StringComparison.Ordinal)))
             {
                 if (link == ApplicationLoginUrl)
                 {
@@ -143,8 +185,15 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
             var external = Links(page.Body).Where(l => l.StartsWith("http", StringComparison.Ordinal)).Distinct().Order(StringComparer.Ordinal).ToList();
             Assert.Equal(new[] { ApplicationLoginUrl, PublicSiteUrls.InstagramUrl }, external);
             Assert.Equal("https://www.instagram.com/app.wasla.tr/", PublicSiteUrls.InstagramUrl);
-            Assert.Contains("</span>app.wasla.tr</span>", page.Body);
+            Assert.Contains("</span>@app.wasla.tr</span>", page.Body);
         }
+    }
+
+    [Fact]
+    public void ContactDetails_AreTheConfirmedAddressAndNumber()
+    {
+        Assert.Equal("mehmetaliozdemir@wasla.tr", PublicSiteUrls.ContactEmail);
+        Assert.Equal("+90 544 669 56 91", PublicSiteUrls.ContactPhoneDisplay);
     }
 
     [Theory]
@@ -160,19 +209,35 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
                 var source = image.Groups["src"].Value;
                 Assert.True(
                     source.StartsWith("/images/brand/wasla-logo.svg", StringComparison.Ordinal)
-                    || source.StartsWith("/images/platforms/yemeksepeti.svg", StringComparison.Ordinal)
-                    || source.StartsWith("/images/platforms/getiryemek.svg", StringComparison.Ordinal),
+                    || source.StartsWith("/images/brand/wasla-app-icon.svg", StringComparison.Ordinal)
+                    || source.StartsWith("/images/platforms/", StringComparison.Ordinal)
+                    || source.StartsWith("/images/marketing/", StringComparison.Ordinal),
                     $"{path}: unexpected image {source}");
                 Assert.Contains(" alt=\"", image.Value);
             }
 
             var mockups = MockupTag().Matches(page.Body);
-            Assert.NotEmpty(mockups);
+            if (MockupPaths.Contains(path))
+                Assert.NotEmpty(mockups);
             Assert.All(mockups, m => Assert.Contains("aria-hidden=\"true\"", m.Value));
 
             Assert.DoesNotContain("figma.com", page.Body, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("Migros", page.Body, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("mailto:", page.Body, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    public void MarketingImages_ExistInTheRepository()
+    {
+        foreach (var file in new[]
+                 {
+                     "images/brand/wasla-app-icon.svg", "images/platforms/migrosyemek.svg",
+                     "images/marketing/hero-kitchen-pass.jpg", "images/marketing/hero-kitchen-pass-m.jpg",
+                     "images/marketing/ocakbasi-grill.jpg", "images/marketing/doner-kitchen.jpg", "images/marketing/lokanta-cook-m.jpg",
+                     "images/marketing/kitchen-pass-heat-lamps-m.jpg", "images/marketing/print-bridge-overview.png",
+                     "images/marketing/print-bridge-overview-narrow.png"
+                 })
+        {
+            Assert.True(File.Exists(Path.Combine(Root(), "src", "Wasla.Web", "wwwroot", file)), file);
         }
     }
 
@@ -224,7 +289,7 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
     private static bool IsExpectedRedirect(string path, string? location) => path switch
     {
         "/auth/login" => location?.StartsWith("/tenant-address-required", StringComparison.Ordinal) == true,
-        _ when path.StartsWith("/culture/set", StringComparison.Ordinal) => location is "/" or "/pos",
+        _ when path.StartsWith("/culture/set", StringComparison.Ordinal) => location is not null && MarketingPaths.Contains(location),
         _ => false
     };
 
@@ -245,6 +310,14 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
             CookieRequestCultureProvider.DefaultCookieName,
             Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture))));
         return await browser.GetAsync(path);
+    }
+
+    private static string Between(string html, string start, string end)
+    {
+        var from = html.IndexOf(start, StringComparison.Ordinal);
+        Assert.True(from >= 0, $"'{start}' not found.");
+        var to = html.IndexOf(end, from, StringComparison.Ordinal);
+        return html[from..to];
     }
 
     private static List<string> Links(string html) =>
@@ -299,7 +372,7 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         {
             _connection.Open();
             await SignupWebHost.CreateCentralDbAsync(_connection);
-            Web = await SignupWebHost.StartAsync(_connection, _keyRing);
+            Web = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: SignupWebHost.FullMarketingSite);
         }
 
         public async ValueTask DisposeAsync()

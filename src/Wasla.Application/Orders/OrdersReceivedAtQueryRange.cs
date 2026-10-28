@@ -92,7 +92,7 @@ public static class OrdersReceivedAtQueryRange
     /// </summary>
     public const string WebDateFormat = "yyyy-MM-dd";
 
-    // No order has an order time before 2000 (OrderSyncService.PlausibleProviderTime), and Hijri years (14xx) cannot pass
+    // No order has an order time before 2000 (OrderIngestion.PlausibleProviderTime), and Hijri years (14xx) cannot pass
     // for Gregorian ones.
     private static readonly DateOnly MinWebDate = new(2000, 1, 1);
 

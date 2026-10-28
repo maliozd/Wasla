@@ -162,10 +162,10 @@ public sealed class OrderTimeSemanticsTests : IDisposable
     {
         var now = new DateTime(2026, 10, 17, 6, 0, 0, DateTimeKind.Utc);
 
-        Assert.Equal(now.AddMinutes(4), OrderSyncService.PlausibleProviderTime(now.AddMinutes(4), now));
-        Assert.Null(OrderSyncService.PlausibleProviderTime(now.AddMinutes(6), now));
-        Assert.Null(OrderSyncService.PlausibleProviderTime(new DateTime(1999, 12, 31, 0, 0, 0, DateTimeKind.Utc), now));
-        Assert.Equal(DateTimeKind.Utc, OrderSyncService.PlausibleProviderTime(DateTime.SpecifyKind(now, DateTimeKind.Unspecified), now)!.Value.Kind);
+        Assert.Equal(now.AddMinutes(4), OrderIngestion.PlausibleProviderTime(now.AddMinutes(4), now));
+        Assert.Null(OrderIngestion.PlausibleProviderTime(now.AddMinutes(6), now));
+        Assert.Null(OrderIngestion.PlausibleProviderTime(new DateTime(1999, 12, 31, 0, 0, 0, DateTimeKind.Utc), now));
+        Assert.Equal(DateTimeKind.Utc, OrderIngestion.PlausibleProviderTime(DateTime.SpecifyKind(now, DateTimeKind.Unspecified), now)!.Value.Kind);
     }
 
     [Fact]

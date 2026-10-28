@@ -615,6 +615,9 @@
   <data name="Orders.LiveScreen.CountUnavailable" xml:space="preserve">
     <value>Этот итог не входит в оперативный снимок.</value>
   </data>
+  <data name="Orders.LiveScreen.WaitingRealOrders" xml:space="preserve">
+    <value>Ожидающие реальные заказы</value>
+  </data>
   <data name="Orders.Print.Action" xml:space="preserve">
     <value>Печать</value>
   </data>
@@ -782,6 +785,9 @@
   </data>
   <data name="Orders.Details.Received" xml:space="preserve">
     <value>Получен в Wasla</value>
+  </data>
+  <data name="Orders.Details.OrderTimeUnknown" xml:space="preserve">
+    <value>Время заказа неизвестно</value>
   </data>
   <data name="Orders.Details.PaymentMethod" xml:space="preserve">
     <value>Способ оплаты</value>
@@ -3838,6 +3844,8 @@
   <data name="Orders.LiveScreen.SelectOrderDescription" xml:space="preserve"><value>Выберите заказ из списка, чтобы увидеть подробности и действия.</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrders" xml:space="preserve"><value>Сейчас нет заказов для отображения</value></data>
   <data name="Orders.LiveScreen.NoDisplayableOrdersDescription" xml:space="preserve"><value>Заказы появятся здесь, когда поступят.</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrder" xml:space="preserve"><value>На этом экране нет тренировочного заказа</value></data>
+  <data name="Orders.LiveScreen.NoPracticeOrderDescription" xml:space="preserve"><value>Во время обучения реальные заказы здесь не показываются; они появятся здесь, когда обучение закончится.</value></data>
   <data name="Orders.LiveScreen.BackToQueue" xml:space="preserve"><value>Назад к заказам</value></data>
   <data name="Orders.LiveScreen.DetailRetry" xml:space="preserve"><value>Повторить</value></data>
   <data name="Orders.LiveScreen.Queue" xml:space="preserve"><value>Заказы</value></data>
@@ -4175,10 +4183,10 @@
   <data name="GuidedSetup.Training.Completed" xml:space="preserve"><value>Обучение работе с заказами пройдено, пошаговая настройка завершена. Руководства по-прежнему доступны в разделе «Помощь и руководства».</value></data>
   <data name="GuidedSetup.Training.PracticeFailed" xml:space="preserve"><value>Не удалось запустить тренировочный заказ. Попробуйте ещё раз.</value></data>
   <data name="GuidedSetup.Training.NotYetDelivered" xml:space="preserve"><value>Обучение можно завершить после доставки тренировочного заказа.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Пока вы проходили обучение, пришёл реальный заказ</value></data>
-  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Пока вы проходили обучение, пришли реальные заказы: {0}</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Вы можете продолжить обучение. Заказ можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
-  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Вы можете продолжить обучение. Заказы можно обработать в панели платформы. Когда обучение завершится, активные заказы появятся на живом экране.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleOne" xml:space="preserve"><value>Ожидает реальный заказ</value></data>
+  <data name="GuidedSetup.Training.RealOrders.TitleMany" xml:space="preserve"><value>Ожидают реальные заказы: {0}</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyOne" xml:space="preserve"><value>Реальные заказы не показываются на этом учебном экране, но о новых вы по-прежнему получаете уведомления по своим настройкам. Заказ можно обработать в панели платформы; он появится на живом экране, когда обучение закончится.</value></data>
+  <data name="GuidedSetup.Training.RealOrders.BodyMany" xml:space="preserve"><value>Реальные заказы не показываются на этом учебном экране, но о новых вы по-прежнему получаете уведомления по своим настройкам. Заказы можно обработать в панели платформы; они появятся на живом экране, когда обучение закончится.</value></data>
   <data name="GuidedSetup.Panel.ContinueToPrintBridge" xml:space="preserve"><value>Перейти к Print Bridge</value></data>
   <data name="GuidedSetup.Panel.ContinueToOrderTraining" xml:space="preserve"><value>Перейти к обучению работе с заказами</value></data>
   <data name="GuidedSetup.Panel.NotReadyYet" xml:space="preserve"><value>Этот шаг ещё не завершён. Завершите настройку или выберите настройку позже.</value></data>
@@ -4368,93 +4376,104 @@
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Сейчас ничего не требует внимания.</value></data>
   <data name="Marketing.SkipToContent" xml:space="preserve"><value>Перейти к содержимому</value></data>
   <data name="Marketing.ComingSoon" xml:space="preserve"><value>Скоро</value></data>
+  <data name="Marketing.ComingSoonPage.MetaTitle" xml:space="preserve"><value>Wasla — Скоро</value></data>
+  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>Wasla готовит программы для заказов и продаж в ресторанах. Мы вносим последние штрихи и совсем скоро будем здесь.</value></data>
+  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>Кухня разогревается.</value></data>
+  <data name="Marketing.ComingSoonPage.Eyebrow" xml:space="preserve"><value>Совсем скоро</value></data>
+  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>Wasla готовит программы для заказов и продаж в ресторанах. Мы вносим последние штрихи и совсем скоро будем здесь.</value></data>
+  <data name="Marketing.ComingSoonPage.EmailUs" xml:space="preserve"><value>Напишите нам</value></data>
+  <data name="Marketing.ComingSoonPage.FollowOnInstagram" xml:space="preserve"><value>Подпишитесь в Instagram</value></data>
   <data name="Marketing.ConceptUi" xml:space="preserve"><value>Концепт интерфейса: Wasla POS пока недоступен.</value></data>
+  <data name="Marketing.ConceptUiLabel" xml:space="preserve"><value>Концепт интерфейса</value></data>
   <data name="Marketing.Nav.Label" xml:space="preserve"><value>Главное меню</value></data>
   <data name="Marketing.Nav.OpenMenu" xml:space="preserve"><value>Открыть меню</value></data>
   <data name="Marketing.Nav.CloseMenu" xml:space="preserve"><value>Закрыть меню</value></data>
+  <data name="Marketing.Nav.HowItWorks" xml:space="preserve"><value>Как это работает</value></data>
   <data name="Marketing.Nav.Products" xml:space="preserve"><value>Продукты</value></data>
+  <data name="Marketing.PhotoCredit" xml:space="preserve"><value>Фото: {0} / Pexels</value></data>
+  <data name="Marketing.Platform.MigrosYemek" xml:space="preserve"><value>Migros Yemek</value></data>
   <data name="Marketing.Nav.Integrations" xml:space="preserve"><value>Интеграции</value></data>
   <data name="Marketing.Nav.Login" xml:space="preserve"><value>Войти</value></data>
   <data name="Marketing.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
-  <data name="Marketing.Product.OrdersShort" xml:space="preserve"><value>Онлайн-заказы</value></data>
   <data name="Marketing.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
   <data name="Marketing.Product.PosShort" xml:space="preserve"><value>Продажи в ресторане</value></data>
   <data name="Marketing.Product.PrintBridge" xml:space="preserve"><value>Wasla Print Bridge</value></data>
-  <data name="Marketing.Product.Family" xml:space="preserve"><value>Семейство продуктов Wasla</value></data>
   <data name="Marketing.Cta.Start" xml:space="preserve"><value>Начать</value></data>
-  <data name="Marketing.Cta.ExploreProducts" xml:space="preserve"><value>Посмотреть продукты</value></data>
+  <data name="Marketing.Cta.StartWithOrders" xml:space="preserve"><value>Начать с Wasla Orders</value></data>
   <data name="Marketing.Cta.ExploreOrders" xml:space="preserve"><value>Подробнее о Wasla Orders</value></data>
   <data name="Marketing.Cta.ExplorePos" xml:space="preserve"><value>Подробнее о Wasla POS</value></data>
   <data name="Marketing.Cta.ExplorePosFeatures" xml:space="preserve"><value>Возможности POS</value></data>
-  <data name="Marketing.Cta.ViewPlans" xml:space="preserve"><value>Смотреть тарифы</value></data>
   <data name="Marketing.Cta.FollowInstagram" xml:space="preserve"><value>Следите за новостями в Instagram</value></data>
+  <data name="Marketing.Cta.SeeHowItWorks" xml:space="preserve"><value>Посмотреть, как это работает</value></data>
   <data name="Marketing.Cta.ContactInstagram" xml:space="preserve"><value>Напишите нам в Instagram</value></data>
+  <data name="Marketing.Cta.ContactUs" xml:space="preserve"><value>Связаться с нами</value></data>
   <data name="Marketing.Footer.Tagline" xml:space="preserve"><value>Программы для управления онлайн-заказами и продажами в ресторане.</value></data>
-  <data name="Marketing.Footer.GetStarted" xml:space="preserve"><value>Начало работы</value></data>
+  <data name="Marketing.Footer.WriteOnInstagram" xml:space="preserve"><value>Напишите нам в Instagram</value></data>
   <data name="Marketing.Footer.Contact" xml:space="preserve"><value>Контакты</value></data>
-  <data name="Marketing.Footer.InstagramLabel" xml:space="preserve"><value>Instagram: {0}</value></data>
   <data name="Marketing.Footer.Copyright" xml:space="preserve"><value>© {0} Wasla. Все права защищены.</value></data>
+  <data name="Marketing.Footer.DeliveryRestaurants" xml:space="preserve"><value>Рестораны с доставкой</value></data>
+  <data name="Marketing.Footer.Help" xml:space="preserve"><value>Помощь и материалы</value></data>
+  <data name="Marketing.Footer.KitchenReceipts" xml:space="preserve"><value>Кухонные чеки и печать</value></data>
+  <data name="Marketing.Footer.LiveScreen" xml:space="preserve"><value>Живой экран</value></data>
+  <data name="Marketing.Footer.MadeFor" xml:space="preserve"><value>Создаётся для ресторанов Турции.</value></data>
+  <data name="Marketing.Footer.OnlineOrderManagement" xml:space="preserve"><value>Управление онлайн-заказами</value></data>
+  <data name="Marketing.Footer.PrintBridgeSetup" xml:space="preserve"><value>Установка Print Bridge</value></data>
+  <data name="Marketing.Footer.Solutions" xml:space="preserve"><value>Решения</value></data>
   <data name="Marketing.Home.MetaTitle" xml:space="preserve"><value>Wasla — программы для онлайн-заказов и продаж ресторана</value></data>
-  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>Управляйте онлайн-заказами с платформ на одном экране с Wasla Orders: живой экран заказов и автоматическая печать чеков. Wasla POS для продаж в ресторане — скоро.</value></data>
-  <data name="Marketing.Home.HeroTitle" xml:space="preserve"><value>Вся работа ресторана —</value></data>
+  <data name="Marketing.Home.PlatformsLead" xml:space="preserve"><value>Заказы с онлайн-платформ собираются в Wasla Orders в один поток. На каждой карточке видно, с какой платформы пришёл заказ; подтверждение, приготовление и выдача — на одном экране.</value></data>
+  <data name="Marketing.Home.PlatformsNote" xml:space="preserve"><value>Каждый ресторан подключает один магазин на каждой платформе.</value></data>
+  <data name="Marketing.Home.PlatformsTitleLine1" xml:space="preserve"><value>Платформы разные.</value></data>
+  <data name="Marketing.Home.PlatformsTitleLine2" xml:space="preserve"><value>Экран один.</value></data>
+  <data name="Marketing.Home.PosCapability1" xml:space="preserve"><value>Управление столами и открытыми счетами</value></data>
+  <data name="Marketing.Home.PosCapability2" xml:space="preserve"><value>Быстрые продажи касанием</value></data>
+  <data name="Marketing.Home.PosCapability3" xml:space="preserve"><value>Работа кухни и кухонные чеки</value></data>
+  <data name="Marketing.Home.PosCapability4" xml:space="preserve"><value>Заказы через QR-меню</value></data>
+  <data name="Marketing.Home.PosCapability5" xml:space="preserve"><value>Продажи продолжаются без интернета</value></data>
+  <data name="Marketing.Home.PosLead" xml:space="preserve"><value>Wasla POS — сенсорная кассовая система, которую мы создаём для продаж за столиками, на доставку, навынос и у стойки. Она рассчитана на локальную работу на устройствах ресторана, чтобы продажи шли даже без интернета.</value></data>
+  <data name="Marketing.Home.PosTitle" xml:space="preserve"><value>Отдельный продукт для продаж в зале.</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature1" xml:space="preserve"><value>Работает с принтером, установленным в Windows</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature2" xml:space="preserve"><value>Автоматические чеки включаются и выключаются в настройках</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature3" xml:space="preserve"><value>Чек можно перепечатать вручную при необходимости</value></data>
+  <data name="Marketing.Home.PrintBridgeFeature4" xml:space="preserve"><value>Статус печати виден в панели</value></data>
+  <data name="Marketing.Home.PrintBridgeLead" xml:space="preserve"><value>Wasla Print Bridge — небольшое приложение для компьютера с Windows на кухне. Оно ставит чек подтверждённого заказа в очередь и отправляет на ваш принтер; статус печати видно в панели Wasla.</value></data>
+  <data name="Marketing.Home.PrintBridgeScreenshotAlt" xml:space="preserve"><value>Экран «Обзор» приложения Wasla Print Bridge: подключение к серверу в сети, принтер POS-80 готов, последнее задание печати #1042 напечатано.</value></data>
+  <data name="Marketing.Home.PrintBridgeTitle" xml:space="preserve"><value>Подтверждённый заказ автоматически уходит на кухонный принтер.</value></data>
+  <data name="Marketing.Home.MetaDescription" xml:space="preserve"><value>Собирайте онлайн-заказы с платформ на одном экране Wasla Orders и отслеживайте их. Подтверждённый заказ автоматически отправляется на кухонный принтер через Wasla Print Bridge.</value></data>
   <data name="Marketing.Home.HeroTitleAccent" xml:space="preserve"><value>в Wasla.</value></data>
-  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>Управляйте онлайн-заказами с платформ уже сегодня в Wasla Orders; Wasla POS для продаж в ресторане скоро появится. Более чёткий сервис, быстрая работа и одно семейство продуктов.</value></data>
-  <data name="Marketing.Home.ProductsTitle" xml:space="preserve"><value>Два продукта — одна работа ресторана.</value></data>
-  <data name="Marketing.Home.ProductsLead" xml:space="preserve"><value>Wasla Orders — для онлайн-заказов, Wasla POS — для продаж в ресторане. Один бренд, единый дизайн и одна команда поддержки.</value></data>
-  <data name="Marketing.Home.OrdersTagline" xml:space="preserve"><value>Центр управления онлайн-заказами.</value></data>
-  <data name="Marketing.Home.OrdersFeature1" xml:space="preserve"><value>Заказы с платформ</value></data>
-  <data name="Marketing.Home.OrdersFeature2" xml:space="preserve"><value>Живой экран заказов</value></data>
-  <data name="Marketing.Home.OrdersFeature3" xml:space="preserve"><value>Автоматическая печать чеков</value></data>
-  <data name="Marketing.Home.OrdersFeature4" xml:space="preserve"><value>История заказов</value></data>
+  <data name="Marketing.Home.HeroTitleLine1" xml:space="preserve"><value>Заказ пришёл.</value></data>
+  <data name="Marketing.Home.HeroTitleLine2" xml:space="preserve"><value>Остальное —</value></data>
+  <data name="Marketing.Home.HeroLead" xml:space="preserve"><value>Собирайте онлайн-заказы с платформ на одном экране и следите за их статусами. Каждый подтверждённый заказ автоматически отправляется на кухонный принтер.</value></data>
   <data name="Marketing.Home.IntegrationsNote" xml:space="preserve"><value>Интеграции с Yemeksepeti, Trendyol GO и GetirYemek запускаются поэтапно; пока работают не все подключения к платформам.</value></data>
-  <data name="Marketing.Home.PosTagline" xml:space="preserve"><value>Быстрый и современный POS для продаж в ресторане.</value></data>
-  <data name="Marketing.Home.PosFeature1" xml:space="preserve"><value>Заказы за столом и навынос</value></data>
-  <data name="Marketing.Home.PosFeature2" xml:space="preserve"><value>Сенсорное управление</value></data>
-  <data name="Marketing.Home.PosFeature3" xml:space="preserve"><value>Меню и оплата</value></data>
-  <data name="Marketing.Home.PosFeature4" xml:space="preserve"><value>Работа зала</value></data>
-  <data name="Marketing.Home.ChannelsTitle" xml:space="preserve"><value>Заказы приходят по двум каналам.</value></data>
-  <data name="Marketing.Home.ChannelsLead" xml:space="preserve"><value>Онлайн-заказы с платформ собираются в Wasla Orders; Wasla POS для продаж за столом и на кассе скоро появится. Оба продукта рассчитаны на одну кухню.</value></data>
+  <data name="Marketing.Home.LiveCaption" xml:space="preserve"><value>Упрощённая визуализация продукта · Примеры заказов</value></data>
+  <data name="Marketing.Home.LiveEyebrow" xml:space="preserve"><value>Wasla Orders · Живой экран</value></data>
+  <data name="Marketing.Home.LiveFeature1Text" xml:space="preserve"><value>Три вида под то, как работает ваша команда.</value></data>
+  <data name="Marketing.Home.LiveFeature1Title" xml:space="preserve"><value>Доска, Список и Фокус</value></data>
+  <data name="Marketing.Home.LiveFeature2Text" xml:space="preserve"><value>Звук, подсветка и уведомление в браузере по желанию.</value></data>
+  <data name="Marketing.Home.LiveFeature2Title" xml:space="preserve"><value>Оповещение о новом заказе</value></data>
+  <data name="Marketing.Home.LiveFeature3Text" xml:space="preserve"><value>Поиск по платформе, статусу и дате.</value></data>
+  <data name="Marketing.Home.LiveFeature3Title" xml:space="preserve"><value>История заказов</value></data>
+  <data name="Marketing.Home.LiveFeature4Text" xml:space="preserve"><value>Вы решаете, кто что видит и меняет.</value></data>
+  <data name="Marketing.Home.LiveFeature4Title" xml:space="preserve"><value>Пользователи и роли</value></data>
+  <data name="Marketing.Home.LiveFeature5Text" xml:space="preserve"><value>Интерфейс на турецком, английском, арабском и русском.</value></data>
+  <data name="Marketing.Home.LiveFeature5Title" xml:space="preserve"><value>Четыре языка</value></data>
+  <data name="Marketing.Home.LiveLead" xml:space="preserve"><value>Живой экран рассчитан на чтение издалека в час пик: крупные номера заказов, цвета статусов и действия одним касанием. Переключайтесь между видами «Доска», «Список» и «Фокус».</value></data>
+  <data name="Marketing.Home.LiveTitle" xml:space="preserve"><value>Общий экран кухни и стойки.</value></data>
   <data name="Marketing.Home.ChannelOnlineTitle" xml:space="preserve"><value>Онлайн-платформы</value></data>
-  <data name="Marketing.Home.ChannelOnlineDesc" xml:space="preserve"><value>Заказы с доставкой</value></data>
-  <data name="Marketing.Home.ChannelOnlineFoot" xml:space="preserve"><value>Собираются в Wasla Orders</value></data>
-  <data name="Marketing.Home.ChannelInStoreTitle" xml:space="preserve"><value>Продажи в ресторане</value></data>
-  <data name="Marketing.Home.ChannelInStoreDesc" xml:space="preserve"><value>Столы, навынос, самовывоз и касса</value></data>
-  <data name="Marketing.Home.ChannelInStoreFoot" xml:space="preserve"><value>Принимаются в Wasla POS</value></data>
-  <data name="Marketing.Home.SameKitchen" xml:space="preserve"><value>Одна кухня</value></data>
   <data name="Marketing.Home.ReceiptAndPrinter" xml:space="preserve"><value>Чеки и принтер</value></data>
-  <data name="Marketing.Home.RoutesTitle" xml:space="preserve"><value>Какой продукт вам подходит?</value></data>
-  <data name="Marketing.Home.RoutesLead" xml:space="preserve"><value>Начните с того, что нужно сейчас: семейство продуктов растёт вместе с рестораном.</value></data>
-  <data name="Marketing.Home.RouteOrdersNeed" xml:space="preserve"><value>Мне нужно управлять только онлайн-заказами с платформ.</value></data>
-  <data name="Marketing.Home.RouteOrdersDetail" xml:space="preserve"><value>Создан, чтобы собирать заказы Yemeksepeti, Trendyol GO и GetirYemek на одном экране.</value></data>
-  <data name="Marketing.Home.RoutePosNeed" xml:space="preserve"><value>Мне нужны продажи в зале и управление столами.</value></data>
-  <data name="Marketing.Home.RoutePosDetail" xml:space="preserve"><value>Сенсорный POS для продаж за столом, навынос, самовывоза и на кассе — скоро.</value></data>
-  <data name="Marketing.Home.RouteBothNeed" xml:space="preserve"><value>Я хочу развивать оба направления вместе.</value></data>
-  <data name="Marketing.Home.RouteBothDetail" xml:space="preserve"><value>Начните с Wasla Orders сегодня и продолжите в том же семействе продуктов, когда Wasla POS будет готов.</value></data>
-  <data name="Marketing.Home.ValuesTitle" xml:space="preserve"><value>Общий подход обоих продуктов.</value></data>
-  <data name="Marketing.Home.ValuesLead" xml:space="preserve"><value>Продукты Wasla создаются по одним принципам.</value></data>
-  <data name="Marketing.Home.ValueOperationTitle" xml:space="preserve"><value>Дизайн для работы ресторана</value></data>
-  <data name="Marketing.Home.ValueOperationText" xml:space="preserve"><value>Экраны рассчитаны на кухню, кассу и зал: читаются издалека и быстры в час пик.</value></data>
-  <data name="Marketing.Home.ValueLearnTitle" xml:space="preserve"><value>Быстро осваивается</value></data>
-  <data name="Marketing.Home.ValueLearnText" xml:space="preserve"><value>Простые экраны, чтобы новый сотрудник справлялся с основным уже в первую смену.</value></data>
-  <data name="Marketing.Home.ValueLocalTitle" xml:space="preserve"><value>Фокус на местных потребностях</value></data>
-  <data name="Marketing.Home.ValueLocalText" xml:space="preserve"><value>В приоритете платформы заказов Турции, доставка и турецкий язык.</value></data>
-  <data name="Marketing.Home.ValueSupportTitle" xml:space="preserve"><value>Настройка и поддержка</value></data>
-  <data name="Marketing.Home.ValueSupportText" xml:space="preserve"><value>Настраиваем вместе и остаёмся рядом во время работы.</value></data>
-  <data name="Marketing.Home.ValueFamilyTitle" xml:space="preserve"><value>Растущее семейство продуктов</value></data>
-  <data name="Marketing.Home.ValueFamilyText" xml:space="preserve"><value>Wasla развивается как семейство продуктов — от онлайн-заказов до продаж в ресторане.</value></data>
-  <data name="Marketing.Home.TrustTitle" xml:space="preserve"><value>Создаётся для ресторанов Турции.</value></data>
-  <data name="Marketing.Home.TrustLead" xml:space="preserve"><value>Отзывы клиентов и цифры мы опубликуем, когда появятся реальные данные. Что можно сказать уже сегодня:</value></data>
-  <data name="Marketing.Home.TrustRestaurantsTitle" xml:space="preserve"><value>Для ресторанов Турции</value></data>
-  <data name="Marketing.Home.TrustRestaurantsText" xml:space="preserve"><value>Проектируется с учётом кухни доставки, кассы и обслуживания столов.</value></data>
-  <data name="Marketing.Home.TrustPlatformsTitle" xml:space="preserve"><value>Фокус на местных платформах заказов</value></data>
-  <data name="Marketing.Home.TrustPlatformsText" xml:space="preserve"><value>Мы работаем над подключениями Yemeksepeti, Trendyol GO и GetirYemek; интеграции запускаются поэтапно.</value></data>
-  <data name="Marketing.Home.TrustTurkishTitle" xml:space="preserve"><value>Продукт и поддержка на турецком</value></data>
-  <data name="Marketing.Home.TrustTurkishText" xml:space="preserve"><value>Интерфейс и поддержка на турецком; при настройке наша команда рядом.</value></data>
-  <data name="Marketing.Home.TrustPrintBridgeText" xml:space="preserve"><value>Вспомогательное приложение для Windows отправляет чеки на ваш принтер.</value></data>
-  <data name="Marketing.Home.TrustLanguagesTitle" xml:space="preserve"><value>Многоязычность</value></data>
-  <data name="Marketing.Home.TrustLanguagesText" xml:space="preserve"><value>Разрабатывается интерфейс на турецком, английском, арабском и русском языках.</value></data>
+  <data name="Marketing.Home.SimplifiedVisualization" xml:space="preserve"><value>Упрощённая визуализация продукта</value></data>
+  <data name="Marketing.Home.Step1Text" xml:space="preserve"><value>Заказ с подключённой платформы попадает в Wasla Orders. На живом экране звук и подсветка не дадут команде его пропустить.</value></data>
+  <data name="Marketing.Home.Step1Title" xml:space="preserve"><value>Приходит заказ</value></data>
+  <data name="Marketing.Home.Step2Text" xml:space="preserve"><value>Подтверждайте или отклоняйте заказ одним касанием. Следите за статусами «Новый», «Подготовка», «Готовый» и «В пути» на одном экране. При желании подходящие заказы подтверждаются автоматически.</value></data>
+  <data name="Marketing.Home.Step2Title" xml:space="preserve"><value>Подтверждайте и отслеживайте</value></data>
+  <data name="Marketing.Home.Step3Text" xml:space="preserve"><value>Чек подтверждённого заказа уходит на кухонный принтер через Wasla Print Bridge на вашем компьютере с Windows. При необходимости его можно перепечатать одним щелчком.</value></data>
+  <data name="Marketing.Home.Step3Title" xml:space="preserve"><value>Уходит на кухню</value></data>
+  <data name="Marketing.Home.StepsLead" xml:space="preserve"><value>Подключение платформ, установку Print Bridge и живой экран мы настраиваем вместе с вами. Дальше — один и тот же простой порядок в каждую смену.</value></data>
+  <data name="Marketing.Home.StepsTitle" xml:space="preserve"><value>От заказа до кухни — три шага.</value></data>
   <data name="Marketing.Home.FinalTitle" xml:space="preserve"><value>Выберите подходящий продукт Wasla для вашего ресторана.</value></data>
-  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders для онлайн-заказов готов уже сегодня; Wasla POS для продаж в ресторане — скоро.</value></data>
+  <data name="Marketing.Home.FlowStepKitchen" xml:space="preserve"><value>Кухня</value></data>
+  <data name="Marketing.Home.FlowStepPlatforms" xml:space="preserve"><value>Платформы заказов</value></data>
+  <data name="Marketing.Home.HeroEyebrow" xml:space="preserve"><value>Wasla Orders · Управление онлайн-заказами</value></data>
+  <data name="Marketing.Home.FinalLead" xml:space="preserve"><value>Wasla Orders — для онлайн-заказов, Wasla POS — для продаж в ресторане.</value></data>
   <data name="Marketing.Pos.MetaTitle" xml:space="preserve"><value>Wasla POS (скоро) — продажи в ресторане | Wasla</value></data>
   <data name="Marketing.Pos.MetaDescription" xml:space="preserve"><value>Wasla POS — сенсорный ресторанный POS в разработке для продаж за столом, навынос, самовывоза и на кассе. Пока не продаётся.</value></data>
   <data name="Marketing.Pos.HeroTitle" xml:space="preserve"><value>От стола до кассы — продажи в ресторане</value></data>
@@ -4481,6 +4500,37 @@
   <data name="Marketing.Pos.TablesPoint3" xml:space="preserve"><value>Добавление заказов к столу</value></data>
   <data name="Marketing.Pos.TablesPoint4" xml:space="preserve"><value>Счёт и оплата</value></data>
   <data name="Marketing.Pos.TouchTitle" xml:space="preserve"><value>Быстрый заказ касанием.</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyHeading" xml:space="preserve"><value>Как подать запрос</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyTextAfter" xml:space="preserve"><value>. В зависимости от характера запроса он рассматривается бесплатно не позднее чем через 30 дней.</value></data>
+  <data name="Marketing.PrivacyNotice.ApplyTextBefore" xml:space="preserve"><value>Запросы, связанные с этими правами, можно направить по адресу</value></data>
+  <data name="Marketing.PrivacyNotice.ControllerHeading" xml:space="preserve"><value>1. Оператор данных</value></data>
+  <data name="Marketing.PrivacyNotice.ControllerText" xml:space="preserve"><value>Ваши персональные данные обрабатывает Wasla как оператор данных.</value></data>
+  <data name="Marketing.PrivacyNotice.DataHeading" xml:space="preserve"><value>2. Какие персональные данные мы обрабатываем</value></data>
+  <data name="Marketing.PrivacyNotice.DataText" xml:space="preserve"><value>Имя и фамилия, название ресторана, адрес электронной почты, номер телефона (если вы его указали), выбранная тема и текст сообщения, которые вы указываете в форме связи.</value></data>
+  <data name="Marketing.PrivacyNotice.Eyebrow" xml:space="preserve"><value>Правовая информация</value></data>
+  <data name="Marketing.PrivacyNotice.Intro" xml:space="preserve"><value>Настоящее уведомление подготовлено в соответствии со статьёй 10 Закона № 6698 о защите персональных данных («KVKK») и объясняет, как обрабатываются персональные данные, которые вы передаёте нам через форму связи на wasla.tr.</value></data>
+  <data name="Marketing.PrivacyNotice.LegalBasisHeading" xml:space="preserve"><value>4. Способ сбора и правовое основание</value></data>
+  <data name="Marketing.PrivacyNotice.LegalBasisText" xml:space="preserve"><value>Данные собираются в электронном виде через форму связи на wasla.tr и обрабатываются на основаниях, предусмотренных пунктом 2 статьи 5 KVKK: непосредственная связь с заключением или исполнением договора (подпункт c) и законный интерес оператора данных при условии, что это не нарушает ваши основные права и свободы (подпункт f).</value></data>
+  <data name="Marketing.PrivacyNotice.MetaDescription" xml:space="preserve"><value>Как Wasla обрабатывает персональные данные, которые вы передаёте через форму связи, согласно турецкому закону о защите персональных данных (KVKK).</value></data>
+  <data name="Marketing.PrivacyNotice.MetaTitle" xml:space="preserve"><value>Уведомление о конфиденциальности — Wasla</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose1" xml:space="preserve"><value>Чтобы получить ваш запрос, ответить на него и связаться с вами</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose2" xml:space="preserve"><value>Чтобы предоставить запрошенную информацию о Wasla Orders, Wasla POS и Print Bridge</value></data>
+  <data name="Marketing.PrivacyNotice.Purpose3" xml:space="preserve"><value>Чтобы хранить переписку по вашему запросу</value></data>
+  <data name="Marketing.PrivacyNotice.PurposesHeading" xml:space="preserve"><value>3. Для чего мы обрабатываем ваши данные</value></data>
+  <data name="Marketing.PrivacyNotice.RetentionHeading" xml:space="preserve"><value>6. Как долго мы храним данные</value></data>
+  <data name="Marketing.PrivacyNotice.RetentionText" xml:space="preserve"><value>Данные хранятся столько, сколько нужно для ответа на запрос, и в течение сроков, установленных применимым законодательством; по истечении этих сроков они удаляются, уничтожаются или обезличиваются.</value></data>
+  <data name="Marketing.PrivacyNotice.Right1" xml:space="preserve"><value>Узнать, обрабатываются ли ваши персональные данные, и если да — запросить сведения об этом</value></data>
+  <data name="Marketing.PrivacyNotice.Right2" xml:space="preserve"><value>Узнать цель обработки и используются ли данные в соответствии с ней</value></data>
+  <data name="Marketing.PrivacyNotice.Right3" xml:space="preserve"><value>Знать третьих лиц в Турции или за рубежом, которым переданы данные</value></data>
+  <data name="Marketing.PrivacyNotice.Right4" xml:space="preserve"><value>Требовать исправления неполных или неверных данных, их удаления или уничтожения на условиях статьи 7 KVKK, а также уведомления об этом третьих лиц, которым данные были переданы</value></data>
+  <data name="Marketing.PrivacyNotice.Right5" xml:space="preserve"><value>Возражать против неблагоприятного для вас результата, полученного исключительно автоматизированным анализом</value></data>
+  <data name="Marketing.PrivacyNotice.Right6" xml:space="preserve"><value>Требовать возмещения ущерба, причинённого незаконной обработкой</value></data>
+  <data name="Marketing.PrivacyNotice.RightsHeading" xml:space="preserve"><value>7. Ваши права по статье 11 KVKK</value></data>
+  <data name="Marketing.PrivacyNotice.Subtitle" xml:space="preserve"><value>О персональных данных, которые вы передаёте через форму связи</value></data>
+  <data name="Marketing.PrivacyNotice.Title" xml:space="preserve"><value>Уведомление о конфиденциальности</value></data>
+  <data name="Marketing.PrivacyNotice.TransfersHeading" xml:space="preserve"><value>5. Кому мы передаём ваши данные</value></data>
+  <data name="Marketing.PrivacyNotice.TransfersText" xml:space="preserve"><value>Ваши данные могут передаваться в объёме, необходимом для ответа на запрос, поставщикам, чьими услугами мы пользуемся, например электронной почты и хостинга. Если серверы этих поставщиков находятся за пределами Турции, передача осуществляется в соответствии со статьёй 9 KVKK. Данные также могут быть переданы уполномоченным государственным органам по их законному запросу.</value></data>
+  <data name="Marketing.PrivacyNotice.Updated" xml:space="preserve"><value>Последнее обновление · {0}</value></data>
   <data name="Marketing.Pos.TouchLead" xml:space="preserve"><value>Крупные зоны касания, понятные категории и опции на одном экране. Даже в час пик заказ — это несколько касаний.</value></data>
   <data name="Marketing.Pos.TouchPoint1" xml:space="preserve"><value>Категории меню</value></data>
   <data name="Marketing.Pos.TouchPoint2" xml:space="preserve"><value>Опции блюд</value></data>
@@ -4518,21 +4568,34 @@
   <data name="Marketing.Mock.OneFamily" xml:space="preserve"><value>Одно семейство</value></data>
   <data name="Marketing.Mock.SameTeam" xml:space="preserve"><value>Тот же ресторан, та же команда</value></data>
   <data name="Marketing.Mock.KitchenTicketPrinted" xml:space="preserve"><value>Кухонный чек напечатан</value></data>
+  <data name="Marketing.Mock.LocalModeReady" xml:space="preserve"><value>Локальный режим готов</value></data>
   <data name="Marketing.Mock.TableAndTakeaway" xml:space="preserve"><value>Заказы за столом и навынос</value></data>
   <data name="Marketing.Mock.Hall" xml:space="preserve"><value>Зал</value></data>
   <data name="Marketing.Mock.Garden" xml:space="preserve"><value>Сад</value></data>
   <data name="Marketing.Mock.Terrace" xml:space="preserve"><value>Терраса</value></data>
+  <data name="Marketing.Mock.TodayUpdated" xml:space="preserve"><value>Сегодня {0} · Обновлено {1}</value></data>
+  <data name="Marketing.Mock.WithCourier" xml:space="preserve"><value>У курьера</value></data>
   <data name="Marketing.Mock.Table" xml:space="preserve"><value>Стол {0}</value></data>
   <data name="Marketing.Mock.Guests" xml:space="preserve"><value>{0} гостя</value></data>
   <data name="Marketing.Mock.GuestsMinutes" xml:space="preserve"><value>{0} гост. · {1} мин</value></data>
+  <data name="Marketing.Mock.GuestsSelected" xml:space="preserve"><value>{0} гост. · выбран</value></data>
   <data name="Marketing.Mock.TableFree" xml:space="preserve"><value>Свободен</value></data>
   <data name="Marketing.Mock.TableOccupied" xml:space="preserve"><value>Занят</value></data>
   <data name="Marketing.Mock.TableBill" xml:space="preserve"><value>Запрошен счёт</value></data>
   <data name="Marketing.Mock.TableSelected" xml:space="preserve"><value>Выбран</value></data>
   <data name="Marketing.Mock.TakePayment" xml:space="preserve"><value>Принять оплату</value></data>
+  <data name="Marketing.Mock.Takeaway" xml:space="preserve"><value>Доставка</value></data>
   <data name="Marketing.Mock.OrderItems" xml:space="preserve"><value>2× Адана-дюрюм, 1× Айран</value></data>
+  <data name="Marketing.Mock.OrderNumber" xml:space="preserve"><value>Заказ {0}</value></data>
+  <data name="Marketing.Mock.OrderSummary" xml:space="preserve"><value>{0} · {1} позиции · {2}</value></data>
   <data name="Marketing.Mock.Approve" xml:space="preserve"><value>Принять</value></data>
+  <data name="Marketing.Mock.Approved" xml:space="preserve"><value>Подтверждён</value></data>
+  <data name="Marketing.Mock.AreaGarden" xml:space="preserve"><value>Сад</value></data>
+  <data name="Marketing.Mock.AreaHall" xml:space="preserve"><value>Зал</value></data>
+  <data name="Marketing.Mock.AreaQuickSale" xml:space="preserve"><value>Быстрая продажа</value></data>
+  <data name="Marketing.Mock.AreaTakeaway" xml:space="preserve"><value>Доставка</value></data>
   <data name="Marketing.Mock.ReceiptPlatform" xml:space="preserve"><value>YEMEKSEPETI · ДОСТАВКА</value></data>
+  <data name="Marketing.Mock.ReceiptSentToPrinter" xml:space="preserve"><value>Чек отправлен на принтер</value></data>
   <data name="Marketing.Mock.ItemAdana" xml:space="preserve"><value>Адана-кебаб</value></data>
   <data name="Marketing.Mock.ItemUrfa" xml:space="preserve"><value>Урфа-кебаб</value></data>
   <data name="Marketing.Mock.ItemIskender" xml:space="preserve"><value>Искендер</value></data>
@@ -4549,6 +4612,7 @@
   <data name="Marketing.Mock.ItemLavash" xml:space="preserve"><value>Лаваш</value></data>
   <data name="Marketing.Mock.ItemKunefe" xml:space="preserve"><value>Кюнефе</value></data>
   <data name="Marketing.Mock.NewOrderAmount" xml:space="preserve"><value>Новый заказ · {0}</value></data>
+  <data name="Marketing.Mock.NewOrderCode" xml:space="preserve"><value>Новый заказ · {0}</value></data>
   <data name="Marketing.Mock.PhoneTakeaway" xml:space="preserve"><value>Навынос #P-031 · телефон</value></data>
   <data name="Marketing.Mock.PickupAt" xml:space="preserve"><value>Самовывоз · 19:30</value></data>
   <data name="Marketing.Mock.QuickSaleCounter" xml:space="preserve"><value>Быстрая продажа · касса</value></data>
@@ -4566,20 +4630,28 @@
   <data name="Marketing.Mock.Open" xml:space="preserve"><value>Открыт</value></data>
   <data name="Marketing.Mock.NotSpicy" xml:space="preserve"><value>Не острый</value></data>
   <data name="Marketing.Mock.MildSpicy" xml:space="preserve"><value>Слегка острый</value></data>
+  <data name="Marketing.Mock.MinutesAgo" xml:space="preserve"><value>{0} мин</value></data>
+  <data name="Marketing.Mock.NewOrder" xml:space="preserve"><value>Новый заказ</value></data>
   <data name="Marketing.Mock.Spicy" xml:space="preserve"><value>Острый</value></data>
   <data name="Marketing.Mock.SendToKitchen" xml:space="preserve"><value>На кухню</value></data>
+  <data name="Marketing.Mock.SentToKitchenPrinter" xml:space="preserve"><value>Отправлено на кухонный принтер</value></data>
   <data name="Marketing.Mock.TakeawayOrder" xml:space="preserve"><value>Заказ навынос #P-031</value></data>
   <data name="Marketing.Mock.PreparingMinutes" xml:space="preserve"><value>Готовится · {0} мин</value></data>
   <data name="Marketing.Mock.PaidByCard" xml:space="preserve"><value>Оплачено картой</value></data>
   <data name="Marketing.Mock.Customer" xml:space="preserve"><value>Клиент</value></data>
+  <data name="Marketing.Mock.Details" xml:space="preserve"><value>Подробнее</value></data>
   <data name="Marketing.Mock.Phone" xml:space="preserve"><value>Телефон</value></data>
   <data name="Marketing.Mock.Address" xml:space="preserve"><value>Адрес</value></data>
   <data name="Marketing.Mock.TableTotal" xml:space="preserve"><value>Итого по столу</value></data>
   <data name="Marketing.Mock.Card" xml:space="preserve"><value>Карта</value></data>
   <data name="Marketing.Mock.ItemsAmount" xml:space="preserve"><value>{0} поз. · {1}</value></data>
+  <data name="Marketing.Mock.KitchenPrinter" xml:space="preserve"><value>Кухонный принтер</value></data>
   <data name="Marketing.Mock.MarkDelivered" xml:space="preserve"><value>Отметить как выданный</value></data>
   <data name="Marketing.Mock.AddOrder" xml:space="preserve"><value>Добавить заказ</value></data>
   <data name="Marketing.Mock.PrintBill" xml:space="preserve"><value>Печать счёта</value></data>
+  <data name="Marketing.Mock.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
+  <data name="Marketing.Mock.PrintBridgeConnected" xml:space="preserve"><value>Wasla Print Bridge · Подключено</value></data>
+  <data name="Marketing.Mock.Queued" xml:space="preserve"><value>В очереди</value></data>
   <data name="Marketing.Mock.Portion" xml:space="preserve"><value>Порция</value></data>
   <data name="Marketing.Mock.PortionOne" xml:space="preserve"><value>1 порция</value></data>
   <data name="Marketing.Mock.PortionOneHalf" xml:space="preserve"><value>1,5 порции</value></data>
@@ -4600,12 +4672,14 @@
   <data name="Marketing.Mock.ColCategory" xml:space="preserve"><value>Категория</value></data>
   <data name="Marketing.Mock.ColPrice" xml:space="preserve"><value>Цена</value></data>
   <data name="Marketing.Mock.ColStatus" xml:space="preserve"><value>Статус</value></data>
+  <data name="Marketing.Mock.ConnectedKitchenPc" xml:space="preserve"><value>Подключено · кухонный компьютер</value></data>
   <data name="Marketing.Mock.Subtotal" xml:space="preserve"><value>Подытог</value></data>
+  <data name="Marketing.Mock.SyncOn" xml:space="preserve"><value>Синхронизация включена</value></data>
   <data name="Marketing.Mock.Service" xml:space="preserve"><value>Обслуживание</value></data>
   <data name="Marketing.Mock.NotIncluded" xml:space="preserve"><value>Не включено</value></data>
   <data name="Marketing.Mock.AmountDue" xml:space="preserve"><value>К оплате</value></data>
   <data name="Marketing.Mock.AmountByCard" xml:space="preserve"><value>{0} картой</value></data>
-  <data name="Marketing.Mock.Bill" xml:space="preserve"><value>СЧЁТ</value></data>
+  <data name="Marketing.Mock.Bill" xml:space="preserve"><value>Счёт</value></data>
   <data name="Marketing.Mock.SentToPrinter" xml:space="preserve"><value>Отправлено на принтер кассы</value></data>
   <data name="Marketing.Mock.TableClosed" xml:space="preserve"><value>{0} закрыт</value></data>
   <data name="Marketing.Mock.KitchenTicketHeader" xml:space="preserve"><value>КУХНЯ · {0}</value></data>
@@ -4703,4 +4777,74 @@
   <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
     <value>+{0} ещё</value>
   </data>
+  <data name="Marketing.Contact.MetaTitle" xml:space="preserve"><value>Контакты | Wasla</value></data>
+  <data name="Marketing.Contact.MetaDescription" xml:space="preserve"><value>Напишите нам о Wasla Orders, Wasla POS или настройке. Заполните форму или свяжитесь с нами по почте, телефону или в Instagram.</value></data>
+  <data name="Marketing.Contact.Eyebrow" xml:space="preserve"><value>Контакты</value></data>
+  <data name="Marketing.Contact.Title" xml:space="preserve"><value>Давайте поговорим о вашем ресторане.</value></data>
+  <data name="Marketing.Contact.Lead" xml:space="preserve"><value>Есть вопрос о Wasla Orders, Wasla POS или настройке? Заполните форму: мы прочитаем сообщение и ответим вам по почте или телефону.</value></data>
+  <data name="Marketing.Contact.ChannelsTitle" xml:space="preserve"><value>Или свяжитесь с нами напрямую</value></data>
+  <data name="Marketing.Contact.ChannelEmail" xml:space="preserve"><value>Эл. почта</value></data>
+  <data name="Marketing.Contact.ChannelPhone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="Marketing.Contact.ChannelInstagram" xml:space="preserve"><value>Instagram</value></data>
+  <data name="Contact.Form.Title" xml:space="preserve"><value>Отправьте сообщение</value></data>
+  <data name="Contact.Form.RequiredHint" xml:space="preserve"><value>Поля, отмеченные звёздочкой (*), обязательны.</value></data>
+  <data name="Contact.Form.FullName" xml:space="preserve"><value>Имя и фамилия *</value></data>
+  <data name="Contact.Form.FullNamePlaceholder" xml:space="preserve"><value>Ваши имя и фамилия</value></data>
+  <data name="Contact.Form.RestaurantName" xml:space="preserve"><value>Название ресторана *</value></data>
+  <data name="Contact.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>Например, Lezzet Ocakbaşı</value></data>
+  <data name="Contact.Form.Email" xml:space="preserve"><value>Эл. почта *</value></data>
+  <data name="Contact.Form.EmailPlaceholder" xml:space="preserve"><value>name@yourrestaurant.com</value></data>
+  <data name="Contact.Form.Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="Contact.Form.PhonePlaceholder" xml:space="preserve"><value>5XX XXX XX XX</value></data>
+  <data name="Contact.Form.Topic" xml:space="preserve"><value>Тема</value></data>
+  <data name="Contact.Form.Message" xml:space="preserve"><value>Сообщение *</value></data>
+  <data name="Contact.Form.MessagePlaceholder" xml:space="preserve"><value>Кратко расскажите о ресторане и своём вопросе.</value></data>
+  <data name="Contact.Form.Consent" xml:space="preserve"><value>Я ознакомился(-ась) с {0} об обработке моих персональных данных для ответа на мой запрос.</value></data>
+  <data name="Contact.Form.ConsentLink" xml:space="preserve"><value>Уведомлением о конфиденциальности</value></data>
+  <data name="Contact.Form.HoneypotLabel" xml:space="preserve"><value>Оставьте это поле пустым</value></data>
+  <data name="Contact.Form.Submit" xml:space="preserve"><value>Отправить сообщение</value></data>
+  <data name="Contact.Topic.WaslaOrders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Contact.Topic.WaslaPos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Contact.Topic.PrintBridgeSetup" xml:space="preserve"><value>Настройка Print Bridge</value></data>
+  <data name="Contact.Topic.Pricing" xml:space="preserve"><value>Цены</value></data>
+  <data name="Contact.Topic.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Contact.Sent.Title" xml:space="preserve"><value>Ваше сообщение получено.</value></data>
+  <data name="Contact.Sent.Body" xml:space="preserve"><value>Спасибо. Мы прочитаем ваше сообщение и ответим вам по почте или телефону.</value></data>
+  <data name="Contact.Sent.Home" xml:space="preserve"><value>Вернуться на главную</value></data>
+  <data name="Contact.Failed.Title" xml:space="preserve"><value>Не удалось отправить сообщение.</value></data>
+  <data name="Contact.Failed.Body" xml:space="preserve"><value>Проверьте подключение и попробуйте ещё раз или напишите на {0}.</value></data>
+  <data name="Contact.TooManyAttempts" xml:space="preserve"><value>За короткое время отправлено слишком много сообщений. Попробуйте позже или напишите на {0}.</value></data>
+  <data name="Validation.RestaurantNameRequired" xml:space="preserve"><value>Укажите название ресторана.</value></data>
+  <data name="Validation.ContactMessageRequired" xml:space="preserve"><value>Напишите сообщение.</value></data>
+  <data name="Validation.ContactMessageTooLong" xml:space="preserve"><value>Сообщение может содержать не более 2000 символов.</value></data>
+  <data name="Validation.TooLong" xml:space="preserve"><value>Слишком длинное значение.</value></data>
+  <data name="Validation.ContactPhoneInvalid" xml:space="preserve"><value>Введите правильный номер телефона, например 532 123 45 67.</value></data>
+  <data name="Validation.ContactTopicInvalid" xml:space="preserve"><value>Выберите тему.</value></data>
+  <data name="Validation.PrivacyNoticeRequired" xml:space="preserve"><value>Перед отправкой подтвердите, что ознакомились с уведомлением о конфиденциальности.</value></data>
+  <data name="Admin.ContactMessages.Title" xml:space="preserve"><value>Сообщения с сайта</value></data>
+  <data name="Admin.ContactMessages.Subtitle" xml:space="preserve"><value>Сообщения из контактной формы сайта, сначала новые.</value></data>
+  <data name="Admin.ContactMessages.Total" xml:space="preserve"><value>Сообщений: {0}</value></data>
+  <data name="Admin.ContactMessages.Empty" xml:space="preserve"><value>Сообщений пока нет.</value></data>
+  <data name="Admin.ContactMessages.Received" xml:space="preserve"><value>Получено</value></data>
+  <data name="Admin.ContactMessages.Sender" xml:space="preserve"><value>Отправитель</value></data>
+  <data name="Admin.ContactMessages.Restaurant" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Admin.ContactMessages.Topic" xml:space="preserve"><value>Тема</value></data>
+  <data name="Admin.ContactMessages.EmailNotification" xml:space="preserve"><value>Уведомление по почте</value></data>
+  <data name="Admin.ContactMessages.Status.Pending" xml:space="preserve"><value>Ожидает</value></data>
+  <data name="Admin.ContactMessages.Status.Sent" xml:space="preserve"><value>Отправлено</value></data>
+  <data name="Admin.ContactMessages.Status.Failed" xml:space="preserve"><value>Не отправлено</value></data>
+  <data name="Admin.ContactMessages.Status.NotConfigured" xml:space="preserve"><value>SMTP не настроен</value></data>
+  <data name="Admin.ContactMessages.DetailTitle" xml:space="preserve"><value>Сообщение с сайта</value></data>
+  <data name="Admin.ContactMessages.Reply" xml:space="preserve"><value>Ответить по почте</value></data>
+  <data name="Admin.ContactMessages.Email" xml:space="preserve"><value>Эл. почта</value></data>
+  <data name="Admin.ContactMessages.Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="Admin.ContactMessages.NoPhone" xml:space="preserve"><value>Не указан</value></data>
+  <data name="Admin.ContactMessages.Message" xml:space="preserve"><value>Сообщение</value></data>
+  <data name="Admin.ContactMessages.Culture" xml:space="preserve"><value>Язык страницы</value></data>
+  <data name="Admin.ContactMessages.Back" xml:space="preserve"><value>Все сообщения</value></data>
+  <data name="Admin.ContactMessages.NotFound" xml:space="preserve"><value>Сообщение не найдено.</value></data>
+  <data name="Admin.ContactMessages.Pagination" xml:space="preserve"><value>Страницы</value></data>
+  <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>Назад</value></data>
+  <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>Далее</value></data>
+  <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>Страница {0} из {1}</value></data>
 </root>

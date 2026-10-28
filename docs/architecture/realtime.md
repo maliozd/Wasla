@@ -82,8 +82,8 @@ A device pointed at Wasla.Api by hand has its reports announced over the interna
 
 | Change | Service | Called from |
 |--------|---------|-------------|
-| New order stored by ingestion | `OrderSyncService.UpsertOrderAsync`, after the insert's `SaveChanges` | Worker sync (internal channel) |
-| Order updated by ingestion (status, items, amounts, customer fields) | `OrderSyncService.UpsertOrderAsync`, after its transaction commits; an order whose provider data did not change writes and announces nothing | Worker sync (internal channel) |
+| New order stored by ingestion | `OrderIngestion.IngestPackageAsync`, after the insert's `SaveChanges`; a caller whose insert lost to a concurrent one announces nothing for the insert | Worker sync (internal channel) |
+| Order updated by ingestion (status, items, amounts, customer fields) | `OrderIngestion.IngestPackageAsync` (and the status-only `ApplyStatusObservationAsync`, no production caller yet), after its transaction commits; an order whose provider data did not change writes and announces nothing | Worker sync (internal channel) |
 | Approve, Reject, Start preparing, Mark ready, Hand to courier, Mark delivered | `OrderActionService`, after `SaveChanges` changed the row; a wrong status, a refused user command, a missing connection or a failed provider call announces nothing | Web operator actions on Orders and the Live Screen (in process); Worker automatic approval (`OrderAutoApproveService` → `TryApproveAsync`, internal channel) |
 
 `OrderChanged` is an invalidation, not a state: the Live Screen reads its whole snapshot, so ordering, role filters,
@@ -314,7 +314,8 @@ snapshot coordinator (`O.liveStore`); it renders nothing itself.
   are unchanged.
 - New-order detection, sound, browser notifications and the "silent first snapshot" baseline stay in the coordinator,
   so an order is announced once however many invalidations arrive. During isolated order training the snapshot
-  leaves real orders out; an invalidation only updates the real-order count faster. Training is not paused or advanced.
+  leaves real orders off the board and carries their ids and waiting count; an invalidation makes the count and the
+  one announcement of a new real order come sooner (WAS-117). Training is not paused or advanced.
 - `pagehide` disposes the module only when the page is really unloading; a page kept in the back/forward cache keeps
   it, and the reconnect on `pageshow` reads the snapshot.
 
@@ -435,5 +436,5 @@ endpoint.
 | Scale-out decision | [realtime-scale-out.md](realtime-scale-out.md) |
 | Print state endpoint | `OrdersController.PrintState` (`GET /orders/{id}/print-state`) |
 | Print action | `Areas/Tenant/Views/Orders/_OrderPrintAction.cshtml`, `Models/Orders/OrderPrintActionModel.cs` |
-| Order change publishing | `OrderSyncService.UpsertOrderAsync`, `OrderActionService` |
+| Order change publishing | `OrderIngestion`, `OrderActionService` |
 | Browser | `wwwroot/js/realtime/wasla-realtime.js`, `wwwroot/js/orders/orders-print-status.js`, `wwwroot/js/orders/orders-print.js`, `wwwroot/js/orders/orders-live-realtime.js`, `setIntervalMs` in `orders-live-store.js` |

@@ -1,0 +1,38 @@
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.ComingSoonPage.MetaTitle"].Value,
+        L["Marketing.ComingSoonPage.MetaDescription"].Value,
+        "/");
+    ViewData[PublicLayoutViewData.ComingSoonPage] = true;
+}
+@* Coming-soon page, shown at / while Wasla:MarketingSite:FullSiteEnabled is false (Figma "Wasla — Yakında Sayfası",
+   recommended v2 "Mutfak ısınıyor": desktop 340:298, mobile 341:328). Until the company side is ready it makes no
+   product claim and shows no price, platform, signup or form: a one-sentence description, e-mail and Instagram. The
+   ocakbaşı photo (Pexels, credited) lies under the whole page in the brand-orange duotone and is decorative. *@
+
+<div class="wm-soon-photo" aria-hidden="true">
+    <img src="~/images/marketing/ocakbasi-grill-wide.jpg" alt="" width="1600" height="1147" fetchpriority="high" />
+    <span class="wm-soon-photo__lift"></span>
+</div>
+
+<section class="wm-coming-soon" aria-labelledby="coming-soon-title">
+    <div class="wm-container wm-container--wide">
+        <p class="wm-eyebrow wm-eyebrow--on-dark">@L["Marketing.ComingSoonPage.Eyebrow"]</p>
+        <h1 class="wm-coming-soon__title" id="coming-soon-title">@L["Marketing.ComingSoonPage.Title"]</h1>
+        <div class="wm-coming-soon__row">
+            <p class="wm-body-l wm-coming-soon__lead">@L["Marketing.ComingSoonPage.Lead"]</p>
+            <div class="wm-actions wm-coming-soon__actions">
+                <a class="wm-btn wm-btn--primary" href="mailto:@PublicSiteUrls.ContactEmail">
+                    @L["Marketing.ComingSoonPage.EmailUs"]
+                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                </a>
+                <a class="wm-btn wm-btn--secondary-dark" href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.ComingSoonPage.FollowOnInstagram"]</a>
+            </div>
+        </div>
+        <p class="wm-coming-soon__credit">@L["Marketing.PhotoCredit", "Hasan Hüseyin Turan"]</p>
+    </div>
+</section>

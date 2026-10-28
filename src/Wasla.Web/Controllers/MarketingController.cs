@@ -1,16 +1,23 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasla.Web.Routing;
+using Wasla.Web.Security;
 
 namespace Wasla.Web.Controllers;
 
 /// <summary>
 /// Public marketing pages other than the homepage (WAS-155). Wasla POS has no implementation in this solution; its
-/// page describes the product as coming soon and links only to existing flows.
+/// page describes the product as coming soon and links only to existing flows. Both pages are part of the full
+/// marketing site and answer 404 until it is published (<see cref="MarketingSiteOptions"/>).
 /// </summary>
 [AllowAnonymous]
+[FullMarketingSiteRequired]
 public sealed class MarketingController : Controller
 {
     [HttpGet(PublicSiteUrls.PosPath)]
     public IActionResult Pos() => View();
+
+    /// <summary>The privacy notice (KVKK Aydınlatma Metni) the contact form links to.</summary>
+    [HttpGet(PublicSiteUrls.PrivacyNoticePath)]
+    public IActionResult PrivacyNotice() => View();
 }

@@ -119,7 +119,7 @@ Renewal runs from the certbot timer and reloads Nginx. Unknown tenant names unde
 
 ## Update
 
-1. On a workstation, from the exact commit merged into `master`: `pwsh deploy/linux/publish-release.ps1 -Commit <sha>` (a detached worktree, so local changes never reach the archive). Copy `artifacts/release/wasla-<sha>.tar.gz` to the server and compare its SHA-256.
+1. On a workstation, from the exact commit merged into `master`: `pwsh deploy/linux/publish-release.ps1 -Commit <sha>` (a detached worktree, so local changes never reach the archive). On Windows it also runs in Windows PowerShell 5.1 (`powershell -File deploy/linux/publish-release.ps1 -Commit <sha>`), from any shell including Git Bash: the archive is always written with the Windows `tar.exe` (`%SystemRoot%\System32`), never with a GNU `tar` that comes first on `PATH`. Copy `artifacts/release/wasla-<sha>.tar.gz` to the server and compare its SHA-256.
 2. `sudo wasla-backup PRE-<short-sha>`.
 3. `sudo wasla-install-release <archive> <sha>`. It installs the release beside the others, stops the services, runs the gate with the new CLI, and only then switches `current` and starts the services, waiting for `/health/ready`. A failed gate leaves the services stopped and `current` unchanged ([deployment.md](deployment.md#release-order-migrate-every-database-first)); fix the failed database and run it again.
 4. Verify, then read the logs for a few minutes.
@@ -153,7 +153,7 @@ Restore a tenant database (services stopped; as the SQL administrator): `RESTORE
 ## Known gaps
 
 - Off-site backups and a restore drill (WAS-79).
-- `Email:Provider` is `Log`: no email is sent (welcome, password reset) until SMTP credentials are configured.
+- `Email:Provider` is `Log`: no email is sent (welcome, password reset, contact form notifications) until SMTP credentials are configured. Contact form messages are still stored in CentralDb and listed in Central Admin (`/admin/contact-messages`), marked as not notified.
 - Payment and billing are not implemented, so public signup stays closed; tenants are added with the CLI.
 - One certificate names each tenant host (no wildcard yet).
 - Worker has no health endpoint; its state is in the journal and its log files.

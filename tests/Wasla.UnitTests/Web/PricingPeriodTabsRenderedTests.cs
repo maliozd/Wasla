@@ -40,7 +40,8 @@ public sealed partial class PricingPeriodTabsRenderedTests : IAsyncLifetime
     {
         _connection.Open();
         await SignupWebHost.CreateCentralDbAsync(_connection);
-        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configureServices: s => s.AddSingleton<IBillingPlanPriceReader>(_prices));
+        // The homepage pricing section is part of the full marketing site, which is published here.
+        _host = await SignupWebHost.StartAsync(_connection, _keyRing, configuration: SignupWebHost.FullMarketingSite, configureServices: s => s.AddSingleton<IBillingPlanPriceReader>(_prices));
     }
 
     public async ValueTask DisposeAsync()

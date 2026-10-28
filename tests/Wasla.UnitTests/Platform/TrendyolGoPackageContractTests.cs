@@ -197,6 +197,51 @@ public sealed class TrendyolGoPackageContractTests
     }
 
     [Fact]
+    public async Task Fetch_ReadsTheReportedSupplierAndStoreAsText()
+    {
+        var order = Assert.Single(await FetchAsync());
+
+        // Numbers in the documented model; ingestion compares them with the connection (WAS-18).
+        Assert.Equal(Supplier, order.ProviderSupplierId);
+        Assert.Equal(Store, order.ProviderStoreId);
+    }
+
+    [Theory]
+    [InlineData("\"900001\"", "\" 900002 \"", Supplier, Store)]
+    [InlineData("null", "{ \"id\": 900002 }", null, null)]
+    [InlineData("[900001]", "\"\"", null, null)]
+    // Digits with a leading zero are a valid JSON string but not a valid JSON number: the stored raw payload must not
+    // write them back as one.
+    [InlineData("\"00123\"", "\"0900002\"", "00123", "0900002")]
+    [InlineData("\"0\"", "\"-12\"", "0", "-12")]
+    public async Task Fetch_IdentifiersOfAnotherJsonShape_DoNotFailThePage(string supplierJson, string storeJson, string? supplier, string? store)
+    {
+        var page = Page
+            .Replace($"\"supplierId\": {Supplier},", $"\"supplierId\": {supplierJson},", StringComparison.Ordinal)
+            .Replace($"\"storeId\": {Store},", $"\"storeId\": {storeJson},", StringComparison.Ordinal);
+        Assert.NotEqual(Page, page);
+
+        var order = Assert.Single(await FetchAsync(page));
+
+        Assert.Equal(PackageId, order.ExternalOrderId);
+        Assert.Equal(supplier, order.ProviderSupplierId);
+        Assert.Equal(store, order.ProviderStoreId);
+    }
+
+    [Fact]
+    public async Task Fetch_PackageWithoutSupplierOrStore_LeavesThemUnknown()
+    {
+        var page = Page
+            .Replace($"\"supplierId\": {Supplier},", "", StringComparison.Ordinal)
+            .Replace($"\"storeId\": {Store},", "", StringComparison.Ordinal);
+
+        var order = Assert.Single(await FetchAsync(page));
+
+        Assert.Null(order.ProviderSupplierId);
+        Assert.Null(order.ProviderStoreId);
+    }
+
+    [Fact]
     public async Task Fetch_LogsNoCredentialsOrCustomerData()
     {
         await FetchAsync();
@@ -210,12 +255,12 @@ public sealed class TrendyolGoPackageContractTests
         }
     }
 
-    private async Task<IReadOnlyCollection<ExternalOrderDto>> FetchAsync()
+    private async Task<IReadOnlyCollection<ExternalOrderDto>> FetchAsync(string? page = null)
     {
         var handler = new DelegateHandler(request =>
         {
             _requests.Add(request);
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Page, Encoding.UTF8, "application/json") };
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(page ?? Page, Encoding.UTF8, "application/json") };
         });
         var options = new TrendyolGoOptions { AgentName = AgentName, BaseUrl = "https://stageapi.tgoapis.com" };
         var client = new TrendyolGoFoodPlatformClient(

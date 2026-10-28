@@ -29,6 +29,9 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         // What each real click landed on, so a click that missed its target says so.
         window.__clicked = null;
         document.addEventListener('click', function (e) { window.__clicked = e.target; }, true);
+        // The form a click submitted: the submit event fires while the click is dispatched, before the page leaves.
+        window.__submitted = null;
+        document.addEventListener('submit', function (e) { window.__submitted = e.target; }, true);
         // Bootstrap ignores a close while the modal still fades in; the test acts once it is fully shown or hidden.
         document.addEventListener('shown.bs.modal', function (e) { if (e.target.id === 'notificationSettingsModal') window.__modalShown++; });
         document.addEventListener('hidden.bs.modal', function (e) { if (e.target.id === 'notificationSettingsModal') window.__modalHidden++; });
@@ -96,11 +99,12 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         // act only on the new page, never on one that is about to be replaced.
         await browser.EvaluateAsync<bool>("(window.__leftForPractice = true)", ct);
         await ClickAsync(browser, "[data-guided-training] [data-training-when='intro'] button[type=submit]", ct, navigates: true);
-        Assert.True(await WaitAcrossNavigationAsync(browser,
-                "(() => { const n = document.querySelector('[data-training-notifications]'); return !window.__leftForPractice " +
-                "&& document.readyState === 'complete' && !!n && !n.hidden " +
+        // A form post and a full page load: the driver's navigation budget, then the server-rendered step on the new page.
+        await browser.WaitForNavigationAsync("__leftForPractice", ct);
+        Assert.True(await browser.WaitForAsync(
+                "(() => { const n = document.querySelector('[data-training-notifications]'); return !!n && !n.hidden " +
                 "&& document.querySelector('[data-guided-training]').getAttribute('data-step') === 'practice-new' " +
-                "&& typeof window.__permissionRequests === 'number'; })()", ct),
+                "&& typeof window.__permissionRequests === 'number'; })()", Wait, ct),
             $"The practice-order step and its notification note are not shown on the reloaded Live Screen. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync(
             "!!(window.WaslaOrders && window.WaslaOrders.state && window.WaslaOrders.state.notificationSettings)", Wait, ct));
@@ -170,7 +174,8 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
               const e = [...document.querySelectorAll({{JsonSerializer.Serialize(selector)}})]
                 .find(x => { const r = x.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(x).visibility !== 'hidden'; });
               if (!e) return { found: false };
-              e.scrollIntoView({ block: 'center', inline: 'center' });
+              // Instant, so the position read below is where the element stays (Bootstrap scrolls smoothly by default).
+              e.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
               const r = e.getBoundingClientRect();
               const x = r.left + r.width / 2, y = r.top + r.height / 2;
               const hit = document.elementFromPoint(x, y);
@@ -184,7 +189,29 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
         var y = target.GetProperty("y").GetDouble();
         await browser.ClickAtAsync(target.GetProperty("x").GetDouble(), y, ct);
         if (navigates)
+        {
+            // The click must have submitted the form: its submit event fired during the click, so while the old document
+            // is still here (it set __clickTarget) the submitted form is known. A new document already means it was sent.
+            JsonElement sent;
+            try
+            {
+                sent = await browser.EvaluateAsync<JsonElement>($$"""
+                    (() => {
+                      const e = window.__clickTarget, c = window.__clicked;
+                      if (!e) return { ok: true };
+                      return { ok: !!window.__submitted && !!e.form && window.__submitted === e.form, at: {{Describe("c")}} };
+                    })()
+                    """, ct);
+            }
+            catch (InvalidOperationException)
+            {
+                return; // The document is being replaced: the form was sent.
+            }
+
+            Assert.True(sent.GetProperty("ok").GetBoolean(),
+                $"The click aimed at {selector} (y {y:0}) submitted no form; it landed on {sent.GetProperty("at").GetString()}.");
             return;
+        }
 
         // The click must have reached the control it aimed at; content that moved it in the meantime fails here, by name.
         var landed = await browser.EvaluateAsync<JsonElement>($$"""
@@ -201,28 +228,6 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
 
     private static string Describe(string node) =>
         $"({node} ? {node}.tagName.toLowerCase() + ({node}.id ? '#' + {node}.id : '') + [...{node}.classList].slice(0, 3).map(c => '.' + c).join('') : 'nothing')";
-
-    /// <summary>Like WaitForAsync, but tolerates the moments of a navigation when the page cannot be evaluated.</summary>
-    private static async Task<bool> WaitAcrossNavigationAsync(HeadlessChromium browser, string expression, CancellationToken ct)
-    {
-        var deadline = DateTime.UtcNow + Wait;
-        while (DateTime.UtcNow < deadline)
-        {
-            try
-            {
-                if (await browser.EvaluateAsync<bool>(expression, ct))
-                    return true;
-            }
-            catch (InvalidOperationException)
-            {
-                // The document is being replaced.
-            }
-
-            await Task.Delay(100, ct);
-        }
-
-        return false;
-    }
 
     /// <summary>For a failure message: the page, the modal's state and the counted Bootstrap events.</summary>
     private static Task<string> ModalStateAsync(HeadlessChromium browser, CancellationToken ct) =>
