@@ -9,6 +9,7 @@ using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Web.PrintBridge;
+using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Configuration;
 
@@ -329,6 +330,7 @@ public sealed partial class WaslaConfigurationKeyTests
             "Realtime:SessionRevalidationSeconds"
         };
         approved.UnionWith(typeof(TenantOnboardingOptions).GetProperties().Select(p => $"{TenantOnboardingOptions.SectionName}:{p.Name}"));
+        approved.UnionWith(typeof(MarketingSiteOptions).GetProperties().Select(p => $"{MarketingSiteOptions.SectionName}:{p.Name}"));
 
         return approved.Contains(key) || approved.Any(a => a.StartsWith(key + ":", StringComparison.Ordinal));
     }

@@ -3882,6 +3882,14 @@
   <data name="Admin.Ops.Guidance.AllClear" xml:space="preserve"><value>Nothing needs attention right now.</value></data>
   <data name="Marketing.SkipToContent" xml:space="preserve"><value>Skip to content</value></data>
   <data name="Marketing.ComingSoon" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="Marketing.ComingSoonPage.MetaTitle" xml:space="preserve"><value>Wasla — Coming soon</value></data>
+  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>Wasla is building ordering and sales software for restaurants. We are adding the finishing touches and will be here as soon as we are ready.</value></data>
+  <data name="Marketing.ComingSoonPage.Kicker" xml:space="preserve"><value>Wasla · Ordering and sales software for restaurants</value></data>
+  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>Wasla is coming soon</value></data>
+  <data name="Marketing.ComingSoonPage.Word" xml:space="preserve"><value>soon</value></data>
+  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>Wasla is building ordering and sales software for restaurants. We are adding the finishing touches and will be here as soon as we are ready.</value></data>
+  <data name="Marketing.ComingSoonPage.EmailUs" xml:space="preserve"><value>Email us</value></data>
+  <data name="Marketing.ComingSoonPage.FollowOnInstagram" xml:space="preserve"><value>Follow us on Instagram</value></data>
   <data name="Marketing.ConceptUi" xml:space="preserve"><value>Concept interface: Wasla POS is not available yet.</value></data>
   <data name="Marketing.ConceptUiLabel" xml:space="preserve"><value>Concept interface</value></data>
   <data name="Marketing.Nav.Label" xml:space="preserve"><value>Main menu</value></data>

@@ -4691,6 +4691,167 @@
   margin-block-start: 32px;
 }
 
+/* ---------- Coming-soon page (Figma "Wasla — Yakında Sayfası", direction E "Harfin içinde mutfak") ----------
+   Shown at / while the full marketing site is not published; the header and footer of every public page then use
+   their --soon variants. */
+
+.wm-header--soon {
+  position: static;
+  border-block-end-color: transparent;
+}
+
+.wm-header__soon-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.wm-header--soon .wm-lang__toggle {
+  border: 1px solid var(--wm-border-strong);
+  background: var(--wm-white);
+  font-size: 0.875rem;
+}
+
+.wm-footer--soon {
+  padding-block: 20px;
+}
+
+.wm-footer__soon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 24px;
+  color: var(--wm-text-muted);
+  font-size: 0.9375rem;
+}
+
+.wm-footer__soon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wm-footer__soon-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--wm-text-body);
+  text-decoration: none;
+}
+
+.wm-footer__soon-links a:hover {
+  color: var(--wm-action);
+}
+
+.wm-coming-soon {
+  /* The word's font size as a share of the container width, so the word spans it. Latin uses Bricolage; Arabic and
+     Cyrillic fall back to the system font, so their shares differ. */
+  --wm-soon-fit: 0.3;
+  display: flex;
+  align-items: center;
+  min-block-size: calc(100svh - var(--wm-header-height) - 85px);
+  padding-block: clamp(32px, 6vh, 88px);
+  overflow-x: clip;
+  background: var(--wm-canvas);
+}
+
+:root[lang^="en"] .wm-coming-soon { --wm-soon-fit: 0.44; }
+:root[lang^="ru"] .wm-coming-soon { --wm-soon-fit: 0.34; }
+:root[lang^="ar"] .wm-coming-soon { --wm-soon-fit: 0.27; }
+
+.wm-coming-soon__inner {
+  container-type: inline-size;
+}
+
+.wm-coming-soon__kicker {
+  margin: 0 0 clamp(4px, 0.8vw, 12px);
+  color: var(--wm-text-muted);
+  font-family: var(--wm-font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wm-coming-soon__title {
+  margin: 0;
+  line-height: 1;
+}
+
+/* The photo shows through the letters. The box reaches past the last letter and below the baseline so no glyph edge
+   loses the photo, and the ink background stays when the photo does not load. The size stops at the Figma desktop
+   size, so the page still fits a laptop screen. */
+.wm-coming-soon__word {
+  display: inline-block;
+  padding-block: 0.04em 0.14em;
+  padding-inline: 0.03em 0.08em;
+  margin-block-end: -0.1em;
+  margin-inline: -0.03em -0.08em;
+  background: var(--wm-ink) url("../images/marketing/ocakbasi-grill-wide.jpg") center 40% / cover no-repeat;
+  color: var(--wm-ink);
+  font-family: var(--wm-font-display);
+  font-size: min(calc((100vw - 2 * var(--wm-gutter)) * var(--wm-soon-fit)), 24rem);
+  font-size: min(calc(100cqi * var(--wm-soon-fit)), 24rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: brightness(0.7) contrast(1.3) saturate(1.3);
+}
+
+@media (forced-colors: active) {
+  .wm-coming-soon__word {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    filter: none;
+  }
+}
+
+.wm-coming-soon__row {
+  display: grid;
+  gap: 24px;
+  margin-block-start: clamp(28px, 4vw, 56px);
+  padding-block-start: 32px;
+  border-block-start: 1px solid var(--wm-border);
+}
+
+.wm-coming-soon__lead {
+  max-inline-size: 560px;
+}
+
+.wm-coming-soon__credit {
+  margin: 24px 0 0;
+  color: var(--wm-text-muted);
+  font-family: var(--wm-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-align: end;
+}
+
+/* Arabic letters join, so they keep normal spacing. */
+:root[lang^="ar"] .wm-coming-soon :is(.wm-coming-soon__kicker, .wm-coming-soon__word, .wm-coming-soon__credit) {
+  letter-spacing: 0;
+}
+
+@media (min-width: 992px) {
+  .wm-coming-soon__row {
+    grid-template-columns: minmax(0, 560px) auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+  }
+}
+
 /* ---------- Motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {

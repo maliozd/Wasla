@@ -6,12 +6,30 @@
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IOptions<TenantOnboardingOptions> Onboarding
+@inject IOptions<MarketingSiteOptions> MarketingSite
 @inject IWebHostEnvironment Environment
 @{
     // Sign-in leaves the marketing host for the configured application entry (WAS-66).
     var loginUrl = TenantWelcomeUrlBuilder.BuildApplicationLoginUrl(Context.Request, Environment, Onboarding.Value.ApplicationBaseDomain);
     // The homepage lays the header over its hero photo; every other public page keeps the solid header.
     var overlay = ViewData[PublicLayoutViewData.HeaderOverlay] is true;
+}
+@if (!MarketingSite.Value.FullSiteEnabled)
+{
+    @* While only the coming-soon page is published (Figma "Wasla — Yakında Sayfası", direction E) the header has no
+       navigation and no signup call: the logo, sign-in for existing restaurants, and the language switch. *@
+    <header class="wm-header wm-header--soon">
+        <div class="wm-container wm-container--wide wm-header__bar">
+            <a class="wm-header__brand" href="/">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
+            </a>
+            <div class="wm-header__soon-end">
+                <a class="wm-nav__link" href="@loginUrl">@L["Marketing.Nav.Login"]</a>
+                @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(Model ?? "/", "wm-header-languages", ShowLanguageName: true))
+            </div>
+        </div>
+    </header>
+    return;
 }
 @* Public site header (Figma "Wasla Landing — Refined Direction", Site header). The links lead to sections of the
    homepage and to the existing sign-in and signup flows; below 1100 px the navigation folds into a menu button. *@

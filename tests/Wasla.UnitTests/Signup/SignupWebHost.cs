@@ -29,6 +29,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
 using Wasla.Web.Controllers;
 using Wasla.Web.Middleware;
+using Wasla.Web.Routing;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Signup;
@@ -45,6 +46,12 @@ namespace Wasla.UnitTests.Signup;
 internal sealed class SignupWebHost : IAsyncDisposable
 {
     public const string CentralHost = "wasla.local";
+
+    /// <summary>The configuration that publishes the full marketing site instead of the coming-soon page.</summary>
+    public static readonly IReadOnlyDictionary<string, string?> FullMarketingSite = new Dictionary<string, string?>
+    {
+        [MarketingSiteOptions.SectionName + ":" + nameof(MarketingSiteOptions.FullSiteEnabled)] = "true"
+    };
 
     private readonly WebApplication _app;
     private readonly string _contentRoot;
@@ -106,6 +113,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         services.AddDbContext<CentralDbContext>(options => options.UseSqlite(centralDb));
         // Wasla:TenantOnboarding from the test's configuration, otherwise the Development domains (WAS-66).
         services.Configure<TenantOnboardingOptions>(builder.Configuration.GetSection(TenantOnboardingOptions.SectionName));
+        // Wasla:MarketingSite as Program.cs binds it: without the test's configuration only the coming-soon page is published.
+        services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();

@@ -1,0 +1,35 @@
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["Marketing.ComingSoonPage.MetaTitle"].Value,
+        L["Marketing.ComingSoonPage.MetaDescription"].Value,
+        "/");
+}
+@* Coming-soon page, shown at / while Wasla:MarketingSite:FullSiteEnabled is false (Figma "Wasla — Yakında Sayfası",
+   direction E "Harfin içinde mutfak": desktop 343:432, mobile 347:614). Until the company side is ready it makes no
+   product claim and shows no price, platform, signup or form: a one-sentence description, e-mail and Instagram. The
+   photo inside the word is decorative (Pexels, credited); the heading is read from its visually hidden text. *@
+
+<section class="wm-coming-soon" aria-labelledby="coming-soon-title">
+    <div class="wm-container wm-container--wide wm-coming-soon__inner">
+        <p class="wm-coming-soon__kicker">@L["Marketing.ComingSoonPage.Kicker"]</p>
+        <h1 class="wm-coming-soon__title" id="coming-soon-title">
+            <span class="wm-visually-hidden">@L["Marketing.ComingSoonPage.Title"]</span>
+            <span class="wm-coming-soon__word" aria-hidden="true">@L["Marketing.ComingSoonPage.Word"]</span>
+        </h1>
+        <div class="wm-coming-soon__row">
+            <p class="wm-body-l wm-coming-soon__lead">@L["Marketing.ComingSoonPage.Lead"]</p>
+            <div class="wm-actions wm-coming-soon__actions">
+                <a class="wm-btn wm-btn--primary" href="mailto:@PublicSiteUrls.ContactEmail">
+                    @L["Marketing.ComingSoonPage.EmailUs"]
+                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                </a>
+                <a class="wm-btn wm-btn--secondary" href="@PublicSiteUrls.InstagramUrl" rel="noopener">@L["Marketing.ComingSoonPage.FollowOnInstagram"]</a>
+            </div>
+        </div>
+        <p class="wm-coming-soon__credit">@L["Marketing.PhotoCredit", "Hasan Hüseyin Turan"]</p>
+    </div>
+</section>

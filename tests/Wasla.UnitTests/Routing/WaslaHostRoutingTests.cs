@@ -42,23 +42,24 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         Assert.Equal(HttpStatusCode.OK, page.Status);
         Assert.Contains("<link rel=\"canonical\" href=\"http://wasla.tr/\" />", page.Body);
         var links = Links(page.Body);
-        // The header's navigation, the header's narrow-screen link next to the menu button, and the footer.
-        Assert.Equal(3, links.Count(l => l == "http://app.wasla.tr/auth/login"));
+        // The homepage is the coming-soon page by default (Wasla:MarketingSite): sign-in is in its header only, and it
+        // links to neither signup nor the pages of the full site.
+        Assert.Single(links, l => l == "http://app.wasla.tr/auth/login");
         Assert.DoesNotContain(links, l => l.Contains("/auth/login", StringComparison.Ordinal) && !l.StartsWith("http://app.wasla.tr/", StringComparison.Ordinal));
-        Assert.Contains("/signup", links);
-        Assert.Contains("/pos", links);
+        Assert.DoesNotContain("/signup", links);
+        Assert.DoesNotContain("/pos", links);
     }
 
     [Fact]
-    public async Task TheMarketingHost_KeepsThePosPageAndSignup()
+    public async Task TheMarketingHost_KeepsSignup_AndClosesThePosPageUntilTheFullSiteIsPublished()
     {
         using var browser = _host.Web.NewBrowser();
 
         var pos = await browser.GetAsync("/pos", Marketing);
         var signup = await browser.GetAsync("/signup", Marketing);
 
-        Assert.Equal(HttpStatusCode.OK, pos.Status);
-        Assert.Contains("<link rel=\"canonical\" href=\"http://wasla.tr/pos\" />", pos.Body);
+        // The full marketing site is not published by default (Wasla:MarketingSite); PublicMarketingSiteTests covers it.
+        Assert.Equal(HttpStatusCode.NotFound, pos.Status);
         Assert.Equal(HttpStatusCode.OK, signup.Status);
         Assert.Contains("__RequestVerificationToken", signup.Body);
         // The tenant address the visitor is choosing is under the application domain.
