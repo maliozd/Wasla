@@ -15,6 +15,7 @@
     var metadata = ViewData[PublicPageMetadata.ViewDataKey] as PublicPageMetadata;
     var canonicalUrl = metadata is null ? null : PublicSiteUrls.BuildCanonicalUrl(Context.Request, Environment, Onboarding.Value.MarketingBaseDomain, metadata.CanonicalPath);
     var headerOverlay = ViewData[PublicLayoutViewData.HeaderOverlay] is true;
+    var comingSoonPage = ViewData[PublicLayoutViewData.ComingSoonPage] is true;
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" class="wm-no-js">
@@ -49,7 +50,7 @@
     }
     <script src="~/js/wasla-marketing.js" asp-append-version="true" defer></script>
 </head>
-<body class="wasla-landing@(metadata is null ? string.Empty : " wm-site")@(headerOverlay ? " wm-site--overlay-header" : string.Empty)">
+<body class="wasla-landing@(metadata is null ? string.Empty : " wm-site")@(headerOverlay ? " wm-site--overlay-header" : string.Empty)@(comingSoonPage ? " wm-site--coming-soon wm-on-dark" : string.Empty)">
     <a class="wm-skip-link" href="#main-content">@L["Marketing.SkipToContent"]</a>
     @await Html.PartialAsync("_PublicHeader", returnUrl)
     <main id="main-content" tabindex="-1">

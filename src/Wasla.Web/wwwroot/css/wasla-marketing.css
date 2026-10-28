@@ -4691,9 +4691,9 @@
   margin-block-start: 32px;
 }
 
-/* ---------- Coming-soon page (Figma "Wasla — Yakında Sayfası", direction E "Harfin içinde mutfak") ----------
+/* ---------- Coming-soon page (Figma "Wasla — Yakında Sayfası", recommended v2 "Mutfak ısınıyor") ----------
    Shown at / while the full marketing site is not published; the header and footer of every public page then use
-   their --soon variants. */
+   their --soon variants. On the coming-soon page itself (wm-site--coming-soon) the whole page lies on the photo. */
 
 .wm-header--soon {
   position: static;
@@ -4749,89 +4749,178 @@
   color: var(--wm-action);
 }
 
-.wm-coming-soon {
-  /* The word's font size as a share of the container width, so the word spans it. Latin uses Bricolage; Arabic and
-     Cyrillic fall back to the system font, so their shares differ. */
-  --wm-soon-fit: 0.3;
+/* The page: header, content and footer over the photo, one screen tall on a laptop. */
+.wasla-landing.wm-site.wm-site--coming-soon {
   display: flex;
-  align-items: center;
-  min-block-size: calc(100svh - var(--wm-header-height) - 85px);
-  padding-block: clamp(32px, 6vh, 88px);
-  overflow-x: clip;
-  background: var(--wm-canvas);
+  flex-direction: column;
+  min-block-size: 100svh;
+  background: var(--wm-ink);
+  color: var(--wm-on-dark);
 }
 
-:root[lang^="en"] .wm-coming-soon { --wm-soon-fit: 0.44; }
-:root[lang^="ru"] .wm-coming-soon { --wm-soon-fit: 0.34; }
-:root[lang^="ar"] .wm-coming-soon { --wm-soon-fit: 0.27; }
-
-.wm-coming-soon__inner {
-  container-type: inline-size;
+.wm-site--coming-soon main {
+  display: flex;
+  flex: 1 1 auto;
 }
 
-.wm-coming-soon__kicker {
-  margin: 0 0 clamp(4px, 0.8vw, 12px);
-  color: var(--wm-text-muted);
-  font-family: var(--wm-font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 18px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.wm-site--coming-soon .wm-header--soon {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  color: var(--wm-on-dark);
 }
 
-.wm-coming-soon__title {
-  margin: 0;
-  line-height: 1;
+.wm-site--coming-soon .wm-header--soon .wasla-logo--marketing {
+  filter: brightness(0) invert(1);
 }
 
-/* The photo shows through the letters. The box reaches past the last letter and below the baseline so no glyph edge
-   loses the photo, and the ink background stays when the photo does not load. The size stops at the Figma desktop
-   size, so the page still fits a laptop screen. */
-.wm-coming-soon__word {
-  display: inline-block;
-  padding-block: 0.04em 0.14em;
-  padding-inline: 0.03em 0.08em;
-  margin-block-end: -0.1em;
-  margin-inline: -0.03em -0.08em;
-  background: var(--wm-ink) url("../images/marketing/ocakbasi-grill-wide.jpg") center 40% / cover no-repeat;
-  color: var(--wm-ink);
-  font-family: var(--wm-font-display);
-  font-size: min(calc((100vw - 2 * var(--wm-gutter)) * var(--wm-soon-fit)), 24rem);
-  font-size: min(calc(100cqi * var(--wm-soon-fit)), 24rem);
-  font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.04em;
-  white-space: nowrap;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: brightness(0.7) contrast(1.3) saturate(1.3);
+.wm-site--coming-soon .wm-header--soon .wm-nav__link:hover {
+  background: rgba(255, 254, 250, 0.1);
+  color: var(--wm-on-dark);
+}
+
+.wm-site--coming-soon .wm-header--soon .wm-lang__toggle {
+  border-color: rgba(255, 254, 250, 0.4);
+  background: rgba(34, 29, 25, 0.25);
+}
+
+.wm-site--coming-soon .wm-footer--soon {
+  position: relative;
+  z-index: 1;
+  border-block-start-color: rgba(255, 254, 250, 0.14);
+  background: transparent;
+}
+
+.wm-site--coming-soon .wm-footer__soon {
+  color: var(--wm-on-dark-muted);
+}
+
+.wm-site--coming-soon .wm-footer__soon-links a {
+  color: var(--wm-on-dark);
+}
+
+.wm-site--coming-soon .wm-footer__soon-links a:hover {
+  color: var(--wm-on-dark);
+  text-decoration: underline;
+}
+
+/* The photo in the brand duotone: greyscale, multiplied by the brand orange, its blacks lifted to ink, and shaded where
+   text sits. Decorative and fixed behind the page; forced colours drop it. */
+.wm-soon-photo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--wm-ink);
+  pointer-events: none;
+}
+
+.wm-soon-photo img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  filter: grayscale(1) contrast(1.25) brightness(1.08);
+}
+
+.wm-soon-photo::before,
+.wm-soon-photo::after,
+.wm-soon-photo__lift {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* The filter makes the image a stacking context painted in tree order, so the layers above it carry their own order. */
+.wm-soon-photo::before {
+  z-index: 1;
+  background: var(--wm-orange);
+  mix-blend-mode: multiply;
+}
+
+.wm-soon-photo__lift {
+  z-index: 2;
+  background: var(--wm-ink);
+  mix-blend-mode: lighten;
+}
+
+.wm-soon-photo::after {
+  z-index: 3;
+  background: linear-gradient(180deg, rgba(34, 29, 25, 0.55) 0%, rgba(34, 29, 25, 0) 20%, rgba(34, 29, 25, 0) 42%, rgba(34, 29, 25, 0.9) 100%);
+}
+
+@media (max-width: 767.98px) {
+  .wm-soon-photo img {
+    object-position: 32% 50%;
+  }
+
+  .wm-soon-photo::after {
+    background: linear-gradient(180deg, rgba(34, 29, 25, 0.6) 0%, rgba(34, 29, 25, 0) 16%, rgba(34, 29, 25, 0) 36%, rgba(34, 29, 25, 0.78) 62%, rgba(34, 29, 25, 0.95) 100%);
+  }
 }
 
 @media (forced-colors: active) {
-  .wm-coming-soon__word {
-    background: none;
-    -webkit-text-fill-color: currentColor;
-    filter: none;
+  .wm-soon-photo {
+    display: none;
   }
+}
+
+.wm-coming-soon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-end;
+  padding-block: clamp(48px, 10vh, 120px) 28px;
+}
+
+/* Figma: 188 px at 1440 and 84 px at 390. Latin uses Bricolage; Arabic and Cyrillic fall back to the system font, and
+   the longer English and Russian titles get a smaller size and a wider measure. */
+.wm-coming-soon__title {
+  max-inline-size: 5.2em;
+  margin: 24px 0 0;
+  color: var(--wm-on-dark);
+  font-family: var(--wm-font-display);
+  font-size: min(clamp(3.5rem, 2.84rem + 9.9vw, 11.75rem), 21svh);
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+:root[lang^="en"] .wm-coming-soon__title {
+  max-inline-size: 8.5em;
+  font-size: clamp(3rem, 1.6rem + 6.6vw, 8rem);
+}
+
+:root[lang^="ru"] .wm-coming-soon__title {
+  max-inline-size: 9em;
+  font-size: clamp(2.5rem, 1.25rem + 6vw, 8.5rem);
+}
+
+:root[lang^="ar"] .wm-coming-soon__title {
+  font-size: clamp(3.25rem, 2.2rem + 8.4vw, 10.5rem);
+  line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .wm-coming-soon__row {
   display: grid;
   gap: 24px;
-  margin-block-start: clamp(28px, 4vw, 56px);
-  padding-block-start: 32px;
-  border-block-start: 1px solid var(--wm-border);
+  margin-block-start: clamp(28px, 3.5vw, 44px);
+  padding-block-start: 28px;
+  border-block-start: 1px solid rgba(255, 254, 250, 0.22);
 }
 
-.wm-coming-soon__lead {
+.wm-on-dark .wm-coming-soon__lead {
   max-inline-size: 560px;
+  color: var(--wm-on-dark);
 }
 
 .wm-coming-soon__credit {
-  margin: 24px 0 0;
-  color: var(--wm-text-muted);
+  margin: 20px 0 0;
+  color: rgba(255, 254, 250, 0.72);
   font-family: var(--wm-font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
@@ -4839,14 +4928,14 @@
 }
 
 /* Arabic letters join, so they keep normal spacing. */
-:root[lang^="ar"] .wm-coming-soon :is(.wm-coming-soon__kicker, .wm-coming-soon__word, .wm-coming-soon__credit) {
+:root[lang^="ar"] .wm-coming-soon__credit {
   letter-spacing: 0;
 }
 
 @media (min-width: 992px) {
   .wm-coming-soon__row {
     grid-template-columns: minmax(0, 560px) auto;
-    align-items: center;
+    align-items: end;
     justify-content: space-between;
     gap: 40px;
   }

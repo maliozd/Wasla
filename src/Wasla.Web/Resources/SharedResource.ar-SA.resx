@@ -3883,11 +3883,10 @@
   <data name="Marketing.SkipToContent" xml:space="preserve"><value>انتقل إلى المحتوى</value></data>
   <data name="Marketing.ComingSoon" xml:space="preserve"><value>قريبًا</value></data>
   <data name="Marketing.ComingSoonPage.MetaTitle" xml:space="preserve"><value>Wasla — قريبًا</value></data>
-  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>تُعِدّ Wasla برامج للطلبات والمبيعات في المطاعم. نضع اللمسات الأخيرة، وسنكون هنا فور جاهزيتنا.</value></data>
-  <data name="Marketing.ComingSoonPage.Kicker" xml:space="preserve"><value>Wasla · برامج الطلبات والمبيعات للمطاعم</value></data>
-  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>Wasla قادمة قريبًا</value></data>
-  <data name="Marketing.ComingSoonPage.Word" xml:space="preserve"><value>قريبًا</value></data>
-  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>تُعِدّ Wasla برامج للطلبات والمبيعات في المطاعم. نضع اللمسات الأخيرة، وسنكون هنا فور جاهزيتنا.</value></data>
+  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>تُعِدّ Wasla برامج للطلبات والمبيعات في المطاعم. نضع اللمسات الأخيرة، وسنكون هنا قريبًا جدًا.</value></data>
+  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>المطبخ يستعد.</value></data>
+  <data name="Marketing.ComingSoonPage.Eyebrow" xml:space="preserve"><value>قريبًا جدًا</value></data>
+  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>تُعِدّ Wasla برامج للطلبات والمبيعات في المطاعم. نضع اللمسات الأخيرة، وسنكون هنا قريبًا جدًا.</value></data>
   <data name="Marketing.ComingSoonPage.EmailUs" xml:space="preserve"><value>راسلنا بالبريد الإلكتروني</value></data>
   <data name="Marketing.ComingSoonPage.FollowOnInstagram" xml:space="preserve"><value>تابعنا على Instagram</value></data>
   <data name="Marketing.ConceptUi" xml:space="preserve"><value>واجهة تصورية: Wasla POS غير متاح بعد.</value></data>

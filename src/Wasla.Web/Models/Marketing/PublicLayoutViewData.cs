@@ -8,4 +8,10 @@ public static class PublicLayoutViewData
     /// light, instead of the solid header the other public pages use.
     /// </summary>
     public const string HeaderOverlay = "PublicHeaderOverlay";
+
+    /// <summary>
+    /// <c>true</c> on the coming-soon page: the whole page lies on its photo, so the header and footer are light on dark
+    /// (<c>wm-site--coming-soon</c> on <c>body</c>).
+    /// </summary>
+    public const string ComingSoonPage = "PublicComingSoonPage";
 }

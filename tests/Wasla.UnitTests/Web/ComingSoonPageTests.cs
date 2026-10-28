@@ -55,10 +55,11 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
         Assert.Contains("<link rel=\"canonical\" href=\"http://wasla.local/\" />", page.Body);
 
         Assert.Single(Regex.Matches(page.Body, "<h1[ >]"));
-        var heading = Between(page.Body, "<h1", "</h1>");
-        Assert.Contains($"<span class=\"wm-visually-hidden\">{Encoded(Text(culture, "Marketing.ComingSoonPage.Title"))}</span>", heading);
-        Assert.Contains($"<span class=\"wm-coming-soon__word\" aria-hidden=\"true\">{Encoded(Text(culture, "Marketing.ComingSoonPage.Word"))}</span>", heading);
+        Assert.Contains($"<h1 class=\"wm-coming-soon__title\" id=\"coming-soon-title\">{Encoded(Text(culture, "Marketing.ComingSoonPage.Title"))}</h1>", page.Body);
+        Assert.Contains(Encoded(Text(culture, "Marketing.ComingSoonPage.Eyebrow")), page.Body);
         Assert.Contains(Encoded(Text(culture, "Marketing.ComingSoonPage.Lead")), page.Body);
+        // The whole page lies on the photo, so the shared header and footer are the light-on-dark variants.
+        Assert.Matches("<body class=\"[^\"]*\\bwm-site--coming-soon wm-on-dark\\b", page.Body);
         Assert.Contains("class=\"wm-header wm-header--soon\"", page.Body);
         Assert.Contains("class=\"wm-footer wm-footer--soon\"", page.Body);
     }
@@ -147,13 +148,16 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
     }
 
     [Fact]
-    public void PhotoInsideTheWord_IsARepositoryImage()
+    public async Task Photo_IsADecorativeRepositoryImage_CreditedOnThePage()
     {
-        var css = File.ReadAllText(Path.Combine(Root(), "src", "Wasla.Web", "wwwroot", "css", "wasla-marketing.css"));
-        var image = Regex.Match(css, @"\.wm-coming-soon__word \{[^}]*url\(""\.\./(?<path>[^""]+)""\)").Groups["path"].Value;
+        var page = await GetAsync("/", "tr-TR");
 
-        Assert.Equal("images/marketing/ocakbasi-grill-wide.jpg", image);
-        Assert.True(File.Exists(Path.Combine(Root(), "src", "Wasla.Web", "wwwroot", image)), image);
+        var photo = Between(page.Body, "<div class=\"wm-soon-photo\"", "</div>");
+        Assert.Contains("aria-hidden=\"true\"", photo);
+        var source = Regex.Match(photo, "<img src=\"/(?<path>[^\"]+)\" alt=\"\"").Groups["path"].Value;
+        Assert.Equal("images/marketing/ocakbasi-grill-wide.jpg", source);
+        Assert.True(File.Exists(Path.Combine(Root(), "src", "Wasla.Web", "wwwroot", source)), source);
+        Assert.Contains(Encoded(string.Format(Text("tr-TR", "Marketing.PhotoCredit"), "Hasan Hüseyin Turan")), page.Body);
     }
 
     private async Task<TestResponse> GetAsync(string path, string culture)

@@ -3883,11 +3883,10 @@
   <data name="Marketing.SkipToContent" xml:space="preserve"><value>İçeriğe geç</value></data>
   <data name="Marketing.ComingSoon" xml:space="preserve"><value>Yakında</value></data>
   <data name="Marketing.ComingSoonPage.MetaTitle" xml:space="preserve"><value>Wasla — Çok yakında</value></data>
-  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>Wasla, restoranlar için sipariş ve satış yazılımları hazırlıyor. Son dokunuşları yapıyoruz; hazır olduğumuzda burada olacağız.</value></data>
-  <data name="Marketing.ComingSoonPage.Kicker" xml:space="preserve"><value>Wasla · Restoranlar için sipariş ve satış yazılımları</value></data>
-  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>Wasla çok yakında</value></data>
-  <data name="Marketing.ComingSoonPage.Word" xml:space="preserve"><value>yakında</value></data>
-  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>Wasla, restoranlar için sipariş ve satış yazılımları hazırlıyor. Son dokunuşları yapıyoruz; hazır olduğumuzda burada olacağız.</value></data>
+  <data name="Marketing.ComingSoonPage.MetaDescription" xml:space="preserve"><value>Wasla, restoranlar için sipariş ve satış yazılımları hazırlıyor. Son dokunuşları yapıyoruz; çok yakında buradayız.</value></data>
+  <data name="Marketing.ComingSoonPage.Title" xml:space="preserve"><value>Mutfak ısınıyor.</value></data>
+  <data name="Marketing.ComingSoonPage.Eyebrow" xml:space="preserve"><value>Çok yakında</value></data>
+  <data name="Marketing.ComingSoonPage.Lead" xml:space="preserve"><value>Wasla, restoranlar için sipariş ve satış yazılımları hazırlıyor. Son dokunuşları yapıyoruz; çok yakında buradayız.</value></data>
   <data name="Marketing.ComingSoonPage.EmailUs" xml:space="preserve"><value>Bize e-posta gönderin</value></data>
   <data name="Marketing.ComingSoonPage.FollowOnInstagram" xml:space="preserve"><value>Instagram’da takip edin</value></data>
   <data name="Marketing.ConceptUi" xml:space="preserve"><value>Konsept arayüz: Wasla POS henüz kullanıma sunulmadı.</value></data>
