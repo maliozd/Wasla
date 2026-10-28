@@ -10,8 +10,9 @@ namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 /// The Trendyol GO Meal webhook stage pilot: exactly one seller, store, tenant and platform connection, configured
 /// explicitly on the existing Wasla deployment. It is not tenant routing (WAS-175): every accepted event belongs to the
 /// one configured connection, and anything that contradicts it is refused. Off unless <see cref="Enabled"/>; when on,
-/// startup fails unless every value is set, the receiver URL is exact, and the Trendyol GO client points at exactly the
-/// stage API.
+/// startup fails unless every value is set, the receiver URL is exact, and the pilot's connection is routed to exactly
+/// the stage API (<see cref="ProviderApiBaseUrl"/>). Every other connection keeps the deployment's
+/// <c>Platform:TrendyolGo:BaseUrl</c>.
 /// </summary>
 public sealed class TrendyolGoMealWebhookPilotOptions
 {
@@ -53,6 +54,17 @@ public sealed class TrendyolGoMealWebhookPilotOptions
     /// </summary>
     public string? ReceiverBaseUrl { get; set; }
 
+    /// <summary>
+    /// The Trendyol GO API the configured <see cref="PlatformConnectionId"/> alone talks to, instead of the deployment's
+    /// <c>Platform:TrendyolGo:BaseUrl</c>: exactly <c>https://stageapi.tgoapis.com</c>, and nothing else is accepted.
+    /// It covers every request for that connection (polling, the pilot's targeted reconciliation and order actions) and
+    /// applies whether or not <see cref="Enabled"/> is on, so the stage seller's credentials never go to another API.
+    /// Required when the pilot is enabled. See <see cref="ProviderApiFor"/>.
+    /// </summary>
+    public string? ProviderApiBaseUrl { get; set; }
+
+    private static readonly Uri StageApi = new(TrendyolGoMealIntegratorExpectation.StageApiBaseUrl + "/");
+
     /// <summary>Whether a seller id is the configured seller (all-digit ids compare as numbers).</summary>
     public bool IsPilotSeller(string? sellerId) =>
         !string.IsNullOrWhiteSpace(sellerId) && !string.IsNullOrWhiteSpace(SellerId)
@@ -72,11 +84,42 @@ public sealed class TrendyolGoMealWebhookPilotOptions
         && connection.Id == PlatformConnectionId
         && IsPilotSeller(string.IsNullOrWhiteSpace(connection.SupplierId) ? connection.StoreId : connection.SupplierId)
         && IsPilotStore(connection.StoreId);
+
+    /// <summary>
+    /// The API <paramref name="connection"/>'s Trendyol GO requests go to instead of the deployment's
+    /// <c>Platform:TrendyolGo:BaseUrl</c>, or null when they go to the deployment's. Only the configured
+    /// <see cref="PlatformConnectionId"/> is ever routed elsewhere, and only to exactly the stage API: any other
+    /// connection, with whatever seller or store, gets null. It fails closed: when the configured connection is no longer
+    /// the active connection of the configured seller and store, or the override is not exactly the stage API, it throws,
+    /// and no API is called for that connection.
+    /// </summary>
+    public Uri? ProviderApiFor(PlatformConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (string.IsNullOrEmpty(ProviderApiBaseUrl) || PlatformConnectionId == Guid.Empty || connection.Id != PlatformConnectionId)
+            return null;
+
+        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(ProviderApiBaseUrl))
+        {
+            throw new InvalidOperationException(
+                $"{SectionName}:ProviderApiBaseUrl is not exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}; no Trendyol GO API is called for the pilot's connection.");
+        }
+
+        if (!IsPilotConnection(connection))
+        {
+            throw new InvalidOperationException(
+                "The webhook pilot's platform connection is inactive or no longer the configured Trendyol GO seller and store; no Trendyol GO API is called for it.");
+        }
+
+        return StageApi;
+    }
 }
 
-/// <summary>Refuses an enabled pilot whose configuration is incomplete, ambiguous or not on the stage API.</summary>
-internal sealed class TrendyolGoMealWebhookPilotOptionsValidator(IOptions<TrendyolGoOptions> trendyolGo)
-    : IValidateOptions<TrendyolGoMealWebhookPilotOptions>
+/// <summary>
+/// Refuses an enabled pilot whose configuration is incomplete, ambiguous or not on the stage API, and a provider API
+/// override, enabled or not, that is not exactly the stage API for one fully identified connection.
+/// </summary>
+internal sealed class TrendyolGoMealWebhookPilotOptionsValidator : IValidateOptions<TrendyolGoMealWebhookPilotOptions>
 {
     private static readonly Regex Digits = new("^[0-9]{1,20}$", RegexOptions.CultureInvariant);
     private static readonly Regex Sha256Hex = new("^[0-9a-fA-F]{64}$", RegexOptions.CultureInvariant);
@@ -84,19 +127,29 @@ internal sealed class TrendyolGoMealWebhookPilotOptionsValidator(IOptions<Trendy
 
     public ValidateOptionsResult Validate(string? name, TrendyolGoMealWebhookPilotOptions options)
     {
-        if (!options.Enabled)
-            return ValidateOptionsResult.Success;
-
         const string section = TrendyolGoMealWebhookPilotOptions.SectionName;
         var failures = new List<string>();
-        if (options.TenantId == Guid.Empty)
-            failures.Add($"{section}:TenantId is required.");
+
+        // The override routes one connection; it needs that connection, its seller and its store, enabled or not.
+        if (!options.Enabled && string.IsNullOrEmpty(options.ProviderApiBaseUrl))
+            return ValidateOptionsResult.Success;
+        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(options.ProviderApiBaseUrl))
+        {
+            failures.Add($"{section}:ProviderApiBaseUrl must be exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}; " +
+                         "the pilot's connection runs only against the stage API.");
+        }
+
         if (options.PlatformConnectionId == Guid.Empty)
             failures.Add($"{section}:PlatformConnectionId is required.");
         if (!Digits.IsMatch(options.SellerId ?? string.Empty))
             failures.Add($"{section}:SellerId must be the seller's numeric id.");
         if (!Digits.IsMatch(options.StoreId ?? string.Empty))
             failures.Add($"{section}:StoreId must be the store's numeric id.");
+        if (!options.Enabled)
+            return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
+
+        if (options.TenantId == Guid.Empty)
+            failures.Add($"{section}:TenantId is required.");
         if (!HeaderToken.IsMatch(options.HeaderName ?? string.Empty))
             failures.Add($"{section}:HeaderName must be a header name of letters, digits and hyphens.");
         if (!Sha256Hex.IsMatch(options.SecretSha256 ?? string.Empty))
@@ -108,10 +161,6 @@ internal sealed class TrendyolGoMealWebhookPilotOptionsValidator(IOptions<Trendy
             failures.Add($"{section}:ReceiverBaseUrl must be exactly https://<host>{TrendyolGoMealIntegratorExpectation.ReceiverPath}, " +
                          "without user info, port, query or fragment, and shorter than 100 characters.");
         }
-
-        // Stage only: an enabled pilot next to the production Trendyol GO API, or any other URL, is refused outright.
-        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(trendyolGo.Value.BaseUrl))
-            failures.Add($"{section} runs only against exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl} ({TrendyolGoOptions.SectionName}:BaseUrl).");
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }

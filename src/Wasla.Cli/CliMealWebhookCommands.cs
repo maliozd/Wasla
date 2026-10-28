@@ -52,8 +52,8 @@ internal static class CliMealWebhookCommands
         }
 
         var trendyolGo = configuration.GetSection(TrendyolGoOptions.SectionName).Get<TrendyolGoOptions>() ?? new TrendyolGoOptions();
-        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(trendyolGo.BaseUrl))
-            return Fail($"Platform:TrendyolGo:BaseUrl must be exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl} for the stage pilot.");
+        if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(pilot.ProviderApiBaseUrl))
+            return Fail($"TrendyolGoMealWebhookPilot:ProviderApiBaseUrl must be exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}: the pilot's connection runs only against the stage API.");
         var apiBase = new Uri(TrendyolGoMealIntegratorExpectation.StageApiBaseUrl + "/");
 
         var tenant = await CliCommands.ResolveTenantAsync(host, slug: null, pilot.TenantId.ToString(), ct).ConfigureAwait(false);

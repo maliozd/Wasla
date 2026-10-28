@@ -57,7 +57,9 @@ public sealed class TrendyolGoMealWebhookReceiverTests : IAsyncLifetime
             configuration["TrendyolGoMealWebhookPilot:SecretSha256"] = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Secret)));
             configuration["TrendyolGoMealWebhookPilot:MaxBodyBytes"] = "4096";
             configuration["TrendyolGoMealWebhookPilot:ReceiverBaseUrl"] = "https://app.wasla.test/api/webhooks/trendyol-go/meal";
-            configuration["Platform:TrendyolGo:BaseUrl"] = "https://stageapi.tgoapis.com";
+            configuration["TrendyolGoMealWebhookPilot:ProviderApiBaseUrl"] = "https://stageapi.tgoapis.com";
+            // The deployment keeps the production API; only the pilot connection is routed to the stage API.
+            configuration["Platform:TrendyolGo:BaseUrl"] = "https://api.tgoapis.com";
         }
 
         _api = await TenantSessionApiHost.StartAsync(_web, _keys, configuration);

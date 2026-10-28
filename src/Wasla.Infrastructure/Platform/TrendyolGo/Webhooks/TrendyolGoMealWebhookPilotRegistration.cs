@@ -8,17 +8,34 @@ namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 public static class TrendyolGoMealWebhookPilotRegistration
 {
     /// <summary>
-    /// The pilot's options (validated at startup: an enabled pilot with an incomplete configuration, or next to the
-    /// production Trendyol GO API, stops the host) and its inbox. Wasla.Api receives; the processor is registered by the
-    /// Worker with <see cref="AddTrendyolGoMealWebhookPilotProcessing"/>.
+    /// The pilot's options and its inbox. Wasla.Api receives; the processor is registered by the Worker with
+    /// <see cref="AddTrendyolGoMealWebhookPilotProcessing"/>.
     /// </summary>
     public static IServiceCollection AddTrendyolGoMealWebhookPilot(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddTrendyolGoMealWebhookPilotOptions(configuration);
+        services.TryAddScoped<TrendyolGoMealWebhookInbox>();
+        return services;
+    }
+
+    /// <summary>
+    /// Binds and validates the pilot's options once, at startup: an enabled pilot with an incomplete configuration, or a
+    /// provider API override that is not exactly the stage API for one identified connection, stops the host. Every host
+    /// that calls Trendyol GO registers them (through <c>AddWaslaInfrastructure</c>), so the pilot's connection is routed
+    /// the same way in Web, Api and Worker.
+    /// </summary>
+    internal static IServiceCollection AddTrendyolGoMealWebhookPilotOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        if (services.Any(d => d.ServiceType == typeof(IValidateOptions<TrendyolGoMealWebhookPilotOptions>)
+                              && d.ImplementationType == typeof(TrendyolGoMealWebhookPilotOptionsValidator)))
+        {
+            return services;
+        }
+
         services.AddOptions<TrendyolGoMealWebhookPilotOptions>()
             .Bind(configuration.GetSection(TrendyolGoMealWebhookPilotOptions.SectionName))
             .ValidateOnStart();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TrendyolGoMealWebhookPilotOptions>, TrendyolGoMealWebhookPilotOptionsValidator>());
-        services.TryAddScoped<TrendyolGoMealWebhookInbox>();
+        services.AddSingleton<IValidateOptions<TrendyolGoMealWebhookPilotOptions>, TrendyolGoMealWebhookPilotOptionsValidator>();
         return services;
     }
 

@@ -151,7 +151,7 @@ There is no command that deactivates or reactivates a central admin; see [../arc
 
 ### Webhook pilot
 
-Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-webhook-stage-pilot.md](../integrations/trendyol-go-meal-webhook-stage-pilot.md)). Both read `TrendyolGoMealWebhookPilot` and run only against exactly `https://stageapi.tgoapis.com`.
+Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-webhook-stage-pilot.md](../integrations/trendyol-go-meal-webhook-stage-pilot.md)). Both read `TrendyolGoMealWebhookPilot`. `meal-webhook-integrator` runs only when `ProviderApiBaseUrl` is exactly `https://stageapi.tgoapis.com`, and talks only to that API.
 
 | Command | Purpose |
 |---------|---------|

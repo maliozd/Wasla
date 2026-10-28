@@ -78,7 +78,7 @@ Per-tenant API keys/secrets are stored **encrypted in the database** after setup
 
 | Variable | Required for | Notes |
 |----------|--------------|-------|
-| `Platform__TrendyolGo__BaseUrl` | **Web**, **Worker**, **Api** (Real mode) | Production: `https://api.tgoapis.com`. Stage: `https://stageapi.tgoapis.com`. |
+| `Platform__TrendyolGo__BaseUrl` | **Web**, **Worker**, **Api** (Real mode) | Production: `https://api.tgoapis.com`. Stage: `https://stageapi.tgoapis.com`. Every connection uses it, except the Meal webhook pilot's one connection when `TrendyolGoMealWebhookPilot__ProviderApiBaseUrl` is set ([pilot](integrations/trendyol-go-meal-webhook-stage-pilot.md#provider-api-routing)). |
 | `Platform__TrendyolGo__AgentName` | Optional | Default and committed value: `Wasla`. Sent as `x-agentname` and in the `User-Agent` suffix. |
 | `Platform__TrendyolGo__RequestTimeout` | Optional | e.g. `00:00:15` |
 

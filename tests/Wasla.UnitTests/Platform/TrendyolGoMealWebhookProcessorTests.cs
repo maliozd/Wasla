@@ -35,6 +35,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     private readonly Guid _connectionId = Guid.NewGuid();
     private readonly ManualClock _clock = new(DateTimeOffset.UtcNow);
     private readonly FakeWindowedClient _client = new();
+    private IFoodPlatformClient? _providerClient;
     private readonly RecordingNotifier _notifier = new();
     private readonly RecordingReceipts _receipts = new();
     private readonly RecordingAutoApprove _autoApprove = new();
@@ -430,6 +431,79 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         });
     }
 
+    [Fact]
+    public async Task PilotConnection_IsReconciledAndPolledOnTheStageApiOnly_TheRestaurantConnectionStaysOnProduction()
+    {
+        // The deployment keeps the production API (wasla-preflight requires it); only the pilot connection is routed.
+        // A tenant has at most one connection per platform, so the restaurant's Trendyol GO connection is in its own
+        // tenant, polled by the same Worker with the same client.
+        _options.ProviderApiBaseUrl = "https://stageapi.tgoapis.com";
+        var restaurantTenant = Guid.NewGuid();
+        _tenants.CreateTenantDatabase(restaurantTenant);
+        _tenants.Execute(_tenantId, "UPDATE PlatformConnections SET ExecutorEmail = 'executor@example.invalid';");
+        _tenants.Seed(restaurantTenant, db => db.TenantOperationalSettings.Add(new TenantOperationalSettings
+        {
+            Id = SettingsId,
+            OrderSyncEnabled = true,
+            OperationalMode = TenantOperationalMode.Live,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        }));
+        _tenants.Seed(restaurantTenant, db => db.PlatformConnections.Add(new PlatformConnection
+        {
+            Id = Guid.NewGuid(),
+            Platform = FoodPlatform.TrendyolYemek,
+            StoreId = "9423",
+            SupplierId = "200412",
+            ExecutorEmail = "executor@example.invalid",
+            EncryptedApiKey = "restaurant-key",
+            EncryptedApiSecret = "restaurant-secret",
+            IsActive = true,
+            SyncIntervalSeconds = 0,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        }));
+        var requests = new ConcurrentQueue<Uri>();
+        _providerClient = new TrendyolGoFoodPlatformClient(
+            new HttpClient(new DelegateHandler(request =>
+            {
+                requests.Enqueue(request.RequestUri!);
+                return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""{"page":0,"size":50,"totalPages":0,"totalCount":0,"content":[]}""")
+                };
+            }))
+            {
+                BaseAddress = new Uri("https://api.tgoapis.com/")
+            },
+            new PassthroughSecrets(),
+            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
+            Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://api.tgoapis.com" }),
+            Options.Create(_options),
+            NullLogger<TrendyolGoFoodPlatformClient>.Instance,
+            new LimiterClock().Limiter(),
+            _clock);
+
+        // Targeted reconciliation of a webhook event reads only the pilot connection, on the stage API.
+        await AcceptAsync("created", Created("pkg-1"));
+        await Processor().ProcessDueAsync(10, Ct);
+        Assert.NotEmpty(requests);
+        Assert.All(requests, r =>
+        {
+            Assert.Equal("stageapi.tgoapis.com", r.Host);
+            Assert.StartsWith($"/integrator/order/meal/suppliers/{Seller}/", r.AbsolutePath, StringComparison.Ordinal);
+        });
+
+        // Polling reads both connections: each on its own API, and never the other's.
+        requests.Clear();
+        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncCustomerWithResultAsync(restaurantTenant, Ct);
+        var bySupplier = requests.GroupBy(r => r.AbsolutePath.Split('/')[5]).ToDictionary(g => g.Key, g => g.Select(r => r.Host).Distinct().ToList());
+        Assert.Equal(["stageapi.tgoapis.com"], bySupplier[Seller]);
+        Assert.Equal(["api.tgoapis.com"], bySupplier["200412"]);
+        Assert.Equal(2, bySupplier.Count);
+    }
+
     private async Task AcceptAsync(string eventType, string body) =>
         await new TrendyolGoMealWebhookInbox(Options.Create(_options), _tenants, NullLogger<TrendyolGoMealWebhookInbox>.Instance, _clock)
             .AcceptAsync(eventType, Encoding.UTF8.GetBytes(body), Ct);
@@ -439,7 +513,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             NullLogger<TrendyolGoMealWebhookProcessor>.Instance, _clock);
 
     private OrderSyncService Sync() =>
-        new(_tenants, [_client], new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
+        new(_tenants, [_providerClient ?? _client], new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
             NullLogger<OrderSyncService>.Instance, time: _clock);
 
     private async Task<List<ProviderWebhookEvent>> EventsAsync()

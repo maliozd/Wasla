@@ -164,7 +164,7 @@ public sealed partial class WaslaConfigurationKeyTests
         new ServiceCollection().AddWaslaInfrastructure(configuration);
 
         Assert.Equal(
-            new[] { "Email", "Platform:TrendyolGo", "Platform:Yemeksepeti", "Platforms:ProviderMode", "Wasla:TenantOnboarding" },
+            new[] { "Email", "Platform:TrendyolGo", "Platform:Yemeksepeti", "Platforms:ProviderMode", "TrendyolGoMealWebhookPilot", "Wasla:TenantOnboarding" },
             configuration.Paths);
     }
 

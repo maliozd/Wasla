@@ -6,7 +6,9 @@ This document describes the pilot that receives Trendyol GO **Meal** webhooks fr
 
 "Stage" names the provider side only. On Wasla's side the pilot runs on the **existing Wasla deployment**, which is the test environment; there is no separate Wasla stage environment, host, database, account, service or certificate. What enabling it there requires is listed in [Existing deployment](#existing-deployment).
 
-It is **not** tenant routing. Routing a previously unseen event to one of many tenants stays blocked on WAS-175 ([provider-webhooks.md](provider-webhooks.md#tenant-routing)). The pilot needs no routing: every accepted event belongs to the one configured connection, and anything that contradicts it is refused. There is no CentralDb index. Production traffic is refused by configuration validation.
+It is **not** tenant routing. Routing a previously unseen event to one of many tenants stays blocked on WAS-175 ([provider-webhooks.md](provider-webhooks.md#tenant-routing)). The pilot needs no routing: every accepted event belongs to the one configured connection, and anything that contradicts it is refused. There is no CentralDb index.
+
+The deployment keeps the production Trendyol GO API for every connection. Only the pilot's one connection is routed to the stage API ([Provider API routing](#provider-api-routing)).
 
 The Trendyol Marketplace webhook (developers.trendyol.com) and the Trendyol GO Grocery webhook are different contracts and are not used.
 
@@ -34,7 +36,7 @@ Stage observations are recorded in [Stage observations](#stage-observations) and
 
 ## Configuration
 
-Section `TrendyolGoMealWebhookPilot`, read by Wasla.Api, Wasla.Worker and the CLI. Set it with environment variables (`TrendyolGoMealWebhookPilot__Enabled` and so on), never in committed files.
+Section `TrendyolGoMealWebhookPilot`, read by Wasla.Web, Wasla.Api, Wasla.Worker and the CLI. Set it with environment variables (`TrendyolGoMealWebhookPilot__Enabled` and so on), never in committed files.
 
 | Key | Meaning |
 |---|---|
@@ -46,11 +48,25 @@ Section `TrendyolGoMealWebhookPilot`, read by Wasla.Api, Wasla.Worker and the CL
 | `SecretSha256` | SHA-256 of the header secret as 64 hex digits. The secret itself is never configured or stored by Wasla |
 | `MaxBodyBytes` | Largest body accepted (default 262144) |
 | `ReceiverBaseUrl` | The public receiver URL the integrator is registered with: exactly `https://<host>/api/webhooks/trendyol-go/meal` |
+| `ProviderApiBaseUrl` | The Trendyol GO API the pilot's connection alone uses: exactly `https://stageapi.tgoapis.com`. See [Provider API routing](#provider-api-routing) |
 
-When `Enabled` is true, Api and Worker refuse to start unless every value is present and valid:
+When `Enabled` is true, Web, Api and Worker refuse to start unless every value is present and valid:
 
 - `ReceiverBaseUrl` is `https://`, a DNS host name (not an IP address or a single label), and exactly the receiver path, with at most one trailing slash. User info, a port, a query or a fragment never match. It is shorter than 100 characters, as Trendyol GO requires.
-- `Platform:TrendyolGo:BaseUrl` is exactly `https://stageapi.tgoapis.com` (one trailing slash allowed). Any other scheme, host, port, path, query, fragment or user info is refused, `https://api.tgoapis.com` included.
+- `ProviderApiBaseUrl` is exactly `https://stageapi.tgoapis.com` (one trailing slash allowed). Any other scheme, host, port, path, query, fragment or user info is refused, `https://api.tgoapis.com` included.
+
+`ProviderApiBaseUrl` is checked whenever it is set, even with the pilot off: it then needs `PlatformConnectionId`, `SellerId` and `StoreId`, and it must be exactly the stage API. `Platform:TrendyolGo:BaseUrl` is not checked by the pilot: it stays the deployment's own API, which on the existing deployment `wasla-preflight` requires to be production.
+
+### Provider API routing
+
+Every Trendyol GO request is built in one place (`TrendyolGoFoodPlatformClient`), so one rule covers polling, the pilot's targeted reconciliation and order actions (accept, invoiced, shipped, delivered, unsupplied), in every host:
+
+- A connection whose id is not `PlatformConnectionId` uses `Platform:TrendyolGo:BaseUrl`, whatever its seller or store. A real restaurant's connection, and a look-alike with the pilot's seller and store, stay on production.
+- The connection whose id is `PlatformConnectionId` uses exactly the stage API, but only while it is still the active Trendyol GO connection of the configured `SellerId` and `StoreId`. Otherwise its request fails before credentials are read and no API is called, so the stage seller's credentials never reach production and nothing reaches stage by mistake.
+- The routing follows `ProviderApiBaseUrl`, not `Enabled`. Turning the receiver off leaves the connection on the stage API. To stop calling the stage API, deactivate the connection in Wasla.
+- With `ProviderApiBaseUrl` unset, no connection is routed.
+
+A tenant has at most one connection per platform, so the pilot's connection is never in the same tenant as a restaurant's Trendyol GO connection.
 
 No committed settings file enables the pilot; a test checks every `appsettings*.json`.
 
@@ -110,7 +126,7 @@ meal-webhook-integrator --action show|enable|disable|test-order --name <name> --
 meal-webhook-inbox [--limit 20] [--replay <event-id>]
 ```
 
-Every integrator action requires `Platform:TrendyolGo:BaseUrl` to be exactly the stage API and `ReceiverBaseUrl` to be exact, as above.
+Every integrator action requires `ProviderApiBaseUrl` to be exactly the stage API and `ReceiverBaseUrl` to be exact, as above. The integrator client talks only to the stage API.
 
 - **`create`.**
   - Takes the seller's credentials from the pilot's encrypted platform connection.
@@ -135,8 +151,8 @@ Every integrator action requires `Platform:TrendyolGo:BaseUrl` to be exactly the
 The pilot runs on the existing Wasla deployment, not beside it. Read-only facts of that deployment that the pilot depends on (checked 2026-10-27; see [../operations/linux-vds-runbook.md](../operations/linux-vds-runbook.md)):
 
 - **Api exposure.** Wasla.Api listens on loopback only. Nginx publishes Wasla.Web on every Wasla host and has no location for the Api, so `/api/webhooks/trendyol-go/meal/...` reaches Wasla.Web today and answers 404. Receiving webhooks needs one Nginx location that forwards exactly that path prefix to the Api, with a body limit just above `MaxBodyBytes`.
-- **Provider API.** The deployment's `Platform__TrendyolGo__BaseUrl` is the production Trendyol GO API, and `wasla-preflight` refuses any other value. The pilot requires exactly the stage API in the same key, so it cannot be enabled there until one of two things is decided: either the deployment's Trendyol GO polling moves to the stage API (a preflight and environment change), or the pilot's one connection gets its own stage base URL (a code change). Until then the pilot stays off and fails closed.
-- **Tenant.** The pilot needs one tenant and one Trendyol GO connection for the stage seller. A tenant that serves a real restaurant would show stage test orders on its Live Screen.
+- **Provider API.** The deployment's `Platform__TrendyolGo__BaseUrl` is the production Trendyol GO API, and `wasla-preflight` refuses any other value. That stays as it is: only the pilot's connection uses the stage API, through `TrendyolGoMealWebhookPilot__ProviderApiBaseUrl` ([Provider API routing](#provider-api-routing)).
+- **Tenant.** The pilot needs its own tenant and one Trendyol GO connection for the stage seller. It cannot share a restaurant's tenant (one connection per platform), and a restaurant's tenant would show stage test orders on its Live Screen.
 - **Schema.** The pilot adds the tenant migration `AddProviderWebhookEvents`. The deployment's processes refuse to start until every tenant database has it (`migration-status --require-current`).
 
 ## Test procedure
@@ -157,7 +173,7 @@ Record what was observed in [Stage observations](#stage-observations): headers, 
 
 ## Rollback
 
-- Set `TrendyolGoMealWebhookPilot__Enabled=false` and restart the deployment's Api and Worker: the receiver answers 404 and nothing is processed.
+- Set `TrendyolGoMealWebhookPilot__Enabled=false` and restart the deployment's Api and Worker: the receiver answers 404 and nothing is processed. The pilot's connection stays on the stage API; deactivate it in Wasla to stop polling it.
 - Disable the integrator with `--action disable`.
 - Polling is unaffected throughout, so no order is lost.
 - The `ProviderWebhookEvents` table stays and can be emptied by an operator.
