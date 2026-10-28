@@ -1,5 +1,7 @@
 @model Wasla.Web.Models.Marketing.MarketingCtaPanelModel
+@using Microsoft.Extensions.Localization
 @using Wasla.Web.Models.Marketing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
 @* Closing call to action (Figma "Final CTA panel"). The Figma panel uses a temporary photo; until an approved
    photo exists the panel is the solid ink surface of the design system. *@
 <section class="wm-final" aria-labelledby="@Model.Id">
@@ -17,8 +19,12 @@
                         MarketingLinkStyle.TertiaryOnDark => "wm-btn wm-btn--tertiary-dark",
                         _ => "wm-btn wm-btn--secondary"
                     };
-                    <a class="@css" href="@action.Href" rel="@(action.External ? "noopener" : null)">
+                    <a class="@css" href="@action.Href" target="@(action.External ? "_blank" : null)" rel="@(action.External ? "noopener noreferrer" : null)">
                         @action.Text
+                        @if (action.External)
+                        {
+                            <span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span>
+                        }
                         @if (action.Style == MarketingLinkStyle.TertiaryOnDark)
                         {
                             <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>

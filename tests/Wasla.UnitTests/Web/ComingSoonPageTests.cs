@@ -89,6 +89,24 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
     }
 
     [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task InstagramLinks_OpenInANewTab_AndTellScreenReaders(string culture)
+    {
+        var page = await GetAsync("/", culture);
+        var note = $"({Encoded(Text(culture, "Common.OpensInNewTab"))})";
+
+        // The page's button and the footer handle.
+        var anchors = InstagramAnchor().Matches(page.Body);
+        Assert.Equal(2, anchors.Count);
+        Assert.All(anchors, anchor =>
+        {
+            Assert.Contains("target=\"_blank\"", anchor.Groups["attributes"].Value);
+            Assert.Contains("rel=\"noopener noreferrer\"", anchor.Groups["attributes"].Value);
+            Assert.Contains(note, anchor.Groups["content"].Value);
+        });
+    }
+
+    [Theory]
     [InlineData(PublicSiteUrls.PosPath)]
     [InlineData(PublicSiteUrls.ContactPath)]
     [InlineData(PublicSiteUrls.PrivacyNoticePath)]
@@ -212,4 +230,7 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
 
     [GeneratedRegex("<a [^>]*href=\"(?<href>[^\"]*)\"")]
     private static partial Regex LinkHref();
+
+    [GeneratedRegex("<a (?<attributes>[^>]*href=\"https://www\\.instagram\\.com/app\\.wasla\\.tr/\"[^>]*)>(?<content>.*?)</a>", RegexOptions.Singleline)]
+    private static partial Regex InstagramAnchor();
 }
