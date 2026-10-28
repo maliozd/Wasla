@@ -1583,7 +1583,7 @@
   <data name="Admin.Ops.Section.PrintBridge" xml:space="preserve"><value>Print Bridge</value></data>
   <data name="Admin.Ops.Section.AdministrativeState" xml:space="preserve"><value>Hesap durumu</value></data>
   <data name="Admin.Ops.Detail.Summary" xml:space="preserve"><value>Durum özeti</value></data>
-  <data name="Admin.Ops.OpensInNewTab" xml:space="preserve"><value>yeni sekmede açılır</value></data>
+  <data name="Common.OpensInNewTab" xml:space="preserve"><value>yeni sekmede açılır</value></data>
   <data name="Admin.Ops.Membership" xml:space="preserve"><value>Üyelik</value></data>
   <data name="Admin.Ops.Membership.Trial" xml:space="preserve"><value>Deneme</value></data>
   <data name="Admin.Ops.Membership.Active" xml:space="preserve"><value>Aktif</value></data>
