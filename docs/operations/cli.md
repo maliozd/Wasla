@@ -149,6 +149,15 @@ There is no command that deactivates or reactivates a central admin; see [../arc
 | `seed-print-job` | Create pending receipt PrintJob (dev/testing; `--slug` or `--tenant-id`) |
 | `list-print-jobs` | List recent PrintJobs for a tenant (dev/testing; `--slug` or `--tenant-id`) |
 
+### Webhook pilot
+
+Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-webhook-stage-pilot.md](../integrations/trendyol-go-meal-webhook-stage-pilot.md)). Both read `TrendyolGoMealWebhookPilot`. `meal-webhook-integrator` runs only when `ProviderApiBaseUrl` is exactly `https://stageapi.tgoapis.com`, and talks only to that API.
+
+| Command | Purpose |
+|---------|---------|
+| `meal-webhook-integrator` | `--action create` registers the integrator for `ReceiverBaseUrl` with the pilot connection's seller credentials, writes its token to `--token-file` (new file, owner-only) and prints only the SHA-256 for `SecretSha256`; `show`, `enable`, `disable`, `test-order` use the token. `show`, `enable` and `test-order` fail closed unless Get Integrator reports exactly the expected base URL, timeout, seller and event destinations; `enable` reads the integrator back and disables it again if it differs |
+| `meal-webhook-inbox` | List received events (delivery, status, outcome, matched order code and status; never payloads); `--replay <event-id>` queues a Failed or Processed event again |
+
 ### Utility
 
 | Command | Purpose |

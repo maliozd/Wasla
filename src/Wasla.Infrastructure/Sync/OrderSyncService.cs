@@ -217,6 +217,111 @@ public sealed class OrderSyncService : IOrderSyncService
         return Summarize(customerId, connectionResults, swCustomer.ElapsedMilliseconds, "backfill");
     }
 
+    /// <summary>
+    /// A targeted reconciliation of one connection, outside the polling cycle: fetches the window from
+    /// <paramref name="sinceUtc"/> (less the checkpoint overlap, at most one fetch window back) to now with the connection's
+    /// own credentials, and ingests every order through the shared path. It never moves the checkpoint, the last attempt
+    /// or the failure counters, so the polling pass and its outage recovery are unaffected; a failure is thrown to the
+    /// caller. Used by the Trendyol GO Meal webhook stage pilot to read back what an event announced.
+    /// </summary>
+    internal async Task<OrderReconcileResult> ReconcileConnectionAsync(Guid customerId, Guid connectionId, DateTime sinceUtc, CancellationToken ct)
+    {
+        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var connection = await db.PlatformConnections.AsNoTracking()
+            .SingleOrDefaultAsync(c => c.Id == connectionId, ct)
+            .ConfigureAwait(false);
+        if (connection is not { IsActive: true })
+            throw new InvalidOperationException("The platform connection is missing or inactive.");
+
+        var nowUtc = _time.GetUtcNow().UtcDateTime;
+        if (connection.CircuitOpenUntil is { } openUntil && openUntil > nowUtc)
+            throw new InvalidOperationException("The platform connection's circuit is open.");
+
+        var client = ClientFor(connection) ?? throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");
+        if (client.MaxFetchWindow is not { } maxWindow)
+            throw new InvalidOperationException("Targeted reconciliation needs a client that fetches by window.");
+
+        var start = OrderFetchWindowPlanner.AsUtc(sinceUtc) - OrderFetchWindowPlanner.CheckpointOverlap;
+        if (start < nowUtc - maxWindow)
+            start = nowUtc - maxWindow;
+        if (start > nowUtc - OrderFetchWindowPlanner.CheckpointOverlap)
+            start = nowUtc - OrderFetchWindowPlanner.CheckpointOverlap;
+        var window = new OrderFetchWindow(start, nowUtc);
+
+        var orders = await _windowedFetchPipeline.ExecuteAsync(
+                async token => await client.FetchOrdersAsync(connection, window, token).ConfigureAwait(false),
+                ct)
+            .ConfigureAwait(false);
+
+        // The window ends now and, for an event processed promptly, is short: its changes are dated like normal polling's.
+        var milestonesObservedLive = window.EndUtc - window.StartUtc <= MilestoneObservationLimit;
+        int inserted = 0, updated = 0, unchanged = 0, skipped = 0;
+        foreach (var external in orders)
+        {
+            var r = await _ingestion.IngestPackageAsync(customerId, db, connection, external, milestonesObservedLive, ct).ConfigureAwait(false);
+            if (r.Inserted) inserted++;
+            if (r.Updated) updated++;
+            if (r.Unchanged) unchanged++;
+            if (r.Skipped) skipped++;
+        }
+
+        _logger.LogInformation(
+            "Targeted reconciliation completed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Unchanged={UnchangedCount}, Skipped={SkippedCount}",
+            customerId,
+            connection.Id,
+            connection.Platform,
+            window.StartUtc,
+            window.EndUtc,
+            orders.Count,
+            inserted,
+            updated,
+            unchanged,
+            skipped);
+
+        return new OrderReconcileResult(orders.Count, inserted, updated, unchanged, skipped);
+    }
+
+    /// <summary>
+    /// Applies a status-only observation for one connection of the tenant (see
+    /// <see cref="OrderIngestion.ApplyStatusObservationAsync"/>): never creates an order or changes its contents.
+    /// </summary>
+    internal async Task<OrderUpsertResult> ApplyStatusObservationAsync(
+        Guid customerId,
+        Guid connectionId,
+        OrderStatusObservation observation,
+        bool milestonesObservedLive,
+        CancellationToken ct)
+    {
+        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var connection = await db.PlatformConnections.AsNoTracking()
+            .SingleOrDefaultAsync(c => c.Id == connectionId, ct)
+            .ConfigureAwait(false);
+        if (connection is not { IsActive: true })
+            throw new InvalidOperationException("The platform connection is missing or inactive.");
+
+        return await _ingestion.ApplyStatusObservationAsync(customerId, db, connection, observation, milestonesObservedLive, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>The id of the tenant's order for a provider order id, or null when Wasla has not stored it.</summary>
+    internal async Task<Guid?> FindOrderIdAsync(Guid customerId, FoodPlatform platform, string externalOrderId, CancellationToken ct)
+    {
+        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var key = OrderIngestion.IdempotencyKey(platform, externalOrderId);
+        return await db.Orders.AsNoTracking()
+            .Where(o => o.IdempotencyKey == key)
+            .Select(o => (Guid?)o.Id)
+            .SingleOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Whether the tenant's Order Sync setting allows fetching orders; the same gate the polling pass uses.</summary>
+    internal async Task<bool> IsOrderSyncEnabledAsync(Guid customerId, CancellationToken ct)
+    {
+        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        return await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false);
+    }
+
     private IFoodPlatformClient? ClientFor(PlatformConnection connection) =>
         _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
 
@@ -753,3 +858,6 @@ internal enum OrderSyncPass
     /// <summary>The oldest missing window after a history gap.</summary>
     Backfill
 }
+
+/// <summary>What a targeted reconciliation fetched and did.</summary>
+internal sealed record OrderReconcileResult(int FetchedCount, int InsertedCount, int UpdatedCount, int UnchangedCount, int SkippedCount);

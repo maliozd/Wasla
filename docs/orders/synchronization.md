@@ -60,6 +60,8 @@ Polling is a safety net only if it sees every change, so it must:
 
 For Trendyol GO this is described in [Checkpoint and outage recovery](#checkpoint-and-outage-recovery). Yemeksepeti does not meet the second point yet (see [Known gaps](#known-gaps)).
 
+The Trendyol GO Meal webhook stage pilot ([../integrations/trendyol-go-meal-webhook-stage-pilot.md](../integrations/trendyol-go-meal-webhook-stage-pilot.md)) adds a **targeted reconciliation** (`OrderSyncService.ReconcileConnectionAsync`): one connection's window from just before an event to now, at most one fetch window, ingested through the shared path. It never moves the checkpoint, the last attempt or the failure counters, and it does not replace the polling pass.
+
 Polling already writes through the path a future webhook adapter would use ([Shared ingestion](#shared-ingestion-was-18)). No endpoint receives provider events, and routing a previously unseen event to a tenant stays blocked on WAS-175.
 
 ## Worker cycle

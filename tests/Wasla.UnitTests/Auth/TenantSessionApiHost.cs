@@ -22,6 +22,7 @@ using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Sync;
 using ApiCurrentTenantService = Wasla.Api.Tenant.CurrentTenantService;
@@ -91,6 +92,7 @@ internal sealed class TenantSessionApiHost : IAsyncDisposable
         services.AddScoped<ICurrentTenantService, ApiCurrentTenantService>();
         services.AddScoped<IOrderSyncService, OrderSyncService>();
         services.AddWaslaInfrastructure(builder.Configuration);
+        services.AddTrendyolGoMealWebhookPilot(builder.Configuration);
         services.AddWaslaHealthChecks();
         services.Configure<RequestDiagnosticsOptions>(options => options.LogRequestCompletion = false);
         services.AddWaslaApiTenantAuthentication(CookieSecurePolicy.Always);

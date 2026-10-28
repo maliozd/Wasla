@@ -13,6 +13,7 @@ using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo;
 
@@ -61,10 +62,15 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     private readonly ISecretManager _secretManager;
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOptions<TrendyolGoOptions> _options;
+    private readonly IOptions<TrendyolGoMealWebhookPilotOptions> _pilot;
     private readonly ILogger<TrendyolGoFoodPlatformClient> _logger;
     private readonly TrendyolRequestRateLimiter _requestLimiter;
     private readonly TimeProvider _time;
 
+    /// <param name="pilot">
+    /// The webhook pilot's options: its one configured connection talks to the stage API instead of
+    /// <see cref="TrendyolGoOptions.BaseUrl"/> (see <see cref="TrendyolGoMealWebhookPilotOptions.ProviderApiFor"/>).
+    /// </param>
     /// <param name="requestLimiter">
     /// The process-wide singleton. Required: a client with its own limiter would have its own budget.
     /// </param>
@@ -73,6 +79,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<TrendyolGoOptions> options,
+        IOptions<TrendyolGoMealWebhookPilotOptions> pilot,
         ILogger<TrendyolGoFoodPlatformClient> logger,
         TrendyolRequestRateLimiter requestLimiter,
         TimeProvider time)
@@ -81,6 +88,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options;
+        _pilot = pilot;
         _logger = logger;
         _requestLimiter = requestLimiter;
         _time = time;
@@ -376,11 +384,17 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)
     {
+        // Every request is built here, so the pilot's connection never reaches the deployment's API and no other
+        // connection reaches the pilot's. Routing is decided before the credentials are read.
+        var requestUri = _pilot.Value.ProviderApiFor(connection) is { } api
+            ? new Uri(api, path.TrimStart('/'))
+            : new Uri(path, UriKind.Relative);
+
         var apiKey = await _secretManager.DecryptAsync(connection.EncryptedApiKey, connection.EncryptionKeyVersion, ct);
         var apiSecret = await _secretManager.DecryptAsync(connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
         var basicCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{apiKey}:{apiSecret}"));
 
-        var req = new HttpRequestMessage(method, path);
+        var req = new HttpRequestMessage(method, requestUri);
         req.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicCredentials);
         req.Headers.Add("x-agentname", _options.Value.AgentName);
 
