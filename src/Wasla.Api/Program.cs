@@ -5,6 +5,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Sync;
@@ -41,6 +42,9 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
 
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
+
+// Trendyol GO Meal webhook stage pilot: off unless configured; refuses to start half-configured or off the stage API.
+builder.Services.AddTrendyolGoMealWebhookPilot(builder.Configuration);
 // Same host-domain startup policy as Wasla.Web (WAS-66).
 builder.Services.AddWaslaHostDomains(builder.Configuration, builder.Environment);
 

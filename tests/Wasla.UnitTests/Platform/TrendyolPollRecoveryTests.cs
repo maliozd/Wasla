@@ -833,6 +833,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
             new PassthroughSecrets(),
             mapper,
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
+                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             _clientLog,
             _limiter,
             _clock);

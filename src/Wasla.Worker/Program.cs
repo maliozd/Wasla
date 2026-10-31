@@ -3,6 +3,7 @@ using Wasla.Infrastructure.Security;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
@@ -39,7 +40,12 @@ builder.Services.AddWaslaInfrastructure(builder.Configuration);
 // (Realtime:Internal). Outside Development it must be configured or explicitly disabled, or startup stops (WAS-103).
 builder.Services.AddWaslaWebTenantChangeNotifier(builder.Configuration, builder.Environment);
 
-builder.Services.AddScoped<IOrderSyncService, OrderSyncService>();
+builder.Services.AddScoped<OrderSyncService>();
+builder.Services.AddScoped<IOrderSyncService>(sp => sp.GetRequiredService<OrderSyncService>());
+
+// Trendyol GO Meal webhook stage pilot: processes stored events; exits at once while the pilot is off.
+builder.Services.AddTrendyolGoMealWebhookPilotProcessing(builder.Configuration);
+builder.Services.AddHostedService<TrendyolGoMealWebhookWorker>();
 
 builder.Services.AddHostedService<OrderSyncWorker>();
 
