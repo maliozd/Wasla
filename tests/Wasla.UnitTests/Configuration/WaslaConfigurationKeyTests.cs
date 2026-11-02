@@ -9,6 +9,7 @@ using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Web.PrintBridge;
+using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Configuration;
 
@@ -50,6 +51,7 @@ public sealed partial class WaslaConfigurationKeyTests
         "Serilog:MinimumLevel:Default",
         "TenantDb:ServerInstance",
         "Wasla:ApiBaseUrl",
+        "Wasla:Contact:RecipientEmail",
         "Wasla:PrintBridgeDownload:PackageFileName",
         "Wasla:PrintBridgeDownload:PackagePath",
         "Wasla:TenantOnboarding:ApplicationBaseDomain",
@@ -121,6 +123,8 @@ public sealed partial class WaslaConfigurationKeyTests
         Assert.Equal(PrintBridgePackagePaths.DefaultPackageFileName, web["Wasla:PrintBridgeDownload:PackageFileName"]);
         Assert.Equal(string.Empty, web["Wasla:PrintBridgeDownload:PackagePath"]);
         Assert.Equal(PrintBridgePackagePaths.DefaultPackageFileName, PrintBridgePackagePaths.GetPackageFileName(web));
+        // Contact form messages are emailed to the Wasla team (Wasla:Contact).
+        Assert.Equal("mehmetaliozdemir@wasla.tr", web["Wasla:Contact:RecipientEmail"]);
     }
 
     [Theory]
@@ -315,7 +319,7 @@ public sealed partial class WaslaConfigurationKeyTests
             "ASPNETCORE_ENVIRONMENT", "DOTNET_ENVIRONMENT", "ENCRYPTION_MASTER_KEY",
             "ConnectionStrings:CentralDb", "ConnectionStrings:TenantDbDesignTime",
             "TenantDb:ServerInstance",
-            "Wasla:ApiBaseUrl", "Wasla:TenantWebBaseUrl", "Wasla:PublicWebBaseUrl",
+            "Wasla:ApiBaseUrl", "Wasla:TenantWebBaseUrl", "Wasla:PublicWebBaseUrl", "Wasla:Contact:RecipientEmail",
             "Wasla:PrintBridgeDownload:PackageFileName", "Wasla:PrintBridgeDownload:PackagePath",
             "DataProtection:KeyPath",
             "Platforms:ProviderMode", "Platform:TrendyolGo:BaseUrl", "Platform:Yemeksepeti:BaseUrl",
@@ -326,6 +330,7 @@ public sealed partial class WaslaConfigurationKeyTests
             "Realtime:SessionRevalidationSeconds"
         };
         approved.UnionWith(typeof(TenantOnboardingOptions).GetProperties().Select(p => $"{TenantOnboardingOptions.SectionName}:{p.Name}"));
+        approved.UnionWith(typeof(MarketingSiteOptions).GetProperties().Select(p => $"{MarketingSiteOptions.SectionName}:{p.Name}"));
 
         return approved.Contains(key) || approved.Any(a => a.StartsWith(key + ":", StringComparison.Ordinal));
     }

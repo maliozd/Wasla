@@ -1,0 +1,81 @@
+@model Wasla.Web.Areas.Admin.Models.AdminContactMessageDetailViewModel
+@using System.Globalization
+@using Wasla.Domain.Enums
+@using Wasla.Web.Formatting
+@{
+    var m = Model.Message;
+    ViewData["Title"] = L["Admin.ContactMessages.DetailTitle"].Value;
+
+    string StatusBadge(ContactMessageNotificationStatus s) => s switch
+    {
+        ContactMessageNotificationStatus.Sent => "text-bg-success",
+        ContactMessageNotificationStatus.Failed => "text-bg-danger",
+        ContactMessageNotificationStatus.NotConfigured => "text-bg-warning",
+        _ => "text-bg-secondary"
+    };
+
+    string Utc(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/admin">@L["Admin.DashboardTitle"]</a></li>
+        <li class="breadcrumb-item"><a href="/admin/contact-messages">@L["Admin.ContactMessages.Title"]</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@m.FullName</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">@m.FullName</h1>
+        <p class="text-muted small mb-0">@L["Admin.ContactMessages.DetailTitle"] · @L[$"Contact.Topic.{m.Topic}"]</p>
+    </div>
+    <a class="btn btn-sm btn-primary" href="mailto:@m.Email"><i class="bi bi-reply me-1" aria-hidden="true"></i>@L["Admin.ContactMessages.Reply"]</a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">@L["Admin.ContactMessages.Sender"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Sender"]</dt>
+            <dd class="col-sm-9">@m.FullName</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Restaurant"]</dt>
+            <dd class="col-sm-9">@m.RestaurantName</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Email"]</dt>
+            <dd class="col-sm-9"><a href="mailto:@m.Email" dir="ltr">@m.Email</a></dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Phone"]</dt>
+            <dd class="col-sm-9" dir="ltr">@(string.IsNullOrWhiteSpace(m.Phone) ? L["Admin.ContactMessages.NoPhone"].Value : TurkishPhoneDisplayFormatter.FormatWithCountryCode(m.Phone))</dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Topic"]</dt>
+            <dd class="col-sm-9">@L[$"Contact.Topic.{m.Topic}"]</dd>
+        </dl>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold">@L["Admin.ContactMessages.Message"]</div>
+    <div class="card-body">
+        <p class="mb-0 text-break" style="white-space: pre-wrap;" data-contact-message>@m.Message</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">@L["Admin.PendingReg.StatusInfo"]</div>
+    <div class="card-body">
+        <dl class="row small mb-0">
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Received"]</dt>
+            <dd class="col-sm-9"><time datetime="@m.CreatedAtUtc.ToString("O", CultureInfo.InvariantCulture)">@Utc(m.CreatedAtUtc)</time></dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.EmailNotification"]</dt>
+            <dd class="col-sm-9">
+                <span class="badge @StatusBadge(m.NotificationStatus)">@L[$"Admin.ContactMessages.Status.{m.NotificationStatus}"]</span>
+                @if (m.NotificationAttemptedAtUtc is { } attempted)
+                {
+                    <span class="text-muted ms-2">@Utc(attempted)</span>
+                }
+            </dd>
+            <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Culture"]</dt>
+            <dd class="col-sm-9"><code>@(m.Culture ?? "-")</code></dd>
+        </dl>
+    </div>
+</div>
+
+<a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>@L["Admin.ContactMessages.Back"]</a>

@@ -26,6 +26,12 @@ public static class AuthenticationRateLimitPolicies
     /// </summary>
     public const string SignupCheckout = "signup-checkout";
 
+    /// <summary>
+    /// The anonymous public contact form, <c>POST /contact</c>, which stores a message and sends an email. Partitioned
+    /// by client network.
+    /// </summary>
+    public const string ContactSubmission = "contact-submission";
+
     /// <summary>Whether the policy's partitions are per tenant (the tenant resolved from the host, never from the request body).</summary>
     public static bool IsTenantScoped(string policy) =>
         policy is TenantLogin or ApiCredentialValidation;
@@ -50,6 +56,8 @@ public sealed class AuthenticationRateLimitOptions
 
     public AuthenticationRateLimitRule SignupCheckout { get; set; } = new() { PermitLimit = 20, Window = TimeSpan.FromMinutes(10) };
 
+    public AuthenticationRateLimitRule ContactSubmission { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromHours(1) };
+
     public AuthenticationRateLimitRule For(string policy) => policy switch
     {
         AuthenticationRateLimitPolicies.TenantLogin => TenantLogin,
@@ -57,6 +65,7 @@ public sealed class AuthenticationRateLimitOptions
         AuthenticationRateLimitPolicies.ApiCredentialValidation => ApiCredentialValidation,
         AuthenticationRateLimitPolicies.SignupSubmission => SignupSubmission,
         AuthenticationRateLimitPolicies.SignupCheckout => SignupCheckout,
+        AuthenticationRateLimitPolicies.ContactSubmission => ContactSubmission,
         _ => throw new ArgumentOutOfRangeException(nameof(policy), policy, "Unknown authentication rate-limit policy.")
     };
 }
@@ -88,6 +97,7 @@ public sealed class AuthenticationRateLimitOptionsValidator : IValidateOptions<A
         Check(options.ApiCredentialValidation, nameof(AuthenticationRateLimitOptions.ApiCredentialValidation), failures);
         Check(options.SignupSubmission, nameof(AuthenticationRateLimitOptions.SignupSubmission), failures);
         Check(options.SignupCheckout, nameof(AuthenticationRateLimitOptions.SignupCheckout), failures);
+        Check(options.ContactSubmission, nameof(AuthenticationRateLimitOptions.ContactSubmission), failures);
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }

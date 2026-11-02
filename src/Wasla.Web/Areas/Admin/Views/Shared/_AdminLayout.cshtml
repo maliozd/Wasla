@@ -18,12 +18,14 @@
     string AdminCustomers() => requestPath.StartsWith("/admin/customers", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPendingRegs() => requestPath.StartsWith("/admin/pending-registrations", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPlanPrices() => requestPath.StartsWith("/admin/billing/plan-prices", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    string AdminContactMessages() => requestPath.StartsWith("/admin/contact-messages", StringComparison.OrdinalIgnoreCase) ? "active" : "";
 }
 <!DOCTYPE html>
 <html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" data-wasla-theme-scope="admin">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @await Html.PartialAsync("_FaviconLinks")
     <title>@(ViewData["Title"] ?? "Wasla") - @L["Layout.CentralAdmin"]</title>
     @* Before any stylesheet: the first frame is painted in the resolved theme. *@
     <script src="~/js/theme-preference.js" asp-append-version="true"></script>
@@ -121,6 +123,11 @@
                     <li class="nav-item">
                         <a class="nav-link @AdminPlanPrices()" href="/admin/billing/plan-prices">
                             <i class="bi bi-tags me-2"></i>@L["Admin.PlanPrices.Title"]
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @AdminContactMessages()" href="/admin/contact-messages">
+                            <i class="bi bi-envelope me-2"></i>@L["Admin.ContactMessages.Title"]
                         </a>
                     </li>
                     <li class="nav-item">

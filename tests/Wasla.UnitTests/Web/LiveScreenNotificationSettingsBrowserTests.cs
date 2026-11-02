@@ -208,8 +208,7 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
                 return; // The document is being replaced: the form was sent.
             }
 
-            Assert.True(sent.GetProperty("ok").GetBoolean(),
-                $"The click aimed at {selector} (y {y:0}) submitted no form; it landed on {sent.GetProperty("at").GetString()}.");
+            AssertFormSubmitted(sent, selector, y);
             return;
         }
 
@@ -224,6 +223,16 @@ public sealed class LiveScreenNotificationSettingsBrowserTests
             $"The click aimed at {selector} (y {y:0}, {target.GetProperty("rendered").GetInt32()} snapshots rendered) landed on " +
             $"{landed.GetProperty("at").GetString()}; the control is now at y {landed.GetProperty("y").GetDouble():0} " +
             $"({landed.GetProperty("rendered").GetInt32()} snapshots rendered).");
+    }
+
+    internal static void AssertFormSubmitted(JsonElement sent, string selector, double y)
+    {
+        // A replaced document returns only { ok: true }; click details belong to the old document.
+        // Build the diagnostic only on failure, otherwise reading "at" would throw after a successful navigation.
+        if (!sent.GetProperty("ok").GetBoolean())
+        {
+            Assert.Fail($"The click aimed at {selector} (y {y:0}) submitted no form; it landed on {sent.GetProperty("at").GetString()}.");
+        }
     }
 
     private static string Describe(string node) =>

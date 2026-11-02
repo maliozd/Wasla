@@ -18,6 +18,21 @@ public static class PublicSiteUrls
     /// <summary>The marketing page of Wasla POS.</summary>
     public const string PosPath = "/pos";
 
+    /// <summary>The contact page: the contact form and the direct channels.</summary>
+    public const string ContactPath = "/contact";
+
+    /// <summary>The privacy notice (KVKK Aydınlatma Metni) of the contact form.</summary>
+    public const string PrivacyNoticePath = "/privacy-notice";
+
+    /// <summary>The published contact email address.</summary>
+    public const string ContactEmail = "mehmetaliozdemir@wasla.tr";
+
+    /// <summary>The published contact phone number, as shown.</summary>
+    public const string ContactPhoneDisplay = "+90 544 669 56 91";
+
+    /// <summary>The published contact phone number as a <c>tel:</c> link.</summary>
+    public const string ContactPhoneHref = "tel:+905446695691";
+
     /// <summary>
     /// The absolute canonical URL of <paramref name="path"/> on the configured marketing domain (the apex, WAS-66): the
     /// request's scheme, its port only in Development and Staging, and no query string or fragment. The host never comes

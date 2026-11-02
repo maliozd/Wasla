@@ -13,7 +13,11 @@ namespace Wasla.Web.Controllers;
 [AllowAnonymous]
 public sealed class HomeController : Controller
 {
+    /// <summary>The view shown at <c>/</c> while the full marketing site is not published.</summary>
+    public const string ComingSoonViewName = "ComingSoon";
+
     private readonly TenantOnboardingOptions _onboardingOptions;
+    private readonly MarketingSiteOptions _marketingSite;
     private readonly IPendingRegistrationService _pendingRegistrations;
     private readonly IWebHostEnvironment _environment;
     private readonly IBillingPlanPriceReader _planPrices;
@@ -21,12 +25,14 @@ public sealed class HomeController : Controller
 
     public HomeController(
         IOptions<TenantOnboardingOptions> onboardingOptions,
+        IOptions<MarketingSiteOptions> marketingSite,
         IPendingRegistrationService pendingRegistrations,
         IWebHostEnvironment environment,
         IBillingPlanPriceReader planPrices,
         ILogger<HomeController> logger)
     {
         _onboardingOptions = onboardingOptions.Value;
+        _marketingSite = marketingSite.Value;
         _pendingRegistrations = pendingRegistrations;
         _environment = environment;
         _planPrices = planPrices;
@@ -35,6 +41,11 @@ public sealed class HomeController : Controller
 
     public async Task<IActionResult> Index(CancellationToken ct)
     {
+        // Until the full marketing site is published (Wasla:MarketingSite:FullSiteEnabled) the homepage is the
+        // coming-soon page; it shows no prices, so nothing is read.
+        if (!_marketingSite.FullSiteEnabled)
+            return View(ComingSoonViewName);
+
         IReadOnlyList<BillingPriceQuote> prices;
         try
         {
