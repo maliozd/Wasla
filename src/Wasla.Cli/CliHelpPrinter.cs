@@ -31,6 +31,8 @@ internal static class CliHelpPrinter
         "generate-print-bridge-token",
         "seed-print-job",
         "list-print-jobs",
+        "meal-webhook-integrator",
+        "meal-webhook-inbox",
         "help"
     ];
 
@@ -98,6 +100,8 @@ internal static class CliHelpPrinter
         Console.WriteLine("  generate-print-bridge-token Register a Print Bridge device and print a one-time agent token.");
         Console.WriteLine("  seed-print-job            Create a pending receipt PrintJob for Print Bridge testing.");
         Console.WriteLine("  list-print-jobs           List recent PrintJobs for a tenant (dev/testing).");
+        Console.WriteLine("  meal-webhook-integrator   Trendyol GO Meal webhook stage pilot: manage its integrator or request a test order.");
+        Console.WriteLine("  meal-webhook-inbox        Trendyol GO Meal webhook stage pilot: list received events or replay one.");
         Console.WriteLine("  help                      Show CLI help.");
         Console.WriteLine();
 
@@ -316,6 +320,30 @@ internal static class CliHelpPrinter
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope tenant --tenant mengen --email user@example.com");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli\\Wasla.Cli.csproj -- reset-password --scope central --email user@example.com --dry-run");
+                return;
+
+            case "meal-webhook-integrator":
+                Console.WriteLine("meal-webhook-integrator");
+                Console.WriteLine();
+                Console.WriteLine("Trendyol GO Meal webhook stage pilot only: runs against exactly TrendyolGoMealWebhookPilot:ProviderApiBaseUrl (the stage API) with the pilot's platform connection.");
+                Console.WriteLine("create prints the SHA-256 to configure as TrendyolGoMealWebhookPilot:SecretSha256 and writes the token to --token-file.");
+                Console.WriteLine("create registers TrendyolGoMealWebhookPilot:ReceiverBaseUrl, the documented event types and a 5000 ms timeout.");
+                Console.WriteLine("show, enable and test-order fail unless Get Integrator reports exactly that registration for exactly");
+                Console.WriteLine("the configured seller; enable reads the integrator back and disables it again if it differs.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  meal-webhook-integrator --action create --name <name> --token-file <path>");
+                Console.WriteLine("  meal-webhook-integrator --action show|enable|disable|test-order --name <name> --token-file <path>");
+                return;
+
+            case "meal-webhook-inbox":
+                Console.WriteLine("meal-webhook-inbox");
+                Console.WriteLine();
+                Console.WriteLine("Lists the stage pilot's newest webhook events: delivery, processing state and outcome, never payloads.");
+                Console.WriteLine("--replay queues a Failed or Processed event again; processing is idempotent.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  meal-webhook-inbox [--limit <n>] [--replay <event-id>]");
                 return;
 
             case "list-central-admins":

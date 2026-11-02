@@ -9,7 +9,10 @@ public enum MarketingLinkStyle
     TertiaryOnDark
 }
 
-/// <summary>A marketing call to action. Every target is an existing route, an in-page anchor or a confirmed external page.</summary>
+/// <summary>
+/// A marketing call to action. Every target is an existing route, an in-page anchor or a confirmed external page; an
+/// external page opens in a new tab.
+/// </summary>
 public sealed record MarketingLink(string Text, string Href, MarketingLinkStyle Style, bool External = false);
 
 /// <summary>The dark closing panel shared by the homepage and the Wasla POS page.</summary>

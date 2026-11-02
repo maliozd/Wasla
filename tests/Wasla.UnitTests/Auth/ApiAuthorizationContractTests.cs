@@ -45,6 +45,7 @@ public sealed class ApiAuthorizationContractTests : IAsyncLifetime
         ["POST api/print-bridge/jobs/{jobId:guid}/mark-printed"] = Expected.Anonymous(PrintBridgeDeviceToken),
         ["POST api/print-bridge/jobs/{jobId:guid}/reprint"] = Expected.Anonymous(PrintBridgeDeviceToken),
         ["POST api/print-bridge/jobs/{jobId:guid}/mark-failed"] = Expected.Anonymous(PrintBridgeDeviceToken),
+        ["POST api/webhooks/trendyol-go/meal/{eventType}"] = Expected.Anonymous("Trendyol GO Meal webhook stage pilot; authenticated by the integrator's header secret, 404 while the pilot is off."),
         ["GET /"] = Expected.Anonymous("Service banner; reads no tenant data."),
         ["* /health/live"] = Expected.Anonymous("Liveness probe; skips tenant resolution."),
         ["* /health/ready"] = Expected.Anonymous("Readiness probe (CentralDb only); skips tenant resolution.")

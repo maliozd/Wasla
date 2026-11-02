@@ -31,6 +31,7 @@ using Wasla.Web;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Middleware;
 using Wasla.Web.Realtime;
+using Wasla.Web.Routing;
 using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
 using CurrentTenantService = Wasla.Web.Tenant.CurrentTenantService;
@@ -189,6 +190,8 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.AddWaslaWebAuthenticationRateLimiting(builder.Configuration);
         services.AddWaslaTrustedProxies(builder.Configuration);
         services.AddWaslaTenantHostMissCache(builder.Configuration);
+        // Wasla:MarketingSite as Program.cs binds it: without the test's configuration only the coming-soon page is published.
+        services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
         // The live tenant hub, its notifier and (with Realtime:Internal) the loopback listener, as in Web Program.cs.
         services.AddWaslaRealtime(builder.Configuration);
         configureServices?.Invoke(services);

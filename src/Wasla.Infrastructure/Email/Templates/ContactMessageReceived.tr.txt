@@ -1,0 +1,18 @@
+İletişim formundan yeni mesaj ({{Topic}})
+
+Ad soyad: {{FullName}}
+Restoran: {{RestaurantName}}
+E-posta: {{Email}}
+Telefon: {{Phone}}
+Konu: {{Topic}}
+
+Mesaj:
+{{Message}}
+
+Gönderildi: {{CreatedAtUtc}}
+Sayfa dili: {{Culture}}
+Kayıt: {{MessageId}}
+
+Mesaj Central Admin'de İletişim mesajları sayfasında da kayıtlı. Gönderene yanıt vermek için e-posta adresine yeni bir ileti yazın.
+
+{{FromName}}

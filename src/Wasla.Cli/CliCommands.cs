@@ -2088,7 +2088,7 @@ internal static class CliCommands
         return 0;
     }
 
-    private static async Task<Tenant?> ResolveTenantAsync(
+    internal static async Task<Tenant?> ResolveTenantAsync(
         IHost host,
         string? slug,
         string? tenantIdArg,
@@ -2119,7 +2119,7 @@ internal static class CliCommands
             .ConfigureAwait(false);
     }
 
-    private static async Task<TenantDbContext> OpenTenantDbAsync(IHost host, Tenant tenant, CancellationToken ct)
+    internal static async Task<TenantDbContext> OpenTenantDbAsync(IHost host, Tenant tenant, CancellationToken ct)
     {
         var secret = host.Services.GetRequiredService<ISecretManager>();
         var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
