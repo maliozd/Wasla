@@ -34,6 +34,7 @@ using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Platform.Mock;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Platform.Yemeksepeti;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
@@ -57,6 +58,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
 
         services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
+        // The webhook pilot's provider API override routes its one connection; every host that calls Trendyol GO binds it.
+        services.AddTrendyolGoMealWebhookPilotOptions(configuration);
         services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
         services.AddOptions<TenantOnboardingOptions>()
             .Bind(configuration.GetSection(TenantOnboardingOptions.SectionName))

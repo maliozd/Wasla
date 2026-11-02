@@ -33,6 +33,7 @@ public sealed class ProviderFailureLoggingTests
             new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
+                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             logger,
             new Wasla.UnitTests.Platform.LimiterClock().Limiter(),
             TimeProvider.System);

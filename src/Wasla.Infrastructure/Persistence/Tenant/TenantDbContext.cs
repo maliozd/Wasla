@@ -29,6 +29,7 @@ public class TenantDbContext : DbContext
     public DbSet<SyncLog> SyncLogs => Set<SyncLog>();
     public DbSet<IntegrationError> IntegrationErrors => Set<IntegrationError>();
     public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
+    public DbSet<ProviderWebhookEvent> ProviderWebhookEvents => Set<ProviderWebhookEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,6 +49,7 @@ public class TenantDbContext : DbContext
         modelBuilder.ApplyConfiguration(new SyncLogConfiguration());
         modelBuilder.ApplyConfiguration(new IntegrationErrorConfiguration());
         modelBuilder.ApplyConfiguration(new PrintJobConfiguration());
+        modelBuilder.ApplyConfiguration(new ProviderWebhookEventConfiguration());
     }
 
     /// <summary>

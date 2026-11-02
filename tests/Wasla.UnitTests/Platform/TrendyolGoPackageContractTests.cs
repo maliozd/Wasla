@@ -268,6 +268,7 @@ public sealed class TrendyolGoPackageContractTests
             new PassthroughSecrets(),
             new DefaultOrderStatusMapper(new CollectingLogger<DefaultOrderStatusMapper>()),
             Options.Create(options),
+                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             _clientLog,
             new LimiterClock().Limiter(),
             TimeProvider.System);
