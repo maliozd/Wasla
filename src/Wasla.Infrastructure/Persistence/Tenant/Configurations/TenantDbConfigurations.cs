@@ -331,6 +331,29 @@ public class SyncLogConfiguration : IEntityTypeConfiguration<SyncLog>
     }
 }
 
+public class ProviderWebhookEventConfiguration : IEntityTypeConfiguration<ProviderWebhookEvent>
+{
+    public void Configure(EntityTypeBuilder<ProviderWebhookEvent> builder)
+    {
+        builder.ToTable("ProviderWebhookEvents");
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Platform).HasConversion<int>();
+        builder.Property(e => e.EventType).IsRequired().HasMaxLength(64);
+        builder.Property(e => e.ExternalOrderId).IsRequired().HasMaxLength(128);
+        builder.Property(e => e.DedupKey).IsRequired().HasMaxLength(88);
+        builder.Property(e => e.PayloadJson).IsRequired();
+        builder.Property(e => e.Status).HasConversion<int>();
+        builder.Property(e => e.Outcome).HasMaxLength(64);
+        builder.Property(e => e.LastError).HasMaxLength(500);
+
+        // A repeated delivery of the same event finds this row instead of adding one.
+        builder.HasIndex(e => e.DedupKey).IsUnique().HasDatabaseName("IX_ProviderWebhookEvents_DedupKey");
+        // The processor's queue: due events by status and time.
+        builder.HasIndex(e => new { e.Status, e.NextAttemptAt }).HasDatabaseName("IX_ProviderWebhookEvents_Status_NextAttemptAt");
+        builder.HasIndex(e => e.ReceivedAt).HasDatabaseName("IX_ProviderWebhookEvents_ReceivedAt");
+    }
+}
+
 public class IntegrationErrorConfiguration : IEntityTypeConfiguration<IntegrationError>
 {
     public void Configure(EntityTypeBuilder<IntegrationError> builder)

@@ -290,6 +290,10 @@ Verified against `dev` at b27505e. None of the cited files changed up to 198b49b
 | Webhook metrics (last event, lag, duplicates, retries, dead letters) and a connection health signal | Deciding any polling reduction | WAS-21 |
 | Integrator management (create, add seller, enable, rotate secret) | Trendyol GO registration | Follow-up, after stage validation |
 
+## Stage pilot
+
+A pilot receives Trendyol GO Meal webhooks from the provider's stage API, on the existing Wasla deployment, for exactly one explicitly configured seller, store, tenant and connection: [trendyol-go-meal-webhook-stage-pilot.md](trendyol-go-meal-webhook-stage-pilot.md). It does not resolve [Tenant routing](#tenant-routing): it needs none, refuses anything that contradicts its configuration and adds no central index. Only its one connection uses the stage API; every other connection keeps the deployment's API. It is the way to collect the stage evidence WAS-175 asks for.
+
 ## Implications for WAS-18 to WAS-21
 
 | Issue | Implication |
