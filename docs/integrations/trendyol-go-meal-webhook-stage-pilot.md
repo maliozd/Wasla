@@ -64,7 +64,7 @@ Every Trendyol GO request is built in one place (`TrendyolGoFoodPlatformClient`)
 - A connection whose id is not `PlatformConnectionId` uses `Platform:TrendyolGo:BaseUrl`, whatever its seller or store. A real restaurant's connection, and a look-alike with the pilot's seller and store, stay on production.
 - The connection whose id is `PlatformConnectionId` uses exactly the stage API, but only while it is still the active Trendyol GO connection of the configured `SellerId` and `StoreId`. Otherwise its request fails before credentials are read and no API is called, so the stage seller's credentials never reach production and nothing reaches stage by mistake.
 - The routing follows `ProviderApiBaseUrl`, not `Enabled`. Turning the receiver off leaves the connection on the stage API. To stop calling the stage API, deactivate the connection in Wasla.
-- With `ProviderApiBaseUrl` unset, no connection is routed.
+- With `ProviderApiBaseUrl` unset, no connection is routed. The pilot's connection is then an ordinary connection on the deployment's production API, and polling would send the stage seller's credentials there. Deactivate the pilot's connection before `ProviderApiBaseUrl` or `PlatformConnectionId` is removed or changed, never after.
 
 A tenant has at most one connection per platform, so the pilot's connection is never in the same tenant as a restaurant's Trendyol GO connection.
 
@@ -174,6 +174,7 @@ Record what was observed in [Stage observations](#stage-observations): headers, 
 ## Rollback
 
 - Set `TrendyolGoMealWebhookPilot__Enabled=false` and restart the deployment's Api and Worker: the receiver answers 404 and nothing is processed. The pilot's connection stays on the stage API; deactivate it in Wasla to stop polling it.
+- Remove the rest of the `TrendyolGoMealWebhookPilot` settings only after the pilot's connection is deactivated (see [Provider API routing](#provider-api-routing)).
 - Disable the integrator with `--action disable`.
 - Polling is unaffected throughout, so no order is lost.
 - The `ProviderWebhookEvents` table stays and can be emptied by an operator.
