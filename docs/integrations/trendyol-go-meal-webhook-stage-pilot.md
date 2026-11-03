@@ -200,7 +200,18 @@ These were observed on stage and are not contract. They may change without notic
 | Processing | Each event reached Processed / `Reconciled` on the first attempt, 1 to 4 s after receipt. The targeted reconciliation found the test package on the stage API and created the order; the polling passes before and after it imported nothing |
 | Orders | Exactly one order per package, with no duplicate idempotency key. Both orders appeared on the tenant's Live Screen |
 
-Not yet observed: retry timing after a failure or non-2xx answer, event ordering, and the status events (`cancelled`, `unsupplied`, `shipped`, `delivered`).
+**2026-11-03, cancelling the second test order.** The order was cancelled from the Trendyol GO side at about 15:52Z, 19 minutes after it was created. The first test order was not cancelled and received no further event.
+
+| Topic | Observed |
+|---|---|
+| Event sent | `unsupplied`, not `cancelled`. Its path was `/unsupplied` and its own `status` the documented `UnSupplied`. No `cancelled` event arrived |
+| Duplicates | Delivered **twice**, within 0.1 s, and deduplicated to one event with `Deliveries=2`, as with `created` |
+| Answer time | 783 ms and 864 ms, both 200 |
+| Processing | Processed / `StatusApplied` on the first attempt, 3 s after receipt. The order became Cancelled in Wasla, with platform status `UnSupplied` |
+| Webhook or polling | The webhook made the change. `CancelledAt` was set at 15:52:47.6Z, while the event was being processed. The next polling pass that returned the package started at 15:52:49.7Z |
+| Polling afterwards | That pass counted one updated order, so polling changed the order once more after the webhook had cancelled it. Its change version is 3: stored, the webhook's status change, and that pass. The fields the pass wrote are not recorded |
+
+Not yet observed: retry timing after a failure or non-2xx answer, event ordering, `cancelled`, `shipped` and `delivered`.
 
 ## Related docs
 
