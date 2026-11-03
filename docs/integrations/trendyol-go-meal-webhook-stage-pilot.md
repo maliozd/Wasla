@@ -211,6 +211,14 @@ These were observed on stage and are not contract. They may change without notic
 | Webhook or polling | The webhook made the change. `CancelledAt` was set at 15:52:47.6Z, while the event was being processed. The next polling pass that returned the package started at 15:52:49.7Z |
 | Polling afterwards | That pass counted one updated order, so polling changed the order once more after the webhook had cancelled it. Its change version is 3: stored, the webhook's status change, and that pass. The fields the pass wrote are not recorded |
 
+**2026-11-03, accepting the first test order.** The order was accepted outside Wasla at about 16:38Z; Wasla's Web and Worker logged no accept action.
+
+| Topic | Observed |
+|---|---|
+| Event sent | None. No request reached the receiver, and the inbox gained no event. The documented event types have none for acceptance |
+| Polling | The next pass returned the package and counted one updated order. The order became Accepted in Wasla, with platform status `Picking`. `AcceptedAt` (16:38:49.9Z) falls within that pass (16:38:49.8–50.0Z) |
+| Conclusion | Polling, not the webhook, carries acceptance. Its delay is the polling interval |
+
 Not yet observed: retry timing after a failure or non-2xx answer, event ordering, `cancelled`, `shipped` and `delivered`.
 
 ## Related docs
