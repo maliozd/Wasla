@@ -25,7 +25,7 @@ Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersContro
 
 1. Policies and the roles each admits are defined once, for Web and API, in `WaslaTenantPolicies` (`src/Wasla.Application/Security/WaslaTenantPolicies.cs`). Web's `TenantPolicies` (`src/Wasla.Web/Security/TenantPolicies.cs`) only aliases those names
 2. Web `Program.cs` and the API's `AddWaslaApiTenantAuthentication` both register every policy from that table with `AddWaslaTenantRolePolicies` (`src/Wasla.Infrastructure/Security/TenantRoleRequirement.cs`) as a `TenantRoleRequirement`
-3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database, by Web and API alike: it must belong to this tenant, and the user must exist, be active, and still have the cookie's role and security stamp. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
+3. Before any policy runs, the tenant session is revalidated against the user's row in the tenant database, by Web and API alike: it must belong to this tenant, the user must exist, be active, and still have the cookie's role and security stamp, and the cookie's stored login session must exist for that user and not have been logged out. Otherwise the request is anonymous. See [authentication.md](../architecture/authentication.md#tenant-session-revalidation)
 4. `TenantRoleAuthorizationHandler` succeeds only when:
    - `ICurrentTenantService.CurrentTenant` is present
    - Claim `TenantId` occurs once, parses and equals that tenant’s id
