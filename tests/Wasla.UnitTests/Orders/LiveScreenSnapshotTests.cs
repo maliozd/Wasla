@@ -135,12 +135,14 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         var after = await CaptureAsync(_tenantId);
 
         Assert.Equal(before, after);
+        // An order stored as the legacy Accepted is in preparation (WAS-185): the snapshot shows it as Preparing,
+        // and the read leaves the stored row as it is.
         Assert.Equal(
-            [OrderStatus.New, OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.OnTheWay],
+            [OrderStatus.New, OrderStatus.Preparing, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.OnTheWay],
             snapshot.Orders.Select(order => order.Status).ToArray());
 
         var card = snapshot.Orders.Single(order => order.Id == accepted);
-        Assert.Equal(OrderStatus.Accepted, card.Status);
+        Assert.Equal(OrderStatus.Preparing, card.Status);
         Assert.Equal(
             [("Lahmacun", 1, "No onion"), ("Ayran", 2, null)],
             card.Items.Select(item => (item.ProductName, item.Quantity, item.Notes)).ToArray());
@@ -190,7 +192,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         Assert.Equal(NowUtc, document.RootElement.GetProperty("serverTimeUtc").GetDateTime().ToUniversalTime());
         Assert.Equal("TY-42", order.GetProperty("displayNumber").GetString());
         Assert.Equal("TrendyolYemek", order.GetProperty("platform").GetString());
-        Assert.Equal("Accepted", order.GetProperty("status").GetString());
+        Assert.Equal("Preparing", order.GetProperty("status").GetString());
         Assert.Equal("Lahmacun", order.GetProperty("items")[0].GetProperty("productName").GetString());
         Assert.Equal(1, order.GetProperty("items")[0].GetProperty("quantity").GetInt32());
         Assert.Equal("No onion", order.GetProperty("items")[0].GetProperty("notes").GetString());

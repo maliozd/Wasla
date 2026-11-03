@@ -49,14 +49,32 @@ public sealed class GuidedDemoScenarioTests
 public sealed class GuidedDemoTransitionTests
 {
     [Fact]
-    public void HappyPath_MovesThroughPreparation()
+    public void HappyPath_ApprovingStartsPreparation()
     {
-        Assert.True(GuidedDemoTransitions.TryMove(OrderStatus.New, "approve", out var accepted, out _));
-        Assert.Equal(OrderStatus.Accepted, accepted);
-        Assert.True(GuidedDemoTransitions.TryMove(accepted, "start-preparing", out var preparing, out _));
+        Assert.True(GuidedDemoTransitions.TryMove(OrderStatus.New, "approve", out var preparing, out var approved));
         Assert.Equal(OrderStatus.Preparing, preparing);
+        Assert.Equal("Orders.ApproveSuccess", approved);
         Assert.True(GuidedDemoTransitions.TryMove(preparing, "mark-ready", out var ready, out _));
         Assert.Equal(OrderStatus.ReadyForPickup, ready);
+    }
+
+    [Fact]
+    public void APracticeOrderStoredAsAccepted_IsMarkedReadyDirectly()
+    {
+        Assert.True(GuidedDemoTransitions.TryMove(OrderStatus.Accepted, "mark-ready", out var ready, out var key));
+        Assert.Equal(OrderStatus.ReadyForPickup, ready);
+        Assert.Equal("Orders.MarkReadySuccess", key);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.New)]
+    [InlineData(OrderStatus.Accepted)]
+    [InlineData(OrderStatus.Preparing)]
+    public void StartPreparing_IsNoLongerAnAction(OrderStatus current)
+    {
+        Assert.False(GuidedDemoTransitions.TryMove(current, "start-preparing", out var next, out var key));
+        Assert.Equal(current, next);
+        Assert.Equal("Orders.InvalidStatusForAction", key);
     }
 
     [Theory]
@@ -70,9 +88,9 @@ public sealed class GuidedDemoTransitionTests
     }
 
     [Fact]
-    public void BrowserActions_AreOnlyApproveStartPreparingAndMarkReady()
+    public void BrowserActions_AreOnlyApproveAndMarkReady()
     {
-        Assert.Equal(new[] { "approve", "start-preparing", "mark-ready" }, GuidedDemoTransitions.UserActions);
+        Assert.Equal(new[] { "approve", "mark-ready" }, GuidedDemoTransitions.UserActions);
     }
 
     /// <summary>
@@ -158,7 +176,7 @@ public sealed class GuidedDemoServiceTests : IDisposable
         var again = await service.ApplyActionAsync(_tenantA, _userA, created.Id, "approve", CancellationToken.None);
 
         Assert.False(again.Succeeded);
-        Assert.Equal(OrderStatus.Accepted, (await service.GetActiveAsync(_tenantA, _userA, CancellationToken.None))!.Status);
+        Assert.Equal(OrderStatus.Preparing, (await service.GetActiveAsync(_tenantA, _userA, CancellationToken.None))!.Status);
     }
 
     [Fact]
@@ -231,8 +249,9 @@ public sealed class GuidedDemoServiceTests : IDisposable
         var service = CreateService(null);
         var ready = await service.StartAsync(_tenantA, _userA, CancellationToken.None);
         await MarkReadyAsync(service, ready.Id);
-        var accepted = await service.StartAsync(_tenantA, _userB, CancellationToken.None);
-        Assert.True((await service.ApplyActionAsync(_tenantA, _userB, accepted.Id, "approve", CancellationToken.None)).Succeeded);
+        // Approved, so in preparation: the restaurant still has to mark it ready, and the courier never moves it.
+        var preparing = await service.StartAsync(_tenantA, _userB, CancellationToken.None);
+        Assert.True((await service.ApplyActionAsync(_tenantA, _userB, preparing.Id, "approve", CancellationToken.None)).Succeeded);
         var simulator = CreateSimulator();
 
         Assert.Equal(0, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
@@ -245,7 +264,7 @@ public sealed class GuidedDemoServiceTests : IDisposable
         _clock.Now = _clock.Now.Add(GuidedDemoTiming.StageDuration);
         Assert.Equal(1, await simulator.AdvanceDueAsync(_tenantA, CancellationToken.None));
         Assert.Equal(OrderStatus.Delivered, await ReadStatusAsync(ready.Id));
-        Assert.Equal(OrderStatus.Accepted, await ReadStatusAsync(accepted.Id));
+        Assert.Equal(OrderStatus.Preparing, await ReadStatusAsync(preparing.Id));
     }
 
     [Fact]
@@ -501,7 +520,7 @@ public sealed class GuidedDemoServiceTests : IDisposable
     /// <summary>The restaurant's last demo action is Mark ready; the courier steps follow on their own.</summary>
     private async Task MarkReadyAsync(GuidedDemoService service, Guid demoId, Guid? tenantId = null)
     {
-        foreach (var action in new[] { "approve", "start-preparing", "mark-ready" })
+        foreach (var action in new[] { "approve", "mark-ready" })
             Assert.True((await service.ApplyActionAsync(tenantId ?? _tenantA, _userA, demoId, action, CancellationToken.None)).Succeeded);
     }
 

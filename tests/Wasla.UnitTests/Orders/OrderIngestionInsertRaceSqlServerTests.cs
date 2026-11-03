@@ -115,7 +115,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         Assert.True(barrier.Released, "The two passes never reached their inserts together.");
         Assert.All(passes, p => Assert.Equal(0, p.FailedConnections));
         var order = await SingleOrderAsync(payload.ExternalOrderId);
-        Assert.Equal(OrderStatus.Accepted, order.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, order.InternalStatus);
         await AssertConnectionHealthyAsync(before);
         Assert.Equal([order.Id], _receipts.Created);
         Assert.Equal([order.Id], _autoApprove.Processed);
@@ -144,7 +144,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         Assert.Equal(0, loser.InsertedCount);
         Assert.Equal(1, loser.UpdatedCount);
         var order = await SingleOrderAsync(id);
-        Assert.Equal(OrderStatus.Accepted, order.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, order.InternalStatus);
         Assert.Equal("Picking", order.PlatformStatus);
         await AssertConnectionHealthyAsync(before);
         // The winner inserted it New (auto-approve considered once); the loser's Accepted is a transition: one receipt.

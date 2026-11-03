@@ -56,7 +56,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
-        // Sync read the order as New and merged the provider's Accepted. The operator rejects it now, so the order's
+        // Sync read the order as New and merged the provider's acceptance (Preparing). The operator rejects it now, so the order's
         // UpdatedAt is later than the time sync took before it paused.
         var rejected = await Operator("operator").TryRejectAsync(_tenantId, orderId, Ct);
         Assert.Equal(new OrderActionResult(true, "Orders.RejectSuccess"), rejected);
@@ -82,7 +82,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
     }
 
     [Fact]
-    public async Task OperatorApproveCommittedDuringSync_WhoseMergeKeptNew_StaysAccepted()
+    public async Task OperatorApproveCommittedDuringSync_WhoseMergeKeptNew_StaysPreparing()
     {
         var (orderId, payload) = await InsertThroughSyncAsync("APPROVE");
         var changedTotal = payload with { Total = 150m };
@@ -104,7 +104,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.Equal(0, result.FailedConnections);
         Assert.Equal(1, result.UpdatedCount);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.NotNull(after.AcceptedAt);
         Assert.Null(after.CancelledAt);
         Assert.Equal(150m, after.TotalAmount);
@@ -140,7 +140,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.Equal(0, result.FailedConnections);
         Assert.Equal(1, result.UpdatedCount);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal(byOperator.AcceptedAt, after.AcceptedAt);
         Assert.Equal(byOperator.ChangeVersion + 1, after.ChangeVersion);
         Assert.True(after.UpdatedAt >= byOperator.UpdatedAt, $"UpdatedAt moved backwards: {byOperator.UpdatedAt:O} -> {after.UpdatedAt:O}.");
@@ -172,7 +172,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.Equal(0, result.UpdatedCount);
         Assert.Equal(1, result.UnchangedCount);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal(secondVersion, after.ChangeVersion);
         Assert.Equal([secondVersion], _notifier.VersionsFor(orderId));
         Assert.Equal([orderId], _receipts.Created);
@@ -216,7 +216,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         Assert.Equal(0, result.UpdatedCount);
         Assert.Equal(1, result.UnchangedCount);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal(bySecond.ChangeVersion, after.ChangeVersion);
         Assert.Equal(bySecond.UpdatedAt, after.UpdatedAt);
         Assert.Equal(bySecond.AcceptedAt, after.AcceptedAt);

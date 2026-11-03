@@ -13,15 +13,15 @@
     bool HiddenFor(string whenSteps) => !whenSteps.Split(' ').Contains(Model.StepKey);
 
     var practiceSteps = StepsFor(
-        GuidedTrainingSteps.PracticeNew, GuidedTrainingSteps.PracticeAccepted, GuidedTrainingSteps.PracticePreparing,
+        GuidedTrainingSteps.PracticeNew, GuidedTrainingSteps.PracticePreparing,
         GuidedTrainingSteps.PracticeReady, GuidedTrainingSteps.PracticeOnTheWay, GuidedTrainingSteps.PracticeDelivered);
     var courierSteps = StepsFor(GuidedTrainingSteps.PracticeReady, GuidedTrainingSteps.PracticeOnTheWay);
     var stepKey = GuidedSetupCopy.TrainingStepKey(Model.StepKey);
-    // Step copy names the real buttons and statuses: {0} delivered minutes, {1} Approve, {2} Start preparing,
-    // {3} Mark ready, {4} On the way, {5} Delivered, {6} the Demo badge.
+    // Step copy names the real buttons and statuses: {0} delivered minutes, {1} Approve, {2} Preparing (the status an
+    // approved order moves to), {3} Mark ready, {4} On the way, {5} Delivered, {6} the Demo badge.
     object[] stepArgs =
     [
-        Model.DeliveredWindowMinutes, L["Orders.Approve"].Value, L["Orders.StartPreparing"].Value, L["Orders.MarkReady"].Value,
+        Model.DeliveredWindowMinutes, L["Orders.Approve"].Value, L["OrderStatus.Preparing"].Value, L["Orders.MarkReady"].Value,
         L["OrderStatus.OnTheWay"].Value, L["OrderStatus.Delivered"].Value, L["Demo.Badge"].Value
     ];
 

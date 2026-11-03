@@ -14,7 +14,11 @@ public static class GuidedTrainingSteps
     public const string Intro = "intro";
 
     public const string PracticeNew = "practice-new";
-    public const string PracticeAccepted = "practice-accepted";
+
+    /// <summary>
+    /// The approved practice order is in preparation; the user marks it ready. Approving starts preparation
+    /// (WAS-185), so there is no step between New and this one.
+    /// </summary>
     public const string PracticePreparing = "practice-preparing";
 
     /// <summary>The restaurant's last action is done; the platform courier collects the order.</summary>
@@ -28,7 +32,7 @@ public static class GuidedTrainingSteps
     /// <summary>All steps in journey order.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
-        Intro, PracticeNew, PracticeAccepted, PracticePreparing, PracticeReady, PracticeOnTheWay, PracticeDelivered
+        Intro, PracticeNew, PracticePreparing, PracticeReady, PracticeOnTheWay, PracticeDelivered
     ];
 
     public static int IndexOf(string? stepKey)
@@ -49,8 +53,8 @@ public static class GuidedTrainingSteps
     public static string? ForDemoStatus(OrderStatus status) => status switch
     {
         OrderStatus.New => PracticeNew,
-        OrderStatus.Accepted => PracticeAccepted,
-        OrderStatus.Preparing => PracticePreparing,
+        // A practice order stored as Accepted before WAS-185 is in preparation.
+        OrderStatus.Accepted or OrderStatus.Preparing => PracticePreparing,
         OrderStatus.ReadyForPickup => PracticeReady,
         OrderStatus.OnTheWay => PracticeOnTheWay,
         OrderStatus.Delivered => PracticeDelivered,

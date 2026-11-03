@@ -130,7 +130,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         var after = await ReadAsync(created.ExternalOrderId);
         Assert.Equal(before.Id, after.Id);
         Assert.Equal(before.CreatedAt, after.CreatedAt);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal("Picking", after.PlatformStatus);
         Assert.NotNull(after.AcceptedAt);
         Assert.NotEqual(before.ItemIds, after.ItemIds);

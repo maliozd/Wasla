@@ -10,6 +10,7 @@ namespace Wasla.UnitTests.Web;
 /// 14 October 2026 (5,754 active orders, 5,316 New and 438 Accepted, oldest eight days old, 53 from the current day,
 /// about 5 MB of snapshot). Added on top of <see cref="TenantVisualWebHost"/>'s own five active orders, it makes the
 /// Live Screen snapshot hold <see cref="ActiveOrders"/> active orders. Fixed seed, fake names, no provider or printer.
+/// The Accepted rows are the legacy status (WAS-185): the Live Screen shows them in the Preparing column.
 /// The host's recently delivered order is dated before the Delivered window, so the snapshot holds no order that leaves
 /// the Live Screen by itself while the tests run.
 /// </summary>

@@ -1,4 +1,5 @@
 @model Wasla.Web.Models.Orders.OrderLifecycleActionsModel
+@using Wasla.Application.Orders
 @using Wasla.Domain.Enums
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
@@ -23,19 +24,10 @@
         </button>
     </div>
 }
-else if (Model.CanManageOrders && Model.Status == OrderStatus.Accepted)
+else if (Model.CanManageOrders && OrderPreparation.IsPreparing(Model.Status))
 {
-    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-        <button type="button"
-                class="btn btn-primary @sizeClass"
-                data-order-action="start-preparing"
-                data-order-id="@Model.OrderId">
-            @L["Orders.StartPreparing"]
-        </button>
-    </div>
-}
-else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
-{
+    @* Approving starts preparation (WAS-185), so a preparing order, including one stored as the legacy Accepted, is
+       marked ready directly; there is no separate preparation step. *@
     <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"

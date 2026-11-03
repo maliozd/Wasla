@@ -84,7 +84,7 @@ A device pointed at Wasla.Api by hand has its reports announced over the interna
 |--------|---------|-------------|
 | New order stored by ingestion | `OrderIngestion.IngestPackageAsync`, after the insert's `SaveChanges`; a caller whose insert lost to a concurrent one announces nothing for the insert | Worker sync (internal channel) |
 | Order updated by ingestion (status, items, amounts, customer fields) | `OrderIngestion.IngestPackageAsync` (and the status-only `ApplyStatusObservationAsync`, no production caller yet), after its transaction commits; an order whose provider data did not change writes and announces nothing | Worker sync (internal channel) |
-| Approve, Reject, Start preparing, Mark ready, Hand to courier, Mark delivered | `OrderActionService`, after `SaveChanges` changed the row; a wrong status, a refused user command, a missing connection or a failed provider call announces nothing | Web operator actions on Orders and the Live Screen (in process); Worker automatic approval (`OrderAutoApproveService` → `TryApproveAsync`, internal channel) |
+| Approve, Reject, Mark ready, Hand to courier, Mark delivered | `OrderActionService`, after `SaveChanges` changed the row; a wrong status, a refused user command, a missing connection or a failed provider call announces nothing | Web operator actions on Orders and the Live Screen (in process); Worker automatic approval (`OrderAutoApproveService` → `TryApproveAsync`, internal channel) |
 
 `OrderChanged` is an invalidation, not a state: the Live Screen reads its whole snapshot, so ordering, role filters,
 training isolation and the Delivered window stay on the server. Wasla.Api writes no orders. Practice orders

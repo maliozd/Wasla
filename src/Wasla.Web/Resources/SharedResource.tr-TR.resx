@@ -1324,7 +1324,7 @@
     <value>Bu sipariş onaylansın mı?</value>
   </data>
   <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
-    <value>Bu işlem siparişi “Kabul Edildi” olarak işaretler.</value>
+    <value>Sipariş platformda onaylanır ve hazırlanmaya başlar.</value>
   </data>
   <data name="Orders.RejectConfirmTitle" xml:space="preserve">
     <value>Bu sipariş reddedilsin mi?</value>
@@ -1333,7 +1333,7 @@
     <value>Bu işlem siparişi “İptal” olarak işaretler.</value>
   </data>
   <data name="Orders.ApproveSuccess" xml:space="preserve">
-    <value>Sipariş onaylandı.</value>
+    <value>Sipariş onaylandı ve hazırlanıyor.</value>
   </data>
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>Sipariş reddedildi.</value>
@@ -1353,9 +1353,6 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Bu adım platformla tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin.</value>
   </data>
-  <data name="Orders.StartPreparing" xml:space="preserve">
-    <value>Hazırlamaya Başla</value>
-  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Hazır</value>
   </data>
@@ -1364,12 +1361,6 @@
   </data>
   <data name="Orders.MarkDelivered" xml:space="preserve">
     <value>Teslim Edildi</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
-    <value>Hazırlamaya başlansın mı?</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
-    <value>Sipariş mutfakta hazırlanıyor olarak işaretlenecek.</value>
   </data>
   <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
     <value>Sipariş hazır olarak işaretlensin mi?</value>
@@ -1388,9 +1379,6 @@
   </data>
   <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
     <value>Sipariş tamamlandı olarak işaretlenecek.</value>
-  </data>
-  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
-    <value>Sipariş hazırlanıyor olarak güncellendi.</value>
   </data>
   <data name="Orders.MarkReadySuccess" xml:space="preserve">
     <value>Sipariş hazır olarak güncellendi.</value>
@@ -3474,9 +3462,7 @@
   <data name="Demo.StartTitle" xml:space="preserve"><value>Wasla'yı deneyelim</value></data>
   <data name="Demo.StartBody" xml:space="preserve"><value>Gerçek siparişlerinizi etkilemeden sipariş akışını deneyebilirsiniz.</value></data>
   <data name="Demo.ApproveTitle" xml:space="preserve"><value>Siparişi onaylayın</value></data>
-  <data name="Demo.ApproveBody" xml:space="preserve"><value>Siparişi buradan onaylayın.</value></data>
-  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Hazırlığa alın</value></data>
-  <data name="Demo.PrepareBody" xml:space="preserve"><value>Onaylanan siparişi hazırlığa alın.</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Siparişi buradan onaylayın. Onaylanan sipariş hazırlanmaya başlar.</value></data>
   <data name="Demo.ReadyTitle" xml:space="preserve"><value>Hazır işaretleyin</value></data>
   <data name="Demo.ReadyBody" xml:space="preserve"><value>Sipariş hazır olduğunda buradan bildirin.</value></data>
   <data name="Demo.SuccessTitle" xml:space="preserve"><value>İlk siparişinizi yönettiniz</value></data>
@@ -3636,9 +3622,9 @@
   <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Canlı Ekran'a genel bakış</value></data>
   <data name="Help.LiveScreen.Body" xml:space="preserve"><value>Canlı Ekran, gelen siparişleri mutfakta ve kasada anlık takip etmeniz içindir. Siparişleri {0}, {1} veya {2} görünümünde izleyebilir; yeni siparişlerde sesli ve tarayıcı bildirimi alabilirsiniz.</value></data>
   <data name="Help.Approve.Title" xml:space="preserve"><value>Siparişi onaylama</value></data>
-  <data name="Help.Approve.Body" xml:space="preserve"><value>Yeni bir sipariş geldiğinde içeriğini kontrol edin ve "{0}" düğmesine basın; onay platforma iletilir. Siparişi karşılayamayacaksanız "{1}" düğmesini kullanın.</value></data>
-  <data name="Help.Prepare.Title" xml:space="preserve"><value>Hazırlamaya başlama</value></data>
-  <data name="Help.Prepare.Body" xml:space="preserve"><value>Onaylanan siparişte "{0}" düğmesine basarak hazırlığın başladığını ekibinize gösterin.</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>Yeni bir sipariş geldiğinde içeriğini kontrol edin ve "{0}" düğmesine basın; onay platforma iletilir ve sipariş hazırlanmaya başlar. Siparişi karşılayamayacaksanız "{1}" düğmesini kullanın.</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Hazırlık</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>Onaylanan sipariş, ekibiniz hazırlarken "{0}" olarak görünür. Hazırlığı başlatmak için ayrı bir adım yoktur; sipariş hazır olduğunda "{1}" düğmesine basın.</value></data>
   <data name="Help.Ready.Title" xml:space="preserve"><value>Siparişi hazır işaretleme</value></data>
   <data name="Help.Ready.Body" xml:space="preserve"><value>Sipariş hazır olduğunda "{0}" düğmesine basın. Bu, restoranın siparişte yaptığı son işlemdir; bilgi platforma iletilir.</value></data>
   <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Kuryenin siparişi alması</value></data>
@@ -3667,11 +3653,9 @@
   <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Sipariş eğitimi: Canlı Ekran</value></data>
   <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>Yeni siparişler burada kart olarak görünür ve üzerinde çalıştıkça ilerler. Akışı denemek için bir deneme siparişi başlatın. Deneme siparişi {6} olarak işaretlidir ve yalnızca siz görürsünüz: Trendyol GO'ya veya Yemeksepeti'ne gönderilmez, yazdırılmaz, siparişlerinize ve raporlarınıza sayılmaz.</value></data>
   <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>Deneme siparişi geldi</value></data>
-  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>{6} olarak işaretli deneme siparişi yeni sipariş olarak bekliyor. Kartındaki {1} düğmesiyle onaylayın.</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Hazırlamaya başlayın</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>Sipariş onaylandı. Mutfak hazırlamaya başladığında {2} düğmesine basın.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>{6} olarak işaretli deneme siparişi yeni sipariş olarak bekliyor. Kartındaki {1} düğmesiyle onaylayın; sipariş doğrudan {2} durumuna geçer.</value></data>
   <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Siparişi hazır işaretleyin</value></data>
-  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Sipariş paketlendiğinde {3} düğmesine basın. Bu, restoranın son adımıdır.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Sipariş onaylandı ve {2} durumunda. Paketlendiğinde {3} düğmesine basın. Bu, restoranın son adımıdır.</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>Kurye siparişi teslim alıyor</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>Başka bir düğmeye basmanız gerekmez. Platformun kuryesi siparişi teslim alır ve durumu kendiliğinden {4} olarak güncellenir.</value></data>
   <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>Sipariş yolda</value></data>

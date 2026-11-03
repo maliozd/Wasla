@@ -556,9 +556,13 @@ public sealed partial class GuidedSetupWebTests
             var delivered = resources["GuidedSetup.Training.Step.Delivered.Body"];
             Assert.Contains("{0}", delivered, StringComparison.Ordinal);
             Assert.DoesNotMatch(new Regex(@"\d"), delivered.Replace("{0}", string.Empty, StringComparison.Ordinal));
+            // Approving moves the practice order straight to Preparing ({2}), where it is marked ready ({3}).
             Assert.Contains("{1}", resources["GuidedSetup.Training.Step.New.Body"], StringComparison.Ordinal);
-            Assert.Contains("{2}", resources["GuidedSetup.Training.Step.Accepted.Body"], StringComparison.Ordinal);
+            Assert.Contains("{2}", resources["GuidedSetup.Training.Step.New.Body"], StringComparison.Ordinal);
+            Assert.Contains("{2}", resources["GuidedSetup.Training.Step.Preparing.Body"], StringComparison.Ordinal);
             Assert.Contains("{3}", resources["GuidedSetup.Training.Step.Preparing.Body"], StringComparison.Ordinal);
+            Assert.False(resources.ContainsKey("GuidedSetup.Training.Step.Accepted.Body"), culture);
+            Assert.False(resources.ContainsKey("Orders.StartPreparing"), culture);
             Assert.Contains("{4}", resources["GuidedSetup.Training.Step.Ready.Body"], StringComparison.Ordinal);
             Assert.Contains("{5}", resources["GuidedSetup.Training.Step.OnTheWay.Body"], StringComparison.Ordinal);
             Assert.Contains("{6}", resources["GuidedSetup.Training.Step.Intro.Body"], StringComparison.Ordinal);
@@ -953,7 +957,7 @@ public sealed partial class GuidedSetupWebTests
     [Fact]
     public void TrainingLabels_ResolveToText_InTheNeutralCultureAndEveryResourceFile()
     {
-        var labels = new[] { "Orders.Approve", "Orders.StartPreparing", "Orders.MarkReady", "OrderStatus.OnTheWay", "OrderStatus.Delivered", "Demo.Badge", "Help.Title" };
+        var labels = new[] { "Orders.Approve", "OrderStatus.Preparing", "Orders.MarkReady", "OrderStatus.OnTheWay", "OrderStatus.Delivered", "Demo.Badge", "Help.Title" };
         foreach (var culture in Cultures)
         {
             var resources = Load(culture);
@@ -982,7 +986,7 @@ public sealed partial class GuidedSetupWebTests
         // The same arguments _GuidedTrainingPanel.cshtml passes.
         object[] args =
         [
-            minutes, Text("Orders.Approve"), Text("Orders.StartPreparing"), Text("Orders.MarkReady"),
+            minutes, Text("Orders.Approve"), Text("OrderStatus.Preparing"), Text("Orders.MarkReady"),
             Text("OrderStatus.OnTheWay"), Text("OrderStatus.Delivered"), Text("Demo.Badge")
         ];
 

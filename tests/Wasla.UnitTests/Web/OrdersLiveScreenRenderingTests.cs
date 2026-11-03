@@ -56,7 +56,8 @@ public sealed class OrdersLiveScreenRenderingTests
         Assert.Contains("return PartialView(\"_LiveScreenOrders\", vm);", controller, StringComparison.Ordinal);
         Assert.Contains("[HttpGet(\"live-display\")]", controller, StringComparison.Ordinal);
         Assert.Contains("[Authorize(Policy = TenantPolicies.CanViewLiveScreen)]", controller, StringComparison.Ordinal);
-        Assert.Equal(6, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
+        // Approve, reject, mark ready, hand to courier, mark delivered: approving starts preparation (WAS-185).
+        Assert.Equal(5, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
     }
 
     [Fact]

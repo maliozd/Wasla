@@ -97,7 +97,6 @@ public sealed class GuidedDemoController : BaseController
         "Orders.RejectFailed" => "ordersRejectFailed",
         "Orders.ApproveSuccess" => "ordersApproveSuccess",
         "Orders.RejectSuccess" => "ordersRejectSuccess",
-        "Orders.StartPreparingSuccess" => "ordersStartPreparingSuccess",
         "Orders.MarkReadySuccess" => "ordersMarkReadySuccess",
         "Orders.HandToCourierSuccess" => "ordersHandToCourierSuccess",
         "Orders.MarkDeliveredSuccess" => "ordersMarkDeliveredSuccess",

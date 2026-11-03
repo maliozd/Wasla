@@ -514,7 +514,8 @@ body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-heade
 .wasla-live-screen-page .wasla-live-board .wasla-live-card__head .wasla-live-screen-card__elapsed { flex: 0 0 auto; }
 
 /* In a column that holds one status, the card's status badge only repeats the column heading (and the stripe), so it
-   is not drawn there; the New column (New and Accepted) and Completed keep it, because it tells orders apart. */
+   is not drawn there; Completed keeps it, because it tells orders apart. */
+.wasla-live-screen-page .wasla-live-board__column[data-board-column="new"] .wasla-live-card__head [data-status-badge],
 .wasla-live-screen-page .wasla-live-board__column[data-board-column="preparing"] .wasla-live-card__head [data-status-badge],
 .wasla-live-screen-page .wasla-live-board__column[data-board-column="ready"] .wasla-live-card__head [data-status-badge],
 .wasla-live-screen-page .wasla-live-board__column[data-board-column="on-the-way"] .wasla-live-card__head [data-status-badge] {

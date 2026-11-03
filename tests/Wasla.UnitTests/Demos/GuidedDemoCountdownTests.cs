@@ -47,7 +47,7 @@ public sealed class GuidedDemoCountdownTests : IDisposable
         // As the training panel does: "start practice" records the practice step and opens the practice order.
         Assert.Null((await Coordinator(demos).StartPracticeAsync(_tenant, _owner, Principal(), Ct)).ErrorMessageKey);
         var demo = (await demos.GetActiveAsync(_tenant, _owner, Ct))!;
-        foreach (var action in new[] { "approve", "start-preparing", "mark-ready" })
+        foreach (var action in new[] { "approve", "mark-ready" })
             Assert.True((await demos.ApplyActionAsync(_tenant, _owner, demo.Id, action, Ct)).Succeeded);
         var simulator = new GuidedDemoDeliverySimulator(_tenants, _clock);
         for (var stage = 0; stage < 2; stage++)
@@ -102,7 +102,7 @@ public sealed class GuidedDemoCountdownTests : IDisposable
         await _tenants.SeedUserAsync(_tenant, _otherOwner);
         var demos = Demos();
         var demo = await demos.StartAsync(_tenant, _owner, Ct);
-        foreach (var action in new[] { "approve", "start-preparing" })
+        foreach (var action in new[] { "approve" })
             Assert.True((await demos.ApplyActionAsync(_tenant, _owner, demo.Id, action, Ct)).Succeeded);
 
         // The restaurant moves it itself until Mark ready: no countdown.

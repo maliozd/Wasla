@@ -680,7 +680,9 @@ public sealed class GuidedSetupCoordinatorTests
         // saved step, latest practice order status, open, expected step
         { GuidedTrainingSteps.Intro, null, false, GuidedTrainingSteps.Intro },
         { GuidedTrainingSteps.Intro, OrderStatus.Delivered, false, GuidedTrainingSteps.Intro },
-        { GuidedTrainingSteps.Intro, OrderStatus.Accepted, true, GuidedTrainingSteps.PracticeAccepted },
+        // A practice order stored as Accepted before WAS-185 is in preparation.
+        { GuidedTrainingSteps.Intro, OrderStatus.Accepted, true, GuidedTrainingSteps.PracticePreparing },
+        { GuidedTrainingSteps.PracticeNew, OrderStatus.Preparing, true, GuidedTrainingSteps.PracticePreparing },
         { GuidedTrainingSteps.PracticeNew, OrderStatus.ReadyForPickup, true, GuidedTrainingSteps.PracticeReady },
         { GuidedTrainingSteps.PracticeNew, OrderStatus.OnTheWay, true, GuidedTrainingSteps.PracticeOnTheWay },
         { GuidedTrainingSteps.PracticeReady, OrderStatus.Delivered, false, GuidedTrainingSteps.PracticeDelivered },

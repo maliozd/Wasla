@@ -21,7 +21,7 @@ Document how Wasla stores and advances restaurant orders from platform sync and 
 | Value | Enum |
 | --- | --- |
 | 0 | `New` |
-| 1 | `Accepted` |
+| 1 | `Accepted` (legacy, see below) |
 | 2 | `Preparing` |
 | 3 | `ReadyForPickup` |
 | 4 | `OnTheWay` |
@@ -30,6 +30,14 @@ Document how Wasla stores and advances restaurant orders from platform sync and 
 | 7 | `Failed` |
 
 Raw platform strings remain on `Order.PlatformStatus`. Mapping into these values is `DefaultOrderStatusMapper` (`src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs`), per platform (Yemeksepeti, Getir, Trendyol GO, plus mock/legacy labels). Unknown Trendyol strings default to `New` with a warning log.
+
+### Acceptance starts preparation (WAS-185)
+
+Accepting an order means starting to prepare it. The restaurant's workflow is New → Approve → `Preparing` → Mark ready → `ReadyForPickup` → `OnTheWay` → `Delivered`, with no waiting step between approval and preparation and no Start preparing action.
+
+- **Every acceptance moves a New order to `Preparing`:** manual approval, auto-approval (both `OrderActionService.TryApproveAsync`) and a provider-side acceptance seen by synchronization. Acceptance statuses map to `Preparing`: Trendyol GO `Picking` (the seller accepted the package with the `picked` call; Trendyol GO has no separate preparation status), the Turkish mock label `Onaylandı`, the legacy lowercase Yemeksepeti mock strings `confirmed` / `accepted`, and the Getir mock tokens `VERIFY` / `VERIFIED` / `CONFIRMED` / `ACCEPTED`. `VERIFY` is what the Getir mock client echoes for its own accept call; Getir has no real client, so no real Getir status is mapped. Yemeksepeti `RECEIVED` stays `New`: it is the order arriving, not an acceptance. Raw provider strings stay on `Order.PlatformStatus` unchanged.
+- **`Accepted` (1) is legacy.** Its value is kept so stored rows and the API's status values stay valid; Wasla no longer writes it (the CLI's test order is created `Preparing`). `OrderPreparation` (`src/Wasla.Application/Orders/OrderPreparation.cs`) handles an order stored as `Accepted` as `Preparing`: Mark ready accepts it directly, the Live Screen snapshot, Orders, order details and the Dashboard show it as Preparing, and the Orders status filter offers no Accepted option; its Preparing option also finds stored `Accepted` rows (Web and API share that filter). The JSON API (`Wasla.Api`) still returns a stored row's own value. A practice order (`GuidedDemoSession`) stored as `Accepted` is handled the same way. No migration rewrites stored rows; a polled legacy order that the provider still reports as `Picking` moves to `Preparing` once, through the normal merge.
+- **Milestone and receipt:** `AcceptedAt` is set when a New (or newly inserted) order reaches preparation, and never moved afterwards; a legacy `Accepted` order that moves on to `Preparing` keeps its time. The automatic kitchen receipt is created once per acceptance: after a successful manual approval (`OrdersController.Approve`), after a successful auto-approval (`OrderAutoApproveService`), or by synchronization when a New or inserted order's merged status reaches preparation. An operator approval and a sync observing the same acceptance never both win, because the conditional write lets only one move the order out of `New`.
 
 ### Order entity notes
 
@@ -82,14 +90,13 @@ Every time is stored as a UTC instant and converted only for display.
 
 ### Operator transitions (`OrderActionService`)
 
-HTTP surface: `Wasla.Web` `OrdersController` under `/orders/{id}/…` (approve, reject, start-preparing, mark-ready, hand-to-courier, mark-delivered). Implementation: `src/Wasla.Infrastructure/Services/OrderActionService.cs`.
+HTTP surface: `Wasla.Web` `OrdersController` under `/orders/{id}/…` (approve, reject, mark-ready, hand-to-courier, mark-delivered). Implementation: `src/Wasla.Infrastructure/Services/OrderActionService.cs`. The former `start-preparing` route and `MarkPreparingAsync` were removed with WAS-185.
 
 | Current status required | Action | Next status | Provider call |
 | --- | --- | --- | --- |
-| `New` | Approve | `Accepted` | `AcceptOrderAsync` |
+| `New` | Approve | `Preparing` (sets `AcceptedAt`) | `AcceptOrderAsync` |
 | `New` | Reject | `Cancelled` | `RejectOrderAsync` |
-| `Accepted` | Start preparing | `Preparing` | **None** (local kitchen step; shared client has no prepare hook yet) |
-| `Preparing` | Mark ready | `ReadyForPickup` | `MarkInvoicedAsync` (shared name; means ready for all platforms) |
+| `Preparing`, or the legacy `Accepted` | Mark ready | `ReadyForPickup` | `MarkInvoicedAsync` (shared name; means ready for all platforms) |
 | `ReadyForPickup` | — (no restaurant action) | `OnTheWay` via provider sync | — |
 | `OnTheWay` | — (no restaurant action) | `Delivered` via provider sync | — |
 
@@ -128,7 +135,7 @@ On existing orders, mapped external status is merged via `MergeInternalStatusFor
 1. If existing is `Delivered`, keep existing.
 2. If existing is `Cancelled` or `Failed`, keep existing.
 3. If incoming is `Cancelled` or `Failed`, take incoming (unless already locked by 1–2).
-4. Otherwise compare operational progress ranks (`New` → `Accepted` → `Preparing` → `ReadyForPickup` → `OnTheWay` → `Delivered`). Incoming with a **lower** rank is ignored so stale provider/mocks do not undo operator progress.
+4. Otherwise compare operational progress ranks (`New` → `Accepted` → `Preparing` → `ReadyForPickup` → `OnTheWay` → `Delivered`). Incoming with a **lower** rank is ignored so stale provider/mocks do not undo operator progress. The legacy `Accepted` ranks below `Preparing`, so a stored `Accepted` order moves to `Preparing` when the provider reports its acceptance again, and a `Preparing` order is never moved back to `Accepted`.
 
 ### Child replace on real updates
 
@@ -158,7 +165,6 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 
 ## Future
 
-- Shared prepare provider hook for `Preparing` (commented as deferred in `OrderActionService`).
 - Every successful lifecycle action and every ingested order change is announced to open Live Screens as an invalidation after its save ([../architecture/realtime.md](../architecture/realtime.md#where-order-changes-are-published-was-24)); the snapshot stays canonical.
 
 ---
@@ -168,6 +174,7 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 | Concern | Location |
 | --- | --- |
 | Status enum | `src/Wasla.Domain/Enums/OrderStatus.cs` |
+| Legacy Accepted handled as Preparing | `src/Wasla.Application/Orders/OrderPreparation.cs` |
 | Order / notes | `src/Wasla.Domain/Entities/Customer/Order.cs`, `OrderItem.cs` |
 | Operator actions | `src/Wasla.Infrastructure/Services/OrderActionService.cs` |
 | HTTP actions | `src/Wasla.Web/Areas/Tenant/Controllers/OrdersController.cs` |

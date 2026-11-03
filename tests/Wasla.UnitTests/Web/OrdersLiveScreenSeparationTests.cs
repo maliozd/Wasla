@@ -87,7 +87,8 @@ public sealed class OrdersLiveScreenSeparationTests
         Assert.Contains("return RedirectToAction(nameof(LiveDisplay));", controller, StringComparison.Ordinal);
         Assert.Contains("[Authorize(Policy = TenantPolicies.CanViewLiveScreen)]", controller, StringComparison.Ordinal);
         Assert.Contains("[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanViewOrders)]", controller, StringComparison.Ordinal);
-        Assert.Equal(6, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
+        // Approve, reject, mark ready, hand to courier, mark delivered: approving starts preparation (WAS-185).
+        Assert.Equal(5, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
     }
 
     [Fact]

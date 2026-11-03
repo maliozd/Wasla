@@ -51,7 +51,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             AssertSingleWinner(results, "Orders.ApproveSuccess");
             Assert.Equal(["accept"], _provider.CallsFor(orderId));
             var after = await ReadAsync(orderId);
-            Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+            Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
             Assert.NotNull(after.AcceptedAt);
             Assert.Null(after.CancelledAt);
             Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
@@ -79,7 +79,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             if (winner.MessageKey == "Orders.ApproveSuccess")
             {
                 Assert.Equal(["accept"], _provider.CallsFor(orderId));
-                Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
                 Assert.NotNull(after.AcceptedAt);
                 Assert.Null(after.CancelledAt);
             }
@@ -122,7 +122,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         Assert.Equal(new OrderActionResult(true, "Orders.ApproveSuccess"), await winner);
         Assert.Equal(["accept"], _provider.CallsFor(orderId));
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Null(after.CancelledAt);
         Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
         Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
@@ -172,13 +172,13 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             {
                 // The Worker won: it approved and created the receipt; no operator reached the provider.
                 Assert.Equal(["accept"], calls);
-                Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
                 Assert.Equal([orderId], receipts.Created);
             }
             else
             {
                 Assert.Empty(receipts.Created);
-                Assert.Equal(operatorRejects ? OrderStatus.Cancelled : OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(operatorRejects ? OrderStatus.Cancelled : OrderStatus.Preparing, after.InternalStatus);
             }
 
             Assert.False(after.AcceptedAt is not null && after.CancelledAt is not null, "Both AcceptedAt and CancelledAt are set.");
@@ -188,9 +188,10 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
     }
 
     [Theory]
-    [InlineData(OrderStatus.Accepted, OrderStatus.Preparing, null)]
-    [InlineData(OrderStatus.Preparing, OrderStatus.ReadyForPickup, "invoiced")]
-    public async Task SimultaneousLifecycleActions_HaveOneWinner(OrderStatus from, OrderStatus to, string? providerAction)
+    [InlineData(OrderStatus.Preparing)]
+    // An order stored as Accepted before WAS-185 is in preparation and is marked ready the same way.
+    [InlineData(OrderStatus.Accepted)]
+    public async Task SimultaneousMarkReady_HasOneWinner(OrderStatus from)
     {
         for (var round = 0; round < 4; round++)
         {
@@ -199,14 +200,12 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             _provider.Reset(delay: TimeSpan.FromMilliseconds(150));
             _notifier.Reset();
 
-            var results = await RaceAsync(6, i => to == OrderStatus.Preparing
-                ? Instance($"lifecycle-{i}").MarkPreparingAsync(_tenantId, orderId, Ct)
-                : Instance($"lifecycle-{i}").MarkReadyForPickupAsync(_tenantId, orderId, Ct));
+            var results = await RaceAsync(6, i => Instance($"lifecycle-{i}").MarkReadyForPickupAsync(_tenantId, orderId, Ct));
 
-            AssertSingleWinner(results, to == OrderStatus.Preparing ? "Orders.StartPreparingSuccess" : "Orders.MarkReadySuccess");
-            Assert.Equal(providerAction is null ? [] : [providerAction], _provider.CallsFor(orderId));
+            AssertSingleWinner(results, "Orders.MarkReadySuccess");
+            Assert.Equal(["invoiced"], _provider.CallsFor(orderId));
             var after = await ReadAsync(orderId);
-            Assert.Equal(to, after.InternalStatus);
+            Assert.Equal(OrderStatus.ReadyForPickup, after.InternalStatus);
             Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
             Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
         }
@@ -246,7 +245,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         var callsAfterFailure = 1;
         Assert.Equal(callsAfterFailure + 1, _provider.CallsFor(orderId).Count);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
         Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
 

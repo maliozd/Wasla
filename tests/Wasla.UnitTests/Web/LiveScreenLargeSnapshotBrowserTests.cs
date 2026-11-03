@@ -22,7 +22,9 @@ namespace Wasla.UnitTests.Web;
 public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScreenLargeSnapshotBrowserTests.LargeHost>
 {
     private const int PageSize = 100;
-    private const int NewColumn = LargeActiveOrderSeed.NewOrders + LargeActiveOrderSeed.AcceptedOrders + 2;
+    // The seeded New orders and the host's own New order. Legacy Accepted orders are shown in Preparing (WAS-185).
+    private const int NewColumn = LargeActiveOrderSeed.NewOrders + 1;
+    private const int PreparingColumn = LargeActiveOrderSeed.AcceptedOrders + 2;
 
     // Counts and optionally slows down or fails the page's snapshot requests; everything else passes through.
     private const string SnapshotProbe = """
@@ -98,6 +100,7 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
                 active: document.getElementById('ordersLiveDisplayActiveCount').textContent,
                 newCount: column.querySelector('[data-board-count]').textContent,
                 newRendered: column.querySelectorAll('[data-board-list] > .wasla-live-screen-card').length,
+                preparingCount: host.querySelector('[data-board-column="preparing"] [data-board-count]').textContent,
                 completed: host.querySelectorAll('[data-board-column="completed"] [data-order-id]').length,
                 cards: ids.length, unique: new Set(ids).size,
                 status: more ? more.querySelector('[data-live-more-status]').textContent : null,
@@ -122,8 +125,11 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
         // No recently delivered order: it would leave the screen by itself during the class (see LargeActiveOrderSeed).
         Assert.Equal(0, page.GetProperty("completed").GetInt32());
         Assert.Equal(page.GetProperty("cards").GetInt32(), page.GetProperty("unique").GetInt32());
-        Assert.InRange(page.GetProperty("cards").GetInt32(), PageSize, PageSize + 10);
-        Assert.Equal(1, page.GetProperty("otherMore").GetInt32());
+        // The legacy Accepted orders are shown in Preparing (WAS-185) with the host's own Accepted and Preparing
+        // order, so that column is paged too: one page each, plus the host's other active orders.
+        Assert.Equal(PreparingColumn.ToString(CultureInfo.InvariantCulture), page.GetProperty("preparingCount").GetString());
+        Assert.InRange(page.GetProperty("cards").GetInt32(), 2 * PageSize, 2 * PageSize + 10);
+        Assert.Equal(2, page.GetProperty("otherMore").GetInt32());
         Assert.Equal("BUTTON", page.GetProperty("buttonTag").GetString());
         Assert.True(page.GetProperty("describedBy").GetBoolean(), "the Show more button is described by the 'showing x of y' line");
         var formatted = await browser.EvaluateAsync<JsonElement>(

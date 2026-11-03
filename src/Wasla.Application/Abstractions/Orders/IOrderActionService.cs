@@ -12,13 +12,14 @@ public interface IOrderActionService
     /// </summary>
     Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct);
 
+    /// <summary>New → Preparing via IFoodPlatformClient.AcceptOrderAsync: accepting an order starts its preparation.</summary>
     Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct);
     Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
-    /// <summary>Accepted → Preparing. No IFoodPlatformClient preparing hook yet; persists local status after the usual active-connection resolution.</summary>
-    Task<OrderActionResult> MarkPreparingAsync(Guid customerId, Guid orderId, CancellationToken ct);
-
-    /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
+    /// <summary>
+    /// Preparing (or the legacy Accepted, see <see cref="Wasla.Application.Orders.OrderPreparation"/>) → ReadyForPickup
+    /// via IFoodPlatformClient.MarkInvoicedAsync.
+    /// </summary>
     Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
     /// <summary>

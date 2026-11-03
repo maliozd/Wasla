@@ -447,6 +447,8 @@ public sealed class OrdersController : BaseController
         CancellationToken ct,
         bool includeLineItems = false)
     {
+        // The legacy Accepted status is filtered as Preparing, which includes it (OrderPreparation).
+        status = status is { } requested ? OrderPreparation.Displayed(requested) : null;
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
 
@@ -566,7 +568,7 @@ public sealed class OrdersController : BaseController
             Platform = order.Platform,
             ExternalOrderId = order.ExternalOrderId,
             ExternalOrderCode = order.ExternalOrderCode,
-            Status = order.Status,
+            Status = OrderPreparation.Displayed(order.Status),
             CustomerName = order.CustomerName,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = order.CustomerAddress,
@@ -682,19 +684,6 @@ public sealed class OrdersController : BaseController
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
     }
 
-    [HttpPost("{id:guid}/start-preparing")]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = TenantPolicies.CanManageOrders)]
-    public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
-    {
-        var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
-
-        var result = await _actions.MarkPreparingAsync(tenant.Id, id, ct);
-        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
-        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
-    }
-
     [HttpPost("{id:guid}/mark-ready")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = TenantPolicies.CanManageOrders)]
@@ -749,7 +738,6 @@ public sealed class OrdersController : BaseController
             "Orders.RejectFailed" => "ordersRejectFailed",
             "Orders.ApproveSuccess" => "ordersApproveSuccess",
             "Orders.RejectSuccess" => "ordersRejectSuccess",
-            "Orders.StartPreparingSuccess" => "ordersStartPreparingSuccess",
             "Orders.MarkReadySuccess" => "ordersMarkReadySuccess",
             "Orders.HandToCourierSuccess" => "ordersHandToCourierSuccess",
             "Orders.MarkDeliveredSuccess" => "ordersMarkDeliveredSuccess",
@@ -772,7 +760,7 @@ public sealed class OrdersController : BaseController
                 ExternalOrderCode = o.ExternalOrderCode,
                 CustomerName = o.CustomerName,
                 TotalAmount = o.TotalAmount,
-                Status = o.Status,
+                Status = OrderPreparation.Displayed(o.Status),
                 ReceivedAtUtc = o.ReceivedAtUtc,
                 ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
                     DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),

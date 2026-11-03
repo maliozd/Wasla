@@ -193,8 +193,10 @@ public sealed class OrderIngestionTests : IDisposable
     // ---- Status merge through the full observation path ----
 
     [Theory]
-    // A provider status that moves the order on is applied.
-    [InlineData(OrderStatus.New, "Picking", OrderStatus.Accepted)]
+    // A provider status that moves the order on is applied. Picking is the acceptance and starts preparation (WAS-185).
+    [InlineData(OrderStatus.New, "Picking", OrderStatus.Preparing)]
+    // A legacy Accepted order is in preparation: Picking moves it on without a second receipt.
+    [InlineData(OrderStatus.Accepted, "Picking", OrderStatus.Preparing)]
     [InlineData(OrderStatus.ReadyForPickup, "Shipped", OrderStatus.OnTheWay)]
     [InlineData(OrderStatus.OnTheWay, "Delivered", OrderStatus.Delivered)]
     // A stale provider status never moves the order back.
@@ -221,8 +223,8 @@ public sealed class OrderIngestionTests : IDisposable
         Assert.Equal(0, result.FailedConnections);
         var order = await SingleOrderAsync("pkg-merge");
         Assert.Equal(expected, order.InternalStatus);
-        // The provider-accepted receipt belongs only to the move into Accepted.
-        Assert.Equal(expected == OrderStatus.Accepted && stored != OrderStatus.Accepted ? [orderId] : [], _receipts.Created);
+        // The provider-accepted receipt belongs only to the acceptance: a New order reaching preparation.
+        Assert.Equal(stored == OrderStatus.New && expected == OrderStatus.Preparing ? [orderId] : [], _receipts.Created);
     }
 
     // ---- Status-only observations ----
@@ -270,7 +272,7 @@ public sealed class OrderIngestionTests : IDisposable
     }
 
     [Theory]
-    [InlineData(OrderStatus.OnTheWay, OrderStatus.Accepted)]
+    [InlineData(OrderStatus.OnTheWay, OrderStatus.Preparing)]
     [InlineData(OrderStatus.Delivered, OrderStatus.Cancelled)]
     [InlineData(OrderStatus.Cancelled, OrderStatus.Delivered)]
     [InlineData(OrderStatus.Cancelled, OrderStatus.Cancelled)]
@@ -292,14 +294,18 @@ public sealed class OrderIngestionTests : IDisposable
     }
 
     [Fact]
-    public async Task StatusOnlyObservationIntoAccepted_CreatesOneReceipt_ARepeatNone()
+    public async Task StatusOnlyObservationOfTheAcceptance_StartsPreparation_CreatesOneReceipt_ARepeatNone()
     {
         await SeedTenantAsync(_tenantId, storeId: "900002", supplierId: "900001");
         var orderId = await StoreOrderWithStatusAsync("pkg-thin-accepted", OrderStatus.New);
 
-        Assert.True((await ApplyStatusAsync("pkg-thin-accepted", OrderStatus.Accepted, "Picking")).Updated);
-        Assert.True((await ApplyStatusAsync("pkg-thin-accepted", OrderStatus.Accepted, "Picking")).Unchanged);
+        Assert.True((await ApplyStatusAsync("pkg-thin-accepted", OrderStatus.Preparing, "Picking")).Updated);
+        Assert.True((await ApplyStatusAsync("pkg-thin-accepted", OrderStatus.Preparing, "Picking")).Unchanged);
 
+        var order = await SingleOrderAsync("pkg-thin-accepted");
+        Assert.Equal(OrderStatus.Preparing, order.InternalStatus);
+        Assert.Equal("Picking", order.PlatformStatus);
+        Assert.NotNull(order.AcceptedAt);
         Assert.Equal([orderId], _receipts.Created);
         Assert.Empty(_autoApprove.Processed);
     }

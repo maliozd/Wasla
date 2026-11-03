@@ -6,13 +6,8 @@
   if (!O || !O.table || typeof O.table.refreshOrdersTable !== "function") return;
 
   /** @type {Record<string, { confirmTitle: string, confirmMessage: string, fallbackSuccess: string, toastKey: string }>} */
+  // Approve starts preparation (WAS-185), so Mark ready is the only lifecycle action after it.
   var lifecycleByAction = {
-    "start-preparing": {
-      confirmTitle: "ordersStartPreparingConfirmTitle",
-      confirmMessage: "ordersStartPreparingConfirmMessage",
-      fallbackSuccess: "ordersStartPreparingSuccess",
-      toastKey: "order-start-preparing-success"
-    },
     "mark-ready": {
       confirmTitle: "ordersMarkReadyConfirmTitle",
       confirmMessage: "ordersMarkReadyConfirmMessage",

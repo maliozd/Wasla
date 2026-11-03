@@ -38,22 +38,23 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         var actions = CreateActions(client);
         var orderId = await SeedOrderAsync(OrderStatus.New);
 
+        var readyTooEarly = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+        Assert.False(readyTooEarly.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", readyTooEarly.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+
+        // Accepting the order starts its preparation (WAS-185): no Accepted step and no start-preparing action.
         var approved = await actions.TryApproveAsync(_tenantId, orderId, Ct);
         Assert.True(approved.Succeeded);
         Assert.Equal("Orders.ApproveSuccess", approved.MessageKey);
         Assert.Equal(new[] { "accept" }, client.Calls);
-        await AssertStatusAsync(orderId, OrderStatus.Accepted, accepted: true, delivered: false, cancelled: false);
-
-        var preparingTooEarly = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
-        Assert.False(preparingTooEarly.Succeeded);
-        Assert.Equal("Orders.InvalidStatusForAction", preparingTooEarly.MessageKey);
-        Assert.Equal(new[] { "accept" }, client.Calls);
-        await AssertStatusAsync(orderId, OrderStatus.Accepted, accepted: true, delivered: false, cancelled: false);
-
-        var preparing = await actions.MarkPreparingAsync(_tenantId, orderId, Ct);
-        Assert.True(preparing.Succeeded);
-        Assert.Equal(new[] { "accept" }, client.Calls);
         await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
+
+        var approvedAgain = await actions.TryApproveAsync(_tenantId, orderId, Ct);
+        Assert.False(approvedAgain.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", approvedAgain.MessageKey);
+        Assert.Equal(new[] { "accept" }, client.Calls);
 
         var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
         Assert.True(ready.Succeeded);
@@ -95,12 +96,95 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.Equal(new[] { "reject" }, client.Calls);
         await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
 
-        var preparing = await actions.MarkPreparingAsync(_tenantId, orderId, Ct);
-        Assert.False(preparing.Succeeded);
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+        Assert.False(ready.Succeeded);
         Assert.Equal(new[] { "reject" }, client.Calls);
 
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         Assert.Equal(0, await db.PrintJobs.CountAsync(Ct));
+    }
+
+    [Fact]
+    public async Task LegacyAcceptedOrder_IsMarkedReadyDirectly_AndKeepsItsAcceptedTime()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.Accepted);
+        var acceptedAt = new DateTime(2026, 11, 1, 9, 30, 0, DateTimeKind.Utc);
+        await using (var seed = await _tenantDb.CreateAsync(_tenantId, Ct))
+        {
+            await seed.Orders.Where(o => o.Id == orderId).ExecuteUpdateAsync(s => s.SetProperty(o => o.AcceptedAt, acceptedAt), Ct);
+        }
+
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+
+        Assert.True(ready.Succeeded);
+        Assert.Equal("Orders.MarkReadySuccess", ready.MessageKey);
+        Assert.Equal(new[] { "invoiced" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.ReadyForPickup, accepted: true, delivered: false, cancelled: false);
+        await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
+        Assert.Equal(acceptedAt, (await db.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId, Ct)).AcceptedAt);
+    }
+
+    [Fact]
+    public async Task AutoApprove_StartsPreparation_AndCreatesTheReceiptOnce()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New, autoPrintOnAccepted: true);
+        await SeedCentralTenantAsync("Sushi M");
+        await using (var seed = await _tenantDb.CreateAsync(_tenantId, Ct))
+        {
+            await seed.TenantOperationalSettings.ExecuteUpdateAsync(s => s.SetProperty(x => x.AutoApproveNewOrders, true), Ct);
+        }
+        var autoApprove = new OrderAutoApproveService(_tenantDb, actions, CreateReceipts(), NullLogger<OrderAutoApproveService>.Instance);
+
+        await autoApprove.ProcessNewlyInsertedOrderAsync(_tenantId, orderId, OrderStatus.New, Ct);
+        await autoApprove.ProcessNewlyInsertedOrderAsync(_tenantId, orderId, OrderStatus.New, Ct);
+
+        Assert.Equal(new[] { "accept" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
+        await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
+        var job = await db.PrintJobs.SingleAsync(Ct);
+        Assert.Equal(orderId, job.OrderId);
+        Assert.Equal(PrintJobType.Receipt, job.Type);
+    }
+
+    [Fact]
+    public async Task OrdersFilter_Preparing_AlsoFindsLegacyAcceptedOrders()
+    {
+        var reader = new OrderReadService(_tenantDb, TimeProvider.System, NullLogger<OrderReadService>.Instance);
+        var legacy = await SeedOrderAsync(OrderStatus.Accepted, externalOrderId: "ORDER-LEGACY");
+        var preparing = await SeedOrderAsync(OrderStatus.Preparing, externalOrderId: "ORDER-PREPARING");
+        await SeedOrderAsync(OrderStatus.New, externalOrderId: "ORDER-NEW");
+
+        Task<OrderListResult> ListAsync(OrderStatus status) => reader.GetListAsync(
+            _tenantId, platform: null, status, startDateUtc: null, endDateUtc: null, sortBy: null, sortDirection: null,
+            page: 1, pageSize: 25, search: null, Ct);
+
+        var inPreparation = await ListAsync(OrderStatus.Preparing);
+        Assert.Equal(new[] { legacy, preparing }.Order(), inPreparation.Items.Select(row => row.Id).Order());
+        Assert.Equal(2, inPreparation.TotalCount);
+        // The stored value is kept: only screens show it as Preparing.
+        Assert.Equal(OrderStatus.Accepted, inPreparation.Items.Single(row => row.Id == legacy).Status);
+        Assert.Equal([legacy], (await ListAsync(OrderStatus.Accepted)).Items.Select(row => row.Id));
+    }
+
+    [Fact]
+    public async Task MarkReady_WhenTheProviderFails_LeavesTheOrderPreparing()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+        Assert.True((await actions.TryApproveAsync(_tenantId, orderId, Ct)).Succeeded);
+        client.Failure = new InvalidOperationException("provider down");
+
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+
+        Assert.False(ready.Succeeded);
+        Assert.Equal("Orders.OrderActionFailed", ready.MessageKey);
+        Assert.Equal(new[] { "accept" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
     }
 
     [Fact]
@@ -227,8 +311,9 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.Contains("item.Notes", cards, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"approve\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"reject\"", actions, StringComparison.Ordinal);
-        Assert.Contains("data-order-action=\"start-preparing\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"mark-ready\"", actions, StringComparison.Ordinal);
+        // Approving starts preparation (WAS-185): there is no separate start-preparing action.
+        Assert.DoesNotContain("start-preparing", actions, StringComparison.Ordinal);
         // The platform courier reports pickup and delivery; no view may offer those actions.
         Assert.DoesNotContain("hand-to-courier", actions, StringComparison.Ordinal);
         Assert.DoesNotContain("mark-delivered", actions, StringComparison.Ordinal);
@@ -253,7 +338,8 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         bool autoPrintOnAccepted = false,
         int copyCount = 1,
         string? itemNotes = null,
-        string? optionName = null)
+        string? optionName = null,
+        string externalOrderId = "ORDER-1")
     {
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         if (!await db.TenantOperationalSettings.AnyAsync(Ct))
@@ -314,9 +400,9 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         {
             Id = orderId,
             Platform = FoodPlatform.TrendyolYemek,
-            ExternalOrderId = "ORDER-1",
-            ExternalOrderCode = "TY-ORDER-1",
-            IdempotencyKey = $"TrendyolYemek:ORDER-1:{_tenantId:N}",
+            ExternalOrderId = externalOrderId,
+            ExternalOrderCode = "TY-" + externalOrderId,
+            IdempotencyKey = $"TrendyolYemek:{externalOrderId}:{_tenantId:N}",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Test Customer",

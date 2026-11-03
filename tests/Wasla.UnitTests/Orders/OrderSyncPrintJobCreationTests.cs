@@ -36,7 +36,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var job = await db.PrintJobs.Include(j => j.Order).SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(PrintJobStatus.Pending, job.Status);
         Assert.Equal(PrintJobType.Receipt, job.Type);
-        Assert.Equal(OrderStatus.Accepted, job.Order!.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, job.Order!.InternalStatus);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         var job = await db.PrintJobs.Include(j => j.Order).SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(PrintJobStatus.Pending, job.Status);
-        Assert.Equal(OrderStatus.Accepted, job.Order!.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, job.Order!.InternalStatus);
     }
 
     [Fact]

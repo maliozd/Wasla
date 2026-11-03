@@ -232,8 +232,8 @@ public sealed class OrderDetailModalBrowserTests : IAsyncLifetime
             })()
             """, ct));
         Assert.True(await browser.WaitForAsync(
-            "!!document.querySelector('#ordersLiveDetailModal [data-order-action=\"start-preparing\"]')", TimeSpan.FromSeconds(15), ct),
-            (_host.ServerErrors ?? "") + " The modal did not show Start preparing after Approve.");
+            "!!document.querySelector('#ordersLiveDetailModal [data-order-action=\"mark-ready\"]')", TimeSpan.FromSeconds(15), ct),
+            (_host.ServerErrors ?? "") + " The modal did not show Mark ready after Approve (approving starts preparation).");
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__orderActionPosts", ct));
         Assert.True(await browser.EvaluateAsync<bool>(
             "document.querySelector('#ordersLiveDetailModal .wasla-live-detail__open').getAttribute('href') === '/orders/details/" + OrderDetailModalSeed.SecondNewOrderId + "'", ct));

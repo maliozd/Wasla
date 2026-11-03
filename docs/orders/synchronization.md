@@ -99,7 +99,7 @@ The difference is in the shared side-effect services, so every ingestion path (s
 - `OrderAutoApproveService` accepts nothing automatically while the tenant is in Setup.
 - `OrderReceiptCreationService` creates no automatic receipt PrintJob while the tenant is in Setup. This covers the provider-accepted path and the automatic receipt after an operator approves an order. Manual printing (`ManualOrderPrintService`) is a separate path and is unaffected.
 
-Each decision is taken when its trigger happens (an order is inserted, or becomes Accepted), using the mode at that moment. Going live replays nothing: orders that arrived or were accepted during Setup are never auto-approved or auto-printed afterwards. Only triggers after activation follow the Auto Approve and receipt settings.
+Each decision is taken when its trigger happens (an order is inserted, or is accepted: a New order reaches preparation), using the mode at that moment. Going live replays nothing: orders that arrived or were accepted during Setup are never auto-approved or auto-printed afterwards. Only triggers after activation follow the Auto Approve and receipt settings.
 
 ## Platform connection eligibility
 
@@ -396,7 +396,7 @@ The checkpoint overlap, the hot window and the history windows that cover the sa
 
 - The upsert finds the existing row by `IdempotencyKey`. No second `Order` row is inserted, also when two callers insert at the same moment ([Concurrent first observations](#concurrent-first-observations)).
 - A repeated result with no change takes the unchanged short circuit: nothing is written.
-- The auto-approve hook runs only when a row is inserted. The provider-accepted receipt is created only when the merged status changes to `Accepted`. A repeated result triggers neither, so recovery overlap alone prints no extra receipt.
+- The auto-approve hook runs only when a row is inserted. The provider-accepted receipt is created only when a New or inserted order's merged status reaches preparation (`Preparing`; acceptance starts preparation, WAS-185). A repeated result triggers neither, so recovery overlap alone prints no extra receipt.
 - The status merge keeps a terminal (`Delivered`, `Cancelled`, `Failed`) or further-progressed status when older provider data arrives. This is the same `MergeInternalStatusForSync` rule used for every sync; the client has no status rules of its own.
 
 `PlatformStatus` is the raw provider string and is still overwritten by the provider's latest value on a real update, even when the merge keeps the internal status.

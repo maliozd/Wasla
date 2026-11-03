@@ -48,7 +48,9 @@ public sealed class OrderReadService : IOrderReadService
         var q = db.Orders.AsNoTracking().AsQueryable();
 
         if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
-        if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
+        // Preparing also finds orders stored as the legacy Accepted, which are in preparation (OrderPreparation).
+        if (status == OrderStatus.Preparing) q = q.Where(o => o.InternalStatus == OrderStatus.Preparing || o.InternalStatus == OrderStatus.Accepted);
+        else if (status.HasValue) q = q.Where(o => o.InternalStatus == status.Value);
         // Date filters and the default sort use the operational order time (WAS-125): the provider's creation time,
         // or the first-import time when the provider sent none.
         if (startDateUtc.HasValue) q = q.Where(o => o.OrderedAt >= startDateUtc.Value);
@@ -237,11 +239,12 @@ public sealed class OrderReadService : IOrderReadService
             })
             .ToListAsync(ct);
 
+        // A legacy Accepted order is shown in preparation, with Mark ready (WAS-185).
         var orders = rows.Select(o => new LiveScreenOrderDto(
             o.Id,
             o.ExternalOrderCode,
             o.Platform,
-            o.InternalStatus,
+            OrderPreparation.Displayed(o.InternalStatus),
             SpecifyUtc(o.ReceivedAt),
             o.DeliveredAt is null ? null : SpecifyUtc(o.DeliveredAt.Value),
             o.CustomerName,
