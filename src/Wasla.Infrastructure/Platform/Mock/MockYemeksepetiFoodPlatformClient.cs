@@ -66,7 +66,7 @@ public sealed class MockYemeksepetiFoodPlatformClient : IFoodPlatformClient
         return Task.CompletedTask;
     }
 
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct)
+    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
     {
         MockProviderOrderStatusStore.Set(Platform, order.ExternalOrderId, "CANCELLED");
         return Task.CompletedTask;

@@ -64,7 +64,7 @@ public sealed class MockTrendyolYemekFoodPlatformClient : IFoodPlatformClient
         return Task.CompletedTask;
     }
 
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct)
+    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
     {
         MockProviderOrderStatusStore.Set(Platform, order.ExternalOrderId, "UnSupplied");
         return Task.CompletedTask;

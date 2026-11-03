@@ -207,7 +207,7 @@ public sealed class TrendyolGoPilotApiRoutingTests
             "invoiced" => client.MarkInvoicedAsync(connection, "pkg-1", Ct),
             "shipped" => client.MarkShippedAsync(connection, "pkg-1", Ct),
             "delivered" => client.MarkDeliveredAsync(connection, "pkg-1", Ct),
-            "reject" => client.RejectOrderAsync(connection, TrendyolGoRejectRequestTests.StoredPackageOrder("pkg-1", "1"), Ct),
+            "reject" => client.RejectOrderAsync(connection, TrendyolGoRejectRequestTests.StoredPackageOrder("pkg-1", "1"), 621, Ct),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))
         };
 }

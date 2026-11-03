@@ -101,7 +101,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         Assert.True((await actions.TryApproveAsync(_tenant, first.Id, Ct)).Succeeded);
         Assert.True((await actions.MarkPreparingAsync(_tenant, first.Id, Ct)).Succeeded);
         Assert.True((await actions.MarkReadyForPickupAsync(_tenant, first.Id, Ct)).Succeeded);
-        Assert.True((await actions.TryRejectAsync(_tenant, second.Id, Ct)).Succeeded);
+        Assert.True((await actions.TryRejectAsync(_tenant, second.Id, 621, Ct)).Succeeded);
 
         Assert.Equal(
             [OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.Cancelled],

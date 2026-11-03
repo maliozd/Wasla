@@ -1960,4 +1960,28 @@
   <data name="Orders.LiveScreen.BoardItemsHidden" xml:space="preserve">
     <value>+{0} ürün daha</value>
   </data>
+  <data name="Orders.RejectReason.Legend" xml:space="preserve">
+    <value>Reddetme nedeni</value>
+  </data>
+  <data name="Orders.RejectReason.SentToPlatform" xml:space="preserve">
+    <value>Seçtiğiniz neden, ret ile birlikte platforma iletilir.</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.621" xml:space="preserve">
+    <value>Tedarik problemi</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.622" xml:space="preserve">
+    <value>Mağaza kapalı</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.623" xml:space="preserve">
+    <value>Mağaza siparişi hazırlayamıyor</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.627" xml:space="preserve">
+    <value>Sipariş karışıklığı</value>
+  </data>
+  <data name="Orders.RejectReasonRequired" xml:space="preserve">
+    <value>Siparişi reddetmek için bir neden seçin.</value>
+  </data>
+  <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
+    <value>Bu neden bu sipariş için kullanılamaz. Listedeki nedenlerden birini seçin.</value>
+  </data>
 </root>

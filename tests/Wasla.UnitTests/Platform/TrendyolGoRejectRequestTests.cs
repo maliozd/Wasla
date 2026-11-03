@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
@@ -14,9 +15,9 @@ namespace Wasla.UnitTests.Platform;
 
 /// <summary>
 /// The Trendyol GO reject request against the official "Sipariş İptali" and "Paket Modelleri" documentation
-/// (developers.tgoapps.com, checked 2026-11-03): a full cancellation sends the package's <c>packageItemId</c> values in
-/// <c>itemIdList</c> and a restaurant-side <c>reasonId</c>. The stage API refused the earlier body (no item ids,
-/// <c>reasonId</c> 0) with HTTP 400. The package comes from a documented-shape page fetched by the real client, so the
+/// (developers.tgoapps.com, checked 2026-11-03): a full cancellation sends all of the package's <c>packageItemId</c>
+/// values in <c>itemIdList</c> and the restaurant reason the operator chose. The stage API refused the earlier body (no
+/// item ids, <c>reasonId</c> 0) with HTTP 400. The package comes from a documented-shape page fetched by the real client, so the
 /// item ids are read from the raw payload exactly as sync stores it. Every value is synthetic; this proves the request
 /// Wasla sends, not the provider's acceptance of it.
 /// </summary>
@@ -70,14 +71,17 @@ public sealed class TrendyolGoRejectRequestTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    [Fact]
-    public async Task Reject_SendsEveryItemStillInTheStoredPackage_WithTheDocumentedReason()
+    public static TheoryData<int> SupportedReasons => new(621, 622, 623, 627);
+
+    [Theory]
+    [MemberData(nameof(SupportedReasons))]
+    public async Task Reject_SendsEveryPackageItemIdOfTheStoredPackage_WithTheChosenReason(int reasonId)
     {
         var client = Client();
         var package = Assert.Single(await client.FetchOrdersAsync(Connection(), new OrderFetchWindow(WindowEnd.AddHours(-1), WindowEnd), Ct));
         _requests.Clear();
 
-        await client.RejectOrderAsync(Connection(), StoredOrder(package.ExternalOrderId, package.RawPayloadJson), Ct);
+        await client.RejectOrderAsync(Connection(), StoredOrder(package.ExternalOrderId, package.RawPayloadJson), reasonId, Ct);
 
         var request = Assert.Single(_requests);
         Assert.Equal(HttpMethod.Put, request.Method);
@@ -86,19 +90,36 @@ public sealed class TrendyolGoRejectRequestTests
         using var body = JsonDocument.Parse(request.Body!);
         Assert.Equal(["packageId", "itemIdList", "reasonId"], body.RootElement.EnumerateObject().Select(p => p.Name));
         Assert.Equal(PackageId, body.RootElement.GetProperty("packageId").GetString());
-        // packageItemId is a string in the documented model; the item already cancelled is not sent again.
+        // Every packageItemId the packages call returned, as strings, in package order: the documented full
+        // cancellation. The item the package already reports as cancelled is listed too; lineItemId never is.
         Assert.Equal(
-            ["1000008723596", "1000008723598", "1000008723599"],
+            ["1000008723596", "1000008723597", "1000008723598", "1000008723599"],
             body.RootElement.GetProperty("itemIdList").EnumerateArray().Select(id => id.GetString()));
+        Assert.All(body.RootElement.GetProperty("itemIdList").EnumerateArray(), id => Assert.Equal(JsonValueKind.String, id.ValueKind));
         Assert.Equal(JsonValueKind.Number, body.RootElement.GetProperty("reasonId").ValueKind);
-        Assert.Equal(623, body.RootElement.GetProperty("reasonId").GetInt32());
+        Assert.Equal(reasonId, body.RootElement.GetProperty("reasonId").GetInt32());
     }
 
-    [Fact]
-    public void RejectReason_IsADocumentedRestaurantReasonForPlatformCouriers()
+    /// <summary>
+    /// 624 and 626 are documented only for sellers with their own couriers; Wasla supports platform couriers only. The
+    /// cancellation codes the provider reports (for example 601) are never sent.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(601)]
+    [InlineData(624)]
+    [InlineData(626)]
+    [InlineData(-623)]
+    public async Task Reject_WithAMissingOrUnsupportedReason_FailsBeforeAnyRequest(int? reasonId)
     {
-        // 621, 622, 623 and 627 are open to every restaurant; 624 and 626 only to sellers with their own couriers.
-        Assert.Contains(TrendyolGoFoodPlatformClient.RejectReasonId, new[] { 621, 622, 623, 627 });
+        var client = Client();
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => client.RejectOrderAsync(Connection(), StoredPackageOrder(PackageId, "1"), reasonId, Ct));
+
+        Assert.StartsWith("TrendyolGo RejectOrder:", failure.Message, StringComparison.Ordinal);
+        Assert.Empty(_requests);
     }
 
     public static TheoryData<string, string> UnusableStoredPackages => new()
@@ -106,14 +127,24 @@ public sealed class TrendyolGoRejectRequestTests
         { "empty", "" },
         { "malformed", "{\"id\":" },
         { "json null", "null" },
-        { "another package", $$"""{"id":"another-package","lines":[{"items":[{"packageItemId":"1","isCancelled":false}]}]}""" },
+        { "another package", """{"id":"another-package","lines":[{"items":[{"packageItemId":"1","isCancelled":false}]}]}""" },
         { "no lines", $$"""{"id":"{{PackageId}}"}""" },
-        { "no items", $$"""{"id":"{{PackageId}}","lines":[{"items":[]}]}""" },
-        { "every item cancelled", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1","isCancelled":true}]}]}""" },
-        { "item without id", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1","isCancelled":false},{"packageItemId":" ","isCancelled":false}]}]}""" }
+        { "empty lines", $$"""{"id":"{{PackageId}}","lines":[]}""" },
+        { "a null line", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"}]},null]}""" },
+        { "a line without items", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"}]},{"name":"Drink"}]}""" },
+        { "a line with null items", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"}]},{"items":null}]}""" },
+        { "a line with no items", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"}]},{"items":[]}]}""" },
+        { "a null item", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"},null]}]}""" },
+        { "an item without id", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"},{"lineItemId":1000008181986}]}]}""" },
+        { "an item with null id", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"}]},{"items":[{"packageItemId":null}]}]}""" },
+        { "an item with blank id", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"},{"packageItemId":" "}]}]}""" },
+        { "a cancelled item without id", $$"""{"id":"{{PackageId}}","lines":[{"items":[{"packageItemId":"1"},{"isCancelled":true}]}]}""" }
     };
 
-    /// <summary>A request that could only cancel part of the order, or none of it, is never sent.</summary>
+    /// <summary>
+    /// A request that could only cancel part of the order, or none of it, is never sent: the remaining ids are not sent
+    /// when one line or item of the stored package cannot be identified.
+    /// </summary>
     [Theory]
     [MemberData(nameof(UnusableStoredPackages))]
     public async Task Reject_WithoutACompleteStoredPackage_FailsBeforeAnyRequest(string reason, string rawPayloadJson)
@@ -121,11 +152,21 @@ public sealed class TrendyolGoRejectRequestTests
         var client = Client();
 
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => client.RejectOrderAsync(Connection(), StoredOrder(PackageId, rawPayloadJson), Ct));
+            () => client.RejectOrderAsync(Connection(), StoredOrder(PackageId, rawPayloadJson), 623, Ct));
 
-        Assert.False(string.IsNullOrWhiteSpace(reason));
         Assert.StartsWith("TrendyolGo RejectOrder:", failure.Message, StringComparison.Ordinal);
-        Assert.Empty(_requests);
+        Assert.True(_requests.Count == 0, $"{reason}: a request was sent.");
+    }
+
+    [Fact]
+    public async Task Reject_WhenTheProviderRefuses_Throws()
+    {
+        var client = Client(rejectStatus: HttpStatusCode.BadRequest);
+
+        await Assert.ThrowsAsync<ProviderRequestException>(
+            () => client.RejectOrderAsync(Connection(), StoredPackageOrder(PackageId, "1", "2"), 622, Ct));
+
+        Assert.Single(_requests);
     }
 
     /// <summary>
@@ -158,11 +199,11 @@ public sealed class TrendyolGoRejectRequestTests
         EncryptedApiSecret = "fake-reject-api-secret"
     };
 
-    private TrendyolGoFoodPlatformClient Client()
+    private TrendyolGoFoodPlatformClient Client(HttpStatusCode rejectStatus = HttpStatusCode.OK)
     {
         var options = new TrendyolGoOptions { AgentName = "WaslaTest", BaseUrl = "https://stageapi.tgoapis.com" };
         return new TrendyolGoFoodPlatformClient(
-            new HttpClient(new RecordingHandler(_requests)) { BaseAddress = new Uri(options.BaseUrl) },
+            new HttpClient(new RecordingHandler(_requests, rejectStatus)) { BaseAddress = new Uri(options.BaseUrl) },
             new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(options),
@@ -173,14 +214,15 @@ public sealed class TrendyolGoRejectRequestTests
     }
 
     // Reads the body while the request is alive: the client disposes it after sending.
-    private sealed class RecordingHandler(List<(HttpMethod Method, string Path, string? Body)> requests) : HttpMessageHandler
+    private sealed class RecordingHandler(List<(HttpMethod Method, string Path, string? Body)> requests, HttpStatusCode rejectStatus) : HttpMessageHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
             requests.Add((request.Method, request.RequestUri!.AbsolutePath, body));
-            var content = request.Method == HttpMethod.Get ? Page : "";
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content, Encoding.UTF8, "application/json") };
+            if (request.Method != HttpMethod.Get)
+                return new HttpResponseMessage(rejectStatus) { Content = new StringContent("", Encoding.UTF8, "application/json") };
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Page, Encoding.UTF8, "application/json") };
         }
     }
 }

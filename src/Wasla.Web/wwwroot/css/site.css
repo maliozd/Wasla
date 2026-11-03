@@ -262,3 +262,24 @@ body {
 [data-bs-theme="dark"] .wasla-print-job-row--failed > td {
   background-color: rgba(239, 68, 68, 0.10);
 }
+
+/* Order reject reasons (_OrderRejectDialog): rows laid out with logical properties instead of Bootstrap's floated
+   form-check, so the radio sits before its label in both directions (Arabic included) and the whole row is a target. */
+.wasla-order-reject-dialog .form-check {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding-inline-start: 0;
+  margin-bottom: 0;
+}
+
+.wasla-order-reject-dialog .form-check .form-check-input {
+  float: none;
+  flex: none;
+  margin: 0;
+}
+
+.wasla-order-reject-dialog .form-check-label {
+  flex: 1 1 auto;
+  cursor: pointer;
+}

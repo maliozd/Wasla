@@ -672,12 +672,17 @@ public sealed class OrdersController : BaseController
     [HttpPost("{id:guid}/reject")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = TenantPolicies.CanManageOrders)]
-    public async Task<IActionResult> Reject(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Reject(Guid id, [FromForm] int? reasonId, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var result = await _actions.TryRejectAsync(tenant.Id, id, ct);
+        // A reason that is not a number is not one the platform offers; the service checks the rest against the stored
+        // order's platform.
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = MapOrderActionClientMessageKey(OrderRejectReasons.ReasonNotSupportedKey, isApprove: false) });
+
+        var result = await _actions.TryRejectAsync(tenant.Id, id, reasonId, ct);
         if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
     }
@@ -747,6 +752,8 @@ public sealed class OrdersController : BaseController
             "Orders.OrderActionFailed" => "ordersOrderActionFailed",
             "Orders.ApproveFailed" => "ordersApproveFailed",
             "Orders.RejectFailed" => "ordersRejectFailed",
+            OrderRejectReasons.ReasonRequiredKey => "ordersRejectReasonRequired",
+            OrderRejectReasons.ReasonNotSupportedKey => "ordersRejectReasonNotSupported",
             "Orders.ApproveSuccess" => "ordersApproveSuccess",
             "Orders.RejectSuccess" => "ordersRejectSuccess",
             "Orders.StartPreparingSuccess" => "ordersStartPreparingSuccess",

@@ -50,15 +50,15 @@ public sealed class OrderActionService : IOrderActionService
 
     public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Accepted, ct);
+        return await ExecuteAsync(customerId, orderId, OrderStatus.Accepted, rejectReasonId: null, ct);
     }
 
-    public async Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct)
+    public async Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Cancelled, ct);
+        return await ExecuteAsync(customerId, orderId, OrderStatus.Cancelled, reasonId, ct);
     }
 
-    private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, CancellationToken ct)
+    private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, int? rejectReasonId, CancellationToken ct)
     {
         if (target is not (OrderStatus.Accepted or OrderStatus.Cancelled))
             return new OrderActionResult(false, "Orders.ActionFailed");
@@ -78,6 +78,18 @@ public sealed class OrderActionService : IOrderActionService
 
         if (order.InternalStatus != OrderStatus.New)
             return new OrderActionResult(false, "Orders.InvalidStatusForAction");
+
+        // The reason must be one the stored order's platform offers. A refused reason changes nothing and calls no
+        // provider.
+        if (target == OrderStatus.Cancelled && OrderRejectReasons.Refusal(order.Platform, rejectReasonId) is { } refusal)
+        {
+            _logger.LogInformation(
+                "Order reject refused: reason missing or not offered by the platform. OrderId={OrderId} Platform={Platform} ReasonId={ReasonId}",
+                orderId,
+                order.Platform,
+                rejectReasonId);
+            return new OrderActionResult(false, refusal);
+        }
 
         // Choose a connection for the platform. We don't persist connection-id on Order yet (MVP),
         // so we use the first active connection for this platform.
@@ -104,7 +116,7 @@ public sealed class OrderActionService : IOrderActionService
             }
             else
             {
-                await client.RejectOrderAsync(connection, order, CancellationToken.None);
+                await client.RejectOrderAsync(connection, order, rejectReasonId, CancellationToken.None);
             }
         }
         catch (Exception ex)

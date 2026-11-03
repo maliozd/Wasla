@@ -438,7 +438,7 @@ public sealed class OrderItemSequenceTests : IDisposable
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
             throw new NotSupportedException();
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) =>
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 

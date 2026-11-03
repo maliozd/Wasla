@@ -533,7 +533,7 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         => throw new NotSupportedException(
             "Yemeksepeti MarkDelivered is not yet implemented.");
 
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct)
+    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti RejectOrder is not yet implemented.");
 

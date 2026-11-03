@@ -210,7 +210,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) => Task.CompletedTask;
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

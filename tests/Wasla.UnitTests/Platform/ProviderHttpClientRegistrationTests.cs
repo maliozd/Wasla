@@ -462,6 +462,6 @@ public sealed class ProviderHttpClientRegistrationTests
 
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) => throw new NotSupportedException();
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }
