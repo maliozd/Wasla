@@ -308,7 +308,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

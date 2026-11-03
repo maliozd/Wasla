@@ -28,6 +28,11 @@ public interface IFoodPlatformClient
     Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
     Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
     Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
-    Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct);
+
+    /// <summary>
+    /// Rejects the whole order on the provider. The client derives what its provider requires (item ids, a reason) from
+    /// <paramref name="order"/> and throws, before any request, when the stored order cannot supply it.
+    /// </summary>
+    Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct);
 }
 

@@ -475,7 +475,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "invoiced");
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "shipped");
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "delivered");
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Act(externalOrderId, "reject");
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) => Act(order.ExternalOrderId, "reject");
 
         private async Task Act(string externalOrderId, string action)
         {

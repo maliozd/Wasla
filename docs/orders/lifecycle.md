@@ -99,6 +99,7 @@ Rules observed in source:
 
 - Wrong current status → fail (`Orders.InvalidStatusForAction`).
 - Provider failure → local status is **not** advanced.
+- Reject cancels the whole order on the provider. `OrderActionService` hands the stored order to `RejectOrderAsync`, and the client derives what its provider requires. Trendyol GO sends every item still in the package and the fixed reason 623; the Live Screen does not ask for a reason. When the stored package cannot supply a complete item id list, no request is sent and the action fails with `Orders.RejectFailed`, so the order stays `New`. See [Trendyol GO reject](../integrations/food-platforms.md#trendyol-go-reject).
 - Connection selection: first active `PlatformConnection` for the order’s platform (order does not store connection id yet).
 - Legacy `TryUpdateStatusAsync` only allows changes while status is still `New` and does **not** call the provider (older path; approve/reject/lifecycle methods are the operational API).
 

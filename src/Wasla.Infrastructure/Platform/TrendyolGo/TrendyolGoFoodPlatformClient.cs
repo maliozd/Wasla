@@ -373,13 +373,58 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         await SendAndEnsureSuccessAsync(req, "MarkDelivered", externalOrderId, ct);
     }
 
-    public async Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
+    /// <summary>
+    /// Full cancellation through the documented "Sipariş İptali" (unsupplied) call: every item still in the package,
+    /// with <see cref="RejectReasonId"/>. The provider refuses the request without item ids or with a reason outside its
+    /// restaurant reasons (HTTP 400 on its stage API, 2026-11-03).
+    /// </summary>
+    public async Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct)
     {
         var supplierId = EnsureSupplierAndExecutor(connection);
+        var itemIdList = PackageItemIdsToReject(order);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/unsupplied";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
-        req.Content = JsonContent.Create(new { packageId = externalOrderId, itemIdList, reasonId }, options: JsonOptions);
-        await SendAndEnsureSuccessAsync(req, "RejectOrder", externalOrderId, ct);
+        req.Content = JsonContent.Create(new { packageId = order.ExternalOrderId, itemIdList, reasonId = RejectReasonId }, options: JsonOptions);
+        await SendAndEnsureSuccessAsync(req, "RejectOrder", order.ExternalOrderId, ct);
+    }
+
+    /// <summary>
+    /// Restaurant-side reason sent with every reject: 623 "Mağaza siparişi hazırlayamıyor" (the store cannot prepare
+    /// the order), from the documented restaurant reasons (621, 622, 623, 627; 624 and 626 only for sellers with their
+    /// own couriers). The Live Screen does not ask the operator for a reason.
+    /// </summary>
+    internal const int RejectReasonId = 623;
+
+    /// <summary>
+    /// The <c>packageItemId</c> of every item not already cancelled, read from the package this client stored on the
+    /// order at its last sync (<see cref="Order.RawPayloadJson"/>; <see cref="OrderItem"/> keeps no provider item id).
+    /// The provider documents a full cancellation as all of the package's item ids; an item it already reports as
+    /// cancelled is left out. Throws, so no request is sent, when the stored package is missing, unreadable or another
+    /// package, has no item to cancel, or has an item without an id: anything else would cancel only part of the order.
+    /// </summary>
+    private static List<string> PackageItemIdsToReject(Order order)
+    {
+        TrendyolGoPackage? package;
+        try
+        {
+            package = JsonSerializer.Deserialize<TrendyolGoPackage>(order.RawPayloadJson, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            package = null;
+        }
+
+        if (package is null || !string.Equals(package.Id, order.ExternalOrderId, StringComparison.Ordinal))
+            throw new InvalidOperationException("TrendyolGo RejectOrder: the order has no stored package to reject.");
+
+        var items = (package.Lines ?? [])
+            .SelectMany(line => line.Items ?? [])
+            .Where(item => item is { IsCancelled: false })
+            .ToList();
+        if (items.Count == 0 || items.Any(item => string.IsNullOrWhiteSpace(item.PackageItemId)))
+            throw new InvalidOperationException("TrendyolGo RejectOrder: the stored package has no complete item id list.");
+
+        return items.Select(item => item.PackageItemId!).ToList();
     }
 
     private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)

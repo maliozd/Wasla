@@ -840,7 +840,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

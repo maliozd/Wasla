@@ -149,9 +149,21 @@ Capabilities on the interface:
 
 - `FetchOrdersAsync(connection, window, ct)` — used by Worker sync; returns every page of one fetch or throws
 - `MaxFetchWindow` — the longest window the client requests in one fetch (Trendyol GO: 1 hour), or null when the client ignores the window (Yemeksepeti, mock clients)
-- Lifecycle: `AcceptOrderAsync`, `MarkInvoicedAsync`, `MarkShippedAsync`, `MarkDeliveredAsync`, `RejectOrderAsync`
+- Lifecycle: `AcceptOrderAsync`, `MarkInvoicedAsync`, `MarkShippedAsync`, `MarkDeliveredAsync` (each with the order's external id), `RejectOrderAsync` (with the stored `Order`, so each client derives its own item ids and reason)
 
-Yemeksepeti’s real client documents that lifecycle fulfillment endpoints are **not yet implemented** for the partner API path. Do not assume Real mode means accept/reject/deliver against Yemeksepeti works end-to-end.
+Yemeksepeti’s real client documents that lifecycle fulfillment endpoints are **not yet implemented** for the partner API path. Do not assume Real mode means accept/reject/deliver against Yemeksepeti works end-to-end. The mock clients set the provider's cancelled status on reject (Trendyol GO `UnSupplied`, Yemeksepeti and Getir `CANCELLED`) and read nothing else from the order.
+
+### Trendyol GO reject
+
+`TrendyolGoFoodPlatformClient.RejectOrderAsync` uses the documented "Sipariş İptali" call (developers.tgoapps.com, Yemek > Sipariş Entegrasyonu, checked 2026-11-03):
+
+`PUT /integrator/order/meal/suppliers/{supplierId}/packages/unsupplied` with `{ "packageId": "<package id>", "itemIdList": ["<packageItemId>", …], "reasonId": 623 }`
+
+- **Item ids.** A full cancellation lists the package's `packageItemId` values (`lines[].items[].packageItemId`, strings); listing only some of them is a partial cancellation. `OrderItem` keeps no provider item id (the line id built during mapping is not stored), so the client reads them from `Order.RawPayloadJson`, the package it stored at the last sync. Orders created through the webhook pilot are ingested through the same polling read, so their payload has the same shape. An item the package already reports with `isCancelled: true` is left out: Wasla does not count it in the line's quantity either. The documentation does not say whether such an item must be listed again.
+- **Refusal before any request.** A stored payload that is missing, unreadable or belongs to another package, a package with no item left to cancel, or an item without an id fails the reject with no request: anything sent would cancel only part of the order, or nothing.
+- **Reason.** `reasonId` is always 623, "Mağaza siparişi hazırlayamıyor" (the store cannot prepare the order). The documented restaurant reasons are 621 supply problem, 622 store closed, 623 store cannot prepare the order and 627 order confusion; 624 (high load / no courier) and 626 (outside the area) are only for sellers with their own couriers. Other cancellation codes in "Paket Modelleri" are reported by the provider and must not be sent. The Live Screen does not ask the operator for a reason.
+- **History.** Until this change the request carried an empty `itemIdList` and `reasonId` 0; the stage API answered HTTP 400 to it twice on 2026-11-03, and production rejects had the same body.
+- **Verification.** `TrendyolGoRejectRequestTests` fetch a documented-shape page with the real client, store its payload on an order and check the request body, and check that an unusable stored package sends nothing. They do not prove the provider accepts the body; the check on the stage API (tgo-test tenant) is still open.
 
 ## Platform connections
 
@@ -272,6 +284,7 @@ When Mock clients generate orders:
 - Yemeksepeti polling is not checkpointed: a change older than one hour at the next successful run can be missed.
 - Trendyol GO date-range limits, retention and the scope of the request limit are undocumented and not yet verified against the Stage API.
 - The Trendyol GO request limiter is per Worker process; several Workers would need a distributed limiter.
+- The corrected [Trendyol GO reject](#trendyol-go-reject) body is not yet verified against the Stage API. The operator cannot choose a reject reason (always 623).
 
 ## Related docs
 

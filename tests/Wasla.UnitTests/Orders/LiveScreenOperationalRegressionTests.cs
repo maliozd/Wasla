@@ -93,6 +93,10 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.True(rejected.Succeeded);
         Assert.Equal("Orders.RejectSuccess", rejected.MessageKey);
         Assert.Equal(new[] { "reject" }, client.Calls);
+        // The provider client receives the stored order: it derives the provider's item ids from its raw payload.
+        Assert.Equal(orderId, client.RejectedOrder?.Id);
+        Assert.Equal("ORDER-1", client.RejectedOrder?.ExternalOrderId);
+        Assert.Equal("{}", client.RejectedOrder?.RawPayloadJson);
         await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
 
         var preparing = await actions.MarkPreparingAsync(_tenantId, orderId, Ct);
@@ -383,6 +387,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
+        public Order? RejectedOrder { get; private set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
@@ -404,11 +409,12 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
         public Task RejectOrderAsync(
             PlatformConnection connection,
-            string externalOrderId,
-            IReadOnlyList<string> itemIdList,
-            int reasonId,
-            CancellationToken ct) =>
-            Record("reject");
+            Order order,
+            CancellationToken ct)
+        {
+            RejectedOrder = order;
+            return Record("reject");
+        }
 
         private Task Record(string name)
         {

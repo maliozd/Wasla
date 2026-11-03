@@ -104,7 +104,7 @@ public sealed class OrderActionService : IOrderActionService
             }
             else
             {
-                await client.RejectOrderAsync(connection, order.ExternalOrderId, Array.Empty<string>(), reasonId: 0, CancellationToken.None);
+                await client.RejectOrderAsync(connection, order, CancellationToken.None);
             }
         }
         catch (Exception ex)
