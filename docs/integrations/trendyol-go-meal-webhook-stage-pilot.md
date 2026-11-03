@@ -181,7 +181,26 @@ Record what was observed in [Stage observations](#stage-observations): headers, 
 
 ## Stage observations
 
-None recorded yet.
+These were observed on stage and are not contract. They may change without notice.
+
+**2026-11-03, two test orders.**
+- **Setup:** the existing deployment on release `94acc764`. One test tenant and its stage seller's connection, with an integrator created and enabled through the CLI.
+- **Test orders:** two, each requested with `meal-webhook-integrator --action test-order`, at 15:29Z and 15:34Z.
+- **Request proof:** the integrator's TLS ClientHello named only `stageapi.tgoapis.com`. Both API hosts resolve to the same Cloudflare addresses, so an address alone does not show which one is used.
+
+| Topic | Observed |
+|---|---|
+| Events sent | Only `created`, one per test order. No other event followed within 10 minutes; both orders stayed `Created` (Wasla New) |
+| Duplicates | Every `created` was delivered **twice**, the copies within 0.1 s of each other. For the first order the second copy came while the first was still being answered, so it was not a retry after a slow or failed answer. Both copies had the same package id and `timestamp`, so they deduplicated to one event with `Deliveries=2` |
+| Authentication and content type | The configured header secret was accepted (no 401), and the body was accepted as `application/json` (no 415). The request's user agent was `fasthttp` |
+| Acknowledgement | 200 with an empty body. No delivery was repeated after a 200 |
+| Answer time | The first order's two deliveries took 2.8 s and 3.3 s to answer. These were the first stored events after the Api started, so a cold start is the likely cause. The second order's took 106 ms and 59 ms, inside the registered 5000 ms timeout |
+| Package id and `timestamp` | The package `id` is a 64-character hex string, not a number. `orderCode` is numeric. `timestamp` was an integer about 1 s before receipt, and it was used as the event time |
+| Seller and store | The `created` payload's `supplierId` and `storeId` matched the configured seller and store, so no event was Rejected |
+| Processing | Each event reached Processed / `Reconciled` on the first attempt, 1 to 4 s after receipt. The targeted reconciliation found the test package on the stage API and created the order; the polling passes before and after it imported nothing |
+| Orders | Exactly one order per package, with no duplicate idempotency key. Both orders appeared on the tenant's Live Screen |
+
+Not yet observed: retry timing after a failure or non-2xx answer, event ordering, and the status events (`cancelled`, `unsupplied`, `shipped`, `delivered`).
 
 ## Related docs
 
