@@ -17,6 +17,12 @@ public static class WaslaAuthContracts
     public const string TenantSecurityStampClaim = "Wasla.TenantSecurityStamp";
 
     /// <summary>
+    /// The id of the tenant login session the cookie was issued for (WAS-114). A tenant session is accepted only while
+    /// that session exists for the cookie's user in the tenant database and has not been revoked by logout.
+    /// </summary>
+    public const string TenantSessionIdClaim = "Wasla.TenantSessionId";
+
+    /// <summary>
     /// The Central Admin's security stamp at sign-in. A Central Admin session whose stamp no longer matches the admin's
     /// row in CentralDb is rejected.
     /// </summary>

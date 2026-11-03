@@ -119,6 +119,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<ITenantLoginRecorder, TenantLoginRecorder>();
         services.AddScoped<ITenantSessionValidator, TenantSessionValidator>();
+        services.AddScoped<ITenantSessionRegistry, TenantSessionRegistry>();
         services.AddScoped<IPasswordPolicy, DefaultPasswordPolicy>();
         services.AddScoped<ITenantPasswordResetService, TenantPasswordResetService>();
         services.AddScoped<ITenantUserRoleService, TenantUserRoleService>();

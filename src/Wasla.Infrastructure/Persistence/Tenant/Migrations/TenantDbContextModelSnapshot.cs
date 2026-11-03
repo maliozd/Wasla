@@ -951,6 +951,28 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserProductTourCompletions", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_TenantSessions_UserId");
+
+                    b.ToTable("TenantSessions", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.GuidedDemoSession", b =>
                 {
                     b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
@@ -1037,6 +1059,15 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Customer.Order", b =>

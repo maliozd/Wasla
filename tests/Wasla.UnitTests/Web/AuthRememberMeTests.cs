@@ -12,6 +12,7 @@ using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.UnitTests.Auth;
 using Wasla.Web.Areas.Admin.Models;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Security;
@@ -280,9 +281,11 @@ public sealed class AuthRememberMeTests
     public async Task Tenant_Logout_DoesNotClearCentralAdminCookie()
     {
         var authentication = new CapturingAuthenticationService();
-        var controller = CreateTenantController(authenticationService: authentication);
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
+        var controller = CreateTenantController(tenant, authenticationService: authentication);
+        controller.HttpContext.User = InMemoryTenantSessionRegistry.SessionPrincipal(tenant.Id, Guid.NewGuid(), Guid.NewGuid());
 
-        await controller.Logout();
+        await controller.Logout(TestContext.Current.CancellationToken);
 
         Assert.Single(controller.Response.Headers.SetCookie);
         var setCookieHeaders = controller.Response.Headers.SetCookie.ToString();
@@ -324,6 +327,7 @@ public sealed class AuthRememberMeTests
             new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
             new NoopLoginRecorder(),
+            new InMemoryTenantSessionRegistry(),
             new FakeSignupCompletionTokenService(),
             new FakeTenantPasswordResetService(),
             new DashboardLandingPages(),

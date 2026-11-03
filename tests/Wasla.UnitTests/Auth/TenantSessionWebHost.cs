@@ -22,6 +22,7 @@ using Microsoft.Extensions.Options;
 using SetCookieHeaderValue = Microsoft.Net.Http.Headers.SetCookieHeaderValue;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Central;
@@ -53,23 +54,24 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
 
     private readonly WebApplication _app;
     private readonly string _contentRoot;
-    private readonly CentralTestDatabase _central;
+    private readonly TenantSessionStorage _storage;
+    private readonly bool _ownsStorage;
 
     private TenantSessionWebHost(
         WebApplication app,
         string contentRoot,
-        CentralTestDatabase central,
+        TenantSessionStorage storage,
+        bool ownsStorage,
         RecordingTenantDbFactory tenants,
-        Guid alphaId,
-        Guid betaId,
         CapturingLoggerProvider logs)
     {
         _app = app;
         _contentRoot = contentRoot;
-        _central = central;
+        _storage = storage;
+        _ownsStorage = ownsStorage;
         Tenants = tenants;
-        AlphaId = alphaId;
-        BetaId = betaId;
+        AlphaId = storage.AlphaId;
+        BetaId = storage.BetaId;
         Logs = logs;
         BaseAddress = new Uri(app.Urls.First());
     }
@@ -86,13 +88,17 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
 
     public IServiceProvider Services => _app.Services;
 
-    public CentralTestDatabase Central => _central;
+    public CentralTestDatabase Central => _storage.Central;
 
     /// <summary>
     /// Starts the host. With <paramref name="sharedDataProtectionKeys"/>, Data Protection uses application name
     /// <c>Wasla</c> and that key folder, as Web and Api do when an operator points both at one key ring; otherwise the
     /// keys are ephemeral and private to this host.
     /// </summary>
+    /// <param name="storage">
+    /// The databases to run on, owned by the caller and kept when this host stops, so another host (a second instance,
+    /// or this one started again) can use them. Without it the host creates its own and deletes them when disposed.
+    /// </param>
     /// <param name="configuration">Extra configuration, for example rate limits or trusted proxies.</param>
     /// <param name="configureServices">Runs after the application's registrations, to wrap or replace a service.</param>
     /// <param name="withoutWebRoot">
@@ -103,14 +109,13 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         DirectoryInfo? sharedDataProtectionKeys = null,
         IReadOnlyDictionary<string, string?>? configuration = null,
         Action<IServiceCollection>? configureServices = null,
-        bool withoutWebRoot = false)
+        bool withoutWebRoot = false,
+        TenantSessionStorage? storage = null)
     {
-        var central = new CentralTestDatabase();
-        var tenants = new RecordingTenantDbFactory();
-        var alpha = central.AddTenant("alpha");
-        var beta = central.AddTenant("beta");
-        tenants.CreateTenantDatabase(alpha.Id);
-        tenants.CreateTenantDatabase(beta.Id);
+        var ownsStorage = storage is null;
+        storage ??= new TenantSessionStorage();
+        var central = storage.Central;
+        var tenants = storage.OpenTenants();
 
         var contentRoot = Directory.CreateTempSubdirectory("wasla-session-host-").FullName;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -215,7 +220,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         app.EnableWaslaTenantLandingPages();
 
         await app.StartAsync();
-        return new TenantSessionWebHost(app, contentRoot, central, tenants, alpha.Id, beta.Id, logs);
+        return new TenantSessionWebHost(app, contentRoot, storage, ownsStorage, tenants, logs);
     }
 
     public TenantSessionClient Client(string host) => new(BaseAddress, host);
@@ -256,24 +261,64 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
     /// <summary>
     /// Builds a tenant auth cookie value the way the cookie handler does (the scheme's own ticket format and
     /// Data Protection keys), for principals the login flow does not produce: missing or malformed claims, an old
-    /// issue time. The real handler reads it back on the next request.
+    /// issue time. The real handler reads it back on the next request. It protects exactly the given claims and writes
+    /// nothing: a cookie that should be valid needs a stored session (<see cref="SeedSession"/>) named by its claims.
     /// </summary>
     public string ProtectTenantCookie(IEnumerable<Claim> claims, DateTimeOffset issuedUtc, DateTimeOffset expiresUtc)
     {
-        var options = _app.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(AuthSchemes.Tenant);
         var ticket = new AuthenticationTicket(
             new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.Tenant)),
             new AuthenticationProperties { IssuedUtc = issuedUtc, ExpiresUtc = expiresUtc },
             AuthSchemes.Tenant);
-        return options.TicketDataFormat.Protect(ticket);
+        return TenantCookieOptions().TicketDataFormat.Protect(ticket);
     }
 
+    /// <summary>
+    /// Reads a tenant auth cookie value back with this host's ticket format and keys, as the cookie handler does before
+    /// validation (expiry is not checked here). Null when the value is not a ticket this host can read.
+    /// </summary>
+    public AuthenticationTicket? UnprotectTenantCookie(string cookieValue) =>
+        TenantCookieOptions().TicketDataFormat.Unprotect(cookieValue);
+
+    /// <summary>
+    /// Deliberately stores a login session for the user, as a sign-in does, so that a cookie built with
+    /// <see cref="ProtectTenantCookie"/> naming it can be valid. With <paramref name="revokedAtUtc"/> it is stored as
+    /// already logged out. Returns the session id.
+    /// </summary>
+    public Guid SeedSession(Guid tenantId, Guid userId, Guid? id = null, DateTime? revokedAtUtc = null)
+    {
+        var session = new TenantSession
+        {
+            Id = id ?? Guid.NewGuid(),
+            UserId = userId,
+            CreatedAtUtc = DateTime.UtcNow,
+            RevokedAtUtc = revokedAtUtc
+        };
+        Tenants.Seed(tenantId, db => db.TenantSessions.Add(session));
+        return session.Id;
+    }
+
+    /// <summary>Every stored login session of the tenant, oldest first.</summary>
+    public IReadOnlyList<TenantSession> ReadSessions(Guid tenantId)
+    {
+        using var db = new TenantDbContext(new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(Tenants.ConnectionStringFor(tenantId)).Options);
+        return db.TenantSessions.AsNoTracking().AsEnumerable().OrderBy(s => s.CreatedAtUtc).ToList();
+    }
+
+    private CookieAuthenticationOptions TenantCookieOptions() =>
+        _app.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(AuthSchemes.Tenant);
+
+    /// <summary>
+    /// Stops the host and disposes its service provider. Databases it created itself are deleted; a caller's
+    /// <see cref="TenantSessionStorage"/> is left as it is.
+    /// </summary>
     public async ValueTask DisposeAsync()
     {
         await _app.StopAsync();
         await _app.DisposeAsync();
         Tenants.Dispose();
-        _central.Dispose();
+        if (_ownsStorage)
+            _storage.Dispose();
         try { Directory.Delete(_contentRoot, recursive: true); } catch (IOException) { }
     }
 }
@@ -346,14 +391,14 @@ internal sealed class TenantSessionClient : IDisposable
     /// one depends on the role, see <c>TenantPostLoginRedirectTests</c>), or to the login page for a session that may
     /// open none (obsolete Staff).
     /// </summary>
-    public async Task LoginAsync(string email, string password = TenantSessionWebHost.Password)
+    public async Task LoginAsync(string email, string password = TenantSessionWebHost.Password, bool rememberMe = false)
     {
         var token = await AntiforgeryTokenAsync("/auth/login");
         var response = await PostFormAsync("/auth/login",
         [
             new("Email", email),
             new("Password", password),
-            new("RememberMe", "false"),
+            new("RememberMe", rememberMe ? "true" : "false"),
             new("__RequestVerificationToken", token)
         ]);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

@@ -9,9 +9,10 @@ namespace Wasla.Infrastructure.Services;
 
 /// <summary>
 /// Tenant session validation for Wasla.Web and Wasla.Api. Claims and the tenant match are checked first, so a cookie
-/// that is malformed or belongs to another tenant never opens a database. Then one primary-key read of the resolved
-/// tenant's database, projecting only the account state. It opens only the database of the tenant it is given and
-/// caches nothing.
+/// that is malformed or belongs to another tenant never opens a database. Then one query against the resolved tenant's
+/// database: a primary-key read of the user projecting only the account state, with the state of the cookie's login
+/// session for that user (primary-key existence checks on <c>TenantSessions</c>). It opens only the database of the
+/// tenant it is given, caches nothing and writes nothing.
 /// </summary>
 public sealed class TenantSessionValidator : ITenantSessionValidator
 {
@@ -53,10 +54,18 @@ public sealed class TenantSessionValidator : ITenantSessionValidator
     {
         await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
+        // The session must belong to this user: a session id issued to another user of the tenant counts as not found.
         var user = await db.AppUsers
             .AsNoTracking()
             .Where(u => u.Id == session.UserId)
-            .Select(u => new { u.IsActive, u.Role, u.SecurityStamp })
+            .Select(u => new
+            {
+                u.IsActive,
+                u.Role,
+                u.SecurityStamp,
+                SessionFound = db.TenantSessions.Any(s => s.Id == session.SessionId && s.UserId == u.Id),
+                SessionActive = db.TenantSessions.Any(s => s.Id == session.SessionId && s.UserId == u.Id && s.RevokedAtUtc == null)
+            })
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
@@ -72,6 +81,12 @@ public sealed class TenantSessionValidator : ITenantSessionValidator
         // A role edited without a new stamp (for example directly in the database) is not trusted either.
         if (user.Role != session.Role)
             return TenantSessionState.RoleChanged;
+
+        if (!user.SessionFound)
+            return TenantSessionState.SessionNotFound;
+
+        if (!user.SessionActive)
+            return TenantSessionState.SessionRevoked;
 
         return TenantSessionState.Valid;
     }

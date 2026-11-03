@@ -253,9 +253,27 @@ internal sealed class SqliteSchemaTenantDbContext(DbContextOptions<TenantDbConte
 /// </summary>
 internal sealed class RecordingTenantDbFactory : ITenantDbContextFactory, IDisposable
 {
-    private readonly string _directory = Directory.CreateTempSubdirectory("wasla-tenants-").FullName;
+    private readonly string _directory;
+    private readonly bool _ownsDirectory;
     private readonly ConcurrentQueue<Guid> _opened = new();
     private readonly ConcurrentDictionary<Guid, Func<CancellationToken, Task<TenantDbContext>>> _overrides = new();
+
+    /// <summary>Over a new temporary folder, deleted when this factory is disposed.</summary>
+    public RecordingTenantDbFactory()
+        : this(Directory.CreateTempSubdirectory("wasla-tenants-").FullName, ownsDirectory: true)
+    {
+    }
+
+    /// <summary>
+    /// Over the database files in <paramref name="directory"/>, with its own record of opened tenants and its own
+    /// overrides. With <paramref name="ownsDirectory"/> false the files outlive this factory (see
+    /// <c>TenantSessionStorage</c>).
+    /// </summary>
+    public RecordingTenantDbFactory(string directory, bool ownsDirectory)
+    {
+        _directory = directory;
+        _ownsDirectory = ownsDirectory;
+    }
 
     public IReadOnlyList<Guid> Opened => _opened.ToArray();
 
@@ -309,6 +327,8 @@ internal sealed class RecordingTenantDbFactory : ITenantDbContextFactory, IDispo
     // Pooling=False: closing a connection closes the file, so there is no pool to clear (see OwnedSqlitePools).
     public void Dispose()
     {
+        if (!_ownsDirectory)
+            return;
         try { Directory.Delete(_directory, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }

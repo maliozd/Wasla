@@ -408,6 +408,7 @@ public sealed class TenantLastLoginTests : IDisposable
             new FixedTenant(tenantId),
             new AuthValidationService(_tenants),
             recorder,
+            new InMemoryTenantSessionRegistry(),
             tokens,
             new UnusedPasswordReset(),
             new Wasla.UnitTests.Web.DashboardLandingPages(),

@@ -11,7 +11,9 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Application.Security;
 using Wasla.Domain.Enums;
+using Wasla.UnitTests.Auth;
 using Wasla.Web.Areas.Tenant.Controllers;
 using Wasla.Web.Models.Auth;
 using Wasla.Web.Routing;
@@ -229,7 +231,8 @@ public sealed class AuthControllerPasswordResetTests
             Result = new AuthSessionResult(tenant.Id, userId, "owner@example.test", "Owner User", UserRole.Owner, Guid.NewGuid())
         };
         var auth = new CapturingAuthenticationService();
-        var controller = CreateController(tenant: tenant, authValidation: authValidation, authenticationService: auth);
+        var sessions = new InMemoryTenantSessionRegistry();
+        var controller = CreateController(tenant: tenant, authValidation: authValidation, authenticationService: auth, sessions: sessions);
 
         var result = await controller.Login(new LoginViewModel
         {
@@ -237,6 +240,11 @@ public sealed class AuthControllerPasswordResetTests
             Password = "Password123!",
             RememberMe = true
         }, TestContext.Current.CancellationToken);
+
+        // The login session is stored for this tenant and user, and the cookie names it.
+        var created = Assert.Single(sessions.Created);
+        Assert.Equal((tenant.Id, userId), (created.TenantId, created.UserId));
+        Assert.Equal(created.SessionId.ToString(), auth.SignInPrincipal?.FindFirst(WaslaAuthContracts.TenantSessionIdClaim)?.Value);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/dashboard", redirect.Url);
@@ -276,15 +284,21 @@ public sealed class AuthControllerPasswordResetTests
     }
 
     [Fact]
-    public async Task Logout_ExpiresOnlyTheActiveTenantCookie()
+    public async Task Logout_RevokesTheSignedInSession_AndExpiresOnlyTheActiveTenantCookie()
     {
+        var tenant = Tenant(Guid.NewGuid(), "tenant.app.wasla.local");
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
         var auth = new CapturingAuthenticationService();
-        var controller = CreateController(authenticationService: auth);
+        var sessions = new InMemoryTenantSessionRegistry();
+        var controller = CreateController(tenant: tenant, authenticationService: auth, sessions: sessions);
+        controller.HttpContext.User = InMemoryTenantSessionRegistry.SessionPrincipal(tenant.Id, userId, sessionId);
 
-        var result = await controller.Logout();
+        var result = await controller.Logout(TestContext.Current.CancellationToken);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal("/auth/login", redirect.Url);
+        Assert.Equal((tenant.Id, userId, sessionId), Assert.Single(sessions.Revoked));
         Assert.Contains(AuthSchemes.Tenant, auth.SignOutSchemes);
 
         var setCookie = Assert.Single(controller.Response.Headers.SetCookie)!;
@@ -301,7 +315,8 @@ public sealed class AuthControllerPasswordResetTests
         FakeTenantPasswordResetService? service = null,
         FakeAuthValidationService? authValidation = null,
         CapturingAuthenticationService? authenticationService = null,
-        string environmentName = "Development")
+        string environmentName = "Development",
+        InMemoryTenantSessionRegistry? sessions = null)
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
@@ -317,6 +332,7 @@ public sealed class AuthControllerPasswordResetTests
             new FakeCurrentTenantService(tenant ?? Tenant(Guid.NewGuid(), "tenant.app.wasla.local")),
             authValidation ?? new FakeAuthValidationService(),
             new NoopLoginRecorder(),
+            sessions ?? new InMemoryTenantSessionRegistry(),
             new FakeSignupCompletionTokenService(),
             service ?? new FakeTenantPasswordResetService(),
             new DashboardLandingPages(),

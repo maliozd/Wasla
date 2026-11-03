@@ -10,8 +10,11 @@ namespace Wasla.Infrastructure.Security;
 /// Revalidates every tenant session whenever the tenant cookie is authenticated, in Wasla.Web and Wasla.Api alike
 /// (<see cref="ITenantSessionValidator"/>). A session is accepted only on its own tenant's host, while its user exists
 /// in that tenant's database, is active, still has the security stamp the cookie was issued with and still has the role
-/// the cookie carries. A rejected session is signed out, which deletes the cookie on that host and suppresses sliding
-/// renewal. When no tenant was resolved for the request, the session simply does not authenticate it and the cookie is
+/// the cookie carries, and while the cookie's login session exists for that user and has not been revoked by logout.
+/// A rejected session is signed out, which deletes the cookie on that host and suppresses sliding renewal; it does not
+/// revoke the stored login session (only the logout action does), so a cookie replayed on another tenant's host cannot
+/// end the session on its own host. Renewal re-issues the same claims, so the same login session. When no tenant was
+/// resolved for the request, the session simply does not authenticate it and the cookie is
 /// left alone. If the tenant database cannot be read, <see cref="TenantSessionUnavailableException"/> propagates; the
 /// session is neither accepted, renewed nor deleted. Each application derives from this only for its challenge and
 /// forbid responses. Registered per request (<c>EventsType</c>), so it holds no state across requests.
