@@ -183,6 +183,40 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
         Assert.Equal(OrderStatus.New, await StatusAsync(TrendyolOrderId, ct));
     }
 
+    /// <summary>
+    /// Escape while the reason dialog is still opening (before Bootstrap listens for it) cancels like Cancel: the dialog
+    /// closes once it has opened, a confirmation right after it posts nothing, and Reject opens it again with nothing
+    /// selected.
+    /// </summary>
+    [Fact]
+    public async Task EscapeWhileTheDialogIsStillOpening_CancelsAndAConfirmationAfterItPostsNothing()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
+        Assert.True(await browser.EvaluateAsync<bool>(HoldModalTransitions, ct));
+
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await StepUntilAsync(browser, "!!document.querySelector('#ordersRejectDialog.show')", ct);
+        Assert.Equal("show:ordersRejectDialog", await ModalEventsAsync(browser, ct));
+
+        await ChooseAsync(browser, 622, ct);
+        await browser.PressKeyAsync("Escape", shift: false, ct);
+        await ConfirmAsync(browser, ct);
+        await StepUntilAsync(browser, "window.__modalEvents.includes('hidden:ordersRejectDialog')", ct);
+        Assert.Equal(
+            "show:ordersRejectDialog, shown:ordersRejectDialog, hide:ordersRejectDialog, hidden:ordersRejectDialog",
+            await ModalEventsAsync(browser, ct));
+        // A post would start on hidden, before this read: the recorder counts it when fetch is called.
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+        Assert.Equal(OrderStatus.New, await StatusAsync(TrendyolOrderId, ct));
+
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await StepUntilAsync(browser, "window.__modalEvents.filter(e => e === 'shown:ordersRejectDialog').length === 2", ct);
+        Assert.Equal(0, (await DialogAsync(browser, ct)).GetProperty("checked").GetInt32());
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+    }
+
     /// <summary>Yemeksepeti has no verified reason list: its Reject keeps the plain confirmation and posts no reason.</summary>
     [Fact]
     public async Task LiveScreen_Yemeksepeti_KeepsThePlainConfirmation()

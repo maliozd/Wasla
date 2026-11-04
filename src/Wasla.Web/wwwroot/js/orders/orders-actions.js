@@ -195,12 +195,20 @@
       function onClick(ev) {
         if (ev.target.closest && ev.target.closest("[data-bs-dismiss=\"modal\"]")) close(null);
       }
+      // Escape while the dialog is still opening never reaches Bootstrap (its focus trap and key handling start once
+      // the dialog has opened), so it cancels here, like Cancel. Once open, Bootstrap's own Escape runs first.
+      function onKeydown(ev) {
+        if (ev.key !== "Escape" || closing) return;
+        ev.preventDefault();
+        close(null);
+      }
       function onHide() { closing = true; }
       function onChange() { setInvalid(false); }
       function onShown() { if (!closing && inputs.length) inputs[0].focus(); }
       function onHidden() {
         form.removeEventListener("submit", onSubmit);
         dialog.removeEventListener("click", onClick);
+        document.removeEventListener("keydown", onKeydown);
         dialog.removeEventListener("hide.bs.modal", onHide);
         group.removeEventListener("change", onChange);
         dialog.removeEventListener("shown.bs.modal", onShown);
@@ -209,6 +217,7 @@
       }
       form.addEventListener("submit", onSubmit);
       dialog.addEventListener("click", onClick);
+      document.addEventListener("keydown", onKeydown);
       dialog.addEventListener("hide.bs.modal", onHide);
       group.addEventListener("change", onChange);
       dialog.addEventListener("shown.bs.modal", onShown);
