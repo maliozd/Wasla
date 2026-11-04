@@ -34,15 +34,19 @@
     return (O && typeof O.getMessage === "function" ? O.getMessage(key) : null) || key;
   }
 
-  async function postAction(url, demo) {
+  async function postAction(url, demo, reasonId) {
     const token = getCsrfToken();
     const headers = { "X-Requested-With": "XMLHttpRequest" };
     let body = undefined;
     if (token) headers["RequestVerificationToken"] = token;
-    // Real order actions keep their header-only request; only the guided demo also posts the token as a form field.
-    if (token && demo) {
+    // Real order actions keep their header-only request; only the guided demo also posts the token as a form field,
+    // and a reject with a reason posts the operator's reason.
+    const fields = [];
+    if (token && demo) fields.push("__RequestVerificationToken=" + encodeURIComponent(token));
+    if (reasonId) fields.push("reasonId=" + encodeURIComponent(reasonId));
+    if (fields.length) {
       headers["Content-Type"] = "application/x-www-form-urlencoded";
-      body = "__RequestVerificationToken=" + encodeURIComponent(token);
+      body = fields.join("&");
     }
 
     const resp = await fetch(url, { method: "POST", headers: headers, body: body });
@@ -65,6 +69,161 @@
     if (global.WaslaToast && typeof global.WaslaToast.error === "function") {
       global.WaslaToast.error(message, { key: toastKey });
     }
+  }
+
+  // Reject with a reason (Trendyol GO): the one dialog of the page shows the clicked order's platform group,
+  // preselects nothing, and resolves with the chosen reason id, or null when the operator cancels. Platforms without a
+  // group keep the plain confirmation. The server checks the reason again against the stored order's platform.
+  let rejectDialogOpen = false;
+
+  function rejectReasonGroup(platform) {
+    const dialog = document.querySelector("[data-order-reject-dialog]");
+    if (!dialog || !platform || !global.bootstrap || !global.bootstrap.Modal) return null;
+    const groups = dialog.querySelectorAll("[data-order-reject-reasons]");
+    for (let i = 0; i < groups.length; i++) {
+      if (groups[i].getAttribute("data-order-reject-reasons") === platform) return { dialog: dialog, group: groups[i] };
+    }
+    return null;
+  }
+
+  // Bootstrap ignores hide() (and show()) while a modal is still fading in or out, so the reject flow follows each
+  // modal's own events instead of assuming a hide() takes effect. Listening on document, registered before any waiter
+  // below, records the state before a waiter reacts to the same event, and sees show/hide only once they were allowed.
+  const modalStates = new WeakMap();
+  ["show", "shown", "hide", "hidden"].forEach(function (name) {
+    document.addEventListener(name + ".bs.modal", function (ev) {
+      if (!ev.defaultPrevented) modalStates.set(ev.target, name);
+    });
+  });
+
+  function onceModalEvent(modalEl, name, callback) {
+    function listener(ev) {
+      if (ev.target !== modalEl) return;
+      document.removeEventListener(name + ".bs.modal", listener);
+      callback();
+    }
+    document.addEventListener(name + ".bs.modal", listener);
+  }
+
+  // Resolves true once the modal is hidden: one still opening finishes opening and is then hidden, one already closing
+  // finishes closing. Resolves false when something kept it open.
+  function whenHidden(modalEl) {
+    return new Promise(function (resolve) {
+      function hide() {
+        global.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        const state = modalStates.get(modalEl);
+        if (state === "hide") onceModalEvent(modalEl, "hidden", function () { resolve(true); });
+        else resolve(state === "hidden");
+      }
+      const state = modalEl ? modalStates.get(modalEl) : null;
+      if (state === "show") onceModalEvent(modalEl, "shown", hide);
+      else if (state === "shown") hide();
+      else if (state === "hide") onceModalEvent(modalEl, "hidden", function () { resolve(true); });
+      else resolve(true);
+    });
+  }
+
+  // Where focus goes after the dialog: the Reject button when it is still on the page, otherwise the order's details
+  // button on the Live Screen (the detail modal was closed for the dialog, or the card was re-rendered).
+  function focusAfterReject(btn, orderId) {
+    let target = btn && btn.isConnected && !btn.closest(".modal") ? btn : null;
+    if (!target) {
+      const host = document.getElementById("ordersLiveScreenHost");
+      const details = host ? host.querySelectorAll("[data-order-detail]") : [];
+      for (let i = 0; i < details.length && !target; i++) {
+        if (details[i].getAttribute("data-order-detail") === String(orderId)) target = details[i];
+      }
+      if (!target) target = host;
+    }
+    if (target && typeof target.focus === "function") target.focus({ preventScroll: true });
+  }
+
+  async function chooseRejectReason(found, btn, orderId) {
+    // Bootstrap does not stack modals: a Reject inside the order detail modal closes it first, after it has finished
+    // opening when it is still opening.
+    if (!await whenHidden(btn.closest(".modal"))) return null;
+
+    const dialog = found.dialog;
+    const group = found.group;
+    const form = dialog.querySelector("[data-order-reject-form]");
+    const error = dialog.querySelector("[data-order-reject-error]");
+    const groups = dialog.querySelectorAll("[data-order-reject-reasons]");
+    for (let i = 0; i < groups.length; i++) {
+      const active = groups[i] === group;
+      groups[i].hidden = !active;
+      groups[i].disabled = !active;
+    }
+    const inputs = group.querySelectorAll("input[name=\"reasonId\"]");
+    for (let i = 0; i < inputs.length; i++) {
+      inputs[i].checked = false;
+      inputs[i].removeAttribute("aria-invalid");
+    }
+    if (error) error.hidden = true;
+
+    return new Promise(function (resolve) {
+      const modal = global.bootstrap.Modal.getOrCreateInstance(dialog);
+      let chosen = null;
+      // Set by the first of Reject, Cancel or Escape: later clicks while the dialog fades in or out change nothing.
+      let closing = false;
+
+      function close(reasonId) {
+        if (closing) return;
+        closing = true;
+        chosen = reasonId;
+        // While the dialog is still opening, it closes as soon as it has opened.
+        whenHidden(dialog);
+      }
+      function setInvalid(invalid) {
+        if (error) error.hidden = !invalid;
+        for (let i = 0; i < inputs.length; i++) {
+          if (invalid) inputs[i].setAttribute("aria-invalid", "true");
+          else inputs[i].removeAttribute("aria-invalid");
+        }
+      }
+      function onSubmit(ev) {
+        ev.preventDefault();
+        if (closing) return;
+        const checked = group.querySelector("input[name=\"reasonId\"]:checked");
+        if (!checked) {
+          setInvalid(true);
+          if (inputs.length) inputs[0].focus();
+          return;
+        }
+        close(checked.value);
+      }
+      // Bootstrap's own Cancel handling ignores a click while the dialog is still opening.
+      function onClick(ev) {
+        if (ev.target.closest && ev.target.closest("[data-bs-dismiss=\"modal\"]")) close(null);
+      }
+      // Escape while the dialog is still opening never reaches Bootstrap (its focus trap and key handling start once
+      // the dialog has opened), so it cancels here, like Cancel. Once open, Bootstrap's own Escape runs first.
+      function onKeydown(ev) {
+        if (ev.key !== "Escape" || closing) return;
+        ev.preventDefault();
+        close(null);
+      }
+      function onHide() { closing = true; }
+      function onChange() { setInvalid(false); }
+      function onShown() { if (!closing && inputs.length) inputs[0].focus(); }
+      function onHidden() {
+        form.removeEventListener("submit", onSubmit);
+        dialog.removeEventListener("click", onClick);
+        document.removeEventListener("keydown", onKeydown);
+        dialog.removeEventListener("hide.bs.modal", onHide);
+        group.removeEventListener("change", onChange);
+        dialog.removeEventListener("shown.bs.modal", onShown);
+        focusAfterReject(btn, orderId);
+        resolve(chosen);
+      }
+      form.addEventListener("submit", onSubmit);
+      dialog.addEventListener("click", onClick);
+      document.addEventListener("keydown", onKeydown);
+      dialog.addEventListener("hide.bs.modal", onHide);
+      group.addEventListener("change", onChange);
+      dialog.addEventListener("shown.bs.modal", onShown);
+      dialog.addEventListener("hidden.bs.modal", onHidden, { once: true });
+      modal.show();
+    });
   }
 
   async function handleActionClick(btn) {
@@ -97,7 +256,18 @@
     }
 
     const demo = btn.hasAttribute("data-wasla-demo");
-    if (!demo) {
+    let reasonId = null;
+    const reasons = action === "reject" && !demo ? rejectReasonGroup(btn.getAttribute("data-order-platform")) : null;
+    if (reasons) {
+      if (rejectDialogOpen) return;
+      rejectDialogOpen = true;
+      try {
+        reasonId = await chooseRejectReason(reasons, btn, orderId);
+      } finally {
+        rejectDialogOpen = false;
+      }
+      if (!reasonId) return;
+    } else if (!demo) {
       const ok = global.confirm(localize(confirmTitleKey) + "\n\n" + localize(confirmMessageKey));
       if (!ok) return;
     }
@@ -110,7 +280,7 @@
     try {
       const url = (demo ? "/orders/demo/" : "/orders/")
         + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
-      const result = await postAction(url, demo);
+      const result = await postAction(url, demo, reasonId);
 
       if (!result.resp.ok) {
         var defaultErr =

@@ -1344,6 +1344,30 @@
   <data name="Orders.RejectFailed" xml:space="preserve">
     <value>تعذر رفض الطلب.</value>
   </data>
+  <data name="Orders.RejectReason.Legend" xml:space="preserve">
+    <value>سبب الرفض</value>
+  </data>
+  <data name="Orders.RejectReason.SentToPlatform" xml:space="preserve">
+    <value>يُرسَل السبب الذي تختاره إلى المنصة مع الرفض.</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.621" xml:space="preserve">
+    <value>مشكلة في التوريد</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.622" xml:space="preserve">
+    <value>المتجر مغلق</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.623" xml:space="preserve">
+    <value>لا يستطيع المتجر تحضير الطلب</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.627" xml:space="preserve">
+    <value>التباس في الطلب</value>
+  </data>
+  <data name="Orders.RejectReasonRequired" xml:space="preserve">
+    <value>اختر سببًا لرفض الطلب.</value>
+  </data>
+  <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
+    <value>لا يمكن استخدام هذا السبب لهذا الطلب. اختر أحد الأسباب المدرجة.</value>
+  </data>
   <data name="Orders.InvalidStatusForAction" xml:space="preserve">
     <value>لم يعد هذا الطلب قابلاً للإجراء.</value>
   </data>

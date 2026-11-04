@@ -729,8 +729,9 @@ internal sealed class OrderIngestion
     /// actually stores. Equality is decided before any mutation.
     /// </summary>
     /// <remarks>
-    /// RawPayloadJson is a diagnostic copy of the last provider body. Nothing in the
-    /// application reads it after save, and provider JSON is not canonical: property
+    /// RawPayloadJson is a copy of the last provider body. After save only the Trendyol GO
+    /// reject reads it, for the package's item ids; an item's cancellation changes the
+    /// stored quantity, so the payload is rewritten then. Provider JSON is not canonical: property
     /// order and non-domain metadata change between overlapping polls. A raw-payload-only
     /// difference does not rewrite the order. When any synchronized field changes, the
     /// existing update path still stores the latest payload.

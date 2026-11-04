@@ -1344,6 +1344,30 @@
   <data name="Orders.RejectFailed" xml:space="preserve">
     <value>Заказ не может быть отклонен.</value>
   </data>
+  <data name="Orders.RejectReason.Legend" xml:space="preserve">
+    <value>Причина отклонения</value>
+  </data>
+  <data name="Orders.RejectReason.SentToPlatform" xml:space="preserve">
+    <value>Выбранная причина передаётся платформе вместе с отклонением.</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.621" xml:space="preserve">
+    <value>Проблема с поставкой</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.622" xml:space="preserve">
+    <value>Заведение закрыто</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.623" xml:space="preserve">
+    <value>Заведение не может приготовить заказ</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.627" xml:space="preserve">
+    <value>Путаница в заказе</value>
+  </data>
+  <data name="Orders.RejectReasonRequired" xml:space="preserve">
+    <value>Выберите причину, чтобы отклонить заказ.</value>
+  </data>
+  <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
+    <value>Эту причину нельзя использовать для этого заказа. Выберите одну из причин в списке.</value>
+  </data>
   <data name="Orders.InvalidStatusForAction" xml:space="preserve">
     <value>Этот приказ больше недействителен.</value>
   </data>

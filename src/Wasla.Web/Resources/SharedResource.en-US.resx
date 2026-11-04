@@ -1344,6 +1344,30 @@
   <data name="Orders.RejectFailed" xml:space="preserve">
     <value>Order could not be rejected.</value>
   </data>
+  <data name="Orders.RejectReason.Legend" xml:space="preserve">
+    <value>Reason for rejecting</value>
+  </data>
+  <data name="Orders.RejectReason.SentToPlatform" xml:space="preserve">
+    <value>The reason you choose is sent to the platform with the rejection.</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.621" xml:space="preserve">
+    <value>Supply problem</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.622" xml:space="preserve">
+    <value>Store closed</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.623" xml:space="preserve">
+    <value>Store cannot prepare the order</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.627" xml:space="preserve">
+    <value>Order confusion</value>
+  </data>
+  <data name="Orders.RejectReasonRequired" xml:space="preserve">
+    <value>Choose a reason to reject the order.</value>
+  </data>
+  <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
+    <value>This reason cannot be used for this order. Choose one of the listed reasons.</value>
+  </data>
   <data name="Orders.InvalidStatusForAction" xml:space="preserve">
     <value>This order is no longer actionable.</value>
   </data>

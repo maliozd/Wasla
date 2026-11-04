@@ -125,7 +125,7 @@ public sealed class ProviderRedirectTests
         var outcomes = new[]
         {
             await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None)),
-            await Outcome("TrendyolGo RejectOrder", () => trendyol.RejectOrderAsync(TrendyolConnection("a"), "package-1", ["item-1"], 1, CancellationToken.None)),
+            await Outcome("TrendyolGo RejectOrder", () => trendyol.RejectOrderAsync(TrendyolConnection("a"), TrendyolGoRejectRequestTests.StoredPackageOrder("package-1", "item-1"), 621, CancellationToken.None)),
             await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None)),
             await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b"), Window, CancellationToken.None))
         };

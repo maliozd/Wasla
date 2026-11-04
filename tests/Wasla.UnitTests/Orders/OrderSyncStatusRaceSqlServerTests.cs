@@ -58,7 +58,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
         // Sync read the order as New and merged the provider's Accepted. The operator rejects it now, so the order's
         // UpdatedAt is later than the time sync took before it paused.
-        var rejected = await Operator("operator").TryRejectAsync(_tenantId, orderId, Ct);
+        var rejected = await Operator("operator").TryRejectAsync(_tenantId, orderId, 623, Ct);
         Assert.Equal(new OrderActionResult(true, "Orders.RejectSuccess"), rejected);
         var byOperator = await ReadAsync(orderId);
 
@@ -441,7 +441,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Task.CompletedTask;
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

@@ -856,6 +856,8 @@ function attachBrowser(O, global, api) {
       button.setAttribute("data-order-action", spec.action);
       button.setAttribute("data-order-id", String(order.id));
       if (order.isDemo) button.setAttribute("data-wasla-demo", "true");
+      // Reject opens the reason dialog of the order's platform when it has one (orders-actions.js).
+      if (spec.action === "reject") button.setAttribute("data-order-platform", String(order.platform || ""));
       button.textContent = spec.label;
       container.appendChild(button);
     });
