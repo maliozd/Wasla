@@ -14,7 +14,13 @@ public interface IOrderActionService
 
     /// <summary>New → Preparing via IFoodPlatformClient.AcceptOrderAsync: accepting an order starts its preparation.</summary>
     Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct);
-    Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct);
+
+    /// <summary>
+    /// New → Cancelled on the provider, then locally. <paramref name="reasonId"/> is the operator's choice from
+    /// <see cref="Wasla.Application.Orders.OrderRejectReasons.For"/> for the stored order's platform, or null for a
+    /// platform without reasons. A missing or unsupported reason is refused before the provider is called.
+    /// </summary>
+    Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct);
 
     /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
     Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);

@@ -71,7 +71,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
 
             var results = await RaceAsync(6, i => i % 2 == 0
                 ? Instance($"approve-{i}").TryApproveAsync(_tenantId, orderId, Ct)
-                : Instance($"reject-{i}").TryRejectAsync(_tenantId, orderId, Ct));
+                : Instance($"reject-{i}").TryRejectAsync(_tenantId, orderId, 623, Ct));
 
             var winner = Assert.Single(results, r => r.Succeeded);
             Assert.All(results.Where(r => !r.Succeeded), r => Assert.Equal(InvalidStatus, r.MessageKey));
@@ -112,8 +112,8 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         var losers = Task.WhenAll(
             Instance("same-1").TryApproveAsync(_tenantId, orderId, Ct),
             Instance("same-2").TryApproveAsync(_tenantId, orderId, Ct),
-            Instance("conflict-1").TryRejectAsync(_tenantId, orderId, Ct),
-            Instance("conflict-2").TryRejectAsync(_tenantId, orderId, Ct));
+            Instance("conflict-1").TryRejectAsync(_tenantId, orderId, 623, Ct),
+            Instance("conflict-2").TryRejectAsync(_tenantId, orderId, 623, Ct));
         var finished = await Task.WhenAny(losers, Task.Delay(LoserDeadline, Ct));
         _provider.ReleaseHeldCall();
 
@@ -156,7 +156,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
                 }
 
                 var result = operatorRejects
-                    ? await Instance($"operator-{i}").TryRejectAsync(_tenantId, orderId, Ct)
+                    ? await Instance($"operator-{i}").TryRejectAsync(_tenantId, orderId, 623, Ct)
                     : await Instance($"operator-{i}").TryApproveAsync(_tenantId, orderId, Ct);
                 operatorResults.Add(result);
                 return result;
@@ -221,7 +221,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         await _provider.FirstCallEntered.WaitAsync(LoserDeadline, Ct);
         var during = Task.WhenAll(
             Instance("during-1").TryApproveAsync(_tenantId, orderId, Ct),
-            Instance("during-2").TryRejectAsync(_tenantId, orderId, Ct));
+            Instance("during-2").TryRejectAsync(_tenantId, orderId, 623, Ct));
         var finished = await Task.WhenAny(during, Task.Delay(LoserDeadline, Ct));
         _provider.ReleaseHeldCall();
 
@@ -471,7 +471,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "invoiced");
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "shipped");
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "delivered");
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Act(externalOrderId, "reject");
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act(order.ExternalOrderId, "reject");
 
         private async Task Act(string externalOrderId, string action)
         {

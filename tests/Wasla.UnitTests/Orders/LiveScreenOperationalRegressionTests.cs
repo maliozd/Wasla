@@ -89,11 +89,16 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         var actions = CreateActions(client);
         var orderId = await SeedOrderAsync(OrderStatus.New);
 
-        var rejected = await actions.TryRejectAsync(_tenantId, orderId, Ct);
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, 623, Ct);
 
         Assert.True(rejected.Succeeded);
         Assert.Equal("Orders.RejectSuccess", rejected.MessageKey);
         Assert.Equal(new[] { "reject" }, client.Calls);
+        // The provider client receives the stored order: it derives the provider's item ids from its raw payload.
+        Assert.Equal(orderId, client.RejectedOrder?.Id);
+        Assert.Equal("ORDER-1", client.RejectedOrder?.ExternalOrderId);
+        Assert.Equal("{}", client.RejectedOrder?.RawPayloadJson);
+        Assert.Equal(623, client.RejectReasonId);
         await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
 
         var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
@@ -102,6 +107,106 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         Assert.Equal(0, await db.PrintJobs.CountAsync(Ct));
+    }
+
+    [Theory]
+    [InlineData(621)]
+    [InlineData(622)]
+    [InlineData(623)]
+    [InlineData(627)]
+    public async Task Reject_TrendyolGo_PassesTheChosenReasonToTheProvider(int reasonId)
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, reasonId, Ct);
+
+        Assert.True(rejected.Succeeded);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        Assert.Equal(reasonId, client.RejectReasonId);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
+    }
+
+    /// <summary>
+    /// Trendyol GO requires one of its platform-courier restaurant reasons: no reason, a restaurant-courier reason (624,
+    /// 626) or any other id is refused before the provider is called, and the order stays New.
+    /// </summary>
+    [Theory]
+    [InlineData(null, OrderRejectReasons.ReasonRequiredKey)]
+    [InlineData(0, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(624, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(626, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(601, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(999, OrderRejectReasons.ReasonNotSupportedKey)]
+    public async Task Reject_TrendyolGo_WithAMissingOrUnsupportedReason_ChangesNothing(int? reasonId, string expectedKey)
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, reasonId, Ct);
+
+        Assert.False(rejected.Succeeded);
+        Assert.Equal(expectedKey, rejected.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+    }
+
+    /// <summary>
+    /// Platforms without a verified reason list keep their reject: no reason is passed, and a reason sent anyway is
+    /// refused rather than invented for them.
+    /// </summary>
+    [Theory]
+    [InlineData(FoodPlatform.Yemeksepeti)]
+    [InlineData(FoodPlatform.GetirYemek)]
+    public async Task Reject_OtherPlatforms_TakeNoReason(FoodPlatform platform)
+    {
+        var client = new RecordingPlatformClient(platform);
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New, platform: platform);
+
+        var withReason = await actions.TryRejectAsync(_tenantId, orderId, 623, Ct);
+        Assert.False(withReason.Succeeded);
+        Assert.Equal(OrderRejectReasons.ReasonNotSupportedKey, withReason.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, null, Ct);
+        Assert.True(rejected.Succeeded);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        Assert.Null(client.RejectReasonId);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
+    }
+
+    [Fact]
+    public async Task Reject_WhenTheProviderFails_LeavesTheOrderNew()
+    {
+        var client = new RecordingPlatformClient { Failure = new InvalidOperationException("provider refused") };
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var result = await actions.TryRejectAsync(_tenantId, orderId, 622, Ct);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Orders.RejectFailed", result.MessageKey);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+    }
+
+    [Fact]
+    public async Task Reject_Repeated_CallsTheProviderOnce()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        Assert.True((await actions.TryRejectAsync(_tenantId, orderId, 621, Ct)).Succeeded);
+        var again = await actions.TryRejectAsync(_tenantId, orderId, 621, Ct);
+
+        Assert.False(again.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", again.MessageKey);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
     }
 
     [Fact]
@@ -339,7 +444,8 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         int copyCount = 1,
         string? itemNotes = null,
         string? optionName = null,
-        string externalOrderId = "ORDER-1")
+        string externalOrderId = "ORDER-1",
+        FoodPlatform platform = FoodPlatform.TrendyolYemek)
     {
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         if (!await db.TenantOperationalSettings.AnyAsync(Ct))
@@ -356,12 +462,12 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             });
         }
 
-        if (!await db.PlatformConnections.AnyAsync(Ct))
+        if (!await db.PlatformConnections.AnyAsync(c => c.Platform == platform, Ct))
         {
             db.PlatformConnections.Add(new PlatformConnection
             {
                 Id = Guid.NewGuid(),
-                Platform = FoodPlatform.TrendyolYemek,
+                Platform = platform,
                 StoreId = "store-1",
                 EncryptedApiKey = "enc-key",
                 EncryptedApiSecret = "enc-secret",
@@ -399,10 +505,10 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         db.Orders.Add(new Order
         {
             Id = orderId,
-            Platform = FoodPlatform.TrendyolYemek,
+            Platform = platform,
             ExternalOrderId = externalOrderId,
             ExternalOrderCode = "TY-" + externalOrderId,
-            IdempotencyKey = $"TrendyolYemek:{externalOrderId}:{_tenantId:N}",
+            IdempotencyKey = $"{platform}:{externalOrderId}:{_tenantId:N}",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Test Customer",
@@ -463,12 +569,14 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         return directory?.FullName ?? throw new InvalidOperationException("Repository root was not found.");
     }
 
-    private sealed class RecordingPlatformClient : IFoodPlatformClient
+    private sealed class RecordingPlatformClient(FoodPlatform platform = FoodPlatform.TrendyolYemek) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public FoodPlatform Platform => platform;
         public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
+        public Order? RejectedOrder { get; private set; }
+        public int? RejectReasonId { get; private set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
@@ -490,11 +598,14 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
         public Task RejectOrderAsync(
             PlatformConnection connection,
-            string externalOrderId,
-            IReadOnlyList<string> itemIdList,
-            int reasonId,
-            CancellationToken ct) =>
-            Record("reject");
+            Order order,
+            int? reasonId,
+            CancellationToken ct)
+        {
+            RejectedOrder = order;
+            RejectReasonId = reasonId;
+            return Record("reject");
+        }
 
         private Task Record(string name)
         {

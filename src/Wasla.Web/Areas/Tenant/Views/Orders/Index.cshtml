@@ -155,6 +155,8 @@
 
 </div>
 
+@await Html.PartialAsync("_OrderRejectDialog")
+
 <form id="ordersCsrfForm" class="d-none">
     @Html.AntiForgeryToken()
 </form>
@@ -183,6 +185,8 @@
                 ["ordersApproveFailed"] = L["Orders.ApproveFailed"].Value,
                 ["ordersRejectSuccess"] = L["Orders.RejectSuccess"].Value,
                 ["ordersRejectFailed"] = L["Orders.RejectFailed"].Value,
+                ["ordersRejectReasonRequired"] = L["Orders.RejectReasonRequired"].Value,
+                ["ordersRejectReasonNotSupported"] = L["Orders.RejectReasonNotSupported"].Value,
                 ["ordersInvalidStatusForAction"] = L["Orders.InvalidStatusForAction"].Value,
                 ["ordersActionFailed"] = L["Orders.ActionFailed"].Value,
                 ["ordersOrderActionFailed"] = L["Orders.OrderActionFailed"].Value,

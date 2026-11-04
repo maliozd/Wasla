@@ -289,7 +289,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
 
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
 
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
@@ -308,7 +308,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         }
 
         public Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
