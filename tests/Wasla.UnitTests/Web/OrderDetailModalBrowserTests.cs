@@ -124,7 +124,7 @@ public sealed class OrderDetailModalBrowserTests : IAsyncLifetime
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync("ru-RU", width, height, "light", ct);
-        foreach (var id in new[] { OrderDetailModalSeed.AcceptedOrderId, OrderDetailModalSeed.StandardOrderId })
+        foreach (var id in new[] { OrderDetailModalSeed.ApprovedOrderId, OrderDetailModalSeed.StandardOrderId })
         {
             await OpenAsync(browser, id, ct);
             var clipped = await browser.EvaluateAsync<string[]>("""
@@ -327,7 +327,7 @@ internal static class OrderDetailModalSeed
 {
     public static readonly Guid StandardOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d1");
     public static readonly Guid LongOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d2");
-    public static readonly Guid AcceptedOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d3");
+    public static readonly Guid ApprovedOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d3");
     public static readonly Guid NoProviderTimeOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d4");
     public static readonly Guid SecondNewOrderId = Guid.Parse("82000000-0000-4000-8000-0000000000d5");
 
@@ -358,7 +358,7 @@ internal static class OrderDetailModalSeed
                 Item("Şalgam (Acılı)", 1, 55m, null),
                 Item("Su (0,5 L)", 1, 20m, null),
                 Item("Kola (Kutu)", 1, 60m, null)),
-            Order(AcceptedOrderId, FoodPlatform.Yemeksepeti, "YS-30418", OrderStatus.Accepted, now.AddMinutes(-3), providerTime: true,
+            Order(ApprovedOrderId, FoodPlatform.Yemeksepeti, "YS-30418", OrderStatus.Preparing, now.AddMinutes(-3), providerTime: true,
                 "Mert Kaya", "+90 500 000 00 02", "Moda Mah. Örnek Sok. No: 3, Kadıköy / İstanbul", null,
                 PaymentMethod.Cash, deliveryFee: 15m, serviceFee: 5m, total: 955m,
                 Item("Izgara Köfte Porsiyon", 1, 320m, null, ("Ekstra pilav", 40m)),

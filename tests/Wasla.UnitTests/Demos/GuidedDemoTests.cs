@@ -58,17 +58,8 @@ public sealed class GuidedDemoTransitionTests
         Assert.Equal(OrderStatus.ReadyForPickup, ready);
     }
 
-    [Fact]
-    public void APracticeOrderStoredAsAccepted_IsMarkedReadyDirectly()
-    {
-        Assert.True(GuidedDemoTransitions.TryMove(OrderStatus.Accepted, "mark-ready", out var ready, out var key));
-        Assert.Equal(OrderStatus.ReadyForPickup, ready);
-        Assert.Equal("Orders.MarkReadySuccess", key);
-    }
-
     [Theory]
     [InlineData(OrderStatus.New)]
-    [InlineData(OrderStatus.Accepted)]
     [InlineData(OrderStatus.Preparing)]
     public void StartPreparing_IsNoLongerAnAction(OrderStatus current)
     {
@@ -411,7 +402,7 @@ public sealed class GuidedDemoServiceTests : IDisposable
         Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.PickUp, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.ReadyForPickup, entered));
         Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Deliver, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.OnTheWay, entered));
         Assert.Equal(new GuidedDemoAutomaticStep(GuidedDemoTiming.Leave, entered.AddSeconds(20)), GuidedDemoTiming.StepFor(OrderStatus.Delivered, entered));
-        foreach (var manual in new[] { OrderStatus.New, OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.Cancelled })
+        foreach (var manual in new[] { OrderStatus.New, OrderStatus.Preparing, OrderStatus.Cancelled })
             Assert.Null(GuidedDemoTiming.StepFor(manual, entered));
         // Real delivered orders keep their own, longer Live Screen window.
         Assert.Equal(TimeSpan.FromMinutes(2), LiveScreenVisibility.RecentDeliveredWindow);

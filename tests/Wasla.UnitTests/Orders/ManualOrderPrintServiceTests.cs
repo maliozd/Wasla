@@ -442,7 +442,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
             ExternalOrderId = "ORDER-1",
             ExternalOrderCode = "TY-ORDER-1",
             IdempotencyKey = $"TrendyolYemek:ORDER-1:{tenantId:N}",
-            InternalStatus = OrderStatus.Accepted,
+            InternalStatus = OrderStatus.Preparing,
             PlatformStatus = "Picking",
             CustomerName = "Test Customer",
             CustomerPhone = "+905555555555",

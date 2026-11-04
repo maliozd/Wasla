@@ -447,8 +447,6 @@ public sealed class OrdersController : BaseController
         CancellationToken ct,
         bool includeLineItems = false)
     {
-        // The legacy Accepted status is filtered as Preparing, which includes it (OrderPreparation).
-        status = status is { } requested ? OrderPreparation.Displayed(requested) : null;
         var (safePage, safePageSize) = NormalizePaging(page, pageSize);
         DefaultDateRangeIfNoDates(ref startDate, ref endDate, useHistoryDefaults);
 
@@ -568,7 +566,7 @@ public sealed class OrdersController : BaseController
             Platform = order.Platform,
             ExternalOrderId = order.ExternalOrderId,
             ExternalOrderCode = order.ExternalOrderCode,
-            Status = OrderPreparation.Displayed(order.Status),
+            Status = order.Status,
             CustomerName = order.CustomerName,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = order.CustomerAddress,
@@ -760,7 +758,7 @@ public sealed class OrdersController : BaseController
                 ExternalOrderCode = o.ExternalOrderCode,
                 CustomerName = o.CustomerName,
                 TotalAmount = o.TotalAmount,
-                Status = OrderPreparation.Displayed(o.Status),
+                Status = o.Status,
                 ReceivedAtUtc = o.ReceivedAtUtc,
                 ReceivedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(
                     DateTime.SpecifyKind(o.ReceivedAtUtc, DateTimeKind.Utc),

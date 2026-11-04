@@ -17,7 +17,7 @@ public static class GuidedDemoTiming
 
     /// <summary>
     /// How soon Wasla.Worker's demo scheduler looks again at a tenant whose practice order still waits for its user's
-    /// own steps (New, Accepted, Preparing), so a new Ready stage is found long before its deadline.
+    /// own steps (New, Preparing), so a new Ready stage is found long before its deadline.
     /// </summary>
     public static readonly TimeSpan UserStepCheckInterval = TimeSpan.FromSeconds(5);
 

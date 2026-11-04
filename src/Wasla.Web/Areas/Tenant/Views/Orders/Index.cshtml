@@ -75,8 +75,7 @@
                 <label class="form-label" for="statusSelect">@L["Orders.Status"]</label>
                 <select id="statusSelect" class="form-select" name="status">
                     <option value="">@L["Common.AllStatuses"]</option>
-                    @* Accepted is not offered: Wasla no longer writes it, and Preparing includes it (OrderPreparation). *@
-                    @foreach (var s in Enum.GetValues<OrderStatus>().Where(s => s != OrderStatus.Accepted))
+                    @foreach (var s in Enum.GetValues<OrderStatus>())
                     {
                         if (f.Status == s)
                         {

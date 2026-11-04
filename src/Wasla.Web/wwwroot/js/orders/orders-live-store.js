@@ -20,7 +20,6 @@
 
   const ACTIVE_STATUSES = {
     New: true,
-    Accepted: true,
     Preparing: true,
     ReadyForPickup: true,
     OnTheWay: true
@@ -188,7 +187,6 @@
 
   const SUPPORTED_STATUSES = {
     New: true,
-    Accepted: true,
     Preparing: true,
     ReadyForPickup: true,
     OnTheWay: true,
@@ -827,7 +825,7 @@ function attachBrowser(O, global, api) {
         { action: "reject", className: "btn btn-outline-danger btn-lg", label: message("ordersReject") }
       ];
     }
-    // Approve starts preparation (WAS-185): the snapshot shows a legacy Accepted order as Preparing.
+    // Approve starts preparation (WAS-185), so a preparing order is marked ready directly.
     if (status === "Preparing") return [{ action: "mark-ready", className: "btn btn-primary btn-lg", label: message("ordersMarkReady") }];
     // Mark ready is the restaurant's last action: the platform courier reports OnTheWay and
     // Delivered through provider sync, so ReadyForPickup and OnTheWay have no action.

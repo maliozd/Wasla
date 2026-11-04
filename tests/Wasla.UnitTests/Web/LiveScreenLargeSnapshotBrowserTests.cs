@@ -22,9 +22,9 @@ namespace Wasla.UnitTests.Web;
 public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScreenLargeSnapshotBrowserTests.LargeHost>
 {
     private const int PageSize = 100;
-    // The seeded New orders and the host's own New order. Legacy Accepted orders are shown in Preparing (WAS-185).
+    // The seeded New orders and the host's own New order; the seeded Preparing orders and the host's two.
     private const int NewColumn = LargeActiveOrderSeed.NewOrders + 1;
-    private const int PreparingColumn = LargeActiveOrderSeed.AcceptedOrders + 2;
+    private const int PreparingColumn = LargeActiveOrderSeed.PreparingOrders + 2;
 
     // Counts and optionally slows down or fails the page's snapshot requests; everything else passes through.
     private const string SnapshotProbe = """
@@ -125,8 +125,8 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
         // No recently delivered order: it would leave the screen by itself during the class (see LargeActiveOrderSeed).
         Assert.Equal(0, page.GetProperty("completed").GetInt32());
         Assert.Equal(page.GetProperty("cards").GetInt32(), page.GetProperty("unique").GetInt32());
-        // The legacy Accepted orders are shown in Preparing (WAS-185) with the host's own Accepted and Preparing
-        // order, so that column is paged too: one page each, plus the host's other active orders.
+        // The seeded Preparing orders and the host's two page that column too: one page each, plus the host's other
+        // active orders.
         Assert.Equal(PreparingColumn.ToString(CultureInfo.InvariantCulture), page.GetProperty("preparingCount").GetString());
         Assert.InRange(page.GetProperty("cards").GetInt32(), 2 * PageSize, 2 * PageSize + 10);
         Assert.Equal(2, page.GetProperty("otherMore").GetInt32());

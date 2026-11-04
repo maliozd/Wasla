@@ -3,7 +3,7 @@
 public enum OrderStatusDto
 {
     New = 0,
-    Accepted = 1,
+    // 1 was Accepted. Accepting an order starts its preparation (WAS-185), so the value is retired: never reuse it.
     Preparing = 2,
     ReadyForPickup = 3,
     OnTheWay = 4,

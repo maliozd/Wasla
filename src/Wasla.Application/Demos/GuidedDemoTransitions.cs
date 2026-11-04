@@ -30,8 +30,7 @@ public static class GuidedDemoTransitions
         var moved = (current, normalized) switch
         {
             (OrderStatus.New, Approve) => OrderStatus.Preparing,
-            // A practice order stored as Accepted before WAS-185 is in preparation too.
-            (OrderStatus.Preparing or OrderStatus.Accepted, MarkReady) => OrderStatus.ReadyForPickup,
+            (OrderStatus.Preparing, MarkReady) => OrderStatus.ReadyForPickup,
             // Mark ready is the restaurant's last action. As with a real platform order, the courier
             // reports OnTheWay and Delivered on its own (IGuidedDemoDeliverySimulator, run by Wasla.Worker).
             _ => (OrderStatus?)null

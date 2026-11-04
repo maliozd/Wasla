@@ -5,7 +5,6 @@ using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Dashboard;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Abstractions.Tenant;
-using Wasla.Application.Orders;
 using Wasla.Web.Controllers;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Models.Dashboard;
@@ -68,7 +67,7 @@ public sealed class DashboardController : BaseController
                     Id = o.Id,
                     Platform = o.Platform,
                     ExternalOrderCode = o.ExternalOrderCode,
-                    Status = OrderPreparation.Displayed(o.Status),
+                    Status = o.Status,
                     CustomerName = o.CustomerName,
                     TotalAmount = o.TotalAmount,
                     OrderedAtUtc = o.OrderedAtUtc,

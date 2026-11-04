@@ -214,7 +214,7 @@ public sealed class GuidedDemoService : IGuidedDemoService
             session.Id,
             session.UserId,
             session.ScenarioCode,
-            OrderPreparation.Displayed(session.Status),
+            session.Status,
             DateTime.SpecifyKind(session.ReceivedAtUtc, DateTimeKind.Utc),
             session.CustomerNameKey,
             session.NoteKey,

@@ -11,7 +11,6 @@ public static class OrderUiHelper
     public static string StatusBadgeClass(OrderStatus status) => status switch
     {
         OrderStatus.New => "wasla-dash-status wasla-dash-status--new",
-        OrderStatus.Accepted => "wasla-dash-status wasla-dash-status--accepted",
         OrderStatus.Preparing => "wasla-dash-status wasla-dash-status--progress",
         OrderStatus.ReadyForPickup => "wasla-dash-status wasla-dash-status--ready",
         OrderStatus.OnTheWay => "wasla-dash-status wasla-dash-status--on-the-way",

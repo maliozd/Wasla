@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using Wasla.Application.Orders;
+using Wasla.Contracts.Enums;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 
@@ -7,7 +7,7 @@ namespace Wasla.UnitTests.Platform;
 
 /// <summary>
 /// Accepting an order starts its preparation (WAS-185): every acceptance status maps to Preparing, statuses that are
-/// not an acceptance keep their meaning, and no platform status maps to the legacy Accepted any more.
+/// not an acceptance keep their meaning, and the retired Accepted value stays unused.
 /// </summary>
 public sealed class DefaultOrderStatusMapperTests
 {
@@ -37,28 +37,31 @@ public sealed class DefaultOrderStatusMapperTests
     }
 
     [Theory]
-    [InlineData(FoodPlatform.TrendyolYemek, new[] { "Created", "Picking", "Invoiced", "Shipped", "Delivered", "Cancelled", "UnSupplied", "Returned", "Yeni", "Onaylandı", "Onaylandi", "Hazırlanıyor", "Hazır", "Yolda", "Teslim edildi", "İptal" })]
-    [InlineData(FoodPlatform.Yemeksepeti, new[] { "RECEIVED", "READY_FOR_PICKUP", "DISPATCHED", "DELIVERED", "CANCELLED", "new", "confirmed", "accepted", "preparing", "ready", "courier", "delivered", "failed" })]
-    [InlineData(FoodPlatform.GetirYemek, new[] { "CREATED", "VERIFY", "VERIFIED", "CONFIRMED", "ACCEPTED", "PREPARE", "PREPARING", "READY", "HANDOVER", "DELIVERED", "CANCELLED", "FAILED" })]
-    public void NoPlatformStatus_MapsToTheLegacyAccepted(FoodPlatform platform, string[] externalStatuses)
+    [InlineData(FoodPlatform.TrendyolYemek, new[] { "Created", "Picking", "Invoiced", "Shipped", "Delivered", "Cancelled", "UnSupplied", "Returned", "Yeni", "Onaylandı", "Onaylandi", "Hazırlanıyor", "Hazır", "Yolda", "Teslim edildi", "İptal", "unknown" })]
+    [InlineData(FoodPlatform.Yemeksepeti, new[] { "RECEIVED", "READY_FOR_PICKUP", "DISPATCHED", "DELIVERED", "CANCELLED", "new", "confirmed", "accepted", "preparing", "ready", "courier", "delivered", "failed", "unknown" })]
+    [InlineData(FoodPlatform.GetirYemek, new[] { "CREATED", "VERIFY", "VERIFIED", "CONFIRMED", "ACCEPTED", "PREPARE", "PREPARING", "READY", "HANDOVER", "DELIVERED", "CANCELLED", "FAILED", "unknown" })]
+    public void EveryPlatformStatus_MapsToADefinedStatus(FoodPlatform platform, string[] externalStatuses)
     {
-        Assert.All(externalStatuses, status => Assert.NotEqual(OrderStatus.Accepted, _mapper.MapToInternalStatus(platform, status)));
+        Assert.All(externalStatuses, status => Assert.True(Enum.IsDefined(_mapper.MapToInternalStatus(platform, status)), status));
     }
 
     [Fact]
-    public void LegacyAccepted_IsHandledAsPreparing_AndNothingElseIs()
+    public void OrderStatusValues_AreKept_AndTheRetiredAcceptedValueIsUnused()
     {
-        Assert.Equal(OrderStatus.Preparing, OrderPreparation.Displayed(OrderStatus.Accepted));
-        Assert.True(OrderPreparation.IsPreparing(OrderStatus.Accepted));
-        Assert.True(OrderPreparation.IsPreparing(OrderStatus.Preparing));
-        foreach (var status in Enum.GetValues<OrderStatus>().Where(s => s is not (OrderStatus.Accepted or OrderStatus.Preparing)))
+        // Stored rows and API values keep their numbers. 1 was Accepted until WAS-185 and is never reused.
+        var expected = new Dictionary<string, int>
         {
-            Assert.Equal(status, OrderPreparation.Displayed(status));
-            Assert.False(OrderPreparation.IsPreparing(status));
-        }
-
-        // The persisted values are unchanged: rows and API values stored before WAS-185 keep their meaning.
-        Assert.Equal(1, (int)OrderStatus.Accepted);
-        Assert.Equal(2, (int)OrderStatus.Preparing);
+            ["New"] = 0,
+            ["Preparing"] = 2,
+            ["ReadyForPickup"] = 3,
+            ["OnTheWay"] = 4,
+            ["Delivered"] = 5,
+            ["Cancelled"] = 6,
+            ["Failed"] = 7
+        };
+        Assert.Equal(expected, Enum.GetValues<OrderStatus>().ToDictionary(s => s.ToString(), s => (int)s));
+        Assert.Equal(expected, Enum.GetValues<OrderStatusDto>().ToDictionary(s => s.ToString(), s => (int)s));
+        Assert.False(Enum.IsDefined(typeof(OrderStatus), 1));
+        Assert.False(Enum.IsDefined(typeof(OrderStatusDto), 1));
     }
 }

@@ -53,8 +53,7 @@ public static class GuidedTrainingSteps
     public static string? ForDemoStatus(OrderStatus status) => status switch
     {
         OrderStatus.New => PracticeNew,
-        // A practice order stored as Accepted before WAS-185 is in preparation.
-        OrderStatus.Accepted or OrderStatus.Preparing => PracticePreparing,
+        OrderStatus.Preparing => PracticePreparing,
         OrderStatus.ReadyForPickup => PracticeReady,
         OrderStatus.OnTheWay => PracticeOnTheWay,
         OrderStatus.Delivered => PracticeDelivered,

@@ -210,7 +210,7 @@ public sealed class LiveScreenSettingsLayoutBrowserTests
         var summary = await browser.EvaluateAsync<JsonElement>("""
             (async () => {
               const data = await (await fetch('/orders/live-data', { headers: { Accept: 'application/json' } })).json();
-              const activeStatuses = ['New', 'Accepted', 'Preparing', 'ReadyForPickup', 'OnTheWay'];
+              const activeStatuses = ['New', 'Preparing', 'ReadyForPickup', 'OnTheWay'];
               const active = data.orders.filter(o => !o.isDemo && activeStatuses.includes(o.status)).length;
               const format = new Intl.NumberFormat(document.documentElement.lang);
               const row = document.querySelector('.wasla-live-summary');

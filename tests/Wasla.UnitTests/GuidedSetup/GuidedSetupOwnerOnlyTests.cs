@@ -221,7 +221,7 @@ public sealed class GuidedSetupOwnerOnlyTests : IDisposable
         }
         await coordinator.StartPracticeAsync(_tenant, _user, principal, Ct);
         await coordinator.CompleteTrainingAsync(_tenant, _user, principal, Ct);
-        await coordinator.RecordPracticeProgressAsync(_tenant, _user, principal, OrderStatus.Accepted, Ct);
+        await coordinator.RecordPracticeProgressAsync(_tenant, _user, principal, OrderStatus.Preparing, Ct);
     }
 
     private async Task NewTenantAsync()

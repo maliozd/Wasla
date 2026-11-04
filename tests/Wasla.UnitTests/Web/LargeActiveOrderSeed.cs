@@ -10,18 +10,18 @@ namespace Wasla.UnitTests.Web;
 /// 14 October 2026 (5,754 active orders, 5,316 New and 438 Accepted, oldest eight days old, 53 from the current day,
 /// about 5 MB of snapshot). Added on top of <see cref="TenantVisualWebHost"/>'s own five active orders, it makes the
 /// Live Screen snapshot hold <see cref="ActiveOrders"/> active orders. Fixed seed, fake names, no provider or printer.
-/// The Accepted rows are the legacy status (WAS-185): the Live Screen shows them in the Preparing column.
+/// The developer's 438 Accepted orders are seeded as Preparing: approving an order starts its preparation (WAS-185).
 /// The host's recently delivered order is dated before the Delivered window, so the snapshot holds no order that leaves
 /// the Live Screen by itself while the tests run.
 /// </summary>
 internal static class LargeActiveOrderSeed
 {
     public const int NewOrders = 5312;
-    public const int AcceptedOrders = 438;
+    public const int PreparingOrders = 438;
     public const int TodayOrders = 53;
 
-    /// <summary>The seeded orders plus the host's own active ones (New, Accepted, Preparing, Ready, On the way).</summary>
-    public const int ActiveOrders = NewOrders + AcceptedOrders + 5;
+    /// <summary>The seeded orders plus the host's own active ones (New, two Preparing, Ready, On the way).</summary>
+    public const int ActiveOrders = NewOrders + PreparingOrders + 5;
 
     private static readonly string[] Products =
     [
@@ -45,18 +45,18 @@ internal static class LargeActiveOrderSeed
     {
         var random = new Random(5755);
         var platforms = new[] { FoodPlatform.Yemeksepeti, FoodPlatform.TrendyolYemek, FoodPlatform.GetirYemek };
-        var total = NewOrders + AcceptedOrders;
+        var total = NewOrders + PreparingOrders;
         var orders = new List<Order>(total);
-        var accepted = 0;
+        var preparing = 0;
         for (var i = 0; i < total; i++)
         {
             // 53 orders from the last two hours, the rest spread over the previous eight days.
             var receivedAt = i < TodayOrders
                 ? now.AddMinutes(-(i * 2 + 3))
                 : now.AddDays(-1).AddMinutes(-(double)(i - TodayOrders) * (7 * 24 * 60) / (total - TodayOrders));
-            var status = i % 13 == 5 && accepted < AcceptedOrders ? OrderStatus.Accepted : OrderStatus.New;
-            if (status == OrderStatus.Accepted)
-                accepted++;
+            var status = i % 13 == 5 && preparing < PreparingOrders ? OrderStatus.Preparing : OrderStatus.New;
+            if (status == OrderStatus.Preparing)
+                preparing++;
             var platform = platforms[i % platforms.Length];
             var code = $"{(platform == FoodPlatform.Yemeksepeti ? "YS" : platform == FoodPlatform.TrendyolYemek ? "TY" : "GY")}-{900000 + i}";
             var itemCount = 1 + random.Next(5);
@@ -97,7 +97,7 @@ internal static class LargeActiveOrderSeed
                 PaymentStatus = PaymentStatus.Paid,
                 CreatedAtPlatform = receivedAt,
                 ReceivedAt = receivedAt,
-                AcceptedAt = status == OrderStatus.Accepted ? receivedAt.AddMinutes(1) : null,
+                AcceptedAt = status == OrderStatus.Preparing ? receivedAt.AddMinutes(1) : null,
                 RawPayloadJson = "{}",
                 Items = items
             });

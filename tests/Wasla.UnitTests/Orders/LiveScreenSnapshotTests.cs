@@ -115,11 +115,11 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     [Fact]
     public async Task Snapshot_PreservesItemNotesAndRealStatuses()
     {
-        var accepted = await SeedAsync(
+        var withItems = await SeedAsync(
             _tenantId,
-            OrderStatus.Accepted,
+            OrderStatus.Preparing,
             NowUtc.AddMinutes(-10),
-            code: "TY-ACCEPTED",
+            code: "TY-ITEMS",
             items:
             [
                 new ItemSeed(Guid.Parse("00000000-0000-0000-0000-000000000002"), "Ayran", 2, null),
@@ -135,13 +135,11 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         var after = await CaptureAsync(_tenantId);
 
         Assert.Equal(before, after);
-        // An order stored as the legacy Accepted is in preparation (WAS-185): the snapshot shows it as Preparing,
-        // and the read leaves the stored row as it is.
         Assert.Equal(
             [OrderStatus.New, OrderStatus.Preparing, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.OnTheWay],
             snapshot.Orders.Select(order => order.Status).ToArray());
 
-        var card = snapshot.Orders.Single(order => order.Id == accepted);
+        var card = snapshot.Orders.Single(order => order.Id == withItems);
         Assert.Equal(OrderStatus.Preparing, card.Status);
         Assert.Equal(
             [("Lahmacun", 1, "No onion"), ("Ayran", 2, null)],
@@ -173,7 +171,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     {
         await SeedAsync(
             _tenantId,
-            OrderStatus.Accepted,
+            OrderStatus.Preparing,
             NowUtc.AddMinutes(-5),
             code: "TY-42",
             phone: "+905551112233",
@@ -213,7 +211,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     public async Task DayCounts_UseTurkeyLocalReceivedAtAndStayOutOfTheActiveList()
     {
         var yesterdayActive = await SeedAsync(_tenantId, OrderStatus.New, NowUtc.AddDays(-1), code: "TY-YESTERDAY");
-        var todayActive = await SeedAsync(_tenantId, OrderStatus.Accepted, new DateTime(2026, 9, 22, 21, 0, 0, DateTimeKind.Utc), code: "TY-TODAY");
+        var todayActive = await SeedAsync(_tenantId, OrderStatus.Preparing, new DateTime(2026, 9, 22, 21, 0, 0, DateTimeKind.Utc), code: "TY-TODAY");
         await SeedAsync(_tenantId, OrderStatus.Cancelled, NowUtc.AddHours(-1), code: "TY-CANCEL-TODAY");
         await SeedAsync(_tenantId, OrderStatus.Cancelled, NowUtc.AddDays(-1), code: "TY-CANCEL-YESTERDAY");
         await SeedAsync(

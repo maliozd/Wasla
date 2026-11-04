@@ -1125,9 +1125,6 @@
   <data name="OrderStatus.New" xml:space="preserve">
     <value>Новый</value>
   </data>
-  <data name="OrderStatus.Accepted" xml:space="preserve">
-    <value>Принял</value>
-  </data>
   <data name="OrderStatus.Preparing" xml:space="preserve">
     <value>Подготовка</value>
   </data>

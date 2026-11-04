@@ -15,7 +15,6 @@ public static class LiveScreenVisibility
     public static readonly OrderStatus[] ActiveStatuses =
     [
         OrderStatus.New,
-        OrderStatus.Accepted,
         OrderStatus.Preparing,
         OrderStatus.ReadyForPickup,
         OrderStatus.OnTheWay

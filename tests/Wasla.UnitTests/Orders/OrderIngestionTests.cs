@@ -195,12 +195,10 @@ public sealed class OrderIngestionTests : IDisposable
     [Theory]
     // A provider status that moves the order on is applied. Picking is the acceptance and starts preparation (WAS-185).
     [InlineData(OrderStatus.New, "Picking", OrderStatus.Preparing)]
-    // A legacy Accepted order is in preparation: Picking moves it on without a second receipt.
-    [InlineData(OrderStatus.Accepted, "Picking", OrderStatus.Preparing)]
     [InlineData(OrderStatus.ReadyForPickup, "Shipped", OrderStatus.OnTheWay)]
     [InlineData(OrderStatus.OnTheWay, "Delivered", OrderStatus.Delivered)]
     // A stale provider status never moves the order back.
-    [InlineData(OrderStatus.Accepted, "Created", OrderStatus.Accepted)]
+    [InlineData(OrderStatus.Preparing, "Created", OrderStatus.Preparing)]
     [InlineData(OrderStatus.Preparing, "Picking", OrderStatus.Preparing)]
     [InlineData(OrderStatus.OnTheWay, "Invoiced", OrderStatus.OnTheWay)]
     // A provider cancellation overrides progress that is not terminal.

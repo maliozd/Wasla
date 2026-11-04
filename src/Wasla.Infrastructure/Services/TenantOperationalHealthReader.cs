@@ -40,7 +40,6 @@ public sealed class TenantOperationalHealthReader : ITenantOperationalHealthRead
     private static readonly OrderStatus[] OpenOrderStatuses =
     [
         OrderStatus.New,
-        OrderStatus.Accepted,
         OrderStatus.Preparing,
         OrderStatus.ReadyForPickup,
         OrderStatus.OnTheWay

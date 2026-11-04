@@ -335,7 +335,6 @@ body.wasla-orders-live-display .wasla-live-screen-page .wasla-live-display-heade
 }
 
 .wasla-live-screen-page [data-order-status="New"] { --lv-status: var(--wasla-status-new, #e0a800); }
-.wasla-live-screen-page [data-order-status="Accepted"] { --lv-status: var(--wasla-status-accepted, #b45309); }
 .wasla-live-screen-page [data-order-status="Preparing"] { --lv-status: var(--wasla-status-preparing, #0d6efd); }
 .wasla-live-screen-page [data-order-status="ReadyForPickup"] { --lv-status: var(--wasla-status-ready, #198754); }
 .wasla-live-screen-page [data-order-status="OnTheWay"] { --lv-status: var(--wasla-status-on-the-way, #6f42c1); }
@@ -1204,7 +1203,6 @@ html[dir="rtl"] .wasla-live-screen-page .wasla-live-board .wasla-live-screen-car
 }
 
 .wasla-order-detail-modal .wasla-dash-status--new { --od-icon: url("../images/live-screen/status-new.svg"); }
-.wasla-order-detail-modal .wasla-dash-status--accepted { --od-icon: var(--od-icon-check); }
 .wasla-order-detail-modal .wasla-dash-status--progress { --od-icon: url("../images/live-screen/status-preparing.svg"); }
 .wasla-order-detail-modal .wasla-dash-status--ready { --od-icon: url("../images/live-screen/status-ready.svg"); }
 .wasla-order-detail-modal .wasla-dash-status--on-the-way { --od-icon: url("../images/live-screen/status-on-the-way.svg"); }

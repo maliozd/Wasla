@@ -1125,9 +1125,6 @@
   <data name="OrderStatus.New" xml:space="preserve">
     <value>جديد</value>
   </data>
-  <data name="OrderStatus.Accepted" xml:space="preserve">
-    <value>تم القبول</value>
-  </data>
   <data name="OrderStatus.Preparing" xml:space="preserve">
     <value>قيد التحضير</value>
   </data>

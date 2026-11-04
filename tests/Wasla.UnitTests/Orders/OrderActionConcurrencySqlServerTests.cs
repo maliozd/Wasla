@@ -187,15 +187,12 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         }
     }
 
-    [Theory]
-    [InlineData(OrderStatus.Preparing)]
-    // An order stored as Accepted before WAS-185 is in preparation and is marked ready the same way.
-    [InlineData(OrderStatus.Accepted)]
-    public async Task SimultaneousMarkReady_HasOneWinner(OrderStatus from)
+    [Fact]
+    public async Task SimultaneousMarkReady_HasOneWinner()
     {
         for (var round = 0; round < 4; round++)
         {
-            var orderId = await SeedOrderAsync(from);
+            var orderId = await SeedOrderAsync(OrderStatus.Preparing);
             var before = await ReadAsync(orderId);
             _provider.Reset(delay: TimeSpan.FromMilliseconds(150));
             _notifier.Reset();

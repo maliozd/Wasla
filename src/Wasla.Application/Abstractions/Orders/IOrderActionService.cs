@@ -16,10 +16,7 @@ public interface IOrderActionService
     Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct);
     Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
-    /// <summary>
-    /// Preparing (or the legacy Accepted, see <see cref="Wasla.Application.Orders.OrderPreparation"/>) → ReadyForPickup
-    /// via IFoodPlatformClient.MarkInvoicedAsync.
-    /// </summary>
+    /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
     Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
     /// <summary>

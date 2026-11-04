@@ -30,8 +30,7 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
 
     // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into OrderHub's shared lifecycle; RECEIVED vs internal Preparing is reconciled at sync merge.
     // TR: Partner stringlerini (RECEIVED, …) ve eski küçük harf mock'larını ortak lifecycle'a map ederiz; RECEIVED ile iç Preparing uyumu sync merge'da toparlanır.
-    // Accepting an order starts its preparation (WAS-185), so acceptance strings map to Preparing; Wasla no longer
-    // produces the legacy Accepted status.
+    // Accepting an order starts its preparation (WAS-185), so acceptance strings map to Preparing.
     private static OrderStatus MapYemeksepeti(string status)
     {
         var s = (status ?? string.Empty).Trim();
