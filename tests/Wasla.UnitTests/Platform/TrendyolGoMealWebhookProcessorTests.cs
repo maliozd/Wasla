@@ -172,7 +172,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
 
     [Theory]
     [InlineData("Shipped", OrderStatus.OnTheWay)]
-    [InlineData("Picking", OrderStatus.Accepted)]
+    [InlineData("Picking", OrderStatus.Preparing)]
     public async Task ShippedEvent_TakesTheStatusFromTheReconciledPackage_NotFromItsName(string providerStatus, OrderStatus expected)
     {
         _client.Set(Package("pkg-ship", "Created"));
@@ -394,7 +394,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         Assert.Equal(ProviderWebhookEventStatus.Processed, view.Status);
         Assert.Equal("Reconciled", view.Outcome);
         Assert.Equal("946511491", view.OrderCode);
-        Assert.Equal(OrderStatus.Accepted, view.OrderStatus);
+        Assert.Equal(OrderStatus.Preparing, view.OrderStatus);
         Assert.DoesNotContain("Gündoğdu", view.ToString(), StringComparison.Ordinal);
     }
 

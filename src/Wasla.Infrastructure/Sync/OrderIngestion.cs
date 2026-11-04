@@ -191,8 +191,8 @@ internal sealed class OrderIngestion
         var oldTotal = existing.TotalAmount;
         var oldPlatformStatus = existing.PlatformStatus;
 
-        // EN: Provider status can lag behind local operator actions; merge instead of blindly overwriting InternalStatus so stale New/Accepted never undoes manual progress.
-        // TR: Provider statüsü paneldeki manuel aksiyonların gerisinde kalabilir; InternalStatus'u körlemesine ezmemek için merge ediyoruz; eski New/Accepted manuel ilerlemeyi geri almasın.
+        // EN: Provider status can lag behind local operator actions; merge instead of blindly overwriting InternalStatus so a stale New never undoes manual progress.
+        // TR: Provider statüsü paneldeki manuel aksiyonların gerisinde kalabilir; InternalStatus'u körlemesine ezmemek için merge ediyoruz; eski New manuel ilerlemeyi geri almasın.
         var mergedStatus = MergeInternalStatusForSync(existing.InternalStatus, newStatus);
 
         existing.InternalStatus = mergedStatus;
@@ -551,13 +551,13 @@ internal sealed class OrderIngestion
         return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
     }
 
-    private static bool ShouldCreateReceiptForAcceptedProviderStatus(OrderStatus? oldStatus, OrderStatus newStatus)
-    {
-        if (newStatus != OrderStatus.Accepted)
-            return false;
+    // Accepting an order starts its preparation (WAS-185): the provider accepted it when a new or inserted order reaches
+    // preparation.
+    private static bool ShouldCreateReceiptForAcceptedProviderStatus(OrderStatus? oldStatus, OrderStatus newStatus) =>
+        IsAcceptance(oldStatus ?? OrderStatus.New, newStatus);
 
-        return oldStatus is null or not OrderStatus.Accepted;
-    }
+    private static bool IsAcceptance(OrderStatus oldStatus, OrderStatus newStatus) =>
+        oldStatus == OrderStatus.New && newStatus == OrderStatus.Preparing;
 
     /// <summary>Earliest provider time accepted as real; anything before it is a missing value read as zero.</summary>
     internal static readonly DateTime EarliestProviderTimeUtc = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -627,7 +627,7 @@ internal sealed class OrderIngestion
             CustomerNote = NormalizeCustomerNote(external.CustomerNote)
         };
 
-        // An order first seen already Accepted, Delivered or Cancelled gets those times only from a live window.
+        // An order first seen already accepted (Preparing), Delivered or Cancelled gets those times only from a live window.
         ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc, milestonesObservedLive);
 
         // Sequence keeps the order in which the provider listed the lines and their options; the mapped
@@ -687,7 +687,6 @@ internal sealed class OrderIngestion
     private static int OperationalProgressRank(OrderStatus status) => status switch
     {
         OrderStatus.New => 0,
-        OrderStatus.Accepted => 1,
         OrderStatus.Preparing => 2,
         OrderStatus.ReadyForPickup => 3,
         OrderStatus.OnTheWay => 4,
@@ -712,7 +711,7 @@ internal sealed class OrderIngestion
 
         switch (newStatus)
         {
-            case OrderStatus.Accepted when order.AcceptedAt is null:
+            case OrderStatus.Preparing when order.AcceptedAt is null && IsAcceptance(oldStatus, newStatus):
                 order.AcceptedAt = nowUtc;
                 break;
             case OrderStatus.Delivered when order.DeliveredAt is null:

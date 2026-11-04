@@ -133,7 +133,6 @@ test("a demo action step stops waiting only after two live renders without the d
 const deliverySteps = [
   { advance: "event", primaryAction: "demo-start", readySelector: "[data-tour='demo-order-start']" },
   { advance: "event", readySelector: "[data-order-action='approve'][data-wasla-demo]" },
-  { advance: "event", readySelector: "[data-order-action='start-preparing'][data-wasla-demo]" },
   { advance: "event", readySelector: "[data-order-action='mark-ready'][data-wasla-demo]" },
   {
     advance: "state",
@@ -159,8 +158,8 @@ function withDocument(visibleSelectors, run) {
 }
 
 for (const [index, name, action, from, to] of [
-  [4, "pickup", "hand-to-courier", "ReadyForPickup", "OnTheWay"],
-  [5, "delivery", "mark-delivered", "OnTheWay", "Delivered"]
+  [3, "pickup", "hand-to-courier", "ReadyForPickup", "OnTheWay"],
+  [4, "delivery", "mark-delivered", "OnTheWay", "Delivered"]
 ]) {
   test("the courier " + name + " step is passive: no user action, bounded wait, done once the demo shows " + to, function () {
     const waiting = deliverySteps[index];
@@ -181,23 +180,23 @@ for (const [index, name, action, from, to] of [
 
 test("reloading resumes at the pickup wait, the delivery wait, or the success step", function () {
   withDocument(["[data-wasla-demo][data-order-status='ReadyForPickup']"], () => {
-    assert.equal(tour.resumeIndex(deliverySteps), 4);
+    assert.equal(tour.resumeIndex(deliverySteps), 3);
   });
   withDocument(["[data-wasla-demo][data-order-status='OnTheWay']"], () => {
-    assert.equal(tour.resumeIndex(deliverySteps), 5);
+    assert.equal(tour.resumeIndex(deliverySteps), 4);
   });
   withDocument(["[data-wasla-demo][data-order-status='Delivered']"], () => {
-    assert.equal(tour.resumeIndex(deliverySteps), 6);
+    assert.equal(tour.resumeIndex(deliverySteps), 5);
   });
 });
 
 test("a replay starts a new training; an open demo resumes its step; a first-run reload resumes success", function () {
-  assert.equal(tour.startIndex(deliverySteps, 6, false, true), 0, "replay while the old delivered demo is still shown");
+  assert.equal(tour.startIndex(deliverySteps, 5, false, true), 0, "replay while the old delivered demo is still shown");
   assert.equal(tour.startIndex(deliverySteps, -1, false, true), 0, "replay after skipping");
-  assert.equal(tour.startIndex(deliverySteps, 5, true, true), 5, "replay while a demo is on the way resumes it");
-  assert.equal(tour.startIndex(deliverySteps, 4, true, false), 4, "reload during the pickup wait");
+  assert.equal(tour.startIndex(deliverySteps, 4, true, true), 4, "replay while a demo is on the way resumes it");
+  assert.equal(tour.startIndex(deliverySteps, 3, true, false), 3, "reload during the pickup wait");
   assert.equal(tour.startIndex(deliverySteps, 0, true, false), 1, "an open demo never restarts at send a demo");
-  assert.equal(tour.startIndex(deliverySteps, 6, false, false), 6, "first-run reload after delivery shows success");
+  assert.equal(tour.startIndex(deliverySteps, 5, false, false), 5, "first-run reload after delivery shows success");
 });
 
 test("Skip training asks for confirmation when the tour has a dialog; Escape never skips", function () {
@@ -211,8 +210,8 @@ test("Skip training asks for confirmation when the tour has a dialog; Escape nev
 
 test("a guided demo completes on its success step however that step is reached; other tours on Done", function () {
   const demo = { finishUrl: "/orders/demo/finish" };
-  assert.equal(tour.completesTraining(demo, 6, 7), true, "success step, including after a pause or reload");
-  assert.equal(tour.completesTraining(demo, 5, 7), false, "waiting for delivery is not completion");
+  assert.equal(tour.completesTraining(demo, 5, 6), true, "success step, including after a pause or reload");
+  assert.equal(tour.completesTraining(demo, 4, 6), false, "waiting for delivery is not completion");
   assert.equal(tour.completesTraining({ finishUrl: null }, 2, 3), false, "screen tours complete only when Done is clicked");
   assert.equal(tour.completesTraining(demo, 0, 1), false);
 });

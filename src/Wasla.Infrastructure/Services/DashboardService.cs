@@ -33,7 +33,6 @@ public sealed class DashboardService : IDashboardService
 
         var activeCount = await todayOrders.CountAsync(o =>
             o.InternalStatus == OrderStatus.New ||
-            o.InternalStatus == OrderStatus.Accepted ||
             o.InternalStatus == OrderStatus.Preparing ||
             o.InternalStatus == OrderStatus.ReadyForPickup ||
             o.InternalStatus == OrderStatus.OnTheWay, ct);

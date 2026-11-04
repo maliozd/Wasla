@@ -58,7 +58,7 @@ function largeSnapshot(count, version, patch) {
       id: guid(i + 1),
       displayNumber: "YS-" + (900000 + i),
       platform: i % 3 === 0 ? "Yemeksepeti" : (i % 3 === 1 ? "TrendyolYemek" : "GetirYemek"),
-      status: i % 13 === 5 ? "Accepted" : "New",
+      status: "New",
       receivedAtUtc: new Date(Date.UTC(2026, 9, 14, 12, 0, 0) - i * 105000).toISOString(),
       deliveredAtUtc: null,
       customerName: "Zeynep Kaya",

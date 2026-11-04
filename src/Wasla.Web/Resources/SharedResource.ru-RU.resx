@@ -1125,9 +1125,6 @@
   <data name="OrderStatus.New" xml:space="preserve">
     <value>Новый</value>
   </data>
-  <data name="OrderStatus.Accepted" xml:space="preserve">
-    <value>Принял</value>
-  </data>
   <data name="OrderStatus.Preparing" xml:space="preserve">
     <value>Подготовка</value>
   </data>
@@ -1324,7 +1321,7 @@
     <value>Одобрить этот заказ?</value>
   </data>
   <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
-    <value>Это отметит заказ как принятый.</value>
+    <value>Заказ будет принят на платформе и сразу перейдёт в приготовление.</value>
   </data>
   <data name="Orders.RejectConfirmTitle" xml:space="preserve">
     <value>Отклонить этот заказ?</value>
@@ -1333,7 +1330,7 @@
     <value>Это отметит заказ как отмененный.</value>
   </data>
   <data name="Orders.ApproveSuccess" xml:space="preserve">
-    <value>Заказ одобрен.</value>
+    <value>Заказ одобрен и готовится.</value>
   </data>
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>Заказ отклонен.</value>
@@ -1377,9 +1374,6 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Нам не удалось выполнить этот шаг с платформой. Попробуйте еще раз или проверьте соединение.</value>
   </data>
-  <data name="Orders.StartPreparing" xml:space="preserve">
-    <value>Начать подготовку</value>
-  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Отметить готовность</value>
   </data>
@@ -1388,12 +1382,6 @@
   </data>
   <data name="Orders.MarkDelivered" xml:space="preserve">
     <value>Отметить, что доставлено</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
-    <value>Начать подготовку этого заказа?</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
-    <value>Это означает, что заказ готовится на вашей кухне.</value>
   </data>
   <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
     <value>Отметить этот заказ как готовый?</value>
@@ -1412,9 +1400,6 @@
   </data>
   <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
     <value>Это пометит заказ как выполненный.</value>
-  </data>
-  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
-    <value>Сейчас готовится заказ.</value>
   </data>
   <data name="Orders.MarkReadySuccess" xml:space="preserve">
     <value>Заказ отмечен как готовый.</value>
@@ -3992,9 +3977,7 @@
   <data name="Demo.StartTitle" xml:space="preserve"><value>Попробуем Wasla</value></data>
   <data name="Demo.StartBody" xml:space="preserve"><value>Изучите обработку заказа, не затрагивая реальные заказы.</value></data>
   <data name="Demo.ApproveTitle" xml:space="preserve"><value>Примите заказ</value></data>
-  <data name="Demo.ApproveBody" xml:space="preserve"><value>Примите заказ отсюда.</value></data>
-  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Начните готовить</value></data>
-  <data name="Demo.PrepareBody" xml:space="preserve"><value>Переведите принятый заказ в приготовление.</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Примите заказ отсюда. С принятием начинается приготовление.</value></data>
   <data name="Demo.ReadyTitle" xml:space="preserve"><value>Отметьте готовым</value></data>
   <data name="Demo.ReadyBody" xml:space="preserve"><value>Когда заказ готов, отметьте это здесь.</value></data>
   <data name="Demo.SuccessTitle" xml:space="preserve"><value>Вы провели первый заказ</value></data>
@@ -4154,9 +4137,9 @@
   <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Обзор живого экрана</value></data>
   <data name="Help.LiveScreen.Body" xml:space="preserve"><value>Живой экран нужен, чтобы в реальном времени следить за поступающими заказами на кухне и на кассе. Заказы можно смотреть в видах «{0}», «{1}» или «{2}» и получать звуковые и браузерные уведомления о новых заказах.</value></data>
   <data name="Help.Approve.Title" xml:space="preserve"><value>Подтверждение заказа</value></data>
-  <data name="Help.Approve.Body" xml:space="preserve"><value>Когда поступит новый заказ, проверьте его и нажмите «{0}» — подтверждение уйдёт на платформу. Если вы не можете выполнить заказ, нажмите «{1}».</value></data>
-  <data name="Help.Prepare.Title" xml:space="preserve"><value>Начало приготовления</value></data>
-  <data name="Help.Prepare.Body" xml:space="preserve"><value>У подтверждённого заказа нажмите «{0}», чтобы команда видела, что приготовление началось.</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>Когда поступит новый заказ, проверьте его и нажмите «{0}» — подтверждение уйдёт на платформу, и заказ перейдёт в приготовление. Если вы не можете выполнить заказ, нажмите «{1}».</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Приготовление</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>Пока команда готовит подтверждённый заказ, он отображается со статусом «{0}». Отдельного шага для начала приготовления нет; когда заказ готов, нажмите «{1}».</value></data>
   <data name="Help.Ready.Title" xml:space="preserve"><value>Отметка о готовности заказа</value></data>
   <data name="Help.Ready.Body" xml:space="preserve"><value>Когда заказ готов, нажмите «{0}». Это последнее действие ресторана по заказу; платформа получит уведомление.</value></data>
   <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Передача заказа курьеру</value></data>
@@ -4185,11 +4168,9 @@
   <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Обучение работе с заказами на живом экране</value></data>
   <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>Новые заказы появляются здесь в виде карточек и переходят дальше по мере работы с ними. Запустите тренировочный заказ, чтобы попробовать весь процесс. Он помечен как «{6}» и виден только вам: он не отправляется в Trendyol GO или Yemeksepeti, не печатается и не учитывается в ваших заказах и отчётах.</value></data>
   <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>Пришёл тренировочный заказ</value></data>
-  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>Тренировочный заказ с пометкой «{6}» ждёт как новый заказ. Подтвердите его кнопкой «{1}» на карточке.</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Начните подготовку</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>Заказ подтверждён. Нажмите «{2}», когда кухня приступит к нему.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>Тренировочный заказ с пометкой «{6}» ждёт как новый заказ. Подтвердите его кнопкой «{1}» на карточке — он сразу перейдёт в статус «{2}».</value></data>
   <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Отметьте готовность заказа</value></data>
-  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Когда заказ упакован, нажмите «{3}». Это последний шаг ресторана.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>Заказ подтверждён и находится в статусе «{2}». Когда заказ упакован, нажмите «{3}». Это последний шаг ресторана.</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>Курьер забирает заказ</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>Больше ничего нажимать не нужно. Курьер платформы забирает заказ, и его статус автоматически меняется на «{4}».</value></data>
   <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>Заказ в пути</value></data>

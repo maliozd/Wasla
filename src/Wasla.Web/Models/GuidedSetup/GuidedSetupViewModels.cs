@@ -84,7 +84,6 @@ public static class GuidedSetupCopy
     public static string TrainingStepKey(string stepKey) => stepKey switch
     {
         GuidedTrainingSteps.PracticeNew => "GuidedSetup.Training.Step.New",
-        GuidedTrainingSteps.PracticeAccepted => "GuidedSetup.Training.Step.Accepted",
         GuidedTrainingSteps.PracticePreparing => "GuidedSetup.Training.Step.Preparing",
         GuidedTrainingSteps.PracticeReady => "GuidedSetup.Training.Step.Ready",
         GuidedTrainingSteps.PracticeOnTheWay => "GuidedSetup.Training.Step.OnTheWay",
@@ -99,7 +98,6 @@ public static class GuidedSetupCopy
     public static string? TrainingStepAction(string stepKey) => stepKey switch
     {
         GuidedTrainingSteps.PracticeNew => Wasla.Application.Demos.GuidedDemoTransitions.Approve,
-        GuidedTrainingSteps.PracticeAccepted => Wasla.Application.Demos.GuidedDemoTransitions.StartPreparing,
         GuidedTrainingSteps.PracticePreparing => Wasla.Application.Demos.GuidedDemoTransitions.MarkReady,
         _ => null
     };

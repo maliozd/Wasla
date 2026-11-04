@@ -38,7 +38,6 @@ else
             .OrderBy(x => x.Status switch
             {
                 OrderStatus.New => 0,
-                OrderStatus.Accepted => 1,
                 OrderStatus.Preparing => 2,
                 OrderStatus.ReadyForPickup => 3,
                 OrderStatus.OnTheWay => 4,

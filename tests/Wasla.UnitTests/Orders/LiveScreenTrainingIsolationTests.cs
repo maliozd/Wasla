@@ -75,7 +75,7 @@ public sealed class LiveScreenTrainingIsolationTests : IDisposable
     public async Task BeforeDuringAndAfterTraining_TheWaitingCountTodaysCountAndTheBacklogAgree()
     {
         await TenantAsync(TenantOperationalMode.Setup);
-        var before = await Seed("before", OrderStatus.Accepted, _clock.UtcNow.AddMinutes(-40));
+        var before = await Seed("before", OrderStatus.Preparing, _clock.UtcNow.AddMinutes(-40));
         await GuidedSetup().StartAsync(_tenant, _owner, TrainingStart, Ct);
         _demos.ForLiveScreen = PracticeOrder();
         var first = await LiveDataAsync(_owner, Owner);

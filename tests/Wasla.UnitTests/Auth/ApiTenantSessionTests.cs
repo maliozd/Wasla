@@ -79,6 +79,40 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         Assert.Equal(_owner.Id, body.RootElement.GetProperty("id").GetGuid());
     }
 
+    // --- Order status filter ------------------------------------------------------------------------
+
+    /// <summary>
+    /// The Api status filter returns only orders in the requested status, and the retired Accepted value (1) is not
+    /// a status any more (WAS-185): it is refused like any unknown value.
+    /// </summary>
+    [Fact]
+    public async Task OrdersStatusFilter_MatchesExactly_AndRefusesTheRetiredAcceptedValue()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var now = DateTime.UtcNow;
+        var preparing = TenantSeed.Order(now.AddMinutes(-5), OrderStatus.Preparing, "API-PREPARING");
+        _web.Tenants.Seed(_web.AlphaId, db => db.Orders.AddRange(
+            preparing,
+            TenantSeed.Order(now.AddMinutes(-4), OrderStatus.New, "API-NEW"),
+            TenantSeed.Order(now.AddMinutes(-3), OrderStatus.ReadyForPickup, "API-READY")));
+        using var web = await WebLoginAsync(_owner);
+        using var api = ToApi(web);
+
+        foreach (var requested in new[] { "Preparing", "2" })
+        {
+            var response = await api.GetAsync($"/api/orders?status={requested}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+            var items = body.RootElement.GetProperty("items").EnumerateArray().ToArray();
+            Assert.Equal([preparing.Id], items.Select(item => item.GetProperty("id").GetGuid()));
+            Assert.Equal(2, items[0].GetProperty("internalStatus").GetInt32());
+            Assert.Equal(1, body.RootElement.GetProperty("totalCount").GetInt32());
+        }
+
+        foreach (var retired in new[] { "Accepted", "1" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await api.GetAsync($"/api/orders?status={retired}")).StatusCode);
+    }
+
     // --- Stale sessions -----------------------------------------------------------------------------
 
     [Fact]

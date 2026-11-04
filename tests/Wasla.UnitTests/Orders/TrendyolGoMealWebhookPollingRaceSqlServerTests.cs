@@ -89,7 +89,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         Assert.Equal(ProviderWebhookEventStatus.Processed, stored.Status);
         Assert.Equal("Reconciled", stored.Outcome);
         Assert.Equal(order.Id, stored.OrderId);
-        Assert.Equal(OrderStatus.Accepted, order.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, order.InternalStatus);
         Assert.Equal([order.Id], _autoApprove.Processed);
         Assert.Equal([order.Id], _receipts.Created);
         Assert.Equal([OrderChangeVersions.Initial], _notifier.VersionsFor(order.Id));

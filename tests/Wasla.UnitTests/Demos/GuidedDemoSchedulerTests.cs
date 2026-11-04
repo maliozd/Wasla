@@ -39,7 +39,7 @@ public sealed class GuidedDemoSchedulerTests : IDisposable
         var preparing = await simulator.AdvanceDueAndPlanAsync(_tenant, Ct);
         Assert.Equal(_time.UtcNow + GuidedDemoTiming.UserStepCheckInterval, preparing.NextCheckAtUtc);
 
-        foreach (var action in new[] { "approve", "start-preparing", "mark-ready" })
+        foreach (var action in new[] { "approve", "mark-ready" })
             Assert.True((await demos.ApplyActionAsync(_tenant, _owner, demo.Id, action, Ct)).Succeeded);
         var readyAt = _time.UtcNow;
         _time.Advance(TimeSpan.FromSeconds(3));
@@ -284,7 +284,7 @@ public sealed class GuidedDemoSchedulerTests : IDisposable
         await _tenants.SeedUserAsync(_tenant, _owner);
         var demos = Demos();
         var demo = await demos.StartAsync(_tenant, _owner, Ct);
-        foreach (var action in new[] { "approve", "start-preparing", "mark-ready" })
+        foreach (var action in new[] { "approve", "mark-ready" })
             Assert.True((await demos.ApplyActionAsync(_tenant, _owner, demo.Id, action, Ct)).Succeeded);
         return _time.UtcNow;
     }

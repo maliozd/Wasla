@@ -118,7 +118,8 @@ public sealed class LiveScreenRealtimeBrowserTests
         // A lifecycle action through the real action service (it announces after its save).
         using (var scope = host.Services.CreateScope())
             Assert.True((await scope.ServiceProvider.GetRequiredService<IOrderActionService>().TryApproveAsync(Tenant, TenantVisualWebHost.DetailOrderId, ct)).Succeeded);
-        Assert.True(await browser.WaitForAsync(CardStatus(TenantVisualWebHost.DetailOrderId, "Accepted"), Push, ct),
+        // Approving starts preparation (WAS-185).
+        Assert.True(await browser.WaitForAsync(CardStatus(TenantVisualWebHost.DetailOrderId, "Preparing"), Push, ct),
             $"The approved order did not change on screen. {host.ServerErrors}");
         Assert.Equal(notifications, await browser.EvaluateAsync<int>("window.__notifications", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__connectionsBuilt", ct));

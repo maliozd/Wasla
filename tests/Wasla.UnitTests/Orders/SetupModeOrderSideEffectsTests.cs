@@ -303,13 +303,12 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             Approved.Add(orderId);
             await using var db = await tenants.CreateAsync(customerId, ct);
             await db.Orders.Where(o => o.Id == orderId)
-                .ExecuteUpdateAsync(set => set.SetProperty(o => o.InternalStatus, OrderStatus.Accepted), ct);
+                .ExecuteUpdateAsync(set => set.SetProperty(o => o.InternalStatus, OrderStatus.Preparing), ct);
             return new OrderActionResult(true, "Orders.ApproveSuccess");
         }
 
         public Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkPreparingAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();

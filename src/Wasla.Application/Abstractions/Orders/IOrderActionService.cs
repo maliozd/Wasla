@@ -12,6 +12,7 @@ public interface IOrderActionService
     /// </summary>
     Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct);
 
+    /// <summary>New → Preparing via IFoodPlatformClient.AcceptOrderAsync: accepting an order starts its preparation.</summary>
     Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
     /// <summary>
@@ -20,9 +21,6 @@ public interface IOrderActionService
     /// platform without reasons. A missing or unsupported reason is refused before the provider is called.
     /// </summary>
     Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct);
-
-    /// <summary>Accepted → Preparing. No IFoodPlatformClient preparing hook yet; persists local status after the usual active-connection resolution.</summary>
-    Task<OrderActionResult> MarkPreparingAsync(Guid customerId, Guid orderId, CancellationToken ct);
 
     /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
     Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);

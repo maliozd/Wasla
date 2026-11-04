@@ -20,7 +20,6 @@
 
   const ACTIVE_STATUSES = {
     New: true,
-    Accepted: true,
     Preparing: true,
     ReadyForPickup: true,
     OnTheWay: true
@@ -188,7 +187,6 @@
 
   const SUPPORTED_STATUSES = {
     New: true,
-    Accepted: true,
     Preparing: true,
     ReadyForPickup: true,
     OnTheWay: true,
@@ -803,7 +801,6 @@ function attachBrowser(O, global, api) {
 
   function statusClass(status) {
     if (status === "New") return "wasla-dash-status wasla-dash-status--new";
-    if (status === "Accepted") return "wasla-dash-status wasla-dash-status--accepted";
     if (status === "Preparing") return "wasla-dash-status wasla-dash-status--progress";
     if (status === "ReadyForPickup") return "wasla-dash-status wasla-dash-status--ready";
     if (status === "OnTheWay") return "wasla-dash-status wasla-dash-status--on-the-way";
@@ -828,7 +825,7 @@ function attachBrowser(O, global, api) {
         { action: "reject", className: "btn btn-outline-danger btn-lg", label: message("ordersReject") }
       ];
     }
-    if (status === "Accepted") return [{ action: "start-preparing", className: "btn btn-primary btn-lg", label: message("ordersStartPreparing") }];
+    // Approve starts preparation (WAS-185), so a preparing order is marked ready directly.
     if (status === "Preparing") return [{ action: "mark-ready", className: "btn btn-primary btn-lg", label: message("ordersMarkReady") }];
     // Mark ready is the restaurant's last action: the platform courier reports OnTheWay and
     // Delivered through provider sync, so ReadyForPickup and OnTheWay have no action.
@@ -1575,7 +1572,7 @@ function attachBrowser(O, global, api) {
   ];
 
   function columnKey(status) {
-    if (status === "New" || status === "Accepted") return "new";
+    if (status === "New") return "new";
     if (status === "Preparing") return "preparing";
     if (status === "ReadyForPickup") return "ready";
     if (status === "OnTheWay") return "on-the-way";
@@ -1594,7 +1591,7 @@ function attachBrowser(O, global, api) {
   }
 
   // Newest order time first within a visual group (WAS-125), then the immutable id.
-  // Actual status must not separate New from Accepted or reshuffle a group.
+  // Actual status must not reshuffle a group (Completed holds more than one).
   function comparePresentation(a, b) {
     const group = groupRank(a.status) - groupRank(b.status);
     if (group) return group;

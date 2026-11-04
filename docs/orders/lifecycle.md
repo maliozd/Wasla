@@ -21,7 +21,7 @@ Document how Wasla stores and advances restaurant orders from platform sync and 
 | Value | Enum |
 | --- | --- |
 | 0 | `New` |
-| 1 | `Accepted` |
+| 1 | Retired (was `Accepted`, see below); never reused |
 | 2 | `Preparing` |
 | 3 | `ReadyForPickup` |
 | 4 | `OnTheWay` |
@@ -30,6 +30,15 @@ Document how Wasla stores and advances restaurant orders from platform sync and 
 | 7 | `Failed` |
 
 Raw platform strings remain on `Order.PlatformStatus`. Mapping into these values is `DefaultOrderStatusMapper` (`src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs`), per platform (Yemeksepeti, Getir, Trendyol GO, plus mock/legacy labels). Unknown Trendyol strings default to `New` with a warning log.
+
+### Acceptance starts preparation (WAS-185)
+
+Accepting an order means starting to prepare it. The restaurant's workflow is New → Approve → `Preparing` → Mark ready → `ReadyForPickup` → `OnTheWay` → `Delivered`, with no waiting step between approval and preparation and no Start preparing action.
+
+- **Every acceptance moves a New order to `Preparing`:** manual approval, auto-approval (both `OrderActionService.TryApproveAsync`) and a provider-side acceptance seen by synchronization. Acceptance statuses map to `Preparing`: Trendyol GO `Picking` (the seller accepted the package with the `picked` call; Trendyol GO has no separate preparation status), the Turkish mock label `Onaylandı`, the legacy lowercase Yemeksepeti mock strings `confirmed` / `accepted`, and the Getir mock tokens `VERIFY` / `VERIFIED` / `CONFIRMED` / `ACCEPTED`. `VERIFY` is what the Getir mock client echoes for its own accept call; Getir has no real client, so no real Getir status is mapped. Yemeksepeti `RECEIVED` stays `New`: it is the order arriving, not an acceptance. Raw provider strings stay on `Order.PlatformStatus` unchanged.
+- **There is no `Accepted` status.** `OrderStatus` and the API's `OrderStatusDto` no longer have it. Its value 1 is retired and never reused, and every other value keeps its number, so stored rows and API values keep their meaning. The Web and API status filters match the requested status exactly: Preparing returns only `Preparing` orders, and the API refuses `status=1` or `status=Accepted` with HTTP 400 like any unknown value. No migration ran. Orders and practice orders (`GuidedDemoSession`) stored as `Accepted` before WAS-185 were test data, deleted separately before the rollout. A row still holding 1 is in no active status: no screen lists it as active and no action applies to it.
+- **Acceptance stays a business event.** Removing the status does not remove acceptance: the provider accept call (`IFoodPlatformClient.AcceptOrderAsync`), `Order.AcceptedAt`, the receipt setting (`AutoPrintReceiptOnAutoApprove`) and the receipt-on-acceptance pipeline (`IOrderReceiptCreationService.TryCreateOnOrderAcceptedAsync`) are unchanged.
+- **Milestone and receipt:** `AcceptedAt` is set when a New (or newly inserted) order reaches preparation, and never moved afterwards: Mark ready and the later steps keep it. The automatic kitchen receipt is created once per acceptance: after a successful manual approval (`OrdersController.Approve`), after a successful auto-approval (`OrderAutoApproveService`), or by synchronization when a New or inserted order's merged status reaches preparation. An operator approval and a sync observing the same acceptance never both win, because the conditional write lets only one move the order out of `New`.
 
 ### Order entity notes
 
@@ -69,7 +78,7 @@ Every time is stored as a UTC instant and converted only for display.
 
 - **Operator actions** (`OrderActionService`) set them to the time of the action.
 - **Synchronization** sets them to the time Wasla saw the change, and only when the fetched window proves the change is recent (`OrderSyncService.MilestoneObservationLimit`, 15 minutes). That holds for a current-pass window that starts at the checkpoint and is at most 15 minutes long, which is normal polling: five minutes before the checkpoint to now. A change found in such a window happened inside it, because the earlier windows that moved the checkpoint did not see it.
-- **Not dated (left null):** the first sync of a connection (it looks back an hour), the hot window fetched ahead of a history gap, every backfill window, and a current window longer than 15 minutes after a short outage. This covers an order first imported already Accepted, Delivered or Cancelled during recovery, and an order Wasla already had that changed status during an outage. No provider field dates the change: Trendyol GO `packageModificationDate` is the latest modification of any kind, not the delivery or cancellation time.
+- **Not dated (left null):** the first sync of a connection (it looks back an hour), the hot window fetched ahead of a history gap, every backfill window, and a current window longer than 15 minutes after a short outage. This covers an order first imported already accepted (`Preparing`), Delivered or Cancelled during recovery, and an order Wasla already had that changed status during an outage. No provider field dates the change: Trendyol GO `packageModificationDate` is the latest modification of any kind, not the delivery or cancellation time.
 - **Effects of null:** a Delivered order without `DeliveredAt` is not shown as "recently delivered" on the Live Screen (`OrderReadService.GetLiveScreenSnapshotAsync` omits it); order details show no accepted time; the API returns null.
 - **Rows stored before this rule** keep the times they have. Orders a recovery poll imported already Delivered, Accepted or Cancelled carry the import time there (for example the three Pilavcı Rahim orders imported on 17 October 2026 at 02:19/02:21). They cannot be told apart from live-observed times, so no data is changed.
 - Yemeksepeti and the mock clients ignore the planned window. For them the same rule uses the window computed from the checkpoint, which is accurate in normal polling.
@@ -82,13 +91,12 @@ Every time is stored as a UTC instant and converted only for display.
 
 ### Operator transitions (`OrderActionService`)
 
-HTTP surface: `Wasla.Web` `OrdersController` under `/orders/{id}/…` (approve, reject, start-preparing, mark-ready, hand-to-courier, mark-delivered). Implementation: `src/Wasla.Infrastructure/Services/OrderActionService.cs`.
+HTTP surface: `Wasla.Web` `OrdersController` under `/orders/{id}/…` (approve, reject, mark-ready, hand-to-courier, mark-delivered). Implementation: `src/Wasla.Infrastructure/Services/OrderActionService.cs`. The former `start-preparing` route and `MarkPreparingAsync` were removed with WAS-185.
 
 | Current status required | Action | Next status | Provider call |
 | --- | --- | --- | --- |
-| `New` | Approve | `Accepted` | `AcceptOrderAsync` |
+| `New` | Approve | `Preparing` (sets `AcceptedAt`) | `AcceptOrderAsync` |
 | `New` | Reject | `Cancelled` | `RejectOrderAsync` |
-| `Accepted` | Start preparing | `Preparing` | **None** (local kitchen step; shared client has no prepare hook yet) |
 | `Preparing` | Mark ready | `ReadyForPickup` | `MarkInvoicedAsync` (shared name; means ready for all platforms) |
 | `ReadyForPickup` | — (no restaurant action) | `OnTheWay` via provider sync | — |
 | `OnTheWay` | — (no restaurant action) | `Delivered` via provider sync | — |
@@ -132,7 +140,7 @@ On existing orders, mapped external status is merged via `MergeInternalStatusFor
 1. If existing is `Delivered`, keep existing.
 2. If existing is `Cancelled` or `Failed`, keep existing.
 3. If incoming is `Cancelled` or `Failed`, take incoming (unless already locked by 1–2).
-4. Otherwise compare operational progress ranks (`New` → `Accepted` → `Preparing` → `ReadyForPickup` → `OnTheWay` → `Delivered`). Incoming with a **lower** rank is ignored so stale provider/mocks do not undo operator progress.
+4. Otherwise compare operational progress ranks (`New` 0 → `Preparing` 2 → `ReadyForPickup` 3 → `OnTheWay` 4 → `Delivered` 5; rank 1 belonged to the retired `Accepted`). Incoming with a **lower** rank is ignored so stale provider/mocks do not undo operator progress.
 
 ### Child replace on real updates
 
@@ -162,7 +170,6 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 
 ## Future
 
-- Shared prepare provider hook for `Preparing` (commented as deferred in `OrderActionService`).
 - Every successful lifecycle action and every ingested order change is announced to open Live Screens as an invalidation after its save ([../architecture/realtime.md](../architecture/realtime.md#where-order-changes-are-published-was-24)); the snapshot stays canonical.
 
 ---

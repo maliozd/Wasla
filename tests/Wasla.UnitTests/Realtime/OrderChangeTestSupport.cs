@@ -71,7 +71,7 @@ internal static class OrderChangeFixtures
             }
         });
 
-    /// <summary>A provider order; "Created" maps to New, "Picking" to Accepted, "Cancelled" to Cancelled.</summary>
+    /// <summary>A provider order; "Created" maps to New, "Picking" to Preparing, "Cancelled" to Cancelled.</summary>
     public static ExternalOrderDto External(string externalOrderId, string status = "Created", decimal total = 100m, FoodPlatform platform = FoodPlatform.TrendyolYemek) =>
         new(
             Platform: platform,

@@ -86,8 +86,6 @@ public static class ProductTourCatalog
                     "demo-start", "Demo.LaunchAction"),
                 new("demo-order-actions", "top", "Demo.ApproveTitle", "Demo.ApproveBody",
                     "event", "wasla:order-action-completed", "approve", "[data-order-action='approve'][data-wasla-demo]"),
-                new("demo-order-actions", "top", "Demo.PrepareTitle", "Demo.PrepareBody",
-                    "event", "wasla:order-action-completed", "start-preparing", "[data-order-action='start-preparing'][data-wasla-demo]"),
                 new("demo-order-actions", "top", "Demo.ReadyTitle", "Demo.ReadyBody",
                     "event", "wasla:order-action-completed", "mark-ready", "[data-order-action='mark-ready'][data-wasla-demo]"),
                 // Mark ready is the restaurant's last action. The next two steps are passive: the Worker

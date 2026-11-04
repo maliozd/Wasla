@@ -680,7 +680,8 @@ public sealed class GuidedSetupCoordinatorTests
         // saved step, latest practice order status, open, expected step
         { GuidedTrainingSteps.Intro, null, false, GuidedTrainingSteps.Intro },
         { GuidedTrainingSteps.Intro, OrderStatus.Delivered, false, GuidedTrainingSteps.Intro },
-        { GuidedTrainingSteps.Intro, OrderStatus.Accepted, true, GuidedTrainingSteps.PracticeAccepted },
+        { GuidedTrainingSteps.Intro, OrderStatus.Preparing, true, GuidedTrainingSteps.PracticePreparing },
+        { GuidedTrainingSteps.PracticeNew, OrderStatus.Preparing, true, GuidedTrainingSteps.PracticePreparing },
         { GuidedTrainingSteps.PracticeNew, OrderStatus.ReadyForPickup, true, GuidedTrainingSteps.PracticeReady },
         { GuidedTrainingSteps.PracticeNew, OrderStatus.OnTheWay, true, GuidedTrainingSteps.PracticeOnTheWay },
         { GuidedTrainingSteps.PracticeReady, OrderStatus.Delivered, false, GuidedTrainingSteps.PracticeDelivered },
@@ -878,7 +879,7 @@ public sealed class GuidedSetupCoordinatorTests
         var coordinator = Coordinator(Owner);
 
         await coordinator.RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Preparing, CancellationToken.None);
-        await coordinator.RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Accepted, CancellationToken.None);
+        await coordinator.RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.New, CancellationToken.None);
         await coordinator.RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Preparing, CancellationToken.None);
 
         Assert.Equal(GuidedTrainingSteps.PracticePreparing, _state.Get(_user).StepKey);
@@ -893,7 +894,7 @@ public sealed class GuidedSetupCoordinatorTests
     {
         _state.Set(_user, status, section);
 
-        await Coordinator(Owner).RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Accepted, CancellationToken.None);
+        await Coordinator(Owner).RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Preparing, CancellationToken.None);
 
         Assert.Equal(0, _state.Writes);
     }
@@ -904,7 +905,7 @@ public sealed class GuidedSetupCoordinatorTests
         _state.Set(_user, GuidedSetupStatus.InProgress, GuidedSetupSections.LiveScreenDemo);
         _state.FailWrites = true;
 
-        await Coordinator(Owner).RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Accepted, CancellationToken.None);
+        await Coordinator(Owner).RecordPracticeProgressAsync(_tenant, _user, _principal, OrderStatus.Preparing, CancellationToken.None);
 
         Assert.Contains(_logger.Entries, entry => entry.Level == LogLevel.Warning);
     }

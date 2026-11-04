@@ -1125,9 +1125,6 @@
   <data name="OrderStatus.New" xml:space="preserve">
     <value>New</value>
   </data>
-  <data name="OrderStatus.Accepted" xml:space="preserve">
-    <value>Accepted</value>
-  </data>
   <data name="OrderStatus.Preparing" xml:space="preserve">
     <value>Preparing</value>
   </data>
@@ -1324,7 +1321,7 @@
     <value>Approve this order?</value>
   </data>
   <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
-    <value>This will mark the order as accepted.</value>
+    <value>The order is accepted on the platform and moves into preparation.</value>
   </data>
   <data name="Orders.RejectConfirmTitle" xml:space="preserve">
     <value>Reject this order?</value>
@@ -1333,7 +1330,7 @@
     <value>This will mark the order as cancelled.</value>
   </data>
   <data name="Orders.ApproveSuccess" xml:space="preserve">
-    <value>Order approved.</value>
+    <value>Order approved. It is now being prepared.</value>
   </data>
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>Order rejected.</value>
@@ -1377,9 +1374,6 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>We could not complete this step with the platform. Try again or check your connection.</value>
   </data>
-  <data name="Orders.StartPreparing" xml:space="preserve">
-    <value>Start preparing</value>
-  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Mark ready</value>
   </data>
@@ -1388,12 +1382,6 @@
   </data>
   <data name="Orders.MarkDelivered" xml:space="preserve">
     <value>Mark delivered</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
-    <value>Start preparing this order?</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
-    <value>This marks the order as being prepared in your kitchen.</value>
   </data>
   <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
     <value>Mark this order as ready?</value>
@@ -1412,9 +1400,6 @@
   </data>
   <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
     <value>This marks the order as completed.</value>
-  </data>
-  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
-    <value>Order is now being prepared.</value>
   </data>
   <data name="Orders.MarkReadySuccess" xml:space="preserve">
     <value>Order marked as ready.</value>
@@ -3498,9 +3483,7 @@
   <data name="Demo.StartTitle" xml:space="preserve"><value>Let's try Wasla</value></data>
   <data name="Demo.StartBody" xml:space="preserve"><value>Practice the order flow without affecting your real orders.</value></data>
   <data name="Demo.ApproveTitle" xml:space="preserve"><value>Accept the order</value></data>
-  <data name="Demo.ApproveBody" xml:space="preserve"><value>Accept the order from here.</value></data>
-  <data name="Demo.PrepareTitle" xml:space="preserve"><value>Start preparation</value></data>
-  <data name="Demo.PrepareBody" xml:space="preserve"><value>Move the accepted order into preparation.</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>Accept the order from here. Accepting it starts preparation.</value></data>
   <data name="Demo.ReadyTitle" xml:space="preserve"><value>Mark it ready</value></data>
   <data name="Demo.ReadyBody" xml:space="preserve"><value>When the order is ready, mark it here.</value></data>
   <data name="Demo.SuccessTitle" xml:space="preserve"><value>You managed your first order</value></data>
@@ -3660,9 +3643,9 @@
   <data name="Help.LiveScreen.Title" xml:space="preserve"><value>Live Screen overview</value></data>
   <data name="Help.LiveScreen.Body" xml:space="preserve"><value>The Live Screen is for following incoming orders in the kitchen and at the counter in real time. View orders as {0}, {1} or {2}, and get sound and browser notifications for new orders.</value></data>
   <data name="Help.Approve.Title" xml:space="preserve"><value>Approving an order</value></data>
-  <data name="Help.Approve.Body" xml:space="preserve"><value>When a new order arrives, check it and select "{0}"; the approval is sent to the platform. If you can't fulfil the order, use "{1}".</value></data>
-  <data name="Help.Prepare.Title" xml:space="preserve"><value>Starting preparation</value></data>
-  <data name="Help.Prepare.Body" xml:space="preserve"><value>On an approved order, select "{0}" to show your team that preparation has started.</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>When a new order arrives, check it and select "{0}"; the approval is sent to the platform and the order moves into preparation. If you can't fulfil the order, use "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>Preparation</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>An approved order is shown as "{0}" while your team prepares it. There is no separate step to start preparation; when the order is ready, select "{1}".</value></data>
   <data name="Help.Ready.Title" xml:space="preserve"><value>Marking an order ready</value></data>
   <data name="Help.Ready.Body" xml:space="preserve"><value>When the order is ready, select "{0}". This is the restaurant's last action on the order; the platform is notified.</value></data>
   <data name="Help.CourierPickup.Title" xml:space="preserve"><value>Courier pickup</value></data>
@@ -3691,11 +3674,9 @@
   <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>Order training on the Live Screen</value></data>
   <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>New orders appear here as cards and move forward as you work on them. Start a practice order to try the flow. It is marked {6} and only you can see it: it is not sent to Trendyol GO or Yemeksepeti, not printed, and not counted in your orders or reports.</value></data>
   <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>A practice order has arrived</value></data>
-  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>The practice order marked {6} is waiting as a new order. Accept it with the {1} button on its card.</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>Start preparing</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>The order is accepted. Press {2} when the kitchen starts on it.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>The practice order marked {6} is waiting as a new order. Accept it with the {1} button on its card; it moves straight to {2}.</value></data>
   <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>Mark the order ready</value></data>
-  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>When the order is packed, press {3}. This is the restaurant's last step.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>The order is accepted and in {2}. When it is packed, press {3}. This is the restaurant's last step.</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>The courier collects the order</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>You don't need to press anything else. The platform's courier collects the order, and its status changes to {4} automatically.</value></data>
   <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>The order is on the way</value></data>

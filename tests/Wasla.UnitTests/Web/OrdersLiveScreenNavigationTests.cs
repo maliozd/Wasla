@@ -184,7 +184,8 @@ public sealed class OrdersLiveScreenNavigationTests
         var table = ReadRepositoryFile("src", "Wasla.Web", "Areas", "Tenant", "Views", "Orders", "_OrdersTable.cshtml");
 
         Assert.Contains("[Authorize(AuthenticationSchemes = AuthSchemes.Tenant, Policy = TenantPolicies.CanViewOrders)]", controller, StringComparison.Ordinal);
-        Assert.Equal(6, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
+        // Approve, reject, mark ready, hand to courier, mark delivered: approving starts preparation (WAS-185).
+        Assert.Equal(5, CountOccurrences(controller, "[Authorize(Policy = TenantPolicies.CanManageOrders)]"));
         Assert.Contains("TenantPolicies.CanManageOrders", table, StringComparison.Ordinal);
     }
 

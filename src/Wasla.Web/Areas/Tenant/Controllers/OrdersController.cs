@@ -687,19 +687,6 @@ public sealed class OrdersController : BaseController
         return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: false) });
     }
 
-    [HttpPost("{id:guid}/start-preparing")]
-    [ValidateAntiForgeryToken]
-    [Authorize(Policy = TenantPolicies.CanManageOrders)]
-    public async Task<IActionResult> StartPreparing(Guid id, CancellationToken ct)
-    {
-        var tenant = _currentTenant.CurrentTenant;
-        if (tenant is null) return NotFound();
-
-        var result = await _actions.MarkPreparingAsync(tenant.Id, id, ct);
-        if (!result.Succeeded) return BadRequest(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
-        return Ok(new { message = MapOrderActionClientMessageKey(result.MessageKey, isApprove: null) });
-    }
-
     [HttpPost("{id:guid}/mark-ready")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = TenantPolicies.CanManageOrders)]
@@ -756,7 +743,6 @@ public sealed class OrdersController : BaseController
             OrderRejectReasons.ReasonNotSupportedKey => "ordersRejectReasonNotSupported",
             "Orders.ApproveSuccess" => "ordersApproveSuccess",
             "Orders.RejectSuccess" => "ordersRejectSuccess",
-            "Orders.StartPreparingSuccess" => "ordersStartPreparingSuccess",
             "Orders.MarkReadySuccess" => "ordersMarkReadySuccess",
             "Orders.HandToCourierSuccess" => "ordersHandToCourierSuccess",
             "Orders.MarkDeliveredSuccess" => "ordersMarkDeliveredSuccess",

@@ -24,19 +24,9 @@
         </button>
     </div>
 }
-else if (Model.CanManageOrders && Model.Status == OrderStatus.Accepted)
-{
-    <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
-        <button type="button"
-                class="btn btn-primary @sizeClass"
-                data-order-action="start-preparing"
-                data-order-id="@Model.OrderId">
-            @L["Orders.StartPreparing"]
-        </button>
-    </div>
-}
 else if (Model.CanManageOrders && Model.Status == OrderStatus.Preparing)
 {
+    @* Approving starts preparation (WAS-185), so a preparing order is marked ready directly. *@
     <div class="wasla-orders-actions" role="group" aria-label="@L["Orders.Actions"]">
         <button type="button"
                 class="btn btn-primary @sizeClass"
