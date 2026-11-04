@@ -264,7 +264,26 @@ body {
 }
 
 /* Order reject reasons (_OrderRejectDialog): rows laid out with logical properties instead of Bootstrap's floated
-   form-check, so the radio sits before its label in both directions (Arabic included) and the whole row is a target. */
+   form-check, so the radio sits before its label in both directions (Arabic included) and the whole row is a target.
+   The Orders page also loads AdminLTE, which frames every fieldset and pads its legend; the dialog looks the same on
+   every page. */
+.wasla-order-reject-dialog fieldset,
+.wasla-order-reject-dialog legend {
+  padding: 0;
+  border: 0;
+}
+
+/* Bootstrap's physical margin-left: auto leaves the close button against the title right to left (no RTL build is
+   loaded); keep it at the far edge in both directions, as the guided setup dialog does. */
+.wasla-order-reject-dialog .modal-header {
+  gap: .5rem;
+}
+
+.wasla-order-reject-dialog .modal-header .btn-close {
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+}
+
 .wasla-order-reject-dialog .form-check {
   display: flex;
   align-items: center;

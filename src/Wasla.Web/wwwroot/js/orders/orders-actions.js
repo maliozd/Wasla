@@ -86,14 +86,40 @@
     return null;
   }
 
+  // Bootstrap ignores hide() (and show()) while a modal is still fading in or out, so the reject flow follows each
+  // modal's own events instead of assuming a hide() takes effect. Listening on document, registered before any waiter
+  // below, records the state before a waiter reacts to the same event, and sees show/hide only once they were allowed.
+  const modalStates = new WeakMap();
+  ["show", "shown", "hide", "hidden"].forEach(function (name) {
+    document.addEventListener(name + ".bs.modal", function (ev) {
+      if (!ev.defaultPrevented) modalStates.set(ev.target, name);
+    });
+  });
+
+  function onceModalEvent(modalEl, name, callback) {
+    function listener(ev) {
+      if (ev.target !== modalEl) return;
+      document.removeEventListener(name + ".bs.modal", listener);
+      callback();
+    }
+    document.addEventListener(name + ".bs.modal", listener);
+  }
+
+  // Resolves true once the modal is hidden: one still opening finishes opening and is then hidden, one already closing
+  // finishes closing. Resolves false when something kept it open.
   function whenHidden(modalEl) {
     return new Promise(function (resolve) {
-      if (!modalEl || !modalEl.classList.contains("show")) {
-        resolve();
-        return;
+      function hide() {
+        global.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        const state = modalStates.get(modalEl);
+        if (state === "hide") onceModalEvent(modalEl, "hidden", function () { resolve(true); });
+        else resolve(state === "hidden");
       }
-      modalEl.addEventListener("hidden.bs.modal", function () { resolve(); }, { once: true });
-      global.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+      const state = modalEl ? modalStates.get(modalEl) : null;
+      if (state === "show") onceModalEvent(modalEl, "shown", hide);
+      else if (state === "shown") hide();
+      else if (state === "hide") onceModalEvent(modalEl, "hidden", function () { resolve(true); });
+      else resolve(true);
     });
   }
 
@@ -113,8 +139,9 @@
   }
 
   async function chooseRejectReason(found, btn, orderId) {
-    // Bootstrap does not stack modals: a Reject inside the order detail modal closes it first.
-    await whenHidden(btn.closest(".modal"));
+    // Bootstrap does not stack modals: a Reject inside the order detail modal closes it first, after it has finished
+    // opening when it is still opening.
+    if (!await whenHidden(btn.closest(".modal"))) return null;
 
     const dialog = found.dialog;
     const group = found.group;
@@ -136,7 +163,16 @@
     return new Promise(function (resolve) {
       const modal = global.bootstrap.Modal.getOrCreateInstance(dialog);
       let chosen = null;
+      // Set by the first of Reject, Cancel or Escape: later clicks while the dialog fades in or out change nothing.
+      let closing = false;
 
+      function close(reasonId) {
+        if (closing) return;
+        closing = true;
+        chosen = reasonId;
+        // While the dialog is still opening, it closes as soon as it has opened.
+        whenHidden(dialog);
+      }
       function setInvalid(invalid) {
         if (error) error.hidden = !invalid;
         for (let i = 0; i < inputs.length; i++) {
@@ -146,25 +182,34 @@
       }
       function onSubmit(ev) {
         ev.preventDefault();
+        if (closing) return;
         const checked = group.querySelector("input[name=\"reasonId\"]:checked");
         if (!checked) {
           setInvalid(true);
           if (inputs.length) inputs[0].focus();
           return;
         }
-        chosen = checked.value;
-        modal.hide();
+        close(checked.value);
       }
+      // Bootstrap's own Cancel handling ignores a click while the dialog is still opening.
+      function onClick(ev) {
+        if (ev.target.closest && ev.target.closest("[data-bs-dismiss=\"modal\"]")) close(null);
+      }
+      function onHide() { closing = true; }
       function onChange() { setInvalid(false); }
-      function onShown() { if (inputs.length) inputs[0].focus(); }
+      function onShown() { if (!closing && inputs.length) inputs[0].focus(); }
       function onHidden() {
         form.removeEventListener("submit", onSubmit);
+        dialog.removeEventListener("click", onClick);
+        dialog.removeEventListener("hide.bs.modal", onHide);
         group.removeEventListener("change", onChange);
         dialog.removeEventListener("shown.bs.modal", onShown);
         focusAfterReject(btn, orderId);
         resolve(chosen);
       }
       form.addEventListener("submit", onSubmit);
+      dialog.addEventListener("click", onClick);
+      dialog.addEventListener("hide.bs.modal", onHide);
       group.addEventListener("change", onChange);
       dialog.addEventListener("shown.bs.modal", onShown);
       dialog.addEventListener("hidden.bs.modal", onHidden, { once: true });

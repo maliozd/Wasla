@@ -79,7 +79,6 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
         Assert.True(await browser.WaitForAsync(
             $"!!document.querySelector('#ordersLiveDetailModal.show [data-order-action=\"reject\"][data-order-id=\"{TrendyolOrderId}\"]')", TimeSpan.FromSeconds(10), ct),
             (_host.ServerErrors ?? "") + " The detail modal did not show Reject.");
-        await Task.Delay(350, ct);
 
         await ClickRejectAsync(browser, "#ordersLiveDetailModal", TrendyolOrderId, ct);
         await DialogAsync(browser, ct);
@@ -110,10 +109,78 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
 
         await ClickRejectAsync(browser, "#ordersTableHost", TrendyolOrderId, ct);
         await DialogAsync(browser, ct);
+        // The Orders page also loads AdminLTE, which frames fieldsets: the reasons line up with the dialog text as on
+        // the Live Screen.
+        Assert.True(await browser.EvaluateAsync<bool>("""
+            (() => {
+              const fieldset = document.querySelector('#ordersRejectDialog fieldset:not([hidden])');
+              const text = document.querySelector('#ordersRejectDialogBody').getBoundingClientRect().left;
+              return getComputedStyle(fieldset).borderTopWidth === '0px'
+                && Math.abs(fieldset.querySelector('legend').getBoundingClientRect().left - text) < 1
+                && Math.abs(fieldset.querySelector('.form-check-input').getBoundingClientRect().left - text) < 1;
+            })()
+            """, ct), "The reason list is framed or indented on the Orders page.");
         await ChooseAsync(browser, 627, ct);
         await ConfirmAsync(browser, ct);
 
         await AssertRejectedAsync(browser, TrendyolOrderId, "reasonId=627", ct);
+    }
+
+    /// <summary>
+    /// Bootstrap ignores <c>hide()</c> while a modal is still opening. A Reject clicked in the detail modal before it has
+    /// finished opening waits for it to open, closes it and only then opens the reason dialog; a reason confirmed (twice)
+    /// while that dialog is itself still opening closes it once it has opened and posts once. Never two modals or two
+    /// backdrops at once.
+    /// </summary>
+    [Fact]
+    public async Task DetailModal_RejectWhileItIsStillOpening_HandsOverAndPostsOnce()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
+        await RejectWhileDetailModalOpensAsync(browser, ct);
+
+        // The reason dialog is still opening: a reason and two quick confirmations.
+        await ChooseAsync(browser, 623, ct);
+        await ConfirmAsync(browser, ct);
+        await ConfirmAsync(browser, ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+
+        await StepUntilAsync(browser, "window.__modalEvents.includes('hidden:ordersRejectDialog')", ct);
+        await AssertRejectedAsync(browser, TrendyolOrderId, "reasonId=623", ct);
+        Assert.Equal(
+            "show:ordersLiveDetailModal, shown:ordersLiveDetailModal, hide:ordersLiveDetailModal, hidden:ordersLiveDetailModal, "
+            + "show:ordersRejectDialog, shown:ordersRejectDialog, hide:ordersRejectDialog, hidden:ordersRejectDialog",
+            await ModalEventsAsync(browser, ct));
+    }
+
+    /// <summary>
+    /// The same race followed by a Cancel while the reason dialog is still opening: it closes once it has opened and
+    /// posts nothing, and the next Reject opens the dialog again with nothing selected (the flow is not left waiting).
+    /// </summary>
+    [Fact]
+    public async Task DetailModal_RejectWhileItIsStillOpening_CancelThenRejectAgain()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
+        await RejectWhileDetailModalOpensAsync(browser, ct);
+
+        await ChooseAsync(browser, 621, ct);
+        Assert.True(await browser.EvaluateAsync<bool>(
+            "(() => { document.querySelector('#ordersRejectDialog .modal-footer [data-bs-dismiss=\"modal\"]').click(); return true; })()", ct));
+        await ConfirmAsync(browser, ct);
+        await StepUntilAsync(browser, "window.__modalEvents.includes('hidden:ordersRejectDialog')", ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await StepUntilAsync(browser, "window.__modalEvents.filter(e => e === 'shown:ordersRejectDialog').length === 2", ct);
+        Assert.Equal(0, (await DialogAsync(browser, ct)).GetProperty("checked").GetInt32());
+
+        await browser.PressKeyAsync("Escape", shift: false, ct);
+        await StepUntilAsync(browser, "window.__modalEvents.filter(e => e === 'hidden:ordersRejectDialog').length === 2", ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+        Assert.Equal(OrderStatus.New, await StatusAsync(TrendyolOrderId, ct));
     }
 
     /// <summary>Yemeksepeti has no verified reason list: its Reject keeps the plain confirmation and posts no reason.</summary>
@@ -148,7 +215,10 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
               const d = document.querySelector('#ordersRejectDialog .modal-content').getBoundingClientRect();
               const radio = document.querySelector('#ordersRejectDialog fieldset:not([hidden]) .form-check-input').getBoundingClientRect();
               const label = document.querySelector('#ordersRejectDialog fieldset:not([hidden]) .form-check-label').getBoundingClientRect();
+              const title = document.querySelector('#ordersRejectDialog .modal-title').getBoundingClientRect();
+              const close = document.querySelector('#ordersRejectDialog .btn-close').getBoundingClientRect();
               return {
+                closeAtFarEdge: close.left - d.left <= 24 && title.left - close.right >= 8,
                 dir: getComputedStyle(document.querySelector('#ordersRejectDialog .modal-body')).direction,
                 left: d.left, right: d.right, width: window.innerWidth,
                 radioRightOfLabel: radio.left >= label.right - 1,
@@ -159,6 +229,7 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
         Assert.Equal("rtl", layout.GetProperty("dir").GetString());
         Assert.True(layout.GetProperty("left").GetDouble() >= 0 && layout.GetProperty("right").GetDouble() <= layout.GetProperty("width").GetDouble(), $"The dialog does not fit: {layout}");
         Assert.True(layout.GetProperty("radioRightOfLabel").GetBoolean(), $"The reasons are not mirrored: {layout}");
+        Assert.True(layout.GetProperty("closeAtFarEdge").GetBoolean(), $"The close button is not at the far edge, apart from the title: {layout}");
         Assert.True(layout.GetProperty("sideways").GetDouble() <= 0, $"Horizontal overflow: {layout}");
 
         await ConfirmAsync(browser, ct);
@@ -241,6 +312,81 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
 
     private static async Task ConfirmAsync(HeadlessChromium browser, CancellationToken ct) =>
         Assert.True(await browser.EvaluateAsync<bool>("(() => { document.querySelector('#ordersRejectDialog [data-order-reject-confirm]').click(); return true; })()", ct));
+
+    // Holds every Bootstrap modal transition until the test ends it. No CSS transition runs, so no real transitionend
+    // fires, but Bootstrap reads the long duration and waits; __endTransition(i) ends the wait on one modal element the
+    // way Bootstrap's own fallback timer would. Every allowed modal event is logged.
+    private const string HoldModalTransitions = """
+        (() => {
+          const style = document.createElement('style');
+          style.textContent = '.modal, .modal-dialog, .modal-backdrop { transition-property: none !important; transition-duration: 1000s !important; transition-delay: 0s !important; }';
+          document.head.appendChild(style);
+          window.__modalEvents = [];
+          ['show', 'shown', 'hide', 'hidden'].forEach(name => document.addEventListener(name + '.bs.modal', e => {
+            if (!e.defaultPrevented) window.__modalEvents.push(name + ':' + e.target.id);
+          }));
+          window.__endTransition = i => {
+            const elements = [...document.querySelectorAll('.modal-backdrop, .modal, .modal-dialog')];
+            elements[i % elements.length].dispatchEvent(new Event('transitionend'));
+            return true;
+          };
+          return true;
+        })()
+        """;
+
+    /// <summary>
+    /// Opens the detail modal and stops it half-way (shown on screen, <c>shown.bs.modal</c> not yet fired), clicks its
+    /// Reject twice, and steps until the reason dialog is in the same half-opened state.
+    /// </summary>
+    private async Task RejectWhileDetailModalOpensAsync(HeadlessChromium browser, CancellationToken ct)
+    {
+        Assert.True(await browser.EvaluateAsync<bool>(HoldModalTransitions, ct));
+        Assert.True(await browser.EvaluateAsync<bool>(
+            $"(() => {{ const b = document.querySelector('#ordersLiveScreenHost [data-order-detail=\"{TrendyolOrderId}\"]'); if (!b) return false; b.click(); return true; }})()", ct),
+            "No details button for the Trendyol GO order.");
+        await StepUntilAsync(browser, "!!document.querySelector('#ordersLiveDetailModal.show')", ct);
+        Assert.True(await browser.WaitForAsync(
+            $"!!document.querySelector('#ordersLiveDetailModal.show [data-order-action=\"reject\"][data-order-id=\"{TrendyolOrderId}\"]')", TimeSpan.FromSeconds(10), ct),
+            (_host.ServerErrors ?? "") + " The detail modal did not show Reject.");
+        Assert.Equal("show:ordersLiveDetailModal", await ModalEventsAsync(browser, ct));
+
+        await ClickRejectAsync(browser, "#ordersLiveDetailModal", TrendyolOrderId, ct);
+        await ClickRejectAsync(browser, "#ordersLiveDetailModal", TrendyolOrderId, ct);
+        Assert.Equal("show:ordersLiveDetailModal", await ModalEventsAsync(browser, ct));
+
+        await StepUntilAsync(browser, "!!document.querySelector('#ordersRejectDialog.show')", ct);
+        Assert.Equal(
+            "show:ordersLiveDetailModal, shown:ordersLiveDetailModal, hide:ordersLiveDetailModal, hidden:ordersLiveDetailModal, show:ordersRejectDialog",
+            await ModalEventsAsync(browser, ct));
+    }
+
+    /// <summary>
+    /// Ends held modal transitions one element at a time until <paramref name="condition"/> holds; after every step at
+    /// most one modal is shown and at most one backdrop is on the page.
+    /// </summary>
+    private static async Task StepUntilAsync(HeadlessChromium browser, string condition, CancellationToken ct)
+    {
+        for (var step = 0; step < 100; step++)
+        {
+            var state = await browser.EvaluateAsync<JsonElement>($$"""
+                (() => ({
+                  done: !!({{condition}}),
+                  modals: document.querySelectorAll('.modal.show').length,
+                  backdrops: document.querySelectorAll('.modal-backdrop').length
+                }))()
+                """, ct);
+            Assert.True(state.GetProperty("modals").GetInt32() <= 1 && state.GetProperty("backdrops").GetInt32() <= 1,
+                $"Two modal layers at once: {state}; events: {await ModalEventsAsync(browser, ct)}");
+            if (state.GetProperty("done").GetBoolean())
+                return;
+            await browser.EvaluateAsync<bool>($"window.__endTransition({step})", ct);
+        }
+
+        Assert.Fail($"Never reached {condition}; events: {await ModalEventsAsync(browser, ct)}");
+    }
+
+    private static Task<string> ModalEventsAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<string>("window.__modalEvents.join(', ')", ct);
 
     private async Task AssertRejectedAsync(HeadlessChromium browser, Guid orderId, string? expectedBody, CancellationToken ct)
     {
