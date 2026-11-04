@@ -88,6 +88,8 @@ public sealed class PlatformConnectionCredentialBrowserTests
             await browser.EvaluateAsync<bool>($$"""
                 (() => {
                   window.__requests = performance.getEntriesByType('resource').length;
+                  window.__requestsAt = performance.now();
+                  window.__requestsSeen = new Set(performance.getEntriesByType('resource').map(e => e.name + ' ' + e.startTime));
                   window.__location = location.href;
                   const input = document.getElementById('ApiKey');
                   input.focus();
@@ -107,29 +109,30 @@ public sealed class PlatformConnectionCredentialBrowserTests
             await browser.PressKeyAsync("Enter", shift: false, ct);
             Assert.Equal(("password", Typed, "false", "bi bi-eye"), await StateAsync(browser, ct));
 
-            var afterKeys = await browser.EvaluateAsync<JsonElement>("""
+            var afterKeys = await browser.EvaluateAsync<JsonElement>($$"""
                 (() => ({
                   sameLocation: location.href === window.__location,
                   focused: document.activeElement.getAttribute('aria-controls'),
                   requests: performance.getEntriesByType('resource').length - window.__requests,
+                  added: {{AddedRequests}},
                   secretValue: document.getElementById('ApiSecret').value
                 }))()
                 """, ct);
             Assert.True(afterKeys.GetProperty("sameLocation").GetBoolean(), $"{label}: the reveal control submitted or navigated.");
             Assert.Equal("ApiKey", afterKeys.GetProperty("focused").GetString());
-            Assert.Equal(0, afterKeys.GetProperty("requests").GetInt32());
+            Assert.True(afterKeys.GetProperty("requests").GetInt32() == 0, $"{label}: {afterKeys.GetProperty("requests").GetInt32()} resource(s) loaded while the keys worked the control: {afterKeys.GetProperty("added").GetString()}");
 
             // Revealing the untouched secret shows that it is empty: there is nothing stored in the page to reveal.
-            var secret = await browser.EvaluateAsync<JsonElement>("""
+            var secret = await browser.EvaluateAsync<JsonElement>($$"""
                 (() => {
                   document.querySelector('[data-credential-toggle][aria-controls="ApiSecret"]').click();
                   const input = document.getElementById('ApiSecret');
-                  return { type: input.type, value: input.value, requests: performance.getEntriesByType('resource').length - window.__requests };
+                  return { type: input.type, value: input.value, requests: performance.getEntriesByType('resource').length - window.__requests, added: {{AddedRequests}} };
                 })()
                 """, ct);
             Assert.Equal("text", secret.GetProperty("type").GetString());
             Assert.Equal("", secret.GetProperty("value").GetString());
-            Assert.Equal(0, secret.GetProperty("requests").GetInt32());
+            Assert.True(secret.GetProperty("requests").GetInt32() == 0, $"{label}: {secret.GetProperty("requests").GetInt32()} resource(s) loaded while the secret was revealed: {secret.GetProperty("added").GetString()}");
 
             // Revealed fields are masked again when the form is submitted (the event alone; nothing is sent).
             var masked = await browser.EvaluateAsync<JsonElement>("""
@@ -172,6 +175,17 @@ public sealed class PlatformConnectionCredentialBrowserTests
             }
         }
     }
+
+    /// <summary>
+    /// Describes the resource entries added since the keys started, for a failure message: address without its query,
+    /// initiator, start and end relative to that moment, and when the page's load event ended. Never a field value.
+    /// </summary>
+    private const string AddedRequests = """
+        performance.getEntriesByType('resource').filter(e => !window.__requestsSeen.has(e.name + ' ' + e.startTime)).map(e => {
+          const url = new URL(e.name), at = t => Math.round(t - window.__requestsAt);
+          return `${url.origin}${url.pathname} (${e.initiatorType}, started ${at(e.startTime)} ms, ended ${at(e.responseEnd)} ms, ${e.deliveryType || 'network'}, ${e.transferSize} bytes)`;
+        }).join('; ') + ` [load event ended ${Math.round(window.__requestsAt - performance.getEntriesByType('navigation')[0].loadEventEnd)} ms before the keys]`
+        """;
 
     private static async Task<(string?, string?, string?, string?)> StateAsync(HeadlessChromium browser, CancellationToken ct)
     {
