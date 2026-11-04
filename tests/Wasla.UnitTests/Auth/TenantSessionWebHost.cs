@@ -262,14 +262,15 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
     /// <summary>
     /// Builds a tenant auth cookie value the way the cookie handler does (the scheme's own ticket format and
     /// Data Protection keys), for principals the login flow does not produce: missing or malformed claims, an old
-    /// issue time. The real handler reads it back on the next request. It protects exactly the given claims and writes
-    /// nothing: a cookie that should be valid needs a stored session (<see cref="SeedSession"/>) named by its claims.
+    /// issue time, optionally as a remember-me (persistent) ticket. The real handler reads it back on the next request.
+    /// It protects exactly the given claims and writes nothing: a cookie that should be valid needs a stored session
+    /// (<see cref="SeedSession"/>) named by its claims.
     /// </summary>
-    public string ProtectTenantCookie(IEnumerable<Claim> claims, DateTimeOffset issuedUtc, DateTimeOffset expiresUtc)
+    public string ProtectTenantCookie(IEnumerable<Claim> claims, DateTimeOffset issuedUtc, DateTimeOffset expiresUtc, bool isPersistent = false)
     {
         var ticket = new AuthenticationTicket(
             new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.Tenant)),
-            new AuthenticationProperties { IssuedUtc = issuedUtc, ExpiresUtc = expiresUtc },
+            new AuthenticationProperties { IssuedUtc = issuedUtc, ExpiresUtc = expiresUtc, IsPersistent = isPersistent },
             AuthSchemes.Tenant);
         return TenantCookieOptions().TicketDataFormat.Protect(ticket);
     }

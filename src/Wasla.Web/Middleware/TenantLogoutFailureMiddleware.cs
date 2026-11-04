@@ -13,9 +13,11 @@ namespace Wasla.Web.Middleware;
 /// failed (<see cref="TenantSessionUnavailableException"/>), WAS-186. It runs before authentication, so it covers a
 /// session that could not be checked before the action as well as a revocation the action could not store. The answer is
 /// HTTP 503 with the logout failure page: the logout could not be completed, the session may still be open, and a link to
-/// the logout page to try again. Nothing is signed out and the cookie is kept. A storage exception does not prove that the
-/// revocation was not stored, so the page claims neither outcome; a retry whose session is no longer valid is signed out
-/// and sent to the login page by the cookie scheme. The page is rendered here, without running the pipeline again, so it
+/// the logout page to try again. Nothing is signed out, and the cookie is kept as it was: the logout never requests
+/// sliding renewal (<see cref="TenantCookieEvents"/>), because clearing the response here would not cancel a renewal the
+/// cookie handler writes when this page starts. A storage exception does not prove that the revocation was not stored,
+/// so the page claims neither outcome; a retry whose session is no longer valid is signed out and sent to the login page
+/// by the cookie scheme. The page is rendered here, without running the pipeline again, so it
 /// needs neither the tenant database nor the session check that just failed. The registry or the validator has logged
 /// the exception type; nothing about the failure reaches the response. Every other request passes through untouched.
 /// </summary>

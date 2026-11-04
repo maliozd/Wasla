@@ -276,9 +276,9 @@ public sealed class AuthController : Controller
 
     /// <summary>
     /// The logout page, which the logout failure page links to as its "Try again" (WAS-186). It shows the same
-    /// antiforgery-protected logout form as the menu, for the signed-in session; opening it changes nothing. A session
-    /// that is no longer valid is signed out and challenged by the cookie scheme as on any page, so the browser lands on
-    /// the login page.
+    /// antiforgery-protected logout form as the menu, for the signed-in session; opening it revokes and signs out
+    /// nothing. Like any page, it renews a cookie whose sliding renewal is due. A session that is no longer valid is
+    /// signed out and challenged by the cookie scheme as on any page, so the browser lands on the login page.
     /// </summary>
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [TenantLogout]
@@ -290,8 +290,9 @@ public sealed class AuthController : Controller
     /// the tenant resolved from the host and the cookie's user; no request value names it. Its revocation is stored
     /// before the response, so every copy of the cookie, including a renewed one, is rejected from then on. Other
     /// sessions of the user are untouched. If the revocation cannot be stored (<see cref="TenantSessionUnavailableException"/>),
-    /// nothing is signed out and the cookie is kept: <see cref="Middleware.TenantLogoutFailureMiddleware"/> shows the
-    /// logout failure page, from which logout can be tried again.
+    /// nothing is signed out and the cookie is kept, not renewed either (<see cref="TenantCookieEvents"/>):
+    /// <see cref="Middleware.TenantLogoutFailureMiddleware"/> shows the logout failure page, from which logout can be
+    /// tried again.
     /// </summary>
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [ValidateAntiForgeryToken]

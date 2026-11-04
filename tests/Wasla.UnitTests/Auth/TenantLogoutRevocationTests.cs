@@ -406,7 +406,7 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
 
     /// <summary>
     /// The revocation cannot be stored (WAS-186): the logout failure page, not a success redirect, and the cookie stays.
-    /// Its "Try again" is the logout page, a GET that changes nothing; posting from it fails the same way while storage
+    /// Its "Try again" is the logout page, a GET that ends no session; posting from it fails the same way while storage
     /// fails, and logs out once storage works again. Only then is the copied cookie rejected. Another session of the user
     /// and the other tenant are untouched throughout.
     /// </summary>
@@ -545,15 +545,104 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         Assert.NotNull(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
     }
 
+    public static TheoryData<string, bool> RenewalDueFailedLogouts => new()
+    {
+        { "revocation-fails", false },
+        { "revocation-fails", true },
+        { "revocation-stored-then-fails", false },
+        { "revocation-stored-then-fails", true },
+        { "session-check-fails", false },
+        { "session-check-fails", true }
+    };
+
     /// <summary>
-    /// The logout page: the logout form for the signed-in session, with its antiforgery token. Opening it revokes,
-    /// deletes and renews nothing. Without a session it is challenged like any page.
+    /// A logout that cannot complete for a session whose sliding renewal is due, with and without remember-me: the
+    /// failure page neither renews nor deletes the cookie. The antiforgery token comes from a page of the fresh session,
+    /// which is not due for renewal; the cookie is aged afterwards, so the logout under test is the first request that
+    /// finds renewal due. Afterwards the logout page, an ordinary authenticated page, renews the due cookie like any page,
+    /// which shows renewal was due, and its form logs out. A revocation that was stored is found by the retry instead, which
+    /// is signed out and sent to the login page. Every copy of the cookie is then rejected; the other device keeps its
+    /// session.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(RenewalDueFailedLogouts))]
+    public async Task RenewalDueSession_LogoutThatCannotComplete_NeitherRenewsNorDeletesTheCookie(string failure, bool rememberMe)
+    {
+        using var browser = _host.Client(TenantSessionWebHost.AlphaHost);
+        await browser.LoginAsync(_owner.Email, rememberMe: rememberMe);
+        using var otherDevice = await SignedInAsync(_owner);
+        var original = browser.AuthCookie!;
+        var sessionId = SessionIdOf(original);
+        var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
+        Assert.True(string.Equals(original, browser.AuthCookie, StringComparison.Ordinal), "A fresh session must not be renewed.");
+        var due = RenewalDue(original);
+        browser.Cookies[TenantAuthCookieNames.Active] = due;
+        switch (failure)
+        {
+            case "revocation-fails":
+                FailAlphaCommands(command => command.CommandText.Contains("UPDATE \"TenantSessions\"", StringComparison.Ordinal));
+                break;
+            case "revocation-stored-then-fails":
+                InterceptAlphaCommands(new FailingAfterExecution(command => command.CommandText.Contains("UPDATE \"TenantSessions\"", StringComparison.Ordinal)));
+                break;
+            default:
+                FailAlphaCommands(command => command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)
+                                             && command.CommandText.Contains("\"TenantSessions\"", StringComparison.Ordinal));
+                break;
+        }
+
+        var failed = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+
+        await AssertLogoutFailurePageAsync(failed, browser);
+        Assert.True(string.Equals(due, browser.AuthCookie, StringComparison.Ordinal), "A logout that cannot complete must neither renew nor delete the cookie.");
+        var stored = failure == "revocation-stored-then-fails";
+        Assert.Equal(stored, _host.ReadSessions(_host.AlphaId).Single(s => s.Id == sessionId).RevokedAtUtc is not null);
+
+        UsePlainAlphaDatabase();
+        var copies = new List<string> { original, due };
+        if (stored)
+        {
+            AssertRedirectsToLogin(await browser.GetAsync("/auth/logout"));
+            AssertSignedOut(browser);
+        }
+        else
+        {
+            var retryToken = await browser.AntiforgeryTokenAsync("/auth/logout");
+            var renewed = browser.AuthCookie!;
+            Assert.False(string.Equals(due, renewed, StringComparison.Ordinal), "The logout page renews a due cookie like any page.");
+            Assert.Equal(sessionId, SessionIdOf(renewed));
+            Assert.Null(_host.ReadSessions(_host.AlphaId).Single(s => s.Id == sessionId).RevokedAtUtc);
+            copies.Add(renewed);
+
+            var retried = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", retryToken)]);
+
+            Assert.Equal(HttpStatusCode.Redirect, retried.StatusCode);
+            Assert.Equal("/auth/login", retried.Headers.Location!.OriginalString);
+            AssertSignedOut(browser);
+        }
+
+        Assert.Equal([sessionId], _host.ReadSessions(_host.AlphaId).Where(s => s.RevokedAtUtc is not null).Select(s => s.Id));
+        foreach (var copy in copies)
+        {
+            using var replay = CookieClient(TenantSessionWebHost.AlphaHost, copy);
+            AssertRedirectsToLogin(await replay.GetAsync("/settings/users"));
+            AssertSignedOut(replay);
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await otherDevice.GetAsync("/settings/users")).StatusCode);
+    }
+
+    /// <summary>
+    /// The logout page: the logout form for the signed-in session, with its antiforgery token. Opening it revokes and
+    /// deletes nothing and leaves a fresh cookie as it is. It is an ordinary authenticated page, so a cookie whose sliding
+    /// renewal is due is renewed as on any page, for the same session. Without a session it is challenged like any page.
     /// </summary>
     [Fact]
-    public async Task LogoutPage_ShowsTheLogoutForm_AndOpeningItChangesNothing()
+    public async Task LogoutPage_ShowsTheLogoutForm_AndOpeningItEndsNoSession()
     {
         using var browser = await SignedInAsync(_owner);
         var cookie = browser.AuthCookie!;
+        var sessionId = SessionIdOf(cookie);
 
         var page = await browser.GetAsync("/auth/logout");
 
@@ -563,12 +652,51 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         Assert.True(html.Contains("name=\"__RequestVerificationToken\"", StringComparison.Ordinal), "The logout form has no antiforgery token.");
         Assert.True(html.Contains("type=\"submit\" data-logout-submit>Logout</button>", StringComparison.Ordinal), "The logout button is missing.");
         Assert.False(html.Contains("data-logout-failed", StringComparison.Ordinal), "The logout page must not report a failure.");
-        Assert.True(string.Equals(cookie, browser.AuthCookie, StringComparison.Ordinal), "Opening the logout page must not change the cookie.");
+        Assert.True(string.Equals(cookie, browser.AuthCookie, StringComparison.Ordinal), "Opening the logout page must not change a fresh cookie.");
         Assert.Null(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
         Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/settings/users")).StatusCode);
 
+        var due = RenewalDue(cookie);
+        browser.Cookies[TenantAuthCookieNames.Active] = due;
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/auth/logout")).StatusCode);
+        Assert.False(string.Equals(due, browser.AuthCookie, StringComparison.Ordinal), "The logout page renews a due cookie like any page.");
+        Assert.Equal(sessionId, SessionIdOf(browser.AuthCookie!));
+        Assert.Null(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+
         using var anonymous = _host.Client(TenantSessionWebHost.AlphaHost);
         AssertRedirectsToLogin(await anonymous.GetAsync("/auth/logout"));
+    }
+
+    /// <summary>
+    /// A logout that succeeds for a session whose sliding renewal is due, with and without remember-me: the response only
+    /// deletes the cookie, with no renewed copy beside it, and every copy is rejected afterwards.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RenewalDueSession_LogsOut_WithoutARenewedCookie(bool rememberMe)
+    {
+        using var browser = _host.Client(TenantSessionWebHost.AlphaHost);
+        await browser.LoginAsync(_owner.Email, rememberMe: rememberMe);
+        var original = browser.AuthCookie!;
+        var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
+        var due = RenewalDue(original);
+        browser.Cookies[TenantAuthCookieNames.Active] = due;
+
+        var logout = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+
+        Assert.Equal(HttpStatusCode.Redirect, logout.StatusCode);
+        Assert.Equal("/auth/login", logout.Headers.Location!.OriginalString);
+        AssertSignedOut(browser);
+        Assert.False(browser.LastSetCookies.Select(header => SetCookieHeaderValue.Parse(header))
+                .Any(cookie => cookie.Name.Equals(TenantAuthCookieNames.Active) && cookie.Value.Length > 0),
+            "A logout must not re-issue the tenant cookie.");
+        Assert.NotNull(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+        foreach (var copy in new[] { original, due })
+        {
+            using var replay = CookieClient(TenantSessionWebHost.AlphaHost, copy);
+            AssertRedirectsToLogin(await replay.GetAsync("/settings/users"));
+        }
     }
 
     [Theory]
@@ -740,6 +868,18 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         var ticket = server.UnprotectTenantCookie(cookie)!;
         var issued = DateTimeOffset.UtcNow - age;
         return server.ProtectTenantCookie(ticket.Principal.Claims, issued, issued.AddDays(7));
+    }
+
+    /// <summary>
+    /// The same login's ticket, with its claims, lifetime and remember-me choice, protected as if issued 70 % of its
+    /// lifetime ago: valid, and due for sliding renewal, since more of its lifetime has passed than remains.
+    /// </summary>
+    private string RenewalDue(string cookie)
+    {
+        var ticket = _host.UnprotectTenantCookie(cookie)!;
+        var lifetime = ticket.Properties.ExpiresUtc!.Value - ticket.Properties.IssuedUtc!.Value;
+        var issued = DateTimeOffset.UtcNow - lifetime * 0.7;
+        return _host.ProtectTenantCookie(ticket.Principal.Claims, issued, issued + lifetime, ticket.Properties.IsPersistent);
     }
 
     private static List<Claim> SessionClaims(Guid tenantId, AppUser user, Guid sessionId) =>

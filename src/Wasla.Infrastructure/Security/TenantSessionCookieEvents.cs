@@ -16,8 +16,9 @@ namespace Wasla.Infrastructure.Security;
 /// end the session on its own host. Renewal re-issues the same claims, so the same login session. When no tenant was
 /// resolved for the request, the session simply does not authenticate it and the cookie is
 /// left alone. If the tenant database cannot be read, <see cref="TenantSessionUnavailableException"/> propagates; the
-/// session is neither accepted, renewed nor deleted. Each application derives from this only for its challenge and
-/// forbid responses. Registered per request (<c>EventsType</c>), so it holds no state across requests.
+/// session is neither accepted, renewed nor deleted. Each application derives from this for its challenge and forbid
+/// responses; Wasla.Web's also keeps its logout from renewing. Registered per request (<c>EventsType</c>), so it holds no
+/// state across requests.
 /// </summary>
 public abstract class TenantSessionCookieEvents : CookieAuthenticationEvents
 {
