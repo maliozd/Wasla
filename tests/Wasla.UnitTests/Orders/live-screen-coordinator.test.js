@@ -239,7 +239,7 @@ test("unchanged signature comparison stays cheap for thousands of orders", funct
       id: "00000000-0000-0000-0000-" + String(i).padStart(12, "0"),
       displayNumber: "TY-" + i,
       platform: "TrendyolYemek",
-      status: "Accepted",
+      status: "New",
       receivedAtUtc: "2026-09-22T08:00:00Z",
       deliveredAtUtc: null,
       customerName: "Customer <b>" + i + "</b>",
@@ -264,7 +264,7 @@ test("unchanged signature comparison stays cheap for thousands of orders", funct
   let changed = 0;
   for (let i = 0; i < orders.length; i++) {
     const before = store.orderContentSignature(
-      i === 10 ? Object.assign({}, orders[i], { status: "Accepted" }) : orders[i],
+      i === 10 ? Object.assign({}, orders[i], { status: "New" }) : orders[i],
       "2026-09-23T08:00:00Z");
     const after = store.orderContentSignature(orders[i], "2026-09-23T08:00:00Z");
     if (before !== after) changed += 1;
@@ -469,7 +469,7 @@ test("a minute boundary updates elapsed labels without rebuilding item nodes", f
       id: guid(i),
       displayNumber: "TY-" + i,
       platform: "TrendyolYemek",
-      status: "Accepted",
+      status: "New",
       receivedAtUtc: "2026-09-22T08:00:00Z",
       deliveredAtUtc: null,
       customerName: "Customer <b>" + i + "</b>",
@@ -489,9 +489,7 @@ test("a minute boundary updates elapsed labels without rebuilding item nodes", f
       canManageOrders: true,
       messages: {
         elapsedMinutes: "{0} dk",
-        ordersStartPreparing: "Hazırla",
         viewDetails: "Detay",
-        statusAccepted: "Kabul",
         statusNewBadge: "Yeni",
         platformTrendyolYemek: "Trendyol",
         ordersFullscreenCustomer: "Müşteri",
@@ -985,7 +983,7 @@ test("Board groups actual statuses, keeps item notes and authorized actions, and
   const h = boardHarness();
   try {
     const body = snapshot([1, 2, 3, 4, 5, 6].map(guid));
-    const statuses = ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
+    const statuses = ["New", "New", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
     body.orders.forEach((o, i) => { o.status = statuses[i]; });
     body.orders[1].items[0].notes = "<script>not markup</script>";
     h.browser.renderSnapshot(body);
@@ -994,9 +992,10 @@ test("Board groups actual statuses, keeps item notes and authorized actions, and
     assert.deepEqual(columns.map(c => c.querySelector("[data-board-count]").textContent), ["2", "1", "1", "1", "1"]);
     const cards = h.host.querySelectorAll(".wasla-live-screen-card");
     const accepted = cards[1];
-    assert.equal(accepted.getAttribute("data-order-status"), "Accepted");
-    assert.equal(accepted.querySelector("[data-status-badge]").textContent, "statusAccepted");
-    assert.equal(accepted.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
+    assert.equal(accepted.getAttribute("data-order-status"), "New");
+    assert.equal(accepted.querySelector("[data-status-badge]").textContent, "statusNew");
+    assert.deepEqual(accepted.querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action")), ["approve", "reject"]);
+    assert.equal(cards[2].querySelector("[data-order-action]").getAttribute("data-order-action"), "mark-ready");
     assert.deepEqual(cards[0].querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action")), ["approve", "reject"]);
     assert.equal(accepted.querySelector(".wasla-live-screen-card__note").textContent, "<script>not markup</script>");
     assert.equal(h.host.querySelectorAll("script").length, 0);
@@ -1031,7 +1030,7 @@ test("Grouped list uses Board groups once, shows customer and address, and reuse
   try {
     const body = snapshot([guid(1), guid(2)]);
     body.orders[0].status = "New";
-    body.orders[1].status = "Accepted";
+    body.orders[1].status = "New";
     body.orders[0].customerName = "Ada";
     body.orders[0].customerAddress = "Ada Street 4";
     body.orders[0].customerNote = "Zili çalmayın, arayın.";
@@ -1067,7 +1066,7 @@ test("Grouped list uses Board groups once, shows customer and address, and reuse
     assert.equal(rows[0].parentElement.getAttribute("data-board-list"), "new");
     assert.equal(rows[1].parentElement.getAttribute("data-board-list"), "new");
     assert.equal(rows[0].querySelector("[data-status-badge]").textContent, "statusNew");
-    assert.equal(rows[1].querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(rows[1].querySelector("[data-status-badge]").textContent, "statusNew");
     assert.equal(h.host.querySelectorAll(".wasla-live-list-columns").length, 0);
     assert.equal(rows[0].children[0].className.indexOf("wasla-live-list-row__identity") >= 0, true);
     assert.equal(rows[0].children[1].className.indexOf("wasla-live-list-row__items") >= 0, true);
@@ -1287,14 +1286,13 @@ test("Grouped list keeps lifecycle actions and moves a row without rebuilding it
   const h = boardHarness(true);
   try {
     const body = snapshot([guid(1), guid(2)]);
-    body.orders[1].status = "Accepted";
     h.view("list");
     h.browser.renderSnapshot(body);
     const row = id => h.host.querySelectorAll(".wasla-live-screen-card").find(el => el.getAttribute("data-order-id") === id);
     const accepted = row(guid(2));
     const item = accepted.querySelector(".wasla-live-screen-card__item");
     assert.deepEqual(row(guid(1)).querySelectorAll("[data-order-action]").map(b => b.getAttribute("data-order-action")), ["approve", "reject"]);
-    assert.equal(accepted.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
+    assert.equal(accepted.querySelector("[data-order-action]").getAttribute("data-order-action"), "approve");
     accepted.querySelector("[data-order-action]").focus();
     body.orders[1].status = "Preparing";
     const diff = h.browser.renderSnapshot(body);
@@ -1343,7 +1341,7 @@ for (const count of [30, 5755]) {
     const h = boardHarness();
     try {
       const body = snapshot(Array.from({ length: count }, (_, i) => guid(i + 1)));
-      const statuses = ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
+      const statuses = ["New", "New", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"];
       body.orders.forEach((o, i) => { o.status = statuses[i % 6]; });
       const start = performance.now();
       h.browser.renderSnapshot(body);
@@ -1353,7 +1351,7 @@ for (const count of [30, 5755]) {
       // Each group renders one page (WAS-5); the rest stays one "Show more" away.
       const groupSizes = {};
       body.orders.forEach(o => {
-        const key = o.status === "New" || o.status === "Accepted" ? "new" : o.status === "Preparing" ? "preparing"
+        const key = o.status === "New" ? "new" : o.status === "Preparing" ? "preparing"
           : o.status === "ReadyForPickup" ? "ready" : o.status === "OnTheWay" ? "on-the-way" : "completed";
         groupSizes[key] = (groupSizes[key] || 0) + 1;
       });
@@ -1381,7 +1379,7 @@ function largeBody(newCount, acceptedCount, extra) {
       id: guid(i + 1),
       displayNumber: "YS-" + (900000 + i),
       platform: "Yemeksepeti",
-      status: i < newCount ? "New" : "Accepted",
+      status: "New",
       // Newest first in the group: order 1 is the newest.
       receivedAtUtc: new Date(Date.UTC(2026, 9, 14, 12, 0, 0) - i * 60000).toISOString(),
       deliveredAtUtc: null,
@@ -1556,7 +1554,7 @@ test("Focus keeps Board groups, selects the first order once, and ignores unchan
       { productName: "Rice", quantity: 2, notes: null },
       { productName: "Tea", quantity: 1, notes: null }
     ];
-    body.orders[1].status = "Accepted";
+    body.orders[1].status = "New";
     body.orders[1].customerName = "Other Customer";
     body.orders[2].status = "Preparing";
     h.view("focus");
@@ -1572,7 +1570,7 @@ test("Focus keeps Board groups, selects the first order once, and ignores unchan
     assert.equal(entries[2].parentElement.getAttribute("data-board-list"), "preparing");
     assert.equal(entries[0].getAttribute("aria-pressed"), "true");
     assert.equal(entries[0].querySelector("[data-status-badge]").textContent, "statusNew");
-    assert.equal(entries[1].querySelector("[data-status-badge]").textContent, "statusAccepted");
+    assert.equal(entries[1].querySelector("[data-status-badge]").textContent, "statusNew");
     assert.equal(entries[0].querySelector("[data-order-code]").textContent, "TY-10000000000000000001");
     assert.equal(entries[0].querySelector("[data-product-summary]").textContent.indexOf("1× Soup"), 0);
     assert.equal(entries[0].querySelector("[data-product-summary]").textContent.indexOf("Tea"), -1);
@@ -1631,7 +1629,6 @@ test("Focus keeps a status change selected, moves its group, and drops outdated 
   });
   try {
     const body = snapshot([guid(1), guid(2)]);
-    body.orders[1].status = "Accepted";
     h.view("focus");
     h.browser.renderSnapshot(body);
     await flush();
@@ -1885,7 +1882,7 @@ function groupIds(host, key) {
   return entries.map(function (el) { return el.getAttribute("data-order-id"); });
 }
 
-test("New and Accepted keep received-time order across polls, views, and group changes", () => {
+test("New orders keep received-time order across polls, views, and group changes", () => {
   const h = boardHarness(true, {
     liveDetailModal: {
       loadPanel: function () { return Promise.resolve(true); },
@@ -1906,16 +1903,16 @@ test("New and Accepted keep received-time order across polls, views, and group c
     body.orders.forEach(function (order) { order.receivedAtUtc = received[order.id]; });
     body.orders[0].status = "New";
     body.orders[1].status = "New";
-    body.orders[2].status = "Accepted";
+    body.orders[2].status = "New";
     body.orders[3].status = "New";
     body.orders[4].status = "New";
     body.orders[5].status = "Preparing";
     body.orders[6].status = "Preparing";
-    // Status-sorted input would place the Accepted order after every New order.
+    // Input in another order (the server sorts by status) must not decide the order within a group.
     body.orders = [0, 1, 3, 4, 2, 5, 6].map(function (index) { return body.orders[index]; });
     h.browser.renderSnapshot(body);
     const newestFirst = [guid(1), guid(2), guid(3), guid(4), guid(5)];
-    assert.deepEqual(groupIds(h.host, "new"), newestFirst, "mixed New and Accepted follow received time, then id");
+    assert.deepEqual(groupIds(h.host, "new"), newestFirst, "New orders follow received time, then id");
     assert.deepEqual(groupIds(h.host, "preparing"), [guid(6), guid(7)]);
 
     const cardById = function (id) {
@@ -1924,22 +1921,13 @@ test("New and Accepted keep received-time order across polls, views, and group c
       });
     };
     const middle = cardById(guid(2));
-    const item = middle.querySelector(".wasla-live-screen-card__item");
-    middle.querySelector("[data-order-action]").focus();
     const second = body.orders.find(function (order) { return order.id === guid(2); });
-    second.status = "Accepted";
     body.orders = body.orders.filter(function (order) { return order.id !== guid(2); }).concat([second]);
-    const accepted = h.browser.renderSnapshot(body);
+    const reordered = h.browser.renderSnapshot(body);
     assert.deepEqual(groupIds(h.host, "new"), newestFirst);
-    assert.equal(accepted.moved, 0);
+    assert.equal(reordered.moved, 0);
     assert.equal(cardById(guid(2)), middle);
-    assert.equal(middle.querySelector(".wasla-live-screen-card__item"), item);
-    assert.equal(middle.querySelector("[data-status-badge]").textContent, "statusAccepted");
-    assert.equal(middle.querySelector("[data-order-action]").getAttribute("data-order-action"), "start-preparing");
-    assert.equal(h.doc.activeElement, middle.querySelector("[data-order-action]"));
 
-    const first = body.orders.find(function (order) { return order.id === guid(1); });
-    first.status = "Accepted";
     body.orders = [guid(5), guid(4), guid(3), guid(2), guid(1), guid(7), guid(6)].map(function (id) {
       return body.orders.find(function (order) { return order.id === id; });
     });
@@ -1985,13 +1973,12 @@ test("New and Accepted keep received-time order across polls, views, and group c
     });
     h.browser.selectOrder(guid(8), true);
     const focused = body.orders.find(function (order) { return order.id === guid(8); });
-    focused.status = "Accepted";
     body.orders = body.orders.filter(function (order) { return order !== focused; }).concat([focused]);
     h.browser.renderSnapshot(body);
     assert.equal(h.browser.getSelectedOrderId(), guid(8));
     assert.deepEqual(groupIds(h.host, "new"), [guid(8), guid(1), guid(2), guid(5)]);
     assert.equal(entry.parentElement !== null, true);
-    assert.equal(entry.getAttribute("data-order-status"), "Accepted");
+    assert.equal(entry.getAttribute("data-order-status"), "New");
     assert.equal(entry.parentElement.getAttribute("data-board-list"), "new");
     assert.equal(queue.scrollTop, 48);
   } finally { h.restore(); }
@@ -3498,7 +3485,7 @@ test("every status uses the same Board card shell, and no status, demo or countd
   const h = boardHarness();
   try {
     const body = snapshot([guid(1), guid(2), guid(3), guid(4), guid(5), guid(6), guid(7)]);
-    ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"].forEach((status, i) => { body.orders[i].status = status; });
+    ["New", "New", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered"].forEach((status, i) => { body.orders[i].status = status; });
     body.orders[6].status = "ReadyForPickup";
     body.orders[6].isDemo = true;
     h.browser.renderSnapshot(body);

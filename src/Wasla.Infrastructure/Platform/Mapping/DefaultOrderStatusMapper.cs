@@ -28,8 +28,9 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into OrderHub's shared lifecycle; RECEIVED vs internal Accepted is reconciled at sync merge.
-    // TR: Partner stringlerini (RECEIVED, …) ve eski küçük harf mock'larını ortak lifecycle'a map ederiz; RECEIVED ile iç Accepted uyumu sync merge'da toparlanır.
+    // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into OrderHub's shared lifecycle; RECEIVED vs internal Preparing is reconciled at sync merge.
+    // TR: Partner stringlerini (RECEIVED, …) ve eski küçük harf mock'larını ortak lifecycle'a map ederiz; RECEIVED ile iç Preparing uyumu sync merge'da toparlanır.
+    // Accepting an order starts its preparation (WAS-185), so acceptance strings map to Preparing.
     private static OrderStatus MapYemeksepeti(string status)
     {
         var s = (status ?? string.Empty).Trim();
@@ -48,7 +49,7 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         return sLower switch
         {
             "new" => OrderStatus.New,
-            "confirmed" or "accepted" => OrderStatus.Accepted,
+            "confirmed" or "accepted" => OrderStatus.Preparing,
             "preparing" => OrderStatus.Preparing,
             "ready" or "ready_for_pickup" => OrderStatus.ReadyForPickup,
             "on_the_way" or "courier" => OrderStatus.OnTheWay,
@@ -67,8 +68,9 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         return u switch
         {
             "CREATED" => OrderStatus.New,
-            "VERIFY" or "VERIFIED" => OrderStatus.Accepted,
-            "CONFIRMED" or "ACCEPTED" => OrderStatus.Accepted,
+            // VERIFY is what this client's accept call echoes (the restaurant verified the order), so it is the acceptance.
+            "VERIFY" or "VERIFIED" => OrderStatus.Preparing,
+            "CONFIRMED" or "ACCEPTED" => OrderStatus.Preparing,
             "PREPARE" or "PREPARING" => OrderStatus.Preparing,
             "READY" or "READY_FOR_PICKUP" => OrderStatus.ReadyForPickup,
             "ON_THE_WAY" or "DISPATCHED" or "HANDOVER" => OrderStatus.OnTheWay,
@@ -93,7 +95,8 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         {
             // Trendyol GO
             "Created" => OrderStatus.New,
-            "Picking" => OrderStatus.Accepted,
+            // The seller accepted the package (the `picked` call) and is preparing it; there is no separate prepare status.
+            "Picking" => OrderStatus.Preparing,
             "Invoiced" => OrderStatus.ReadyForPickup,
             "Shipped" => OrderStatus.OnTheWay,
             "Delivered" => OrderStatus.Delivered,
@@ -102,7 +105,7 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
 
             // Turkish mock labels / UI-ish strings
             "Yeni" or "yeni" => OrderStatus.New,
-            "Onaylandı" or "Onaylandi" or "onaylandı" or "onaylandi" => OrderStatus.Accepted,
+            "Onaylandı" or "Onaylandi" or "onaylandı" or "onaylandi" => OrderStatus.Preparing,
             "Hazırlanıyor" or "Hazirlaniyor" or "hazırlanıyor" or "hazirlaniyor" => OrderStatus.Preparing,
             "Hazır" or "Hazir" or "hazır" or "hazir" => OrderStatus.ReadyForPickup,
             "Yolda" or "yolda" => OrderStatus.OnTheWay,

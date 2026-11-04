@@ -499,7 +499,7 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         var orders = new[]
         {
             Order(DetailOrderId, FoodPlatform.Yemeksepeti, "YS-48211", OrderStatus.New, "Zeynep Kaya", 412.50m, now.AddMinutes(-2), "Please ring the bell twice."),
-            Order(Guid.NewGuid(), FoodPlatform.TrendyolYemek, "TY-77310", OrderStatus.Accepted, "Can Demir", 238.00m, now.AddMinutes(-6), null),
+            Order(Guid.NewGuid(), FoodPlatform.TrendyolYemek, "TY-77310", OrderStatus.Preparing, "Can Demir", 238.00m, now.AddMinutes(-6), null),
             Order(Guid.NewGuid(), FoodPlatform.GetirYemek, "GY-10944", OrderStatus.Preparing, "Elif Şahin", 189.90m, now.AddMinutes(-11), null),
             Order(Guid.NewGuid(), FoodPlatform.Yemeksepeti, "YS-48190", OrderStatus.ReadyForPickup, "Burak Yılmaz", 655.00m, now.AddMinutes(-18), "No cutlery."),
             Order(Guid.NewGuid(), FoodPlatform.TrendyolYemek, "TY-77288", OrderStatus.OnTheWay, "Selin Arslan", 302.40m, now.AddMinutes(-31), null),

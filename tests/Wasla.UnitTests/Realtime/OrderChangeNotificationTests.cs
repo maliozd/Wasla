@@ -70,7 +70,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         _notifier.OnNotify = async (tenantId, change) =>
         {
             var stored = await OrderChangeFixtures.ReadOrderAsync(_tenants, tenantId, "UPD-1");
-            accepted = stored.InternalStatus == OrderStatus.Accepted;
+            accepted = stored.InternalStatus == OrderStatus.Preparing;
         };
         _provider.Returns(OrderChangeFixtures.External("UPD-1", status: "Picking"));
         await sync.SyncCustomerAsync(_tenant, Ct);
@@ -99,18 +99,18 @@ public sealed class OrderChangeNotificationTests : IDisposable
         };
 
         Assert.True((await actions.TryApproveAsync(_tenant, first.Id, Ct)).Succeeded);
-        Assert.True((await actions.MarkPreparingAsync(_tenant, first.Id, Ct)).Succeeded);
         Assert.True((await actions.MarkReadyForPickupAsync(_tenant, first.Id, Ct)).Succeeded);
-        Assert.True((await actions.TryRejectAsync(_tenant, second.Id, Ct)).Succeeded);
+        Assert.True((await actions.TryRejectAsync(_tenant, second.Id, 621, Ct)).Succeeded);
 
+        // Approving starts preparation (WAS-185), so one order takes two actions to be ready.
         Assert.Equal(
-            [OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.Cancelled],
+            [OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.Cancelled],
             statusAtNotification);
         var announced = OrderChanges.Skip(before).ToList();
-        Assert.Equal([first.Id, first.Id, first.Id, second.Id], announced.Select(c => c.OrderId));
+        Assert.Equal([first.Id, first.Id, second.Id], announced.Select(c => c.OrderId));
         // Each order's versions only grow, one per committed change; the stored value is the last one announced.
-        Assert.Equal([2L, 3L, 4L, 2L], announced.Select(c => c.Version));
-        Assert.Equal(4, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-1")).ChangeVersion);
+        Assert.Equal([2L, 3L, 2L], announced.Select(c => c.Version));
+        Assert.Equal(3, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-1")).ChangeVersion);
         Assert.Equal(2, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-2")).ChangeVersion);
     }
 
@@ -173,7 +173,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         var before = _notifier.Sent.Count;
 
         // Wrong status for the action; an unknown order; the provider refuses the call.
-        Assert.False((await actions.MarkPreparingAsync(_tenant, order.Id, Ct)).Succeeded);
+        Assert.False((await actions.MarkReadyForPickupAsync(_tenant, order.Id, Ct)).Succeeded);
         Assert.False((await actions.TryApproveAsync(_tenant, Guid.NewGuid(), Ct)).Succeeded);
         _provider.FailActions = true;
         Assert.False((await actions.TryApproveAsync(_tenant, order.Id, Ct)).Succeeded);
@@ -195,7 +195,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         Assert.Equal(1, result.InsertedCount);
         Assert.Equal(0, result.FailedConnections);
         Assert.True(approved.Succeeded);
-        Assert.Equal(OrderStatus.Accepted, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "BROKEN-1")).InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, (await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "BROKEN-1")).InternalStatus);
         Assert.Equal(2, _notifier.Sent.Count);
     }
 

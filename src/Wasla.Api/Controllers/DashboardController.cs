@@ -49,7 +49,6 @@ public sealed class DashboardController : ControllerBase
         var pendingCount = await todayQuery
             .CountAsync(o =>
                 o.InternalStatus == OrderStatus.New ||
-                o.InternalStatus == OrderStatus.Accepted ||
                 o.InternalStatus == OrderStatus.Preparing ||
                 o.InternalStatus == OrderStatus.ReadyForPickup ||
                 o.InternalStatus == OrderStatus.OnTheWay, ct);

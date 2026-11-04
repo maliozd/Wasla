@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
+using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Enums;
@@ -373,13 +374,61 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         await SendAndEnsureSuccessAsync(req, "MarkDelivered", externalOrderId, ct);
     }
 
-    public async Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
+    /// <summary>
+    /// Full cancellation through the documented "Sipariş İptali" (unsupplied) call: every item id of the package, with
+    /// the operator's <paramref name="reasonId"/>. The provider refuses the request without item ids or with a reason
+    /// outside its restaurant reasons (HTTP 400 on its stage API, 2026-11-03). A missing or unsupported reason, or a
+    /// stored package that cannot supply a complete item id list, throws before any request.
+    /// </summary>
+    public async Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
     {
+        if (OrderRejectReasons.Refusal(FoodPlatform.TrendyolYemek, reasonId) is not null)
+            throw new InvalidOperationException("TrendyolGo RejectOrder: the reason is missing or not a supported restaurant reason.");
+
         var supplierId = EnsureSupplierAndExecutor(connection);
+        var itemIdList = PackageItemIdsToReject(order);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/unsupplied";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
-        req.Content = JsonContent.Create(new { packageId = externalOrderId, itemIdList, reasonId }, options: JsonOptions);
-        await SendAndEnsureSuccessAsync(req, "RejectOrder", externalOrderId, ct);
+        req.Content = JsonContent.Create(new { packageId = order.ExternalOrderId, itemIdList, reasonId = reasonId!.Value }, options: JsonOptions);
+        await SendAndEnsureSuccessAsync(req, "RejectOrder", order.ExternalOrderId, ct);
+    }
+
+    /// <summary>
+    /// Every <c>lines[].items[].packageItemId</c> of the package this client stored on the order at its last sync
+    /// (<see cref="Order.RawPayloadJson"/>; <see cref="OrderItem"/> keeps no provider item id). Never <c>lineItemId</c>,
+    /// a product id or a Wasla row id. The documentation defines a full cancellation as all the package item ids the
+    /// packages call returned, so an item already reported as cancelled is listed too; a subset is a partial
+    /// cancellation. Throws, so no request is sent, when the stored package is missing, unreadable or another package,
+    /// or when any line has no items, any item is null, or any item has no id: sending the ids that remain would cancel
+    /// only part of the order while Wasla records the whole order as cancelled.
+    /// </summary>
+    private static List<string> PackageItemIdsToReject(Order order)
+    {
+        TrendyolGoPackage? package;
+        try
+        {
+            package = JsonSerializer.Deserialize<TrendyolGoPackage>(order.RawPayloadJson, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            package = null;
+        }
+
+        if (package is null || !string.Equals(package.Id, order.ExternalOrderId, StringComparison.Ordinal))
+            throw new InvalidOperationException("TrendyolGo RejectOrder: the order has no stored package to reject.");
+
+        var lines = package.Lines;
+        if (lines is not { Count: > 0 } || lines.Any(line => line?.Items is not { Count: > 0 }))
+            throw IncompletePackage();
+
+        var items = lines.SelectMany(line => line!.Items!).ToList();
+        if (items.Any(item => item is null || string.IsNullOrWhiteSpace(item.PackageItemId)))
+            throw IncompletePackage();
+
+        return items.Select(item => item!.PackageItemId!).ToList();
+
+        static InvalidOperationException IncompletePackage() =>
+            new("TrendyolGo RejectOrder: the stored package has no complete item id list.");
     }
 
     private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)

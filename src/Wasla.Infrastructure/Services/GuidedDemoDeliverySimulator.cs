@@ -37,7 +37,6 @@ public sealed class GuidedDemoDeliverySimulator : IGuidedDemoDeliverySimulator
             .Where(session => session.CompletedAtUtc == null
                 && session.ExpiresAtUtc > now
                 && (session.Status == OrderStatus.New
-                    || session.Status == OrderStatus.Accepted
                     || session.Status == OrderStatus.Preparing
                     || session.Status == OrderStatus.ReadyForPickup
                     || session.Status == OrderStatus.OnTheWay))
@@ -76,7 +75,7 @@ public sealed class GuidedDemoDeliverySimulator : IGuidedDemoDeliverySimulator
             {
                 OrderStatus.ReadyForPickup or OrderStatus.OnTheWay when stage.UpdatedAt > dueFrom =>
                     GuidedDemoTiming.DueAt(stage.UpdatedAt),
-                OrderStatus.New or OrderStatus.Accepted or OrderStatus.Preparing =>
+                OrderStatus.New or OrderStatus.Preparing =>
                     now + GuidedDemoTiming.UserStepCheckInterval,
                 _ => null
             };

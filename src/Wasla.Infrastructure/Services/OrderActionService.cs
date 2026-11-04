@@ -48,19 +48,20 @@ public sealed class OrderActionService : IOrderActionService
         return true;
     }
 
+    // Accepting an order starts its preparation (WAS-185): New moves straight to Preparing and sets AcceptedAt.
     public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Accepted, ct);
+        return await ExecuteAsync(customerId, orderId, OrderStatus.Preparing, rejectReasonId: null, ct);
     }
 
-    public async Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, CancellationToken ct)
+    public async Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Cancelled, ct);
+        return await ExecuteAsync(customerId, orderId, OrderStatus.Cancelled, reasonId, ct);
     }
 
-    private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, CancellationToken ct)
+    private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, int? rejectReasonId, CancellationToken ct)
     {
-        if (target is not (OrderStatus.Accepted or OrderStatus.Cancelled))
+        if (target is not (OrderStatus.Preparing or OrderStatus.Cancelled))
             return new OrderActionResult(false, "Orders.ActionFailed");
 
         await using var db = await _dbFactory.CreateAsync(customerId, ct);
@@ -78,6 +79,18 @@ public sealed class OrderActionService : IOrderActionService
 
         if (order.InternalStatus != OrderStatus.New)
             return new OrderActionResult(false, "Orders.InvalidStatusForAction");
+
+        // The reason must be one the stored order's platform offers. A refused reason changes nothing and calls no
+        // provider.
+        if (target == OrderStatus.Cancelled && OrderRejectReasons.Refusal(order.Platform, rejectReasonId) is { } refusal)
+        {
+            _logger.LogInformation(
+                "Order reject refused: reason missing or not offered by the platform. OrderId={OrderId} Platform={Platform} ReasonId={ReasonId}",
+                orderId,
+                order.Platform,
+                rejectReasonId);
+            return new OrderActionResult(false, refusal);
+        }
 
         // Choose a connection for the platform. We don't persist connection-id on Order yet (MVP),
         // so we use the first active connection for this platform.
@@ -98,39 +111,27 @@ public sealed class OrderActionService : IOrderActionService
         // provider HTTP clients bound the call with their own timeouts.
         try
         {
-            if (target == OrderStatus.Accepted)
+            if (target == OrderStatus.Preparing)
             {
                 await client.AcceptOrderAsync(connection, order.ExternalOrderId, preparationMinutes: 0, CancellationToken.None);
             }
             else
             {
-                await client.RejectOrderAsync(connection, order.ExternalOrderId, Array.Empty<string>(), reasonId: 0, CancellationToken.None);
+                await client.RejectOrderAsync(connection, order, rejectReasonId, CancellationToken.None);
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Provider action failed. OrderId={OrderId} Platform={Platform} Target={Target}", orderId, order.Platform, target);
-            return new OrderActionResult(false, target == OrderStatus.Accepted ? "Orders.ApproveFailed" : "Orders.RejectFailed");
+            return new OrderActionResult(false, target == OrderStatus.Preparing ? "Orders.ApproveFailed" : "Orders.RejectFailed");
         }
 
         if (await CommitTransitionAsync(db, orderId, OrderStatus.New, target, CancellationToken.None) is not { } version)
             return StatusChangedAfterProviderCall(orderId, order.Platform, OrderStatus.New, target);
 
         await PublishChangedAsync(customerId, orderId, version);
-        return new OrderActionResult(true, target == OrderStatus.Accepted ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
+        return new OrderActionResult(true, target == OrderStatus.Preparing ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
-
-    // EN: Preparing is an internal kitchen/ops step; IFoodPlatformClient has no shared prepare hook yet—per-platform prepare APIs can map here later.
-    // TR: Preparing şu an iç mutfak/operasyon adımı; IFoodPlatformClient'ta ortak prepare kancası yok—ileride platforma özel prepare API'leri buraya bağlanabilir.
-    public Task<OrderActionResult> MarkPreparingAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
-        TransitionLifecycleAsync(
-            customerId,
-            orderId,
-            requiredCurrent: OrderStatus.Accepted,
-            nextStatus: OrderStatus.Preparing,
-            platformCall: null,
-            successKey: "Orders.StartPreparingSuccess",
-            ct);
 
     // EN: Shared interface still uses Trendyol-shaped names; MarkInvoicedAsync here means ReadyForPickup for all implementing platforms (rename deferred).
     // TR: Ortak interface hâlâ Trendyol etkili isimler taşır; burada MarkInvoicedAsync tüm platformlarda ReadyForPickup anlamına gelir (isim değişikliği ertelendi).
@@ -253,7 +254,8 @@ public sealed class OrderActionService : IOrderActionService
     /// <c>ChangeVersion</c> in one short transaction (provider calls happen before it), and returns the new version.
     /// The update only applies while the order is still in <paramref name="requiredCurrent"/>, so of simultaneous
     /// writers exactly one changes it, and a status Worker sync applied meanwhile is never overwritten. Null when the
-    /// order was no longer in that status; then nothing is committed. The transition's timestamp is set only if empty.
+    /// order was no longer in that status; then nothing is committed. The transition's timestamp is set only if empty;
+    /// entering Preparing is the acceptance and sets <c>AcceptedAt</c>.
     /// </summary>
     private static async Task<long?> CommitTransitionAsync(
         TenantDbContext db,
@@ -267,7 +269,7 @@ public sealed class OrderActionService : IOrderActionService
         var claimed = db.Orders.Where(o => o.Id == orderId && o.InternalStatus == requiredCurrent);
         var rows = nextStatus switch
         {
-            OrderStatus.Accepted => await claimed.ExecuteUpdateAsync(s => s
+            OrderStatus.Preparing => await claimed.ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.InternalStatus, nextStatus)
                 .SetProperty(o => o.AcceptedAt, o => o.AcceptedAt ?? nowUtc)
                 .SetProperty(o => o.UpdatedAt, nowUtc), ct),

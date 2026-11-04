@@ -127,7 +127,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         await RunAsync();
         var before = await OrdersAsync();
         Assert.Equal(OrderStatus.OnTheWay, before["delivered"].InternalStatus);
-        Assert.Equal(OrderStatus.Accepted, before["cancelled"].InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, before["cancelled"].InternalStatus);
         Assert.Equal(OrderStatus.New, before["unsupplied"].InternalStatus);
         Assert.Equal(lastGoodSync, await CheckpointAsync());
 
@@ -751,7 +751,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         var orders = await OrdersAsync();
         Assert.Equal(OrderStatus.Delivered, orders["old-delivered"].InternalStatus);
         Assert.Null(orders["old-delivered"].DeliveredAt);
-        Assert.Equal(OrderStatus.Accepted, orders["old-accepted"].InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, orders["old-accepted"].InternalStatus);
         Assert.Null(orders["old-accepted"].AcceptedAt);
         Assert.Equal(OrderStatus.Cancelled, orders["old-cancelled"].InternalStatus);
         Assert.Null(orders["old-cancelled"].CancelledAt);

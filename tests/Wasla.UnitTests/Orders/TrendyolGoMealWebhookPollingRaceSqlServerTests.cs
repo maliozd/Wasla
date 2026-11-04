@@ -89,7 +89,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         Assert.Equal(ProviderWebhookEventStatus.Processed, stored.Status);
         Assert.Equal("Reconciled", stored.Outcome);
         Assert.Equal(order.Id, stored.OrderId);
-        Assert.Equal(OrderStatus.Accepted, order.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, order.InternalStatus);
         Assert.Equal([order.Id], _autoApprove.Processed);
         Assert.Equal([order.Id], _receipts.Created);
         Assert.Equal([OrderChangeVersions.Initial], _notifier.VersionsFor(order.Id));
@@ -210,7 +210,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Task.CompletedTask;
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

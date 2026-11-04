@@ -74,7 +74,7 @@ internal sealed class PrintServices
         ExternalOrderId = externalId,
         ExternalOrderCode = $"TY-{externalId}",
         IdempotencyKey = $"TrendyolYemek:{externalId}:{tenantId:N}",
-        InternalStatus = OrderStatus.Accepted,
+        InternalStatus = OrderStatus.Preparing,
         PlatformStatus = "Picking",
         CustomerName = "Test Customer",
         CustomerPhone = "+905555555555",

@@ -1125,9 +1125,6 @@
   <data name="OrderStatus.New" xml:space="preserve">
     <value>جديد</value>
   </data>
-  <data name="OrderStatus.Accepted" xml:space="preserve">
-    <value>تم القبول</value>
-  </data>
   <data name="OrderStatus.Preparing" xml:space="preserve">
     <value>قيد التحضير</value>
   </data>
@@ -1324,7 +1321,7 @@
     <value>هل تريد قبول هذا الطلب؟</value>
   </data>
   <data name="Orders.ApproveConfirmMessage" xml:space="preserve">
-    <value>سيتم وضع علامة على الطلب بأنه “مقبول”.</value>
+    <value>سيُقبل الطلب على المنصة ويبدأ تحضيره.</value>
   </data>
   <data name="Orders.RejectConfirmTitle" xml:space="preserve">
     <value>هل تريد رفض هذا الطلب؟</value>
@@ -1333,7 +1330,7 @@
     <value>سيتم وضع علامة على الطلب بأنه “ملغى”.</value>
   </data>
   <data name="Orders.ApproveSuccess" xml:space="preserve">
-    <value>تم قبول الطلب.</value>
+    <value>تم قبول الطلب وبدأ تحضيره.</value>
   </data>
   <data name="Orders.RejectSuccess" xml:space="preserve">
     <value>تم رفض الطلب.</value>
@@ -1344,6 +1341,30 @@
   <data name="Orders.RejectFailed" xml:space="preserve">
     <value>تعذر رفض الطلب.</value>
   </data>
+  <data name="Orders.RejectReason.Legend" xml:space="preserve">
+    <value>سبب الرفض</value>
+  </data>
+  <data name="Orders.RejectReason.SentToPlatform" xml:space="preserve">
+    <value>يُرسَل السبب الذي تختاره إلى المنصة مع الرفض.</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.621" xml:space="preserve">
+    <value>مشكلة في التوريد</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.622" xml:space="preserve">
+    <value>المتجر مغلق</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.623" xml:space="preserve">
+    <value>لا يستطيع المتجر تحضير الطلب</value>
+  </data>
+  <data name="Orders.RejectReason.TrendyolYemek.627" xml:space="preserve">
+    <value>التباس في الطلب</value>
+  </data>
+  <data name="Orders.RejectReasonRequired" xml:space="preserve">
+    <value>اختر سببًا لرفض الطلب.</value>
+  </data>
+  <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
+    <value>لا يمكن استخدام هذا السبب لهذا الطلب. اختر أحد الأسباب المدرجة.</value>
+  </data>
   <data name="Orders.InvalidStatusForAction" xml:space="preserve">
     <value>لم يعد هذا الطلب قابلاً للإجراء.</value>
   </data>
@@ -1353,9 +1374,6 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>تعذر إكمال هذه الخطوة مع المنصة. أعد المحاولة أو تحقق من الاتصال.</value>
   </data>
-  <data name="Orders.StartPreparing" xml:space="preserve">
-    <value>بدء التحضير</value>
-  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>جاهز</value>
   </data>
@@ -1364,12 +1382,6 @@
   </data>
   <data name="Orders.MarkDelivered" xml:space="preserve">
     <value>تم التسليم</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmTitle" xml:space="preserve">
-    <value>هل تريد بدء تحضير هذا الطلب؟</value>
-  </data>
-  <data name="Orders.StartPreparingConfirmMessage" xml:space="preserve">
-    <value>سيتم وضع الطلب قيد التحضير في المطبخ.</value>
   </data>
   <data name="Orders.MarkReadyConfirmTitle" xml:space="preserve">
     <value>هل تريد وضع الطلب كجاهز؟</value>
@@ -1388,9 +1400,6 @@
   </data>
   <data name="Orders.MarkDeliveredConfirmMessage" xml:space="preserve">
     <value>سيتم وضع الطلب كمكتمل.</value>
-  </data>
-  <data name="Orders.StartPreparingSuccess" xml:space="preserve">
-    <value>تم وضع الطلب قيد التحضير.</value>
   </data>
   <data name="Orders.MarkReadySuccess" xml:space="preserve">
     <value>تم وضع الطلب كجاهز.</value>
@@ -3476,9 +3485,7 @@
   <data name="Demo.StartTitle" xml:space="preserve"><value>لنجرب وصلة</value></data>
   <data name="Demo.StartBody" xml:space="preserve"><value>جرّب سير الطلب دون التأثير على طلباتك الحقيقية.</value></data>
   <data name="Demo.ApproveTitle" xml:space="preserve"><value>اقبلوا الطلب</value></data>
-  <data name="Demo.ApproveBody" xml:space="preserve"><value>اقبلوا الطلب من هنا.</value></data>
-  <data name="Demo.PrepareTitle" xml:space="preserve"><value>ابدأوا التحضير</value></data>
-  <data name="Demo.PrepareBody" xml:space="preserve"><value>انقلوا الطلب المقبول إلى التحضير.</value></data>
+  <data name="Demo.ApproveBody" xml:space="preserve"><value>اقبلوا الطلب من هنا. يبدأ تحضير الطلب بمجرد قبوله.</value></data>
   <data name="Demo.ReadyTitle" xml:space="preserve"><value>علّموه جاهزًا</value></data>
   <data name="Demo.ReadyBody" xml:space="preserve"><value>عندما يجهز الطلب، علّموه من هنا.</value></data>
   <data name="Demo.SuccessTitle" xml:space="preserve"><value>أدرتم أول طلب</value></data>
@@ -3638,9 +3645,9 @@
   <data name="Help.LiveScreen.Title" xml:space="preserve"><value>نظرة عامة على الشاشة المباشرة</value></data>
   <data name="Help.LiveScreen.Body" xml:space="preserve"><value>الشاشة المباشرة مخصّصة لمتابعة الطلبات الواردة في المطبخ وعند الكاشير لحظة بلحظة. اعرض الطلبات بطريقة {0} أو {1} أو {2}، واحصل على تنبيهات صوتية وتنبيهات المتصفح للطلبات الجديدة.</value></data>
   <data name="Help.Approve.Title" xml:space="preserve"><value>قبول الطلب</value></data>
-  <data name="Help.Approve.Body" xml:space="preserve"><value>عند وصول طلب جديد راجعه واضغط "{0}"؛ يُرسَل القبول إلى المنصة. إذا لم تتمكن من تلبية الطلب فاستخدم "{1}".</value></data>
-  <data name="Help.Prepare.Title" xml:space="preserve"><value>بدء التحضير</value></data>
-  <data name="Help.Prepare.Body" xml:space="preserve"><value>في الطلب المقبول اضغط "{0}" لإظهار بدء التحضير لفريقك.</value></data>
+  <data name="Help.Approve.Body" xml:space="preserve"><value>عند وصول طلب جديد راجعه واضغط "{0}"؛ يُرسَل القبول إلى المنصة ويبدأ تحضير الطلب. إذا لم تتمكن من تلبية الطلب فاستخدم "{1}".</value></data>
+  <data name="Help.Prepare.Title" xml:space="preserve"><value>التحضير</value></data>
+  <data name="Help.Prepare.Body" xml:space="preserve"><value>يظهر الطلب المقبول بحالة "{0}" أثناء تحضير فريقك له. لا توجد خطوة منفصلة لبدء التحضير؛ عندما يجهز الطلب اضغط "{1}".</value></data>
   <data name="Help.Ready.Title" xml:space="preserve"><value>وضع علامة جاهز على الطلب</value></data>
   <data name="Help.Ready.Body" xml:space="preserve"><value>عندما يصبح الطلب جاهزًا اضغط "{0}". هذا آخر إجراء يقوم به المطعم على الطلب، ويتم إبلاغ المنصة.</value></data>
   <data name="Help.CourierPickup.Title" xml:space="preserve"><value>استلام المندوب للطلب</value></data>
@@ -3669,11 +3676,9 @@
   <data name="GuidedSetup.Training.Step.Intro.Title" xml:space="preserve"><value>التدريب على الطلبات في الشاشة المباشرة</value></data>
   <data name="GuidedSetup.Training.Step.Intro.Body" xml:space="preserve"><value>تظهر الطلبات الجديدة هنا على شكل بطاقات، وتنتقل إلى المرحلة التالية كلما تقدّمت في العمل عليها. ابدأ طلبًا تجريبيًا لتجربة سير العمل. يحمل الطلب التجريبي علامة «{6}» ولا يراه أحد غيرك: لا يُرسل إلى Trendyol GO أو Yemeksepeti، ولا يُطبع، ولا يُحتسب ضمن طلباتك أو تقاريرك.</value></data>
   <data name="GuidedSetup.Training.Step.New.Title" xml:space="preserve"><value>وصل طلب تجريبي</value></data>
-  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>الطلب التجريبي الذي يحمل علامة «{6}» ينتظر بوصفه طلبًا جديدًا. اقبله بالضغط على زر «{1}» في بطاقته.</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Title" xml:space="preserve"><value>ابدأ التحضير</value></data>
-  <data name="GuidedSetup.Training.Step.Accepted.Body" xml:space="preserve"><value>تم قبول الطلب. اضغط «{2}» عندما يبدأ المطبخ العمل عليه.</value></data>
+  <data name="GuidedSetup.Training.Step.New.Body" xml:space="preserve"><value>الطلب التجريبي الذي يحمل علامة «{6}» ينتظر بوصفه طلبًا جديدًا. اقبله بالضغط على زر «{1}» في بطاقته، فينتقل مباشرةً إلى حالة «{2}».</value></data>
   <data name="GuidedSetup.Training.Step.Preparing.Title" xml:space="preserve"><value>ضع علامة جاهز على الطلب</value></data>
-  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>عندما يُغلَّف الطلب، اضغط «{3}». هذه آخر خطوة يقوم بها المطعم.</value></data>
+  <data name="GuidedSetup.Training.Step.Preparing.Body" xml:space="preserve"><value>تم قبول الطلب وهو الآن في حالة «{2}». عندما يُغلَّف الطلب، اضغط «{3}». هذه آخر خطوة يقوم بها المطعم.</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Title" xml:space="preserve"><value>المندوب يستلم الطلب</value></data>
   <data name="GuidedSetup.Training.Step.Ready.Body" xml:space="preserve"><value>لا تحتاج إلى الضغط على أي زر آخر. يستلم مندوب المنصة الطلب، وتتغير حالته تلقائيًا إلى «{4}».</value></data>
   <data name="GuidedSetup.Training.Step.OnTheWay.Title" xml:space="preserve"><value>الطلب في الطريق</value></data>

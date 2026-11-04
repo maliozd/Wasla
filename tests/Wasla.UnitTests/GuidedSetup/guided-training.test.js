@@ -6,7 +6,7 @@ const path = require("node:path");
 const scriptPath = path.join(__dirname, "../../../src/Wasla.Web/wwwroot/js/wasla-guided-training.js");
 const training = require(scriptPath);
 
-const STEPS = ["intro", "practice-new", "practice-accepted", "practice-preparing", "practice-ready", "practice-on-the-way", "practice-delivered"];
+const STEPS = ["intro", "practice-new", "practice-preparing", "practice-ready", "practice-on-the-way", "practice-delivered"];
 
 // A small DOM: enough selectors (.class, [attr], [attr="v"], descendant) for the training controller.
 class FakeClassList {
@@ -163,7 +163,7 @@ function page(options = {}) {
       title: "Title " + key,
       body: "Body " + key,
       progress: "Step " + (i + 1) + " of " + STEPS.length,
-      action: { "practice-new": "approve", "practice-accepted": "start-preparing", "practice-preparing": "mark-ready" }[key] || null
+      action: { "practice-new": "approve", "practice-preparing": "mark-ready" }[key] || null
     };
   });
   const config = { step, steps: STEPS, copy, realOrders: REAL_ORDERS };
@@ -179,7 +179,7 @@ function page(options = {}) {
 
   function demoCard(status, id = "demo-1") {
     const card = el("article", { "data-order-id": id, "data-order-status": status, "data-wasla-demo": "true", "data-wasla-demo-card": "true" });
-    const action = { New: "approve", Accepted: "start-preparing", Preparing: "mark-ready" }[status];
+    const action = { New: "approve", Preparing: "mark-ready" }[status];
     if (action) card.append(el("button", { "data-order-action": action, "data-order-id": id, "data-wasla-demo": "true" }));
     return card;
   }
@@ -229,7 +229,7 @@ const isolated = (count) => ({
 
 test("training moves only forward, so a late or stale snapshot never resets it", () => {
   assert.equal(training.nextStep(STEPS, "intro", demo("New")), "practice-new");
-  assert.equal(training.nextStep(STEPS, "practice-preparing", demo("Accepted")), "practice-preparing");
+  assert.equal(training.nextStep(STEPS, "practice-preparing", demo("Preparing")), "practice-preparing");
   assert.equal(training.nextStep(STEPS, "practice-ready", demo("OnTheWay")), "practice-on-the-way");
   assert.equal(training.nextStep(STEPS, "practice-on-the-way", null), "practice-on-the-way", "a missing demo changes nothing");
   assert.equal(training.nextStep(STEPS, "practice-new", demo("Cancelled")), "practice-new");
@@ -304,11 +304,11 @@ test("snapshots advance the visible step, update the copy and announce each step
   for (let i = 0; i < 3; i++) p.render([demo("New")]);
   assert.equal(p.section.getAttribute("data-step"), "practice-new");
   assert.equal(p.q("[data-training-title]").textContent, "Title practice-new");
-  assert.equal(p.q("[data-training-progress]").textContent, "Step 2 of 7");
+  assert.equal(p.q("[data-training-progress]").textContent, "Step 2 of 6");
   assert.deepEqual(p.announcements, ["Title practice-new"], "polling the same state does not repeat the announcement");
 
   p.render([demo("ReadyForPickup")]);
-  p.render([demo("Accepted")]);
+  p.render([demo("Preparing")]);
   assert.equal(p.section.getAttribute("data-step"), "practice-ready", "a stale snapshot cannot move training back");
 
   p.render([]);
@@ -335,11 +335,11 @@ test("the pointer marks the practice order and the action it needs, and survives
   assert.equal(first.querySelector("[data-order-action]").classList.contains("wasla-guided-training-target--action"), true);
   assert.equal(p.host.querySelector("[data-order-id='r1']").classList.contains("wasla-guided-training-target"), false, "real orders are never marked");
 
-  const next = p.demoCard("Accepted");
-  p.render([demo("Accepted")], [next]);
+  const next = p.demoCard("Preparing");
+  p.render([demo("Preparing")], [next]);
   assert.equal(p.host.contains(first), false);
   assert.equal(next.classList.contains("wasla-guided-training-target"), true);
-  assert.equal(next.querySelector("[data-order-action='start-preparing']").classList.contains("wasla-guided-training-target--action"), true);
+  assert.equal(next.querySelector("[data-order-action='mark-ready']").classList.contains("wasla-guided-training-target--action"), true);
   assert.equal(p.host.querySelectorAll(".wasla-guided-training-target").length, 1);
 
   const ready = p.demoCard("ReadyForPickup");
@@ -362,8 +362,8 @@ test("Focus view marks the queue entry and Show practice order selects it", () =
 // Real orders during training: counted, never interrupting ---------------------------------------------
 
 test("an automation status change alone never moves, resets or announces training", () => {
-  const p = page({ step: "practice-accepted" });
-  const orders = [demo("Accepted")];
+  const p = page({ step: "practice-preparing" });
+  const orders = [demo("Preparing")];
   p.render(orders);
   const step = p.section.getAttribute("data-step");
   const title = p.q("[data-training-title]").textContent;
@@ -383,14 +383,14 @@ test("an automation status change alone never moves, resets or announces trainin
 });
 
 test("real orders never pause or move training, whatever their status", () => {
-  for (const status of ["New", "Accepted", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered", "Cancelled"]) {
-    const p = page({ step: "practice-accepted" });
-    const card = p.demoCard("Accepted");
-    p.render([demo("Accepted"), real("r1", status)], [card, p.realCard("r1", status)]);
-    p.render([demo("Accepted"), real("r1", status), real("r2", "New")], [card, p.realCard("r1", status), p.realCard("r2", "New")]);
+  for (const status of ["New", "Preparing", "ReadyForPickup", "OnTheWay", "Delivered", "Cancelled"]) {
+    const p = page({ step: "practice-preparing" });
+    const card = p.demoCard("Preparing");
+    p.render([demo("Preparing"), real("r1", status)], [card, p.realCard("r1", status)]);
+    p.render([demo("Preparing"), real("r1", status), real("r2", "New")], [card, p.realCard("r1", status), p.realCard("r2", "New")]);
 
-    assert.equal(p.section.getAttribute("data-step"), "practice-accepted", status);
-    assert.equal(p.q("[data-training-title]").textContent, "Title practice-accepted", status);
+    assert.equal(p.section.getAttribute("data-step"), "practice-preparing", status);
+    assert.equal(p.q("[data-training-title]").textContent, "Title practice-preparing", status);
     assert.equal(isShown(p.q("[data-training-show-practice]")), true, status);
     assert.equal(card.classList.contains("wasla-guided-training-target"), true, "the pointer stays on the practice order");
     assert.deepEqual(p.announcements, [], "nothing is announced for real orders");
@@ -541,21 +541,21 @@ test("a step change never leaves keyboard focus on a control that disappeared, a
   const card = p.el("button", {});
   p.host.append(card);
   card.focus();
-  p.render([demo("Accepted")], null, isolated(4));
+  p.render([demo("Preparing")], null, isolated(4));
   assert.equal(p.doc.activeElement, card);
 });
 
 test("Show the practice order appears only while a practice order is on the screen", () => {
-  const p = page({ step: "practice-accepted" });
+  const p = page({ step: "practice-preparing" });
   p.render([real("old", "Delivered")]);
   assert.equal(isShown(p.q("[data-training-show-practice]")), false, "nothing to show yet");
 
-  p.render([demo("Accepted")]);
+  p.render([demo("Preparing")]);
   assert.equal(isShown(p.q("[data-training-show-practice]")), true);
 
   p.render([]);
   assert.equal(isShown(p.q("[data-training-show-practice]")), false, "the practice order left the screen");
-  assert.equal(p.section.getAttribute("data-step"), "practice-accepted", "the step itself is kept");
+  assert.equal(p.section.getAttribute("data-step"), "practice-preparing", "the step itself is kept");
 });
 
 test("courier steps explain a paused background service only after a long wait", () => {

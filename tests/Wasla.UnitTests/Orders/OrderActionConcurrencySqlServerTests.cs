@@ -51,7 +51,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             AssertSingleWinner(results, "Orders.ApproveSuccess");
             Assert.Equal(["accept"], _provider.CallsFor(orderId));
             var after = await ReadAsync(orderId);
-            Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+            Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
             Assert.NotNull(after.AcceptedAt);
             Assert.Null(after.CancelledAt);
             Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
@@ -71,7 +71,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
 
             var results = await RaceAsync(6, i => i % 2 == 0
                 ? Instance($"approve-{i}").TryApproveAsync(_tenantId, orderId, Ct)
-                : Instance($"reject-{i}").TryRejectAsync(_tenantId, orderId, Ct));
+                : Instance($"reject-{i}").TryRejectAsync(_tenantId, orderId, 623, Ct));
 
             var winner = Assert.Single(results, r => r.Succeeded);
             Assert.All(results.Where(r => !r.Succeeded), r => Assert.Equal(InvalidStatus, r.MessageKey));
@@ -79,7 +79,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             if (winner.MessageKey == "Orders.ApproveSuccess")
             {
                 Assert.Equal(["accept"], _provider.CallsFor(orderId));
-                Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
                 Assert.NotNull(after.AcceptedAt);
                 Assert.Null(after.CancelledAt);
             }
@@ -112,8 +112,8 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         var losers = Task.WhenAll(
             Instance("same-1").TryApproveAsync(_tenantId, orderId, Ct),
             Instance("same-2").TryApproveAsync(_tenantId, orderId, Ct),
-            Instance("conflict-1").TryRejectAsync(_tenantId, orderId, Ct),
-            Instance("conflict-2").TryRejectAsync(_tenantId, orderId, Ct));
+            Instance("conflict-1").TryRejectAsync(_tenantId, orderId, 623, Ct),
+            Instance("conflict-2").TryRejectAsync(_tenantId, orderId, 623, Ct));
         var finished = await Task.WhenAny(losers, Task.Delay(LoserDeadline, Ct));
         _provider.ReleaseHeldCall();
 
@@ -122,7 +122,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         Assert.Equal(new OrderActionResult(true, "Orders.ApproveSuccess"), await winner);
         Assert.Equal(["accept"], _provider.CallsFor(orderId));
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Null(after.CancelledAt);
         Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
         Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
@@ -156,7 +156,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
                 }
 
                 var result = operatorRejects
-                    ? await Instance($"operator-{i}").TryRejectAsync(_tenantId, orderId, Ct)
+                    ? await Instance($"operator-{i}").TryRejectAsync(_tenantId, orderId, 623, Ct)
                     : await Instance($"operator-{i}").TryApproveAsync(_tenantId, orderId, Ct);
                 operatorResults.Add(result);
                 return result;
@@ -172,13 +172,13 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             {
                 // The Worker won: it approved and created the receipt; no operator reached the provider.
                 Assert.Equal(["accept"], calls);
-                Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
                 Assert.Equal([orderId], receipts.Created);
             }
             else
             {
                 Assert.Empty(receipts.Created);
-                Assert.Equal(operatorRejects ? OrderStatus.Cancelled : OrderStatus.Accepted, after.InternalStatus);
+                Assert.Equal(operatorRejects ? OrderStatus.Cancelled : OrderStatus.Preparing, after.InternalStatus);
             }
 
             Assert.False(after.AcceptedAt is not null && after.CancelledAt is not null, "Both AcceptedAt and CancelledAt are set.");
@@ -187,26 +187,22 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         }
     }
 
-    [Theory]
-    [InlineData(OrderStatus.Accepted, OrderStatus.Preparing, null)]
-    [InlineData(OrderStatus.Preparing, OrderStatus.ReadyForPickup, "invoiced")]
-    public async Task SimultaneousLifecycleActions_HaveOneWinner(OrderStatus from, OrderStatus to, string? providerAction)
+    [Fact]
+    public async Task SimultaneousMarkReady_HasOneWinner()
     {
         for (var round = 0; round < 4; round++)
         {
-            var orderId = await SeedOrderAsync(from);
+            var orderId = await SeedOrderAsync(OrderStatus.Preparing);
             var before = await ReadAsync(orderId);
             _provider.Reset(delay: TimeSpan.FromMilliseconds(150));
             _notifier.Reset();
 
-            var results = await RaceAsync(6, i => to == OrderStatus.Preparing
-                ? Instance($"lifecycle-{i}").MarkPreparingAsync(_tenantId, orderId, Ct)
-                : Instance($"lifecycle-{i}").MarkReadyForPickupAsync(_tenantId, orderId, Ct));
+            var results = await RaceAsync(6, i => Instance($"lifecycle-{i}").MarkReadyForPickupAsync(_tenantId, orderId, Ct));
 
-            AssertSingleWinner(results, to == OrderStatus.Preparing ? "Orders.StartPreparingSuccess" : "Orders.MarkReadySuccess");
-            Assert.Equal(providerAction is null ? [] : [providerAction], _provider.CallsFor(orderId));
+            AssertSingleWinner(results, "Orders.MarkReadySuccess");
+            Assert.Equal(["invoiced"], _provider.CallsFor(orderId));
             var after = await ReadAsync(orderId);
-            Assert.Equal(to, after.InternalStatus);
+            Assert.Equal(OrderStatus.ReadyForPickup, after.InternalStatus);
             Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
             Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
         }
@@ -225,7 +221,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         await _provider.FirstCallEntered.WaitAsync(LoserDeadline, Ct);
         var during = Task.WhenAll(
             Instance("during-1").TryApproveAsync(_tenantId, orderId, Ct),
-            Instance("during-2").TryRejectAsync(_tenantId, orderId, Ct));
+            Instance("during-2").TryRejectAsync(_tenantId, orderId, 623, Ct));
         var finished = await Task.WhenAny(during, Task.Delay(LoserDeadline, Ct));
         _provider.ReleaseHeldCall();
 
@@ -246,7 +242,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         var callsAfterFailure = 1;
         Assert.Equal(callsAfterFailure + 1, _provider.CallsFor(orderId).Count);
         var after = await ReadAsync(orderId);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal(before.ChangeVersion + 1, after.ChangeVersion);
         Assert.Equal([after.ChangeVersion], _notifier.VersionsFor(orderId));
 
@@ -475,7 +471,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "invoiced");
         public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "shipped");
         public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "delivered");
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Act(externalOrderId, "reject");
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act(order.ExternalOrderId, "reject");
 
         private async Task Act(string externalOrderId, string action)
         {

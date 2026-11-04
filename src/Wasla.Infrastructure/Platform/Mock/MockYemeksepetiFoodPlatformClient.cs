@@ -42,8 +42,8 @@ public sealed class MockYemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
     {
-        // EN: Partner-picking mock has no separate provider "accepted" string; OrderHub stores Accepted; echo stays RECEIVED until READY_FOR_PICKUP—sync merge blocks downgrade.
-        // TR: Partner-picking mock'ta ayrı provider "accepted" string'i yok; Accepted OrderHub'da; echo READY_FOR_PICKUP'a kadar RECEIVED kalabilir—sync merge düşürmeyi engeller.
+        // EN: Partner-picking mock has no separate provider "accepted" string; OrderHub stores Preparing; echo stays RECEIVED until READY_FOR_PICKUP—sync merge blocks downgrade.
+        // TR: Partner-picking mock'ta ayrı provider "accepted" string'i yok; Preparing OrderHub'da; echo READY_FOR_PICKUP'a kadar RECEIVED kalabilir—sync merge düşürmeyi engeller.
         MockProviderOrderStatusStore.Set(Platform, externalOrderId, "RECEIVED");
         return Task.CompletedTask;
     }
@@ -66,9 +66,9 @@ public sealed class MockYemeksepetiFoodPlatformClient : IFoodPlatformClient
         return Task.CompletedTask;
     }
 
-    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct)
+    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
     {
-        MockProviderOrderStatusStore.Set(Platform, externalOrderId, "CANCELLED");
+        MockProviderOrderStatusStore.Set(Platform, order.ExternalOrderId, "CANCELLED");
         return Task.CompletedTask;
     }
 }

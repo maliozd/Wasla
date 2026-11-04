@@ -115,11 +115,11 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     [Fact]
     public async Task Snapshot_PreservesItemNotesAndRealStatuses()
     {
-        var accepted = await SeedAsync(
+        var withItems = await SeedAsync(
             _tenantId,
-            OrderStatus.Accepted,
+            OrderStatus.Preparing,
             NowUtc.AddMinutes(-10),
-            code: "TY-ACCEPTED",
+            code: "TY-ITEMS",
             items:
             [
                 new ItemSeed(Guid.Parse("00000000-0000-0000-0000-000000000002"), "Ayran", 2, null),
@@ -136,11 +136,11 @@ public sealed class LiveScreenSnapshotTests : IDisposable
 
         Assert.Equal(before, after);
         Assert.Equal(
-            [OrderStatus.New, OrderStatus.Accepted, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.OnTheWay],
+            [OrderStatus.New, OrderStatus.Preparing, OrderStatus.Preparing, OrderStatus.ReadyForPickup, OrderStatus.OnTheWay],
             snapshot.Orders.Select(order => order.Status).ToArray());
 
-        var card = snapshot.Orders.Single(order => order.Id == accepted);
-        Assert.Equal(OrderStatus.Accepted, card.Status);
+        var card = snapshot.Orders.Single(order => order.Id == withItems);
+        Assert.Equal(OrderStatus.Preparing, card.Status);
         Assert.Equal(
             [("Lahmacun", 1, "No onion"), ("Ayran", 2, null)],
             card.Items.Select(item => (item.ProductName, item.Quantity, item.Notes)).ToArray());
@@ -171,7 +171,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     {
         await SeedAsync(
             _tenantId,
-            OrderStatus.Accepted,
+            OrderStatus.Preparing,
             NowUtc.AddMinutes(-5),
             code: "TY-42",
             phone: "+905551112233",
@@ -190,7 +190,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         Assert.Equal(NowUtc, document.RootElement.GetProperty("serverTimeUtc").GetDateTime().ToUniversalTime());
         Assert.Equal("TY-42", order.GetProperty("displayNumber").GetString());
         Assert.Equal("TrendyolYemek", order.GetProperty("platform").GetString());
-        Assert.Equal("Accepted", order.GetProperty("status").GetString());
+        Assert.Equal("Preparing", order.GetProperty("status").GetString());
         Assert.Equal("Lahmacun", order.GetProperty("items")[0].GetProperty("productName").GetString());
         Assert.Equal(1, order.GetProperty("items")[0].GetProperty("quantity").GetInt32());
         Assert.Equal("No onion", order.GetProperty("items")[0].GetProperty("notes").GetString());
@@ -211,7 +211,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     public async Task DayCounts_UseTurkeyLocalReceivedAtAndStayOutOfTheActiveList()
     {
         var yesterdayActive = await SeedAsync(_tenantId, OrderStatus.New, NowUtc.AddDays(-1), code: "TY-YESTERDAY");
-        var todayActive = await SeedAsync(_tenantId, OrderStatus.Accepted, new DateTime(2026, 9, 22, 21, 0, 0, DateTimeKind.Utc), code: "TY-TODAY");
+        var todayActive = await SeedAsync(_tenantId, OrderStatus.Preparing, new DateTime(2026, 9, 22, 21, 0, 0, DateTimeKind.Utc), code: "TY-TODAY");
         await SeedAsync(_tenantId, OrderStatus.Cancelled, NowUtc.AddHours(-1), code: "TY-CANCEL-TODAY");
         await SeedAsync(_tenantId, OrderStatus.Cancelled, NowUtc.AddDays(-1), code: "TY-CANCEL-YESTERDAY");
         await SeedAsync(

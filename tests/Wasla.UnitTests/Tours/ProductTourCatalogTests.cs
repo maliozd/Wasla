@@ -14,27 +14,28 @@ public sealed class ProductTourCatalogTests
     public void GuidedDemo_TeachesRestaurantActions_ThenWaitsForThePlatformCourier(UserRole role)
     {
         var steps = ProductTourCatalog.StepsFor(ProductTourKeys.GuidedDemo, role);
-        Assert.Equal(7, steps.Count);
+        Assert.Equal(6, steps.Count);
 
-        // Mark ready is the restaurant's last action.
-        Assert.Equal(new[] { "approve", "start-preparing", "mark-ready" },
+        // Approving starts preparation (WAS-185), and Mark ready is the restaurant's last action.
+        Assert.Equal(new[] { "approve", "mark-ready" },
             steps.Where(step => step.EventAction is not null).Select(step => step.EventAction));
-        Assert.All(steps.Skip(1).Take(3), step =>
+        Assert.All(steps.Skip(1).Take(2), step =>
         {
             Assert.Equal("event", step.Advance);
             Assert.Contains("[data-wasla-demo]", step.ReadySelector);
             Assert.Null(step.PrimaryAction);
         });
         Assert.DoesNotContain(steps, step =>
-            (step.ReadySelector ?? string.Empty).Contains("hand-to-courier")
+            (step.ReadySelector ?? string.Empty).Contains("start-preparing")
+            || (step.ReadySelector ?? string.Empty).Contains("hand-to-courier")
             || (step.ReadySelector ?? string.Empty).Contains("mark-delivered"));
 
         // The platform courier's pickup and delivery are passive waits that advance on the snapshot.
-        var pickup = steps[4];
+        var pickup = steps[3];
         Assert.Equal(("state", "Demo.PickupWaitTitle"), (pickup.Advance, pickup.TitleKey));
         Assert.Contains("data-order-status='ReadyForPickup'", pickup.ReadySelector);
         Assert.Contains("data-order-status='OnTheWay'", pickup.CompleteSelector);
-        var delivery = steps[5];
+        var delivery = steps[4];
         Assert.Equal(("state", "Demo.DeliveryWaitTitle"), (delivery.Advance, delivery.TitleKey));
         Assert.Contains("data-order-status='OnTheWay'", delivery.ReadySelector);
         Assert.Contains("data-order-status='Delivered'", delivery.CompleteSelector);

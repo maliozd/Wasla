@@ -21,7 +21,6 @@
   /** Practice-order status → training step. Statuses training does not use map to nothing. */
   var STEP_FOR_STATUS = {
     New: "practice-new",
-    Accepted: "practice-accepted",
     Preparing: "practice-preparing",
     ReadyForPickup: "practice-ready",
     OnTheWay: "practice-on-the-way",

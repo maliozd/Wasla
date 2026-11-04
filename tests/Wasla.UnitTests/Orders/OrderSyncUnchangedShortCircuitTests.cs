@@ -130,7 +130,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         var after = await ReadAsync(created.ExternalOrderId);
         Assert.Equal(before.Id, after.Id);
         Assert.Equal(before.CreatedAt, after.CreatedAt);
-        Assert.Equal(OrderStatus.Accepted, after.InternalStatus);
+        Assert.Equal(OrderStatus.Preparing, after.InternalStatus);
         Assert.Equal("Picking", after.PlatformStatus);
         Assert.NotNull(after.AcceptedAt);
         Assert.NotEqual(before.ItemIds, after.ItemIds);
@@ -840,7 +840,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

@@ -68,7 +68,6 @@
 
   /* Live Screen status colors. Group dots and status badges share these. */
   --wasla-status-new: #e0a800;
-  --wasla-status-accepted: #b45309;
   --wasla-status-preparing: #0d6efd;
   --wasla-status-ready: #198754;
   --wasla-status-on-the-way: #6f42c1;
@@ -3437,12 +3436,6 @@ body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host 
   border: 1px solid color-mix(in srgb, var(--wasla-status-new) 45%, transparent);
 }
 
-.wasla-dash-status--accepted {
-  background: color-mix(in srgb, var(--wasla-status-accepted) 14%, var(--wasla-surface));
-  color: #7c3e0a;
-  border: 1px solid color-mix(in srgb, var(--wasla-status-accepted) 40%, transparent);
-}
-
 .wasla-dash-status--progress {
   background: color-mix(in srgb, var(--wasla-status-preparing) 14%, var(--wasla-surface));
   color: #084298;
@@ -3556,12 +3549,6 @@ body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host 
   background: var(--color-warning-soft);
   color: var(--color-warning);
   border-color: var(--color-warning-border);
-}
-
-[data-bs-theme="dark"] .wasla-dash-status--accepted {
-  background: rgba(180, 83, 9, 0.22);
-  color: #fdba74;
-  border-color: rgba(180, 83, 9, 0.45);
 }
 
 [data-bs-theme="dark"] .wasla-dash-status--progress {

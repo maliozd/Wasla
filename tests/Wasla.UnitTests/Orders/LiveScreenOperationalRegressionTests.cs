@@ -38,22 +38,23 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         var actions = CreateActions(client);
         var orderId = await SeedOrderAsync(OrderStatus.New);
 
+        var readyTooEarly = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+        Assert.False(readyTooEarly.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", readyTooEarly.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+
+        // Accepting the order starts its preparation (WAS-185): no Accepted step and no start-preparing action.
         var approved = await actions.TryApproveAsync(_tenantId, orderId, Ct);
         Assert.True(approved.Succeeded);
         Assert.Equal("Orders.ApproveSuccess", approved.MessageKey);
         Assert.Equal(new[] { "accept" }, client.Calls);
-        await AssertStatusAsync(orderId, OrderStatus.Accepted, accepted: true, delivered: false, cancelled: false);
-
-        var preparingTooEarly = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
-        Assert.False(preparingTooEarly.Succeeded);
-        Assert.Equal("Orders.InvalidStatusForAction", preparingTooEarly.MessageKey);
-        Assert.Equal(new[] { "accept" }, client.Calls);
-        await AssertStatusAsync(orderId, OrderStatus.Accepted, accepted: true, delivered: false, cancelled: false);
-
-        var preparing = await actions.MarkPreparingAsync(_tenantId, orderId, Ct);
-        Assert.True(preparing.Succeeded);
-        Assert.Equal(new[] { "accept" }, client.Calls);
         await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
+
+        var approvedAgain = await actions.TryApproveAsync(_tenantId, orderId, Ct);
+        Assert.False(approvedAgain.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", approvedAgain.MessageKey);
+        Assert.Equal(new[] { "accept" }, client.Calls);
 
         var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
         Assert.True(ready.Succeeded);
@@ -88,19 +89,207 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         var actions = CreateActions(client);
         var orderId = await SeedOrderAsync(OrderStatus.New);
 
-        var rejected = await actions.TryRejectAsync(_tenantId, orderId, Ct);
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, 623, Ct);
 
         Assert.True(rejected.Succeeded);
         Assert.Equal("Orders.RejectSuccess", rejected.MessageKey);
         Assert.Equal(new[] { "reject" }, client.Calls);
+        // The provider client receives the stored order: it derives the provider's item ids from its raw payload.
+        Assert.Equal(orderId, client.RejectedOrder?.Id);
+        Assert.Equal("ORDER-1", client.RejectedOrder?.ExternalOrderId);
+        Assert.Equal("{}", client.RejectedOrder?.RawPayloadJson);
+        Assert.Equal(623, client.RejectReasonId);
         await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
 
-        var preparing = await actions.MarkPreparingAsync(_tenantId, orderId, Ct);
-        Assert.False(preparing.Succeeded);
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+        Assert.False(ready.Succeeded);
         Assert.Equal(new[] { "reject" }, client.Calls);
 
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         Assert.Equal(0, await db.PrintJobs.CountAsync(Ct));
+    }
+
+    [Theory]
+    [InlineData(621)]
+    [InlineData(622)]
+    [InlineData(623)]
+    [InlineData(627)]
+    public async Task Reject_TrendyolGo_PassesTheChosenReasonToTheProvider(int reasonId)
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, reasonId, Ct);
+
+        Assert.True(rejected.Succeeded);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        Assert.Equal(reasonId, client.RejectReasonId);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
+    }
+
+    /// <summary>
+    /// Trendyol GO requires one of its platform-courier restaurant reasons: no reason, a restaurant-courier reason (624,
+    /// 626) or any other id is refused before the provider is called, and the order stays New.
+    /// </summary>
+    [Theory]
+    [InlineData(null, OrderRejectReasons.ReasonRequiredKey)]
+    [InlineData(0, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(624, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(626, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(601, OrderRejectReasons.ReasonNotSupportedKey)]
+    [InlineData(999, OrderRejectReasons.ReasonNotSupportedKey)]
+    public async Task Reject_TrendyolGo_WithAMissingOrUnsupportedReason_ChangesNothing(int? reasonId, string expectedKey)
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, reasonId, Ct);
+
+        Assert.False(rejected.Succeeded);
+        Assert.Equal(expectedKey, rejected.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+    }
+
+    /// <summary>
+    /// Platforms without a verified reason list keep their reject: no reason is passed, and a reason sent anyway is
+    /// refused rather than invented for them.
+    /// </summary>
+    [Theory]
+    [InlineData(FoodPlatform.Yemeksepeti)]
+    [InlineData(FoodPlatform.GetirYemek)]
+    public async Task Reject_OtherPlatforms_TakeNoReason(FoodPlatform platform)
+    {
+        var client = new RecordingPlatformClient(platform);
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New, platform: platform);
+
+        var withReason = await actions.TryRejectAsync(_tenantId, orderId, 623, Ct);
+        Assert.False(withReason.Succeeded);
+        Assert.Equal(OrderRejectReasons.ReasonNotSupportedKey, withReason.MessageKey);
+        Assert.Empty(client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+
+        var rejected = await actions.TryRejectAsync(_tenantId, orderId, null, Ct);
+        Assert.True(rejected.Succeeded);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        Assert.Null(client.RejectReasonId);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
+    }
+
+    [Fact]
+    public async Task Reject_WhenTheProviderFails_LeavesTheOrderNew()
+    {
+        var client = new RecordingPlatformClient { Failure = new InvalidOperationException("provider refused") };
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        var result = await actions.TryRejectAsync(_tenantId, orderId, 622, Ct);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Orders.RejectFailed", result.MessageKey);
+        await AssertStatusAsync(orderId, OrderStatus.New, accepted: false, delivered: false, cancelled: false);
+    }
+
+    [Fact]
+    public async Task Reject_Repeated_CallsTheProviderOnce()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+
+        Assert.True((await actions.TryRejectAsync(_tenantId, orderId, 621, Ct)).Succeeded);
+        var again = await actions.TryRejectAsync(_tenantId, orderId, 621, Ct);
+
+        Assert.False(again.Succeeded);
+        Assert.Equal("Orders.InvalidStatusForAction", again.MessageKey);
+        Assert.Equal(new[] { "reject" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
+    }
+
+    [Fact]
+    public async Task ApprovedOrder_IsMarkedReadyDirectly_AndKeepsItsAcceptedTime()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+        Assert.True((await actions.TryApproveAsync(_tenantId, orderId, Ct)).Succeeded);
+        DateTime? acceptedAt;
+        await using (var read = await _tenantDb.CreateAsync(_tenantId, Ct))
+        {
+            acceptedAt = (await read.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId, Ct)).AcceptedAt;
+        }
+
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+
+        Assert.True(ready.Succeeded);
+        Assert.Equal("Orders.MarkReadySuccess", ready.MessageKey);
+        Assert.Equal(new[] { "accept", "invoiced" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.ReadyForPickup, accepted: true, delivered: false, cancelled: false);
+        await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
+        Assert.NotNull(acceptedAt);
+        Assert.Equal(acceptedAt, (await db.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId, Ct)).AcceptedAt);
+    }
+
+    [Fact]
+    public async Task AutoApprove_StartsPreparation_AndCreatesTheReceiptOnce()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New, autoPrintOnAccepted: true);
+        await SeedCentralTenantAsync("Sushi M");
+        await using (var seed = await _tenantDb.CreateAsync(_tenantId, Ct))
+        {
+            await seed.TenantOperationalSettings.ExecuteUpdateAsync(s => s.SetProperty(x => x.AutoApproveNewOrders, true), Ct);
+        }
+        var autoApprove = new OrderAutoApproveService(_tenantDb, actions, CreateReceipts(), NullLogger<OrderAutoApproveService>.Instance);
+
+        await autoApprove.ProcessNewlyInsertedOrderAsync(_tenantId, orderId, OrderStatus.New, Ct);
+        await autoApprove.ProcessNewlyInsertedOrderAsync(_tenantId, orderId, OrderStatus.New, Ct);
+
+        Assert.Equal(new[] { "accept" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
+        await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
+        var job = await db.PrintJobs.SingleAsync(Ct);
+        Assert.Equal(orderId, job.OrderId);
+        Assert.Equal(PrintJobType.Receipt, job.Type);
+    }
+
+    [Fact]
+    public async Task OrdersFilter_MatchesTheRequestedStatusExactly()
+    {
+        var reader = new OrderReadService(_tenantDb, TimeProvider.System, NullLogger<OrderReadService>.Instance);
+        var preparing = await SeedOrderAsync(OrderStatus.Preparing, externalOrderId: "ORDER-PREPARING");
+        var fresh = await SeedOrderAsync(OrderStatus.New, externalOrderId: "ORDER-NEW");
+        var ready = await SeedOrderAsync(OrderStatus.ReadyForPickup, externalOrderId: "ORDER-READY");
+
+        async Task<Guid[]> ListAsync(OrderStatus status) => (await reader.GetListAsync(
+            _tenantId, platform: null, status, startDateUtc: null, endDateUtc: null, sortBy: null, sortDirection: null,
+            page: 1, pageSize: 25, search: null, Ct)).Items.Select(row => row.Id).ToArray();
+
+        Assert.Equal([preparing], await ListAsync(OrderStatus.Preparing));
+        Assert.Equal([fresh], await ListAsync(OrderStatus.New));
+        Assert.Equal([ready], await ListAsync(OrderStatus.ReadyForPickup));
+        Assert.Empty(await ListAsync(OrderStatus.OnTheWay));
+    }
+
+    [Fact]
+    public async Task MarkReady_WhenTheProviderFails_LeavesTheOrderPreparing()
+    {
+        var client = new RecordingPlatformClient();
+        var actions = CreateActions(client);
+        var orderId = await SeedOrderAsync(OrderStatus.New);
+        Assert.True((await actions.TryApproveAsync(_tenantId, orderId, Ct)).Succeeded);
+        client.Failure = new InvalidOperationException("provider down");
+
+        var ready = await actions.MarkReadyForPickupAsync(_tenantId, orderId, Ct);
+
+        Assert.False(ready.Succeeded);
+        Assert.Equal("Orders.OrderActionFailed", ready.MessageKey);
+        Assert.Equal(new[] { "accept" }, client.Calls);
+        await AssertStatusAsync(orderId, OrderStatus.Preparing, accepted: true, delivered: false, cancelled: false);
     }
 
     [Fact]
@@ -121,7 +310,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     [Fact]
     public async Task AcceptanceReceipt_IsCreatedOnlyWhenTheAcceptedSettingIsOn()
     {
-        var orderId = await SeedOrderAsync(OrderStatus.Accepted, autoPrintOnAccepted: true, copyCount: 2);
+        var orderId = await SeedOrderAsync(OrderStatus.Preparing, autoPrintOnAccepted: true, copyCount: 2);
         await SeedCentralTenantAsync("Sushi M");
         var receipts = CreateReceipts();
 
@@ -140,7 +329,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     [Fact]
     public async Task AcceptanceReceipt_IsSkippedWhenTheSettingIsOff()
     {
-        var orderId = await SeedOrderAsync(OrderStatus.Accepted, autoPrintOnAccepted: false);
+        var orderId = await SeedOrderAsync(OrderStatus.Preparing, autoPrintOnAccepted: false);
         await SeedCentralTenantAsync("Sushi M");
 
         await CreateReceipts().TryCreateOnOrderAcceptedAsync(_tenantId, orderId, Ct);
@@ -152,7 +341,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     [Fact]
     public async Task AcceptanceReceipt_FailureDoesNotEscapeTheBestEffortCall()
     {
-        var orderId = await SeedOrderAsync(OrderStatus.Accepted, autoPrintOnAccepted: true);
+        var orderId = await SeedOrderAsync(OrderStatus.Preparing, autoPrintOnAccepted: true);
         await SeedCentralTenantAsync("Sushi M");
         var receiptJobs = new ThrowingReceiptJobs();
         var receipts = new OrderReceiptCreationService(
@@ -227,8 +416,9 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.Contains("item.Notes", cards, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"approve\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"reject\"", actions, StringComparison.Ordinal);
-        Assert.Contains("data-order-action=\"start-preparing\"", actions, StringComparison.Ordinal);
         Assert.Contains("data-order-action=\"mark-ready\"", actions, StringComparison.Ordinal);
+        // Approving starts preparation (WAS-185): there is no separate start-preparing action.
+        Assert.DoesNotContain("start-preparing", actions, StringComparison.Ordinal);
         // The platform courier reports pickup and delivery; no view may offer those actions.
         Assert.DoesNotContain("hand-to-courier", actions, StringComparison.Ordinal);
         Assert.DoesNotContain("mark-delivered", actions, StringComparison.Ordinal);
@@ -253,7 +443,9 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         bool autoPrintOnAccepted = false,
         int copyCount = 1,
         string? itemNotes = null,
-        string? optionName = null)
+        string? optionName = null,
+        string externalOrderId = "ORDER-1",
+        FoodPlatform platform = FoodPlatform.TrendyolYemek)
     {
         await using var db = await _tenantDb.CreateAsync(_tenantId, Ct);
         if (!await db.TenantOperationalSettings.AnyAsync(Ct))
@@ -270,12 +462,12 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             });
         }
 
-        if (!await db.PlatformConnections.AnyAsync(Ct))
+        if (!await db.PlatformConnections.AnyAsync(c => c.Platform == platform, Ct))
         {
             db.PlatformConnections.Add(new PlatformConnection
             {
                 Id = Guid.NewGuid(),
-                Platform = FoodPlatform.TrendyolYemek,
+                Platform = platform,
                 StoreId = "store-1",
                 EncryptedApiKey = "enc-key",
                 EncryptedApiSecret = "enc-secret",
@@ -313,10 +505,10 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         db.Orders.Add(new Order
         {
             Id = orderId,
-            Platform = FoodPlatform.TrendyolYemek,
-            ExternalOrderId = "ORDER-1",
-            ExternalOrderCode = "TY-ORDER-1",
-            IdempotencyKey = $"TrendyolYemek:ORDER-1:{_tenantId:N}",
+            Platform = platform,
+            ExternalOrderId = externalOrderId,
+            ExternalOrderCode = "TY-" + externalOrderId,
+            IdempotencyKey = $"{platform}:{externalOrderId}:{_tenantId:N}",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Test Customer",
@@ -377,12 +569,14 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         return directory?.FullName ?? throw new InvalidOperationException("Repository root was not found.");
     }
 
-    private sealed class RecordingPlatformClient : IFoodPlatformClient
+    private sealed class RecordingPlatformClient(FoodPlatform platform = FoodPlatform.TrendyolYemek) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public FoodPlatform Platform => platform;
         public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
+        public Order? RejectedOrder { get; private set; }
+        public int? RejectReasonId { get; private set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
             PlatformConnection connection,
@@ -404,11 +598,14 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
         public Task RejectOrderAsync(
             PlatformConnection connection,
-            string externalOrderId,
-            IReadOnlyList<string> itemIdList,
-            int reasonId,
-            CancellationToken ct) =>
-            Record("reject");
+            Order order,
+            int? reasonId,
+            CancellationToken ct)
+        {
+            RejectedOrder = order;
+            RejectReasonId = reasonId;
+            return Record("reject");
+        }
 
         private Task Record(string name)
         {

@@ -32,7 +32,7 @@ internal sealed class ScriptedPlatformClient(FoodPlatform platform) : IFoodPlatf
     public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("invoiced");
     public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("shipped");
     public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("delivered");
-    public Task RejectOrderAsync(PlatformConnection connection, string externalOrderId, IReadOnlyList<string> itemIdList, int reasonId, CancellationToken ct) => Act("reject");
+    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act("reject");
 
     private Task Act(string action)
     {
@@ -71,7 +71,7 @@ internal static class OrderChangeFixtures
             }
         });
 
-    /// <summary>A provider order; "Created" maps to New, "Picking" to Accepted, "Cancelled" to Cancelled.</summary>
+    /// <summary>A provider order; "Created" maps to New, "Picking" to Preparing, "Cancelled" to Cancelled.</summary>
     public static ExternalOrderDto External(string externalOrderId, string status = "Created", decimal total = 100m, FoodPlatform platform = FoodPlatform.TrendyolYemek) =>
         new(
             Platform: platform,

@@ -1976,7 +1976,7 @@ internal static class CliCommands
             ExternalOrderCode = "TEST-001",
             IdempotencyKey = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes($"Yemeksepeti:{externalOrderId}"))),
-            InternalStatus = OrderStatus.Accepted,
+            InternalStatus = OrderStatus.Preparing,
             PlatformStatus = "Accepted",
             CustomerName = "Test Customer",
             CustomerPhone = "+905551112233",
