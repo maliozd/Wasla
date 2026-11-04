@@ -211,6 +211,7 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         app.UseRouting();
         app.UseWaslaRealtimeOriginCheck();
         app.UseMiddleware<TenantResolutionMiddleware>();
+        app.UseMiddleware<TenantLogoutFailureMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();

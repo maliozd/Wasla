@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +20,12 @@ using SetCookieHeaderValue = Microsoft.Net.Http.Headers.SetCookieHeaderValue;
 namespace Wasla.UnitTests.Auth;
 
 /// <summary>
-/// Tenant logout ends the server-side login session it logs out (WAS-114). Every test drives the tenant application over
-/// HTTP: the real login form and welcome link, the real cookie scheme with its per-request session check, the tenant
-/// resolved from the Host header, and the real logout action with its antiforgery check, over SQLite tenant databases.
-/// Cookies are kept in memory only: no assertion message or test output contains a cookie, header, password or token.
+/// Tenant logout ends the server-side login session it logs out (WAS-114), and a logout that cannot complete says so
+/// and can be tried again (WAS-186). Every test drives the tenant application over HTTP: the real login form and
+/// welcome link, the real cookie scheme with its per-request session check, the tenant resolved from the Host header,
+/// the real logout page and logout action with its antiforgery check, and the logout failure middleware, over SQLite
+/// tenant databases. Cookies are kept in memory only: no assertion message or test output contains a cookie, header,
+/// password or token.
 /// </summary>
 public sealed class TenantLogoutRevocationTests : IAsyncLifetime
 {
@@ -401,27 +404,192 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, (await again.GetAsync("/settings/users")).StatusCode);
     }
 
+    /// <summary>
+    /// The revocation cannot be stored (WAS-186): the logout failure page, not a success redirect, and the cookie stays.
+    /// Its "Try again" is the logout page, a GET that changes nothing; posting from it fails the same way while storage
+    /// fails, and logs out once storage works again. Only then is the copied cookie rejected. Another session of the user
+    /// and the other tenant are untouched throughout.
+    /// </summary>
     [Fact]
-    public async Task RevocationFailure_DoesNotReportSuccess_AndTheSessionStaysUntilALaterLogout()
+    public async Task RevocationFailure_ShowsTheFailurePage_KeepsTheCookie_AndTryAgainLogsOutOnceStorageWorks()
     {
+        var betaOwner = _host.SeedUser(_host.BetaId, "owner@beta.test", UserRole.Owner);
         using var browser = await SignedInAsync(_owner);
+        using var otherDevice = await SignedInAsync(_owner);
+        using var beta = await SignedInAsync(betaOwner, TenantSessionWebHost.BetaHost);
         var copied = browser.AuthCookie!;
+        var sessionId = SessionIdOf(copied);
         var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
         FailAlphaCommands(command => command.CommandText.Contains("UPDATE \"TenantSessions\"", StringComparison.Ordinal));
 
         var failed = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
 
-        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
-        Assert.True(browser.AuthCookie is not null, "A failed logout must not delete the browser's cookie.");
+        await AssertLogoutFailurePageAsync(failed, browser);
+        Assert.True(string.Equals(copied, browser.AuthCookie, StringComparison.Ordinal), "A failed logout must keep the browser's cookie.");
         await AssertRevealsNothingAsync(failed, "Tenant session could not be revoked");
-        Assert.Null(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+        await AssertBodyHoldsAsync(failed, copied, sessionId.ToString());
+        AssertLogsHold(copied, sessionId.ToString());
+        Assert.All(_host.ReadSessions(_host.AlphaId), s => Assert.Null(s.RevokedAtUtc));
         // Nothing claimed the copy was invalidated, and it was not.
         using var replay = CookieClient(TenantSessionWebHost.AlphaHost, copied);
         Assert.Equal(HttpStatusCode.OK, (await replay.GetAsync("/settings/users")).StatusCode);
 
+        // Try again while storage still fails: the logout page opens (the session can be checked) and its form fails alike.
+        await AssertLogoutFailurePageAsync(await TryLogoutAgainAsync(browser), browser);
+        Assert.All(_host.ReadSessions(_host.AlphaId), s => Assert.Null(s.RevokedAtUtc));
+
         UsePlainAlphaDatabase();
-        await LogoutAsync(browser, token);
+        var retried = await TryLogoutAgainAsync(browser);
+
+        Assert.Equal(HttpStatusCode.Redirect, retried.StatusCode);
+        Assert.Equal("/auth/login", retried.Headers.Location!.OriginalString);
+        AssertSignedOut(browser);
+        Assert.Equal([sessionId], _host.ReadSessions(_host.AlphaId).Where(s => s.RevokedAtUtc is not null).Select(s => s.Id));
         AssertRedirectsToLogin(await replay.GetAsync("/settings/users"));
+        Assert.Equal(HttpStatusCode.OK, (await otherDevice.GetAsync("/settings/users")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await beta.GetAsync("/settings/users")).StatusCode);
+        Assert.Null(Assert.Single(_host.ReadSessions(_host.BetaId)).RevokedAtUtc);
+    }
+
+    /// <summary>
+    /// The revocation was stored, but the database reported a failure afterwards: the outcome is unknown to the server,
+    /// so the page is the same and claims neither outcome. "Try again" finds the session already ended: the cookie scheme
+    /// signs the browser out and sends it to the login page, which shows its form. Signing in from there does not
+    /// return to logout, so nothing loops. The first revocation time is kept.
+    /// </summary>
+    [Fact]
+    public async Task RevocationStoredButReportedAsFailed_TryAgainLandsOnTheLoginPage_WithoutALoop()
+    {
+        using var browser = await SignedInAsync(_owner);
+        using var otherDevice = await SignedInAsync(_owner);
+        var copied = browser.AuthCookie!;
+        var sessionId = SessionIdOf(copied);
+        var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
+        InterceptAlphaCommands(new FailingAfterExecution(command => command.CommandText.Contains("UPDATE \"TenantSessions\"", StringComparison.Ordinal)));
+
+        var failed = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+
+        await AssertLogoutFailurePageAsync(failed, browser);
+        Assert.True(string.Equals(copied, browser.AuthCookie, StringComparison.Ordinal), "An unconfirmed logout must keep the browser's cookie.");
+        var revokedAt = _host.ReadSessions(_host.AlphaId).Single(s => s.Id == sessionId).RevokedAtUtc;
+        Assert.NotNull(revokedAt);
+
+        var retry = await browser.GetAsync("/auth/logout");
+
+        AssertRedirectsToLogin(retry);
+        AssertSignedOut(browser);
+        AssertRejectionLogged(TenantSessionState.SessionRevoked);
+        var login = await browser.GetAsync(retry.Headers.Location!.PathAndQuery);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        Assert.True((await login.Content.ReadAsStringAsync(Ct)).Contains("<form method=\"post\" action=\"/auth/login\">", StringComparison.Ordinal),
+            "The retry should end on the login form.");
+        // The login page carries the logout path as its ReturnUrl; signing in goes to the landing page instead.
+        var signIn = await browser.PostFormAsync("/auth/login",
+        [
+            new("Email", _owner.Email),
+            new("Password", TenantSessionWebHost.Password),
+            new("ReturnUrl", "/auth/logout"),
+            new("__RequestVerificationToken", await browser.AntiforgeryTokenAsync("/auth/login"))
+        ]);
+        Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
+        Assert.Equal("/dashboard", signIn.Headers.Location!.OriginalString);
+
+        Assert.Equal(revokedAt, _host.ReadSessions(_host.AlphaId).Single(s => s.Id == sessionId).RevokedAtUtc);
+        using var replay = CookieClient(TenantSessionWebHost.AlphaHost, copied);
+        AssertRedirectsToLogin(await replay.GetAsync("/settings/users"));
+        Assert.Equal(HttpStatusCode.OK, (await otherDevice.GetAsync("/settings/users")).StatusCode);
+    }
+
+    public static TheoryData<string> SessionCheckFailures => ["session-read", "database-unreachable"];
+
+    /// <summary>
+    /// The session cannot be checked before the logout action (WAS-186). The request is not authenticated, so the
+    /// action does not run: with only the check's read failing, the revocation's UPDATE would have worked, and the
+    /// session stays unrevoked. The failure page renders even when the tenant database cannot be opened at all, and
+    /// its "Try again" gets the same page while that lasts. Once the database works, the logout page logs out.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(SessionCheckFailures))]
+    public async Task SessionCheckFailureBeforeLogout_ShowsTheFailurePage_AndDoesNotRunTheLogout(string failure)
+    {
+        using var browser = await SignedInAsync(_owner);
+        var copied = browser.AuthCookie!;
+        var sessionId = SessionIdOf(copied);
+        var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
+        if (failure == "session-read")
+        {
+            FailAlphaCommands(command => command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)
+                                         && command.CommandText.Contains("\"TenantSessions\"", StringComparison.Ordinal));
+        }
+        else
+        {
+            _host.Tenants.Override(_host.AlphaId, _ => Task.FromException<TenantDbContext>(new SimulatedDbException()));
+        }
+
+        var failed = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+
+        await AssertLogoutFailurePageAsync(failed, browser);
+        Assert.True(string.Equals(copied, browser.AuthCookie, StringComparison.Ordinal), "An unchecked session must be neither accepted nor deleted.");
+        await AssertRevealsNothingAsync(failed, "Tenant session could not be validated");
+        await AssertBodyHoldsAsync(failed, copied, sessionId.ToString());
+        AssertLogsHold(copied, sessionId.ToString());
+        await AssertLogoutFailurePageAsync(await browser.GetAsync("/auth/logout"), browser);
+
+        UsePlainAlphaDatabase();
+        Assert.Null(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+        var retried = await TryLogoutAgainAsync(browser);
+
+        Assert.Equal(HttpStatusCode.Redirect, retried.StatusCode);
+        Assert.Equal("/auth/login", retried.Headers.Location!.OriginalString);
+        AssertSignedOut(browser);
+        Assert.NotNull(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+    }
+
+    /// <summary>
+    /// The logout page: the logout form for the signed-in session, with its antiforgery token. Opening it revokes,
+    /// deletes and renews nothing. Without a session it is challenged like any page.
+    /// </summary>
+    [Fact]
+    public async Task LogoutPage_ShowsTheLogoutForm_AndOpeningItChangesNothing()
+    {
+        using var browser = await SignedInAsync(_owner);
+        var cookie = browser.AuthCookie!;
+
+        var page = await browser.GetAsync("/auth/logout");
+
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        var html = await page.Content.ReadAsStringAsync(Ct);
+        Assert.True(html.Contains("<form method=\"post\" action=\"/auth/logout\">", StringComparison.Ordinal), "The logout form is missing.");
+        Assert.True(html.Contains("name=\"__RequestVerificationToken\"", StringComparison.Ordinal), "The logout form has no antiforgery token.");
+        Assert.True(html.Contains("type=\"submit\" data-logout-submit>Logout</button>", StringComparison.Ordinal), "The logout button is missing.");
+        Assert.False(html.Contains("data-logout-failed", StringComparison.Ordinal), "The logout page must not report a failure.");
+        Assert.True(string.Equals(cookie, browser.AuthCookie, StringComparison.Ordinal), "Opening the logout page must not change the cookie.");
+        Assert.Null(Assert.Single(_host.ReadSessions(_host.AlphaId)).RevokedAtUtc);
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync("/settings/users")).StatusCode);
+
+        using var anonymous = _host.Client(TenantSessionWebHost.AlphaHost);
+        AssertRedirectsToLogin(await anonymous.GetAsync("/auth/logout"));
+    }
+
+    [Theory]
+    [InlineData("tr-TR", "ltr", "Çıkış yap", "Çıkış tamamlanamadı. Oturumunuz açık kalmış olabilir. Lütfen tekrar deneyin.", "Tekrar dene")]
+    [InlineData("en-US", "ltr", "Logout", "Logout could not be completed. Your session may still be open. Please try again.", "Try again")]
+    [InlineData("ar-SA", "rtl", "تسجيل الخروج", "تعذر إكمال تسجيل الخروج. قد تظل جلستك مفتوحة. يرجى المحاولة مرة أخرى.", "إعادة المحاولة")]
+    [InlineData("ru-RU", "ltr", "Выход из системы", "Не удалось завершить выход. Ваш сеанс может оставаться открытым. Повторите попытку.", "Повторить")]
+    public async Task LogoutFailurePage_IsLocalized(string culture, string direction, string heading, string message, string tryAgain)
+    {
+        using var browser = await SignedInAsync(_owner);
+        browser.Cookies[CookieRequestCultureProvider.DefaultCookieName] =
+            Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)));
+        var token = await browser.AntiforgeryTokenAsync("/settings/users/create");
+        FailAlphaCommands(command => command.CommandText.Contains("UPDATE \"TenantSessions\"", StringComparison.Ordinal));
+
+        var failed = await browser.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+
+        await AssertLogoutFailurePageAsync(failed, browser, message, tryAgain);
+        var html = WebUtility.HtmlDecode(await failed.Content.ReadAsStringAsync(Ct));
+        Assert.True(html.Contains($"<html lang=\"{culture}\" dir=\"{direction}\">", StringComparison.Ordinal), $"Expected lang {culture} and dir {direction}.");
+        Assert.True(html.Contains($"<h1 class=\"h4 mb-3\">{heading}</h1>", StringComparison.Ordinal), "The localized heading is missing.");
     }
 
     [Fact]
@@ -504,6 +672,46 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         AssertSignedOut(client);
     }
 
+    /// <summary>
+    /// The failure page's "Try again", as a browser follows it: open the logout page (it must render its form) and post
+    /// its form, with the token the page issued for this session.
+    /// </summary>
+    private static async Task<HttpResponseMessage> TryLogoutAgainAsync(TenantSessionClient client)
+    {
+        var token = await client.AntiforgeryTokenAsync("/auth/logout");
+        return await client.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+    }
+
+    /// <summary>
+    /// The logout failure page (WAS-186): HTTP 503, not cached, no redirect, no change to the tenant cookie, the localized
+    /// alert and a "Try again" link to the logout page, and no form of its own.
+    /// </summary>
+    private static async Task AssertLogoutFailurePageAsync(
+        HttpResponseMessage response,
+        TenantSessionClient client,
+        string message = "Logout could not be completed. Your session may still be open. Please try again.",
+        string tryAgain = "Try again")
+    {
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
+        Assert.True(response.Headers.CacheControl?.NoStore == true, "The failure page must not be cached.");
+        Assert.False(client.LastSetCookies.Any(header => SetCookieHeaderValue.Parse(header).Name.Equals(TenantAuthCookieNames.Active)),
+            "The failure page must neither delete nor renew the tenant cookie.");
+        var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync(Ct));
+        Assert.True(html.Contains($"role=\"alert\" data-logout-failed>{message}</div>", StringComparison.Ordinal), "The localized failure alert is missing.");
+        Assert.True(html.Contains($"href=\"/auth/logout\" data-logout-retry>{tryAgain}</a>", StringComparison.Ordinal), "The Try again link is missing.");
+        Assert.False(html.Contains("<form", StringComparison.Ordinal), "The failure page must not post anything itself.");
+    }
+
+    /// <summary>The response body contains none of the values (cookies, session ids).</summary>
+    private static async Task AssertBodyHoldsAsync(HttpResponseMessage response, params string[] values)
+    {
+        var body = await response.Content.ReadAsStringAsync(Ct);
+        foreach (var value in values)
+            Assert.False(body.Contains(value, StringComparison.OrdinalIgnoreCase), "The page contains a cookie or session id.");
+    }
+
     private TenantSessionClient CookieClient(string host, string cookie) => CookieClient(_host, host, cookie);
 
     /// <summary>An independent client holding only the given tenant cookie, as a copy taken from another device.</summary>
@@ -551,11 +759,13 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
         return cookies[0];
     }
 
-    private void FailAlphaCommands(Func<DbCommand, bool> match) =>
+    private void FailAlphaCommands(Func<DbCommand, bool> match) => InterceptAlphaCommands(new FailingCommands(match));
+
+    private void InterceptAlphaCommands(IInterceptor interceptor) =>
         _host.Tenants.Override(_host.AlphaId, _ => Task.FromResult(new TenantDbContext(
             new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlite(_host.Tenants.ConnectionStringFor(_host.AlphaId))
-                .AddInterceptors(new FailingCommands(match))
+                .AddInterceptors(interceptor)
                 .Options)));
 
     private void UsePlainAlphaDatabase() =>
@@ -633,6 +843,19 @@ public sealed class TenantLogoutRevocationTests : IAsyncLifetime
             match(command) ? throw new SimulatedDbException() : result;
 
         public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<object> result, CancellationToken cancellationToken = default) =>
+            match(command) ? throw new SimulatedDbException() : ValueTask.FromResult(result);
+    }
+
+    /// <summary>
+    /// Lets every command <paramref name="match"/> accepts run and commit, then fails it: the database stored the change,
+    /// the caller sees an error.
+    /// </summary>
+    private sealed class FailingAfterExecution(Func<DbCommand, bool> match) : DbCommandInterceptor
+    {
+        public override int NonQueryExecuted(DbCommand command, CommandExecutedEventData eventData, int result) =>
+            match(command) ? throw new SimulatedDbException() : result;
+
+        public override ValueTask<int> NonQueryExecutedAsync(DbCommand command, CommandExecutedEventData eventData, int result, CancellationToken cancellationToken = default) =>
             match(command) ? throw new SimulatedDbException() : ValueTask.FromResult(result);
     }
 

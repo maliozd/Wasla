@@ -275,14 +275,27 @@ public sealed class AuthController : Controller
     }
 
     /// <summary>
+    /// The logout page, which the logout failure page links to as its "Try again" (WAS-186). It shows the same
+    /// antiforgery-protected logout form as the menu, for the signed-in session; opening it changes nothing. A session
+    /// that is no longer valid is signed out and challenged by the cookie scheme as on any page, so the browser lands on
+    /// the login page.
+    /// </summary>
+    [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+    [TenantLogout]
+    [HttpGet("logout")]
+    public IActionResult Logout() => View(new LogoutViewModel());
+
+    /// <summary>
     /// Ends this login session on the server, then in the browser. The session is the authenticated cookie's own, for
     /// the tenant resolved from the host and the cookie's user; no request value names it. Its revocation is stored
     /// before the response, so every copy of the cookie, including a renewed one, is rejected from then on. Other
-    /// sessions of the user are untouched. If the revocation cannot be stored, the request fails
-    /// (<see cref="TenantSessionUnavailableException"/>) and the cookie is kept, so logout can be tried again.
+    /// sessions of the user are untouched. If the revocation cannot be stored (<see cref="TenantSessionUnavailableException"/>),
+    /// nothing is signed out and the cookie is kept: <see cref="Middleware.TenantLogoutFailureMiddleware"/> shows the
+    /// logout failure page, from which logout can be tried again.
     /// </summary>
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [ValidateAntiForgeryToken]
+    [TenantLogout]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
