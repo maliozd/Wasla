@@ -79,6 +79,27 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         Assert.Equal(_owner.Id, body.RootElement.GetProperty("id").GetGuid());
     }
 
+    [Fact]
+    public async Task WebLogout_EndsThatSessionOnApi_AndAnotherSessionOfTheUserKeepsWorking()
+    {
+        using var web = await WebLoginAsync(_owner);
+        using var other = await WebLoginAsync(_owner);
+        // A copy of the Web session's cookies, presented to the Api with the tenant's host.
+        using var api = ToApi(web);
+        Assert.Equal(HttpStatusCode.OK, (await api.GetAsync("/api/auth/me")).StatusCode);
+
+        var token = await web.AntiforgeryTokenAsync("/settings/users/create");
+        var logout = await web.PostFormAsync("/auth/logout", [new("__RequestVerificationToken", token)]);
+        Assert.Equal(HttpStatusCode.Redirect, logout.StatusCode);
+
+        var replay = await api.GetAsync("/api/auth/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, replay.StatusCode);
+        Assert.Null(replay.Headers.Location);
+        Assert.True(api.AuthCookie is null, "The Api must sign the logged-out cookie out.");
+        using var otherApi = ToApi(other);
+        Assert.Equal(HttpStatusCode.OK, (await otherApi.GetAsync("/api/auth/me")).StatusCode);
+    }
+
     // --- Order status filter ------------------------------------------------------------------------
 
     /// <summary>
@@ -229,7 +250,9 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         // Issued five days ago: sliding renewal is due after half of the seven-day lifetime.
         using var valid = _api.Client(TenantSessionWebHost.AlphaHost);
         valid.Cookies[TenantAuthCookieNames.Active] = _api.ProtectTenantCookie(
-            SessionClaims(_owner, UserRole.Owner), DateTimeOffset.UtcNow.AddDays(-5), DateTimeOffset.UtcNow.AddDays(2));
+            SessionClaims(_owner, UserRole.Owner, _web.SeedSession(_web.AlphaId, _owner.Id)),
+            DateTimeOffset.UtcNow.AddDays(-5),
+            DateTimeOffset.UtcNow.AddDays(2));
         var original = valid.AuthCookie;
 
         Assert.Equal(HttpStatusCode.OK, (await valid.GetAsync("/api/auth/me")).StatusCode);
@@ -272,14 +295,15 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
     [
         "no-user-id", "malformed-user-id", "empty-user-id", "no-stamp", "empty-stamp", "malformed-stamp",
         "no-tenant-id", "malformed-tenant-id", "empty-tenant-id", "no-role", "unknown-role", "undefined-role-number",
-        "user-id-claims-disagree"
+        "user-id-claims-disagree", "no-session-id", "empty-session-id", "malformed-session-id"
     ];
 
     [Theory]
     [MemberData(nameof(MalformedSessions))]
     public async Task CookieWithMissingOrMalformedClaims_IsRejectedByApiWithoutOpeningADatabase(string defect)
     {
-        var claims = SessionClaims(_owner, UserRole.Owner);
+        // A stored, unrevoked session: each case differs from a working cookie by its one defect only.
+        var claims = SessionClaims(_owner, UserRole.Owner, _web.SeedSession(_web.AlphaId, _owner.Id));
         void Replace(string type, string? value)
         {
             claims.RemoveAll(c => c.Type == type);
@@ -303,6 +327,10 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
             case "unknown-role": Replace(ClaimTypes.Role, "Administrator"); Replace("Role", "Administrator"); break;
             case "undefined-role-number": Replace(ClaimTypes.Role, "99"); Replace("Role", "99"); break;
             case "user-id-claims-disagree": Replace("UserId", _otherOwner.Id.ToString()); break;
+            // A cookie issued before login sessions were stored (WAS-114).
+            case "no-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, null); break;
+            case "empty-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, Guid.Empty.ToString()); break;
+            case "malformed-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, "session"); break;
         }
 
         using var client = _api.Client(TenantSessionWebHost.AlphaHost);
@@ -329,7 +357,7 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
     {
         using var client = _api.Client(TenantSessionWebHost.AlphaHost);
         client.Cookies[TenantAuthCookieNames.Active] = _api.ProtectTenantCookie(
-            AmbiguousSessionClaims.Apply(SessionClaims(_owner, UserRole.Owner), defect, _web.BetaId),
+            AmbiguousSessionClaims.Apply(SessionClaims(_owner, UserRole.Owner, _web.SeedSession(_web.AlphaId, _owner.Id)), defect, _web.BetaId),
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddDays(7));
         var openedBefore = _web.Tenants.Opened.Count;
@@ -347,7 +375,9 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         // The malformed cases above differ from this working session in one claim each.
         using var client = _api.Client(TenantSessionWebHost.AlphaHost);
         client.Cookies[TenantAuthCookieNames.Active] = _api.ProtectTenantCookie(
-            SessionClaims(_owner, UserRole.Owner), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(7));
+            SessionClaims(_owner, UserRole.Owner, _web.SeedSession(_web.AlphaId, _owner.Id)),
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow.AddDays(7));
 
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
     }
@@ -690,9 +720,10 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
     private static Task<HttpResponseMessage> PostJsonAsync(TenantSessionClient client, string path, object body) =>
         client.SendAsync(HttpMethod.Post, path, JsonContent.Create(body));
 
-    private List<Claim> SessionClaims(AppUser user, UserRole role) =>
+    /// <summary>A login's claims for this user, naming login session <paramref name="sessionId"/>.</summary>
+    private List<Claim> SessionClaims(AppUser user, UserRole role, Guid sessionId) =>
     [
-        .. TenantSessionClaims.Create(_web.AlphaId, user.Id, role, user.SecurityStamp),
+        .. TenantSessionClaims.Create(_web.AlphaId, user.Id, role, user.SecurityStamp, sessionId),
         new(ClaimTypes.Email, user.Email),
         new(ClaimTypes.Name, user.FullName)
     ];

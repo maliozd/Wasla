@@ -1176,9 +1176,10 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         IsActive = true
     };
 
+    // The controller is reached directly, as after the cookie scheme validated the session; no session is looked up here.
     private ClaimsPrincipal SessionPrincipal(AppUser user) =>
         new(new ClaimsIdentity(
-            TenantSessionClaims.Create(_tenantId, user.Id, user.Role, user.SecurityStamp),
+            TenantSessionClaims.Create(_tenantId, user.Id, user.Role, user.SecurityStamp, Guid.NewGuid()),
             AuthSchemes.Tenant));
 
     private async Task<AppUser> ReadUserAsync(Guid userId)

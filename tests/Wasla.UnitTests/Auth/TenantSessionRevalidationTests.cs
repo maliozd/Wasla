@@ -201,14 +201,16 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
     public static TheoryData<string> MalformedSessions =>
     [
         "no-user-id", "malformed-user-id", "empty-user-id", "no-stamp", "empty-stamp", "malformed-stamp",
-        "no-tenant-id", "malformed-tenant-id", "no-role", "unknown-role", "undefined-role-number", "user-id-claims-disagree"
+        "no-tenant-id", "malformed-tenant-id", "no-role", "unknown-role", "undefined-role-number", "user-id-claims-disagree",
+        "no-session-id", "empty-session-id", "malformed-session-id"
     ];
 
     [Theory]
     [MemberData(nameof(MalformedSessions))]
     public async Task CookieWithMissingOrMalformedClaims_IsRejectedAndSignedOut(string defect)
     {
-        var claims = OwnerClaims(_attacker);
+        // A stored, unrevoked session: each case differs from a working cookie by its one defect only.
+        var claims = OwnerClaims(_attacker, _host.SeedSession(_host.AlphaId, _attacker.Id));
         void Replace(string type, string? value)
         {
             claims.RemoveAll(c => c.Type == type);
@@ -231,6 +233,10 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
             case "unknown-role": Replace(ClaimTypes.Role, "Administrator"); break;
             case "undefined-role-number": Replace(ClaimTypes.Role, "99"); break;
             case "user-id-claims-disagree": Replace("UserId", _victim.Id.ToString()); break;
+            // A cookie issued before login sessions were stored (WAS-114).
+            case "no-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, null); break;
+            case "empty-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, Guid.Empty.ToString()); break;
+            case "malformed-session-id": Replace(Wasla.Application.Security.WaslaAuthContracts.TenantSessionIdClaim, "session"); break;
         }
 
         using var client = ForgedClient(claims, DateTimeOffset.UtcNow);
@@ -249,7 +255,8 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
     [MemberData(nameof(AmbiguousSessions))]
     public async Task CookieWithAmbiguousOrNonCanonicalClaims_IsRejectedAndSignedOut(string defect)
     {
-        using var client = ForgedClient(AmbiguousSessionClaims.Apply(OwnerClaims(_attacker), defect, _host.BetaId), DateTimeOffset.UtcNow);
+        var claims = OwnerClaims(_attacker, _host.SeedSession(_host.AlphaId, _attacker.Id));
+        using var client = ForgedClient(AmbiguousSessionClaims.Apply(claims, defect, _host.BetaId), DateTimeOffset.UtcNow);
         var openedBefore = _host.Tenants.Opened.Count;
 
         var response = await client.GetAsync("/settings/users");
@@ -262,8 +269,9 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
     [Fact]
     public async Task ForgedCookieWithCurrentClaims_StillWorks()
     {
-        // The same claims as a login issues: the malformed cases above differ from a working session in one claim.
-        using var client = ForgedClient(OwnerClaims(_attacker), DateTimeOffset.UtcNow);
+        // The same claims as a login issues, for a stored session: the malformed cases above differ from a working
+        // session in one claim.
+        using var client = ForgedClient(OwnerClaims(_attacker, _host.SeedSession(_host.AlphaId, _attacker.Id)), DateTimeOffset.UtcNow);
 
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/settings/users")).StatusCode);
     }
@@ -274,7 +282,7 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
     public async Task SlidingRenewal_ReissuesAValidSession()
     {
         // Issued five days ago: renewal is due after half of the seven-day lifetime.
-        using var client = ForgedClient(OwnerClaims(_attacker), DateTimeOffset.UtcNow.AddDays(-5));
+        using var client = ForgedClient(OwnerClaims(_attacker, _host.SeedSession(_host.AlphaId, _attacker.Id)), DateTimeOffset.UtcNow.AddDays(-5));
         var original = client.AuthCookie;
 
         var response = await client.GetAsync("/settings/users");
@@ -293,7 +301,7 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
         // An Owner session issued five days ago (renewal is due after half of the seven-day lifetime).
         using var stale = _host.Client(TenantSessionWebHost.AlphaHost);
         stale.Cookies[TenantAuthCookieNames.Active] = _host.ProtectTenantCookie(
-            OwnerClaims(_attacker),
+            OwnerClaims(_attacker, _host.SeedSession(_host.AlphaId, _attacker.Id)),
             DateTimeOffset.UtcNow.AddDays(-5),
             DateTimeOffset.UtcNow.AddDays(2));
 
@@ -498,10 +506,13 @@ public sealed class TenantSessionRevalidationTests : IAsyncLifetime
         return client;
     }
 
-    /// <summary>The claims a login issued for this Owner, with the security stamp the user was seeded with.</summary>
-    private List<Claim> OwnerClaims(AppUser user) =>
+    /// <summary>
+    /// The claims a login issued for this Owner, with the security stamp the user was seeded with, naming login session
+    /// <paramref name="sessionId"/> (stored with <see cref="TenantSessionWebHost.SeedSession"/> when it should be valid).
+    /// </summary>
+    private List<Claim> OwnerClaims(AppUser user, Guid sessionId) =>
     [
-        .. TenantSessionClaims.Create(_host.AlphaId, user.Id, UserRole.Owner, user.SecurityStamp),
+        .. TenantSessionClaims.Create(_host.AlphaId, user.Id, UserRole.Owner, user.SecurityStamp, sessionId),
         new(ClaimTypes.Email, user.Email),
         new(ClaimTypes.Name, user.FullName)
     ];

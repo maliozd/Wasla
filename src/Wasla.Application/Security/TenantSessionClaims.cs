@@ -11,13 +11,14 @@ namespace Wasla.Application.Security;
 /// </summary>
 /// <remarks>
 /// Reading is strict and mirrors <see cref="Create"/>, the only issuer. Each security claim must carry exactly one value:
-/// a repeated tenant id, user id, role or stamp claim is rejected, even when the copies are identical, so no reader can
-/// pick a different copy than the one that was validated. Ids and stamps are non-empty GUIDs in the issued <c>D</c> form.
-/// The role is matched ordinally against the exact names <see cref="Create"/> writes for the assignable roles (no case
-/// folding, whitespace, numbers or comma-combined values), so obsolete <see cref="UserRole.Staff"/> is not a session role.
-/// The two role claim types and the two user id claim types, where present, must agree.
+/// a repeated tenant id, user id, role, stamp or session id claim is rejected, even when the copies are identical, so no
+/// reader can pick a different copy than the one that was validated. Ids, stamps and session ids are non-empty GUIDs in
+/// the issued <c>D</c> form. The role is matched ordinally against the exact names <see cref="Create"/> writes for the
+/// assignable roles (no case folding, whitespace, numbers or comma-combined values), so obsolete
+/// <see cref="UserRole.Staff"/> is not a session role. The two role claim types and the two user id claim types, where
+/// present, must agree. A cookie issued before login sessions were stored (WAS-114) has no session id and is rejected.
 /// </remarks>
-public sealed record TenantSessionClaims(Guid TenantId, Guid UserId, UserRole Role, Guid SecurityStamp)
+public sealed record TenantSessionClaims(Guid TenantId, Guid UserId, UserRole Role, Guid SecurityStamp, Guid SessionId)
 {
     private const string LegacyUserIdClaim = "UserId";
     private const string LegacyRoleClaim = "Role";
@@ -28,14 +29,16 @@ public sealed record TenantSessionClaims(Guid TenantId, Guid UserId, UserRole Ro
 
     public TenantUserActor ToActor() => new(UserId, SecurityStamp);
 
-    public static IEnumerable<Claim> Create(Guid tenantId, Guid userId, UserRole role, Guid securityStamp) =>
+    /// <param name="sessionId">The stored login session (<see cref="ITenantSessionRegistry.CreateAsync"/>).</param>
+    public static IEnumerable<Claim> Create(Guid tenantId, Guid userId, UserRole role, Guid securityStamp, Guid sessionId) =>
     [
         new(WaslaAuthContracts.TenantIdClaim, tenantId.ToString()),
         new(LegacyUserIdClaim, userId.ToString()),
         new(LegacyRoleClaim, role.ToString()),
         new(ClaimTypes.NameIdentifier, userId.ToString()),
         new(ClaimTypes.Role, role.ToString()),
-        new(WaslaAuthContracts.TenantSecurityStampClaim, securityStamp.ToString())
+        new(WaslaAuthContracts.TenantSecurityStampClaim, securityStamp.ToString()),
+        new(WaslaAuthContracts.TenantSessionIdClaim, sessionId.ToString())
     ];
 
     /// <summary>
@@ -50,7 +53,8 @@ public sealed record TenantSessionClaims(Guid TenantId, Guid UserId, UserRole Ro
 
         if (!TryReadGuid(principal, WaslaAuthContracts.TenantIdClaim, out var tenantId)
             || !TryReadGuid(principal, ClaimTypes.NameIdentifier, out var userId)
-            || !TryReadGuid(principal, WaslaAuthContracts.TenantSecurityStampClaim, out var securityStamp))
+            || !TryReadGuid(principal, WaslaAuthContracts.TenantSecurityStampClaim, out var securityStamp)
+            || !TryReadGuid(principal, WaslaAuthContracts.TenantSessionIdClaim, out var sessionId))
         {
             return false;
         }
@@ -64,7 +68,7 @@ public sealed record TenantSessionClaims(Guid TenantId, Guid UserId, UserRole Ro
         if (!TryReadRole(principal, out var role))
             return false;
 
-        session = new TenantSessionClaims(tenantId, userId, role, securityStamp);
+        session = new TenantSessionClaims(tenantId, userId, role, securityStamp, sessionId);
         return true;
     }
 

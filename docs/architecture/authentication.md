@@ -19,6 +19,7 @@ Wasla does **not** use JWT for this auth contract.
 | `TenantCookieName` | `.Wasla.TenantAuth` |
 | `CentralAdminCookieName` | `.Wasla.CentralAdminAuth` |
 | `TenantIdClaim` | `TenantId` |
+| `TenantSessionIdClaim` | `Wasla.TenantSessionId` |
 | `CentralAdminSecurityStampClaim` | `Wasla.CentralAdminSecurityStamp` |
 
 Web wrappers alias the same values:
@@ -59,11 +60,11 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 
 - Routes under `/auth`
 - Validates credentials via `IAuthValidationService` against the resolved tenant
-- Signs in with scheme `WaslaTenant`
+- Signs in with scheme `WaslaTenant`, after storing a new login session for the user in the tenant database (`ITenantSessionRegistry`, see [Tenant login sessions and logout](#tenant-login-sessions-and-logout)). The password login and the signup welcome link share this sign-in; if the session cannot be stored, no cookie is issued
 - After `SignInAsync` succeeds, `ITenantLoginRecorder` (`TenantLoginRecorder`) stores the UTC time in `AppUsers.LastLoginAt` for that user in that tenant database. It uses one conditional `UPDATE` that only moves the value forward, so a slower concurrent login cannot overwrite a newer time, and it does not change `UpdatedAt`. If that database write fails, the login still succeeds and a warning with only the tenant id, user id and exception type is logged; cancellation and non-database errors are not swallowed. Failed or cancelled logins, the signup welcome link (`/auth/welcome`) and requests authenticated by an existing cookie do not record a login. `AuthValidationService` only checks credentials and reads only the columns it needs
-- Claims include `TenantId` (value from `AuthSessionResult.CustomerId`), `UserId` (also `ClaimTypes.NameIdentifier`), email, role (`ClaimTypes.Role` and `"Role"`), name, and the user's security stamp (`Wasla.TenantSecurityStamp`, `WaslaAuthContracts.TenantSecurityStampClaim`)
+- Claims include `TenantId` (value from `AuthSessionResult.CustomerId`), `UserId` (also `ClaimTypes.NameIdentifier`), email, role (`ClaimTypes.Role` and `"Role"`), name, the user's security stamp (`Wasla.TenantSecurityStamp`, `WaslaAuthContracts.TenantSecurityStampClaim`) and the id of the stored login session (`Wasla.TenantSessionId`, `WaslaAuthContracts.TenantSessionIdClaim`)
 - The signup welcome link (`/auth/welcome`) builds the session from the user's current row (`IAuthValidationService.GetActiveSessionAsync`): current role and stamp, and no session for a user who is inactive or gone
-- Logout: `SignOutAsync(WaslaTenant)` and expires `.Wasla.TenantAuth` only
+- Logout (`POST /auth/logout`, signed in, antiforgery token required): revokes this cookie's login session in the tenant database, then `SignOutAsync(WaslaTenant)` and expires `.Wasla.TenantAuth` only, and redirects to `/auth/login` on the same host. Other sessions of the user are kept. `GET /auth/logout` only shows the logout page with the same form. A logout that cannot complete because the tenant database fails gets the logout failure page (HTTP 503, WAS-186). Details and failure behavior: [Tenant login sessions and logout](#tenant-login-sessions-and-logout)
 
 ### Where a tenant user goes after signing in
 
@@ -92,29 +93,92 @@ The page tells a signed-in user that they are signed in but lack permission. It 
 
 **Source:** `src/Wasla.Infrastructure/Services/TenantSessionValidator.cs` (the rules, behind `ITenantSessionValidator`), `src/Wasla.Infrastructure/Security/TenantSessionCookieEvents.cs` (the cookie events), `src/Wasla.Application/Security/TenantSessionClaims.cs` (the claims). Web's `TenantCookieEvents` (`src/Wasla.Web/Security/TenantCookieEvents.cs`) and the API's `ApiTenantCookieEvents` (`src/Wasla.Api/Security/ApiTenantAuthenticationExtensions.cs`) derive from the shared events and differ only in how they answer a challenge or a forbid.
 
-Every request that presents `.Wasla.TenantAuth` to Wasla.Web or Wasla.Api is checked against the user's row in the tenant database before any role claim is used. Both use the same validator, so the rules below are identical in both. Tenant resolution runs before authentication, and the tenant database is chosen from the resolved host, never from the cookie.
+Every request that presents `.Wasla.TenantAuth` to Wasla.Web or Wasla.Api is checked against the user's row and the cookie's login session in the tenant database before any role claim is used. Both use the same validator, so the rules below are identical in both. Tenant resolution runs before authentication, and the tenant database is chosen from the resolved host, never from the cookie.
 
 | Situation | Result |
 |-----------|--------|
-| Cookie `TenantId` differs from the resolved tenant | Rejected and signed out on that host. No database is opened |
-| `TenantId`, user id, role or stamp claim missing, malformed or empty (including cookies issued before stamps existed) | Rejected and signed out. No database is opened |
-| A security claim repeated (even with an identical value), the two role claims or the two user id claims disagreeing, a role that is not exactly the name the login writes for an assignable role (for example lower case, padded, numeric, comma-combined, or obsolete `Staff`), or an id or stamp not in the issued lowercase GUID form | Rejected and signed out. No database is opened |
+| Cookie `TenantId` differs from the resolved tenant | Rejected and signed out on that host. No database is opened. The session is not revoked, so it keeps working on its own host |
+| `TenantId`, user id, role, stamp or session id claim missing, malformed or empty (including cookies issued before stamps or login sessions existed) | Rejected and signed out. No database is opened |
+| A security claim repeated (even with an identical value), the two role claims or the two user id claims disagreeing, a role that is not exactly the name the login writes for an assignable role (for example lower case, padded, numeric, comma-combined, or obsolete `Staff`), or an id, stamp or session id not in the issued lowercase GUID form | Rejected and signed out. No database is opened |
 | User no longer exists | Rejected and signed out |
 | User inactive | Rejected and signed out |
 | Stored security stamp differs from the cookie's | Rejected and signed out |
 | Stored role differs from the cookie's role (for example a role edited directly in the database) | Rejected and signed out |
+| No stored login session with the cookie's session id for the cookie's user (unknown id, or another user's session) | Rejected and signed out (`SessionNotFound`). Nothing is created |
+| The cookie's login session was revoked by logout | Rejected and signed out (`SessionRevoked`). Nothing is reactivated |
 | No tenant resolved for the request (a central host, or a path that skips tenant resolution such as `/culture` or `/error`) | The session does not authenticate that request. The cookie is not deleted and not renewed |
-| The tenant database cannot be read | The request fails closed before any controller runs: Wasla.Web answers HTTP 500, Wasla.Api answers HTTP 503 with `{"error":"tenant_session_unavailable"}` (`TenantSessionUnavailableMiddleware`). Only the exception type is logged; the session is neither accepted, renewed nor deleted, and is checked again on the next request |
+| The tenant database cannot be read | The request fails closed before any controller runs: Wasla.Web answers HTTP 500, Wasla.Api answers HTTP 503 with `{"error":"tenant_session_unavailable"}` (`TenantSessionUnavailableMiddleware`). Web's 500 has no body: the error page re-runs the request, and the tenant cookie's cached authentication fails again. A tenant logout request instead gets the logout failure page (HTTP 503, see [When logout cannot complete](#when-logout-cannot-complete)). Only the exception type is logged; the session is neither accepted, renewed nor deleted, and is checked again on the next request |
 
 A rejected session is anonymous for that request. On Web, protected pages redirect to `/auth/login` on the same host (no `ReturnUrl` from another host is followed, see [Where a tenant user goes after signing in](#where-a-tenant-user-goes-after-signing-in)), and the login page itself renders, so there is no redirect loop. On the API, a protected endpoint answers 401 without a redirect; the rejected cookie is deleted on that host as well.
 
-Which changes end existing sessions: `AppUsers.SecurityStamp` is replaced whenever a user's role, active state or password changes (user management, the Web password reset and `reset-password --scope tenant`). Deleting a user or deactivating them also fails the check directly. A name-only edit keeps the stamp. A role change is not refreshed into the cookie: the old session is rejected and the user signs in again with the new role. A reactivated user's old cookie stays rejected, because deactivation already replaced the stamp; they sign in again with their password. An Owner who changes their own password on the Users page is signed out on the next request.
+Which changes end existing sessions: `AppUsers.SecurityStamp` is replaced whenever a user's role, active state or password changes (user management, the Web password reset and `reset-password --scope tenant`). Deleting a user or deactivating them also fails the check directly. A name-only edit keeps the stamp. A role change is not refreshed into the cookie: the old session is rejected and the user signs in again with the new role. A reactivated user's old cookie stays rejected, because deactivation already replaced the stamp; they sign in again with their password. An Owner who changes their own password on the Users page is signed out on the next request. Logout ends only the logged-out session (see [Tenant login sessions and logout](#tenant-login-sessions-and-logout)); there is no "log out everywhere".
 
-Cost and timing: one primary-key read of `AppUsers` (active flag, role, stamp) per authenticated tenant request, through the existing per-tenant `ITenantDbContextFactory`. Nothing is cached, so a change applies from the next request. Sliding renewal is decided by the cookie handler before validation; it is deferred and only a session that has just passed validation is re-issued.
+Cost and timing: one query per authenticated tenant request, through the existing per-tenant `ITenantDbContextFactory`: a primary-key read of `AppUsers` (active flag, role, stamp) with two primary-key existence checks on `TenantSessions` for the cookie's session and user. Nothing is cached and nothing is written, so a change or a logout applies from the next request. Sliding renewal is decided by the cookie handler before validation; it is deferred and only a session that has just passed validation is re-issued. Web's logout itself (`POST /auth/logout`) never renews (see [When logout cannot complete](#when-logout-cannot-complete)).
 
-Deployment: the `AddAppUserSecurityStamp` tenant migration gives every existing user a new stamp. Cookies issued before it carry no stamp, so every tenant user signs in again once after the release. A tenant database without the column fails closed (see [../operations/deployment.md](../operations/deployment.md#release-order-migrate-every-database-first)).
+Deployment: the `AddAppUserSecurityStamp` tenant migration gives every existing user a new stamp. Cookies issued before it carry no stamp, so every tenant user signs in again once after the release. A tenant database without the column fails closed (see [../operations/deployment.md](../operations/deployment.md#release-order-migrate-every-database-first)). The `AddTenantSessions` migration (WAS-114) has the same effect for cookies without a session id; see [Tenant login sessions and logout](#tenant-login-sessions-and-logout).
 
 Wasla.Api runs the same check on the same cookie (WAS-94). It has no endpoint that issues a tenant cookie, so the only tenant sessions it can see are Web sessions; see [When a Web session reaches the API](#when-a-web-session-reaches-the-api).
+
+### Tenant login sessions and logout
+
+**Source:** `src/Wasla.Domain/Entities/TenantDb/TenantSession.cs` (the row), `src/Wasla.Application/Abstractions/Auth/ITenantSessionRegistry.cs` and `src/Wasla.Infrastructure/Services/TenantSessionRegistry.cs` (create and revoke), `TenantSessionValidator` (the check), the tenant `AuthController` (`SignInSessionAsync`, the logout page and `Logout`), `src/Wasla.Web/Middleware/TenantLogoutFailureMiddleware.cs` and `Areas/Tenant/Views/Auth/Logout.cshtml` (a logout that cannot complete). Added in WAS-114, the failure page in WAS-186; tenant migration `AddTenantSessions`.
+
+Every tenant sign-in is stored as one row of `TenantSessions` in the tenant's own database:
+
+| Column | Meaning |
+|--------|---------|
+| `Id` | The session id: 128 bits from a cryptographic random source, generated by the server at sign-in. The cookie carries it in `Wasla.TenantSessionId`; it is never logged |
+| `UserId` | The signed-in user (`AppUsers.Id`); the user's rows are deleted with the user |
+| `CreatedAtUtc` | When the session was signed in |
+| `RevokedAtUtc` | When logout ended the session; null while it may authenticate |
+
+There is no tenant column: the tenant is the database the row is in, chosen by server-side tenant resolution.
+
+**Sign-in.** The password login and the signup welcome link share one sign-in: it stores a new row, then issues the cookie naming it. Every sign-in gets its own id, so a user's browsers and devices are separate sessions. If the row cannot be stored, no cookie is issued (see the failures below).
+
+**What the row decides.** Only whether that login session exists for the cookie's user and has not been revoked. Time expiry stays with the cookie ticket: the 7-day sliding default and the 14-day remember-me lifetime ([Remember-me / lifetimes](#remember-me--lifetimes-confirmed-in-source)) are unchanged, and an expired ticket is rejected even when its row is not revoked. The row has no expiry, last-seen time or renewal counter, so an ordinary request writes nothing and there is no second expiry clock to keep in step with sliding renewal. Sliding renewal re-issues the same claims, so the renewed cookie names the same session. Validation and renewal never create, extend or reactivate a row.
+
+**Logout.** `POST /auth/logout` requires a signed-in session and a valid antiforgery token. `GET /auth/logout` is only the logout page: the same form, for the signed-in session; opening it revokes and deletes nothing. It is an ordinary authenticated page, so it renews a cookie whose sliding renewal is due, for the same session. The POST revokes the session the authenticated cookie names, for the tenant resolved from the host and the cookie's user, with one conditional `UPDATE … WHERE Id = @session AND UserId = @user AND RevokedAtUtc IS NULL`. No request value names the session. The revocation is stored before the response; only then is the cookie deleted and the browser sent to `/auth/login` on the same host. The update is idempotent: repeating it changes nothing, never clears `RevokedAtUtc`, never creates a row and never touches another session. Logout ends only that session; there is no "log out everywhere" (a password, role or active-state change still ends all of a user's sessions through the stamp).
+
+**Guarantee.** Once a logout's revocation has committed, every later authentication check against that tenant database rejects every copy of that session's cookie, the original and any renewed copy, on every Web and Api instance and after a restart. A request that passed its check before the commit may still finish afterwards and may even return a renewed cookie; that cookie is already unusable. No lock prevents that response, by design.
+
+What logout is not:
+
+- Logout is the only revocation. A cookie rejected for any other reason, for example replayed on another tenant's host, is signed out (deleted) on that host only; its session is not revoked and keeps working on its own host. `SignOutAsync` itself never revokes.
+- Signing in again in a browser that still holds an earlier session replaces that browser's cookie but does not revoke the earlier session; a copy of the earlier cookie stays valid until it expires or is logged out.
+- A second logout with a copy of an already logged-out cookie is not authenticated, so it is challenged like any anonymous request (redirect to `/auth/login` with a `ReturnUrl`, which the login never follows to `/auth`). The first revocation time is kept.
+
+#### When logout cannot complete
+
+WAS-186. If the tenant database fails while a logout request's session is checked or while its revocation is stored (`TenantSessionUnavailableException`), `TenantLogoutFailureMiddleware` answers instead of the error page. It sits before authentication and handles only the actions marked `[TenantLogout]` (the logout page and the logout), so it covers a failure before the action and inside it. The answer is HTTP 503 with `Cache-Control: no-store` and the logout failure page: the alert `Auth.Logout.Failed` (`role="alert"`; Turkish "Çıkış tamamlanamadı. Oturumunuz açık kalmış olabilir. Lütfen tekrar deneyin.") and one action, `Auth.Logout.TryAgain`, a link to the logout page.
+
+- Nothing is signed out, and the cookie is kept as it was: neither deleted nor renewed. The page claims neither outcome, because a storage exception does not prove that the `UPDATE` was not stored.
+- The logout itself never requests sliding renewal (`TenantCookieEvents`). The cookie handler writes a requested renewal when the response starts, and clearing the response does not cancel it. Without this, the failure page for a session due for renewal carried a renewed cookie: it re-issued a session whose logout was unconfirmed and possibly already stored, and the handler's own cache headers replaced the page's. A logout that succeeds signs out, which cancels renewal anyway. Every other request renews as before, the logout page included, and Wasla.Api, which has no logout, is unchanged.
+- A failed session check never authorizes the logout: the request is not authenticated, so the action does not run.
+- The middleware renders the page itself instead of running the request again, so the page reads no tenant database and does not repeat the failed check. It has no form: while the session cannot be checked, no antiforgery token for it can be issued.
+- "Try again" opens the logout page, a GET that ends no session. While the database still fails, it gets the failure page again, not a redirect. Once the database works, a valid session gets the logout form and logs out normally. A session that has already ended (the earlier revocation was stored after all) is signed out by the cookie scheme and redirected to `/auth/login` with a `ReturnUrl` that the login never follows to `/auth`, so nothing loops.
+- The page is standalone and light like the sign-in pages (no tenant layout, so no theme script, and a stored dark choice is left alone), localized in TR, EN, AR and RU, and right to left in Arabic.
+- The middleware logs nothing; the registry or the validator has logged the exception type.
+
+**Failures.**
+
+| Situation | Result |
+|-----------|--------|
+| The row cannot be stored at sign-in | No cookie is issued; Web shows the error page (HTTP 500). Log: `Tenant session could not be created in the tenant database ({ExceptionType}).` |
+| The revocation cannot be stored at logout | No success response: the logout failure page (HTTP 503), and the cookie is kept, neither deleted nor renewed. Usually the session stays valid and "Try again" logs out once the database works; if the database stored the revocation before failing, the session has ended and "Try again" leads to the login page. Log: `Tenant session could not be revoked in the tenant database ({ExceptionType}).` |
+| The session cannot be read during a logout request (the logout page or the logout) | The logout failure page (HTTP 503); the logout does not run; the session is neither accepted, renewed nor deleted. Log: `Tenant session could not be validated against the tenant database ({ExceptionType}).` |
+| The session cannot be read during any other request | As any tenant database failure above: Web 500 without a body, Api 503; the session is neither accepted, renewed nor deleted |
+| The session is already invalid (logged out, unknown, another user's) | The request is not authenticated: the cookie is deleted on that host and Web redirects to the login page, Api answers 401 |
+
+Only the exception type is logged, never an id, cookie or SQL detail (`TenantSessionUnavailableException` carries no inner exception). Cancellation propagates unchanged.
+
+**Several instances.** The rows live in the tenant database, so a logout on one Web instance is seen by every Web and Api instance that reads that tenant database, and by a restarted process. A cookie is usable on another instance at all only when the instances share one Data Protection key ring and the same tenant databases; that is the deployment prerequisite for moving a session between instances, not something logout adds.
+
+**Live connections.** An open live connection learns of the logout at its next periodic check ([Long-lived live connections](#long-lived-live-connections), default every 60 seconds) and is closed; its reconnect is refused at negotiate. There is no immediate disconnect.
+
+**Storage growth (not solved).** Rows are kept: one per sign-in, revoked rows and rows whose cookies have expired accumulate in every tenant database, and nothing deletes them yet. Retention and cleanup are deferred. A future cleanup must keep rejecting a cookie whose row is missing (deleting a row already makes its cookies fail closed) and must not shorten the existing cookie lifetimes. A revoked row can be deleted without changing any outcome. An unrevoked row cannot be told apart from an active sliding session, because renewal writes nothing, so deleting one would sign that user out; cleaning those up needs a design decision first (for example a last-renewed time or an absolute lifetime).
+
+**Rollout.** Run `migrate-all-tenants` before the new Web and Api start ([release order](../operations/deployment.md#release-order-migrate-every-database-first)); a tenant without the table cannot sign in and fails closed on every signed-in request. Cookies issued before the release have no session id and are rejected, so every tenant user signs in again once; an old cookie is never upgraded during authentication or renewal. Previous-version instances neither store nor check sessions, so none may keep serving tenant traffic next to the new version while logout is meant to end sessions. Rolling back makes the previous version accept this version's cookies again, logged-out ones included, until they expire.
 
 ### Central admin login / logout
 
@@ -275,7 +339,7 @@ Web and API use the **same scheme, cookie name and cookie settings** (`WaslaTena
 - **Keys.** By default they are not shared: the API persists keys to `DataProtection:KeyPath`; when that is unset it uses `C:\Wasla-keys` on Windows and the framework's default key store on other operating systems (`ApiDataProtection`; no committed configuration sets the path). Web uses `DataProtection:KeyPath` only when it is set, otherwise the default store. An operator who points both at one folder shares the key ring. `docs/deployment-config.md` (non-canonical) recommends exactly that when Web and API must share protected payloads.
 - **Host.** The cookie is host-only. A browser sends it to the API only when the API is served on the tenant's own host (for example behind a reverse proxy under the tenant domain). Anyone who has the cookie value can still present it with the tenant's `Host` header.
 
-Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.app.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
+Since WAS-94 a shared key ring is safe for tenant sessions in the sense that matters: a Web session presented to the API gets exactly the Web checks (current user, active, stamp, role, stored login session, tenant from the host) and the same role policies, so a deactivated, deleted, demoted or password-reset user's old cookie, and a cookie whose session was logged out on Web (WAS-114), is rejected by the API as it is by Web, and a lower role cannot use an API write that its Web policy forbids. Sharing is still a deployment choice, not a requirement; in local development Web (`{slug}.app.wasla.local`) and API (`localhost`) are different hosts with different keys, so a Web login does **not** authenticate API calls there.
 
 What sharing does not change: the Central Admin cookie is not registered by the API at all; Web revalidates it against CentralDb (WAS-37, [Central admin session revalidation](#central-admin-session-revalidation)). Provider HTTP clients and their cookie containers are unrelated to these sessions (WAS-95).
 
@@ -299,7 +363,7 @@ This protection holds only while the API keeps these properties. Adding CORS wit
 The live hub (`/hubs/tenant-events`) is one long request per browser tab, so the per-request check above would run only when it opens. Wasla.Web therefore checks it at connect and again while it is open:
 
 - **Connect.** The negotiate and connect requests are normal Web requests: tenant resolution from the host, the tenant cookie (`WaslaTenant`) with its revalidation, and policy `CanReceiveLiveTenantUpdates` (the roles of `CanViewLiveScreen` and `CanManualPrint` together). A rejected or missing session is not connected; a central-admin cookie is not accepted. The groups joined come from the resolved tenant and the role, never from the client: `live-screen` for `CanViewLiveScreen`, `print-status` for `CanManualPrint`.
-- **While open.** Every `Realtime:SessionRevalidationSeconds` (default 60, 1–600) each connection's principal is checked again with the same `ITenantSessionValidator` the cookie scheme uses, for the tenant the connection was resolved for, its role again against every stream the connection joined, and the connection's host is resolved again (the same `ITenantResolver` and 5-minute host cache HTTP requests use). The connection is closed when the tenant is no longer the active tenant of that host, the user was deleted or deactivated, their role, password or security stamp changed, or the role no longer admits it. When the tenant database cannot be read the connection is closed too (fail closed). One primary-key read of `AppUsers` per open connection per interval.
+- **While open.** Every `Realtime:SessionRevalidationSeconds` (default 60, 1–600) each connection's principal is checked again with the same `ITenantSessionValidator` the cookie scheme uses, for the tenant the connection was resolved for, its role again against every stream the connection joined, and the connection's host is resolved again (the same `ITenantResolver` and 5-minute host cache HTTP requests use). The connection is closed when the tenant is no longer the active tenant of that host, the user was deleted or deactivated, their role, password or security stamp changed, the connection's login session was logged out (WAS-114), or the role no longer admits it. When the tenant database cannot be read the connection is closed too (fail closed). One primary-key read of `AppUsers` per open connection per interval.
 - **Expiry.** The hub closes a connection when its cookie's authentication ticket expires (`CloseOnAuthenticationExpiration`).
 - **After a close** the browser reconnects through negotiate, where the cookie scheme decides again, so a revoked session gets no new connection; its next page request goes to sign-in.
 
@@ -319,7 +383,7 @@ Wasla's own cookies (WAS-141). Nothing else is registered, read or deleted as an
 | `.Wasla.CentralAdminAuth` | Web, scheme `WaslaCentralAdmin` | HttpOnly, SameSite Lax, Path `/`, host-only, 8-hour sliding; Secure outside Development |
 | `.Wasla.SignupRegistration` | Web, `SignupRegistrationOwnership` | HttpOnly, SameSite Strict, Path `/`, host-only, expires with the registration; Secure outside Development |
 
-Sign-out deletes only that audience's active cookie: tenant logout deletes `.Wasla.TenantAuth`, Central Admin logout deletes `.Wasla.CentralAdminAuth`. The antiforgery, request-culture and TempData cookies keep their ASP.NET Core default names.
+Sign-out deletes only that audience's active cookie: tenant logout deletes `.Wasla.TenantAuth` (after revoking its stored login session, see [Tenant login sessions and logout](#tenant-login-sessions-and-logout)), Central Admin logout deletes `.Wasla.CentralAdminAuth`. The cookie names and attributes are unchanged by WAS-114. The antiforgery, request-culture and TempData cookies keep their ASP.NET Core default names.
 
 ## Legacy property: `AuthSessionResult.CustomerId`
 

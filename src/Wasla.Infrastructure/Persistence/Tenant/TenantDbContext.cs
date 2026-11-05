@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
 
 namespace Wasla.Infrastructure.Persistence.Tenant;
@@ -16,6 +17,7 @@ public class TenantDbContext : DbContext
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<AppUser> AppUsers => Set<AppUser>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<TenantSession> TenantSessions => Set<TenantSession>();
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
     public DbSet<UserProductTourCompletion> UserProductTourCompletions => Set<UserProductTourCompletion>();
     public DbSet<GuidedDemoSession> GuidedDemoSessions => Set<GuidedDemoSession>();
@@ -36,6 +38,7 @@ public class TenantDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BranchConfiguration());
         modelBuilder.ApplyConfiguration(new AppUserConfiguration());
         modelBuilder.ApplyConfiguration(new PasswordResetTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantSessionConfiguration());
         modelBuilder.ApplyConfiguration(new UserNotificationSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new UserProductTourCompletionConfiguration());
         modelBuilder.ApplyConfiguration(new GuidedDemoSessionConfiguration());

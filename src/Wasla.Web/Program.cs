@@ -190,6 +190,10 @@ app.UseRateLimiter();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseMiddleware<PrintBridgeAuthMiddleware>();
 
+// Before authentication: a tenant logout that fails on the tenant database, in the session check or in the revocation,
+// gets the logout failure page instead of the error page.
+app.UseMiddleware<TenantLogoutFailureMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -15,7 +15,8 @@ internal static class AmbiguousSessionClaims
         "duplicate-tenant-id-other", "duplicate-tenant-id-identical", "duplicate-user-id-identical",
         "duplicate-legacy-user-id-identical", "duplicate-stamp-other", "duplicate-stamp-identical",
         "duplicate-role-identical", "role-claim-types-disagree", "lowercase-role", "padded-role", "numeric-role",
-        "comma-combined-role", "obsolete-staff-role", "uppercase-tenant-id", "braced-stamp"
+        "comma-combined-role", "obsolete-staff-role", "uppercase-tenant-id", "braced-stamp",
+        "duplicate-session-id-identical", "duplicate-session-id-other", "uppercase-session-id", "braced-session-id"
     ];
 
     /// <summary>Applies <paramref name="defect"/> to a copy of a valid session's claims.</summary>
@@ -36,6 +37,7 @@ internal static class AmbiguousSessionClaims
         }
 
         const string stamp = WaslaAuthContracts.TenantSecurityStampClaim;
+        const string session = WaslaAuthContracts.TenantSessionIdClaim;
         switch (defect)
         {
             case "duplicate-tenant-id-other": Add(WaslaAuthContracts.TenantIdClaim, otherTenantId.ToString()); break;
@@ -55,6 +57,10 @@ internal static class AmbiguousSessionClaims
             case "obsolete-staff-role": Role("Staff"); break;
             case "uppercase-tenant-id": Replace(WaslaAuthContracts.TenantIdClaim, Value(WaslaAuthContracts.TenantIdClaim).ToUpperInvariant()); break;
             case "braced-stamp": Replace(stamp, "{" + Value(stamp) + "}"); break;
+            case "duplicate-session-id-identical": Add(session, Value(session)); break;
+            case "duplicate-session-id-other": Add(session, Guid.NewGuid().ToString()); break;
+            case "uppercase-session-id": Replace(session, Value(session).ToUpperInvariant()); break;
+            case "braced-session-id": Replace(session, "{" + Value(session) + "}"); break;
             default: throw new ArgumentOutOfRangeException(nameof(defect), defect, null);
         }
 

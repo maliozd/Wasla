@@ -25,6 +25,7 @@ public sealed class AuthController : Controller
     private readonly ICurrentTenantService _currentTenant;
     private readonly IAuthValidationService _authValidation;
     private readonly ITenantLoginRecorder _loginRecorder;
+    private readonly ITenantSessionRegistry _sessions;
     private readonly ISignupCompletionTokenService _signupCompletionTokens;
     private readonly ITenantPasswordResetService _passwordReset;
     private readonly ITenantLandingPageResolver _landingPages;
@@ -35,6 +36,7 @@ public sealed class AuthController : Controller
         ICurrentTenantService currentTenant,
         IAuthValidationService authValidation,
         ITenantLoginRecorder loginRecorder,
+        ITenantSessionRegistry sessions,
         ISignupCompletionTokenService signupCompletionTokens,
         ITenantPasswordResetService passwordReset,
         ITenantLandingPageResolver landingPages,
@@ -44,6 +46,7 @@ public sealed class AuthController : Controller
         _currentTenant = currentTenant;
         _authValidation = authValidation;
         _loginRecorder = loginRecorder;
+        _sessions = sessions;
         _signupCompletionTokens = signupCompletionTokens;
         _passwordReset = passwordReset;
         _landingPages = landingPages;
@@ -234,15 +237,22 @@ public sealed class AuthController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// The one sign-in of the password login and the signup welcome link. The login session is stored in the tenant
+    /// database first; if that fails, <see cref="TenantSessionUnavailableException"/> propagates and no cookie is issued.
+    /// </summary>
     private async Task<ClaimsPrincipal> SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
-        _ = ct;
-        // Tenant, user, role and security stamp are revalidated on every request (TenantCookieEvents).
+        var sessionId = await _sessions.CreateAsync(session.CustomerId, session.UserId, ct);
+
+        // Tenant, user, role, security stamp and the stored login session are revalidated on every request
+        // (TenantCookieEvents).
         var claims = new List<Claim>(TenantSessionClaims.Create(
             session.CustomerId,
             session.UserId,
             session.Role,
-            session.SecurityStamp))
+            session.SecurityStamp,
+            sessionId))
         {
             new("Email", session.Email),
             new(ClaimTypes.Email, session.Email),
@@ -264,11 +274,39 @@ public sealed class AuthController : Controller
         return string.IsNullOrWhiteSpace(token) || !Base64UrlTokenRegex.IsMatch(token.Trim());
     }
 
+    /// <summary>
+    /// The logout page, which the logout failure page links to as its "Try again" (WAS-186). It shows the same
+    /// antiforgery-protected logout form as the menu, for the signed-in session; opening it revokes and signs out
+    /// nothing. Like any page, it renews a cookie whose sliding renewal is due. A session that is no longer valid is
+    /// signed out and challenged by the cookie scheme as on any page, so the browser lands on the login page.
+    /// </summary>
+    [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
+    [TenantLogout]
+    [HttpGet("logout")]
+    public IActionResult Logout() => View(new LogoutViewModel());
+
+    /// <summary>
+    /// Ends this login session on the server, then in the browser. The session is the authenticated cookie's own, for
+    /// the tenant resolved from the host and the cookie's user; no request value names it. Its revocation is stored
+    /// before the response, so every copy of the cookie, including a renewed one, is rejected from then on. Other
+    /// sessions of the user are untouched. If the revocation cannot be stored (<see cref="TenantSessionUnavailableException"/>),
+    /// nothing is signed out and the cookie is kept, not renewed either (<see cref="TenantCookieEvents"/>):
+    /// <see cref="Middleware.TenantLogoutFailureMiddleware"/> shows the logout failure page, from which logout can be
+    /// tried again.
+    /// </summary>
     [Authorize(AuthenticationSchemes = AuthSchemes.Tenant)]
     [ValidateAntiForgeryToken]
+    [TenantLogout]
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
+        var tenant = _currentTenant.CurrentTenant;
+        // The cookie scheme has just validated this principal for this tenant; anything else is not a session to end.
+        if (tenant is null || !TenantSessionClaims.TryRead(User, out var session) || session.TenantId != tenant.Id)
+            return Challenge(AuthSchemes.Tenant);
+
+        await _sessions.RevokeAsync(tenant.Id, session.UserId, session.SessionId, ct);
+
         await HttpContext.SignOutAsync(AuthSchemes.Tenant);
         ExpireTenantAuthCookies();
         return Redirect("/auth/login");

@@ -28,6 +28,7 @@ public sealed class WaslaAuthCookieInventoryTests
                 [nameof(WaslaAuthContracts.TenantCookieName)] = ".Wasla.TenantAuth",
                 [nameof(WaslaAuthContracts.CentralAdminCookieName)] = ".Wasla.CentralAdminAuth",
                 [nameof(WaslaAuthContracts.TenantSecurityStampClaim)] = "Wasla.TenantSecurityStamp",
+                [nameof(WaslaAuthContracts.TenantSessionIdClaim)] = "Wasla.TenantSessionId",
                 [nameof(WaslaAuthContracts.CentralAdminSecurityStampClaim)] = "Wasla.CentralAdminSecurityStamp",
                 [nameof(WaslaAuthContracts.TenantIdClaim)] = "TenantId"
             },
