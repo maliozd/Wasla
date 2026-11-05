@@ -80,8 +80,8 @@ test('a retired name in source, in a test and in a new migration each fails with
 
   assert.equal(result.code, 1);
   assert.deepEqual(result.lines.slice(0, 4), [
-    `${MIGRATIONS}/20990101000000_AddThing.cs:1:40: [tenant-id] "patron_id"`,
     `${MIGRATIONS}/20990101000000_AddThing.Designer.cs:1:22: [former-product-name] "Quokkahub"`,
+    `${MIGRATIONS}/20990101000000_AddThing.cs:1:40: [tenant-id] "patron_id"`,
     'src/App/Service.cs:3:16: [tenant-id] "PatronId"',
     'tests/App.Tests/ClientTests.cs:2:37: [former-product-name] "quokkahub"',
   ]);
@@ -131,12 +131,14 @@ test('every match on a line is reported, from every rule', (t) => {
 test('UTF-16 text, UTF-8 with a byte-order mark and binary files are scanned too', (t) => {
   const utf16 = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('first\r\nint PatronId;\r\n', 'utf16le')]);
   const utf16BigEndian = Buffer.from(Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from('x PatronId', 'utf16le').swap16()]));
+  const truncatedBigEndian = Buffer.concat([utf16BigEndian, Buffer.from([0x00])]);
   const utf16WithoutMark = Buffer.from('see Quokkahub', 'utf16le');
   const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('<root>Quokkahub</root>\n', 'utf8')]);
   const binary = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0x00]), Buffer.from('tEXtquokkahub'), Buffer.from([0x00])]);
   const root = repository(t, {
     'src/App/Utf16.cs': utf16,
     'src/App/Utf16BigEndian.cs': utf16BigEndian,
+    'src/App/Utf16BigEndianTruncated.cs': truncatedBigEndian,
     'src/App/Utf16WithoutMark.txt': utf16WithoutMark,
     'src/App/Settings.xml': bom,
     'src/App/logo.png': binary,
@@ -146,11 +148,12 @@ test('UTF-16 text, UTF-8 with a byte-order mark and binary files are scanned too
 
   assert.equal(result.code, 1);
   assert.deepEqual(result.lines.slice(0, -1), [
-    'src/App/logo.png (binary content): [former-product-name] "quokkahub"',
     'src/App/Settings.xml:1:7: [former-product-name] "Quokkahub"',
     'src/App/Utf16.cs:2:5: [tenant-id] "PatronId"',
     'src/App/Utf16BigEndian.cs:1:3: [tenant-id] "PatronId"',
+    'src/App/Utf16BigEndianTruncated.cs:1:3: [tenant-id] "PatronId"',
     'src/App/Utf16WithoutMark.txt (binary content): [former-product-name] "Quokkahub"',
+    'src/App/logo.png (binary content): [former-product-name] "quokkahub"',
   ]);
 });
 

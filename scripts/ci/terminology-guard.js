@@ -146,7 +146,8 @@ function decode(buffer) {
     return { binary: false, texts: [buffer.subarray(2).toString('utf16le')] };
   }
   if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
-    return { binary: false, texts: [Buffer.from(buffer.subarray(2)).swap16().toString('utf16le')] };
+    const body = Buffer.from(buffer.subarray(2, 2 + Math.floor((buffer.length - 2) / 2) * 2));
+    return { binary: false, texts: [body.swap16().toString('utf16le')] };
   }
   if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
     return { binary: false, texts: [buffer.subarray(3).toString('utf8')] };
@@ -274,8 +275,8 @@ function scan({ root, rules, approved, historical = HISTORICAL_MIGRATIONS }) {
       buffer = readFile(file);
     } catch (error) {
       // A tracked file deleted from the working tree has no content to scan; Git still lists it until the deletion is
-      // staged. CI checks out a clean tree, where this does not happen.
-      if (error.code === 'ENOENT') continue;
+      // staged. A submodule is listed as a directory; its files belong to its own repository. Neither happens in CI.
+      if (error.code === 'ENOENT' || error.code === 'EISDIR') continue;
       throw error;
     }
     scanned += 1;
@@ -349,8 +350,10 @@ function run({ cwd = process.cwd(), env = process.env, historical = HISTORICAL_M
     return 0;
   }
 
+  // Ordinal path order, so the output is the same on every machine and locale.
+  const ordinal = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
   const ordered = [...result.findings].sort(
-    (a, b) => a.path.localeCompare(b.path) || (a.line || 0) - (b.line || 0) || (a.column || 0) - (b.column || 0),
+    (a, b) => ordinal(a.path, b.path) || (a.line || 0) - (b.line || 0) || (a.column || 0) - (b.column || 0),
   );
   for (const finding of ordered) err(describe(finding));
   if (env.GITHUB_ACTIONS === 'true') {
