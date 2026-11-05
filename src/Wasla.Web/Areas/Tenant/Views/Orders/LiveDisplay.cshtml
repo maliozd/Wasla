@@ -11,7 +11,7 @@
     Layout = "_OrdersDisplayLayout";
     ViewData["Title"] = L["Orders.LiveDisplay.Title"];
     var today = Model.TurkeyLocalToday;
-    var customerName = ViewData["CustomerName"] as string;
+    var tenantName = ViewData["TenantName"] as string;
     var restaurantLogoUrl = ViewData["RestaurantLogoUrl"] as string;
     var restaurantLogoBackgroundClass = ViewData["RestaurantLogoBackgroundClass"] as string;
     var navPermissions = await TenantNavigation.GetPermissionsAsync(User);
@@ -43,9 +43,9 @@
                 }
                 <div class="wasla-live-display-identity__copy">
                     <div class="wasla-live-display-identity__heading">
-                        @if (!string.IsNullOrWhiteSpace(customerName))
+                        @if (!string.IsNullOrWhiteSpace(tenantName))
                         {
-                            <h1 class="wasla-live-display-header__title wasla-fs-header__title mb-0">@customerName</h1>
+                            <h1 class="wasla-live-display-header__title wasla-fs-header__title mb-0">@tenantName</h1>
                         }
                         @* Platform synchronization as the server reports it on each snapshot (orders-platform-sync-status.js);
                            never "Live" until the backend says so. The words carry the state; the dot and icon are decorative. *@

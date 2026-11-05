@@ -1,9 +1,13 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -427,27 +431,80 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     // Links -----------------------------------------------------------------------------------------
 
     [Fact]
-    public async Task TheOverview_TheNavigation_AndTheDetail_LinkTheRestaurantPagesUnderAdminRestaurants()
+    public void CentralAdmin_ServesItsRestaurantPagesOnlyUnderAdminRestaurants()
     {
+        // Every endpoint of the host under /admin or in the Admin area: the restaurant (tenant) pages have one home.
+        var templates = _host.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText!.TrimStart('/').StartsWith("admin", StringComparison.OrdinalIgnoreCase)
+                || (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.RouteValues.TryGetValue("area", out var area) == true
+                    && area == AreaNames.Admin))
+            .Select(endpoint => endpoint.RoutePattern.RawText!.TrimStart('/'))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(
+            [
+                "admin",
+                "admin/billing/plan-prices",
+                "admin/billing/plan-prices/{id:guid}/correct",
+                "admin/billing/plan-prices/{id:guid}/supersede",
+                "admin/billing/plan-prices/{id:guid}/withdraw",
+                "admin/contact-messages",
+                "admin/contact-messages/{id:guid}",
+                "admin/login",
+                "admin/logout",
+                "admin/pending-registrations",
+                "admin/pending-registrations/{id:guid}",
+                "admin/pending-registrations/{id:guid}/provision",
+                "admin/restaurants",
+                "admin/restaurants/{id:guid}",
+                "admin/restaurants/{id:guid}/activate",
+                "admin/restaurants/{id:guid}/deactivate",
+            ],
+            templates);
+    }
+
+    [Fact]
+    public async Task TheOverview_TheList_TheDetail_AndTheNavigation_LinkTheRestaurantPagesUnderAdminRestaurants()
+    {
+        var closed = _central.AddTenant("charlie-pide", name: "Charlie Pide", isActive: false);
+        _tenants.CreateTenantDatabase(closed.Id);
+        _tenants.Seed(closed.Id, db => TenantSeed.HealthyTenant(db, DateTime.UtcNow));
         using var browser = await _host.SignedInAdminAsync();
 
         var overview = Html(await browser.GetAsync("/admin"));
-        var links = Hrefs().Matches(overview).Select(match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
-        foreach (var expected in new[]
+        foreach (var link in new[]
                  {
-                     "/admin/restaurants",
-                     "/admin/restaurants?status=active",
-                     "/admin/restaurants?status=inactive",
-                     "/admin/restaurants?migration=failed",
-                     "/admin/restaurants?migration=not-recorded",
-                     $"/admin/restaurants/{_tenantA}",
+                     "<a class=\"small\" href=\"/admin/restaurants\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?status=active\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?status=inactive\">",
+                     "href=\"/admin/restaurants?migration=failed\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?migration=not-recorded\">",
+                     "<a class=\"btn btn-sm btn-outline-secondary\" href=\"/admin/restaurants\">",
+                     $"<a class=\"fw-medium\" href=\"/admin/restaurants/{_tenantA}\">",
                  })
-            Assert.Contains(expected, links);
+            Assert.Contains(link, overview, StringComparison.Ordinal);
+
+        var list = Html(await browser.GetAsync("/admin/restaurants"));
+        Assert.Contains("<form method=\"get\" action=\"/admin/restaurants\"", list, StringComparison.Ordinal);
+        Assert.Contains($"<a class=\"btn btn-sm btn-outline-primary text-nowrap\" href=\"/admin/restaurants/{_tenantA}\">", list, StringComparison.Ordinal);
+        Assert.Matches(ActiveRestaurantsNavigation(), list);
+
+        var noMatch = Html(await browser.GetAsync("/admin/restaurants?q=does-not-exist"));
+        Assert.Contains("<a class=\"small d-inline-block mt-2\" href=\"/admin/restaurants\">", noMatch, StringComparison.Ordinal);
+        Assert.Contains("<a class=\"small\" href=\"/admin/restaurants\">", noMatch, StringComparison.Ordinal);
 
         var detail = Html(await browser.GetAsync($"/admin/restaurants/{_tenantA}"));
-        Assert.Matches(new Regex("<a class=\"nav-link active\"[^>]*href=\"/admin/restaurants\""), detail);
-        Assert.Contains($"<form method=\"post\" action=\"/admin/restaurants/{_tenantA}/deactivate\"", detail, StringComparison.Ordinal);
-        Assert.Contains("href=\"/admin/restaurants\"", detail, StringComparison.Ordinal);
+        Assert.Contains("<li class=\"breadcrumb-item\"><a href=\"/admin/restaurants\">", detail, StringComparison.Ordinal);
+        Assert.Contains("<a class=\"btn btn-sm btn-outline-secondary\" href=\"/admin/restaurants\">", detail, StringComparison.Ordinal);
+        Assert.Contains($"<form method=\"post\" action=\"/admin/restaurants/{_tenantA}/deactivate\" class=\"d-inline\">", detail, StringComparison.Ordinal);
+        Assert.Matches(ActiveRestaurantsNavigation(), detail);
+
+        var inactive = Html(await browser.GetAsync($"/admin/restaurants/{closed.Id}"));
+        Assert.Contains($"<form method=\"post\" action=\"/admin/restaurants/{closed.Id}/activate\" class=\"d-inline\">", inactive, StringComparison.Ordinal);
     }
 
     // Helpers ------------------------------------------------------------------------------------------
@@ -469,6 +526,6 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     [GeneratedRegex("<a class=\"page-link\" href=\"([^\"]+)\"")]
     private static partial Regex PageLinks();
 
-    [GeneratedRegex("href=\"([^\"]+)\"")]
-    private static partial Regex Hrefs();
+    [GeneratedRegex("<a class=\"nav-link active\"[^>]*href=\"/admin/restaurants\"")]
+    private static partial Regex ActiveRestaurantsNavigation();
 }

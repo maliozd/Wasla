@@ -56,6 +56,8 @@ internal sealed class AdminWebHost : IAsyncDisposable
 
     public Uri BaseAddress { get; }
 
+    public IServiceProvider Services => _app.Services;
+
     public static async Task<AdminWebHost> StartAsync(
         CentralTestDatabase central,
         RecordingTenantDbFactory tenants,

@@ -307,7 +307,7 @@ public sealed class OrdersController : BaseController
         if (Guid.TryParse(userIdValue, out var userId))
             vm.GuidedTraining = await guidedSetup.GetLiveScreenAsync(tenant.Id, userId, User, ct);
 
-        ViewData["CustomerName"] = tenant.Name;
+        ViewData["TenantName"] = tenant.Name;
         var logo = await ReadRestaurantLogoAsync(restaurantLogos, tenant.Id, ct);
         ViewData["RestaurantLogoUrl"] = Url.RestaurantLogo(logo?.Version);
         if (logo is not null)

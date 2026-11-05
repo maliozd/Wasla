@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Web.Areas.Admin.Controllers;
 using Wasla.Web.Areas.Admin.Models.TenantOperations;
-using Wasla.Web.Routing;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Admin;
@@ -49,45 +48,6 @@ public sealed partial class AdminTenantOperationsContractTests
         // Only the activate/deactivate posts that existed before this page, both antiforgery-protected.
         Assert.Equal(["Activate", "Deactivate"], writes);
         Assert.All(writes, name => Assert.NotNull(typeof(TenantsController).GetMethod(name)!.GetCustomAttribute<ValidateAntiForgeryTokenAttribute>()));
-    }
-
-    [Fact]
-    public void CentralAdmin_RoutesItsRestaurantPagesOnlyUnderAdminRestaurants()
-    {
-        // Every route template in the Admin area. The restaurant (tenant) pages have one home and no other path.
-        var templates = typeof(TenantsController).Assembly.GetTypes()
-            .Where(type => typeof(Controller).IsAssignableFrom(type) && type.GetCustomAttribute<AreaAttribute>()?.RouteValue == AreaNames.Admin)
-            .SelectMany(type =>
-            {
-                var prefix = type.GetCustomAttribute<RouteAttribute>()?.Template ?? string.Empty;
-                return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                    .SelectMany(method => method.GetCustomAttributes<HttpMethodAttribute>())
-                    .Select(route => string.IsNullOrEmpty(route.Template) ? prefix : $"{prefix}/{route.Template}");
-            })
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal)
-            .ToList();
-
-        Assert.Equal(
-            [
-                "admin",
-                "admin/billing/plan-prices",
-                "admin/billing/plan-prices/{id:guid}/correct",
-                "admin/billing/plan-prices/{id:guid}/supersede",
-                "admin/billing/plan-prices/{id:guid}/withdraw",
-                "admin/contact-messages",
-                "admin/contact-messages/{id:guid}",
-                "admin/login",
-                "admin/logout",
-                "admin/pending-registrations",
-                "admin/pending-registrations/{id:guid}",
-                "admin/pending-registrations/{id:guid}/provision",
-                "admin/restaurants",
-                "admin/restaurants/{id:guid}",
-                "admin/restaurants/{id:guid}/activate",
-                "admin/restaurants/{id:guid}/deactivate",
-            ],
-            templates);
     }
 
     [Fact]

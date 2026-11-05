@@ -85,6 +85,34 @@ public sealed class TenantDbEntityNamespaceTests
     }
 
     [Fact]
+    public void EveryMigrationAfterTheHistoricalOnes_NamesOnlyTenantDbEntities()
+    {
+        using var tenant = SqlServerModel();
+        var migrations = tenant.GetService<IMigrationsAssembly>();
+
+        // Migrations with a designer, oldest first; for each, whether its entities are named in the TenantDb namespace.
+        var designers = migrations.Migrations
+            .OrderBy(migration => migration.Key, StringComparer.Ordinal)
+            .Select(migration => (Id: migration.Key, Model: migrations.CreateMigration(migration.Value, tenant.Database.ProviderName!).TargetModel))
+            .Where(migration => migration.Model?.GetEntityTypes().Any() == true)
+            .Select(migration => (migration.Id, Canonical: migration.Model!.GetEntityTypes()
+                .Select(entity => entity.Name.StartsWith($"{TenantDbNamespace}.", StringComparison.Ordinal))
+                .Distinct()
+                .ToList()))
+            .ToList();
+
+        // A designer names all of its entities one way, never a mix.
+        Assert.All(designers, designer => Assert.True(designer.Canonical.Count == 1, designer.Id));
+
+        // The historical designers kept by WAS-134 (at most 15, a list that may only shrink) all come first, and every
+        // designer after them, including any new migration, names only TenantDb entities.
+        var historical = designers.TakeWhile(designer => !designer.Canonical[0]).Count();
+        Assert.InRange(historical, 0, 15);
+        Assert.All(designers.Skip(historical), designer => Assert.True(designer.Canonical[0], designer.Id));
+        Assert.True(designers[^1].Canonical[0], designers[^1].Id);
+    }
+
+    [Fact]
     public void TheModel_CreatesExactlyTheTenantDatabaseTables()
     {
         using var tenant = SqlServerModel();
