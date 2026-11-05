@@ -9,7 +9,7 @@ namespace Wasla.UnitTests.Terminology;
 /// assertion is on the exact set, so a new Customer name fails here until it is reviewed and added as an order-customer
 /// concept; a tenant concept uses Tenant naming instead.
 /// </summary>
-public sealed class OrderCustomerNameInventoryTests
+public sealed class OrderCustomerTerminologyTests
 {
     private static readonly string[] AssemblyNames =
         ["Wasla.Domain", "Wasla.Application", "Wasla.Contracts", "Wasla.Infrastructure", "Wasla.Web", "Wasla.Api", "Wasla.Cli"];
