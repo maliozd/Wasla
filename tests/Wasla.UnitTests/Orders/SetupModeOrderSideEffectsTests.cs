@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
@@ -85,6 +86,24 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         Assert.Empty(_approvals.Approved);
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         Assert.Equal(OrderStatus.New, (await db.Orders.SingleAsync(Ct)).InternalStatus);
+    }
+
+    [Fact]
+    public async Task InSetup_TheSkippedAutoApprove_IsLoggedWithTheTenantAndOrderIds()
+    {
+        await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
+        var logger = new StructuredLogger<OrderAutoApproveService>();
+        var orderId = Guid.NewGuid();
+
+        await new OrderAutoApproveService(_tenants, _approvals, ReceiptCreation(), logger)
+            .ProcessNewlyInsertedOrderAsync(_tenant, orderId, OrderStatus.New, Ct);
+
+        // The structured properties a log query reads: the tenant under TenantId, the order under OrderId.
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(["TenantId", "OrderId", "{OriginalFormat}"], entry.Select(pair => pair.Key));
+        Assert.Equal(_tenant, entry[0].Value);
+        Assert.Equal(orderId, entry[1].Value);
+        Assert.Empty(_approvals.Approved);
     }
 
     [Fact]
@@ -312,6 +331,19 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         public Task<OrderActionResult> MarkReadyForPickupAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkOnTheWayAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
         public Task<OrderActionResult> MarkDeliveredAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+    }
+
+    /// <summary>Keeps each entry's structured properties, in template order.</summary>
+    private sealed class StructuredLogger<T> : ILogger<T>
+    {
+        public List<IReadOnlyList<KeyValuePair<string, object?>>> Entries { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Entries.Add(state is IReadOnlyList<KeyValuePair<string, object?>> pairs ? pairs.ToList() : []);
     }
 
     private sealed class DefaultTemplates : IReceiptTemplateSettingsService
