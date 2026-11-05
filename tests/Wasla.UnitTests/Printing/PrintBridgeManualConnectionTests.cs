@@ -236,7 +236,7 @@ public sealed partial class PrintBridgeManualConnectionTests
     // Setup page ---------------------------------------------------------------------------------
 
     [Fact]
-    public void SetupPage_OffersNoCustomerFacingSetupCode()
+    public void SetupPage_OffersNoUserFacingSetupCode()
     {
         var view = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "PrintBridge", "Setup.cshtml");
         var script = Read("src", "Wasla.Web", "wwwroot", "js", "print-bridge", "print-bridge-setup.js");
@@ -493,26 +493,26 @@ public sealed partial class PrintBridgeManualConnectionTests
         public List<(Guid TenantId, string Name)> Created { get; } = new();
         public List<(Guid TenantId, Guid DeviceId)> Regenerated { get; } = new();
 
-        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid customerId, string deviceName, CancellationToken ct)
+        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid tenantId, string deviceName, CancellationToken ct)
         {
             if (AtLimit)
                 throw new PrintBridgeDeviceLimitReachedException();
-            Created.Add((customerId, deviceName));
+            Created.Add((tenantId, deviceName));
             return Task.FromResult(new GeneratePrintBridgeTokenResult(CreatedId, RawToken, "Print Bridge"));
         }
 
-        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid customerId, Guid deviceId, CancellationToken ct)
+        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid tenantId, Guid deviceId, CancellationToken ct)
         {
-            Regenerated.Add((customerId, deviceId));
+            Regenerated.Add((tenantId, deviceId));
             return Task.FromResult(new GeneratePrintBridgeTokenResult(deviceId, RawToken, "Print Bridge"));
         }
 
-        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid customerId, CancellationToken ct) => Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>([]);
-        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid customerId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<bool> SetDeviceActiveAsync(Guid customerId, Guid deviceId, bool isActive, CancellationToken ct) => throw new NotSupportedException();
-        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid customerId, Guid deviceId, string deviceName, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>([]);
+        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct) => throw new NotSupportedException();
+        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid tenantId, Guid deviceId, string deviceName, CancellationToken ct) => throw new NotSupportedException();
     }
 
     /// <summary>The manual connection never touches setup sessions.</summary>

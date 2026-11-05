@@ -1,7 +1,7 @@
 ﻿using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// One row per sync attempt per PlatformConnection. Critical for debugging

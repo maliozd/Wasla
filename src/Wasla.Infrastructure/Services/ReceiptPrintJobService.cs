@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
@@ -14,7 +14,7 @@ namespace Wasla.Infrastructure.Services;
 public interface IReceiptPrintJobService
 {
     Task<bool> TryCreateReceiptJobAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         int copyCount,
         string? tenantDisplayName,
@@ -41,7 +41,7 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
     }
 
     public async Task<bool> TryCreateReceiptJobAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         int copyCount,
         string? tenantDisplayName,
@@ -50,10 +50,10 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         // Read template settings on a separate connection before taking the serializable lock.
         // Holding that lock while opening a second tenant context can deadlock concurrent first-prints.
         var template = await _templateSettings
-            .GetAsync(customerId, tenantDisplayName, null, ct)
+            .GetAsync(tenantId, tenantDisplayName, null, ct)
             .ConfigureAwait(false);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         await using var tx = await db.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, ct)
@@ -73,8 +73,8 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             await tx.RollbackAsync(ct).ConfigureAwait(false);
 
             _logger.LogInformation(
-                "Receipt PrintJob skipped because an active job already exists. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt PrintJob skipped because an active job already exists. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return false;
         }
@@ -91,8 +91,8 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
             await tx.RollbackAsync(ct).ConfigureAwait(false);
 
             _logger.LogWarning(
-                "Receipt PrintJob creation skipped because order was not found. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt PrintJob creation skipped because order was not found. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return false;
         }
@@ -127,22 +127,22 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
             _logger.LogInformation(
                 ex,
-                "Receipt PrintJob skipped because a duplicate was created concurrently. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt PrintJob skipped because a duplicate was created concurrently. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return false;
         }
 
         _logger.LogInformation(
-            "Receipt PrintJob created. CustomerId={CustomerId}, OrderId={OrderId}, PrintJobId={PrintJobId}, CopyCount={CopyCount}",
-            customerId,
+            "Receipt PrintJob created. TenantId={TenantId}, OrderId={OrderId}, PrintJobId={PrintJobId}, CopyCount={CopyCount}",
+            tenantId,
             orderId,
             job.Id,
             safeCopyCount);
 
         await TenantChangePublisher.PublishAsync(
                 _notifier,
-                customerId,
+                tenantId,
                 new PrintJobChanged(orderId, job.Id, job.Status, job.StatusVersion),
                 _logger)
             .ConfigureAwait(false);

@@ -11,7 +11,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mock;
@@ -436,7 +436,7 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
         Assert.Equal(TenantDatabaseState.TimedOut, TenantOperationalHealthReader.Classify(new TimeoutException()));
         Assert.Equal(TenantDatabaseState.ConfigurationUnreadable, TenantOperationalHealthReader.Classify(new CryptographicException()));
         Assert.Equal(TenantDatabaseState.ConfigurationUnreadable, TenantOperationalHealthReader.Classify(new ArgumentException("Keyword not supported")));
-        Assert.Equal(TenantDatabaseState.Failed, TenantOperationalHealthReader.Classify(new InvalidOperationException("Customer not found")));
+        Assert.Equal(TenantDatabaseState.Failed, TenantOperationalHealthReader.Classify(new InvalidOperationException("Tenant not found")));
     }
 
     [Fact]

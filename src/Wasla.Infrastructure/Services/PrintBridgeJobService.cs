@@ -29,13 +29,13 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     }
 
     public async Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(
-        Guid customerId,
+        Guid tenantId,
         int max,
         CancellationToken ct)
     {
         var safeMax = Math.Clamp(max, 1, MaxPendingLimit);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var jobs = await db.PrintJobs
             .AsNoTracking()
@@ -54,7 +54,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
 
         _logger.LogDebug(
             "Print Bridge pending jobs fetched. TenantId={TenantId}, Count={Count}, Max={Max}",
-            customerId,
+            tenantId,
             jobs.Count,
             safeMax);
 
@@ -62,13 +62,13 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     }
 
     public async Task<PrintJobClaimResponse> TryMarkPrintingAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         string lockedBy,
         Guid? lockedByInstallationId,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
             return JobNotFound();
@@ -95,26 +95,26 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         {
             _logger.LogInformation(
                 "Print job claimed for printing. TenantId={TenantId}, JobId={JobId}, LockedBy={LockedBy}",
-                customerId,
+                tenantId,
                 jobId,
                 safeLockedBy);
-            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
+            await PublishCurrentStateAsync(db, tenantId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobClaimed");
         }
 
         _logger.LogInformation(
             "Print job claim skipped because status is no longer Pending. TenantId={TenantId}, JobId={JobId}",
-            customerId,
+            tenantId,
             jobId);
         return new PrintJobClaimResponse(PrintJobClaimResult.Skipped, "PrintBridge.JobNotPending");
     }
 
     public async Task<PrintJobClaimResponse> TryMarkPrintedAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
             return JobNotFound();
@@ -136,9 +136,9 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         {
             _logger.LogInformation(
                 "Print job marked printed. TenantId={TenantId}, JobId={JobId}",
-                customerId,
+                tenantId,
                 jobId);
-            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
+            await PublishCurrentStateAsync(db, tenantId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobPrinted");
         }
 
@@ -146,12 +146,12 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     }
 
     public async Task<PrintJobClaimResponse> TryMarkFailedAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         string errorMessage,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await JobExistsAsync(db, jobId, ct).ConfigureAwait(false))
             return JobNotFound();
@@ -174,10 +174,10 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
         {
             _logger.LogWarning(
                 "Print job marked failed. TenantId={TenantId}, JobId={JobId}, Error={Error}",
-                customerId,
+                tenantId,
                 jobId,
                 safeError);
-            await PublishCurrentStateAsync(db, customerId, jobId).ConfigureAwait(false);
+            await PublishCurrentStateAsync(db, tenantId, jobId).ConfigureAwait(false);
             return new PrintJobClaimResponse(PrintJobClaimResult.Claimed, "PrintBridge.JobFailed");
         }
 
@@ -196,7 +196,7 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
     /// consistent, and the version tells screens which notification is newest. Nothing here can change the response
     /// the Bridge gets for its report.
     /// </summary>
-    private async Task PublishCurrentStateAsync(TenantDbContext db, Guid customerId, Guid jobId)
+    private async Task PublishCurrentStateAsync(TenantDbContext db, Guid tenantId, Guid jobId)
     {
         PrintJobChanged? change;
         try
@@ -215,13 +215,13 @@ public sealed class PrintBridgeJobService : IPrintBridgeJobService
             _logger.LogWarning(
                 "Print job state could not be read for its change notification ({ExceptionType}). TenantId={TenantId}, JobId={JobId}",
                 ex.GetType().Name,
-                customerId,
+                tenantId,
                 jobId);
             return;
         }
 
         if (change is not null)
-            await TenantChangePublisher.PublishAsync(_notifier, customerId, change, _logger).ConfigureAwait(false);
+            await TenantChangePublisher.PublishAsync(_notifier, tenantId, change, _logger).ConfigureAwait(false);
     }
 
     private static PrintJobClaimResponse JobNotFound() =>

@@ -1,7 +1,7 @@
 using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// One tenant user's guided-setup progress (at most one row per user).

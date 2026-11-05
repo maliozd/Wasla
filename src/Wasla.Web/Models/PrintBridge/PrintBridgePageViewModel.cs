@@ -25,7 +25,7 @@ public sealed class PrintBridgePageViewModel
 
     public string PackageDownloadUrl { get; set; } = "/print-bridge/download/package";
 
-    /// <summary>Customer web base URL for Print Bridge desktop Server URL field (trailing slash).</summary>
+    /// <summary>Tenant web base URL for Print Bridge desktop Server URL field (trailing slash).</summary>
     public string? ServerUrl { get; set; }
 
     public IReadOnlyList<PrintJobHistoryRowViewModel> PrintJobs { get; set; } =

@@ -2,7 +2,7 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Wasla.Application.Abstractions.Auth;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 

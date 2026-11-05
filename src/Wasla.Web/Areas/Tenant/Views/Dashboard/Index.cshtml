@@ -26,10 +26,10 @@
 
 <div class="wasla-dashboard">
 
-    <header class="wasla-customer-page-header wasla-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-        <div class="wasla-customer-page-header__main">
-            <h1 class="wasla-customer-page-header__title wasla-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
-            <p class="wasla-customer-page-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
+    <header class="wasla-tenant-page-header wasla-dash-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+        <div class="wasla-tenant-page-header__main">
+            <h1 class="wasla-tenant-page-header__title wasla-dash-header__title h4 mb-1">@L["Dashboard.Title"]</h1>
+            <p class="wasla-tenant-page-header__subtitle text-muted small mb-0">@L["Dashboard.TodayOverview"]</p>
         </div>
         <div class="wasla-dash-header__scope text-md-end">
             <span class="badge rounded-pill text-bg-light border wasla-dash-today-badge">
@@ -81,7 +81,7 @@
 
                     @if (Model.RecentOrders.Count == 0)
                     {
-                        <div class="wasla-customer-empty-state wasla-dash-empty text-center py-4">
+                        <div class="wasla-tenant-empty-state wasla-dash-empty text-center py-4">
                             <div class="wasla-dash-empty__icon text-muted mb-2" aria-hidden="true">
                                 <i class="bi bi-inbox"></i>
                             </div>
@@ -156,7 +156,7 @@
 
                     @if (Model.PlatformSummary.Count == 0)
                     {
-                        <div class="wasla-customer-empty-state wasla-dash-empty text-center py-4">
+                        <div class="wasla-tenant-empty-state wasla-dash-empty text-center py-4">
                             <p class="wasla-dash-empty__title text-muted mb-0">@L["Dashboard.NoPlatformSummary"]</p>
                         </div>
                     }

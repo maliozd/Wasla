@@ -1,7 +1,7 @@
 using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// The restaurant's logo, shown beside its name in the Live Screen header (singleton row in the tenant database). It is

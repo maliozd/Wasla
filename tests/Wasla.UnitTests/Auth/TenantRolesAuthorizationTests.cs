@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -900,7 +900,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
 
         Assert.NotNull(result);
         Assert.Equal(UserRole.Kitchen, result!.Role);
-        Assert.Equal(_tenantId, result.CustomerId);
+        Assert.Equal(_tenantId, result.TenantId);
     }
 
     [Fact]
@@ -1309,13 +1309,13 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public async Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public async Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 await connection.OpenAsync(ct);
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
 
                 await CreateSchemaAsync(connection, ct);
             }

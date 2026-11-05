@@ -11,7 +11,7 @@ namespace Wasla.Domain.Entities.Central;
 /// <remarks>
 /// Terminology note: this entity represents the tenant (restaurant/business), not an
 /// end customer who places a food order. Order-level fields such as <c>CustomerName</c>
-/// on <see cref="Wasla.Domain.Entities.Customer.Order"/> refer to the food orderer
+/// on <see cref="Wasla.Domain.Entities.TenantDb.Order"/> refer to the food orderer
 /// and must keep Customer terminology.
 /// </remarks>
 public class Tenant : BaseEntity
@@ -24,7 +24,7 @@ public class Tenant : BaseEntity
     public string Slug { get; set; } = string.Empty;
 
     /// <summary>
-    /// Primary domain used to resolve requests to this customer, e.g. "restaurant-a.myWasla.com".
+    /// Primary domain used to resolve requests to this tenant, e.g. "restaurant-a.myWasla.com".
     /// </summary>
     public string PrimaryDomain { get; set; } = string.Empty;
 
@@ -47,8 +47,8 @@ public class Tenant : BaseEntity
     public int EncryptionKeyVersion { get; set; } = 1;
 
     /// <summary>
-    /// Schema version this customer's database is currently on, e.g. "1.0.0".
-    /// The app can check this at startup to decide if the customer is compatible.
+    /// Schema version this tenant's database is currently on, e.g. "1.0.0".
+    /// The app can check this at startup to decide if the tenant is compatible.
     /// </summary>
     public string SchemaVersion { get; set; } = "1.0.0";
 

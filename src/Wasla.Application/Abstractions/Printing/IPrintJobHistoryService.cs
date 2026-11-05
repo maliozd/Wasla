@@ -38,7 +38,7 @@ public static class PrintJobHistoryLimits
 public interface IPrintJobHistoryService
 {
     Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(
-        Guid customerId,
+        Guid tenantId,
         int limit,
         CancellationToken ct);
 
@@ -47,7 +47,7 @@ public interface IPrintJobHistoryService
     /// Preserves the source job's copy count, clamped to the supported range of 1–3.
     /// </summary>
     Task<ReprintReceiptResult> CreateReprintAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid printJobId,
         string? tenantDisplayName,
         CancellationToken ct);

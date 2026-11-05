@@ -42,10 +42,10 @@ Accepting an order means starting to prepare it. The restaurant's workflow is Ne
 
 ### Order entity notes
 
-`src/Wasla.Domain/Entities/Customer/Order.cs`:
+`src/Wasla.Domain/Entities/TenantDb/Order.cs`:
 
 - `CustomerNote` — order-level instruction from the end customer (delivery/prep request). Normalized and capped at 2000 characters on sync.
-- Item instructions use `OrderItem.Notes` (`src/Wasla.Domain/Entities/Customer/OrderItem.cs`), not `CustomerNote`.
+- Item instructions use `OrderItem.Notes` (`src/Wasla.Domain/Entities/TenantDb/OrderItem.cs`), not `CustomerNote`.
 
 End-customer fields (`CustomerName`, `CustomerPhone`, `CustomerAddress`) refer to the restaurant’s buyer, not the SaaS tenant.
 
@@ -179,7 +179,7 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 | Concern | Location |
 | --- | --- |
 | Status enum | `src/Wasla.Domain/Enums/OrderStatus.cs` |
-| Order / notes | `src/Wasla.Domain/Entities/Customer/Order.cs`, `OrderItem.cs` |
+| Order / notes | `src/Wasla.Domain/Entities/TenantDb/Order.cs`, `OrderItem.cs` |
 | Operator actions | `src/Wasla.Infrastructure/Services/OrderActionService.cs` |
 | HTTP actions | `src/Wasla.Web/Areas/Tenant/Controllers/OrdersController.cs` |
 | Status mapping | `src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs` |

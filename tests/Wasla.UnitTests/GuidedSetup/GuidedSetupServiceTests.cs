@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Wasla.Application.Abstractions.GuidedSetup;
 using Wasla.Application.GuidedSetup;
 using Wasla.Application.Tours;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -605,20 +605,20 @@ public sealed class GuidedSetupServiceTests : IDisposable
                 _recorded?.Add(commandText);
         }
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct) =>
-            CreateAsync(customerId, ct, withHooks: true);
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
+            CreateAsync(tenantId, ct, withHooks: true);
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct, bool withHooks)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct, bool withHooks)
         {
             var connectionString = _pools.Own(new SqliteConnectionStringBuilder
             {
-                DataSource = Path.Combine(_directory, customerId.ToString("N") + ".db"),
+                DataSource = Path.Combine(_directory, tenantId.ToString("N") + ".db"),
                 DefaultTimeout = 30
             }.ToString());
 
             lock (_gate)
             {
-                if (_created.Add(customerId))
+                if (_created.Add(tenantId))
                 {
                     using var setup = new GuidedSetupTenantDbContext(Options(connectionString, []));
                     setup.Database.EnsureCreated();

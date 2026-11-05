@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Web.Areas.Admin.Controllers;
 using Wasla.Web.Areas.Admin.Models.TenantOperations;
+using Wasla.Web.Routing;
 using Wasla.Web.Security;
 
 namespace Wasla.UnitTests.Admin;
@@ -24,7 +25,7 @@ public sealed partial class AdminTenantOperationsContractTests
 
     [Theory]
     [InlineData(typeof(DashboardController))]
-    [InlineData(typeof(CustomersController))]
+    [InlineData(typeof(TenantsController))]
     public void OperationsControllers_RequireTheCentralAdminScheme_WithNoAnonymousAction(Type controller)
     {
         var authorize = controller.GetCustomAttributes<AuthorizeAttribute>().Single();
@@ -38,7 +39,7 @@ public sealed partial class AdminTenantOperationsContractTests
     [Fact]
     public void OperationsCenter_AddsNoWriteEndpoint()
     {
-        var writes = new[] { typeof(DashboardController), typeof(CustomersController) }
+        var writes = new[] { typeof(DashboardController), typeof(TenantsController) }
             .SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
             .Where(method => method.GetCustomAttributes<HttpMethodAttribute>().Any(a => !a.HttpMethods.SequenceEqual(["GET"])))
             .Select(method => method.Name)
@@ -47,7 +48,46 @@ public sealed partial class AdminTenantOperationsContractTests
 
         // Only the activate/deactivate posts that existed before this page, both antiforgery-protected.
         Assert.Equal(["Activate", "Deactivate"], writes);
-        Assert.All(writes, name => Assert.NotNull(typeof(CustomersController).GetMethod(name)!.GetCustomAttribute<ValidateAntiForgeryTokenAttribute>()));
+        Assert.All(writes, name => Assert.NotNull(typeof(TenantsController).GetMethod(name)!.GetCustomAttribute<ValidateAntiForgeryTokenAttribute>()));
+    }
+
+    [Fact]
+    public void CentralAdmin_RoutesItsRestaurantPagesOnlyUnderAdminRestaurants()
+    {
+        // Every route template in the Admin area. The restaurant (tenant) pages have one home and no other path.
+        var templates = typeof(TenantsController).Assembly.GetTypes()
+            .Where(type => typeof(Controller).IsAssignableFrom(type) && type.GetCustomAttribute<AreaAttribute>()?.RouteValue == AreaNames.Admin)
+            .SelectMany(type =>
+            {
+                var prefix = type.GetCustomAttribute<RouteAttribute>()?.Template ?? string.Empty;
+                return type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                    .SelectMany(method => method.GetCustomAttributes<HttpMethodAttribute>())
+                    .Select(route => string.IsNullOrEmpty(route.Template) ? prefix : $"{prefix}/{route.Template}");
+            })
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(
+            [
+                "admin",
+                "admin/billing/plan-prices",
+                "admin/billing/plan-prices/{id:guid}/correct",
+                "admin/billing/plan-prices/{id:guid}/supersede",
+                "admin/billing/plan-prices/{id:guid}/withdraw",
+                "admin/contact-messages",
+                "admin/contact-messages/{id:guid}",
+                "admin/login",
+                "admin/logout",
+                "admin/pending-registrations",
+                "admin/pending-registrations/{id:guid}",
+                "admin/pending-registrations/{id:guid}/provision",
+                "admin/restaurants",
+                "admin/restaurants/{id:guid}",
+                "admin/restaurants/{id:guid}/activate",
+                "admin/restaurants/{id:guid}/deactivate",
+            ],
+            templates);
     }
 
     [Fact]
@@ -84,7 +124,7 @@ public sealed partial class AdminTenantOperationsContractTests
     [Fact]
     public void TenantList_MarkupIsAccessible()
     {
-        var view = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Customers", "Index.cshtml");
+        var view = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Tenants", "Index.cshtml");
 
         Assert.Contains("aria-sort=\"@ariaSort\"", view, StringComparison.Ordinal);
         Assert.Contains("<caption id=\"tenantTableCaption\"", view, StringComparison.Ordinal);
@@ -121,7 +161,7 @@ public sealed partial class AdminTenantOperationsContractTests
         Assert.DoesNotMatch(new Regex("#[0-9a-fA-F]{3,6}\\b"), css);
         Assert.Contains("wasla-admin-operations.css", layout, StringComparison.Ordinal);
 
-        var list = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Customers", "Index.cshtml");
+        var list = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Tenants", "Index.cshtml");
         Assert.Contains("table-responsive", list, StringComparison.Ordinal);
         Assert.Contains("d-none d-md-table-cell", list, StringComparison.Ordinal);
         Assert.Contains("d-none d-xl-table-cell", list, StringComparison.Ordinal);
@@ -162,13 +202,13 @@ public sealed partial class AdminTenantOperationsContractTests
         foreach (var path in new[]
                  {
                      Path.Combine(root, "Views", "Dashboard", "Index.cshtml"),
-                     Path.Combine(root, "Views", "Customers", "Index.cshtml"),
-                     Path.Combine(root, "Views", "Customers", "Details.cshtml"),
+                     Path.Combine(root, "Views", "Tenants", "Index.cshtml"),
+                     Path.Combine(root, "Views", "Tenants", "Details.cshtml"),
                      Path.Combine(root, "Views", "Shared", "_AdminStatusBadge.cshtml"),
                      Path.Combine(root, "Views", "Shared", "_AdminLoadError.cshtml"),
                      Path.Combine(root, "Models", "TenantOperations", "AdminOperationsPresenter.cs"),
                      Path.Combine(root, "Models", "TenantOperations", "AdminTenantOperationsViewModels.cs"),
-                     Path.Combine(root, "Controllers", "CustomersController.cs"),
+                     Path.Combine(root, "Controllers", "TenantsController.cs"),
                      Path.Combine(root, "Controllers", "DashboardController.cs")
                  })
             yield return (path, File.ReadAllText(path));

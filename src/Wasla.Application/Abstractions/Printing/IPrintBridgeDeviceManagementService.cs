@@ -71,38 +71,38 @@ public static class PrintBridgeDeviceNameRules
 
 public interface IPrintBridgeDeviceManagementService
 {
-    Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid customerId, CancellationToken ct);
+    Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid tenantId, CancellationToken ct);
 
     Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid deviceId,
         CancellationToken ct);
 
-    Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid customerId, CancellationToken ct);
+    Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct);
 
     Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(
-        Guid customerId,
+        Guid tenantId,
         string deviceName,
         CancellationToken ct);
 
     Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid deviceId,
         CancellationToken ct);
 
     Task<bool> SetDeviceActiveAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid deviceId,
         bool isActive,
         CancellationToken ct);
 
     Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid deviceId,
         CancellationToken ct);
 
     Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid deviceId,
         string deviceName,
         CancellationToken ct);
@@ -111,7 +111,7 @@ public interface IPrintBridgeDeviceManagementService
 public interface IPrintBridgeActivePrintJobChecker
 {
     Task<bool> HasActivePrintingJobAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid? installationId,
         string? legacyLockedBy,
         CancellationToken ct);

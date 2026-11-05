@@ -6,7 +6,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
 
@@ -507,7 +507,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         private readonly ConcurrentQueue<Guid> _created = new();
         public IReadOnlyList<Guid> Created => _created.ToList();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;

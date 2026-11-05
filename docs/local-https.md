@@ -20,8 +20,6 @@ For local development, use a trusted certificate that covers your tenant domains
 
 Production HTTPS behavior is unchanged. Do not disable HTTPS or ignore certificate errors in Production.
 
-**Legacy:** Older local setups used `*.orderhub.local` and `.certs/orderhub-local.pfx`. That certificate does not cover `*.wasla.local`. Regenerate with the script below.
-
 ---
 
 ## Quick start
@@ -98,8 +96,6 @@ Git for Windows OpenSSL is often at:
 Install Git for Windows if needed: [https://git-scm.com/download/win](https://git-scm.com/download/win)
 
 **Do not commit** `.certs/` contents. Private keys and generated certificates stay local only.
-
-Old `.certs/orderhub-local.*` files may remain on disk from earlier setups; they are unused and safe to delete locally after regenerating.
 
 ---
 
@@ -215,7 +211,7 @@ Development auth cookies support HTTP (`CookieSecurePolicy.SameAsRequest`). Prin
 
 | Symptom | Likely cause |
 |--------|----------------|
-| Browser cert warning (`NET::ERR_CERT_COMMON_NAME_INVALID`) | Still using legacy `orderhub-local.pfx`, `mkcert -install` not run, wrong PFX path, or Web not restarted after regenerating cert |
+| Browser cert warning (`NET::ERR_CERT_COMMON_NAME_INVALID`) | Certificate generated for other host names, `mkcert -install` not run, wrong PFX path, or Web not restarted after regenerating cert |
 | Certificate warning or Print Bridge `RemoteCertificateNameMismatch` only on `{slug}.app.wasla.local` | Certificate generated before WAS-66 covers `*.wasla.local` but not `*.app.wasla.local`; regenerate and restart Web |
 | Print Bridge SSL error | mkcert CA not trusted, wrong server URL, or hosts entry missing |
 | Kestrel cannot load PFX | Script not run, or `Kestrel__Certificates__Default__Path` / `__Password` wrong |

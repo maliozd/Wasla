@@ -2,6 +2,6 @@
 
 public interface IDashboardService
 {
-    Task<DashboardResult> GetTodayAsync(Guid customerId, CancellationToken ct);
+    Task<DashboardResult> GetTodayAsync(Guid tenantId, CancellationToken ct);
 }
 

@@ -178,10 +178,10 @@ public sealed class NotificationSettingsSoundResolutionTests
 
     private sealed class DefaultNotificationSettingsService : IUserNotificationSettingsService
     {
-        public Task<GetNotificationSettingsResult> GetAsync(Guid customerId, Guid userId, CancellationToken ct) =>
+        public Task<GetNotificationSettingsResult> GetAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
             Task.FromResult(new GetNotificationSettingsResult());
 
-        public Task UpdateAsync(Guid customerId, Guid userId, UpdateNotificationSettingsCommand command, CancellationToken ct) =>
+        public Task UpdateAsync(Guid tenantId, Guid userId, UpdateNotificationSettingsCommand command, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 

@@ -17,9 +17,9 @@ internal static class WorkerConsole
     private const int ColSkipped   = 8;
     private const int ColUnchanged = 9;
 
-    // Customer section fixed widths.
-    private const int CustomerNameWidth = 28;
-    private const int CustomerSepLen    = 60;
+    // Tenant section fixed widths.
+    private const int TenantNameWidth = 28;
+    private const int TenantSepLen    = 60;
 
     private static readonly object _lock = new();
 
@@ -28,7 +28,7 @@ internal static class WorkerConsole
     public static void WriteStartupBanner(string providerMode, string environmentName, int intervalSeconds)
     {
         const int W = 48;
-        const string Title = "OrderHub Worker";
+        const string Title = "Wasla Worker";
         int rightDashes = W - Title.Length - 3;
 
         var modeColor = providerMode.Equals("Real", StringComparison.OrdinalIgnoreCase)
@@ -53,7 +53,7 @@ internal static class WorkerConsole
 
     // ── Cycle lines ───────────────────────────────────────────────────────────
 
-    public static void WriteCycleStarted(DateTime utcNow, int customerCount, int intervalSeconds)
+    public static void WriteCycleStarted(DateTime utcNow, int tenantCount, int intervalSeconds)
     {
         var localNow = utcNow.ToLocalTime();
         lock (_lock)
@@ -62,14 +62,14 @@ internal static class WorkerConsole
             System.Console.Write("  ");
             WriteC(localNow.ToString("dd.MM.yyyy HH:mm"), ConsoleColor.DarkGray);
             System.Console.Write("  ");
-            WriteKv("customers", customerCount.ToString(), ConsoleColor.White);
+            WriteKv("tenants", tenantCount.ToString(), ConsoleColor.White);
             WriteKv("interval",  $"{intervalSeconds}s",   ConsoleColor.White, last: true);
             System.Console.WriteLine();
         }
     }
 
     public static void WriteCycleCompleted(
-        int customerCount, int connectionCount,
+        int tenantCount, int connectionCount,
         int fetched, int inserted, int updated, int unchanged, int failed, long elapsedMs)
     {
         var sepWidth = SafeWindowWidth();
@@ -78,7 +78,7 @@ internal static class WorkerConsole
             var topColor = failed > 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             WriteC("✓", topColor);
             System.Console.Write("  ");
-            WriteKv("customers",   customerCount.ToString(),   ConsoleColor.White);
+            WriteKv("tenants",   tenantCount.ToString(),   ConsoleColor.White);
             WriteKv("connections", connectionCount.ToString(), ConsoleColor.White);
             WriteKvNum("fetched",  fetched,  ConsoleColor.Cyan);
             WriteKvNum("inserted", inserted, ConsoleColor.Green);
@@ -93,14 +93,14 @@ internal static class WorkerConsole
         }
     }
 
-    // ── Customer block ────────────────────────────────────────────────────────
+    // ── Tenant block ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Writes the customer block: header, separator, and either a disabled message
+    /// Writes the tenant block: header, separator, and either a disabled message
     /// or the per-connection table. Does nothing when sync is active and no connections ran.
     /// </summary>
-    public static void WriteCustomerResult(
-        string customerName,
+    public static void WriteTenantResult(
+        string tenantName,
         bool syncDisabled,
         IReadOnlyList<OrderSyncConnectionSummary> connections)
     {
@@ -111,9 +111,9 @@ internal static class WorkerConsole
         {
             System.Console.WriteLine();
 
-            // Customer name + sync status on one line.
+            // Tenant name + sync status on one line.
             System.Console.Write("  ");
-            WriteCell(customerName, CustomerNameWidth, ConsoleColor.White);
+            WriteCell(tenantName, TenantNameWidth, ConsoleColor.White);
             WriteC("Sync: ", ConsoleColor.DarkGray);
             WriteC(
                 syncDisabled ? "Disabled" : "Active",
@@ -121,7 +121,7 @@ internal static class WorkerConsole
             System.Console.WriteLine();
 
             // Section separator.
-            WriteC("  " + new string('-', CustomerSepLen), ConsoleColor.DarkGray);
+            WriteC("  " + new string('-', TenantSepLen), ConsoleColor.DarkGray);
             System.Console.WriteLine();
 
             if (syncDisabled)

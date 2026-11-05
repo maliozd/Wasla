@@ -18,12 +18,12 @@ namespace Wasla.Api.Controllers;
 public sealed class DashboardController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
-    private readonly ITenantDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _tenantDbFactory;
 
-    public DashboardController(ICurrentTenantService currentTenant, ITenantDbContextFactory customerDbFactory)
+    public DashboardController(ICurrentTenantService currentTenant, ITenantDbContextFactory tenantDbFactory)
     {
         _currentTenant = currentTenant;
-        _customerDbFactory = customerDbFactory;
+        _tenantDbFactory = tenantDbFactory;
     }
 
     [HttpGet("summary")]
@@ -32,7 +32,7 @@ public sealed class DashboardController : ControllerBase
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
+        await using var db = await _tenantDbFactory.CreateAsync(tenant.Id, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
@@ -95,7 +95,7 @@ public sealed class DashboardController : ControllerBase
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
+        await using var db = await _tenantDbFactory.CreateAsync(tenant.Id, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);

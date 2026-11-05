@@ -346,7 +346,6 @@ public sealed class TenantResolutionMiddlewareTests
         Row("/api/print-bridge/jobs/claim", "next", "next", "next", "404");
         // The tenant address page: the marketing host and the application entry.
         Row("/tenant-address-required", "next", "next", "tenant", "notfound");
-        Row("/customer-access-required", "next", "next", "tenant", "notfound");
         // Every host: failure pages, probes, culture and static assets, so nothing loops.
         foreach (var path in new[] { "/tenant-not-found", "/error", "/health/live", "/health/ready", "/culture/set", "/css/site.css", "/js/x.js", "/lib/x.js", "/images/x.svg", "/favicon.ico" })
             Row(path, "next", "next", "next", "next");

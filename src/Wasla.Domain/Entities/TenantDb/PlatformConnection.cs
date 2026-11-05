@@ -1,10 +1,10 @@
 ﻿using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// A connection to a specific food-delivery platform for this customer.
+/// A connection to a specific food-delivery platform for this tenant.
 /// Holds encrypted credentials and sync/circuit-breaker state.
 /// </summary>
 public class PlatformConnection : BaseEntity

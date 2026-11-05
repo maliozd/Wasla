@@ -47,14 +47,14 @@ internal sealed class CredentialCheckProbe
 
     private sealed class CountingTenantChecks(IAuthValidationService inner, CredentialCheckProbe probe) : IAuthValidationService
     {
-        public async Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct)
+        public async Task<AuthSessionResult?> ValidateAsync(Guid tenantId, string email, string password, CancellationToken ct)
         {
             await probe.EnterTenantCheckAsync();
-            return await inner.ValidateAsync(customerId, email, password, ct);
+            return await inner.ValidateAsync(tenantId, email, password, ct);
         }
 
-        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
-            inner.GetActiveSessionAsync(customerId, userId, ct);
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
+            inner.GetActiveSessionAsync(tenantId, userId, ct);
     }
 
     private sealed class CountingAdminChecks(ICentralAdminAuthService inner, CredentialCheckProbe probe) : ICentralAdminAuthService

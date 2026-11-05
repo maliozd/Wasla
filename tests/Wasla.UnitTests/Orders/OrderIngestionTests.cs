@@ -8,7 +8,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -47,7 +47,7 @@ public sealed class OrderIngestionTests : IDisposable
         await SeedTenantAsync(_tenantId, storeId: "900002", supplierId: "900001");
         _client.Set(Package("pkg-other-store", "Created") with { ProviderSupplierId = "900001", ProviderStoreId = "900099" });
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(0, result.FailedConnections);
         Assert.Equal(0, result.InsertedCount);
@@ -67,7 +67,7 @@ public sealed class OrderIngestionTests : IDisposable
         await SeedTenantAsync(_tenantId, storeId: "900002", supplierId: "900001");
         _client.Set(Package("pkg-other-supplier", "Created") with { ProviderSupplierId = "900077", ProviderStoreId = "900002" });
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(0, result.FailedConnections);
         Assert.Equal(1, result.SkippedCount);
@@ -84,7 +84,7 @@ public sealed class OrderIngestionTests : IDisposable
             Package("pkg-store-only", "Created") with { ProviderStoreId = "900002" },
             Package("pkg-no-identifiers", "Created"));
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(3, result.InsertedCount);
         Assert.Equal(0, result.SkippedCount);
@@ -99,7 +99,7 @@ public sealed class OrderIngestionTests : IDisposable
             Package("pkg-any-supplier", "Created") with { ProviderSupplierId = "900001", ProviderStoreId = "900002" },
             Package("pkg-wrong-store", "Created") with { ProviderSupplierId = "900001", ProviderStoreId = "900003" });
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(1, result.InsertedCount);
         Assert.Equal(1, result.SkippedCount);
@@ -115,8 +115,8 @@ public sealed class OrderIngestionTests : IDisposable
         // A provider response that wrongly lists tenant A's package for tenant B's store as well.
         _client.Set(Package("pkg-of-store-a", "Created") with { ProviderSupplierId = "supplier-1", ProviderStoreId = "store-a" });
 
-        var forA = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
-        var forB = await Sync().SyncCustomerWithResultAsync(_otherTenantId, Ct);
+        var forA = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        var forB = await Sync().SyncTenantWithResultAsync(_otherTenantId, Ct);
 
         Assert.Equal(1, forA.InsertedCount);
         Assert.Equal(0, forB.InsertedCount);
@@ -134,11 +134,11 @@ public sealed class OrderIngestionTests : IDisposable
         await SeedTenantAsync(_tenantId, storeId: "900002", supplierId: "900001");
         var stored = Package("pkg-moves", "Created") with { ProviderStoreId = "900002" };
         _client.Set(stored);
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         var before = await SingleOrderAsync("pkg-moves");
 
         _client.Set(stored with { ExternalStatus = "Picking", CustomerName = "Someone Else", ProviderStoreId = "900099" });
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(1, result.SkippedCount);
         var after = await SingleOrderAsync("pkg-moves");
@@ -177,9 +177,9 @@ public sealed class OrderIngestionTests : IDisposable
         await SeedTenantAsync(_tenantId, storeId: "900002", supplierId: "900001");
         _client.Set(Package("pkg-replay", "Picking"));
 
-        var results = new List<OrderSyncCustomerResult>();
+        var results = new List<OrderSyncTenantResult>();
         for (var i = 0; i < 3; i++)
-            results.Add(await Sync().SyncCustomerWithResultAsync(_tenantId, Ct));
+            results.Add(await Sync().SyncTenantWithResultAsync(_tenantId, Ct));
 
         Assert.Equal([1, 0, 0], results.Select(r => r.InsertedCount));
         Assert.Equal([0, 1, 1], results.Select(r => r.UnchangedCount));
@@ -216,7 +216,7 @@ public sealed class OrderIngestionTests : IDisposable
         var orderId = await StoreOrderWithStatusAsync("pkg-merge", stored);
 
         _client.Set(Package("pkg-merge", providerStatus));
-        var result = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(0, result.FailedConnections);
         var order = await SingleOrderAsync("pkg-merge");
@@ -343,7 +343,7 @@ public sealed class OrderIngestionTests : IDisposable
     private async Task<Guid> StoreOrderWithStatusAsync(string externalOrderId, OrderStatus status)
     {
         _client.Set(Package(externalOrderId, "Created"));
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         await using var db = await _tenants.CreateAsync(_tenantId, Ct);
         var order = await db.Orders.SingleAsync(o => o.ExternalOrderId == externalOrderId, Ct);
         order.InternalStatus = status;
@@ -476,7 +476,7 @@ public sealed class OrderIngestionTests : IDisposable
 
         public void Reset() => _created.Clear();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;
@@ -490,7 +490,7 @@ public sealed class OrderIngestionTests : IDisposable
 
         public void Reset() => _processed.Clear();
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
         {
             _processed.Enqueue(orderId);
             return Task.CompletedTask;
@@ -502,13 +502,13 @@ public sealed class OrderIngestionTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("DataSource=:memory:");
                 connection.Open();
-                _connections[customerId] = connection;
+                _connections[tenantId] = connection;
                 using var setup = new TestTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
@@ -25,9 +25,9 @@ public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
         _logger = logger;
     }
 
-    public async Task<TenantOrderSettingsResult> GetAsync(Guid customerId, CancellationToken ct)
+    public async Task<TenantOrderSettingsResult> GetAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .AsNoTracking()
@@ -37,14 +37,14 @@ public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
         if (row is null)
         {
             _logger.LogDebug(
-                "Order settings row missing; returning defaults. CustomerId={CustomerId}",
-                customerId);
+                "Order settings row missing; returning defaults. TenantId={TenantId}",
+                tenantId);
             return DefaultResult();
         }
 
         _logger.LogDebug(
-            "Order settings loaded. CustomerId={CustomerId}, AutoApproveNewOrders={AutoApproveNewOrders}, AutoPrintReceiptOnAutoApprove={AutoPrintReceiptOnAutoApprove}, ReceiptPrintCopyCount={ReceiptPrintCopyCount}",
-            customerId,
+            "Order settings loaded. TenantId={TenantId}, AutoApproveNewOrders={AutoApproveNewOrders}, AutoPrintReceiptOnAutoApprove={AutoPrintReceiptOnAutoApprove}, ReceiptPrintCopyCount={ReceiptPrintCopyCount}",
+            tenantId,
             row.AutoApproveNewOrders,
             row.AutoPrintReceiptOnAutoApprove,
             row.ReceiptPrintCopyCount);
@@ -53,13 +53,13 @@ public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
     }
 
     public async Task<TenantOrderSettingsResult> UpdateAsync(
-        Guid customerId,
+        Guid tenantId,
         UpdateTenantOrderSettingsCommand command,
         CancellationToken ct)
     {
         await _validator.ValidateAndThrowAsync(command, ct).ConfigureAwait(false);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
@@ -90,8 +90,8 @@ public sealed class TenantOrderSettingsService : ITenantOrderSettingsService
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Order settings updated. CustomerId={CustomerId}, AutoApproveNewOrders={AutoApproveNewOrders}, AutoPrintReceiptOnAutoApprove={AutoPrintReceiptOnAutoApprove}, ReceiptPrintCopyCount={ReceiptPrintCopyCount}",
-            customerId,
+            "Order settings updated. TenantId={TenantId}, AutoApproveNewOrders={AutoApproveNewOrders}, AutoPrintReceiptOnAutoApprove={AutoPrintReceiptOnAutoApprove}, ReceiptPrintCopyCount={ReceiptPrintCopyCount}",
+            tenantId,
             row.AutoApproveNewOrders,
             row.AutoPrintReceiptOnAutoApprove,
             row.ReceiptPrintCopyCount);

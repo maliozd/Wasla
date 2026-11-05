@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
@@ -16,9 +16,9 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
         _dbFactory = dbFactory;
     }
 
-    public async Task<OrderSyncSettingsResult> GetAsync(Guid customerId, CancellationToken ct)
+    public async Task<OrderSyncSettingsResult> GetAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .AsNoTracking()
@@ -29,9 +29,9 @@ public sealed class OrderSyncSettingsService : IOrderSyncSettingsService
         return new OrderSyncSettingsResult(row?.OrderSyncEnabled ?? true);
     }
 
-    public async Task<OrderSyncSettingsResult> UpdateAsync(Guid customerId, bool enabled, CancellationToken ct)
+    public async Task<OrderSyncSettingsResult> UpdateAsync(Guid tenantId, bool enabled, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)

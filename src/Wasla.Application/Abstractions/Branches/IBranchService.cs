@@ -2,7 +2,7 @@
 
 public interface IBranchService
 {
-    Task<IReadOnlyList<BranchResult>> GetListAsync(Guid customerId, CancellationToken ct);
-    Task<Guid> CreateAsync(Guid customerId, CreateBranchCommand command, CancellationToken ct);
+    Task<IReadOnlyList<BranchResult>> GetListAsync(Guid tenantId, CancellationToken ct);
+    Task<Guid> CreateAsync(Guid tenantId, CreateBranchCommand command, CancellationToken ct);
 }
 

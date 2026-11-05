@@ -8,7 +8,7 @@ using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
@@ -622,7 +622,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         public int CallCount { get; private set; }
 
         public Task<bool> TryCreateReceiptJobAsync(
-            Guid customerId,
+            Guid tenantId,
             Guid orderId,
             int copyCount,
             string? tenantDisplayName,
@@ -636,15 +636,15 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     private sealed class FixedReceiptTemplateSettings : IReceiptTemplateSettingsService
     {
         public Task<ReceiptTemplateSettings> GetAsync(
-            Guid customerId,
-            string? customerDisplayName,
+            Guid tenantId,
+            string? tenantDisplayName,
             string? defaultReceiptLanguage,
             CancellationToken ct) =>
-            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(customerDisplayName, defaultReceiptLanguage));
+            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, defaultReceiptLanguage));
 
         public Task<ReceiptTemplateSettings> UpdateAsync(
-            Guid customerId,
-            string? customerDisplayName,
+            Guid tenantId,
+            string? tenantDisplayName,
             UpdateReceiptTemplateSettingsCommand command,
             CancellationToken ct) =>
             throw new NotSupportedException();
@@ -674,13 +674,13 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
                 using var setup = new TestTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.GuidedSetup;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.GuidedSetup;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Setup;

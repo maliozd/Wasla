@@ -14,7 +14,7 @@ using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Onboarding;
 using Wasla.Application.Setup;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using System.Text.Json;
 using Wasla.Infrastructure.Email;

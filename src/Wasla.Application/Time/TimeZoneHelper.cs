@@ -4,7 +4,7 @@
 /// Restaurant timezone helpers (MVP).
 /// </summary>
 /// <remarks>
-/// TODO: Replace hardcoded Turkey timezone with per-customer timezone setting (e.g. Customer.TimeZoneId).
+/// TODO: Replace hardcoded Turkey timezone with a per-tenant timezone setting (e.g. Tenant.TimeZoneId).
 /// </remarks>
 public static class TimeZoneHelper
 {

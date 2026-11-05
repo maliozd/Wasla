@@ -1,11 +1,11 @@
 ﻿using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// Application user, scoped to a single customer database.
-/// Authentication runs against whichever CustomerDb the current domain resolves to.
+/// Application user, scoped to a single tenant database.
+/// Authentication runs against whichever tenant database the current domain resolves to.
 /// </summary>
 public class AppUser : BaseEntity
 {

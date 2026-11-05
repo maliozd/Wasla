@@ -8,7 +8,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -330,10 +330,10 @@ public sealed class OrderItemSequenceTests : IDisposable
             NullLogger<OrderSyncService>.Instance);
     }
 
-    private async Task<OrderSyncCustomerResult> SyncAsync(OrderSyncService sync, ExternalOrderDto order)
+    private async Task<OrderSyncTenantResult> SyncAsync(OrderSyncService sync, ExternalOrderDto order)
     {
         _client.Set(order);
-        var result = await sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        var result = await sync.SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(0, result.FailedConnections);
         return result;
     }
@@ -444,23 +444,23 @@ public sealed class OrderItemSequenceTests : IDisposable
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class DefaultTemplates : IReceiptTemplateSettingsService
     {
         public static readonly DefaultTemplates Instance = new();
 
-        public Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
-            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(customerDisplayName, defaultReceiptLanguage));
+        public Task<ReceiptTemplateSettings> GetAsync(Guid tenantId, string? tenantDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
+            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, defaultReceiptLanguage));
 
-        public Task<ReceiptTemplateSettings> UpdateAsync(Guid customerId, string? customerDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
+        public Task<ReceiptTemplateSettings> UpdateAsync(Guid tenantId, string? tenantDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 
@@ -469,13 +469,13 @@ public sealed class OrderItemSequenceTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
                 using var setup = new SqliteSchemaTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

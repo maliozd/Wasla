@@ -28,7 +28,7 @@ public sealed class OrderReadService : IOrderReadService
     }
 
     public async Task<OrderListResult> GetListAsync(
-        Guid customerId,
+        Guid tenantId,
         FoodPlatform? platform,
         OrderStatus? status,
         DateTime? startDateUtc,
@@ -44,7 +44,7 @@ public sealed class OrderReadService : IOrderReadService
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var q = db.Orders.AsNoTracking().AsQueryable();
 
         if (platform.HasValue) q = q.Where(o => o.Platform == platform.Value);
@@ -149,9 +149,9 @@ public sealed class OrderReadService : IOrderReadService
         };
     }
 
-    public async Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct)
+    public async Task<OrderDetailResult?> GetByIdAsync(Guid tenantId, Guid id, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var order = await db.Orders.AsNoTracking()
             .IncludeItemsInSequence()
             .FirstOrDefaultAsync(o => o.Id == id, ct);
@@ -195,12 +195,12 @@ public sealed class OrderReadService : IOrderReadService
         };
     }
 
-    public async Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct)
+    public async Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid tenantId, CancellationToken ct)
     {
         var serverTimeUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var windowStartUtc = serverTimeUtc - RecentDeliveredWindow;
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         // One projection. Delivered rows with a null DeliveredAt are omitted: the current
         // transition writers set that timestamp when they enter Delivered, and this read

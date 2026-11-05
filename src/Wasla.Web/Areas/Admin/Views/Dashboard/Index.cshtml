@@ -32,29 +32,29 @@
         <section class="mb-4" aria-labelledby="opsTenantsHeading">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                 <h2 id="opsTenantsHeading" class="h6 text-uppercase text-body-secondary mb-0">@L["Admin.Ops.Section.Tenants"]</h2>
-                <a class="small" href="/admin/customers">@L["Admin.ViewAllRestaurants"]</a>
+                <a class="small" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.ViewAllRestaurants"]</a>
             </div>
             <div class="row g-2 row-cols-2 row-cols-md-3 row-cols-xl-5">
                 <div class="col">
-                    <a class="wasla-admin-metric" href="/admin/customers">
-                        <span class="wasla-admin-metric__label">@L["Admin.TotalCustomers"]</span>
+                    <a class="wasla-admin-metric" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">
+                        <span class="wasla-admin-metric__label">@L["Admin.TotalRestaurants"]</span>
                         <span class="wasla-admin-metric__value">@tenants.Total</span>
                     </a>
                 </div>
                 <div class="col">
-                    <a class="wasla-admin-metric" href="/admin/customers?status=active">
-                        <span class="wasla-admin-metric__label">@L["Admin.ActiveCustomers"]</span>
+                    <a class="wasla-admin-metric" href="@Url.Action("Index", "Tenants", new { area = "Admin", status = "active" })">
+                        <span class="wasla-admin-metric__label">@L["Admin.ActiveRestaurants"]</span>
                         <span class="wasla-admin-metric__value">@tenants.Active</span>
                     </a>
                 </div>
                 <div class="col">
-                    <a class="wasla-admin-metric" href="/admin/customers?status=inactive">
-                        <span class="wasla-admin-metric__label">@L["Admin.InactiveCustomers"]</span>
+                    <a class="wasla-admin-metric" href="@Url.Action("Index", "Tenants", new { area = "Admin", status = "inactive" })">
+                        <span class="wasla-admin-metric__label">@L["Admin.InactiveRestaurants"]</span>
                         <span class="wasla-admin-metric__value">@tenants.Inactive</span>
                     </a>
                 </div>
                 <div class="col">
-                    <a class="wasla-admin-metric @(tenants.MigrationFailed > 0 ? "wasla-admin-metric--danger" : "")" href="/admin/customers?migration=failed">
+                    <a class="wasla-admin-metric @(tenants.MigrationFailed > 0 ? "wasla-admin-metric--danger" : "")" href="@Url.Action("Index", "Tenants", new { area = "Admin", migration = "failed" })">
                         <span class="wasla-admin-metric__label">@L["Admin.Ops.Metric.MigrationFailed"]</span>
                         <span class="wasla-admin-metric__value">@tenants.MigrationFailed</span>
                         @if (tenants.MigrationFailed > 0)
@@ -64,7 +64,7 @@
                     </a>
                 </div>
                 <div class="col">
-                    <a class="wasla-admin-metric" href="/admin/customers?migration=not-recorded">
+                    <a class="wasla-admin-metric" href="@Url.Action("Index", "Tenants", new { area = "Admin", migration = "not-recorded" })">
                         <span class="wasla-admin-metric__label">@L["Admin.Ops.Metric.MigrationNotRecorded"]</span>
                         <span class="wasla-admin-metric__value">@tenants.MigrationNotRecorded</span>
                     </a>
@@ -195,14 +195,14 @@
         <section class="card wasla-admin-card" aria-labelledby="opsRecentHeading">
             <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <h2 id="opsRecentHeading" class="h6 mb-0">@L["Admin.Ops.RecentTenants"]</h2>
-                <a class="btn btn-sm btn-outline-secondary" href="/admin/customers">@L["Admin.ViewAllRestaurants"]</a>
+                <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.ViewAllRestaurants"]</a>
             </div>
             @if (overview.RecentTenants.Count == 0)
             {
                 <div class="text-center text-body-secondary py-4 px-3">
                     <i class="bi bi-inbox fs-2 d-block mb-2" aria-hidden="true"></i>
-                    <p class="fw-semibold mb-1">@L["Admin.NoCustomers"]</p>
-                    <p class="small mb-0">@L["Admin.NoCustomersHint"]</p>
+                    <p class="fw-semibold mb-1">@L["Admin.NoRestaurants"]</p>
+                    <p class="small mb-0">@L["Admin.NoRestaurantsHint"]</p>
                 </div>
             }
             else
@@ -212,7 +212,7 @@
                     {
                         <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <div class="min-w-0">
-                                <a class="fw-medium" href="/admin/customers/@t.Id">@t.Name</a>
+                                <a class="fw-medium" href="@Url.Action("Details", "Tenants", new { area = "Admin", id = t.Id })">@t.Name</a>
                                 <div class="small text-body-secondary"><code>@t.Slug</code> · @AdminOperationsPresenter.Time(t.CreatedAtUtc)</div>
                             </div>
                             <partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(t.IsActive)" />

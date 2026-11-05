@@ -255,7 +255,7 @@
   <data name="Layout.CentralAdmin" xml:space="preserve">
     <value>Wasla Yönetim Paneli</value>
   </data>
-  <data name="Layout.Customers" xml:space="preserve">
+  <data name="Layout.Restaurants" xml:space="preserve">
     <value>Restoranlar</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
@@ -282,8 +282,8 @@
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
   </data>
-  <data name="Landing.CustomerLogin" xml:space="preserve">
-    <value>Müşteri Girişi</value>
+  <data name="Landing.RestaurantLogin" xml:space="preserve">
+    <value>Restoran Girişi</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Admin Girişi</value>
@@ -316,7 +316,7 @@
     <value>Lütfen bilgileri kontrol edin.</value>
   </data>
   <data name="Auth.TenantContextMissing" xml:space="preserve">
-    <value>Restoran bağlamı yok. Size verilen müşteri alan adındaki giriş adresinizi kullanın.</value>
+    <value>Restoran bağlamı yok. Size verilen restoran alan adındaki giriş adresinizi kullanın.</value>
   </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>Çıkış yap</value>
@@ -1209,16 +1209,16 @@
   <data name="Admin.DashboardTitle" xml:space="preserve">
     <value>Merkezi Yönetim</value>
   </data>
-  <data name="Admin.Customers" xml:space="preserve">
+  <data name="Admin.Restaurants" xml:space="preserve">
     <value>Restoranlar</value>
   </data>
-  <data name="Admin.TotalCustomers" xml:space="preserve">
+  <data name="Admin.TotalRestaurants" xml:space="preserve">
     <value>Toplam restoran</value>
   </data>
-  <data name="Admin.ActiveCustomers" xml:space="preserve">
+  <data name="Admin.ActiveRestaurants" xml:space="preserve">
     <value>Aktif restoran</value>
   </data>
-  <data name="Admin.InactiveCustomers" xml:space="preserve">
+  <data name="Admin.InactiveRestaurants" xml:space="preserve">
     <value>Pasif restoran</value>
   </data>
   <data name="Admin.RecentRestaurants" xml:space="preserve">
@@ -1233,7 +1233,7 @@
   <data name="Admin.TechnicalInfo" xml:space="preserve">
     <value>Sistem bilgileri</value>
   </data>
-  <data name="Admin.CustomerDetails" xml:space="preserve">
+  <data name="Admin.RestaurantDetails" xml:space="preserve">
     <value>Restoran ayrıntıları</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
@@ -1287,13 +1287,13 @@
   <data name="Admin.CentralAdmin" xml:space="preserve">
     <value>Wasla Yönetim Paneli</value>
   </data>
-  <data name="Admin.CustomerNotFound" xml:space="preserve">
+  <data name="Admin.RestaurantNotFound" xml:space="preserve">
     <value>Restoran bulunamadı.</value>
   </data>
-  <data name="Admin.NoCustomers" xml:space="preserve">
+  <data name="Admin.NoRestaurants" xml:space="preserve">
     <value>Henüz veri yok</value>
   </data>
-  <data name="Admin.NoCustomersHint" xml:space="preserve">
+  <data name="Admin.NoRestaurantsHint" xml:space="preserve">
     <value>Kayıtlı restoran bulunmuyor.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
@@ -1852,7 +1852,7 @@
     <value>Bildirimler</value>
   </data>
   <data name="Settings.Notifications.Description" xml:space="preserve">
-    <value>Müşteri web panelinin yeni siparişler hakkında nasıl uyarı vereceğini yapılandırın.</value>
+    <value>Restoran web panelinin yeni siparişler hakkında nasıl uyarı vereceğini yapılandırın.</value>
   </data>
   <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
     <value>Bildirim Ayarlarını Yönet</value>
@@ -2140,7 +2140,7 @@
     <value>Print Bridge token oluşturulamadı.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>Print Bridge, Wasla API uç noktalarını X-PrintBridge-Token başlığı ile çağırır. Müşteri kimliği istekte gönderilmez.</value>
+    <value>Print Bridge, Wasla API uç noktalarını X-PrintBridge-Token başlığı ile çağırır. Restoran kimliği istekte gönderilmez.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>USB fiş yazıcısından otomatik yazdırma için restoran bilgisayarında çalışan yerel Print Bridge uygulamasını yönetin.</value>
@@ -2803,7 +2803,7 @@
     <value>Cihaz Tokenı</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
-    <value>Sunucu adresi belirlenemedi. Lütfen müşteri alan adınız üzerinden bu sayfayı açın veya yöneticinize başvurun.</value>
+    <value>Sunucu adresi belirlenemedi. Lütfen restoran alan adınız üzerinden bu sayfayı açın veya yöneticinize başvurun.</value>
   </data>
   <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
     <value>Cihaz tokenını görmek için yukarıdan bir cihaz ekleyin veya mevcut bir cihazın tokenını yenileyin.</value>
@@ -2971,7 +2971,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Ödemeye devam et</value></data>
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>Kayıt özetini görüntüle</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Restoranınız</value></data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Wasla adresiniz</value></data>
+  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve"><value>Wasla adresiniz</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>{0} adresini aç</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Paketiniz</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Ödeme dönemi</value></data>

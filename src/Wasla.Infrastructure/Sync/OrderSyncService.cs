@@ -11,7 +11,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mock;
@@ -25,12 +25,12 @@ namespace Wasla.Infrastructure.Sync;
 public sealed class OrderSyncService : IOrderSyncService
 {
     /// <summary>
-    /// Backfill windows per connection in one <see cref="BackfillCustomerAsync"/> turn. One window per turn lets the
+    /// Backfill windows per connection in one <see cref="BackfillTenantAsync"/> turn. One window per turn lets the
     /// cycle interleave tenants round-robin (<see cref="OrderSyncCycleRunner"/>).
     /// </summary>
     internal const int BackfillWindowsPerTurn = 1;
 
-    private readonly ITenantDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _tenantDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
     private readonly OrderIngestion _ingestion;
     private readonly ILogger<OrderSyncService> _logger;
@@ -70,7 +70,7 @@ public sealed class OrderSyncService : IOrderSyncService
     };
 
     public OrderSyncService(
-        ITenantDbContextFactory customerDbFactory,
+        ITenantDbContextFactory tenantDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
@@ -80,7 +80,7 @@ public sealed class OrderSyncService : IOrderSyncService
         ITenantBusinessSubtypeReader? businessSubtypeReader = null,
         TimeProvider? time = null)
     {
-        _customerDbFactory = customerDbFactory;
+        _tenantDbFactory = tenantDbFactory;
         _platformClients = platformClients;
         _ingestion = new OrderIngestion(statusMapper, autoApprove, receiptCreation, notifier, logger);
         _logger = logger;
@@ -88,23 +88,23 @@ public sealed class OrderSyncService : IOrderSyncService
         _time = time ?? TimeProvider.System;
     }
 
-    public async Task SyncCustomerAsync(Guid customerId, CancellationToken ct)
+    public async Task SyncTenantAsync(Guid tenantId, CancellationToken ct)
     {
-        await SyncCustomerWithResultAsync(customerId, ct).ConfigureAwait(false);
+        await SyncTenantWithResultAsync(tenantId, ct).ConfigureAwait(false);
     }
 
-    public async Task<OrderSyncCustomerResult> SyncCustomerWithResultAsync(Guid customerId, CancellationToken ct)
+    public async Task<OrderSyncTenantResult> SyncTenantWithResultAsync(Guid tenantId, CancellationToken ct)
     {
-        var swCustomer = Stopwatch.StartNew();
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var swTenant = Stopwatch.StartNew();
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
         {
             _logger.LogDebug(
-                "Order sync skipped — tenant sync is disabled. CustomerId={CustomerId}",
-                customerId);
+                "Order sync skipped — tenant sync is disabled. TenantId={TenantId}",
+                tenantId);
 
-            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
+            return new OrderSyncTenantResult(tenantId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
         }
 
         // Same clock as LastSyncAttempt and the fetch windows, so "behind" (checkpoint older than the last attempt) is exact.
@@ -122,18 +122,18 @@ public sealed class OrderSyncService : IOrderSyncService
         if (activeConnections.Count == 0)
         {
             _logger.LogInformation(
-                "No active platform connections for customer {CustomerId}",
-                customerId);
-            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0);
+                "No active platform connections for tenant {TenantId}",
+                tenantId);
+            return new OrderSyncTenantResult(tenantId, 0, 0, 0, 0, 0, 0, 0);
         }
 
         if (dueConnections.Count == 0)
         {
             _logger.LogDebug(
-                "No due platform connections for customer {CustomerId}. ActiveConnections={ActiveConnectionCount}",
-                customerId,
+                "No due platform connections for tenant {TenantId}. ActiveConnections={ActiveConnectionCount}",
+                tenantId,
                 activeConnections.Count);
-            return new OrderSyncCustomerResult(customerId, activeConnections.Count, 0, 0, 0, 0, 0, 0);
+            return new OrderSyncTenantResult(tenantId, activeConnections.Count, 0, 0, 0, 0, 0, 0);
         }
 
         foreach (var c in activeConnections)
@@ -141,19 +141,19 @@ public sealed class OrderSyncService : IOrderSyncService
             if (c.CircuitOpenUntil != null && c.CircuitOpenUntil > now)
             {
                 _logger.LogInformation(
-                    "Skipping platform connection {ConnectionId} because circuit is open until {CircuitOpenUntilUtc}. CustomerId={CustomerId}, Platform={Platform}, StoreId={StoreId}",
+                    "Skipping platform connection {ConnectionId} because circuit is open until {CircuitOpenUntilUtc}. TenantId={TenantId}, Platform={Platform}, StoreId={StoreId}",
                     c.Id,
                     c.CircuitOpenUntil,
-                    customerId,
+                    tenantId,
                     c.Platform,
                     c.StoreId);
             }
             else if (c.LastSyncAttempt != null && c.LastSyncAttempt.Value.AddSeconds(c.SyncIntervalSeconds) > now)
             {
                 _logger.LogDebug(
-                    "Skipping platform connection {ConnectionId} because sync interval has not elapsed. CustomerId={CustomerId}, Platform={Platform}, StoreId={StoreId}, LastAttemptUtc={LastAttemptUtc}, IntervalSeconds={IntervalSeconds}",
+                    "Skipping platform connection {ConnectionId} because sync interval has not elapsed. TenantId={TenantId}, Platform={Platform}, StoreId={StoreId}, LastAttemptUtc={LastAttemptUtc}, IntervalSeconds={IntervalSeconds}",
                     c.Id,
-                    customerId,
+                    tenantId,
                     c.Platform,
                     c.StoreId,
                     c.LastSyncAttempt,
@@ -163,12 +163,12 @@ public sealed class OrderSyncService : IOrderSyncService
 
         var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
 
-        var mockGenerationScope = await BeginMockGenerationScopeAsync(customerId, db, ct).ConfigureAwait(false);
+        var mockGenerationScope = await BeginMockGenerationScopeAsync(tenantId, db, ct).ConfigureAwait(false);
         try
         {
             foreach (var connection in dueConnections)
             {
-                var result = await SyncConnectionAsync(customerId, db, connection, OrderSyncPass.Current, ct).ConfigureAwait(false);
+                var result = await SyncConnectionAsync(tenantId, db, connection, OrderSyncPass.Current, ct).ConfigureAwait(false);
                 connectionResults.Add(result);
             }
         }
@@ -177,8 +177,8 @@ public sealed class OrderSyncService : IOrderSyncService
             mockGenerationScope?.Dispose();
         }
 
-        swCustomer.Stop();
-        return Summarize(customerId, connectionResults, swCustomer.ElapsedMilliseconds, "sync");
+        swTenant.Stop();
+        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "sync");
     }
 
     /// <summary>
@@ -187,13 +187,13 @@ public sealed class OrderSyncService : IOrderSyncService
     /// The last turn reaches now, so the checkpoint ends at or after the hot window the current pass fetched, in the
     /// same cycle. Connections that are current, have an open circuit, or whose last attempt failed are left alone.
     /// </summary>
-    public async Task<OrderSyncCustomerResult> BackfillCustomerAsync(Guid customerId, CancellationToken ct)
+    public async Task<OrderSyncTenantResult> BackfillTenantAsync(Guid tenantId, CancellationToken ct)
     {
-        var swCustomer = Stopwatch.StartNew();
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        var swTenant = Stopwatch.StartNew();
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
-            return new OrderSyncCustomerResult(customerId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
+            return new OrderSyncTenantResult(tenantId, 0, 0, 0, 0, 0, 0, 0) { WasSyncDisabled = true };
 
         var now = _time.GetUtcNow().UtcDateTime;
         var connections = await db.PlatformConnections
@@ -209,12 +209,12 @@ public sealed class OrderSyncService : IOrderSyncService
         var connectionResults = new List<OrderSyncConnectionResult>(behind.Count);
         foreach (var connection in behind)
         {
-            var result = await SyncConnectionAsync(customerId, db, connection, OrderSyncPass.Backfill, ct).ConfigureAwait(false);
+            var result = await SyncConnectionAsync(tenantId, db, connection, OrderSyncPass.Backfill, ct).ConfigureAwait(false);
             connectionResults.Add(result);
         }
 
-        swCustomer.Stop();
-        return Summarize(customerId, connectionResults, swCustomer.ElapsedMilliseconds, "backfill");
+        swTenant.Stop();
+        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "backfill");
     }
 
     /// <summary>
@@ -224,9 +224,9 @@ public sealed class OrderSyncService : IOrderSyncService
     /// or the failure counters, so the polling pass and its outage recovery are unaffected; a failure is thrown to the
     /// caller. Used by the Trendyol GO Meal webhook stage pilot to read back what an event announced.
     /// </summary>
-    internal async Task<OrderReconcileResult> ReconcileConnectionAsync(Guid customerId, Guid connectionId, DateTime sinceUtc, CancellationToken ct)
+    internal async Task<OrderReconcileResult> ReconcileConnectionAsync(Guid tenantId, Guid connectionId, DateTime sinceUtc, CancellationToken ct)
     {
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         var connection = await db.PlatformConnections.AsNoTracking()
             .SingleOrDefaultAsync(c => c.Id == connectionId, ct)
             .ConfigureAwait(false);
@@ -258,7 +258,7 @@ public sealed class OrderSyncService : IOrderSyncService
         int inserted = 0, updated = 0, unchanged = 0, skipped = 0;
         foreach (var external in orders)
         {
-            var r = await _ingestion.IngestPackageAsync(customerId, db, connection, external, milestonesObservedLive, ct).ConfigureAwait(false);
+            var r = await _ingestion.IngestPackageAsync(tenantId, db, connection, external, milestonesObservedLive, ct).ConfigureAwait(false);
             if (r.Inserted) inserted++;
             if (r.Updated) updated++;
             if (r.Unchanged) unchanged++;
@@ -266,8 +266,8 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         _logger.LogInformation(
-            "Targeted reconciliation completed. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Unchanged={UnchangedCount}, Skipped={SkippedCount}",
-            customerId,
+            "Targeted reconciliation completed. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Unchanged={UnchangedCount}, Skipped={SkippedCount}",
+            tenantId,
             connection.Id,
             connection.Platform,
             window.StartUtc,
@@ -286,27 +286,27 @@ public sealed class OrderSyncService : IOrderSyncService
     /// <see cref="OrderIngestion.ApplyStatusObservationAsync"/>): never creates an order or changes its contents.
     /// </summary>
     internal async Task<OrderUpsertResult> ApplyStatusObservationAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid connectionId,
         OrderStatusObservation observation,
         bool milestonesObservedLive,
         CancellationToken ct)
     {
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         var connection = await db.PlatformConnections.AsNoTracking()
             .SingleOrDefaultAsync(c => c.Id == connectionId, ct)
             .ConfigureAwait(false);
         if (connection is not { IsActive: true })
             throw new InvalidOperationException("The platform connection is missing or inactive.");
 
-        return await _ingestion.ApplyStatusObservationAsync(customerId, db, connection, observation, milestonesObservedLive, ct)
+        return await _ingestion.ApplyStatusObservationAsync(tenantId, db, connection, observation, milestonesObservedLive, ct)
             .ConfigureAwait(false);
     }
 
     /// <summary>The id of the tenant's order for a provider order id, or null when Wasla has not stored it.</summary>
-    internal async Task<Guid?> FindOrderIdAsync(Guid customerId, FoodPlatform platform, string externalOrderId, CancellationToken ct)
+    internal async Task<Guid?> FindOrderIdAsync(Guid tenantId, FoodPlatform platform, string externalOrderId, CancellationToken ct)
     {
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         var key = OrderIngestion.IdempotencyKey(platform, externalOrderId);
         return await db.Orders.AsNoTracking()
             .Where(o => o.IdempotencyKey == key)
@@ -316,9 +316,9 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     /// <summary>Whether the tenant's Order Sync setting allows fetching orders; the same gate the polling pass uses.</summary>
-    internal async Task<bool> IsOrderSyncEnabledAsync(Guid customerId, CancellationToken ct)
+    internal async Task<bool> IsOrderSyncEnabledAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         return await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false);
     }
 
@@ -337,14 +337,14 @@ public sealed class OrderSyncService : IOrderSyncService
         && connection.LastSyncAttempt is { } attempt
         && OrderFetchWindowPlanner.AsUtc(checkpoint) < OrderFetchWindowPlanner.AsUtc(attempt);
 
-    private OrderSyncCustomerResult Summarize(
-        Guid customerId,
+    private OrderSyncTenantResult Summarize(
+        Guid tenantId,
         IReadOnlyList<OrderSyncConnectionResult> connectionResults,
         long elapsedMs,
         string pass)
     {
-        var result = new OrderSyncCustomerResult(
-            customerId,
+        var result = new OrderSyncTenantResult(
+            tenantId,
             connectionResults.Count,
             connectionResults.Sum(r => r.FetchedCount),
             connectionResults.Sum(r => r.InsertedCount),
@@ -369,9 +369,9 @@ public sealed class OrderSyncService : IOrderSyncService
         };
 
         _logger.LogDebug(
-            "Completed {Pass} for customer {CustomerId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, BackfillPending={BackfillPending}, ElapsedMs={ElapsedMs}",
+            "Completed {Pass} for tenant {TenantId}. Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnections}, BackfillPending={BackfillPending}, ElapsedMs={ElapsedMs}",
             pass,
-            customerId,
+            tenantId,
             result.ConnectionCount,
             result.FetchedCount,
             result.InsertedCount,
@@ -400,14 +400,14 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     private async Task<IDisposable?> BeginMockGenerationScopeAsync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         CancellationToken ct)
     {
         if (_businessSubtypeReader is null)
             return null;
 
-        var codes = await _businessSubtypeReader.GetSubtypeCodesAsync(customerId, ct).ConfigureAwait(false);
+        var codes = await _businessSubtypeReader.GetSubtypeCodesAsync(tenantId, ct).ConfigureAwait(false);
         if (codes is null)
             return null;
 
@@ -447,7 +447,7 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     private async Task<OrderSyncConnectionResult> SyncConnectionAsync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         PlatformConnection connection,
         OrderSyncPass pass,
@@ -468,7 +468,7 @@ public sealed class OrderSyncService : IOrderSyncService
             {
                 // A connection has no concurrency token, so the update found no row: it was removed after this pass
                 // loaded it. Nothing was fetched; the pass goes on with the tenant's other connections.
-                return RemovedDuringSync(customerId, db, connection, syncLog: null, swConn);
+                return RemovedDuringSync(tenantId, db, connection, syncLog: null, swConn);
             }
         }
 
@@ -489,8 +489,8 @@ public sealed class OrderSyncService : IOrderSyncService
             }
 
             _logger.LogDebug(
-                "Starting platform sync. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, IsActive={IsActive}, SyncIntervalSeconds={SyncIntervalSeconds}, LastSuccessfulSyncAt={LastSuccessfulSyncAtUtc}, LastSyncAttemptAt={LastSyncAttemptAtUtc}, CircuitOpenUntil={CircuitOpenUntilUtc}",
-                customerId,
+                "Starting platform sync. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, IsActive={IsActive}, SyncIntervalSeconds={SyncIntervalSeconds}, LastSuccessfulSyncAt={LastSuccessfulSyncAtUtc}, LastSyncAttemptAt={LastSyncAttemptAtUtc}, CircuitOpenUntil={CircuitOpenUntilUtc}",
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
@@ -507,17 +507,17 @@ public sealed class OrderSyncService : IOrderSyncService
                 if (string.IsNullOrWhiteSpace(connection.SupplierId) && !string.IsNullOrWhiteSpace(connection.StoreId))
                 {
                     _logger.LogDebug(
-                        "Resolved Trendyol supplier id from StoreId for connection {ConnectionId}. CustomerId={CustomerId}",
+                        "Resolved Trendyol supplier id from StoreId for connection {ConnectionId}. TenantId={TenantId}",
                         connection.Id,
-                        customerId);
+                        tenantId);
                 }
 
                 if (string.IsNullOrWhiteSpace(connection.SupplierId) && string.IsNullOrWhiteSpace(connection.StoreId))
                 {
                     _logger.LogWarning(
-                        "Skipping TrendyolYemek connection {ConnectionId} because supplier id could not be resolved. StoreId is empty and no supplierId setting exists. CustomerId={CustomerId}",
+                        "Skipping TrendyolYemek connection {ConnectionId} because supplier id could not be resolved. StoreId is empty and no supplierId setting exists. TenantId={TenantId}",
                         connection.Id,
-                        customerId);
+                        tenantId);
 
                     syncLog.Status = SyncStatus.Failed;
                     syncLog.FinishedAt = DateTime.UtcNow;
@@ -526,7 +526,7 @@ public sealed class OrderSyncService : IOrderSyncService
                     await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
                     swConn.Stop();
-                    return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true)
+                    return new OrderSyncConnectionResult(tenantId, connection.Id, connection.Platform, connection.StoreId, 0, 0, 0, 0, 0, IsFailed: true)
                         { ElapsedMs = swConn.ElapsedMilliseconds };
                 }
             }
@@ -545,8 +545,8 @@ public sealed class OrderSyncService : IOrderSyncService
                 if (!advancesCheckpoint)
                 {
                     _logger.LogInformation(
-                        "Order history is behind; fetching the current window first. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}, CurrentWindowStartUtc={CurrentWindowStartUtc:O}, CurrentWindowEndUtc={CurrentWindowEndUtc:O}",
-                        customerId,
+                        "Order history is behind; fetching the current window first. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}, CurrentWindowStartUtc={CurrentWindowStartUtc:O}, CurrentWindowEndUtc={CurrentWindowEndUtc:O}",
+                        tenantId,
                         connection.Id,
                         connection.Platform,
                         connection.LastSuccessfulSync,
@@ -589,13 +589,13 @@ public sealed class OrderSyncService : IOrderSyncService
                 syncLog.OrdersFetched = connFetched;
 
                 _logger.LogDebug(
-                    "Provider returned {OrderCount} orders. Pass={Pass}, Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, CustomerId={CustomerId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
+                    "Provider returned {OrderCount} orders. Pass={Pass}, Platform={Platform}, StoreId={StoreId}, ConnectionId={ConnectionId}, TenantId={TenantId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, FetchElapsedMs={FetchElapsedMs}, SampleExternalOrderIds={SampleExternalOrderIds}",
                     externalOrders.Count,
                     pass,
                     connection.Platform,
                     connection.StoreId,
                     connection.Id,
-                    customerId,
+                    tenantId,
                     window.StartUtc,
                     window.EndUtc,
                     swFetch.ElapsedMilliseconds,
@@ -612,7 +612,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
                 foreach (var external in externalOrders)
                 {
-                    var r = await _ingestion.IngestPackageAsync(customerId, db, connection, external, milestonesObservedLive, ct).ConfigureAwait(false);
+                    var r = await _ingestion.IngestPackageAsync(tenantId, db, connection, external, milestonesObservedLive, ct).ConfigureAwait(false);
 
                     if (r.Inserted) { syncLog.OrdersInserted++; connInserted++; }
                     if (r.Updated) { syncLog.OrdersUpdated++; connUpdated++; }
@@ -637,8 +637,8 @@ public sealed class OrderSyncService : IOrderSyncService
             if (pass == OrderSyncPass.Backfill && !backfillPending)
             {
                 _logger.LogInformation(
-                    "Order history recovered. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}",
-                    customerId,
+                    "Order history recovered. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, CheckpointUtc={CheckpointUtc:O}",
+                    tenantId,
                     connection.Id,
                     connection.Platform,
                     connection.LastSuccessfulSync);
@@ -652,9 +652,9 @@ public sealed class OrderSyncService : IOrderSyncService
 
             swConn.Stop();
             _logger.LogDebug(
-                "Completed platform sync. Pass={Pass}, CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
+                "Completed platform sync. Pass={Pass}, TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, UpsertElapsedMs={UpsertElapsedMs}, ElapsedMs={ElapsedMs}",
                 pass,
-                customerId,
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
@@ -667,7 +667,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 swConn.ElapsedMilliseconds);
 
             return new OrderSyncConnectionResult(
-                customerId,
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
@@ -694,15 +694,15 @@ public sealed class OrderSyncService : IOrderSyncService
             syncLog.FinishedAt = DateTime.UtcNow;
             syncLog.ErrorMessage = SanitizeErrorMessage(ex);
 
-            if (!await RecordFailureAsync(customerId, db, connection, syncLog, ex, ct).ConfigureAwait(false))
-                return RemovedDuringSync(customerId, db, connection, syncLog, swConn);
+            if (!await RecordFailureAsync(tenantId, db, connection, syncLog, ex, ct).ConfigureAwait(false))
+                return RemovedDuringSync(tenantId, db, connection, syncLog, swConn);
 
             swConn.Stop();
             _logger.LogError(
                 ex,
-                "Platform connection sync failed. Pass={Pass}, CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, CheckpointUtc={CheckpointUtc:O}, ElapsedMs={ElapsedMs}",
+                "Platform connection sync failed. Pass={Pass}, TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, StoreId={StoreId}, WindowStartUtc={WindowStartUtc:O}, WindowEndUtc={WindowEndUtc:O}, CheckpointUtc={CheckpointUtc:O}, ElapsedMs={ElapsedMs}",
                 pass,
-                customerId,
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
@@ -711,7 +711,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 connection.LastSuccessfulSync,
                 swConn.ElapsedMilliseconds);
 
-            return new OrderSyncConnectionResult(customerId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true)
+            return new OrderSyncConnectionResult(tenantId, connection.Id, connection.Platform, connection.StoreId, syncLog.OrdersFetched, syncLog.OrdersInserted, syncLog.OrdersUpdated, 0, 0, IsFailed: true)
                 { ElapsedMs = swConn.ElapsedMilliseconds };
         }
     }
@@ -744,7 +744,7 @@ public sealed class OrderSyncService : IOrderSyncService
     /// tracking it so no later save of the pass touches it.
     /// </summary>
     private OrderSyncConnectionResult RemovedDuringSync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         PlatformConnection connection,
         SyncLog? syncLog,
@@ -753,13 +753,13 @@ public sealed class OrderSyncService : IOrderSyncService
         db.Entry(connection).State = EntityState.Detached;
         swConn.Stop();
         _logger.LogInformation(
-            "Platform connection was removed during sync; nothing more is recorded for it. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}",
-            customerId,
+            "Platform connection was removed during sync; nothing more is recorded for it. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}",
+            tenantId,
             connection.Id,
             connection.Platform);
 
         return new OrderSyncConnectionResult(
-            customerId,
+            tenantId,
             connection.Id,
             connection.Platform,
             connection.StoreId,
@@ -778,14 +778,14 @@ public sealed class OrderSyncService : IOrderSyncService
     /// nothing written, when the connection was removed meanwhile.
     /// </summary>
     private async Task<bool> RecordFailureAsync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         PlatformConnection connection,
         SyncLog syncLog,
         Exception ex,
         CancellationToken ct)
     {
-        await using var report = await _customerDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var report = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         var stored = await report.PlatformConnections
             .SingleOrDefaultAsync(c => c.Id == connection.Id, ct)
             .ConfigureAwait(false);

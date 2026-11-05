@@ -8,7 +8,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Cli;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Application.Security;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;

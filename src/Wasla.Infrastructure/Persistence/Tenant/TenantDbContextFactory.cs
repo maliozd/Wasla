@@ -18,10 +18,10 @@ public sealed class TenantDbContextFactory : ITenantDbContextFactory
         _secretManager = secretManager;
     }
 
-    public async Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+    public async Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
     {
         var lazy = _optionsCache.GetOrAdd(
-            customerId,
+            tenantId,
             id => new Lazy<Task<DbContextOptions<TenantDbContext>>>(
                 () => BuildOptionsAsync(id, CancellationToken.None)));
 
@@ -33,28 +33,28 @@ public sealed class TenantDbContextFactory : ITenantDbContextFactory
         catch
         {
             _optionsCache.TryRemove(
-                new KeyValuePair<Guid, Lazy<Task<DbContextOptions<TenantDbContext>>>>(customerId, lazy));
+                new KeyValuePair<Guid, Lazy<Task<DbContextOptions<TenantDbContext>>>>(tenantId, lazy));
             throw;
         }
     }
 
-    private async Task<DbContextOptions<TenantDbContext>> BuildOptionsAsync(Guid customerId, CancellationToken ct)
+    private async Task<DbContextOptions<TenantDbContext>> BuildOptionsAsync(Guid tenantId, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var centralDb = scope.ServiceProvider.GetRequiredService<Wasla.Infrastructure.Persistence.Central.CentralDbContext>();
 
-        var customer = await centralDb.Tenants
+        var tenant = await centralDb.Tenants
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == customerId, ct)
+            .FirstOrDefaultAsync(c => c.Id == tenantId, ct)
             .ConfigureAwait(false);
 
-        if (customer is null)
+        if (tenant is null)
         {
-            throw new InvalidOperationException($"Customer '{customerId}' not found in CentralDb.");
+            throw new InvalidOperationException($"Tenant '{tenantId}' not found in CentralDb.");
         }
 
         var connectionString = await _secretManager
-            .DecryptAsync(customer.EncryptedConnectionString, customer.EncryptionKeyVersion, ct)
+            .DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
             .ConfigureAwait(false);
 
         var builder = new DbContextOptionsBuilder<TenantDbContext>();

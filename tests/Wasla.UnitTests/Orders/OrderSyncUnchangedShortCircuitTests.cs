@@ -10,7 +10,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -53,7 +53,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         Assert.Equal(2, afterInsert.OptionIds.Length);
 
         _writes.Clear();
-        OrderSyncCustomerResult? last = null;
+        OrderSyncTenantResult? last = null;
         for (var i = 1; i < RepeatCount; i++)
         {
             var noisy = baseline with
@@ -632,10 +632,10 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             NullLogger<OrderSyncService>.Instance);
     }
 
-    private async Task<OrderSyncCustomerResult> SyncAsync(OrderSyncService sync, params ExternalOrderDto[] orders)
+    private async Task<OrderSyncTenantResult> SyncAsync(OrderSyncService sync, params ExternalOrderDto[] orders)
     {
         _client.Set(orders);
-        return await sync.SyncCustomerWithResultAsync(_tenantId, CancellationToken);
+        return await sync.SyncTenantWithResultAsync(_tenantId, CancellationToken);
     }
 
     private async Task MoveCheckpointAsync(TimeSpan fromNow)
@@ -846,13 +846,13 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
@@ -919,13 +919,13 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
 
         public SqliteTenantFactory(WriteCommandCollector writes) => _writes = writes;
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("DataSource=:memory:");
                 connection.Open();
-                _connections[customerId] = connection;
+                _connections[tenantId] = connection;
                 using var setup = new TestTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

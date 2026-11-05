@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Web;
 using Wasla.Web.Security;
@@ -264,15 +264,15 @@ public sealed class WebLoginRateLimitTests : IAsyncLifetime
         using var admin = _web.Client(CentralHost);
         var invalidAdmin = Localized("en-US", "Admin.InvalidCredentials");
 
-        var wrongPassword = await PostLoginAsync(admin, "/admin/login", AdminEmail, "Wrong-Password-1", "/admin/customers");
-        var unknownAdmin = await PostLoginAsync(admin, "/admin/login", "nobody@wasla.test", "Wrong-Password-1", "/admin/customers");
+        var wrongPassword = await PostLoginAsync(admin, "/admin/login", AdminEmail, "Wrong-Password-1", "/admin/restaurants");
+        var unknownAdmin = await PostLoginAsync(admin, "/admin/login", "nobody@wasla.test", "Wrong-Password-1", "/admin/restaurants");
         Assert.Contains(invalidAdmin, await HtmlAsync(wrongPassword), StringComparison.Ordinal);
         Assert.Contains(invalidAdmin, await HtmlAsync(unknownAdmin), StringComparison.Ordinal);
         Assert.Equal(2, _probe.AdminChecks);
 
         // The same client on another host shares the admin allowance: admin partitions are per client only.
         using var adminOnTenantHost = _web.Client(TenantSessionWebHost.AlphaHost);
-        var limited = await PostLoginAsync(adminOnTenantHost, "/admin/login", AdminEmail, AdminPassword, "/admin/customers");
+        var limited = await PostLoginAsync(adminOnTenantHost, "/admin/login", AdminEmail, AdminPassword, "/admin/restaurants");
 
         Assert.Equal(2, _probe.AdminChecks);
         Assert.InRange(RateLimitTestConfig.RetryAfterSeconds(limited), 1, 300);
@@ -280,7 +280,7 @@ public sealed class WebLoginRateLimitTests : IAsyncLifetime
         var html = await HtmlAsync(limited);
         Assert.Contains($"role=\"alert\">{Localized("en-US", "Auth.Login.TooManyAttempts")}</div>", html, StringComparison.Ordinal);
         Assert.DoesNotContain(invalidAdmin, html, StringComparison.Ordinal);
-        Assert.Matches(HiddenReturnUrl("/admin/customers"), html);
+        Assert.Matches(HiddenReturnUrl("/admin/restaurants"), html);
         Assert.DoesNotContain(AdminPassword, html, StringComparison.Ordinal);
 
         // Other endpoints keep working: the login pages, the forgot-password page and a tenant login.

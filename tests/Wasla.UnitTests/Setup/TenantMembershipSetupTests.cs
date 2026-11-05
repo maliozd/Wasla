@@ -215,7 +215,7 @@ public sealed class TenantMembershipSetupTests : IDisposable
     /// <summary>The restaurant step reads only CentralDb; the tenant-database steps degrade on their own.</summary>
     private sealed class UnavailableTenantDatabases : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct) =>
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
             throw new InvalidOperationException("Tenant database is not part of this test.");
     }
 }

@@ -20,12 +20,12 @@ public sealed class CentralAdminTenantService : ICentralAdminTenantService
         _logger = logger;
     }
 
-    public async Task<bool> SetCustomerActiveStateAsync(Guid customerId, bool isActive, CancellationToken ct)
+    public async Task<bool> SetTenantActiveStateAsync(Guid tenantId, bool isActive, CancellationToken ct)
     {
-        var entity = await _db.Tenants.FirstOrDefaultAsync(x => x.Id == customerId, ct).ConfigureAwait(false);
+        var entity = await _db.Tenants.FirstOrDefaultAsync(x => x.Id == tenantId, ct).ConfigureAwait(false);
         if (entity is null)
         {
-            _logger.LogInformation("SetCustomerActiveState: tenant {Id} not found", customerId);
+            _logger.LogInformation("SetTenantActiveState: tenant {Id} not found", tenantId);
             return false;
         }
 

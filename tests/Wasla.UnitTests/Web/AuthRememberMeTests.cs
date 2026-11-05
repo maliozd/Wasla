@@ -374,10 +374,10 @@ public sealed class AuthRememberMeTests
     {
         public AuthSessionResult? Result { get; set; }
 
-        public Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct) =>
+        public Task<AuthSessionResult?> ValidateAsync(Guid tenantId, string email, string password, CancellationToken ct) =>
             Task.FromResult(Result);
 
-        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct) =>
+        public Task<AuthSessionResult?> GetActiveSessionAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
             Task.FromResult(Result);
     }
 

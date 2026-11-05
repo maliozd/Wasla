@@ -70,7 +70,7 @@ internal sealed class AdminWebHost : IAsyncDisposable
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             EnvironmentName = Environments.Production,
-            ApplicationName = typeof(CustomersController).Assembly.GetName().Name,
+            ApplicationName = typeof(TenantsController).Assembly.GetName().Name,
             ContentRootPath = contentRoot,
             // The real stylesheets and scripts, so a real browser renders the pages as deployed.
             WebRootPath = TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "wwwroot")

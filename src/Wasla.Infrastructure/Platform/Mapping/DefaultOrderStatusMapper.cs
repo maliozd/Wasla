@@ -28,7 +28,7 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into OrderHub's shared lifecycle; RECEIVED vs internal Preparing is reconciled at sync merge.
+    // EN: Normalize partner-style strings (RECEIVED, …) plus legacy lowercase mocks into Wasla's shared lifecycle; RECEIVED vs internal Preparing is reconciled at sync merge.
     // TR: Partner stringlerini (RECEIVED, …) ve eski küçük harf mock'larını ortak lifecycle'a map ederiz; RECEIVED ile iç Preparing uyumu sync merge'da toparlanır.
     // Accepting an order starts its preparation (WAS-185), so acceptance strings map to Preparing.
     private static OrderStatus MapYemeksepeti(string status)
@@ -60,8 +60,8 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    // EN: Maps ExternalStatus tokens into OrderHub lifecycle; VERIFY/PREPARE/HANDOVER-style strings here are mock/dev echoes—not guaranteed production codes.
-    // TR: ExternalStatus token'larını OrderHub lifecycle'a map eder; VERIFY/PREPARE/HANDOVER burada mock/dev echo'dur—kesin production kodu garantisi yoktur.
+    // EN: Maps ExternalStatus tokens into Wasla lifecycle; VERIFY/PREPARE/HANDOVER-style strings here are mock/dev echoes—not guaranteed production codes.
+    // TR: ExternalStatus token'larını Wasla lifecycle'a map eder; VERIFY/PREPARE/HANDOVER burada mock/dev echo'dur—kesin production kodu garantisi yoktur.
     private static OrderStatus MapGetir(string status)
     {
         var u = (status ?? string.Empty).Trim().ToUpperInvariant();
@@ -81,8 +81,8 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    // EN: Trendyol GO package statuses (and a few Turkish mock labels) fold into the same shared OrderHub statuses as the real integration.
-    // TR: Trendyol GO paket statüleri (ve birkaç Türkçe mock etiketi) gerçek entegrasyonla aynı ortak OrderHub statülerine indirgenir.
+    // EN: Trendyol GO package statuses (and a few Turkish mock labels) fold into the same shared Wasla statuses as the real integration.
+    // TR: Trendyol GO paket statüleri (ve birkaç Türkçe mock etiketi) gerçek entegrasyonla aynı ortak Wasla statülerine indirgenir.
     private static OrderStatus MapTrendyol(string status)
     {
         var t = (status ?? string.Empty).Trim();

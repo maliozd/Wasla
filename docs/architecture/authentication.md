@@ -62,7 +62,7 @@ Controllers select schemes explicitly (for example `[Authorize(AuthenticationSch
 - Validates credentials via `IAuthValidationService` against the resolved tenant
 - Signs in with scheme `WaslaTenant`, after storing a new login session for the user in the tenant database (`ITenantSessionRegistry`, see [Tenant login sessions and logout](#tenant-login-sessions-and-logout)). The password login and the signup welcome link share this sign-in; if the session cannot be stored, no cookie is issued
 - After `SignInAsync` succeeds, `ITenantLoginRecorder` (`TenantLoginRecorder`) stores the UTC time in `AppUsers.LastLoginAt` for that user in that tenant database. It uses one conditional `UPDATE` that only moves the value forward, so a slower concurrent login cannot overwrite a newer time, and it does not change `UpdatedAt`. If that database write fails, the login still succeeds and a warning with only the tenant id, user id and exception type is logged; cancellation and non-database errors are not swallowed. Failed or cancelled logins, the signup welcome link (`/auth/welcome`) and requests authenticated by an existing cookie do not record a login. `AuthValidationService` only checks credentials and reads only the columns it needs
-- Claims include `TenantId` (value from `AuthSessionResult.CustomerId`), `UserId` (also `ClaimTypes.NameIdentifier`), email, role (`ClaimTypes.Role` and `"Role"`), name, the user's security stamp (`Wasla.TenantSecurityStamp`, `WaslaAuthContracts.TenantSecurityStampClaim`) and the id of the stored login session (`Wasla.TenantSessionId`, `WaslaAuthContracts.TenantSessionIdClaim`)
+- Claims include `TenantId` (value from `AuthSessionResult.TenantId`), `UserId` (also `ClaimTypes.NameIdentifier`), email, role (`ClaimTypes.Role` and `"Role"`), name, the user's security stamp (`Wasla.TenantSecurityStamp`, `WaslaAuthContracts.TenantSecurityStampClaim`) and the id of the stored login session (`Wasla.TenantSessionId`, `WaslaAuthContracts.TenantSessionIdClaim`)
 - The signup welcome link (`/auth/welcome`) builds the session from the user's current row (`IAuthValidationService.GetActiveSessionAsync`): current role and stamp, and no session for a user who is inactive or gone
 - Logout (`POST /auth/logout`, signed in, antiforgery token required): revokes this cookie's login session in the tenant database, then `SignOutAsync(WaslaTenant)` and expires `.Wasla.TenantAuth` only, and redirects to `/auth/login` on the same host. Other sessions of the user are kept. `GET /auth/logout` only shows the logout page with the same form. A logout that cannot complete because the tenant database fails gets the logout failure page (HTTP 503, WAS-186). Details and failure behavior: [Tenant login sessions and logout](#tenant-login-sessions-and-logout)
 
@@ -384,12 +384,6 @@ Wasla's own cookies (WAS-141). Nothing else is registered, read or deleted as an
 | `.Wasla.SignupRegistration` | Web, `SignupRegistrationOwnership` | HttpOnly, SameSite Strict, Path `/`, host-only, expires with the registration; Secure outside Development |
 
 Sign-out deletes only that audience's active cookie: tenant logout deletes `.Wasla.TenantAuth` (after revoking its stored login session, see [Tenant login sessions and logout](#tenant-login-sessions-and-logout)), Central Admin logout deletes `.Wasla.CentralAdminAuth`. The cookie names and attributes are unchanged by WAS-114. The antiforgery, request-culture and TempData cookies keep their ASP.NET Core default names.
-
-## Legacy property: `AuthSessionResult.CustomerId`
-
-**Source:** `src/Wasla.Application/Abstractions/Auth/AuthSessionResult.cs`
-
-The property is still named `CustomerId`. Sign-in stores that value in the **`TenantId` claim**. Do not treat a global rename of this property as a required follow-up for feature work.
 
 ## Password reset
 

@@ -99,8 +99,8 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
             foreach (var path in new[]
                      {
                          "/admin",
-                         "/admin/customers?sort=name&dir=asc",
-                         $"/admin/customers/{_tenantId}",
+                         "/admin/restaurants?sort=name&dir=asc",
+                         $"/admin/restaurants/{_tenantId}",
                          "/admin/pending-registrations",
                          "/admin/billing/plan-prices",
                          $"/admin/billing/plan-prices/{_correctablePriceId}/correct",

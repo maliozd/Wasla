@@ -15,7 +15,7 @@
             : (isRtl ? "العربية" : "Türkçe"));
 
     string AdminDash() => p == "/admin" ? "active" : "";
-    string AdminCustomers() => requestPath.StartsWith("/admin/customers", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    string AdminRestaurants() => string.Equals(ViewContext.RouteData.Values["controller"] as string, "Tenants", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPendingRegs() => requestPath.StartsWith("/admin/pending-registrations", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminPlanPrices() => requestPath.StartsWith("/admin/billing/plan-prices", StringComparison.OrdinalIgnoreCase) ? "active" : "";
     string AdminContactMessages() => requestPath.StartsWith("/admin/contact-messages", StringComparison.OrdinalIgnoreCase) ? "active" : "";
@@ -111,8 +111,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @AdminCustomers()" asp-area="Admin" asp-controller="Customers" asp-action="Index">
-                            <i class="bi bi-people me-2"></i>@L["Layout.Customers"]
+                        <a class="nav-link @AdminRestaurants()" asp-area="Admin" asp-controller="Tenants" asp-action="Index">
+                            <i class="bi bi-people me-2"></i>@L["Layout.Restaurants"]
                         </a>
                     </li>
                     <li class="nav-item">

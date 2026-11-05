@@ -45,7 +45,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         };
         _provider.Returns(OrderChangeFixtures.External("ING-1"));
 
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
 
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "ING-1");
         var (tenantId, change) = Assert.Single(_notifier.Sent);
@@ -60,10 +60,10 @@ public sealed class OrderChangeNotificationTests : IDisposable
     {
         _provider.Returns(OrderChangeFixtures.External("UPD-1"));
         var sync = OrderChangeFixtures.Sync(_tenants, _provider, _notifier);
-        await sync.SyncCustomerAsync(_tenant, Ct);
+        await sync.SyncTenantAsync(_tenant, Ct);
 
         // The same order again: nothing written, nothing announced.
-        await sync.SyncCustomerAsync(_tenant, Ct);
+        await sync.SyncTenantAsync(_tenant, Ct);
         Assert.Single(_notifier.Sent);
 
         var accepted = false;
@@ -73,7 +73,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
             accepted = stored.InternalStatus == OrderStatus.Preparing;
         };
         _provider.Returns(OrderChangeFixtures.External("UPD-1", status: "Picking"));
-        await sync.SyncCustomerAsync(_tenant, Ct);
+        await sync.SyncTenantAsync(_tenant, Ct);
 
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "UPD-1");
         Assert.Equal(2, OrderChanges.Count);
@@ -86,7 +86,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
     public async Task EveryLifecycleAction_IsAnnouncedAfterItsSave()
     {
         _provider.Returns(OrderChangeFixtures.External("LIFE-1"), OrderChangeFixtures.External("LIFE-2"));
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
         var first = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-1");
         var second = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "LIFE-2");
         var actions = OrderChangeFixtures.Actions(_tenants, _provider, _notifier);
@@ -118,7 +118,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
     public async Task ChangeVersions_AreRaisedAtomically_SoConcurrentWritersNeverShareOne()
     {
         _provider.Returns(OrderChangeFixtures.External("RACE-1"));
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "RACE-1");
 
         // Twenty writers, each in its own transaction (as the services do), racing on the same order.
@@ -139,7 +139,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
     public async Task AChangeVersion_IsNeverRaisedOutsideTheChangesTransaction()
     {
         _provider.Returns(OrderChangeFixtures.External("NO-TX-1"));
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "NO-TX-1");
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
 
@@ -151,7 +151,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
     public async Task TheLiveScreenSnapshot_CarriesEachOrdersChangeVersion()
     {
         _provider.Returns(OrderChangeFixtures.External("SNAP-1"));
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "SNAP-1");
         await OrderChangeFixtures.Actions(_tenants, _provider, _notifier).TryApproveAsync(_tenant, order.Id, Ct);
         var read = new Wasla.Infrastructure.Services.OrderReadService(_tenants, TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<Wasla.Infrastructure.Services.OrderReadService>.Instance);
@@ -167,7 +167,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
     public async Task ARefusedOrFailedAction_AnnouncesNothing_AndChangesNothing()
     {
         _provider.Returns(OrderChangeFixtures.External("FAIL-1"));
-        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerAsync(_tenant, Ct);
+        await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantAsync(_tenant, Ct);
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "FAIL-1");
         var actions = OrderChangeFixtures.Actions(_tenants, _provider, _notifier);
         var before = _notifier.Sent.Count;
@@ -188,7 +188,7 @@ public sealed class OrderChangeNotificationTests : IDisposable
         _notifier.Throw = new InvalidOperationException("channel down");
         _provider.Returns(OrderChangeFixtures.External("BROKEN-1"));
 
-        var result = await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await OrderChangeFixtures.Sync(_tenants, _provider, _notifier).SyncTenantWithResultAsync(_tenant, Ct);
         var order = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "BROKEN-1");
         var approved = await OrderChangeFixtures.Actions(_tenants, _provider, _notifier).TryApproveAsync(_tenant, order.Id, Ct);
 
@@ -205,8 +205,8 @@ public sealed class OrderChangeNotificationTests : IDisposable
         _provider.Returns(OrderChangeFixtures.External("SAME-ID"));
         var sync = OrderChangeFixtures.Sync(_tenants, _provider, _notifier);
 
-        await sync.SyncCustomerAsync(_tenant, Ct);
-        await sync.SyncCustomerAsync(_otherTenant, Ct);
+        await sync.SyncTenantAsync(_tenant, Ct);
+        await sync.SyncTenantAsync(_otherTenant, Ct);
 
         var a = await OrderChangeFixtures.ReadOrderAsync(_tenants, _tenant, "SAME-ID");
         var b = await OrderChangeFixtures.ReadOrderAsync(_tenants, _otherTenant, "SAME-ID");

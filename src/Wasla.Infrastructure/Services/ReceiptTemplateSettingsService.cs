@@ -4,7 +4,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
@@ -34,24 +34,24 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
     }
 
     public async Task<ReceiptTemplateSettings> GetAsync(
-        Guid customerId,
-        string? customerDisplayName,
+        Guid tenantId,
+        string? tenantDisplayName,
         string? defaultReceiptLanguage,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
             .ConfigureAwait(false);
 
-        return Deserialize(row?.ReceiptTemplateSettingsJson, customerDisplayName, defaultReceiptLanguage);
+        return Deserialize(row?.ReceiptTemplateSettingsJson, tenantDisplayName, defaultReceiptLanguage);
     }
 
     public async Task<ReceiptTemplateSettings> UpdateAsync(
-        Guid customerId,
-        string? customerDisplayName,
+        Guid tenantId,
+        string? tenantDisplayName,
         UpdateReceiptTemplateSettingsCommand command,
         CancellationToken ct)
     {
@@ -59,7 +59,7 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
 
         var settings = MapCommand(command);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.TenantOperationalSettings
             .FirstOrDefaultAsync(x => x.Id == SingletonId, ct)
@@ -85,43 +85,43 @@ public sealed class ReceiptTemplateSettingsService : IReceiptTemplateSettingsSer
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
 
-        _logger.LogInformation("Receipt template settings updated. CustomerId={CustomerId}", customerId);
+        _logger.LogInformation("Receipt template settings updated. TenantId={TenantId}", tenantId);
 
         return settings;
     }
 
-    private static ReceiptTemplateSettings Deserialize(string? json, string? customerDisplayName, string? defaultReceiptLanguage)
+    private static ReceiptTemplateSettings Deserialize(string? json, string? tenantDisplayName, string? defaultReceiptLanguage)
     {
         var fallbackLanguage = ReceiptLanguageCodes.Normalize(defaultReceiptLanguage);
 
         if (string.IsNullOrWhiteSpace(json))
-            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
+            return ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, fallbackLanguage);
 
         try
         {
             var settings = JsonSerializer.Deserialize<ReceiptTemplateSettings>(json, JsonOptions);
             if (settings is null)
-                return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
+                return ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, fallbackLanguage);
 
-            NormalizeLegacyHeaderText(settings, customerDisplayName);
+            NormalizeLegacyHeaderText(settings, tenantDisplayName);
             settings.ReceiptLanguage = ReceiptLanguageCodes.Normalize(settings.ReceiptLanguage, fallbackLanguage);
             return settings;
         }
         catch (JsonException)
         {
-            return ReceiptTemplateSettings.CreateDefaults(customerDisplayName, fallbackLanguage);
+            return ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, fallbackLanguage);
         }
     }
 
-    private static void NormalizeLegacyHeaderText(ReceiptTemplateSettings settings, string? customerDisplayName)
+    private static void NormalizeLegacyHeaderText(ReceiptTemplateSettings settings, string? tenantDisplayName)
     {
         // Older defaults stored tenant display name in ReceiptHeaderText, which bypassed ShowRestaurantName.
-        if (string.IsNullOrWhiteSpace(customerDisplayName) || string.IsNullOrWhiteSpace(settings.ReceiptHeaderText))
+        if (string.IsNullOrWhiteSpace(tenantDisplayName) || string.IsNullOrWhiteSpace(settings.ReceiptHeaderText))
             return;
 
         if (string.Equals(
                 settings.ReceiptHeaderText.Trim(),
-                customerDisplayName.Trim(),
+                tenantDisplayName.Trim(),
                 StringComparison.OrdinalIgnoreCase))
         {
             settings.ReceiptHeaderText = null;

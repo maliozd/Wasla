@@ -431,7 +431,7 @@ public sealed class OrdersController : BaseController
     /// Live Screen opts into line-item projection; management list/history keep the lighter shape.
     /// </summary>
     private async Task<OrderListViewModel> BuildOrderListViewModelAsync(
-        Guid customerId,
+        Guid tenantId,
         FoodPlatform? platform,
         OrderStatus? status,
         string? startDate,
@@ -467,7 +467,7 @@ public sealed class OrdersController : BaseController
         // A supplied date that cannot be used never widens the query: nothing is listed until the filter is corrected.
         var result = dates.IsValid
             ? await _orders.GetListAsync(
-                customerId,
+                tenantId,
                 platform,
                 status,
                 startUtc,

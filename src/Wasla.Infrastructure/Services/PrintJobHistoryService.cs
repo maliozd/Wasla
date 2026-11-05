@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
@@ -31,13 +31,13 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
     }
 
     public async Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(
-        Guid customerId,
+        Guid tenantId,
         int limit,
         CancellationToken ct)
     {
         var safeLimit = Math.Clamp(limit, 1, PrintJobHistoryLimits.Max);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var rows = await (
                 from j in db.PrintJobs.AsNoTracking()
@@ -85,7 +85,7 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
     }
 
     public async Task<ReprintReceiptResult> CreateReprintAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid printJobId,
         string? tenantDisplayName,
         CancellationToken ct)
@@ -93,10 +93,10 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
         // Load settings before acquiring the serializable lock, as in the first-print path.
         // The settings service opens a separate tenant context.
         var template = await _templateSettings
-            .GetAsync(customerId, tenantDisplayName, null, ct)
+            .GetAsync(tenantId, tenantDisplayName, null, ct)
             .ConfigureAwait(false);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         // Same serializable guard the first-receipt path uses, so concurrent reprint requests
         // cannot both pass the active-job check and queue two receipts for one order.
@@ -187,23 +187,23 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
 
             _logger.LogWarning(
                 ex,
-                "Receipt reprint job creation failed. CustomerId={CustomerId}, SourceJobId={SourceJobId}, OrderId={OrderId}",
-                customerId,
+                "Receipt reprint job creation failed. TenantId={TenantId}, SourceJobId={SourceJobId}, OrderId={OrderId}",
+                tenantId,
                 printJobId,
                 source.OrderId);
             return new ReprintReceiptResult(false, "PrintBridge.ReprintFailed", null);
         }
 
         _logger.LogInformation(
-            "Receipt reprint job created. CustomerId={CustomerId}, SourceJobId={SourceJobId}, NewJobId={NewJobId}, OrderId={OrderId}",
-            customerId,
+            "Receipt reprint job created. TenantId={TenantId}, SourceJobId={SourceJobId}, NewJobId={NewJobId}, OrderId={OrderId}",
+            tenantId,
             printJobId,
             job.Id,
             source.OrderId);
 
         await TenantChangePublisher.PublishAsync(
                 _notifier,
-                customerId,
+                tenantId,
                 new PrintJobChanged(source.OrderId, job.Id, job.Status, job.StatusVersion),
                 _logger)
             .ConfigureAwait(false);

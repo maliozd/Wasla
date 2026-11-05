@@ -253,11 +253,11 @@ public sealed class GuidedDemoSchedulerTests : IDisposable
         Assert.Contains("private const int CycleIntervalSeconds = OrderSyncSchedule.WorkerCycleSeconds;", worker, StringComparison.Ordinal);
         Assert.Equal(15, Wasla.Application.Orders.OrderSyncSchedule.WorkerCycleSeconds);
         Assert.Contains("private const int CatastrophicFailureBackoffSeconds = 30;", worker, StringComparison.Ordinal);
-        Assert.Contains("private const int MaxParallelCustomers = 5;", worker, StringComparison.Ordinal);
+        Assert.Contains("private const int MaxParallelTenants = 5;", worker, StringComparison.Ordinal);
         Assert.Contains("var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;", worker, StringComparison.Ordinal);
-        Assert.Contains("var r = await syncer.SyncCustomerWithResultAsync(customer.Id, ct);", worker, StringComparison.Ordinal);
+        Assert.Contains("var r = await syncer.SyncTenantWithResultAsync(tenant.Id, ct);", worker, StringComparison.Ordinal);
         // The cycle only hands the tenant's next demo deadline to the scheduler.
-        Assert.Contains("_demoSchedule.Plan(customer.Id, result.NextCheckAtUtc);", worker, StringComparison.Ordinal);
+        Assert.Contains("_demoSchedule.Plan(tenant.Id, result.NextCheckAtUtc);", worker, StringComparison.Ordinal);
 
         var program = Source("src", "Wasla.Worker", "Program.cs");
         Assert.Contains("builder.Services.AddHostedService<OrderSyncWorker>();", program, StringComparison.Ordinal);
@@ -267,7 +267,7 @@ public sealed class GuidedDemoSchedulerTests : IDisposable
         foreach (var file in new[] { "GuidedDemoScheduler.cs", "GuidedDemoSchedule.cs" })
         {
             var source = Source("src", "Wasla.Infrastructure", "Services", file);
-            foreach (var forbidden in new[] { "IOrderSyncService", "SyncCustomer", "CycleInterval", "ProviderMode", "IPlatform", "Webhook", "PrintJob", "db.Orders", "Notification", "TenantDbContext" })
+            foreach (var forbidden in new[] { "IOrderSyncService", "SyncTenant", "CycleInterval", "ProviderMode", "IPlatform", "Webhook", "PrintJob", "db.Orders", "Notification", "TenantDbContext" })
                 Assert.DoesNotContain(forbidden, source, StringComparison.Ordinal);
         }
 

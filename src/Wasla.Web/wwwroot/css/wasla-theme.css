@@ -683,7 +683,6 @@ body.wasla-tenant.wasla-app .wasla-sidebar-user-label {
 
 /* Collapsed sidebar. Link and control text stays their accessible name: wasla-foundation.css hides it visually. */
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-tenant-name,
-body.wasla-tenant.wasla-app.sidebar-collapsed .customer-text,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-footer .footer-label,
 body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-user-label {
   display: none;
@@ -3153,8 +3152,8 @@ body.wasla-orders-live-display.wasla-orders-view-table .wasla-orders-table-host 
   }
 }
 
-/* --- Tenant: shared customer page patterns --- */
-.wasla-customer-page-header__title,
+/* --- Tenant: shared tenant page patterns --- */
+.wasla-tenant-page-header__title,
 .wasla-dash-header__title,
 .wasla-order-details__title {
   font-weight: 600;
@@ -4157,7 +4156,7 @@ body.wasla-tenant.wasla-app.sidebar-collapsed .wasla-sidebar-nav-sub {
 }
 
 /* =============================================================================
-   Dark theme — customer panel component system (token-driven)
+   Dark theme — tenant panel component system (token-driven)
    ============================================================================= */
 
 [data-bs-theme="dark"] body.wasla-tenant.wasla-app {

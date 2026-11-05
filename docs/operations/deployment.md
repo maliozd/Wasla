@@ -6,8 +6,6 @@ This document lists what must be configured to run Wasla in a non-local environm
 
 It corrects stale names from older checklists (e.g. treating `BaseUrl` as the Print Bridge setup field, or the former product name as the current one). It does **not** embed real secrets or placeholder passwords.
 
-Older matrix: `docs/deployment-config.md` (superseded for day-to-day ops; not deleted).
-
 ## Processes
 
 | Process | Role |

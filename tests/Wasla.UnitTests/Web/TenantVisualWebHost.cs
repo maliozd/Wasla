@@ -17,7 +17,7 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Central;

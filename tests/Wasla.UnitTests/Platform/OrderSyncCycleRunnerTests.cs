@@ -10,7 +10,7 @@ namespace Wasla.UnitTests.Platform;
 /// </summary>
 public sealed class OrderSyncCycleRunnerTests
 {
-    /// <summary>The Worker's MaxParallelCustomers.</summary>
+    /// <summary>The Worker's MaxParallelTenants.</summary>
     private const int WorkerParallelism = 5;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -58,11 +58,11 @@ public sealed class OrderSyncCycleRunnerTests
 
         await runner.RunAsync(
             tenants,
-            (id, _) => Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true)),
+            (id, _) => Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true)),
             (id, _) =>
             {
                 turns.Add(id);
-                return Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: --turnsNeeded[id] > 0));
+                return Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: --turnsNeeded[id] > 0));
             },
             Ct);
 
@@ -82,11 +82,11 @@ public sealed class OrderSyncCycleRunnerTests
 
         await runner.RunAsync(
             tenants,
-            (id, _) => Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true)),
+            (id, _) => Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true)),
             (id, _) =>
             {
                 turns++;
-                return Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true));
+                return Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true));
             },
             Ct);
 
@@ -104,12 +104,12 @@ public sealed class OrderSyncCycleRunnerTests
 
         await runner.RunAsync(
             tenants,
-            (id, _) => Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true)),
+            (id, _) => Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true)),
             (id, _) =>
             {
                 startedAt.Add(clock.Now);
                 clock.Now += TimeSpan.FromSeconds(4);
-                return Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true));
+                return Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true));
             },
             Ct);
 
@@ -127,12 +127,12 @@ public sealed class OrderSyncCycleRunnerTests
 
         await runner.RunAsync(
             tenants,
-            (id, _) => Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true)),
+            (id, _) => Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true)),
             (id, _) =>
             {
                 turns.Add(id);
                 var failed = id == tenants[0];
-                return Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: !failed, failed: failed));
+                return Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: !failed, failed: failed));
             },
             Ct);
 
@@ -153,13 +153,13 @@ public sealed class OrderSyncCycleRunnerTests
             var first = true;
             await runner.RunAsync(
                 tenants,
-                (id, _) => Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: true)),
+                (id, _) => Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: true)),
                 (id, _) =>
                 {
                     if (first)
                         firstTurns.Add(id);
                     first = false;
-                    return Task.FromResult<OrderSyncCustomerResult?>(Result(id, pending: false));
+                    return Task.FromResult<OrderSyncTenantResult?>(Result(id, pending: false));
                 },
                 Ct);
         }
@@ -217,6 +217,6 @@ public sealed class OrderSyncCycleRunnerTests
     private static List<Guid> Tenants(int count) =>
         Enumerable.Range(1, count).Select(i => new Guid(i, 0, 0, new byte[8])).ToList();
 
-    private static OrderSyncCustomerResult Result(Guid id, bool pending, bool failed = false) =>
+    private static OrderSyncTenantResult Result(Guid id, bool pending, bool failed = false) =>
         new(id, 1, 0, 0, 0, 0, 0, failed ? 1 : 0) { BackfillPending = pending };
 }

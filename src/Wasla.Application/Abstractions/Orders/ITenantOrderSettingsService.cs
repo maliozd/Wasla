@@ -19,6 +19,6 @@ public sealed record UpdateTenantOrderSettingsCommand(
 
 public interface ITenantOrderSettingsService
 {
-    Task<TenantOrderSettingsResult> GetAsync(Guid customerId, CancellationToken ct);
-    Task<TenantOrderSettingsResult> UpdateAsync(Guid customerId, UpdateTenantOrderSettingsCommand command, CancellationToken ct);
+    Task<TenantOrderSettingsResult> GetAsync(Guid tenantId, CancellationToken ct);
+    Task<TenantOrderSettingsResult> UpdateAsync(Guid tenantId, UpdateTenantOrderSettingsCommand command, CancellationToken ct);
 }

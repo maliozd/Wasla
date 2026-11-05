@@ -9,7 +9,7 @@ public interface IOrderAutoApproveService
     /// No-op when settings are disabled or the order is not eligible.
     /// </summary>
     Task ProcessNewlyInsertedOrderAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         OrderStatus insertedStatus,
         CancellationToken ct);

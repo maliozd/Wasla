@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Email;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
@@ -374,18 +374,18 @@ public sealed class TenantPasswordResetServiceTests : IDisposable
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
         private readonly HashSet<Guid> _throwOnSaveTenants = new();
 
-        public async Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public async Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 await connection.OpenAsync(ct);
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
 
                 await CreateSchemaAsync(connection, ct);
             }
 
-            return CreateContext(customerId, connection);
+            return CreateContext(tenantId, connection);
         }
 
         public void ThrowOnSaveForTenant(Guid tenantId) => _throwOnSaveTenants.Add(tenantId);

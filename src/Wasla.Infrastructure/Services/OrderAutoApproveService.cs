@@ -29,7 +29,7 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
     }
 
     public async Task ProcessNewlyInsertedOrderAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         OrderStatus insertedStatus,
         CancellationToken ct)
@@ -37,7 +37,7 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
         if (!IsEligibleForAutoApprove(insertedStatus))
             return;
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var settings = await db.TenantOperationalSettings
             .AsNoTracking()
@@ -49,8 +49,8 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
         if (settings?.OperationalMode == TenantOperationalMode.Setup)
         {
             _logger.LogDebug(
-                "Tenant is in setup mode, skipping auto-approve. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Tenant is in setup mode, skipping auto-approve. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return;
         }
@@ -60,34 +60,34 @@ public sealed class OrderAutoApproveService : IOrderAutoApproveService
         if (!autoApproveEnabled)
         {
             _logger.LogDebug(
-                "AutoApprove disabled, skipping. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "AutoApprove disabled, skipping. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return;
         }
 
         _logger.LogInformation(
-            "AutoApprove enabled for new order. CustomerId={CustomerId}, OrderId={OrderId}",
-            customerId,
+            "AutoApprove enabled for new order. TenantId={TenantId}, OrderId={OrderId}",
+            tenantId,
             orderId);
 
-        var approveResult = await _orderActions.TryApproveAsync(customerId, orderId, ct).ConfigureAwait(false);
+        var approveResult = await _orderActions.TryApproveAsync(tenantId, orderId, ct).ConfigureAwait(false);
         if (!approveResult.Succeeded)
         {
             _logger.LogWarning(
-                "Order auto-approve failed. CustomerId={CustomerId}, OrderId={OrderId}, MessageKey={MessageKey}",
-                customerId,
+                "Order auto-approve failed. TenantId={TenantId}, OrderId={OrderId}, MessageKey={MessageKey}",
+                tenantId,
                 orderId,
                 approveResult.MessageKey);
             return;
         }
 
         _logger.LogInformation(
-            "Order auto-approved successfully. CustomerId={CustomerId}, OrderId={OrderId}",
-            customerId,
+            "Order auto-approved successfully. TenantId={TenantId}, OrderId={OrderId}",
+            tenantId,
             orderId);
 
-        await _receiptCreation.TryCreateOnOrderAcceptedAsync(customerId, orderId, ct).ConfigureAwait(false);
+        await _receiptCreation.TryCreateOnOrderAcceptedAsync(tenantId, orderId, ct).ConfigureAwait(false);
     }
 
     private static bool IsEligibleForAutoApprove(OrderStatus status) =>

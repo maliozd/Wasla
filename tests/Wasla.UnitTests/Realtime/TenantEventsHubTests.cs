@@ -156,7 +156,7 @@ public sealed class TenantEventsHubTests
         var provider = new ScriptedPlatformClient(FoodPlatform.TrendyolYemek);
         provider.Returns(OrderChangeFixtures.External("WORKER-1"));
         await OrderChangeFixtures.Sync(host.Tenants, provider, workerServices.GetRequiredService<ITenantChangeNotifier>())
-            .SyncCustomerAsync(host.AlphaId, Ct);
+            .SyncTenantAsync(host.AlphaId, Ct);
 
         var order = await OrderChangeFixtures.ReadOrderAsync(host.Tenants, host.AlphaId, "WORKER-1");
         AssertOrderMessage(new OrderChanged(order.Id, order.ChangeVersion), await alphaLive.NextAsync());

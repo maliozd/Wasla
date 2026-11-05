@@ -6,7 +6,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -30,7 +30,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-accepted-1"));
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         var job = await db.PrintJobs.Include(j => j.Order).SingleAsync(TestContext.Current.CancellationToken);
@@ -48,7 +48,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, noted, blank);
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         var orders = await db.Orders.Include(o => o.Items).ToListAsync(TestContext.Current.CancellationToken);
@@ -67,7 +67,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, NewOrder("provider-new-1"));
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         Assert.Empty(await db.PrintJobs.ToListAsync(TestContext.Current.CancellationToken));
@@ -80,8 +80,8 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-repeat-1"));
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         Assert.Equal(1, await db.PrintJobs.CountAsync(TestContext.Current.CancellationToken));
@@ -94,7 +94,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-manual-1"));
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         Assert.Empty(await db.PrintJobs.ToListAsync(TestContext.Current.CancellationToken));
@@ -108,7 +108,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-tenant-1"));
         var sync = CreateSyncService(client);
 
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var tenantDb = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         await using var otherDb = await _dbFactory.CreateAsync(_otherTenantId, TestContext.Current.CancellationToken);
@@ -122,10 +122,10 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         await SeedTenantAsync(_tenantId, autoPrintOnAccepted: true);
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, NewOrder("provider-update-1"));
         var sync = CreateSyncService(client);
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         client.ReplaceOrders(AcceptedOrder("provider-update-1"));
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
 
         await using var db = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         var job = await db.PrintJobs.Include(j => j.Order).SingleAsync(TestContext.Current.CancellationToken);
@@ -139,7 +139,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         await SeedTenantAsync(_tenantId, autoPrintOnAccepted: true);
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-poll-1"));
         var sync = CreateSyncService(client);
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
         var polling = new PrintBridgeJobService(_dbFactory, NullTenantChangeNotifier.Instance, NullLogger<PrintBridgeJobService>.Instance);
 
         var jobs = await polling.GetPendingJobsAsync(_tenantId, max: 10, TestContext.Current.CancellationToken);
@@ -155,7 +155,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         await SeedTenantAsync(_tenantId, autoPrintOnAccepted: true);
         var client = new FakeFoodPlatformClient(FoodPlatform.TrendyolYemek, AcceptedOrder("provider-claim-1"));
         var sync = CreateSyncService(client);
-        await sync.SyncCustomerAsync(_tenantId, TestContext.Current.CancellationToken);
+        await sync.SyncTenantAsync(_tenantId, TestContext.Current.CancellationToken);
         await using var beforeDb = await _dbFactory.CreateAsync(_tenantId, TestContext.Current.CancellationToken);
         var pendingJobId = await beforeDb.PrintJobs
             .Select(j => j.Id)
@@ -316,7 +316,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
     {
         public static readonly NoAutoApproveService Instance = new();
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
@@ -335,9 +335,9 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             _receiptJobs = receiptJobs;
         }
 
-        public async Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public async Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
-            await using var db = await _dbFactory.CreateAsync(customerId, ct);
+            await using var db = await _dbFactory.CreateAsync(tenantId, ct);
             var settings = await db.TenantOperationalSettings
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == SettingsId, ct);
@@ -346,7 +346,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
                 return;
 
             await _receiptJobs.TryCreateReceiptJobAsync(
-                customerId,
+                tenantId,
                 orderId,
                 settings.ReceiptPrintCopyCount,
                 tenantDisplayName: "Test Tenant",
@@ -359,15 +359,15 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         public static readonly DefaultReceiptTemplateSettingsService Instance = new();
 
         public Task<ReceiptTemplateSettings> GetAsync(
-            Guid customerId,
-            string? customerDisplayName,
+            Guid tenantId,
+            string? tenantDisplayName,
             string? defaultReceiptLanguage,
             CancellationToken ct) =>
-            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(customerDisplayName, defaultReceiptLanguage));
+            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, defaultReceiptLanguage));
 
         public Task<ReceiptTemplateSettings> UpdateAsync(
-            Guid customerId,
-            string? customerDisplayName,
+            Guid tenantId,
+            string? tenantDisplayName,
             UpdateReceiptTemplateSettingsCommand command,
             CancellationToken ct) =>
             throw new NotSupportedException();
@@ -377,13 +377,13 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("DataSource=:memory:");
                 connection.Open();
-                _connections[customerId] = connection;
+                _connections[tenantId] = connection;
                 using var setup = new TestTenantDbContext(CreateOptions(connection));
                 setup.Database.EnsureCreated();
             }

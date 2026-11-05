@@ -10,7 +10,7 @@ using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.GuidedSetup;
 using Wasla.Application.Orders;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Setup;
@@ -504,21 +504,21 @@ internal sealed class FakePlatformConnections : IPlatformConnectionService
 
     public List<Guid> ReadTenants { get; } = new();
 
-    public Task<IReadOnlyList<PlatformConnectionResult>> GetListAsync(Guid customerId, CancellationToken ct)
+    public Task<IReadOnlyList<PlatformConnectionResult>> GetListAsync(Guid tenantId, CancellationToken ct)
     {
-        ReadTenants.Add(customerId);
+        ReadTenants.Add(tenantId);
         if (FailReads)
             throw new InvalidOperationException("database unavailable");
         return Task.FromResult(Connections);
     }
 
-    public Task<PlatformConnectionDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) => throw new NotSupportedException();
+    public Task<PlatformConnectionDetailResult?> GetByIdAsync(Guid tenantId, Guid id, CancellationToken ct) => throw new NotSupportedException();
 
-    public Task<CreatePlatformConnectionResult> CreateAsync(Guid customerId, CreatePlatformConnectionCommand command, CancellationToken ct) => throw new NotSupportedException();
+    public Task<CreatePlatformConnectionResult> CreateAsync(Guid tenantId, CreatePlatformConnectionCommand command, CancellationToken ct) => throw new NotSupportedException();
 
-    public Task<CreatePlatformConnectionResult> UpdateAsync(Guid customerId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct) => throw new NotSupportedException();
+    public Task<CreatePlatformConnectionResult> UpdateAsync(Guid tenantId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct) => throw new NotSupportedException();
 
-    public Task<bool> SetActiveAsync(Guid customerId, Guid id, bool isActive, CancellationToken ct) => throw new NotSupportedException();
+    public Task<bool> SetActiveAsync(Guid tenantId, Guid id, bool isActive, CancellationToken ct) => throw new NotSupportedException();
 
-    public Task<bool> RemoveAsync(Guid customerId, Guid id, CancellationToken ct) => throw new NotSupportedException();
+    public Task<bool> RemoveAsync(Guid tenantId, Guid id, CancellationToken ct) => throw new NotSupportedException();
 }

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Email;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
@@ -174,7 +174,7 @@ public sealed class SmtpFailureClassifierTests
             await db.SaveChangesAsync(ct);
         }
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
             var options = new DbContextOptionsBuilder<TenantDbContext>()
                 .UseSqlite(_connection)

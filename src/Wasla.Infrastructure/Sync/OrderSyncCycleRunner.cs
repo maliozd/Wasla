@@ -9,7 +9,7 @@ namespace Wasla.Infrastructure.Sync;
 /// <remarks>
 /// <para>
 /// Phase 1 runs the current pass of every active tenant, at most the host's parallelism at a time (the Worker's
-/// <c>MaxParallelCustomers</c>). Every eligible tenant gets its current-window check before any tenant starts
+/// <c>MaxParallelTenants</c>). Every eligible tenant gets its current-window check before any tenant starts
 /// recovering history.
 /// </para>
 /// <para>
@@ -55,23 +55,23 @@ public sealed class OrderSyncCycleRunner
     /// <param name="backfillAsync">One backfill turn of one tenant; null when it failed outside a connection.</param>
     public async Task<OrderSyncCycleResult> RunAsync(
         IReadOnlyList<Guid> tenantIds,
-        Func<Guid, CancellationToken, Task<OrderSyncCustomerResult?>> syncCurrentAsync,
-        Func<Guid, CancellationToken, Task<OrderSyncCustomerResult?>> backfillAsync,
+        Func<Guid, CancellationToken, Task<OrderSyncTenantResult?>> syncCurrentAsync,
+        Func<Guid, CancellationToken, Task<OrderSyncTenantResult?>> backfillAsync,
         CancellationToken ct)
     {
         var options = new ParallelOptions { MaxDegreeOfParallelism = _maxParallelTenants, CancellationToken = ct };
 
-        var current = new ConcurrentQueue<OrderSyncCustomerResult>();
+        var current = new ConcurrentQueue<OrderSyncTenantResult>();
         await Parallel.ForEachAsync(tenantIds, options, async (tenantId, innerCt) =>
         {
             if (await syncCurrentAsync(tenantId, innerCt).ConfigureAwait(false) is { } result)
                 current.Enqueue(result);
         }).ConfigureAwait(false);
 
-        var behind = current.Where(r => r.BackfillPending).Select(r => r.CustomerId).ToHashSet();
+        var behind = current.Where(r => r.BackfillPending).Select(r => r.TenantId).ToHashSet();
         var pending = Rotate(tenantIds.Where(behind.Contains).ToList());
 
-        var backfill = new ConcurrentQueue<OrderSyncCustomerResult>();
+        var backfill = new ConcurrentQueue<OrderSyncTenantResult>();
         var deadline = _time.GetUtcNow() + _backfillBudget;
         for (var round = 0; round < OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle && pending.Count > 0; round++)
         {
@@ -112,5 +112,5 @@ public sealed class OrderSyncCycleRunner
 /// <param name="Current">Phase 1 results, one per tenant that returned one.</param>
 /// <param name="Backfill">Phase 2 results, one per backfill turn.</param>
 public sealed record OrderSyncCycleResult(
-    IReadOnlyList<OrderSyncCustomerResult> Current,
-    IReadOnlyList<OrderSyncCustomerResult> Backfill);
+    IReadOnlyList<OrderSyncTenantResult> Current,
+    IReadOnlyList<OrderSyncTenantResult> Backfill);

@@ -59,7 +59,7 @@
   function resolvePreviewHeader(template) {
     const custom = (template.receiptHeaderText || "").trim();
     if (custom) return custom;
-    if (template.showRestaurantName) return (opts.customerDisplayName || "").trim();
+    if (template.showRestaurantName) return (opts.tenantDisplayName || "").trim();
     return "";
   }
 

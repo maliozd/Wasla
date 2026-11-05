@@ -16,7 +16,7 @@ public sealed class OrderSyncWorker : BackgroundService
 {
     private const int CycleIntervalSeconds = OrderSyncSchedule.WorkerCycleSeconds;
     private const int CatastrophicFailureBackoffSeconds = 30;
-    private const int MaxParallelCustomers = 5;
+    private const int MaxParallelTenants = 5;
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OrderSyncWorker> _logger;
@@ -38,7 +38,7 @@ public sealed class OrderSyncWorker : BackgroundService
         _config = config;
         _env = env;
         _demoSchedule = demoSchedule;
-        _cycleRunner = new OrderSyncCycleRunner(time, MaxParallelCustomers);
+        _cycleRunner = new OrderSyncCycleRunner(time, MaxParallelTenants);
     }
 
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -109,39 +109,39 @@ public sealed class OrderSyncWorker : BackgroundService
         var swCycle = Stopwatch.StartNew();
         var cycleStartUtc = DateTime.UtcNow;
 
-        var customers = await LoadActiveCustomersAsync(stoppingToken);
+        var tenants = await LoadActiveTenantsAsync(stoppingToken);
 
         if (_env.IsDevelopment())
         {
-            WorkerConsole.WriteCycleStarted(cycleStartUtc, customers.Count, CycleIntervalSeconds);
+            WorkerConsole.WriteCycleStarted(cycleStartUtc, tenants.Count, CycleIntervalSeconds);
         }
         else
         {
             _logger.LogDebug(
-                "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveCustomers={CustomerCount}",
+                "Order sync cycle started. StartedAtUtc={StartedAtUtc}, IntervalSeconds={IntervalSeconds}, ActiveTenants={TenantCount}",
                 cycleStartUtc,
                 CycleIntervalSeconds,
-                customers.Count);
+                tenants.Count);
         }
 
         // Phase 1: every tenant's current window. Phase 2: bounded, round-robin history recovery.
-        var byId = customers.ToDictionary(c => c.Id);
+        var byId = tenants.ToDictionary(c => c.Id);
         var cycle = await _cycleRunner.RunAsync(
-            customers.Select(c => c.Id).ToList(),
-            (tenantId, ct) => SyncSingleCustomerAsync(byId[tenantId], ct),
-            (tenantId, ct) => BackfillSingleCustomerAsync(byId[tenantId], ct),
+            tenants.Select(c => c.Id).ToList(),
+            (tenantId, ct) => SyncSingleTenantAsync(byId[tenantId], ct),
+            (tenantId, ct) => BackfillSingleTenantAsync(byId[tenantId], ct),
             stoppingToken);
 
         swCycle.Stop();
 
-        LogCycleTotals(swCycle.ElapsedMilliseconds, customers.Count, cycle.Current.Concat(cycle.Backfill).ToList());
+        LogCycleTotals(swCycle.ElapsedMilliseconds, tenants.Count, cycle.Current.Concat(cycle.Backfill).ToList());
 
         var remaining = TimeSpan.FromSeconds(CycleIntervalSeconds) - swCycle.Elapsed;
         if (remaining > TimeSpan.Zero)
             await Task.Delay(remaining, stoppingToken);
     }
 
-    private async Task<List<ActiveCustomer>> LoadActiveCustomersAsync(CancellationToken ct)
+    private async Task<List<ActiveTenant>> LoadActiveTenantsAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
         var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
@@ -149,20 +149,20 @@ public sealed class OrderSyncWorker : BackgroundService
         return await central.Tenants
             .AsNoTracking()
             .Where(c => c.IsActive)
-            .Select(c => new ActiveCustomer(c.Id, c.Slug, c.Name))
+            .Select(c => new ActiveTenant(c.Id, c.Slug, c.Name))
             .ToListAsync(ct);
     }
 
-    private async Task<OrderSyncCustomerResult?> SyncSingleCustomerAsync(ActiveCustomer customer, CancellationToken ct)
+    private async Task<OrderSyncTenantResult?> SyncSingleTenantAsync(ActiveTenant tenant, CancellationToken ct)
     {
-        OrderSyncCustomerResult? result = null;
+        OrderSyncTenantResult? result = null;
         using var activity = new Activity("Wasla.OrderSync");
-        activity.SetTag("tenant.id", customer.Id.ToString("D"));
+        activity.SetTag("tenant.id", tenant.Id.ToString("D"));
         activity.Start();
         using var logScope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["TraceId"] = activity.TraceId.ToString(),
-            ["TenantId"] = customer.Id.ToString("D")
+            ["TenantId"] = tenant.Id.ToString("D")
         });
 
         using var scope = _scopeFactory.CreateScope();
@@ -172,15 +172,15 @@ public sealed class OrderSyncWorker : BackgroundService
         {
             _logger.LogDebug(
                 "Starting sync for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
-                customer.Id,
-                customer.Slug,
-                customer.Name);
+                tenant.Id,
+                tenant.Slug,
+                tenant.Name);
 
-            var r = await syncer.SyncCustomerWithResultAsync(customer.Id, ct);
+            var r = await syncer.SyncTenantWithResultAsync(tenant.Id, ct);
             result = r;
 
             if (_env.IsDevelopment())
-                WorkerConsole.WriteCustomerResult(customer.Name, r.WasSyncDisabled, r.Connections);
+                WorkerConsole.WriteTenantResult(tenant.Name, r.WasSyncDisabled, r.Connections);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -188,32 +188,32 @@ public sealed class OrderSyncWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            // One customer's failure must not stop the others in the same cycle.
+            // One tenant's failure must not stop the others in the same cycle.
             _logger.LogError(
                 ex,
                 "Sync failed for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
-                customer.Id,
-                customer.Slug,
-                customer.Name);
+                tenant.Id,
+                tenant.Slug,
+                tenant.Name);
 
             if (_env.IsDevelopment())
-                WorkerConsole.WriteError($"Sync failed for {customer.Name} ({customer.Slug})");
+                WorkerConsole.WriteError($"Sync failed for {tenant.Name} ({tenant.Slug})");
         }
 
-        await DeliverGuidedDemosAsync(scope, customer, ct);
+        await DeliverGuidedDemosAsync(scope, tenant, ct);
         return result;
     }
 
     /// <summary>One history-recovery turn for a tenant whose current pass reported a backlog.</summary>
-    private async Task<OrderSyncCustomerResult?> BackfillSingleCustomerAsync(ActiveCustomer customer, CancellationToken ct)
+    private async Task<OrderSyncTenantResult?> BackfillSingleTenantAsync(ActiveTenant tenant, CancellationToken ct)
     {
         using var activity = new Activity("Wasla.OrderSync.Backfill");
-        activity.SetTag("tenant.id", customer.Id.ToString("D"));
+        activity.SetTag("tenant.id", tenant.Id.ToString("D"));
         activity.Start();
         using var logScope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["TraceId"] = activity.TraceId.ToString(),
-            ["TenantId"] = customer.Id.ToString("D")
+            ["TenantId"] = tenant.Id.ToString("D")
         });
 
         using var scope = _scopeFactory.CreateScope();
@@ -221,7 +221,7 @@ public sealed class OrderSyncWorker : BackgroundService
 
         try
         {
-            return await syncer.BackfillCustomerAsync(customer.Id, ct);
+            return await syncer.BackfillTenantAsync(tenant.Id, ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -229,13 +229,13 @@ public sealed class OrderSyncWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            // One customer's failure must not stop the others in the same cycle.
+            // One tenant's failure must not stop the others in the same cycle.
             _logger.LogError(
                 ex,
                 "Order history recovery failed for tenant {TenantId} ({TenantSlug}). TenantName={TenantName}",
-                customer.Id,
-                customer.Slug,
-                customer.Name);
+                tenant.Id,
+                tenant.Slug,
+                tenant.Name);
             return null;
         }
     }
@@ -247,15 +247,15 @@ public sealed class OrderSyncWorker : BackgroundService
     /// order on time between cycles (and this first cycle catches up overdue stages after a restart). The cycle's own
     /// timing does not change.
     /// </summary>
-    private async Task DeliverGuidedDemosAsync(IServiceScope scope, ActiveCustomer customer, CancellationToken ct)
+    private async Task DeliverGuidedDemosAsync(IServiceScope scope, ActiveTenant tenant, CancellationToken ct)
     {
         try
         {
             var simulator = scope.ServiceProvider.GetRequiredService<IGuidedDemoDeliverySimulator>();
-            var result = await simulator.AdvanceDueAndPlanAsync(customer.Id, ct);
-            _demoSchedule.Plan(customer.Id, result.NextCheckAtUtc);
+            var result = await simulator.AdvanceDueAndPlanAsync(tenant.Id, ct);
+            _demoSchedule.Plan(tenant.Id, result.NextCheckAtUtc);
             if (result.Advanced > 0)
-                _logger.LogDebug("Guided demo courier simulated for {CustomerSlug}. Advanced={Advanced}", customer.Slug, result.Advanced);
+                _logger.LogDebug("Guided demo courier simulated for {TenantSlug}. Advanced={Advanced}", tenant.Slug, result.Advanced);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -265,19 +265,19 @@ public sealed class OrderSyncWorker : BackgroundService
         {
             // A training convenience must never disturb order synchronization.
             _logger.LogWarning(
-                "Guided demo delivery simulation failed for {CustomerSlug}: {ExceptionType}",
-                customer.Slug,
+                "Guided demo delivery simulation failed for {TenantSlug}: {ExceptionType}",
+                tenant.Slug,
                 ex.GetType().Name);
         }
     }
 
     private void LogCycleTotals(
         long elapsedMs,
-        int customerCount,
-        IEnumerable<OrderSyncCustomerResult> results)
+        int tenantCount,
+        IEnumerable<OrderSyncTenantResult> results)
     {
         var totals = new OrderSyncCycleTotals(
-            CustomerCount: customerCount,
+            TenantCount: tenantCount,
             ConnectionCount: results.Sum(r => r.ConnectionCount),
             FetchedCount: results.Sum(r => r.FetchedCount),
             InsertedCount: results.Sum(r => r.InsertedCount),
@@ -289,7 +289,7 @@ public sealed class OrderSyncWorker : BackgroundService
         if (_env.IsDevelopment())
         {
             WorkerConsole.WriteCycleCompleted(
-                totals.CustomerCount,
+                totals.TenantCount,
                 totals.ConnectionCount,
                 totals.FetchedCount,
                 totals.InsertedCount,
@@ -303,9 +303,9 @@ public sealed class OrderSyncWorker : BackgroundService
             var level = totals.FailedConnections > 0 ? LogLevel.Warning : LogLevel.Debug;
             _logger.Log(
                 level,
-                "Order sync cycle completed in {ElapsedMs} ms. Customers={CustomerCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
+                "Order sync cycle completed in {ElapsedMs} ms. Tenants={TenantCount}, Connections={ConnectionCount}, Fetched={FetchedCount}, Inserted={InsertedCount}, Updated={UpdatedCount}, Skipped={SkippedCount}, Unchanged={UnchangedCount}, FailedConnections={FailedConnectionCount}",
                 elapsedMs,
-                totals.CustomerCount,
+                totals.TenantCount,
                 totals.ConnectionCount,
                 totals.FetchedCount,
                 totals.InsertedCount,
@@ -329,5 +329,5 @@ public sealed class OrderSyncWorker : BackgroundService
         }
     }
 
-    private sealed record ActiveCustomer(Guid Id, string Slug, string Name);
+    private sealed record ActiveTenant(Guid Id, string Slug, string Name);
 }

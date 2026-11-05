@@ -9,7 +9,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.GuidedSetup;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -641,18 +641,18 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
 
         public void FailCommit(Guid tenantId, bool fail) => Fault(tenantId).FailCommit = fail;
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();
-                _connections.Add(customerId, connection);
-                using var setup = new SqliteTenantDbContext(Options(connection, Fault(customerId)));
+                _connections.Add(tenantId, connection);
+                using var setup = new SqliteTenantDbContext(Options(connection, Fault(tenantId)));
                 setup.Database.EnsureCreated();
             }
 
-            return Task.FromResult<TenantDbContext>(new SqliteTenantDbContext(Options(connection, Fault(customerId))));
+            return Task.FromResult<TenantDbContext>(new SqliteTenantDbContext(Options(connection, Fault(tenantId))));
         }
 
         private FailOnCommand Fault(Guid tenantId)

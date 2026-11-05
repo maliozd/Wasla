@@ -4,7 +4,7 @@ Canonical developer and agent documentation is **English**. Turkish, English, Ar
 
 Source code wins when a document is wrong. Do not “fix” code to match a stale doc. Retired product and tenant names are not tolerated debt: they are removed under the [clean-break policy](product/terminology.md#clean-break-policy), with no aliases or compatibility layer. Do not add new uses of them.
 
-Older files in this folder (`LOCAL_DEVELOPMENT_*.md`, `deployment-config.md`, `tenant-vs-customer.md`, `wasla-design-language-v1.md`, `orders-printjob-status-signalr.md`, scratch `.txt` files) are **not** canonical. They stay until a later cleanup. Prefer the root `README.md` and the map below.
+Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-status-signalr.md`, scratch `.txt` files) are **not** canonical. They stay until a later cleanup. Prefer the root `README.md` and the map below.
 
 [product/onboarding.md](product/onboarding.md) covers guided setup and the tenant's operational mode only. Signup and provisioning entry points are summarized in [operations/cli.md](operations/cli.md) and [architecture/tenancy.md](architecture/tenancy.md).
 

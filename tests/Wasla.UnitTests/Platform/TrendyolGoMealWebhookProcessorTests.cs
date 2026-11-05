@@ -8,7 +8,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
@@ -109,7 +109,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     public async Task WebhookAfterPollingStoredTheOrder_FindsIt_AndRepeatsNoEffect()
     {
         _client.Set(Package("pkg-polled", "Picking"));
-        var polled = await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        var polled = await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, polled.InsertedCount);
         var order = await SingleOrderAsync("pkg-polled");
 
@@ -128,7 +128,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     public async Task CancelledEventForAStoredOrder_AppliesOnlyTheStatus_WithoutAFetch()
     {
         _client.Set(Package("pkg-cancel", "Created"));
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         var before = await SingleOrderAsync("pkg-cancel");
         _client.Windows.Clear();
         _client.FailWith(new InvalidOperationException("No fetch is expected."));
@@ -159,7 +159,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     public async Task CancellationWithoutItsDocumentedStatus_IsReconciled_NotApplied(string eventType, string? status)
     {
         _client.Set(Package("pkg-odd", "Created"));
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         _client.Windows.Clear();
 
         await AcceptAsync(eventType, Cancellation("pkg-odd", eventType, status));
@@ -176,7 +176,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
     public async Task ShippedEvent_TakesTheStatusFromTheReconciledPackage_NotFromItsName(string providerStatus, OrderStatus expected)
     {
         _client.Set(Package("pkg-ship", "Created"));
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
         _client.Set(Package("pkg-ship", providerStatus));
 
         await AcceptAsync("shipped", Thin("pkg-ship"));
@@ -496,8 +496,8 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
 
         // Polling reads both connections: each on its own API, and never the other's.
         requests.Clear();
-        await Sync().SyncCustomerWithResultAsync(_tenantId, Ct);
-        await Sync().SyncCustomerWithResultAsync(restaurantTenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        await Sync().SyncTenantWithResultAsync(restaurantTenant, Ct);
         var bySupplier = requests.GroupBy(r => r.AbsolutePath.Split('/')[5]).ToDictionary(g => g.Key, g => g.Select(r => r.Host).Distinct().ToList());
         Assert.Equal(["stageapi.tgoapis.com"], bySupplier[Seller]);
         Assert.Equal(["api.tgoapis.com"], bySupplier["200412"]);
@@ -629,7 +629,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         private readonly ConcurrentQueue<Guid> _created = new();
         public IReadOnlyList<Guid> Created => _created.ToList();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;
@@ -641,7 +641,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         private readonly ConcurrentQueue<Guid> _processed = new();
         public IReadOnlyList<Guid> Processed => _processed.ToList();
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
         {
             _processed.Enqueue(orderId);
             return Task.CompletedTask;

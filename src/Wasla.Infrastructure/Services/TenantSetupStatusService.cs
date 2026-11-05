@@ -58,7 +58,7 @@ public sealed class TenantSetupStatusService : ITenantSetupStatusService
             var now = _time.GetUtcNow().UtcDateTime;
             if (row is null)
             {
-                db.TenantOperationalSettings.Add(new Wasla.Domain.Entities.Customer.TenantOperationalSettings
+                db.TenantOperationalSettings.Add(new Wasla.Domain.Entities.TenantDb.TenantOperationalSettings
                 {
                     Id = SettingsSingletonId,
                     CreatedAt = now,

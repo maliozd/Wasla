@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.UnitTests.Admin;
 

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -30,7 +30,7 @@ public sealed class OrderSyncCancellationTests : IDisposable
         }));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            sync.SyncCustomerWithResultAsync(_tenantId, cts.Token));
+            sync.SyncTenantWithResultAsync(_tenantId, cts.Token));
 
         var ct = TestContext.Current.CancellationToken;
         await using var db = await _db.CreateAsync(_tenantId, ct);
@@ -45,7 +45,7 @@ public sealed class OrderSyncCancellationTests : IDisposable
         var sync = CreateSync(new ThrowingClient(() =>
             throw new TaskCanceledException("HttpClient.Timeout elapsed.")));
 
-        var result = await sync.SyncCustomerWithResultAsync(_tenantId, CancellationToken.None);
+        var result = await sync.SyncTenantWithResultAsync(_tenantId, CancellationToken.None);
 
         Assert.Equal(1, result.FailedConnections);
         var ct = TestContext.Current.CancellationToken;
@@ -119,13 +119,13 @@ public sealed class OrderSyncCancellationTests : IDisposable
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
@@ -133,13 +133,13 @@ public sealed class OrderSyncCancellationTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("DataSource=:memory:");
                 connection.Open();
-                _connections[customerId] = connection;
+                _connections[tenantId] = connection;
                 using var setup = new TestTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

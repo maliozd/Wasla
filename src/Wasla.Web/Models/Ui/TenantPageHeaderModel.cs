@@ -1,6 +1,6 @@
 ﻿namespace Wasla.Web.Models.Ui;
 
-public sealed class CustomerPageHeaderModel
+public sealed class TenantPageHeaderModel
 {
     public required string Title { get; init; }
 

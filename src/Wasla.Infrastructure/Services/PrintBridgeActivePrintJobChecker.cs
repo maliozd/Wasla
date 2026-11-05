@@ -15,12 +15,12 @@ public sealed class PrintBridgeActivePrintJobChecker : IPrintBridgeActivePrintJo
     }
 
     public async Task<bool> HasActivePrintingJobAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid? installationId,
         string? legacyLockedBy,
         CancellationToken ct)
     {
-        await using var db = await _tenantDbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var normalizedLegacyName = string.IsNullOrWhiteSpace(legacyLockedBy)
             ? null
