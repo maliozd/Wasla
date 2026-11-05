@@ -1,10 +1,10 @@
 ﻿using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// Pending or completed print job for a tenant order. Physical printing is handled by OrderHub Print Bridge.
+/// Pending or completed print job for a tenant order. Physical printing is handled by Wasla Print Bridge.
 /// </summary>
 public sealed class PrintJob : BaseEntity
 {

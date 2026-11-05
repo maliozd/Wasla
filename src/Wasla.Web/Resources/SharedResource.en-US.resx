@@ -255,7 +255,7 @@
   <data name="Layout.CentralAdmin" xml:space="preserve">
     <value>Wasla Admin Panel</value>
   </data>
-  <data name="Layout.Customers" xml:space="preserve">
+  <data name="Layout.Restaurants" xml:space="preserve">
     <value>Restaurants</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
@@ -282,8 +282,8 @@
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
   </data>
-  <data name="Landing.CustomerLogin" xml:space="preserve">
-    <value>Customer Login</value>
+  <data name="Landing.RestaurantLogin" xml:space="preserve">
+    <value>Restaurant Login</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Admin Login</value>
@@ -316,7 +316,7 @@
     <value>Please check your details.</value>
   </data>
   <data name="Auth.TenantContextMissing" xml:space="preserve">
-    <value>Restaurant context is missing. Open your login link on the customer domain you were given.</value>
+    <value>Restaurant context is missing. Open your login link on the restaurant domain you were given.</value>
   </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>Log out</value>
@@ -1209,16 +1209,16 @@
   <data name="Admin.DashboardTitle" xml:space="preserve">
     <value>Central Management</value>
   </data>
-  <data name="Admin.Customers" xml:space="preserve">
+  <data name="Admin.Restaurants" xml:space="preserve">
     <value>Restaurants</value>
   </data>
-  <data name="Admin.TotalCustomers" xml:space="preserve">
+  <data name="Admin.TotalRestaurants" xml:space="preserve">
     <value>Total restaurants</value>
   </data>
-  <data name="Admin.ActiveCustomers" xml:space="preserve">
+  <data name="Admin.ActiveRestaurants" xml:space="preserve">
     <value>Active restaurants</value>
   </data>
-  <data name="Admin.InactiveCustomers" xml:space="preserve">
+  <data name="Admin.InactiveRestaurants" xml:space="preserve">
     <value>Inactive restaurants</value>
   </data>
   <data name="Admin.RecentRestaurants" xml:space="preserve">
@@ -1233,7 +1233,7 @@
   <data name="Admin.TechnicalInfo" xml:space="preserve">
     <value>System information</value>
   </data>
-  <data name="Admin.CustomerDetails" xml:space="preserve">
+  <data name="Admin.RestaurantDetails" xml:space="preserve">
     <value>Restaurant details</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
@@ -1287,13 +1287,13 @@
   <data name="Admin.CentralAdmin" xml:space="preserve">
     <value>Wasla Admin Panel</value>
   </data>
-  <data name="Admin.CustomerNotFound" xml:space="preserve">
+  <data name="Admin.RestaurantNotFound" xml:space="preserve">
     <value>Restaurant not found.</value>
   </data>
-  <data name="Admin.NoCustomers" xml:space="preserve">
+  <data name="Admin.NoRestaurants" xml:space="preserve">
     <value>No data yet</value>
   </data>
-  <data name="Admin.NoCustomersHint" xml:space="preserve">
+  <data name="Admin.NoRestaurantsHint" xml:space="preserve">
     <value>No restaurants have been registered yet.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
@@ -1852,7 +1852,7 @@
     <value>Notifications</value>
   </data>
   <data name="Settings.Notifications.Description" xml:space="preserve">
-    <value>Configure how the customer web panel alerts the user about new orders.</value>
+    <value>Configure how the restaurant web panel alerts the user about new orders.</value>
   </data>
   <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
     <value>Manage Notification Settings</value>
@@ -2140,7 +2140,7 @@
     <value>Could not generate Print Bridge token.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>Print Bridge calls Wasla API endpoints with the X-PrintBridge-Token header. Customer id is not sent in requests.</value>
+    <value>Print Bridge calls Wasla API endpoints with the X-PrintBridge-Token header. Restaurant id is not sent in requests.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>Manage the local Print Bridge app on your restaurant PC for automatic USB receipt printing.</value>
@@ -2803,7 +2803,7 @@
     <value>Device Token</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
-    <value>Server URL could not be determined. Open this page from your customer domain or contact your administrator.</value>
+    <value>Server URL could not be determined. Open this page from your restaurant domain or contact your administrator.</value>
   </data>
   <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
     <value>Add a device above or regenerate an existing device token to view the device token here.</value>
@@ -2971,7 +2971,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Continue to payment</value></data>
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>View registration summary</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Your restaurant</value></data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>Your Wasla address</value></data>
+  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve"><value>Your Wasla address</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Your package</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Payment period</value></data>

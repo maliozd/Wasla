@@ -9,7 +9,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -51,10 +51,10 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
 
         // Worker A reads "no such order" and stops right before its INSERT; Worker B stores the order meanwhile.
         var held = new HoldBeforeOrderInsert();
-        var loserPass = Sync("worker-a", Provider(payload), held).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var loserPass = Sync("worker-a", Provider(payload), held).SyncTenantWithResultAsync(_tenantId, Ct);
         await held.Reached.WaitAsync(Deadline, Ct);
 
-        var winner = await Sync("worker-b", Provider(payload)).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var winner = await Sync("worker-b", Provider(payload)).SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, winner.InsertedCount);
 
         held.Resume();
@@ -83,8 +83,8 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         // Both passes stop at their INSERT after both have read that the order is missing, then go on together.
         var barrier = new OrderInsertBarrier(parties: 2);
         var passes = await Task.WhenAll(
-            Sync("worker-a", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct),
-            Sync("worker-b", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct))
+            Sync("worker-a", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct),
+            Sync("worker-b", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct))
             .WaitAsync(Deadline, Ct);
 
         Assert.True(barrier.Released, "The two passes never reached their inserts together.");
@@ -108,8 +108,8 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
 
         var barrier = new OrderInsertBarrier(parties: 2);
         var passes = await Task.WhenAll(
-            Sync("worker-a", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct),
-            Sync("worker-b", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct))
+            Sync("worker-a", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct),
+            Sync("worker-b", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct))
             .WaitAsync(Deadline, Ct);
 
         Assert.True(barrier.Released, "The two passes never reached their inserts together.");
@@ -131,10 +131,10 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         var accepted = Payload(id, "Picking");
 
         var held = new HoldBeforeOrderInsert();
-        var loserPass = Sync("worker-a", Provider(accepted), held).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var loserPass = Sync("worker-a", Provider(accepted), held).SyncTenantWithResultAsync(_tenantId, Ct);
         await held.Reached.WaitAsync(Deadline, Ct);
 
-        var winner = await Sync("worker-b", Provider(created)).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var winner = await Sync("worker-b", Provider(created)).SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, winner.InsertedCount);
 
         held.Resume();
@@ -161,12 +161,12 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
 
         var barrier = new OrderInsertBarrier(parties: 2);
         await Task.WhenAll(
-            Sync("worker-a", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct),
-            Sync("worker-b", Provider(payload), barrier).SyncCustomerWithResultAsync(_tenantId, Ct))
+            Sync("worker-a", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct),
+            Sync("worker-b", Provider(payload), barrier).SyncTenantWithResultAsync(_tenantId, Ct))
             .WaitAsync(Deadline, Ct);
         var afterRace = await SingleOrderAsync(payload.ExternalOrderId);
 
-        var repeat = await Sync("worker-c", Provider(payload)).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var repeat = await Sync("worker-c", Provider(payload)).SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(0, repeat.FailedConnections);
         Assert.Equal(1, repeat.UnchangedCount);
@@ -187,7 +187,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         // ExternalOrderCode is nvarchar(128): SQL Server refuses this insert with a truncation error, not a duplicate key.
         var tooLong = Payload(id, "Created") with { ExternalOrderCode = new string('X', 129) };
 
-        var failed = await Sync("worker-a", Provider(tooLong)).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var failed = await Sync("worker-a", Provider(tooLong)).SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(1, failed.FailedConnections);
         await using (var db = _database.Open())
@@ -202,7 +202,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         Assert.Empty(_autoApprove.Processed);
         Assert.Empty(_notifier.All);
 
-        var retried = await Sync("worker-a", Provider(Payload(id, "Created"))).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var retried = await Sync("worker-a", Provider(Payload(id, "Created"))).SyncTenantWithResultAsync(_tenantId, Ct);
 
         Assert.Equal(0, retried.FailedConnections);
         Assert.Equal(1, retried.InsertedCount);
@@ -224,7 +224,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
     {
         await PrepareAsync();
         var id = $"RACE-CLASSIFY-{Guid.NewGuid():N}";
-        await Sync("seed", Provider(Payload(id, "Created"))).SyncCustomerWithResultAsync(_tenantId, Ct);
+        await Sync("seed", Provider(Payload(id, "Created"))).SyncTenantWithResultAsync(_tenantId, Ct);
         var storedKey = (await SingleOrderAsync(id)).IdempotencyKey;
 
         // The same Platform + ExternalOrderId again: the order identity index refuses it.
@@ -419,7 +419,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
 
     private sealed class InterceptedFactory(string connectionString, IInterceptor[] interceptors) : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
             var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString);
             if (interceptors.Length > 0)
@@ -465,7 +465,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         private readonly ConcurrentQueue<Guid> _created = new();
         public IReadOnlyList<Guid> Created => _created.ToList();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;
@@ -478,7 +478,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
         private readonly ConcurrentQueue<Guid> _processed = new();
         public IReadOnlyList<Guid> Processed => _processed.ToList();
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
         {
             _processed.Enqueue(orderId);
             return Task.CompletedTask;

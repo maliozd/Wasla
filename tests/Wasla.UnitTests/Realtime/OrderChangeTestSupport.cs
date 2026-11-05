@@ -4,7 +4,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -114,12 +114,12 @@ internal static class OrderChangeFixtures
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
         public static readonly NoAutoApprove Instance = new();
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) => Task.CompletedTask;
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
         public static readonly NoReceipts Instance = new();
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
     }
 }

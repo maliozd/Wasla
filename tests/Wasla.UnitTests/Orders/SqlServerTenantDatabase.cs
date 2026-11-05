@@ -101,7 +101,7 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
 
     private sealed class InstanceFactory(string connectionString) : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct) =>
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new TenantDbContext(
                 new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString).Options));
     }

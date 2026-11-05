@@ -14,9 +14,9 @@ public sealed class DashboardService : IDashboardService
         _dbFactory = dbFactory;
     }
 
-    public async Task<DashboardResult> GetTodayAsync(Guid customerId, CancellationToken ct)
+    public async Task<DashboardResult> GetTodayAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
         var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);

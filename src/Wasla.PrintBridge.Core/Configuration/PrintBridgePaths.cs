@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Canonical ProgramData paths for Print Bridge runtime config and logs.
-/// Customer-specific values must not be stored under Program Files or in the repo.
+/// Tenant-specific values must not be stored under Program Files or in the repo.
 /// </summary>
 public static class PrintBridgePaths
 {

@@ -19,7 +19,7 @@ using Wasla.Web.Security;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Web.Tenant;
 
-// Web needs encryption master key to decrypt CustomerDb connection strings
+// Web needs encryption master key to decrypt tenant database connection strings
 AesSecretManager.ValidateMasterKeyOrThrow();
 
 var builder = WebApplication.CreateBuilder(args);

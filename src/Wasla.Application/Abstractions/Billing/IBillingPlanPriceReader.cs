@@ -3,7 +3,7 @@ using Wasla.Domain.Billing;
 namespace Wasla.Application.Abstractions.Billing;
 
 /// <summary>
-/// Read side of the Central Admin plan prices for customer-facing pages (WAS-147): the public pricing section and
+/// Read side of the Central Admin plan prices for public pages (WAS-147): the public pricing section and
 /// signup show exactly the prices checkout would charge now. Monthly and yearly are separate prices; one is never
 /// derived from the other.
 /// </summary>

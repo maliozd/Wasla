@@ -437,9 +437,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
 
     private async Task<bool> IsSlugOrDomainTakenAsync(string slug, string primaryDomain, CancellationToken ct)
     {
-        var customerTaken = await _central.Tenants.AsNoTracking()
+        var tenantTaken = await _central.Tenants.AsNoTracking()
             .AnyAsync(c => c.Slug == slug || c.PrimaryDomain == primaryDomain, ct);
-        if (customerTaken)
+        if (tenantTaken)
             return true;
 
         return await _central.PendingRegistrations.AsNoTracking()

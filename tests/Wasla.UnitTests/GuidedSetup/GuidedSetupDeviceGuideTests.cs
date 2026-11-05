@@ -512,10 +512,10 @@ public sealed partial class GuidedSetupDeviceGuideTests
 
     private sealed class NoPrintJobs : IPrintJobHistoryService
     {
-        public Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(Guid customerId, int limit, CancellationToken ct) =>
+        public Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(Guid tenantId, int limit, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<PrintJobHistoryItemDto>>([]);
 
-        public Task<ReprintReceiptResult> CreateReprintAsync(Guid customerId, Guid printJobId, string? tenantDisplayName, CancellationToken ct) =>
+        public Task<ReprintReceiptResult> CreateReprintAsync(Guid tenantId, Guid printJobId, string? tenantDisplayName, CancellationToken ct) =>
             throw new InvalidOperationException("The device guide must not reprint.");
     }
 

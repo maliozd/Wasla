@@ -3,7 +3,7 @@
 namespace Wasla.Application.Abstractions.Orders.Services;
 
 public sealed record OrderSyncCycleTotals(
-    int CustomerCount,
+    int TenantCount,
     int ConnectionCount,
     int FetchedCount,
     int InsertedCount,
@@ -26,8 +26,8 @@ public sealed record OrderSyncConnectionSummary(
     bool IsFailed,
     long ElapsedMs);
 
-public sealed record OrderSyncCustomerResult(
-    Guid CustomerId,
+public sealed record OrderSyncTenantResult(
+    Guid TenantId,
     int ConnectionCount,
     int FetchedCount,
     int InsertedCount,
@@ -47,7 +47,7 @@ public sealed record OrderSyncCustomerResult(
 }
 
 public sealed record OrderSyncConnectionResult(
-    Guid CustomerId,
+    Guid TenantId,
     Guid ConnectionId,
     FoodPlatform Platform,
     string StoreId,

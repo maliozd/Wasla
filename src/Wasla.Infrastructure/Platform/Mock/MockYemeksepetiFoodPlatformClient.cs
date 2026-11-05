@@ -2,7 +2,7 @@
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Platform.Mock;
@@ -42,8 +42,8 @@ public sealed class MockYemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
     {
-        // EN: Partner-picking mock has no separate provider "accepted" string; OrderHub stores Preparing; echo stays RECEIVED until READY_FOR_PICKUP—sync merge blocks downgrade.
-        // TR: Partner-picking mock'ta ayrı provider "accepted" string'i yok; Preparing OrderHub'da; echo READY_FOR_PICKUP'a kadar RECEIVED kalabilir—sync merge düşürmeyi engeller.
+        // EN: Partner-picking mock has no separate provider "accepted" string; Wasla stores Preparing; echo stays RECEIVED until READY_FOR_PICKUP—sync merge blocks downgrade.
+        // TR: Partner-picking mock'ta ayrı provider "accepted" string'i yok; Preparing Wasla'da; echo READY_FOR_PICKUP'a kadar RECEIVED kalabilir—sync merge düşürmeyi engeller.
         MockProviderOrderStatusStore.Set(Platform, externalOrderId, "RECEIVED");
         return Task.CompletedTask;
     }

@@ -1,7 +1,7 @@
 using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// One provider webhook delivery, stored before the provider is answered and processed afterwards (the durable inbox).

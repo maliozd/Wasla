@@ -7,7 +7,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Application.PlatformConnections;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Realtime;
@@ -44,7 +44,7 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
         await _tenants.SeedSettingsAsync(_tenant, TenantOperationalMode.Live);
         var id = await AddConnectionAsync(_tenant, FoodPlatform.TrendyolYemek, "TY-STORE-1");
         _trendyol.Orders = [Order("ty-1")];
-        Assert.Equal(1, (await Sync().SyncCustomerWithResultAsync(_tenant, Ct)).InsertedCount);
+        Assert.Equal(1, (await Sync().SyncTenantWithResultAsync(_tenant, Ct)).InsertedCount);
         await using (var db = await _tenants.CreateAsync(_tenant, Ct))
         {
             db.IntegrationErrors.Add(new IntegrationError
@@ -83,8 +83,8 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
         await AddConnectionAsync(_tenant, FoodPlatform.Yemeksepeti, "YS-STORE-1");
 
         Assert.True(await Connections().RemoveAsync(_tenant, trendyol, Ct));
-        var current = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
-        var backfill = await Sync().BackfillCustomerAsync(_tenant, Ct);
+        var current = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
+        var backfill = await Sync().BackfillTenantAsync(_tenant, Ct);
 
         Assert.Equal(0, _trendyol.Fetches);
         Assert.Equal(1, _yemeksepeti.Fetches);
@@ -142,7 +142,7 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
         // The operator removes the Trendyol connection while the Worker is fetching its orders.
         _trendyol.DuringFetch = () => Connections().RemoveAsync(_tenant, trendyol, CancellationToken.None);
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((2, 0, 2), (result.ConnectionCount, result.FailedConnections, result.InsertedCount));
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
@@ -154,7 +154,7 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
 
         // The next pass does not load the removed connection.
         _trendyol.Fetches = 0;
-        Assert.Equal(0, (await Sync().SyncCustomerWithResultAsync(_tenant, Ct)).FailedConnections);
+        Assert.Equal(0, (await Sync().SyncTenantWithResultAsync(_tenant, Ct)).FailedConnections);
         Assert.Equal(0, _trendyol.Fetches);
     }
 
@@ -168,7 +168,7 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
         _yemeksepeti.Orders = [Order("ys-1", FoodPlatform.Yemeksepeti, "CREATED")];
         _yemeksepeti.DuringFetch = () => Connections().RemoveAsync(_tenant, trendyol, CancellationToken.None);
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal(1, _yemeksepeti.Fetches);
         Assert.Equal(0, _trendyol.Fetches);
@@ -279,13 +279,13 @@ public sealed class PlatformConnectionRemovalTests : IDisposable
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class PassthroughSecrets : ISecretManager

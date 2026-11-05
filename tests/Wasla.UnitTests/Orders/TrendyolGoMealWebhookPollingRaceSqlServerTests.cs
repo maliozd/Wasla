@@ -10,7 +10,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -76,7 +76,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
                 NullLogger<TrendyolGoMealWebhookProcessor>.Instance,
                 TimeProvider.System)
             .ProcessDueAsync(10, Ct);
-        var polling = Sync("worker-polling", client, barrier).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var polling = Sync("worker-polling", client, barrier).SyncTenantWithResultAsync(_tenantId, Ct);
         await Task.WhenAll(webhook, polling).WaitAsync(Deadline, Ct);
 
         Assert.True(barrier.Released, "The webhook and the polling pass never reached their inserts together.");
@@ -193,7 +193,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
 
     private sealed class InterceptedFactory(string connectionString, IInterceptor interceptor) : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct) =>
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new TenantDbContext(
                 new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString).AddInterceptors(interceptor).Options));
     }
@@ -232,7 +232,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         private readonly ConcurrentQueue<Guid> _created = new();
         public IReadOnlyList<Guid> Created => _created.ToList();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;
@@ -244,7 +244,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
         private readonly ConcurrentQueue<Guid> _processed = new();
         public IReadOnlyList<Guid> Processed => _processed.ToList();
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
         {
             _processed.Enqueue(orderId);
             return Task.CompletedTask;

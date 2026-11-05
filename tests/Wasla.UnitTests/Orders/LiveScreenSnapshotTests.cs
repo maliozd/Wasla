@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Tenant;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
@@ -395,9 +395,9 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         public Exception? Failure { get; set; }
         public LiveScreenSnapshotResult Snapshot { get; } = new(NowUtc, [], 0, 0);
 
-        public Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct)
+        public Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid tenantId, CancellationToken ct)
         {
-            RequestedTenantId = customerId;
+            RequestedTenantId = tenantId;
             if (Failure is not null)
                 throw Failure;
 
@@ -405,7 +405,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
         }
 
         public Task<OrderListResult> GetListAsync(
-            Guid customerId,
+            Guid tenantId,
             FoodPlatform? platform,
             OrderStatus? status,
             DateTime? startDateUtc,
@@ -419,7 +419,7 @@ public sealed class LiveScreenSnapshotTests : IDisposable
             bool includeLineItems = false) =>
             throw new NotSupportedException();
 
-        public Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) =>
+        public Task<OrderDetailResult?> GetByIdAsync(Guid tenantId, Guid id, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 
@@ -427,13 +427,13 @@ public sealed class LiveScreenSnapshotTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
                 using var setup = new TestTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

@@ -97,8 +97,6 @@ Key starting points:
 - [Print Bridge](docs/integrations/print-bridge.md)
 - [Local development](docs/operations/local-development.md)
 
-The [initial OrderHub skeleton](docs/archive/INITIAL_SKELETON.md) is retained only as historical context.
-
 ## Coding agents
 
 Read `AGENTS.md` before changing the repository. It points to the shared rules in `.cursor/rules/` and defines tenant isolation, architecture, provider, order, printing, localization, testing, and Git constraints. Claude Code also starts from `CLAUDE.md`.

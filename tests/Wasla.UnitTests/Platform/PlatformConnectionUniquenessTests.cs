@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.PlatformConnections;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -275,7 +275,7 @@ public sealed class PlatformConnectionUniquenessTests : IAsyncLifetime
 
     private sealed class SingleConnectionFactory(SqliteConnection connection) : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct) =>
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult<TenantDbContext>(new PlatformConnectionTenantDbContext(
                 new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(connection).Options));
     }

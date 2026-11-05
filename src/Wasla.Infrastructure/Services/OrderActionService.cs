@@ -4,7 +4,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Realtime;
@@ -31,12 +31,12 @@ public sealed class OrderActionService : IOrderActionService
     }
 
     public async Task<bool> TryUpdateStatusAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         OrderStatus newStatus,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         // Only allow actions while still New to avoid clobbering worker-driven updates. The write itself checks that,
         // so of simultaneous callers only one changes the order.
@@ -44,27 +44,27 @@ public sealed class OrderActionService : IOrderActionService
         _logger.LogInformation("Order action updated status: orderId={OrderId} newStatus={NewStatus} saved={Saved}", orderId, newStatus, version is not null);
         if (version is not { } changed)
             return false;
-        await PublishChangedAsync(customerId, orderId, changed);
+        await PublishChangedAsync(tenantId, orderId, changed);
         return true;
     }
 
     // Accepting an order starts its preparation (WAS-185): New moves straight to Preparing and sets AcceptedAt.
-    public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
+    public async Task<OrderActionResult> TryApproveAsync(Guid tenantId, Guid orderId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Preparing, rejectReasonId: null, ct);
+        return await ExecuteAsync(tenantId, orderId, OrderStatus.Preparing, rejectReasonId: null, ct);
     }
 
-    public async Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct)
+    public async Task<OrderActionResult> TryRejectAsync(Guid tenantId, Guid orderId, int? reasonId, CancellationToken ct)
     {
-        return await ExecuteAsync(customerId, orderId, OrderStatus.Cancelled, reasonId, ct);
+        return await ExecuteAsync(tenantId, orderId, OrderStatus.Cancelled, reasonId, ct);
     }
 
-    private async Task<OrderActionResult> ExecuteAsync(Guid customerId, Guid orderId, OrderStatus target, int? rejectReasonId, CancellationToken ct)
+    private async Task<OrderActionResult> ExecuteAsync(Guid tenantId, Guid orderId, OrderStatus target, int? rejectReasonId, CancellationToken ct)
     {
         if (target is not (OrderStatus.Preparing or OrderStatus.Cancelled))
             return new OrderActionResult(false, "Orders.ActionFailed");
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         // Claim the order's transition before reading it: another action on the same order, from any process, is
         // refused here and never reaches the provider (WAS-104).
@@ -129,15 +129,15 @@ public sealed class OrderActionService : IOrderActionService
         if (await CommitTransitionAsync(db, orderId, OrderStatus.New, target, CancellationToken.None) is not { } version)
             return StatusChangedAfterProviderCall(orderId, order.Platform, OrderStatus.New, target);
 
-        await PublishChangedAsync(customerId, orderId, version);
+        await PublishChangedAsync(tenantId, orderId, version);
         return new OrderActionResult(true, target == OrderStatus.Preparing ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
 
     // EN: Shared interface still uses Trendyol-shaped names; MarkInvoicedAsync here means ReadyForPickup for all implementing platforms (rename deferred).
     // TR: Ortak interface hâlâ Trendyol etkili isimler taşır; burada MarkInvoicedAsync tüm platformlarda ReadyForPickup anlamına gelir (isim değişikliği ertelendi).
-    public Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+    public Task<OrderActionResult> MarkReadyForPickupAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
         TransitionLifecycleAsync(
-            customerId,
+            tenantId,
             orderId,
             requiredCurrent: OrderStatus.Preparing,
             nextStatus: OrderStatus.ReadyForPickup,
@@ -151,9 +151,9 @@ public sealed class OrderActionService : IOrderActionService
     // User command only: platform couriers report pickup through provider sync, so current platforms
     // are refused before any provider call. Trendyol's manual shipped call is kept for a future
     // restaurant-courier fulfillment mode.
-    public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+    public Task<OrderActionResult> MarkOnTheWayAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
         TransitionLifecycleAsync(
-            customerId,
+            tenantId,
             orderId,
             requiredCurrent: OrderStatus.ReadyForPickup,
             nextStatus: OrderStatus.OnTheWay,
@@ -166,9 +166,9 @@ public sealed class OrderActionService : IOrderActionService
                 : null);
 
     // User command only. Provider sync applies Delivered through its own merge, which this guard does not touch.
-    public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+    public Task<OrderActionResult> MarkDeliveredAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
         TransitionLifecycleAsync(
-            customerId,
+            tenantId,
             orderId,
             requiredCurrent: OrderStatus.OnTheWay,
             nextStatus: OrderStatus.Delivered,
@@ -187,7 +187,7 @@ public sealed class OrderActionService : IOrderActionService
         CancellationToken ct);
 
     private async Task<OrderActionResult> TransitionLifecycleAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         OrderStatus requiredCurrent,
         OrderStatus nextStatus,
@@ -196,7 +196,7 @@ public sealed class OrderActionService : IOrderActionService
         CancellationToken ct,
         Func<Order, string?>? refuseUserCommand = null)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         await using var claim = await OrderActionLock.TryAcquireAsync(db, orderId, ct);
         if (claim is null)
@@ -245,7 +245,7 @@ public sealed class OrderActionService : IOrderActionService
         if (await CommitTransitionAsync(db, orderId, requiredCurrent, nextStatus, CancellationToken.None) is not { } version)
             return StatusChangedAfterProviderCall(orderId, order.Platform, requiredCurrent, nextStatus);
 
-        await PublishChangedAsync(customerId, orderId, version);
+        await PublishChangedAsync(tenantId, orderId, version);
         return new OrderActionResult(true, successKey);
     }
 
@@ -320,7 +320,7 @@ public sealed class OrderActionService : IOrderActionService
     }
 
     // After the save committed the status change: open Live Screens read their snapshot again. Never fails the action.
-    private Task PublishChangedAsync(Guid customerId, Guid orderId, long version) =>
-        TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(orderId, version), _logger);
+    private Task PublishChangedAsync(Guid tenantId, Guid orderId, long version) =>
+        TenantChangePublisher.PublishAsync(_notifier, tenantId, new OrderChanged(orderId, version), _logger);
 }
 

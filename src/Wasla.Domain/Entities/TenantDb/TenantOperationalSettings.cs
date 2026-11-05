@@ -1,10 +1,10 @@
 ﻿using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// Per-tenant operational settings stored in the CustomerDb (singleton row).
+/// Per-tenant operational settings stored in the tenant database (singleton row).
 /// When the row does not exist, services return safe defaults (sync enabled; auto-approve off).
 /// </summary>
 public sealed class TenantOperationalSettings : BaseEntity

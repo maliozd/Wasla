@@ -4,7 +4,7 @@
 @using Wasla.Web.Areas.Admin.Models.TenantOperations
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    ViewData["Title"] = L["Admin.Customers"].Value;
+    ViewData["Title"] = L["Admin.Restaurants"].Value;
     var query = Model.Query;
     var result = Model.Page;
 
@@ -28,12 +28,12 @@
 <div class="wasla-admin-ops">
     <header class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
         <div>
-            <h1 class="h4 mb-1">@L["Admin.Customers"]</h1>
+            <h1 class="h4 mb-1">@L["Admin.Restaurants"]</h1>
             <p class="text-body-secondary small mb-0">@L["Admin.Ops.List.Subtitle"]</p>
         </div>
     </header>
 
-    <form method="get" action="/admin/customers" class="card wasla-admin-card wasla-admin-filters mb-3" role="search" aria-label="@L["Admin.Ops.List.FiltersLabel"]">
+    <form method="get" action="@Url.Action("Index", "Tenants", new { area = "Admin" })" class="card wasla-admin-card wasla-admin-filters mb-3" role="search" aria-label="@L["Admin.Ops.List.FiltersLabel"]">
         <div class="card-body">
             <input type="hidden" name="sort" value="@TenantListQuery.SortToken(query.Sort)" />
             <input type="hidden" name="dir" value="@TenantListQuery.DirectionToken(query.Direction)" />
@@ -86,7 +86,7 @@
             </div>
             @if (query.HasFilters)
             {
-                <a class="small d-inline-block mt-2" href="/admin/customers">@L["Admin.Ops.List.ClearFilters"]</a>
+                <a class="small d-inline-block mt-2" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.Ops.List.ClearFilters"]</a>
             }
         </div>
     </form>
@@ -102,13 +102,13 @@
                 <i class="bi bi-inbox fs-2 d-block mb-2" aria-hidden="true"></i>
                 @if (result.RegistryIsEmpty)
                 {
-                    <p class="fw-semibold mb-1">@L["Admin.NoCustomers"]</p>
-                    <p class="small mb-0">@L["Admin.NoCustomersHint"]</p>
+                    <p class="fw-semibold mb-1">@L["Admin.NoRestaurants"]</p>
+                    <p class="small mb-0">@L["Admin.NoRestaurantsHint"]</p>
                 }
                 else
                 {
                     <p class="fw-semibold mb-1">@L["Admin.Ops.List.NoMatches"]</p>
-                    <a class="small" href="/admin/customers">@L["Admin.Ops.List.ClearFilters"]</a>
+                    <a class="small" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.Ops.List.ClearFilters"]</a>
                 }
             </div>
         </div>
@@ -174,7 +174,7 @@
                             <td class="d-none d-xl-table-cell small">@AdminOperationsPresenter.Time(t.CreatedAtUtc)</td>
                             <td class="d-none d-xl-table-cell small">@AdminOperationsPresenter.Time(t.UpdatedAtUtc)</td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary text-nowrap" href="/admin/customers/@t.Id">@L["Admin.Ops.List.Operations"]<span class="visually-hidden">: @t.Name</span></a>
+                                <a class="btn btn-sm btn-outline-primary text-nowrap" href="@Url.Action("Details", "Tenants", new { area = "Admin", id = t.Id })">@L["Admin.Ops.List.Operations"]<span class="visually-hidden">: @t.Name</span></a>
                             </td>
                         </tr>
                     }

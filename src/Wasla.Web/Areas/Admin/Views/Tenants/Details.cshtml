@@ -7,7 +7,7 @@
 @{
     var detail = Model.Detail;
     var health = Model.Health;
-    ViewData["Title"] = detail?.Name ?? L["Admin.CustomerDetails"].Value;
+    ViewData["Title"] = detail?.Name ?? L["Admin.RestaurantDetails"].Value;
     var now = Model.NowUtc;
 
     string? Age(DateTime? utc) => AdminOperationsPresenter.Age(utc, now, L);
@@ -17,14 +17,14 @@
     <nav aria-label="breadcrumb" class="mb-2">
         <ol class="breadcrumb small mb-0">
             <li class="breadcrumb-item"><a href="/admin">@L["Admin.Ops.OverviewTitle"]</a></li>
-            <li class="breadcrumb-item"><a href="/admin/customers">@L["Admin.Customers"]</a></li>
-            <li class="breadcrumb-item active" aria-current="page">@(detail?.Name ?? L["Admin.CustomerDetails"].Value)</li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.Restaurants"]</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(detail?.Name ?? L["Admin.RestaurantDetails"].Value)</li>
         </ol>
     </nav>
 
     @if (detail is null || health is null)
     {
-        <h1 class="h4 mb-3">@L["Admin.CustomerDetails"]</h1>
+        <h1 class="h4 mb-3">@L["Admin.RestaurantDetails"]</h1>
         <partial name="_AdminLoadError" />
     }
     else
@@ -395,17 +395,17 @@
                 <section class="card wasla-admin-card" aria-labelledby="opsAdminStateHeading">
                     <div class="card-header"><h2 id="opsAdminStateHeading" class="h6 mb-0">@L["Admin.Ops.Section.AdministrativeState"]</h2></div>
                     <div class="card-body d-flex flex-wrap align-items-center gap-2">
-                        <a class="btn btn-sm btn-outline-secondary" href="/admin/customers">@L["Admin.Ops.BackToTenants"]</a>
+                        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Index", "Tenants", new { area = "Admin" })">@L["Admin.Ops.BackToTenants"]</a>
                         @if (detail.IsActive)
                         {
-                            <form method="post" action="/admin/customers/@detail.Id/deactivate" class="d-inline">
+                            <form method="post" action="@Url.Action("Deactivate", "Tenants", new { area = "Admin", id = detail.Id })" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-warning">@L["Admin.Deactivate"]</button>
                             </form>
                         }
                         else
                         {
-                            <form method="post" action="/admin/customers/@detail.Id/activate" class="d-inline">
+                            <form method="post" action="@Url.Action("Activate", "Tenants", new { area = "Admin", id = detail.Id })" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-success">@L["Admin.Activate"]</button>
                             </form>

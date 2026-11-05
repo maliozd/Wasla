@@ -287,24 +287,24 @@ public sealed class PrintBridgeDevicesSnapshotTests
             return device;
         }
 
-        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid customerId, CancellationToken ct)
+        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid tenantId, CancellationToken ct)
         {
-            ListedTenants.Add(customerId);
+            ListedTenants.Add(tenantId);
             return Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>(
-                _byTenant.TryGetValue(customerId, out var devices) ? devices.ToArray() : []);
+                _byTenant.TryGetValue(tenantId, out var devices) ? devices.ToArray() : []);
         }
 
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid customerId, CancellationToken ct)
+        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct)
         {
-            QuotaTenants.Add(customerId);
-            var active = _byTenant.TryGetValue(customerId, out var devices) ? devices.Count(d => d.IsActive) : 0;
+            QuotaTenants.Add(tenantId);
+            var active = _byTenant.TryGetValue(tenantId, out var devices) ? devices.Count(d => d.IsActive) : 0;
             return Task.FromResult(new PrintBridgeDeviceQuotaDto(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, active,
                 active < PrintBridgeDeviceLimits.AllowedActiveDeviceCount, active > PrintBridgeDeviceLimits.AllowedActiveDeviceCount));
         }
 
-        public Task<bool> SetDeviceActiveAsync(Guid customerId, Guid deviceId, bool isActive, CancellationToken ct)
+        public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct)
         {
-            if (!_byTenant.TryGetValue(customerId, out var devices)) return Task.FromResult(false);
+            if (!_byTenant.TryGetValue(tenantId, out var devices)) return Task.FromResult(false);
             var index = devices.FindIndex(d => d.Id == deviceId);
             if (index < 0) return Task.FromResult(false);
             var device = devices[index];
@@ -317,13 +317,13 @@ public sealed class PrintBridgeDevicesSnapshotTests
             return Task.FromResult(true);
         }
 
-        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid customerId, Guid deviceId, CancellationToken ct) =>
+        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid tenantId, Guid deviceId, CancellationToken ct) =>
             Task.FromResult<PrintBridgeDeviceDetailsDto?>(null);
 
-        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid customerId, string deviceName, CancellationToken ct) => throw Forbidden();
-        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw Forbidden();
-        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw Forbidden();
-        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid customerId, Guid deviceId, string deviceName, CancellationToken ct) => throw Forbidden();
+        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid tenantId, string deviceName, CancellationToken ct) => throw Forbidden();
+        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw Forbidden();
+        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw Forbidden();
+        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid tenantId, Guid deviceId, string deviceName, CancellationToken ct) => throw Forbidden();
 
         private static Exception Forbidden([System.Runtime.CompilerServices.CallerMemberName] string? action = null) =>
             new InvalidOperationException($"The Devices page refresh must not call {action}.");
@@ -331,10 +331,10 @@ public sealed class PrintBridgeDevicesSnapshotTests
 
     private sealed class NoPrintJobs : IPrintJobHistoryService
     {
-        public Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(Guid customerId, int limit, CancellationToken ct) =>
+        public Task<IReadOnlyList<PrintJobHistoryItemDto>> GetRecentReceiptJobsAsync(Guid tenantId, int limit, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<PrintJobHistoryItemDto>>([]);
 
-        public Task<ReprintReceiptResult> CreateReprintAsync(Guid customerId, Guid printJobId, string? tenantDisplayName, CancellationToken ct) =>
+        public Task<ReprintReceiptResult> CreateReprintAsync(Guid tenantId, Guid printJobId, string? tenantDisplayName, CancellationToken ct) =>
             throw new InvalidOperationException("The Devices page refresh must not reprint.");
     }
 

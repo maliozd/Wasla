@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
@@ -478,7 +478,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         await _limiter.AcquireAsync(Ct);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            Sync().SyncCustomerWithResultAsync(_tenant, cts.Token).WaitAsync(TimeSpan.FromSeconds(10), Ct));
+            Sync().SyncTenantWithResultAsync(_tenant, cts.Token).WaitAsync(TimeSpan.FromSeconds(10), Ct));
 
         Assert.Empty(_api.Requests);
         Assert.Equal(checkpoint, await CheckpointAsync());
@@ -502,8 +502,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
 
         var cycle = await RunCycleAsync(_tenant, other);
 
-        Assert.Equal(1, cycle.Backfill.Where(r => r.CustomerId == _tenant).Sum(r => r.FailedConnections));
-        Assert.Equal(0, cycle.Current.Single(r => r.CustomerId == other).FailedConnections);
+        Assert.Equal(1, cycle.Backfill.Where(r => r.TenantId == _tenant).Sum(r => r.FailedConnections));
+        Assert.Equal(0, cycle.Current.Single(r => r.TenantId == other).FailedConnections);
         var requestB = Assert.Single(_api.Requests, r => r.SupplierId == "supplier-b");
         Assert.Equal(checkpointB - Overlap, requestB.StartUtc);
         Assert.Equal(BasicAuth("fake-api-key-b", "fake-api-secret-b"), requestB.Authorization);
@@ -851,8 +851,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     }
 
     /// <summary>The current pass only, as one tenant's phase 1.</summary>
-    private Task<OrderSyncCustomerResult> RunAsync(Guid? tenant = null) =>
-        Sync().SyncCustomerWithResultAsync(tenant ?? _tenant, Ct);
+    private Task<OrderSyncTenantResult> RunAsync(Guid? tenant = null) =>
+        Sync().SyncTenantWithResultAsync(tenant ?? _tenant, Ct);
 
     /// <summary>One Worker cycle: every tenant's current pass, then round-robin backfill turns.</summary>
     private Task<OrderSyncCycleResult> RunCycleAsync(params Guid[] tenants) => RunCycleAsync(Ct, tenants);
@@ -860,8 +860,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
     private Task<OrderSyncCycleResult> RunCycleAsync(CancellationToken ct, params Guid[] tenants) =>
         new OrderSyncCycleRunner(_clock, maxParallelTenants: 1, OrderSyncCycleRunner.BackfillBudget).RunAsync(
             tenants,
-            async (id, token) => await Sync().SyncCustomerWithResultAsync(id, token),
-            async (id, token) => await Sync().BackfillCustomerAsync(id, token),
+            async (id, token) => await Sync().SyncTenantWithResultAsync(id, token),
+            async (id, token) => await Sync().BackfillTenantAsync(id, token),
             ct);
 
     private async Task SeedConnectionAsync(
@@ -1056,13 +1056,13 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
 
         public List<Guid> Receipts { get; } = [];
 
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct)
         {
             AutoApproved.Add(orderId);
             return Task.CompletedTask;
         }
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             Receipts.Add(orderId);
             return Task.CompletedTask;

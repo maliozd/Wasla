@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Tenant;
 using Wasla.Contracts.Auth;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
@@ -611,14 +611,14 @@ public sealed class TenantLastLoginTests : IDisposable
 
         public void FailUpdates(Guid tenantId, Action<DbCommand> fail) => _updateFailures[tenantId] = fail;
 
-        public async Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public async Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            var path = Path.Combine(_root, customerId.ToString("N") + ".db");
+            var path = Path.Combine(_root, tenantId.ToString("N") + ".db");
             bool create;
             lock (_gate)
             {
-                Opened.Add(customerId);
-                create = _created.Add(customerId);
+                Opened.Add(tenantId);
+                create = _created.Add(tenantId);
             }
 
             var connectionString = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString();
@@ -640,7 +640,7 @@ public sealed class TenantLastLoginTests : IDisposable
                         IsActive INTEGER NOT NULL,
                         SecurityStamp TEXT NOT NULL,
                         CreatedAt TEXT NOT NULL,
-                        UpdatedAt TEXT NOT NULL{(_oldSchema.Contains(customerId) ? "" : ",\n    LastLoginAt TEXT NULL")}
+                        UpdatedAt TEXT NOT NULL{(_oldSchema.Contains(tenantId) ? "" : ",\n    LastLoginAt TEXT NULL")}
                     );
                     CREATE UNIQUE INDEX IX_AppUsers_Email ON AppUsers (Email);
                     """;
@@ -648,7 +648,7 @@ public sealed class TenantLastLoginTests : IDisposable
             }
 
             var builder = new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(connectionString);
-            if (_updateFailures.TryGetValue(customerId, out var fail))
+            if (_updateFailures.TryGetValue(tenantId, out var fail))
                 builder.AddInterceptors(new FailUpdateInterceptor(fail));
             return new TenantDbContext(builder.Options);
         }

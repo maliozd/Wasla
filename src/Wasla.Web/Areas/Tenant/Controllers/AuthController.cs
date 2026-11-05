@@ -133,7 +133,7 @@ public sealed class AuthController : Controller
         var payload = _signupCompletionTokens.ValidateAndConsume(token);
         // The session is built from the user's current row (role, active state, security stamp), not from the
         // values the link was issued with.
-        var session = payload is null || payload.CustomerId != tenant.Id
+        var session = payload is null || payload.TenantId != tenant.Id
             ? null
             : await _authValidation.GetActiveSessionAsync(tenant.Id, payload.UserId, ct);
         if (session is null)
@@ -243,12 +243,12 @@ public sealed class AuthController : Controller
     /// </summary>
     private async Task<ClaimsPrincipal> SignInSessionAsync(AuthSessionResult session, bool rememberMe, CancellationToken ct)
     {
-        var sessionId = await _sessions.CreateAsync(session.CustomerId, session.UserId, ct);
+        var sessionId = await _sessions.CreateAsync(session.TenantId, session.UserId, ct);
 
         // Tenant, user, role, security stamp and the stored login session are revalidated on every request
         // (TenantCookieEvents).
         var claims = new List<Claim>(TenantSessionClaims.Create(
-            session.CustomerId,
+            session.TenantId,
             session.UserId,
             session.Role,
             session.SecurityStamp,

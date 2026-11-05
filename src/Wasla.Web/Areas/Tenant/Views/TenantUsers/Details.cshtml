@@ -4,7 +4,7 @@
 }
 
 <div class="wasla-tenant-user-details-page">
-    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    @await Html.PartialAsync("_TenantPageHeader", new TenantPageHeaderModel
     {
         Title = L["TenantUsers.DetailsTitle"].Value,
         Subtitle = Model.Email

@@ -1190,33 +1190,33 @@ public sealed class GuidedSetupCoordinatorTests
             return device;
         }
 
-        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid customerId, CancellationToken ct)
+        public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid tenantId, CancellationToken ct)
         {
-            ListedTenants.Add(customerId);
+            ListedTenants.Add(tenantId);
             if (FailReads)
                 throw new InvalidOperationException("database unavailable");
             return Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>(
-                _byTenant.TryGetValue(customerId, out var devices) ? devices.ToArray() : []);
+                _byTenant.TryGetValue(tenantId, out var devices) ? devices.ToArray() : []);
         }
 
         /// <summary>Tenant-scoped like the real query: another tenant's device id finds nothing.</summary>
-        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid customerId, Guid deviceId, CancellationToken ct)
+        public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid tenantId, Guid deviceId, CancellationToken ct)
         {
-            var device = _byTenant.TryGetValue(customerId, out var devices) ? devices.FirstOrDefault(d => d.Id == deviceId) : null;
+            var device = _byTenant.TryGetValue(tenantId, out var devices) ? devices.FirstOrDefault(d => d.Id == deviceId) : null;
             return Task.FromResult(device is null
                 ? null
                 : new PrintBridgeDeviceDetailsDto(device.Id, device.Name, device.IsActive, DateTime.UtcNow, device.LastSeenAtUtc,
                     device.MachineName, null, null, null, device.ConnectionStatus, HasToken: true));
         }
 
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid customerId, CancellationToken ct) =>
+        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new PrintBridgeDeviceQuotaDto(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, 0, true, false));
 
-        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid customerId, string deviceName, CancellationToken ct) => throw Forbidden();
-        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw Forbidden();
-        public Task<bool> SetDeviceActiveAsync(Guid customerId, Guid deviceId, bool isActive, CancellationToken ct) => throw Forbidden();
-        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid customerId, Guid deviceId, CancellationToken ct) => throw Forbidden();
-        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid customerId, Guid deviceId, string deviceName, CancellationToken ct) => throw Forbidden();
+        public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid tenantId, string deviceName, CancellationToken ct) => throw Forbidden();
+        public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw Forbidden();
+        public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct) => throw Forbidden();
+        public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw Forbidden();
+        public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid tenantId, Guid deviceId, string deviceName, CancellationToken ct) => throw Forbidden();
 
         private static Exception Forbidden([System.Runtime.CompilerServices.CallerMemberName] string? action = null) =>
             new InvalidOperationException($"Guided setup must not call {action}.");

@@ -7,7 +7,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
@@ -84,7 +84,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         _trendyol.Orders = [NewOrder("insert-1")];
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal(1, result.FailedConnections);
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
@@ -110,10 +110,10 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         await SeedTenantAsync(_tenant, autoApprove: true, autoPrint: true);
         _trendyol.Orders = [NewOrder("insert-2")];
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
-        var retry = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
-        var duplicate = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var retry = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
+        var duplicate = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((0, 1), (retry.FailedConnections, retry.InsertedCount));
         Assert.Equal((0, 0, 1), (duplicate.InsertedCount, duplicate.UpdatedCount, duplicate.UnchangedCount));
@@ -136,12 +136,12 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         await SeedTenantAsync(_tenant, autoApprove: false, autoPrint: true);
         _trendyol.Orders = [NewOrder("update-1")];
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
         var before = await SnapshotAsync("update-1");
 
         _trendyol.Orders = [ChangedOrder("update-1")];
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
-        var result = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((1, 0), (result.FailedConnections, result.UpdatedCount));
         Assert.Equal(before, await SnapshotAsync("update-1"));
@@ -157,13 +157,13 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         await SeedTenantAsync(_tenant, autoApprove: false, autoPrint: true);
         _trendyol.Orders = [NewOrder("update-2")];
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
         _trendyol.Orders = [ChangedOrder("update-2")];
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
-        var retry = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
-        var duplicate = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var retry = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
+        var duplicate = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((0, 1), (retry.FailedConnections, retry.UpdatedCount));
         Assert.Equal((0, 1), (duplicate.UpdatedCount, duplicate.UnchangedCount));
@@ -191,7 +191,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         // Whichever connection runs first fails on its order; the other connection then saves its own work.
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
 
-        var result = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var result = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((2, 1, 1), (result.ConnectionCount, result.FailedConnections, result.InsertedCount));
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
@@ -214,7 +214,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         _trendyol.Orders = [NewOrder("checkpoint-1")];
         _tenants.FailNextStatementContaining = "\"LastSuccessfulSync\" = ";
 
-        var failed = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var failed = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal(1, failed.FailedConnections);
         Assert.Equal(checkpoint, await CheckpointAsync());
@@ -222,7 +222,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         var order = await OrderAsync("checkpoint-1");
         Assert.Equal([order.Id], _approvals.Approved);
 
-        var retry = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var retry = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal((0, 0), (retry.FailedConnections, retry.InsertedCount));
         Assert.Equal(_clock.UtcNow, await CheckpointAsync());
@@ -242,7 +242,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         };
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Sync().SyncCustomerWithResultAsync(_tenant, host.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Sync().SyncTenantWithResultAsync(_tenant, host.Token));
 
         await using (var db = await _tenants.CreateAsync(_tenant, Ct))
         {
@@ -253,7 +253,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
             Assert.Equal(0, (await db.PlatformConnections.SingleAsync(Ct)).ConsecutiveFailures);
         }
 
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         var order = await OrderAsync("cancel-1");
         Assert.Equal([order.Id], _approvals.Approved);
@@ -275,7 +275,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         };
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => Sync().SyncCustomerWithResultAsync(_tenant, Ct));
+        await Assert.ThrowsAsync<DbUpdateException>(() => Sync().SyncTenantWithResultAsync(_tenant, Ct));
 
         Assert.Equal(2, failures);
         await using (var db = await _tenants.CreateAsync(_tenant, Ct))
@@ -286,7 +286,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
             Assert.Empty(await db.IntegrationErrors.ToListAsync(Ct));
         }
 
-        await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         var order = await OrderAsync("report-1");
         Assert.Equal([order.Id], _approvals.Approved);
@@ -301,7 +301,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         _trendyol.Orders = [NewOrder("tenant-order")];
         _tenants.FailNextStatementContaining = FailOrderItemInsert;
 
-        var failed = await Sync().SyncCustomerWithResultAsync(_tenant, Ct);
+        var failed = await Sync().SyncTenantWithResultAsync(_tenant, Ct);
 
         Assert.Equal(1, failed.FailedConnections);
         Assert.NotEmpty(_factory.Requested);
@@ -315,7 +315,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
         }
 
         _factory.Requested.Clear();
-        var succeeded = await Sync().SyncCustomerWithResultAsync(_otherTenant, Ct);
+        var succeeded = await Sync().SyncTenantWithResultAsync(_otherTenant, Ct);
 
         Assert.Equal((0, 1), (succeeded.FailedConnections, succeeded.InsertedCount));
         Assert.All(_factory.Requested, id => Assert.Equal(_otherTenant, id));
@@ -490,10 +490,10 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         public List<Guid> Requested { get; } = [];
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            Requested.Add(customerId);
-            return inner.CreateAsync(customerId, ct);
+            Requested.Add(tenantId);
+            return inner.CreateAsync(tenantId, ct);
         }
     }
 
@@ -526,20 +526,20 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         public List<Guid> Approved { get; } = [];
 
-        public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public async Task<OrderActionResult> TryApproveAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             Approved.Add(orderId);
-            await using var db = await tenants.CreateAsync(customerId, ct);
+            await using var db = await tenants.CreateAsync(tenantId, ct);
             await db.Orders.Where(o => o.Id == orderId)
                 .ExecuteUpdateAsync(set => set.SetProperty(o => o.InternalStatus, OrderStatus.Preparing), ct);
             return new OrderActionResult(true, "Orders.ApproveSuccess");
         }
 
-        public Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<bool> TryUpdateStatusAsync(Guid tenantId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> TryRejectAsync(Guid tenantId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkReadyForPickupAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkOnTheWayAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkDeliveredAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
     }
 
     /// <summary>
@@ -550,19 +550,19 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         public List<Guid> Calls { get; } = [];
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             Calls.Add(orderId);
-            return inner.TryCreateOnOrderAcceptedAsync(customerId, orderId, ct);
+            return inner.TryCreateOnOrderAcceptedAsync(tenantId, orderId, ct);
         }
     }
 
     private sealed class DefaultTemplates : IReceiptTemplateSettingsService
     {
-        public Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
-            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(customerDisplayName, defaultReceiptLanguage));
+        public Task<ReceiptTemplateSettings> GetAsync(Guid tenantId, string? tenantDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
+            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, defaultReceiptLanguage));
 
-        public Task<ReceiptTemplateSettings> UpdateAsync(Guid customerId, string? customerDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
+        public Task<ReceiptTemplateSettings> UpdateAsync(Guid tenantId, string? tenantDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 }

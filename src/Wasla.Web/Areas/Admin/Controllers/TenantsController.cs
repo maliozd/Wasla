@@ -17,29 +17,29 @@ namespace Wasla.Web.Areas.Admin.Controllers;
 /// </summary>
 [Area(AreaNames.Admin)]
 [Authorize(AuthenticationSchemes = AuthSchemes.CentralAdmin)]
-[Route("admin/customers")]
-public sealed class CustomersController : Controller
+[Route("admin/restaurants")]
+public sealed class TenantsController : Controller
 {
-    private readonly ICentralAdminTenantService _customers;
+    private readonly ICentralAdminTenantService _tenants;
     private readonly ICentralAdminTenantOperationsService _operations;
     private readonly ITenantOperationalHealthReader _health;
     private readonly IWaslaPlanCatalog _plans;
     private readonly TimeProvider _time;
     private readonly IWebHostEnvironment _environment;
     private readonly IStringLocalizer<SharedResource> _localizer;
-    private readonly ILogger<CustomersController> _logger;
+    private readonly ILogger<TenantsController> _logger;
 
-    public CustomersController(
-        ICentralAdminTenantService customers,
+    public TenantsController(
+        ICentralAdminTenantService tenants,
         ICentralAdminTenantOperationsService operations,
         ITenantOperationalHealthReader health,
         IWaslaPlanCatalog plans,
         TimeProvider time,
         IWebHostEnvironment environment,
         IStringLocalizer<SharedResource> localizer,
-        ILogger<CustomersController> logger)
+        ILogger<TenantsController> logger)
     {
-        _customers = customers;
+        _tenants = tenants;
         _operations = operations;
         _health = health;
         _plans = plans;
@@ -93,7 +93,7 @@ public sealed class CustomersController : Controller
             return View(new AdminTenantDetailViewModel { NowUtc = _time.GetUtcNow().UtcDateTime });
         }
 
-        if (detail is null) return NotFound(_localizer["Admin.CustomerNotFound"].Value);
+        if (detail is null) return NotFound(_localizer["Admin.RestaurantNotFound"].Value);
 
         // The tenant is identified by the CentralDb record just read, never by anything else from the request.
         var health = detail.DatabaseConfigured
@@ -116,8 +116,8 @@ public sealed class CustomersController : Controller
     [HttpPost("{id:guid}/activate")]
     public async Task<IActionResult> Activate(Guid id, CancellationToken ct)
     {
-        var ok = await _customers.SetCustomerActiveStateAsync(id, isActive: true, ct).ConfigureAwait(false);
-        if (!ok) return NotFound(_localizer["Admin.CustomerNotFound"].Value);
+        var ok = await _tenants.SetTenantActiveStateAsync(id, isActive: true, ct).ConfigureAwait(false);
+        if (!ok) return NotFound(_localizer["Admin.RestaurantNotFound"].Value);
         return RedirectToAction(nameof(Details), new { id });
     }
 
@@ -125,8 +125,8 @@ public sealed class CustomersController : Controller
     [HttpPost("{id:guid}/deactivate")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
-        var ok = await _customers.SetCustomerActiveStateAsync(id, isActive: false, ct).ConfigureAwait(false);
-        if (!ok) return NotFound(_localizer["Admin.CustomerNotFound"].Value);
+        var ok = await _tenants.SetTenantActiveStateAsync(id, isActive: false, ct).ConfigureAwait(false);
+        if (!ok) return NotFound(_localizer["Admin.RestaurantNotFound"].Value);
         return RedirectToAction(nameof(Details), new { id });
     }
 }

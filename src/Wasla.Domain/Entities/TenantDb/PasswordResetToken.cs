@@ -1,4 +1,4 @@
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// Single-use password reset token metadata for a tenant user.

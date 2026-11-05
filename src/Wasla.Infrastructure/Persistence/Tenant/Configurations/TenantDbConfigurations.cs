@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Wasla.Application.GuidedSetup;
-using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Entities.TenantDb;
 
 namespace Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -27,7 +26,7 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.Property(u => u.PasswordHash).IsRequired().HasMaxLength(255);
         builder.Property(u => u.FullName).HasMaxLength(200);
 
-        // Email must be unique within a customer DB.
+        // Email must be unique within a tenant database.
         builder.HasIndex(u => u.Email).IsUnique().HasDatabaseName("IX_AppUsers_Email");
         builder.HasIndex(u => u.BranchId).HasDatabaseName("IX_AppUsers_BranchId");
     }

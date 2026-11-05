@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
@@ -7,7 +8,7 @@ using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Setup;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
@@ -64,8 +65,8 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
         _provider.Orders = [ProviderOrder("setup-1", "Created"), ProviderOrder("setup-2", "Picking")];
 
-        await Sync().SyncCustomerAsync(_tenant, Ct);
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         Assert.Equal(new[] { "setup-1", "setup-2" }, (await db.Orders.Select(o => o.ExternalOrderId).ToListAsync(Ct)).Order(StringComparer.Ordinal).ToArray());
@@ -80,11 +81,29 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
         _provider.Orders = [ProviderOrder("setup-new", "Created")];
 
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         Assert.Empty(_approvals.Approved);
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         Assert.Equal(OrderStatus.New, (await db.Orders.SingleAsync(Ct)).InternalStatus);
+    }
+
+    [Fact]
+    public async Task InSetup_TheSkippedAutoApprove_IsLoggedWithTheTenantAndOrderIds()
+    {
+        await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
+        var logger = new StructuredLogger<OrderAutoApproveService>();
+        var orderId = Guid.NewGuid();
+
+        await new OrderAutoApproveService(_tenants, _approvals, ReceiptCreation(), logger)
+            .ProcessNewlyInsertedOrderAsync(_tenant, orderId, OrderStatus.New, Ct);
+
+        // The structured properties a log query reads: the tenant under TenantId, the order under OrderId.
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(["TenantId", "OrderId", "{OriginalFormat}"], entry.Select(pair => pair.Key));
+        Assert.Equal(_tenant, entry[0].Value);
+        Assert.Equal(orderId, entry[1].Value);
+        Assert.Empty(_approvals.Approved);
     }
 
     [Fact]
@@ -93,7 +112,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
         _provider.Orders = [ProviderOrder("accepted-at-provider", "Picking"), ProviderOrder("accepted-here", "Created")];
 
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
         // The automatic receipt after an operator's approval goes through the same service.
         var acceptedHere = await OrderIdAsync("accepted-here");
         await ReceiptCreation().TryCreateOnOrderAcceptedAsync(_tenant, acceptedHere, Ct);
@@ -107,7 +126,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
     {
         await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: false, autoPrint: false);
         _provider.Orders = [ProviderOrder("manual-print", "Created")];
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         var manual = new ManualOrderPrintService(_tenants, ReceiptJobs(), printJobHistory: null!, NullLogger<ManualOrderPrintService>.Instance);
         var result = await manual.QueueReceiptPrintAsync(_tenant, await OrderIdAsync("manual-print"), "Setup Mode Restaurant", Ct);
@@ -122,21 +141,21 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
     {
         await SeedTenantAsync(TenantOperationalMode.Setup, autoApprove: true, autoPrint: true);
         _provider.Orders = [ProviderOrder("during-setup-new", "Created"), ProviderOrder("during-setup-accepted", "Picking")];
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         // The trainee skips: the tenant goes live.
         await new GuidedSetupService(_tenants, TimeProvider.System).SkipAsync(_tenant, _owner, Ct);
         Assert.Equal(TenantOperationalMode.Live, await _tenants.ModeAsync(_tenant));
 
         // The same provider orders again (unchanged): nothing is accepted or printed for them, now or later.
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
         Assert.Empty(_approvals.Approved);
         await using (var db = await _tenants.CreateAsync(_tenant, Ct))
             Assert.Equal(0, await db.PrintJobs.CountAsync(Ct));
 
         // A genuinely new order after going live is accepted and printed as the settings say.
         _provider.Orders = [.. _provider.Orders, ProviderOrder("after-live", "Created")];
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         var afterLive = await OrderIdAsync("after-live");
         Assert.Equal(new[] { afterLive }, _approvals.Approved);
@@ -151,7 +170,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         await SeedTenantAsync(TenantOperationalMode.Live, autoApprove: true, autoPrint: true);
         _provider.Orders = [ProviderOrder("live-new", "Created")];
 
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         Assert.Single(_approvals.Approved);
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
@@ -168,7 +187,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
         _provider.Orders = [ProviderOrder("status-check", "Created")];
 
         var status = await new TenantOperationalModeService(_tenants).GetAutomationStatusAsync(_tenant, Ct);
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         Assert.Equal(AutomationState.Active, status.OrderSync);
@@ -188,7 +207,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
                 Wasla.Application.GuidedSetup.GuidedSetupSections.LiveScreenDemo, Wasla.Application.GuidedSetup.GuidedTrainingSteps.Intro), Ct);
         _provider.Orders = [ProviderOrder("while-training", "Created")];
 
-        await Sync().SyncCustomerAsync(_tenant, Ct);
+        await Sync().SyncTenantAsync(_tenant, Ct);
 
         var order = await OrderIdAsync("while-training");
         Assert.Equal(new[] { order }, _approvals.Approved);
@@ -298,28 +317,41 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
     {
         public List<Guid> Approved { get; } = new();
 
-        public async Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public async Task<OrderActionResult> TryApproveAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             Approved.Add(orderId);
-            await using var db = await tenants.CreateAsync(customerId, ct);
+            await using var db = await tenants.CreateAsync(tenantId, ct);
             await db.Orders.Where(o => o.Id == orderId)
                 .ExecuteUpdateAsync(set => set.SetProperty(o => o.InternalStatus, OrderStatus.Preparing), ct);
             return new OrderActionResult(true, "Orders.ApproveSuccess");
         }
 
-        public Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<bool> TryUpdateStatusAsync(Guid tenantId, Guid orderId, OrderStatus newStatus, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> TryRejectAsync(Guid tenantId, Guid orderId, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkReadyForPickupAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkOnTheWayAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<OrderActionResult> MarkDeliveredAsync(Guid tenantId, Guid orderId, CancellationToken ct) => throw new NotSupportedException();
+    }
+
+    /// <summary>Keeps each entry's structured properties, in template order.</summary>
+    private sealed class StructuredLogger<T> : ILogger<T>
+    {
+        public List<IReadOnlyList<KeyValuePair<string, object?>>> Entries { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Entries.Add(state is IReadOnlyList<KeyValuePair<string, object?>> pairs ? pairs.ToList() : []);
     }
 
     private sealed class DefaultTemplates : IReceiptTemplateSettingsService
     {
-        public Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
-            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(customerDisplayName, defaultReceiptLanguage));
+        public Task<ReceiptTemplateSettings> GetAsync(Guid tenantId, string? tenantDisplayName, string? defaultReceiptLanguage, CancellationToken ct) =>
+            Task.FromResult(ReceiptTemplateSettings.CreateDefaults(tenantDisplayName, defaultReceiptLanguage));
 
-        public Task<ReceiptTemplateSettings> UpdateAsync(Guid customerId, string? customerDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
+        public Task<ReceiptTemplateSettings> UpdateAsync(Guid tenantId, string? tenantDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 }

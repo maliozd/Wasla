@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.GuidedSetup;
 using Wasla.Application.GuidedSetup;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;

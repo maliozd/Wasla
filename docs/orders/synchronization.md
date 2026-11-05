@@ -22,14 +22,14 @@ OrderSyncWorker (Wasla.Worker)
   → load active tenants from CentralDb
   → OrderSyncCycleRunner
       Phase 1, every tenant (max 5 at a time):
-      → IOrderSyncService.SyncCustomerWithResultAsync
+      → IOrderSyncService.SyncTenantWithResultAsync
           → skip if tenant Order Sync disabled
           → for each due PlatformConnection: the current window, ending now
               → IFoodPlatformClient.FetchOrdersAsync (every page; each Trendyol GO request waits for the shared limiter)
               → upsert by Platform + ExternalOrderId (idempotency key)
               → move the checkpoint to now, unless the window was a hot window ahead of a history gap
       Phase 2, tenants whose history is behind, round-robin, ≤ 12 rounds, ≤ 30 s:
-      → IOrderSyncService.BackfillCustomerAsync: the oldest missing window per behind connection
+      → IOrderSyncService.BackfillTenantAsync: the oldest missing window per behind connection
           → fetch every page, upsert, move the checkpoint to the window end
 ```
 
@@ -70,7 +70,7 @@ Polling already writes through the path a future webhook adapter would use ([Sha
 |----------|-------|--------|
 | Cycle interval | 15 seconds | `OrderSyncSchedule.WorkerCycleSeconds` (Application), used by `OrderSyncWorker.CycleIntervalSeconds` and by the Live Screen's stale threshold ([live-screen.md](live-screen.md#platform-connection-status-header)) |
 | Catastrophic cycle backoff | 30 seconds | `OrderSyncWorker.CatastrophicFailureBackoffSeconds` |
-| Max parallel tenants | 5 | `OrderSyncWorker.MaxParallelCustomers` |
+| Max parallel tenants | 5 | `OrderSyncWorker.MaxParallelTenants` |
 | History recovery per cycle | at most 12 rounds of one window per behind connection | `OrderFetchWindowPlanner.MaxRecoveryWindowsPerCycle` |
 | History recovery time budget | 30 seconds (no new round or turn starts after it) | `OrderSyncCycleRunner.BackfillBudget` |
 
@@ -80,7 +80,7 @@ Behavior:
 - Each cycle loads **active** tenants from CentralDb (`IsActive`).
 - `OrderSyncCycleRunner` runs the cycle in two phases. Phase 1 is every tenant's current pass, up to five tenants at a time, so every eligible tenant gets its current-window check before any history recovery starts. Phase 2 is history recovery ([Current window first, then history](#current-window-first-then-history)) for tenants whose current pass reported a history gap: round-robin, one window per behind connection per turn, at most 12 rounds and only within the 30-second budget, starting from a different tenant each cycle. A tenant whose turn fails stops for this cycle. One tenant’s exception does not stop the others.
 - The next cycle starts after both phases, as before (15 seconds after the previous start, or at once if the cycle took longer).
-- Development uses `WorkerConsole` for cycle/customer summaries. Non-Development logs cycle start at Debug and cycle completion at Debug (Warning if any connection failed).
+- Development uses `WorkerConsole` for cycle/tenant summaries. Non-Development logs cycle start at Debug and cycle completion at Debug (Warning if any connection failed).
 - Per-tenant sync starts a `Activity("Wasla.OrderSync")` and scopes `TraceId` / `TenantId` into logs.
 - After each tenant's sync, the cycle also reads that tenant's open guided-demo practice orders (`IGuidedDemoDeliverySimulator.AdvanceDueAndPlanAsync`: one small read, plus an update only when a stage is due) and hands the next practice deadline to `GuidedDemoScheduler`. That second hosted service in the Worker moves a practice order at its deadline between cycles. It touches only `GuidedDemoSessions` and changes none of the constants above: provider calls, webhooks and real orders keep this cycle's cadence. See [../product/onboarding.md](../product/onboarding.md#practice-order-countdown).
 
@@ -411,13 +411,13 @@ Safe diagnostics for polling and recovery. These fields may be logged: tenant an
 
 | Level | Message | Fields |
 |-------|---------|--------|
-| Information | `Order history is behind; fetching the current window first` (each current pass while a gap remains) | `CustomerId`, `ConnectionId`, `Platform`, `CheckpointUtc`, `CurrentWindowStartUtc`, `CurrentWindowEndUtc` |
-| Information | `Order history recovered` (a backfill turn closed the gap) | `CustomerId`, `ConnectionId`, `Platform`, `CheckpointUtc` |
+| Information | `Order history is behind; fetching the current window first` (each current pass while a gap remains) | `TenantId`, `ConnectionId`, `Platform`, `CheckpointUtc`, `CurrentWindowStartUtc`, `CurrentWindowEndUtc` |
+| Information | `Order history recovered` (a backfill turn closed the gap) | `TenantId`, `ConnectionId`, `Platform`, `CheckpointUtc` |
 | Warning | `Provider throttled the request; retrying the same page` (client, HTTP 429) | `StatusCode`, `Page`, `Attempt`, `RetryDelayMs`, `RetryDelaySource` |
 | Error | `Platform connection sync failed` | Adds `Pass` (`Current` or `Backfill`), `WindowStartUtc`, `WindowEndUtc` (the failing window; empty when the failure was outside a window) and `CheckpointUtc` (the next run starts five minutes before it) |
 | Warning | `Provider pagination failed` (client) | `Reason`, `PagesFetched`, `OrdersFetched`, `ReportedTotalPages` |
-| Warning | `Provider order refused: its {Field} does not match the connection it was fetched for` | `Field` (`platform`, `store` or `supplier`), `CustomerId`, `ConnectionId`, `Platform`, connection and provider `StoreId` / `SupplierId`, `ExternalOrderId` |
-| Information | `Order was stored by a concurrent sync; this observation is applied to it` | `CustomerId`, `OrderId`, `ExternalOrderId`, `Platform` |
+| Warning | `Provider order refused: its {Field} does not match the connection it was fetched for` | `Field` (`platform`, `store` or `supplier`), `TenantId`, `ConnectionId`, `Platform`, connection and provider `StoreId` / `SupplierId`, `ExternalOrderId` |
+| Information | `Order was stored by a concurrent sync; this observation is applied to it` | `TenantId`, `OrderId`, `ExternalOrderId`, `Platform` |
 | Debug | `Provider returned {OrderCount} orders` and `Provider fetch completed` | Window boundaries, pages, counts, elapsed time |
 
 See also [../operations/observability.md](../operations/observability.md#order-sync-recovery-diagnostics).

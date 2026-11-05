@@ -49,8 +49,8 @@ public sealed class CentralAdminSessionRevalidationTests : IAsyncLifetime
     private string[] ProtectedPages =>
     [
         "/admin",
-        "/admin/customers",
-        $"/admin/customers/{_tenantId}",
+        "/admin/restaurants",
+        $"/admin/restaurants/{_tenantId}",
         "/admin/pending-registrations"
     ];
 

@@ -2,5 +2,5 @@
 
 public interface ICentralAdminTenantService
 {
-    Task<bool> SetCustomerActiveStateAsync(Guid customerId, bool isActive, CancellationToken ct);
+    Task<bool> SetTenantActiveStateAsync(Guid tenantId, bool isActive, CancellationToken ct);
 }

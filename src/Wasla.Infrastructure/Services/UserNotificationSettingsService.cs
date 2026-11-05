@@ -19,9 +19,9 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
         _validator = validator;
     }
 
-    public async Task<GetNotificationSettingsResult> GetAsync(Guid customerId, Guid userId, CancellationToken ct)
+    public async Task<GetNotificationSettingsResult> GetAsync(Guid tenantId, Guid userId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.UserNotificationSettings
             .AsNoTracking()
@@ -56,13 +56,13 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
         };
     }
 
-    public async Task UpdateAsync(Guid customerId, Guid userId, UpdateNotificationSettingsCommand command, CancellationToken ct)
+    public async Task UpdateAsync(Guid tenantId, Guid userId, UpdateNotificationSettingsCommand command, CancellationToken ct)
     {
         var validation = await _validator.ValidateAsync(command, ct).ConfigureAwait(false);
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors);
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var row = await db.UserNotificationSettings
             .FirstOrDefaultAsync(x => x.UserId == userId, ct)
@@ -70,7 +70,7 @@ public sealed class UserNotificationSettingsService : IUserNotificationSettingsS
 
         if (row is null)
         {
-            row = new Wasla.Domain.Entities.Customer.UserNotificationSettings
+            row = new Wasla.Domain.Entities.TenantDb.UserNotificationSettings
             {
                 UserId = userId,
                 NewOrderSoundEnabled = command.NewOrderSoundEnabled,

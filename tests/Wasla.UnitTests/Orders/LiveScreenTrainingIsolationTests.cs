@@ -12,7 +12,7 @@ using Wasla.Application.Abstractions.Tenant;
 using Wasla.Application.Demos;
 using Wasla.Application.GuidedSetup;
 using Wasla.Application.Orders;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Setup;

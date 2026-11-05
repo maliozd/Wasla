@@ -1,6 +1,6 @@
 ﻿using Wasla.Domain.Common;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 public class OrderItemOption : BaseEntity
 {

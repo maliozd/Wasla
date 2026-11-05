@@ -31,7 +31,7 @@ public sealed class ReceiptTemplateSettings
     public string? ReceiptHeaderText { get; set; }
     public string? ReceiptFooterText { get; set; }
 
-    public static ReceiptTemplateSettings CreateDefaults(string? customerDisplayName, string? defaultReceiptLanguage = null)
+    public static ReceiptTemplateSettings CreateDefaults(string? tenantDisplayName, string? defaultReceiptLanguage = null)
     {
         var language = ReceiptLanguageCodes.Normalize(defaultReceiptLanguage);
         return new ReceiptTemplateSettings
@@ -91,6 +91,6 @@ public sealed record UpdateReceiptTemplateSettingsCommand(
 
 public interface IReceiptTemplateSettingsService
 {
-    Task<ReceiptTemplateSettings> GetAsync(Guid customerId, string? customerDisplayName, string? defaultReceiptLanguage, CancellationToken ct);
-    Task<ReceiptTemplateSettings> UpdateAsync(Guid customerId, string? customerDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct);
+    Task<ReceiptTemplateSettings> GetAsync(Guid tenantId, string? tenantDisplayName, string? defaultReceiptLanguage, CancellationToken ct);
+    Task<ReceiptTemplateSettings> UpdateAsync(Guid tenantId, string? tenantDisplayName, UpdateReceiptTemplateSettingsCommand command, CancellationToken ct);
 }

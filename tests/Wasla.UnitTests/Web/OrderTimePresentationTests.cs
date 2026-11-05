@@ -4,7 +4,7 @@ using Wasla.Application.Abstractions.Dashboard;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Application.Orders;
 using Wasla.Application.Time;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 
 namespace Wasla.UnitTests.Web;

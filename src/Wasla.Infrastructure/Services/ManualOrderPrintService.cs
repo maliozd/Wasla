@@ -34,20 +34,20 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
     }
 
     public async Task<OrderReceiptPrintState> GetReceiptPrintStateAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         return BuildState(await LoadReceiptJobsAsync(db, orderId, ct).ConfigureAwait(false));
     }
 
     public async Task<OrderReceiptPrintState?> FindReceiptPrintStateAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         // Tenant isolation: the order is looked up inside this tenant's database only.
         var orderExists = await db.Orders
@@ -61,7 +61,7 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
     }
 
     public async Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         string? tenantDisplayName,
         CancellationToken ct)
@@ -69,7 +69,7 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         int copyCount;
         ReceiptJobRow? reprintSource;
 
-        await using (var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false))
+        await using (var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false))
         {
             // Tenant isolation: the order is looked up inside this tenant's database only.
             var orderExists = await db.Orders
@@ -106,7 +106,7 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         if (reprintSource is not null)
         {
             var reprint = await _printJobHistory
-                .CreateReprintAsync(customerId, reprintSource.Id, tenantDisplayName, ct)
+                .CreateReprintAsync(tenantId, reprintSource.Id, tenantDisplayName, ct)
                 .ConfigureAwait(false);
 
             if (reprint.Success)
@@ -126,8 +126,8 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
             }
 
             _logger.LogWarning(
-                "Manual receipt reprint failed. CustomerId={CustomerId}, OrderId={OrderId}, SourceJobId={SourceJobId}, MessageKey={MessageKey}",
-                customerId,
+                "Manual receipt reprint failed. TenantId={TenantId}, OrderId={OrderId}, SourceJobId={SourceJobId}, MessageKey={MessageKey}",
+                tenantId,
                 orderId,
                 reprintSource.Id,
                 reprint.MessageKey);
@@ -140,22 +140,22 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         }
 
         var created = await _receiptJobs
-            .TryCreateReceiptJobAsync(customerId, orderId, copyCount, tenantDisplayName, ct)
+            .TryCreateReceiptJobAsync(tenantId, orderId, copyCount, tenantDisplayName, ct)
             .ConfigureAwait(false);
 
         if (!created)
         {
             // TryCreateReceiptJobAsync only declines when an active job already exists (including the
             // serializable-transaction duplicate race), so re-read to report the real state.
-            await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+            await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
             var jobs = await LoadReceiptJobsAsync(db, orderId, ct).ConfigureAwait(false);
 
             if (jobs.Any(IsActive))
                 return AlreadyQueued();
 
             _logger.LogWarning(
-                "Manual receipt print could not be queued. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Manual receipt print could not be queued. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
 
             return new ManualOrderPrintResult(
@@ -166,8 +166,8 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
         }
 
         _logger.LogInformation(
-            "Manual receipt print queued. CustomerId={CustomerId}, OrderId={OrderId}",
-            customerId,
+            "Manual receipt print queued. TenantId={TenantId}, OrderId={OrderId}",
+            tenantId,
             orderId);
 
         return new ManualOrderPrintResult(

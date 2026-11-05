@@ -4,15 +4,15 @@
 
 The Tenant Operations Center is the read-only operational view of the central Admin area for Wasla Orders. It answers which tenants exist, which are unhealthy, which registrations wait for payment or provisioning, and, for one selected tenant, whether its database, providers, orders and Print Bridge devices are working.
 
-It owns the `/admin`, `/admin/customers` and `/admin/customers/{id}` pages. It does not own signup, provisioning, migrations, provider credentials or Print Bridge setup, and it is not Wasla POS.
+It owns the `/admin`, `/admin/restaurants` and `/admin/restaurants/{id}` pages. It does not own signup, provisioning, migrations, provider credentials or Print Bridge setup, and it is not Wasla POS.
 
 ## Pages
 
 | Page | Reads | Notes |
 |------|-------|-------|
 | `/admin` overview | CentralDb only | Tenant counts, signup pipeline, Print Bridge fleet presence, paid registrations awaiting provisioning, recent tenants |
-| `/admin/customers` list | CentralDb only | Search, filters, sort, server-side pagination |
-| `/admin/customers/{id}` detail | CentralDb + that one tenant database | Identity, provisioning, database and migrations, mode and automation, providers, orders, Print Bridge, next steps |
+| `/admin/restaurants` list | CentralDb only | Search, filters, sort, server-side pagination |
+| `/admin/restaurants/{id}` detail | CentralDb + that one tenant database | Identity, provisioning, database and migrations, mode and automation, providers, orders, Print Bridge, next steps |
 
 The existing activate/deactivate posts on the detail page predate this feature and are unchanged. The feature adds no write endpoint.
 

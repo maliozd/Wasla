@@ -366,7 +366,7 @@
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
     <value>Restoranınız</value>
   </data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve">
+  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve">
     <value>Wasla adresiniz</value>
   </data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve">

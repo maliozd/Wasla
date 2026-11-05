@@ -652,11 +652,11 @@ public sealed class PrintBridgeController : BaseController
         };
 
     private async Task<PrintJobHistoryListViewModel> BuildPrintJobHistoryViewModelAsync(
-        Guid customerId,
+        Guid tenantId,
         CancellationToken ct)
     {
         var jobs = await _printJobHistory
-            .GetRecentReceiptJobsAsync(customerId, PrintJobHistoryLimits.Default, ct)
+            .GetRecentReceiptJobsAsync(tenantId, PrintJobHistoryLimits.Default, ct)
             .ConfigureAwait(false);
 
         return new PrintJobHistoryListViewModel

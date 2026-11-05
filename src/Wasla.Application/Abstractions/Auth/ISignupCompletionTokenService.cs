@@ -3,7 +3,7 @@
 namespace Wasla.Application.Abstractions.Auth;
 
 public sealed record SignupCompletionPayload(
-    Guid CustomerId,
+    Guid TenantId,
     Guid UserId,
     string Email,
     string FullName,

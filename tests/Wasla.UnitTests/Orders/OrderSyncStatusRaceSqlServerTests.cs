@@ -10,7 +10,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
@@ -53,7 +53,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         var probe = new ProbeRowLockAfterLockWrite(_database, orderId);
         var sync = Sync("worker", paused, probe);
         _provider.Set(accepted);
-        var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        var pass = sync.SyncTenantWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
         // Sync read the order as New and merged the provider's acceptance (Preparing). The operator rejects it now, so the order's
@@ -90,7 +90,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
         var sync = Sync("worker", paused);
         _provider.Set(changedTotal);
-        var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        var pass = sync.SyncTenantWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
         var approved = await Operator("operator").TryApproveAsync(_tenantId, orderId, Ct);
@@ -126,7 +126,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
         var sync = Sync("worker", paused);
         _provider.Set(changedItems);
-        var pass = sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        var pass = sync.SyncTenantWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
         // The sync took its time before it paused; the operator's write is later.
@@ -156,11 +156,11 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         _provider.Set(accepted);
 
         var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
-        var first = Sync("worker-a", paused).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var first = Sync("worker-a", paused).SyncTenantWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
         // A second Worker process applies the same provider status first.
-        var second = await Sync("worker-b").SyncCustomerWithResultAsync(_tenantId, Ct);
+        var second = await Sync("worker-b").SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, second.UpdatedCount);
         var secondVersion = (await ReadAsync(orderId)).ChangeVersion;
         Assert.Equal([orderId], _receipts.Created);
@@ -197,11 +197,11 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         _provider.Set(changed);
 
         var paused = new PauseBeforeUpdateTransaction(payload.ExternalOrderId);
-        var first = Sync("worker-a", paused).SyncCustomerWithResultAsync(_tenantId, Ct);
+        var first = Sync("worker-a", paused).SyncTenantWithResultAsync(_tenantId, Ct);
         await paused.Reached.WaitAsync(Deadline, Ct);
 
         // A second Worker process applies the same items, options and status first.
-        var second = await Sync("worker-b").SyncCustomerWithResultAsync(_tenantId, Ct);
+        var second = await Sync("worker-b").SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, second.UpdatedCount);
         var bySecond = await ReadAsync(orderId);
         var secondRows = await ReadItemRowIdsAsync(orderId);
@@ -248,7 +248,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
         await EnsureTenantRowsAsync();
         var payload = Payload($"SYNC-RACE-{name}-{Guid.NewGuid():N}");
         _provider.Set(payload);
-        var inserted = await Sync("seed").SyncCustomerWithResultAsync(_tenantId, Ct);
+        var inserted = await Sync("seed").SyncTenantWithResultAsync(_tenantId, Ct);
         Assert.Equal(1, inserted.InsertedCount);
 
         await using var db = _database.Open();
@@ -415,7 +415,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
     private sealed class InterceptedFactory(string connectionString, IInterceptor[] interceptors) : ITenantDbContextFactory
     {
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
             var options = new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString);
             if (interceptors.Length > 0)
@@ -467,7 +467,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
         public void Reset() => _created.Clear();
 
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
         {
             _created.Enqueue(orderId);
             return Task.CompletedTask;
@@ -476,7 +476,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 }

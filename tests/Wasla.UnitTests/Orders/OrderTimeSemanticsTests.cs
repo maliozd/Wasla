@@ -9,7 +9,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Application.Time;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Realtime;
@@ -278,7 +278,7 @@ public sealed class OrderTimeSemanticsTests : IDisposable
         return id;
     }
 
-    private async Task<OrderSyncCustomerResult> SyncAsync(ExternalOrderDto order)
+    private async Task<OrderSyncTenantResult> SyncAsync(ExternalOrderDto order)
     {
         if (!_connectionSeeded)
         {
@@ -311,7 +311,7 @@ public sealed class OrderTimeSemanticsTests : IDisposable
             NullTenantChangeNotifier.Instance,
             _syncLog);
         _client.Set(order);
-        return await sync.SyncCustomerWithResultAsync(_tenantId, Ct);
+        return await sync.SyncTenantWithResultAsync(_tenantId, Ct);
     }
 
     private async Task<Order> ReadAsync(string externalOrderId)
@@ -368,13 +368,13 @@ public sealed class OrderTimeSemanticsTests : IDisposable
 
     private sealed class NoAutoApprove : IOrderAutoApproveService
     {
-        public Task ProcessNewlyInsertedOrderAsync(Guid customerId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
+        public Task ProcessNewlyInsertedOrderAsync(Guid tenantId, Guid orderId, OrderStatus insertedStatus, CancellationToken ct) =>
             Task.CompletedTask;
     }
 
     private sealed class NoReceipts : IOrderReceiptCreationService
     {
-        public Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct) =>
+        public Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 }

@@ -5,5 +5,5 @@
 /// </summary>
 public interface IOrderReceiptCreationService
 {
-    Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct);
+    Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct);
 }

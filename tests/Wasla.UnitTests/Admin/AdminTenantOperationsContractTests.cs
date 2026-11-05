@@ -24,7 +24,7 @@ public sealed partial class AdminTenantOperationsContractTests
 
     [Theory]
     [InlineData(typeof(DashboardController))]
-    [InlineData(typeof(CustomersController))]
+    [InlineData(typeof(TenantsController))]
     public void OperationsControllers_RequireTheCentralAdminScheme_WithNoAnonymousAction(Type controller)
     {
         var authorize = controller.GetCustomAttributes<AuthorizeAttribute>().Single();
@@ -38,7 +38,7 @@ public sealed partial class AdminTenantOperationsContractTests
     [Fact]
     public void OperationsCenter_AddsNoWriteEndpoint()
     {
-        var writes = new[] { typeof(DashboardController), typeof(CustomersController) }
+        var writes = new[] { typeof(DashboardController), typeof(TenantsController) }
             .SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
             .Where(method => method.GetCustomAttributes<HttpMethodAttribute>().Any(a => !a.HttpMethods.SequenceEqual(["GET"])))
             .Select(method => method.Name)
@@ -47,7 +47,7 @@ public sealed partial class AdminTenantOperationsContractTests
 
         // Only the activate/deactivate posts that existed before this page, both antiforgery-protected.
         Assert.Equal(["Activate", "Deactivate"], writes);
-        Assert.All(writes, name => Assert.NotNull(typeof(CustomersController).GetMethod(name)!.GetCustomAttribute<ValidateAntiForgeryTokenAttribute>()));
+        Assert.All(writes, name => Assert.NotNull(typeof(TenantsController).GetMethod(name)!.GetCustomAttribute<ValidateAntiForgeryTokenAttribute>()));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed partial class AdminTenantOperationsContractTests
     [Fact]
     public void TenantList_MarkupIsAccessible()
     {
-        var view = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Customers", "Index.cshtml");
+        var view = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Tenants", "Index.cshtml");
 
         Assert.Contains("aria-sort=\"@ariaSort\"", view, StringComparison.Ordinal);
         Assert.Contains("<caption id=\"tenantTableCaption\"", view, StringComparison.Ordinal);
@@ -121,7 +121,7 @@ public sealed partial class AdminTenantOperationsContractTests
         Assert.DoesNotMatch(new Regex("#[0-9a-fA-F]{3,6}\\b"), css);
         Assert.Contains("wasla-admin-operations.css", layout, StringComparison.Ordinal);
 
-        var list = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Customers", "Index.cshtml");
+        var list = Read("src", "Wasla.Web", "Areas", "Admin", "Views", "Tenants", "Index.cshtml");
         Assert.Contains("table-responsive", list, StringComparison.Ordinal);
         Assert.Contains("d-none d-md-table-cell", list, StringComparison.Ordinal);
         Assert.Contains("d-none d-xl-table-cell", list, StringComparison.Ordinal);
@@ -162,13 +162,13 @@ public sealed partial class AdminTenantOperationsContractTests
         foreach (var path in new[]
                  {
                      Path.Combine(root, "Views", "Dashboard", "Index.cshtml"),
-                     Path.Combine(root, "Views", "Customers", "Index.cshtml"),
-                     Path.Combine(root, "Views", "Customers", "Details.cshtml"),
+                     Path.Combine(root, "Views", "Tenants", "Index.cshtml"),
+                     Path.Combine(root, "Views", "Tenants", "Details.cshtml"),
                      Path.Combine(root, "Views", "Shared", "_AdminStatusBadge.cshtml"),
                      Path.Combine(root, "Views", "Shared", "_AdminLoadError.cshtml"),
                      Path.Combine(root, "Models", "TenantOperations", "AdminOperationsPresenter.cs"),
                      Path.Combine(root, "Models", "TenantOperations", "AdminTenantOperationsViewModels.cs"),
-                     Path.Combine(root, "Controllers", "CustomersController.cs"),
+                     Path.Combine(root, "Controllers", "TenantsController.cs"),
                      Path.Combine(root, "Controllers", "DashboardController.cs")
                  })
             yield return (path, File.ReadAllText(path));

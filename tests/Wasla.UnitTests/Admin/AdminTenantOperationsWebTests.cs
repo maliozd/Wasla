@@ -1,9 +1,13 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Domain.Enums;
+using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -58,7 +62,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = _host.NewBrowser();
 
-        foreach (var path in new[] { "/admin", "/admin/customers", $"/admin/customers/{_tenantA}", "/admin/customers?sort=name" })
+        foreach (var path in new[] { "/admin", "/admin/restaurants", $"/admin/restaurants/{_tenantA}", "/admin/restaurants?sort=name" })
         {
             var response = await browser.GetAsync(path);
             Assert.Equal(HttpStatusCode.Redirect, response.Status);
@@ -75,7 +79,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         using var browser = _host.NewBrowser();
         await browser.SignInTenantUserAsync(_tenantA);
 
-        foreach (var path in new[] { "/admin", "/admin/customers", $"/admin/customers/{_tenantA}", $"/admin/customers/{_tenantB}" })
+        foreach (var path in new[] { "/admin", "/admin/restaurants", $"/admin/restaurants/{_tenantA}", $"/admin/restaurants/{_tenantB}" })
         {
             var response = await browser.GetAsync(path);
             Assert.Equal(HttpStatusCode.Redirect, response.Status);
@@ -100,7 +104,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         var overview = await browser.GetAsync("/admin");
         var overviewCommands = _central.Counter.Commands;
         _central.Counter.Reset();
-        var list = await browser.GetAsync("/admin/customers?size=50");
+        var list = await browser.GetAsync("/admin/restaurants?size=50");
         var listCommands = _central.Counter.Commands;
 
         Assert.Equal(HttpStatusCode.OK, overview.Status);
@@ -121,7 +125,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         _tenants.Override(_tenantA, _ => throw new InvalidOperationException("down"));
         using var browser = await _host.SignedInAdminAsync();
 
-        var list = await browser.GetAsync("/admin/customers");
+        var list = await browser.GetAsync("/admin/restaurants");
 
         Assert.Equal(HttpStatusCode.OK, list.Status);
         Assert.Contains("Alpha Kebap", Html(list), StringComparison.Ordinal);
@@ -135,7 +139,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = await _host.SignedInAdminAsync();
 
-        var page = await browser.GetAsync("/admin/customers?q=a&status=active&plan=pro&migration=succeeded&size=50&sort=name&dir=asc&page=1");
+        var page = await browser.GetAsync("/admin/restaurants?q=a&status=active&plan=pro&migration=succeeded&size=50&sort=name&dir=asc&page=1");
         var html = page.Body;
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
@@ -171,7 +175,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
             _central.AddTenant($"zz-{i:00}", name: $"Zulu {i:00}");
         using var browser = await _host.SignedInAdminAsync();
 
-        var page = await browser.GetAsync("/admin/customers?q=zulu&sort=name&dir=desc&size=10&page=2");
+        var page = await browser.GetAsync("/admin/restaurants?q=zulu&sort=name&dir=desc&size=10&page=2");
         var html = Html(page);
         var links = PageLinks().Matches(page.Body).Select(m => WebUtility.HtmlDecode(m.Groups[1].Value)).ToList();
 
@@ -194,7 +198,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = await _host.SignedInAdminAsync();
 
-        var page = await browser.GetAsync("/admin/customers?sort=EncryptedConnectionString&dir=sideways&size=100000&page=-5&status=1&plan=%27%3B--");
+        var page = await browser.GetAsync("/admin/restaurants?sort=EncryptedConnectionString&dir=sideways&size=100000&page=-5&status=1&plan=%27%3B--");
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
         Assert.Contains("name=\"sort\" value=\"created\"", page.Body, StringComparison.Ordinal);
@@ -206,7 +210,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = await _host.SignedInAdminAsync();
 
-        var page = await browser.GetAsync("/admin/customers?q=does-not-exist");
+        var page = await browser.GetAsync("/admin/restaurants?q=does-not-exist");
 
         Assert.Contains(Resource("", "Admin.Ops.List.NoMatches"), Html(page), StringComparison.Ordinal);
         Assert.Contains(Resource("", "Admin.Ops.List.ClearFilters"), Html(page), StringComparison.Ordinal);
@@ -219,7 +223,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = await _host.SignedInAdminAsync("en-US");
 
-        var page = await browser.GetAsync($"/admin/customers/{_tenantA}");
+        var page = await browser.GetAsync($"/admin/restaurants/{_tenantA}");
         var html = Html(page);
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
@@ -240,7 +244,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
     {
         using var browser = await _host.SignedInAdminAsync("en-US");
 
-        var html = Html(await browser.GetAsync($"/admin/customers/{_tenantB}"));
+        var html = Html(await browser.GetAsync($"/admin/restaurants/{_tenantB}"));
 
         Assert.Contains(Resource(".en-US", "Admin.Ops.Mode.Setup"), html, StringComparison.Ordinal);
         Assert.Contains(Resource(".en-US", "Admin.Ops.Guidance.TenantInSetup"), html, StringComparison.Ordinal);
@@ -256,7 +260,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         _tenants.CreateTenantDatabase(behind.Id, expected => expected.Take(expected.Count - 1));
         using var browser = await _host.SignedInAdminAsync("en-US");
 
-        var html = Html(await browser.GetAsync($"/admin/customers/{behind.Id}"));
+        var html = Html(await browser.GetAsync($"/admin/restaurants/{behind.Id}"));
 
         Assert.Contains(Resource(".en-US", "Admin.Ops.Migrations.Pending"), html, StringComparison.Ordinal);
         Assert.Contains(Resource(".en-US", "Admin.Ops.Guidance.MigrationsPending"), html, StringComparison.Ordinal);
@@ -268,9 +272,9 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         var registration = _central.AddRegistration("orphan", PendingRegistrationStatus.PaymentSucceeded);
         using var browser = await _host.SignedInAdminAsync();
 
-        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync($"/admin/customers/{Guid.NewGuid()}")).Status);
-        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync($"/admin/customers/{registration.Id}")).Status);
-        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync("/admin/customers/not-a-guid")).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync($"/admin/restaurants/{Guid.NewGuid()}")).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync($"/admin/restaurants/{registration.Id}")).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync("/admin/restaurants/not-a-guid")).Status);
         Assert.Empty(_tenants.Opened);
     }
 
@@ -284,7 +288,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
                 .UseSqlite($"Data Source={missing};Mode=ReadOnly;Pooling=False").Options)));
         using var browser = await _host.SignedInAdminAsync("en-US");
 
-        var page = await browser.GetAsync($"/admin/customers/{down.Id}");
+        var page = await browser.GetAsync($"/admin/restaurants/{down.Id}");
         var html = Html(page);
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
@@ -303,7 +307,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         var half = _central.AddTenant("half", name: "Half Provisioned", encryptedConnectionString: string.Empty);
         using var browser = await _host.SignedInAdminAsync("en-US");
 
-        var html = Html(await browser.GetAsync($"/admin/customers/{half.Id}"));
+        var html = Html(await browser.GetAsync($"/admin/restaurants/{half.Id}"));
 
         Assert.Contains(Resource(".en-US", "Admin.Ops.Database.NotConfigured"), html, StringComparison.Ordinal);
         Assert.Empty(_tenants.Opened);
@@ -321,7 +325,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         using var browser = await host.SignedInAdminAsync("en-US");
         var started = System.Diagnostics.Stopwatch.StartNew();
 
-        var page = await browser.GetAsync($"/admin/customers/{_tenantA}");
+        var page = await browser.GetAsync($"/admin/restaurants/{_tenantA}");
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
         Assert.Contains(Resource(".en-US", "Admin.Ops.Database.TimedOut"), Html(page), StringComparison.Ordinal);
@@ -337,7 +341,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         using (var db = _central.CreateContext())
             db.Database.ExecuteSqlRaw("ALTER TABLE \"Tenants\" RENAME TO \"Tenants_Unavailable\";");
 
-        foreach (var path in new[] { "/admin", "/admin/customers", $"/admin/customers/{_tenantA}" })
+        foreach (var path in new[] { "/admin", "/admin/restaurants", $"/admin/restaurants/{_tenantA}" })
         {
             var page = await browser.GetAsync(path);
             Assert.Equal(HttpStatusCode.ServiceUnavailable, page.Status);
@@ -364,7 +368,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         // CentralDb SQL behind the overview and list never touches secret or contact columns.
         _central.Counter.Reset();
         var overview = await browser.GetAsync("/admin");
-        await browser.GetAsync("/admin/customers");
+        await browser.GetAsync("/admin/restaurants");
         Assert.Contains("Registration attention-pizza", Html(overview), StringComparison.Ordinal);
         Assert.All(_central.Counter.Commands, sql =>
         {
@@ -376,11 +380,11 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         foreach (var path in new[]
                  {
                      "/admin",
-                     "/admin/customers",
-                     "/admin/customers?migration=failed",
-                     $"/admin/customers/{_tenantA}",
-                     $"/admin/customers/{_tenantB}",
-                     $"/admin/customers/{failed.Id}"
+                     "/admin/restaurants",
+                     "/admin/restaurants?migration=failed",
+                     $"/admin/restaurants/{_tenantA}",
+                     $"/admin/restaurants/{_tenantB}",
+                     $"/admin/restaurants/{failed.Id}"
                  })
         {
             var page = await browser.GetAsync(path);
@@ -413,8 +417,8 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         foreach (var (path, key) in new[]
                  {
                      ("/admin", "Admin.Ops.OverviewTitle"),
-                     ("/admin/customers", "Admin.Ops.List.Subtitle"),
-                     ($"/admin/customers/{_tenantA}", "Admin.Ops.Section.Guidance")
+                     ("/admin/restaurants", "Admin.Ops.List.Subtitle"),
+                     ($"/admin/restaurants/{_tenantA}", "Admin.Ops.Section.Guidance")
                  })
         {
             var page = await browser.GetAsync(path);
@@ -422,6 +426,85 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
             Assert.Contains($"dir=\"{direction}\"", page.Body, StringComparison.Ordinal);
             Assert.Contains(Resource(suffix, key), Html(page), StringComparison.Ordinal);
         }
+    }
+
+    // Links -----------------------------------------------------------------------------------------
+
+    [Fact]
+    public void CentralAdmin_ServesItsRestaurantPagesOnlyUnderAdminRestaurants()
+    {
+        // Every endpoint of the host under /admin or in the Admin area: the restaurant (tenant) pages have one home.
+        var templates = _host.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Where(endpoint => endpoint.RoutePattern.RawText!.TrimStart('/').StartsWith("admin", StringComparison.OrdinalIgnoreCase)
+                || (endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.RouteValues.TryGetValue("area", out var area) == true
+                    && area == AreaNames.Admin))
+            .Select(endpoint => endpoint.RoutePattern.RawText!.TrimStart('/'))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(
+            [
+                "admin",
+                "admin/billing/plan-prices",
+                "admin/billing/plan-prices/{id:guid}/correct",
+                "admin/billing/plan-prices/{id:guid}/supersede",
+                "admin/billing/plan-prices/{id:guid}/withdraw",
+                "admin/contact-messages",
+                "admin/contact-messages/{id:guid}",
+                "admin/login",
+                "admin/logout",
+                "admin/pending-registrations",
+                "admin/pending-registrations/{id:guid}",
+                "admin/pending-registrations/{id:guid}/provision",
+                "admin/restaurants",
+                "admin/restaurants/{id:guid}",
+                "admin/restaurants/{id:guid}/activate",
+                "admin/restaurants/{id:guid}/deactivate",
+            ],
+            templates);
+    }
+
+    [Fact]
+    public async Task TheOverview_TheList_TheDetail_AndTheNavigation_LinkTheRestaurantPagesUnderAdminRestaurants()
+    {
+        var closed = _central.AddTenant("charlie-pide", name: "Charlie Pide", isActive: false);
+        _tenants.CreateTenantDatabase(closed.Id);
+        _tenants.Seed(closed.Id, db => TenantSeed.HealthyTenant(db, DateTime.UtcNow));
+        using var browser = await _host.SignedInAdminAsync();
+
+        var overview = Html(await browser.GetAsync("/admin"));
+        foreach (var link in new[]
+                 {
+                     "<a class=\"small\" href=\"/admin/restaurants\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?status=active\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?status=inactive\">",
+                     "href=\"/admin/restaurants?migration=failed\">",
+                     "<a class=\"wasla-admin-metric\" href=\"/admin/restaurants?migration=not-recorded\">",
+                     "<a class=\"btn btn-sm btn-outline-secondary\" href=\"/admin/restaurants\">",
+                     $"<a class=\"fw-medium\" href=\"/admin/restaurants/{_tenantA}\">",
+                 })
+            Assert.Contains(link, overview, StringComparison.Ordinal);
+
+        var list = Html(await browser.GetAsync("/admin/restaurants"));
+        Assert.Contains("<form method=\"get\" action=\"/admin/restaurants\"", list, StringComparison.Ordinal);
+        Assert.Contains($"<a class=\"btn btn-sm btn-outline-primary text-nowrap\" href=\"/admin/restaurants/{_tenantA}\">", list, StringComparison.Ordinal);
+        Assert.Matches(ActiveRestaurantsNavigation(), list);
+
+        var noMatch = Html(await browser.GetAsync("/admin/restaurants?q=does-not-exist"));
+        Assert.Contains("<a class=\"small d-inline-block mt-2\" href=\"/admin/restaurants\">", noMatch, StringComparison.Ordinal);
+        Assert.Contains("<a class=\"small\" href=\"/admin/restaurants\">", noMatch, StringComparison.Ordinal);
+
+        var detail = Html(await browser.GetAsync($"/admin/restaurants/{_tenantA}"));
+        Assert.Contains("<li class=\"breadcrumb-item\"><a href=\"/admin/restaurants\">", detail, StringComparison.Ordinal);
+        Assert.Contains("<a class=\"btn btn-sm btn-outline-secondary\" href=\"/admin/restaurants\">", detail, StringComparison.Ordinal);
+        Assert.Contains($"<form method=\"post\" action=\"/admin/restaurants/{_tenantA}/deactivate\" class=\"d-inline\">", detail, StringComparison.Ordinal);
+        Assert.Matches(ActiveRestaurantsNavigation(), detail);
+
+        var inactive = Html(await browser.GetAsync($"/admin/restaurants/{closed.Id}"));
+        Assert.Contains($"<form method=\"post\" action=\"/admin/restaurants/{closed.Id}/activate\" class=\"d-inline\">", inactive, StringComparison.Ordinal);
     }
 
     // Helpers ------------------------------------------------------------------------------------------
@@ -442,4 +525,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
 
     [GeneratedRegex("<a class=\"page-link\" href=\"([^\"]+)\"")]
     private static partial Regex PageLinks();
+
+    [GeneratedRegex("<a class=\"nav-link active\"[^>]*href=\"/admin/restaurants\"")]
+    private static partial Regex ActiveRestaurantsNavigation();
 }

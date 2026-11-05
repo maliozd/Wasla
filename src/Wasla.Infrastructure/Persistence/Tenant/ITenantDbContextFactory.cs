@@ -2,6 +2,6 @@
 
 public interface ITenantDbContextFactory
 {
-    Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct);
+    Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct);
 }
 

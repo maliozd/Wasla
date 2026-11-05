@@ -18,12 +18,12 @@ public sealed class AuthValidationService : IAuthValidationService
         _dbFactory = dbFactory;
     }
 
-    public async Task<AuthSessionResult?> ValidateAsync(Guid customerId, string email, string password, CancellationToken ct)
+    public async Task<AuthSessionResult?> ValidateAsync(Guid tenantId, string email, string password, CancellationToken ct)
     {
-        if (customerId == Guid.Empty) return null;
+        if (tenantId == Guid.Empty) return null;
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password)) return null;
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         var emailNorm = email.Trim();
         // Only the columns authentication needs, including the security stamp every tenant session is validated
@@ -42,7 +42,7 @@ public sealed class AuthValidationService : IAuthValidationService
         if (!ok || user is null) return null;
 
         return new AuthSessionResult(
-            customerId,
+            tenantId,
             user.Id,
             user.Email,
             user.FullName,
@@ -50,11 +50,11 @@ public sealed class AuthValidationService : IAuthValidationService
             user.SecurityStamp);
     }
 
-    public async Task<AuthSessionResult?> GetActiveSessionAsync(Guid customerId, Guid userId, CancellationToken ct)
+    public async Task<AuthSessionResult?> GetActiveSessionAsync(Guid tenantId, Guid userId, CancellationToken ct)
     {
-        if (customerId == Guid.Empty || userId == Guid.Empty) return null;
+        if (tenantId == Guid.Empty || userId == Guid.Empty) return null;
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         var user = await db.AppUsers.AsNoTracking()
             .Where(u => u.Id == userId && u.IsActive)
@@ -63,6 +63,6 @@ public sealed class AuthValidationService : IAuthValidationService
 
         return user is null
             ? null
-            : new AuthSessionResult(customerId, user.Id, user.Email, user.FullName, user.Role, user.SecurityStamp);
+            : new AuthSessionResult(tenantId, user.Id, user.Email, user.FullName, user.Role, user.SecurityStamp);
     }
 }

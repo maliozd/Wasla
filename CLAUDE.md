@@ -22,5 +22,3 @@ Before a task:
 Wasla has two products: **Wasla Orders** and **Wasla POS**. This repository currently implements Wasla Orders. Wasla POS is a separate product and has no project or module in this solution yet.
 
 Do not reinterpret the Wasla Orders Live Screen as a POS interface. Shared infrastructure belongs in this repository only when the requested work establishes a real cross-product need.
-
-The old root handoff is archived at `docs/archive/INITIAL_SKELETON.md`. It is historical context, not a list of unfinished work.

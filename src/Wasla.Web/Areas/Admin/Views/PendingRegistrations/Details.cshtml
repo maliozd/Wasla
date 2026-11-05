@@ -165,7 +165,7 @@
                 <dd class="col-sm-9">
                     @if (Model.TenantDomain is not null)
                     {
-                        <a href="/admin/customers/@Model.TenantId" class="text-decoration-none">@Model.TenantId</a>
+                        <a href="@Url.Action("Details", "Tenants", new { area = "Admin", id = Model.TenantId })" class="text-decoration-none">@Model.TenantId</a>
                     }
                     else
                     {

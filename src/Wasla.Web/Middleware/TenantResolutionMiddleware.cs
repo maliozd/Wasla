@@ -216,7 +216,7 @@ public sealed class TenantResolutionMiddleware
             return RouteGroup.AnyHost;
         }
 
-        if (IsUnder(path, "/tenant-address-required") || IsUnder(path, "/customer-access-required"))
+        if (IsUnder(path, "/tenant-address-required"))
             return RouteGroup.TenantAddressRequired;
         if (IsSignupStatusPath(path))
             return RouteGroup.SignupStatus;

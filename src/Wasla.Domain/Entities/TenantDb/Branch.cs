@@ -1,9 +1,9 @@
 ﻿using Wasla.Domain.Common;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// A physical branch/location of the restaurant. Lives in CustomerDb.
+/// A physical branch/location of the restaurant. Lives in the tenant database.
 /// </summary>
 public class Branch : BaseEntity
 {

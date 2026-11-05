@@ -18,9 +18,9 @@
 }
 
 <div class="wasla-order-details">
-    <header class="wasla-customer-page-header wasla-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
-        <div class="wasla-order-details__header-main wasla-customer-page-header__main min-w-0">
-            <h1 class="wasla-customer-page-header__title wasla-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
+    <header class="wasla-tenant-page-header wasla-order-details__header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div class="wasla-order-details__header-main wasla-tenant-page-header__main min-w-0">
+            <h1 class="wasla-tenant-page-header__title wasla-order-details__title h4 mb-2">@L["Orders.Details.Title"]</h1>
             <div class="d-flex flex-wrap align-items-center gap-2">
                 @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)Model.Platform, DisplayName: (string?)null))
                 <span class="wasla-order-details__code font-monospace">@Model.ExternalOrderCode</span>
@@ -169,7 +169,7 @@
                     <h2 class="wasla-order-details-card__title h6 mb-3">@L["Orders.Details.Items"]</h2>
                     @if (Model.Items.Count == 0)
                     {
-                        <div class="wasla-customer-empty-state wasla-order-details-empty text-center py-4">
+                        <div class="wasla-tenant-empty-state wasla-order-details-empty text-center py-4">
                             <p class="text-muted mb-0">@L["Orders.Details.NoItemsFound"]</p>
                         </div>
                     }

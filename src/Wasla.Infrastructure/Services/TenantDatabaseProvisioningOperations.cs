@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 
@@ -47,9 +47,9 @@ public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatab
             "Tenant database {DatabaseName} for registration {RegistrationId}: {Claim}.",
             databaseName, registration.Id, claim);
 
-        var customerConnString = SqlServerTenantDatabases.BuildConnectionString(server, sqlAuth, databaseName);
+        var tenantConnString = SqlServerTenantDatabases.BuildConnectionString(server, sqlAuth, databaseName);
         var tenantOptions = new DbContextOptionsBuilder<TenantDbContext>()
-            .UseSqlServer(customerConnString)
+            .UseSqlServer(tenantConnString)
             .Options;
 
         var migrationNow = DateTime.UtcNow;
@@ -88,6 +88,6 @@ public sealed class SqlServerTenantDatabaseProvisioningOperations : ITenantDatab
             await TenantOperationalModes.EnsureNewTenantStartsInSetupAsync(tenantDb, migrationNow, ct).ConfigureAwait(false);
         }
 
-        return new TenantDatabaseProvisioningWork(customerConnString, migrationNow, ownerCreated);
+        return new TenantDatabaseProvisioningWork(tenantConnString, migrationNow, ownerCreated);
     }
 }

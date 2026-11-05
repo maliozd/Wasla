@@ -112,7 +112,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         await using var browser = await SignedInBrowserAsync(culture, ct);
         await browser.SetViewportAsync(width, 860, mobile: true, ct);
         var page = $"{width}px ({culture})";
-        await LoadAsync(browser, $"/admin/customers/{_tenantId}", ct);
+        await LoadAsync(browser, $"/admin/restaurants/{_tenantId}", ct);
 
         // Closed: an accessible toggle at the inline-start of the bar, next to the compact logo; the drawer is
         // off-canvas and out of the focus order; the header controls stay.
@@ -197,7 +197,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await SignedInBrowserAsync(culture, ct);
         await browser.SetViewportAsync(375, 812, mobile: true, ct);
-        await LoadAsync(browser, $"/admin/customers/{_tenantId}", ct);
+        await LoadAsync(browser, $"/admin/restaurants/{_tenantId}", ct);
 
         await ClickCenterAsync(browser, (await StateAsync(browser, ct)).GetProperty("toggle"), ct);
         Assert.True(await browser.WaitForAsync(IsOpen, TimeSpan.FromSeconds(5), ct));
@@ -232,7 +232,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         await using var browser = await SignedInBrowserAsync(culture, ct);
         await browser.SetViewportAsync(width, 860, mobile: false, ct);
         var page = $"{width}px ({culture})";
-        await LoadAsync(browser, $"/admin/customers/{_tenantId}", ct);
+        await LoadAsync(browser, $"/admin/restaurants/{_tenantId}", ct);
 
         var s = await StateAsync(browser, ct);
         Assert.False(s.GetProperty("toggleShown").GetBoolean(), $"{page}: the mobile toggle shows on desktop");
@@ -270,7 +270,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         await browser.SetViewportAsync(375, 812, mobile: true, ct);
         await LoadAsync(browser, "/admin", ct);
         await browser.EvaluateAsync<bool>("(() => { localStorage.setItem('Wasla.theme', 'dark'); return true; })()", ct);
-        await LoadAsync(browser, $"/admin/customers/{_tenantId}", ct);
+        await LoadAsync(browser, $"/admin/restaurants/{_tenantId}", ct);
         Assert.Equal("dark", await browser.EvaluateAsync<string>("document.documentElement.getAttribute('data-bs-theme')", ct));
 
         await ClickCenterAsync(browser, (await StateAsync(browser, ct)).GetProperty("toggle"), ct);
@@ -299,7 +299,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         await using var browser = await SignedInBrowserAsync(culture, ct);
         await browser.SetViewportAsync(width, 860, mobile: true, ct);
 
-        foreach (var path in new[] { $"/admin/customers/{_tenantId}", $"/admin/pending-registrations/{_registrationId}" })
+        foreach (var path in new[] { $"/admin/restaurants/{_tenantId}", $"/admin/pending-registrations/{_registrationId}" })
         {
             var page = $"{path} at {width}px ({culture})";
             await LoadAsync(browser, path, ct);
@@ -309,7 +309,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
             AssertNoHorizontalOverflow(await StateAsync(browser, ct), page);
 
             // The long, unbroken values wrap onto several lines instead of being cut off.
-            var slug = path.Contains("customers", StringComparison.Ordinal) ? LongSlug : LongRegistrationSlug;
+            var slug = path.Contains("restaurants", StringComparison.Ordinal) ? LongSlug : LongRegistrationSlug;
             var longValues = lists.EnumerateArray().Where(dd => dd.GetProperty("text").GetString()!.Contains(slug[..20], StringComparison.Ordinal)).ToArray();
             Assert.NotEmpty(longValues);
             Assert.All(longValues, dd => Assert.True(dd.GetProperty("height").GetDouble() > dd.GetProperty("lineHeight").GetDouble() * 1.5,
@@ -383,7 +383,7 @@ public sealed class AdminMobileNavigationBrowserTests : IAsyncLifetime
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await SignedInBrowserAsync("ar-SA", ct);
         await browser.SetViewportAsync(375, 812, mobile: true, ct);
-        await LoadAsync(browser, $"/admin/customers/{_tenantId}", ct);
+        await LoadAsync(browser, $"/admin/restaurants/{_tenantId}", ct);
 
         // Targeted mutation of the fix: restore the browser's default dd start margin and normal wrapping.
         await browser.EvaluateAsync<bool>(

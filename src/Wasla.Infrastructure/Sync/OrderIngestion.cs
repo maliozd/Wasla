@@ -9,7 +9,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Realtime;
@@ -51,7 +51,7 @@ internal sealed class OrderIngestion
     /// status merge. <paramref name="connection"/> is the tenant's connection the observation was fetched for.
     /// </summary>
     internal async Task<OrderUpsertResult> IngestPackageAsync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         PlatformConnection connection,
         ExternalOrderDto external,
@@ -72,9 +72,9 @@ internal sealed class OrderIngestion
             // The provider says this order is not the connection's: storing it would show another location's order to
             // this tenant. Nothing is written; the window still completes, because the order is not this tenant's.
             _logger.LogWarning(
-                "Provider order refused: its {Field} does not match the connection it was fetched for, so it was not stored. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ConnectionStoreId={ConnectionStoreId}, ProviderStoreId={ProviderStoreId}, ConnectionSupplierId={ConnectionSupplierId}, ProviderSupplierId={ProviderSupplierId}, ExternalOrderId={ExternalOrderId}",
+                "Provider order refused: its {Field} does not match the connection it was fetched for, so it was not stored. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, ConnectionStoreId={ConnectionStoreId}, ProviderStoreId={ProviderStoreId}, ConnectionSupplierId={ConnectionSupplierId}, ProviderSupplierId={ProviderSupplierId}, ExternalOrderId={ExternalOrderId}",
                 field,
-                customerId,
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 connection.StoreId,
@@ -111,7 +111,7 @@ internal sealed class OrderIngestion
             if (await TryInsertNewOrderAsync(db, order, ct).ConfigureAwait(false))
             {
                 // The new order is committed: open Live Screens read their snapshot again.
-                await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(order.Id, order.ChangeVersion), _logger)
+                await TenantChangePublisher.PublishAsync(_notifier, tenantId, new OrderChanged(order.Id, order.ChangeVersion), _logger)
                     .ConfigureAwait(false);
 
                 _logger.LogDebug(
@@ -125,7 +125,7 @@ internal sealed class OrderIngestion
                 try
                 {
                     await _autoApprove.ProcessNewlyInsertedOrderAsync(
-                        customerId,
+                        tenantId,
                         order.Id,
                         order.InternalStatus,
                         ct).ConfigureAwait(false);
@@ -134,13 +134,13 @@ internal sealed class OrderIngestion
                 {
                     _logger.LogWarning(
                         ex,
-                        "Auto-approve processing failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
-                        customerId,
+                        "Auto-approve processing failed but sync continued. TenantId={TenantId}, OrderId={OrderId}",
+                        tenantId,
                         order.Id);
                 }
 
                 await TryCreateReceiptIfProviderAcceptedAsync(
-                    customerId,
+                    tenantId,
                     order.Id,
                     oldStatus: null,
                     newStatus: order.InternalStatus,
@@ -158,8 +158,8 @@ internal sealed class OrderIngestion
                 ?? throw new InvalidOperationException("The order's identity was taken by a concurrent insert, but the order cannot be read.");
 
             _logger.LogInformation(
-                "Order was stored by a concurrent sync; this observation is applied to it. CustomerId={CustomerId}, OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}",
-                customerId,
+                "Order was stored by a concurrent sync; this observation is applied to it. TenantId={TenantId}, OrderId={OrderId}, ExternalOrderId={ExternalOrderId}, Platform={Platform}",
+                tenantId,
                 existing.Id,
                 existing.ExternalOrderId,
                 existing.Platform);
@@ -269,11 +269,11 @@ internal sealed class OrderIngestion
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
-        await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(existing.Id, changeVersion), _logger)
+        await TenantChangePublisher.PublishAsync(_notifier, tenantId, new OrderChanged(existing.Id, changeVersion), _logger)
             .ConfigureAwait(false);
 
         await TryCreateReceiptIfProviderAcceptedAsync(
-            customerId,
+            tenantId,
             existing.Id,
             oldStatus,
             mergedStatus,
@@ -305,7 +305,7 @@ internal sealed class OrderIngestion
     /// a verified provider contract; this method does not interpret provider event names (WAS-18, WAS-175).
     /// </remarks>
     internal async Task<OrderUpsertResult> ApplyStatusObservationAsync(
-        Guid customerId,
+        Guid tenantId,
         TenantDbContext db,
         PlatformConnection connection,
         OrderStatusObservation observation,
@@ -315,8 +315,8 @@ internal sealed class OrderIngestion
         if (string.IsNullOrWhiteSpace(observation.ExternalOrderId) || observation.Platform != connection.Platform)
         {
             _logger.LogWarning(
-                "Status observation refused: it has no order id or another platform than its connection. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ObservationPlatform={ObservationPlatform}",
-                customerId,
+                "Status observation refused: it has no order id or another platform than its connection. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, ObservationPlatform={ObservationPlatform}",
+                tenantId,
                 connection.Id,
                 connection.Platform,
                 observation.Platform);
@@ -330,8 +330,8 @@ internal sealed class OrderIngestion
         if (existing is null)
         {
             _logger.LogInformation(
-                "Status observation for an order Wasla has not stored was not applied; polling imports the full order. CustomerId={CustomerId}, ConnectionId={ConnectionId}, Platform={Platform}, ExternalOrderId={ExternalOrderId}, ObservedStatus={ObservedStatus}",
-                customerId,
+                "Status observation for an order Wasla has not stored was not applied; polling imports the full order. TenantId={TenantId}, ConnectionId={ConnectionId}, Platform={Platform}, ExternalOrderId={ExternalOrderId}, ObservedStatus={ObservedStatus}",
+                tenantId,
                 connection.Id,
                 observation.Platform,
                 observation.ExternalOrderId,
@@ -367,10 +367,10 @@ internal sealed class OrderIngestion
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
-        await TenantChangePublisher.PublishAsync(_notifier, customerId, new OrderChanged(existing.Id, changeVersion), _logger)
+        await TenantChangePublisher.PublishAsync(_notifier, tenantId, new OrderChanged(existing.Id, changeVersion), _logger)
             .ConfigureAwait(false);
 
-        await TryCreateReceiptIfProviderAcceptedAsync(customerId, existing.Id, oldStatus, mergedStatus, ct).ConfigureAwait(false);
+        await TryCreateReceiptIfProviderAcceptedAsync(tenantId, existing.Id, oldStatus, mergedStatus, ct).ConfigureAwait(false);
 
         _logger.LogDebug(
             "Applied status observation to order {ExternalOrderId}. Status {OldStatus} -> {MergedStatus} (observed {ObservedStatus})",
@@ -517,7 +517,7 @@ internal sealed class OrderIngestion
     }
 
     private async Task TryCreateReceiptIfProviderAcceptedAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         OrderStatus? oldStatus,
         OrderStatus newStatus,
@@ -528,15 +528,15 @@ internal sealed class OrderIngestion
 
         try
         {
-            await _receiptCreation.TryCreateOnOrderAcceptedAsync(customerId, orderId, ct)
+            await _receiptCreation.TryCreateOnOrderAcceptedAsync(tenantId, orderId, ct)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(
                 ex,
-                "Receipt creation after provider-accepted order failed but sync continued. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt creation after provider-accepted order failed but sync continued. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
         }
     }
@@ -662,8 +662,8 @@ internal sealed class OrderIngestion
         return order;
     }
 
-    // EN: Merge prevents downgrades when external/mock payloads lag behind OrderHub; terminals (Delivered/Cancelled/Failed) stay locked except allowed cancel/fail propagation.
-    // TR: Dış/mock payload OrderHub'un gerisinde kaldığında düşürme olmasın diye merge; terminal durumlar (Delivered/Cancelled/Failed) kilitlenir, iptal/hata ise kurallara göre geçer.
+    // EN: Merge prevents downgrades when external/mock payloads lag behind Wasla; terminals (Delivered/Cancelled/Failed) stay locked except allowed cancel/fail propagation.
+    // TR: Dış/mock payload Wasla'nın gerisinde kaldığında düşürme olmasın diye merge; terminal durumlar (Delivered/Cancelled/Failed) kilitlenir, iptal/hata ise kurallara göre geçer.
     private static OrderStatus MergeInternalStatusForSync(OrderStatus existing, OrderStatus incomingFromExternal)
     {
         if (existing == OrderStatus.Delivered)

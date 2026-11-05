@@ -22,7 +22,7 @@ using Wasla.Web.Security;
 namespace Wasla.UnitTests.Signup;
 
 /// <summary>
-/// Customer-facing prices follow the Central Admin plan prices (WAS-147), rendered by the real Production host: the
+/// Public prices follow the Central Admin plan prices (WAS-147), rendered by the real Production host: the
 /// public pricing section, the signup plan summary and the checkout summary. Monthly and yearly are separate prices, a
 /// scheduled price stays hidden until its date, a missing price is shown as not set without any built-in amount, and a
 /// subscription that has started keeps showing its own price and VAT after a later price takes effect. Each test has
@@ -173,7 +173,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         Assert.Contains("(KDV hariç)", secondReview, StringComparison.Ordinal);
         Assert.Equal(BillingStoreOutcome.Applied, secondStart.Outcome);
         Assert.Equal((b, 400m), (secondView!.PlanPriceId, secondView.Price.Amount));
-        // The new price is shown to new customers; the first subscription's summary is unchanged.
+        // The new price is shown to new restaurants; the first subscription's summary is unchanged.
         Assert.Contains("300 TL / ay", await ReviewAsync(first), StringComparison.Ordinal);
     }
 

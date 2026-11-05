@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Application.Abstractions.Email;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Tenant;

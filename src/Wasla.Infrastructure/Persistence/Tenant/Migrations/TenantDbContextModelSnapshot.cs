@@ -22,7 +22,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.AppUser", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -76,7 +76,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("AppUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.Branch", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.Branch", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -106,7 +106,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("Branches", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.GuidedDemoSession", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.GuidedDemoSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -164,7 +164,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("GuidedDemoSessions", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.IntegrationError", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.IntegrationError", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -206,7 +206,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("IntegrationErrors", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.Order", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.Order", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -335,7 +335,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("Orders", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItem", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -381,7 +381,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("OrderItems", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItemOption", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItemOption", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -416,7 +416,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("OrderItemOptions", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.PasswordResetToken", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.PasswordResetToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -454,7 +454,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("PasswordResetTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.PlatformConnection", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.PlatformConnection", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -531,7 +531,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("PlatformConnections", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.PrintJob", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.PrintJob", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -600,7 +600,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("PrintJobs", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.ProviderWebhookEvent", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.ProviderWebhookEvent", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -687,7 +687,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("ProviderWebhookEvents", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.RestaurantLogo", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.RestaurantLogo", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -721,7 +721,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("RestaurantLogos", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.SyncLog", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.SyncLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -770,7 +770,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("SyncLogs", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.TenantOperationalSettings", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantOperationalSettings", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -820,7 +820,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("TenantOperationalSettings", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserGuidedSetupState", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserGuidedSetupState", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -864,7 +864,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserGuidedSetupStates", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserNotificationSettings", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserNotificationSettings", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -919,7 +919,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserNotificationSettings", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserProductTourCompletion", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -973,9 +973,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("TenantSessions", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.GuidedDemoSession", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.GuidedDemoSession", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -984,9 +984,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItem", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItem", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.Order", "Order")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -995,9 +995,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItemOption", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItemOption", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.OrderItem", "OrderItem")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.OrderItem", "OrderItem")
                         .WithMany("Options")
                         .HasForeignKey("OrderItemId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1006,9 +1006,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("OrderItem");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.PasswordResetToken", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.PasswordResetToken", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1017,9 +1017,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.PrintJob", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.PrintJob", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.Order", "Order")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.Order", "Order")
                         .WithMany()
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1028,9 +1028,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserGuidedSetupState", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserGuidedSetupState", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1039,9 +1039,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserNotificationSettings", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserNotificationSettings", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "AppUser")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "AppUser")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1050,9 +1050,9 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("AppUser");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.UserProductTourCompletion", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", "User")
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1063,19 +1063,19 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.Customer.AppUser", null)
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.Order", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.Order", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.Customer.OrderItem", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItem", b =>
                 {
                     b.Navigation("Options");
                 });

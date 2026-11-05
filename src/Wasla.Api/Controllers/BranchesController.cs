@@ -16,18 +16,18 @@ namespace Wasla.Api.Controllers;
 public sealed class BranchesController : ControllerBase
 {
     private readonly ICurrentTenantService _currentTenant;
-    private readonly ITenantDbContextFactory _customerDbFactory;
+    private readonly ITenantDbContextFactory _tenantDbFactory;
     private readonly IBranchService _branches;
     private readonly IValidator<CreateBranchCommand> _createValidator;
 
     public BranchesController(
         ICurrentTenantService currentTenant,
-        ITenantDbContextFactory customerDbFactory,
+        ITenantDbContextFactory tenantDbFactory,
         IBranchService branches,
         IValidator<CreateBranchCommand> createValidator)
     {
         _currentTenant = currentTenant;
-        _customerDbFactory = customerDbFactory;
+        _tenantDbFactory = tenantDbFactory;
         _branches = branches;
         _createValidator = createValidator;
     }
@@ -40,7 +40,7 @@ public sealed class BranchesController : ControllerBase
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound("Tenant not found");
 
-        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
+        await using var db = await _tenantDbFactory.CreateAsync(tenant.Id, ct);
 
         var branches = await db.Branches
             .AsNoTracking()
@@ -80,7 +80,7 @@ public sealed class BranchesController : ControllerBase
 
         var id = await _branches.CreateAsync(tenant.Id, cmd, ct);
 
-        await using var db = await _customerDbFactory.CreateAsync(tenant.Id, ct);
+        await using var db = await _tenantDbFactory.CreateAsync(tenant.Id, ct);
         var created = await db.Branches
             .AsNoTracking()
             .Where(b => b.Id == id)

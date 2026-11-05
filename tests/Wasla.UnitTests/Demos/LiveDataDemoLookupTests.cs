@@ -86,15 +86,15 @@ public sealed class LiveDataDemoLookupTests
 
     private sealed class EmptySnapshot : IOrderReadService
     {
-        public Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid customerId, CancellationToken ct) =>
+        public Task<LiveScreenSnapshotResult> GetLiveScreenSnapshotAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new LiveScreenSnapshotResult(DateTime.UtcNow, [], 0, 0));
 
-        public Task<OrderListResult> GetListAsync(Guid customerId, FoodPlatform? platform, OrderStatus? status,
+        public Task<OrderListResult> GetListAsync(Guid tenantId, FoodPlatform? platform, OrderStatus? status,
             DateTime? startDateUtc, DateTime? endDateUtc, string? sortBy, string? sortDirection, int page, int pageSize,
             string? search, CancellationToken ct, bool includeLineItems = false) =>
             throw new NotSupportedException();
 
-        public Task<OrderDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct) =>
+        public Task<OrderDetailResult?> GetByIdAsync(Guid tenantId, Guid id, CancellationToken ct) =>
             throw new NotSupportedException();
     }
 

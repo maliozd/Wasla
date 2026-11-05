@@ -4,7 +4,7 @@ using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.PlatformConnections;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -24,9 +24,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         _validator = validator;
     }
 
-    public async Task<IReadOnlyList<PlatformConnectionResult>> GetListAsync(Guid customerId, CancellationToken ct)
+    public async Task<IReadOnlyList<PlatformConnectionResult>> GetListAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         return await db.PlatformConnections.AsNoTracking()
             .OrderBy(p => p.Platform)
             .ThenBy(p => p.StoreId)
@@ -43,9 +43,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             .ToListAsync(ct);
     }
 
-    public async Task<PlatformConnectionDetailResult?> GetByIdAsync(Guid customerId, Guid id, CancellationToken ct)
+    public async Task<PlatformConnectionDetailResult?> GetByIdAsync(Guid tenantId, Guid id, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         return await db.PlatformConnections.AsNoTracking()
             .Where(p => p.Id == id)
             .Select(p => new PlatformConnectionDetailResult(
@@ -61,7 +61,7 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<CreatePlatformConnectionResult> CreateAsync(Guid customerId, CreatePlatformConnectionCommand command, CancellationToken ct)
+    public async Task<CreatePlatformConnectionResult> CreateAsync(Guid tenantId, CreatePlatformConnectionCommand command, CancellationToken ct)
     {
         var validation = await _validator.ValidateAsync(command, ct);
         if (!validation.IsValid)
@@ -74,7 +74,7 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             };
         }
 
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         var storeId = (command.StoreId ?? string.Empty).Trim();
 
@@ -95,7 +95,7 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         var keyVer = Math.Max(keyVer1, keyVer2);
 
         var now = DateTime.UtcNow;
-        var entity = new Wasla.Domain.Entities.Customer.PlatformConnection
+        var entity = new Wasla.Domain.Entities.TenantDb.PlatformConnection
         {
             Platform = command.Platform,
             StoreId = storeId,
@@ -120,9 +120,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         return new CreatePlatformConnectionResult { Succeeded = true, Id = entity.Id };
     }
 
-    public async Task<CreatePlatformConnectionResult> UpdateAsync(Guid customerId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct)
+    public async Task<CreatePlatformConnectionResult> UpdateAsync(Guid tenantId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null)
         {
@@ -243,9 +243,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         }
     }
 
-    public async Task<bool> SetActiveAsync(Guid customerId, Guid id, bool isActive, CancellationToken ct)
+    public async Task<bool> SetActiveAsync(Guid tenantId, Guid id, bool isActive, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null) return false;
 
@@ -255,9 +255,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
         return true;
     }
 
-    public async Task<bool> RemoveAsync(Guid customerId, Guid id, CancellationToken ct)
+    public async Task<bool> RemoveAsync(Guid tenantId, Guid id, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         // One statement by id: a repeated or concurrent removal deletes nothing and reports false, and a connection
         // created again for the same platform has a new id, so a stale confirmation can never remove it.
         return await db.PlatformConnections.Where(p => p.Id == id).ExecuteDeleteAsync(ct) > 0;

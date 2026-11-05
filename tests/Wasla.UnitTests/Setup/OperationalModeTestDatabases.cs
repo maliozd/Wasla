@@ -2,7 +2,7 @@ using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
@@ -43,17 +43,17 @@ internal sealed class OperationalModeTestDatabases : ITenantDbContextFactory, ID
     /** Every SQL statement run against any tenant database so far (reads and writes). */
     public int StatementCount => _failure.Count;
 
-    public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+    public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
     {
         var connectionString = _pools.Own(new SqliteConnectionStringBuilder
         {
-            DataSource = Path.Combine(_directory, customerId.ToString("N") + ".db"),
+            DataSource = Path.Combine(_directory, tenantId.ToString("N") + ".db"),
             DefaultTimeout = 30
         }.ToString());
 
         lock (_gate)
         {
-            if (_created.Add(customerId))
+            if (_created.Add(tenantId))
             {
                 using var setup = new ProductionModelSqliteContext(Options(connectionString));
                 setup.Database.EnsureCreated();

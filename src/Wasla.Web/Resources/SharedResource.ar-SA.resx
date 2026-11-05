@@ -255,7 +255,7 @@
   <data name="Layout.CentralAdmin" xml:space="preserve">
     <value>لوحة إدارة Wasla</value>
   </data>
-  <data name="Layout.Customers" xml:space="preserve">
+  <data name="Layout.Restaurants" xml:space="preserve">
     <value>المطاعم</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
@@ -282,8 +282,8 @@
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
   </data>
-  <data name="Landing.CustomerLogin" xml:space="preserve">
-    <value>دخول العميل</value>
+  <data name="Landing.RestaurantLogin" xml:space="preserve">
+    <value>دخول المطعم</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>دخول المشرف</value>
@@ -316,7 +316,7 @@
     <value>يرجى التحقق من البيانات.</value>
   </data>
   <data name="Auth.TenantContextMissing" xml:space="preserve">
-    <value>سياق المطعم غير متوفر. افتح رابط تسجيل الدخول على نطاق العميل الذي أعطي لك.</value>
+    <value>سياق المطعم غير متوفر. افتح رابط تسجيل الدخول على نطاق المطعم الذي أعطي لك.</value>
   </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>تسجيل الخروج</value>
@@ -1209,16 +1209,16 @@
   <data name="Admin.DashboardTitle" xml:space="preserve">
     <value>الإدارة المركزية</value>
   </data>
-  <data name="Admin.Customers" xml:space="preserve">
+  <data name="Admin.Restaurants" xml:space="preserve">
     <value>المطاعم</value>
   </data>
-  <data name="Admin.TotalCustomers" xml:space="preserve">
+  <data name="Admin.TotalRestaurants" xml:space="preserve">
     <value>إجمالي المطاعم</value>
   </data>
-  <data name="Admin.ActiveCustomers" xml:space="preserve">
+  <data name="Admin.ActiveRestaurants" xml:space="preserve">
     <value>المطاعم النشطة</value>
   </data>
-  <data name="Admin.InactiveCustomers" xml:space="preserve">
+  <data name="Admin.InactiveRestaurants" xml:space="preserve">
     <value>المطاعم غير النشطة</value>
   </data>
   <data name="Admin.RecentRestaurants" xml:space="preserve">
@@ -1233,7 +1233,7 @@
   <data name="Admin.TechnicalInfo" xml:space="preserve">
     <value>معلومات النظام</value>
   </data>
-  <data name="Admin.CustomerDetails" xml:space="preserve">
+  <data name="Admin.RestaurantDetails" xml:space="preserve">
     <value>تفاصيل المطعم</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
@@ -1287,13 +1287,13 @@
   <data name="Admin.CentralAdmin" xml:space="preserve">
     <value>لوحة إدارة Wasla</value>
   </data>
-  <data name="Admin.CustomerNotFound" xml:space="preserve">
+  <data name="Admin.RestaurantNotFound" xml:space="preserve">
     <value>المطعم غير موجود.</value>
   </data>
-  <data name="Admin.NoCustomers" xml:space="preserve">
+  <data name="Admin.NoRestaurants" xml:space="preserve">
     <value>لا توجد بيانات بعد</value>
   </data>
-  <data name="Admin.NoCustomersHint" xml:space="preserve">
+  <data name="Admin.NoRestaurantsHint" xml:space="preserve">
     <value>لا توجد مطاعم مسجّلة.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
@@ -1852,7 +1852,7 @@
     <value>الإشعارات</value>
   </data>
   <data name="Settings.Notifications.Description" xml:space="preserve">
-    <value>تكوين كيفية تنبيه لوحة الويب للعميل بشأن الطلبات الجديدة.</value>
+    <value>تكوين كيفية تنبيه لوحة الويب للمطعم بشأن الطلبات الجديدة.</value>
   </data>
   <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
     <value>إدارة إعدادات الإشعارات</value>
@@ -2140,7 +2140,7 @@
     <value>تعذر إنشاء رمز Print Bridge.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>يستدعي Print Bridge نقاط Wasla API باستخدام رأس X-PrintBridge-Token. لا يُرسل معرّف العميل في الطلبات.</value>
+    <value>يستدعي Print Bridge نقاط Wasla API باستخدام رأس X-PrintBridge-Token. لا يُرسل معرّف المطعم في الطلبات.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>أدر تطبيق Print Bridge المحلي على حاسوب المطعم للطباعة التلقائية عبر USB.</value>
@@ -2803,7 +2803,7 @@
     <value>رمز الجهاز</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
-    <value>تعذر تحديد عنوان الخادم. افتح هذه الصفحة من نطاق العميل أو تواصل مع المسؤول.</value>
+    <value>تعذر تحديد عنوان الخادم. افتح هذه الصفحة من نطاق المطعم أو تواصل مع المسؤول.</value>
   </data>
   <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
     <value>أضف جهازاً أعلاه أو أعد إنشاء رمز جهاز موجود لعرض رمز الجهاز هنا.</value>
@@ -2971,7 +2971,7 @@
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>عرض ملخص التسجيل</value></data>
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
+  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>فتح {0}</value></data>
   <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>باقتك</value></data>
   <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>فترة الدفع</value></data>

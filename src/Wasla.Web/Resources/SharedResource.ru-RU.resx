@@ -255,7 +255,7 @@
   <data name="Layout.CentralAdmin" xml:space="preserve">
     <value>Wasla Панель администратора</value>
   </data>
-  <data name="Layout.Customers" xml:space="preserve">
+  <data name="Layout.Restaurants" xml:space="preserve">
     <value>Рестораны</value>
   </data>
   <data name="Layout.PublicSite" xml:space="preserve">
@@ -282,8 +282,8 @@
   <data name="Brand.LogoAlt" xml:space="preserve">
     <value>Wasla</value>
   </data>
-  <data name="Landing.CustomerLogin" xml:space="preserve">
-    <value>Вход для клиентов</value>
+  <data name="Landing.RestaurantLogin" xml:space="preserve">
+    <value>Вход для ресторанов</value>
   </data>
   <data name="Landing.AdminLogin" xml:space="preserve">
     <value>Вход администратора</value>
@@ -316,7 +316,7 @@
     <value>Пожалуйста, проверьте свои данные.</value>
   </data>
   <data name="Auth.TenantContextMissing" xml:space="preserve">
-    <value>Контекст ресторана отсутствует. Откройте ссылку для входа в предоставленный вам домен клиента.</value>
+    <value>Контекст ресторана отсутствует. Откройте ссылку для входа в предоставленный вам домен ресторана.</value>
   </data>
   <data name="Auth.Logout" xml:space="preserve">
     <value>Выйти</value>
@@ -1209,16 +1209,16 @@
   <data name="Admin.DashboardTitle" xml:space="preserve">
     <value>Центральное управление</value>
   </data>
-  <data name="Admin.Customers" xml:space="preserve">
+  <data name="Admin.Restaurants" xml:space="preserve">
     <value>Рестораны</value>
   </data>
-  <data name="Admin.TotalCustomers" xml:space="preserve">
+  <data name="Admin.TotalRestaurants" xml:space="preserve">
     <value>Всего ресторанов</value>
   </data>
-  <data name="Admin.ActiveCustomers" xml:space="preserve">
+  <data name="Admin.ActiveRestaurants" xml:space="preserve">
     <value>Активные рестораны</value>
   </data>
-  <data name="Admin.InactiveCustomers" xml:space="preserve">
+  <data name="Admin.InactiveRestaurants" xml:space="preserve">
     <value>Неактивные рестораны</value>
   </data>
   <data name="Admin.RecentRestaurants" xml:space="preserve">
@@ -1233,7 +1233,7 @@
   <data name="Admin.TechnicalInfo" xml:space="preserve">
     <value>Информация о системе</value>
   </data>
-  <data name="Admin.CustomerDetails" xml:space="preserve">
+  <data name="Admin.RestaurantDetails" xml:space="preserve">
     <value>Подробности о ресторане</value>
   </data>
   <data name="Admin.Name" xml:space="preserve">
@@ -1287,13 +1287,13 @@
   <data name="Admin.CentralAdmin" xml:space="preserve">
     <value>Wasla Панель администратора</value>
   </data>
-  <data name="Admin.CustomerNotFound" xml:space="preserve">
+  <data name="Admin.RestaurantNotFound" xml:space="preserve">
     <value>Ресторан не найден.</value>
   </data>
-  <data name="Admin.NoCustomers" xml:space="preserve">
+  <data name="Admin.NoRestaurants" xml:space="preserve">
     <value>Данных пока нет</value>
   </data>
-  <data name="Admin.NoCustomersHint" xml:space="preserve">
+  <data name="Admin.NoRestaurantsHint" xml:space="preserve">
     <value>Ни один ресторан пока не зарегистрирован.</value>
   </data>
   <data name="Admin.StatusActive" xml:space="preserve">
@@ -1852,7 +1852,7 @@
     <value>Уведомления</value>
   </data>
   <data name="Settings.Notifications.Description" xml:space="preserve">
-    <value>Настройте способ оповещения веб-панели клиента о новых заказах.</value>
+    <value>Настройте способ оповещения веб-панели ресторана о новых заказах.</value>
   </data>
   <data name="Settings.Notifications.ManageNotificationSettings" xml:space="preserve">
     <value>Управление настройками уведомлений</value>
@@ -2140,7 +2140,7 @@
     <value>Не удалось создать токен Print Bridge.</value>
   </data>
   <data name="PrintBridge.ApiHint" xml:space="preserve">
-    <value>Print Bridge вызывает конечные точки Wasla API с заголовком X-PrintBridge-Token. Идентификатор клиента не отправляется в запросах.</value>
+    <value>Print Bridge вызывает конечные точки Wasla API с заголовком X-PrintBridge-Token. Идентификатор ресторана не отправляется в запросах.</value>
   </data>
   <data name="PrintBridge.Description" xml:space="preserve">
     <value>Управляйте локальным приложением Print Bridge на компьютере в ресторане для автоматической печати чеков через USB.</value>
@@ -2803,7 +2803,7 @@
     <value>Токен устройства</value>
   </data>
   <data name="PrintBridge.ServerUrlUnavailable" xml:space="preserve">
-    <value>Сервер URL не удалось определить. Откройте эту страницу из своего клиентского домена или обратитесь к своему администратору.</value>
+    <value>Сервер URL не удалось определить. Откройте эту страницу из домена своего ресторана или обратитесь к своему администратору.</value>
   </data>
   <data name="PrintBridge.TokenPendingHint" xml:space="preserve">
     <value>Добавьте устройство выше или заново создайте существующий токен устройства, чтобы просмотреть токен устройства здесь.</value>
@@ -3213,7 +3213,7 @@
   <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
     <value>Ваш ресторан</value>
   </data>
-  <data name="Signup.PendingLabelOrderHubAddress" xml:space="preserve">
+  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve">
     <value>Ваш адрес Wasla</value>
   </data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve">

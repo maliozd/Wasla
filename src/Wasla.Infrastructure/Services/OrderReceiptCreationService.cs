@@ -28,9 +28,9 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
         _logger = logger;
     }
 
-    public async Task TryCreateOnOrderAcceptedAsync(Guid customerId, Guid orderId, CancellationToken ct)
+    public async Task TryCreateOnOrderAcceptedAsync(Guid tenantId, Guid orderId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct).ConfigureAwait(false);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         var settings = await db.TenantOperationalSettings
             .AsNoTracking()
@@ -42,8 +42,8 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
         if (settings?.OperationalMode == Wasla.Domain.Enums.TenantOperationalMode.Setup)
         {
             _logger.LogDebug(
-                "Tenant is in setup mode, skipping automatic receipt. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Tenant is in setup mode, skipping automatic receipt. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return;
         }
@@ -51,8 +51,8 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
         if (!(settings?.AutoPrintReceiptOnAutoApprove ?? false))
         {
             _logger.LogDebug(
-                "Receipt creation timing is not OnAccepted, skipping PrintJob. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt creation timing is not OnAccepted, skipping PrintJob. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
             return;
         }
@@ -63,13 +63,13 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
         {
             var tenantDisplayName = await _centralDb.Tenants
                 .AsNoTracking()
-                .Where(c => c.Id == customerId)
+                .Where(c => c.Id == tenantId)
                 .Select(c => c.Name)
                 .FirstOrDefaultAsync(ct)
                 .ConfigureAwait(false);
 
             await _receiptPrintJobs.TryCreateReceiptJobAsync(
-                customerId,
+                tenantId,
                 orderId,
                 copyCount,
                 tenantDisplayName,
@@ -79,8 +79,8 @@ public sealed class OrderReceiptCreationService : IOrderReceiptCreationService
         {
             _logger.LogWarning(
                 ex,
-                "Receipt PrintJob creation failed. CustomerId={CustomerId}, OrderId={OrderId}",
-                customerId,
+                "Receipt PrintJob creation failed. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
                 orderId);
         }
     }

@@ -4,7 +4,7 @@ using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Demos;
 using Wasla.Application.Orders;
 using Wasla.Application.Tours;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
@@ -680,13 +680,13 @@ public sealed class GuidedDemoServiceTests : IDisposable
     {
         private readonly Dictionary<Guid, SqliteConnection> _connections = new();
 
-        public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
         {
-            if (!_connections.TryGetValue(customerId, out var connection))
+            if (!_connections.TryGetValue(tenantId, out var connection))
             {
                 connection = new SqliteConnection("Data Source=:memory:");
                 connection.Open();
-                _connections.Add(customerId, connection);
+                _connections.Add(tenantId, connection);
                 using var setup = new DemoTenantDbContext(Options(connection));
                 setup.Database.EnsureCreated();
             }

@@ -844,7 +844,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         }
 
         public Task<bool> HasActivePrintingJobAsync(
-            Guid customerId,
+            Guid tenantId,
             Guid? installationId,
             string? legacyLockedBy,
             CancellationToken ct) =>

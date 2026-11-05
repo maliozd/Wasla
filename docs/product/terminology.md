@@ -67,7 +67,7 @@ Each tenant has its own operational SQL database (orders, tenant users, platform
 
 **Path:** `src/Wasla.Infrastructure/Persistence/Tenant/`
 
-**Entity namespace (target):** `Wasla.Domain.Entities.TenantDb`. Until WAS-142 lands, the tenant-database entity types still live in a namespace with a retired name; WAS-142 moves them without changing the physical schema.
+**Entity namespace:** `Wasla.Domain.Entities.TenantDb` (not `Wasla.Domain.Entities.Tenant`, which would shadow the central `Tenant` type). Moving the entities into it (WAS-142) changed no table, column, key or index.
 
 ### Agent warnings
 
@@ -160,14 +160,14 @@ Rules:
 
 - The exception covers these exact files only, never a directory, glob or `*.Designer.cs` pattern. No CentralDb migration file is on the list.
 - Do not edit these files.
-- Not exempt: both model snapshots, every other migration file, the DbContexts, entity configurations and all runtime model code. WAS-142 moves the tenant model and its snapshot to Tenant naming without changing the physical schema.
+- Not exempt: both model snapshots, every other migration file, the DbContexts, entity configurations and all runtime model code. The tenant model, its snapshot and every tenant migration designer outside the list use `Wasla.Domain.Entities.TenantDb` (WAS-142); the physical schema did not change.
 - The list is closed and may only shrink. A file is added only by an explicit product decision recorded in WAS-134, and this list must match that record.
-- Every newly generated migration must contain no retired identifier. Until WAS-142 lands, avoid generating tenant migrations; if one is unavoidable, get that decision first.
+- Every newly generated migration must contain no retired identifier.
 - WAS-143, the deferred destructive migration-baseline reset, later replaces these files with clean Wasla baselines and removes this exception. It is scheduled for a separate maintenance window and is not a prerequisite for the current rename work.
 
 ## Older documents
 
-Non-canonical documents listed in [../README.md](../README.md) may still use retired names until WAS-144 rewrites or removes them. This file and `src/Wasla.Domain/Entities/Central/Tenant.cs` win for current naming.
+Non-canonical documents listed in [../README.md](../README.md) are kept for reference only and use no retired names. This file and `src/Wasla.Domain/Entities/Central/Tenant.cs` win for current naming.
 
 ## Related docs
 

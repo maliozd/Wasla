@@ -7,7 +7,7 @@ using Wasla.Domain.Enums;
 namespace Wasla.Infrastructure.Platform.Mock;
 
 // EN: In-memory overlay keeps mock fetch echoes aligned with the last manual lifecycle action per external id—avoids confusing default CREATED/RECEIVED/Created strings in local dev.
-// TR: Bellek içi overlay; mock fetch son manuel lifecycle aksiyonunu yansıtır—lokal geliştirmede varsayılan CREATED/RECEIVED/Created ile OrderHub durumunun çakışmasını azaltır.
+// TR: Bellek içi overlay; mock fetch son manuel lifecycle aksiyonunu yansıtır—lokal geliştirmede varsayılan CREATED/RECEIVED/Created ile Wasla durumunun çakışmasını azaltır.
 internal static class MockProviderOrderStatusStore
 {
     private static readonly ConcurrentDictionary<string, string> StatusByKey = new();

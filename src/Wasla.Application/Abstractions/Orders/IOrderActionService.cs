@@ -8,33 +8,33 @@ public interface IOrderActionService
 {
     /// <summary>
     /// MVP: update the internal order status locally (no provider API call yet).
-    /// Returns false if order not found for this customer or not actionable.
+    /// Returns false if order not found for this tenant or not actionable.
     /// </summary>
-    Task<bool> TryUpdateStatusAsync(Guid customerId, Guid orderId, OrderStatus newStatus, CancellationToken ct);
+    Task<bool> TryUpdateStatusAsync(Guid tenantId, Guid orderId, OrderStatus newStatus, CancellationToken ct);
 
     /// <summary>New → Preparing via IFoodPlatformClient.AcceptOrderAsync: accepting an order starts its preparation.</summary>
-    Task<OrderActionResult> TryApproveAsync(Guid customerId, Guid orderId, CancellationToken ct);
+    Task<OrderActionResult> TryApproveAsync(Guid tenantId, Guid orderId, CancellationToken ct);
 
     /// <summary>
     /// New → Cancelled on the provider, then locally. <paramref name="reasonId"/> is the operator's choice from
     /// <see cref="Wasla.Application.Orders.OrderRejectReasons.For"/> for the stored order's platform, or null for a
     /// platform without reasons. A missing or unsupported reason is refused before the provider is called.
     /// </summary>
-    Task<OrderActionResult> TryRejectAsync(Guid customerId, Guid orderId, int? reasonId, CancellationToken ct);
+    Task<OrderActionResult> TryRejectAsync(Guid tenantId, Guid orderId, int? reasonId, CancellationToken ct);
 
     /// <summary>Preparing → ReadyForPickup via IFoodPlatformClient.MarkInvoicedAsync.</summary>
-    Task<OrderActionResult> MarkReadyForPickupAsync(Guid customerId, Guid orderId, CancellationToken ct);
+    Task<OrderActionResult> MarkReadyForPickupAsync(Guid tenantId, Guid orderId, CancellationToken ct);
 
     /// <summary>
     /// User command ReadyForPickup → OnTheWay. Refused with <see cref="Wasla.Application.Orders.OrderDeliveryPolicy.UserPickupNotAllowedKey"/>
     /// for platforms whose courier reports pickup (all current platforms); provider sync applies OnTheWay instead.
     /// </summary>
-    Task<OrderActionResult> MarkOnTheWayAsync(Guid customerId, Guid orderId, CancellationToken ct);
+    Task<OrderActionResult> MarkOnTheWayAsync(Guid tenantId, Guid orderId, CancellationToken ct);
 
     /// <summary>
     /// User command OnTheWay → Delivered. Refused with <see cref="Wasla.Application.Orders.OrderDeliveryPolicy.UserDeliveryNotAllowedKey"/>
     /// for platforms whose courier reports delivery (all current platforms); provider sync applies Delivered instead.
     /// </summary>
-    Task<OrderActionResult> MarkDeliveredAsync(Guid customerId, Guid orderId, CancellationToken ct);
+    Task<OrderActionResult> MarkDeliveredAsync(Guid tenantId, Guid orderId, CancellationToken ct);
 }
 

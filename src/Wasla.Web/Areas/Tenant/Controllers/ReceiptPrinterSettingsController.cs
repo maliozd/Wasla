@@ -45,7 +45,7 @@ public sealed class ReceiptPrinterSettingsController : BaseController
 
         return View(new ReceiptPrinterSettingsPageViewModel
         {
-            CustomerDisplayName = tenant.Name,
+            TenantDisplayName = tenant.Name,
             PrintBridgeStatus = BuildPrintBridgeStatus(deviceRows)
         });
     }

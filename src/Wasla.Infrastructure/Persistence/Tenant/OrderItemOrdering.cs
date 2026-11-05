@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 
 namespace Wasla.Infrastructure.Persistence.Tenant;
 

@@ -1,7 +1,7 @@
 using Wasla.Domain.Common;
 using Wasla.Domain.Enums;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
 /// A user-scoped practice order. It is not an <see cref="Order"/> and is never synced or printed.

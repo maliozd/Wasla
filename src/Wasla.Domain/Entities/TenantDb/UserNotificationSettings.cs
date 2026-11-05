@@ -1,9 +1,9 @@
 ﻿using Wasla.Domain.Common;
 
-namespace Wasla.Domain.Entities.Customer;
+namespace Wasla.Domain.Entities.TenantDb;
 
 /// <summary>
-/// Per-user notification preferences within a single CustomerDb.
+/// Per-user notification preferences within a single tenant database.
 /// Browser autoplay/unlock state is NOT stored here.
 /// </summary>
 public sealed class UserNotificationSettings : BaseEntity

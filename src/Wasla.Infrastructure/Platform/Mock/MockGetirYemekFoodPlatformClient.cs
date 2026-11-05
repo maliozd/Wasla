@@ -2,7 +2,7 @@
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Platform.Mock;
@@ -40,8 +40,8 @@ public sealed class MockGetirYemekFoodPlatformClient : IFoodPlatformClient
 
     // EN: Mock echo tokens (VERIFY/PREPARE/ON_THE_WAY/…) align with verify/prepare/handover/cancel in this dev client—not confirmed production codes.
     // TR: Mock echo tokenları (VERIFY/PREPARE/…) bu dev istemcide verify/prepare/handover/cancel ile hizalanır—kesin production kodu değildir.
-    // EN: Simplified Getir flow skips a separate ready endpoint; OrderHub keeps ReadyForPickup as shared internal step before handover; PREPARE vs DB gap is handled by sync merge.
-    // TR: Basitleştirilmiş Getir akışında ayrı ready endpoint yok; OrderHub ReadyForPickup'i handover öncesi ortak iç adım tutar; PREPARE ile DB farkını sync merge kapatır.
+    // EN: Simplified Getir flow skips a separate ready endpoint; Wasla keeps ReadyForPickup as shared internal step before handover; PREPARE vs DB gap is handled by sync merge.
+    // TR: Basitleştirilmiş Getir akışında ayrı ready endpoint yok; Wasla ReadyForPickup'i handover öncesi ortak iç adım tutar; PREPARE ile DB farkını sync merge kapatır.
 
     public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
     {

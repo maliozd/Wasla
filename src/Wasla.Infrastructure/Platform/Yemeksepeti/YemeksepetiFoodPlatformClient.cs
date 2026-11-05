@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
 

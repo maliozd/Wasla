@@ -13,21 +13,21 @@ public sealed class BranchService : IBranchService
         _dbFactory = dbFactory;
     }
 
-    public async Task<IReadOnlyList<BranchResult>> GetListAsync(Guid customerId, CancellationToken ct)
+    public async Task<IReadOnlyList<BranchResult>> GetListAsync(Guid tenantId, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         return await db.Branches.AsNoTracking()
             .OrderBy(b => b.Name)
             .Select(b => new BranchResult(b.Id, b.Name, b.Address, b.IsActive))
             .ToListAsync(ct);
     }
 
-    public async Task<Guid> CreateAsync(Guid customerId, CreateBranchCommand command, CancellationToken ct)
+    public async Task<Guid> CreateAsync(Guid tenantId, CreateBranchCommand command, CancellationToken ct)
     {
-        await using var db = await _dbFactory.CreateAsync(customerId, ct);
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var now = DateTime.UtcNow;
 
-        var entity = new Wasla.Domain.Entities.Customer.Branch
+        var entity = new Wasla.Domain.Entities.TenantDb.Branch
         {
             Name = (command.Name ?? string.Empty).Trim(),
             Address = (command.Address ?? string.Empty).Trim(),

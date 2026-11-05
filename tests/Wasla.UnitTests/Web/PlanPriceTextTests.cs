@@ -10,7 +10,7 @@ using Wasla.Web.Formatting;
 namespace Wasla.UnitTests.Web;
 
 /// <summary>
-/// How a Wasla plan price reads on customer-facing pages (WAS-147), with the real resources in every culture: monthly
+/// How a Wasla plan price reads on public pages (WAS-147), with the real resources in every culture: monthly
 /// and yearly are worded from their own prices, a missing price says it is not set and never shows an amount, and a
 /// yearly saving is claimed only when the configured prices show one.
 /// </summary>

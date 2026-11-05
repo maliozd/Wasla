@@ -75,17 +75,6 @@ public sealed class HomeController : Controller
     }
 
     [AllowAnonymous]
-    [HttpGet("/customer-access-required")]
-    public IActionResult CustomerAccessRequired([FromQuery] string? returnUrl = null)
-    {
-        var redirect = "/tenant-address-required";
-        if (!string.IsNullOrWhiteSpace(returnUrl))
-            redirect += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
-
-        return Redirect(redirect);
-    }
-
-    [AllowAnonymous]
     [HttpGet("/tenant-not-found")]
     public async Task<IActionResult> TenantNotFound([FromQuery] string? host = null, CancellationToken ct = default)
     {

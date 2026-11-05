@@ -2,7 +2,7 @@
 
 public sealed class ReceiptPrinterSettingsPageViewModel
 {
-    public string CustomerDisplayName { get; set; } = string.Empty;
+    public string TenantDisplayName { get; set; } = string.Empty;
 
     public PrintBridgeStatusSummaryViewModel? PrintBridgeStatus { get; set; }
 }

@@ -1239,7 +1239,7 @@ public sealed partial class GuidedSetupWebTests
 
     private sealed class EmptyDashboard : Wasla.Application.Abstractions.Dashboard.IDashboardService
     {
-        public Task<Wasla.Application.Abstractions.Dashboard.DashboardResult> GetTodayAsync(Guid customerId, CancellationToken ct) =>
+        public Task<Wasla.Application.Abstractions.Dashboard.DashboardResult> GetTodayAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new Wasla.Application.Abstractions.Dashboard.DashboardResult());
     }
 

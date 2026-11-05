@@ -13,7 +13,7 @@
 }
 
 <div class="wasla-order-settings-page wasla-receipt-printer-settings-page">
-    @await Html.PartialAsync("_CustomerPageHeader", new CustomerPageHeaderModel
+    @await Html.PartialAsync("_TenantPageHeader", new TenantPageHeaderModel
     {
         Title = L["Settings.ReceiptPrinterSettings.Title"].Value,
         Subtitle = L["Settings.ReceiptPrinterSettings.Subtitle"].Value
@@ -234,7 +234,7 @@
         };
         window.waslaReceiptTemplateOptions = {
             templateSettingsUrl: "/settings/receipt-printer/template-settings",
-            customerDisplayName: @Html.Raw(JsonSerializer.Serialize(Model.CustomerDisplayName)),
+            tenantDisplayName: @Html.Raw(JsonSerializer.Serialize(Model.TenantDisplayName)),
             headerMaxLength: @ReceiptTemplateLimits.HeaderMaxLength,
             footerMaxLength: @ReceiptTemplateLimits.FooterMaxLength,
             defaultReceiptLanguage: @Html.Raw(JsonSerializer.Serialize(ReceiptLanguageCodes.Normalize(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName))),

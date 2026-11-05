@@ -3,24 +3,24 @@
 public interface IPrintBridgeJobService
 {
     Task<IReadOnlyList<PendingPrintJobDto>> GetPendingJobsAsync(
-        Guid customerId,
+        Guid tenantId,
         int max,
         CancellationToken ct);
 
     Task<PrintJobClaimResponse> TryMarkPrintingAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         string lockedBy,
         Guid? lockedByInstallationId,
         CancellationToken ct);
 
     Task<PrintJobClaimResponse> TryMarkPrintedAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         CancellationToken ct);
 
     Task<PrintJobClaimResponse> TryMarkFailedAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid jobId,
         string errorMessage,
         CancellationToken ct);

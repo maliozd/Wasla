@@ -46,18 +46,18 @@ public sealed record ManualOrderPrintResult(
 public interface IManualOrderPrintService
 {
     Task<OrderReceiptPrintState> GetReceiptPrintStateAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         CancellationToken ct);
 
     /// <summary>The order's receipt print state, or null when the order does not exist in this tenant.</summary>
     Task<OrderReceiptPrintState?> FindReceiptPrintStateAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         CancellationToken ct);
 
     Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
-        Guid customerId,
+        Guid tenantId,
         Guid orderId,
         string? tenantDisplayName,
         CancellationToken ct);

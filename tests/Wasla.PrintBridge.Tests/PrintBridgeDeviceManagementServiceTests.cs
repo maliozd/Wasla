@@ -384,13 +384,13 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         private readonly Dictionary<Guid, TestPrintJob> _jobsByTenant = new();
 
         public Task<bool> HasActivePrintingJobAsync(
-            Guid customerId,
+            Guid tenantId,
             Guid? installationId,
             string? legacyLockedBy,
             CancellationToken ct)
         {
             return Task.FromResult(
-                _jobsByTenant.TryGetValue(customerId, out var job)
+                _jobsByTenant.TryGetValue(tenantId, out var job)
                 && job.Status == PrintJobStatus.Printing
                 && ((installationId.HasValue && job.InstallationId == installationId)
                     || (job.InstallationId is null
@@ -399,17 +399,17 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         }
 
         public void SetActivePrintingJob(
-            Guid customerId,
+            Guid tenantId,
             PrintJobStatus status,
             string? lockedBy,
             Guid? installationId = null)
         {
-            _jobsByTenant[customerId] = new TestPrintJob(status, lockedBy, installationId);
+            _jobsByTenant[tenantId] = new TestPrintJob(status, lockedBy, installationId);
         }
 
-        public TestPrintJob GetJob(Guid customerId)
+        public TestPrintJob GetJob(Guid tenantId)
         {
-            return _jobsByTenant[customerId];
+            return _jobsByTenant[tenantId];
         }
     }
 

@@ -3,7 +3,7 @@ using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Wasla.Domain.Entities.Central;
-using Wasla.Domain.Entities.Customer;
+using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -284,13 +284,13 @@ internal sealed class RecordingTenantDbFactory : ITenantDbContextFactory, IDispo
 
     public void Override(Guid tenantId, Func<CancellationToken, Task<TenantDbContext>> create) => _overrides[tenantId] = create;
 
-    public Task<TenantDbContext> CreateAsync(Guid customerId, CancellationToken ct)
+    public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct)
     {
-        _opened.Enqueue(customerId);
-        if (_overrides.TryGetValue(customerId, out var create))
+        _opened.Enqueue(tenantId);
+        if (_overrides.TryGetValue(tenantId, out var create))
             return create(ct);
 
-        return Task.FromResult(new TenantDbContext(Options(ConnectionStringFor(customerId))));
+        return Task.FromResult(new TenantDbContext(Options(ConnectionStringFor(tenantId))));
     }
 
     /// <summary>Creates the tenant schema and records the given migrations as applied (all of this build's by default).</summary>

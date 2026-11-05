@@ -7,7 +7,7 @@ namespace Wasla.Web.Formatting;
 
 /// <summary>
 /// How a Wasla plan price reads on the public pricing section, signup and the checkout summary (WAS-147), so every
-/// customer-facing page words the same price the same way. Presentation only: which price applies is decided in
+/// public page words the same price the same way. Presentation only: which price applies is decided in
 /// Infrastructure; nothing here falls back to an amount when there is no price.
 /// </summary>
 public static class PlanPriceText

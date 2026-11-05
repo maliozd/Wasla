@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Wasla.Domain.Entities.Customer;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Persistence.Tenant.Configurations;
 
 namespace Wasla.Infrastructure.Persistence.Tenant;
 
 /// <summary>
-/// Per-customer database context. One physical database per restaurant.
+/// Per-tenant database context. One physical database per restaurant.
 /// The connection string is resolved per-request/per-sync from CentralDb
 /// and passed in via ITenantDbContextFactory.
 /// </summary>

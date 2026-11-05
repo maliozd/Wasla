@@ -34,7 +34,7 @@ flowchart LR
 
 Future agents must **not**:
 
-- Recreate `CustomerDbContext`, `CurrentCustomer`, or similar renamed-away types for new work
+- Reintroduce retired product, context or type names for new work (see the [clean-break policy](../product/terminology.md#clean-break-policy))
 - Provision, create, migrate, or drop tenant databases from request middleware or tenant resolution
 - Treat CentralDb as a shared operational store for orders
 - Document shared-schema multi-tenancy as the Wasla model
@@ -57,7 +57,7 @@ Main `DbSet` entities:
 | `PendingRegistration` | Signup / payment / provisioning pipeline |
 | `BillingPlanPrice` / `BillingSubscription` / `BillingPayment` | Wasla plan prices, subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
 | `PrintBridgeDevice` / `PrintBridgeSetupSession` | Print Bridge device registry (central) |
-| `ContactMessage` | Messages from the public contact form (`/contact`) and whether the Wasla team was e-mailed; read by Central Admin at `/admin/contact-messages`. Not tenant data: the sender is a prospective customer, not a tenant user |
+| `ContactMessage` | Messages from the public contact form (`/contact`) and whether the Wasla team was e-mailed; read by Central Admin at `/admin/contact-messages`. Not tenant data: the sender is a prospective restaurant, not a tenant user |
 | Address/catalog helpers | `BusinessType`, `Country`, `City`, `District`, `Neighborhood`, `Street`, and related pending-registration join |
 
 ### Tenant registry entity
@@ -84,7 +84,7 @@ Each active tenant has a dedicated SQL Server database holding operational data 
 
 `TenantDbContext` is created through `ITenantDbContextFactory` / `TenantDbContextFactory`, not via a single shared connection for all tenants.
 
-Domain types for tenant-DB entities still live under the legacy namespace `Wasla.Domain.Entities.Customer` (for example `Order`, `PlatformConnection`). That namespace is historical; it does **not** mean CentralDb `Customer` still exists. The central SaaS entity is `Tenant`.
+Domain types for tenant-DB entities live in the namespace `Wasla.Domain.Entities.TenantDb` (for example `Order`, `PlatformConnection`, `TenantSession`). The central SaaS entity is `Tenant` in `Wasla.Domain.Entities.Central`.
 
 ## Host / domain resolution
 
@@ -300,7 +300,7 @@ Each tenant may have at most one `PlatformConnection` per platform. A second Tre
 
 **Sources:**
 
-- Entity: `src/Wasla.Domain/Entities/Customer/PlatformConnection.cs`
+- Entity: `src/Wasla.Domain/Entities/TenantDb/PlatformConnection.cs`
 - Service duplicate check: `src/Wasla.Infrastructure/Services/PlatformConnectionService.cs`
 - EF config / snapshot: `src/Wasla.Infrastructure/Persistence/Tenant/Configurations/TenantDbConfigurations.cs`, `TenantDbContextModelSnapshot.cs`
 
@@ -329,4 +329,3 @@ The tenant database has a `Branch` row with name, address, and an active flag, e
 
 - [authentication.md](authentication.md)
 - [terminology.md](../product/terminology.md)
-- Stale historical notes in `docs/tenant-vs-customer.md` (do not copy its outdated `Customer.cs` / `CustomerDb` paths; central entity is `Tenant`, operational context is `TenantDbContext`)
