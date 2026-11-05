@@ -181,7 +181,63 @@ Record what was observed in [Stage observations](#stage-observations): headers, 
 
 ## Stage observations
 
-None recorded yet.
+These were observed on stage and are not contract. They may change without notice.
+
+**2026-11-03, two test orders.**
+- **Setup:** the existing deployment on release `94acc764`. One test tenant and its stage seller's connection, with an integrator created and enabled through the CLI.
+- **Test orders:** two, each requested with `meal-webhook-integrator --action test-order`, at 15:29Z and 15:34Z.
+- **Request proof:** the integrator's TLS ClientHello named only `stageapi.tgoapis.com`. Both API hosts resolve to the same Cloudflare addresses, so an address alone does not show which one is used.
+
+| Topic | Observed |
+|---|---|
+| Events sent | Only `created`, one per test order. No other event followed within 10 minutes; both orders stayed `Created` (Wasla New) |
+| Duplicates | Every `created` was delivered **twice**, the copies within 0.1 s of each other. For the first order the second copy came while the first was still being answered, so it was not a retry after a slow or failed answer. Both copies had the same package id and `timestamp`, so they deduplicated to one event with `Deliveries=2` |
+| Authentication and content type | The configured header secret was accepted (no 401), and the body was accepted as `application/json` (no 415). The request's user agent was `fasthttp` |
+| Acknowledgement | 200 with an empty body. No delivery was repeated after a 200 |
+| Answer time | The first order's two deliveries took 2.8 s and 3.3 s to answer. These were the first stored events after the Api started, so a cold start is the likely cause. The second order's took 106 ms and 59 ms, inside the registered 5000 ms timeout |
+| Package id and `timestamp` | The package `id` is a 64-character hex string, not a number. `orderCode` is numeric. `timestamp` was an integer about 1 s before receipt, and it was used as the event time |
+| Seller and store | The `created` payload's `supplierId` and `storeId` matched the configured seller and store, so no event was Rejected |
+| Processing | Each event reached Processed / `Reconciled` on the first attempt, 1 to 4 s after receipt. The targeted reconciliation found the test package on the stage API and created the order; the polling passes before and after it imported nothing |
+| Orders | Exactly one order per package, with no duplicate idempotency key. Both orders appeared on the tenant's Live Screen |
+
+**2026-11-03, cancelling the second test order.** The order was cancelled from the Trendyol GO side at about 15:52Z, 19 minutes after it was created. The first test order was not cancelled and received no further event.
+
+| Topic | Observed |
+|---|---|
+| Event sent | `unsupplied`, not `cancelled`. Its path was `/unsupplied` and its own `status` the documented `UnSupplied`. No `cancelled` event arrived |
+| Duplicates | Delivered **twice**, within 0.1 s, and deduplicated to one event with `Deliveries=2`, as with `created` |
+| Answer time | 783 ms and 864 ms, both 200 |
+| Processing | Processed / `StatusApplied` on the first attempt, 3 s after receipt. The order became Cancelled in Wasla, with platform status `UnSupplied` |
+| Webhook or polling | The webhook made the change. `CancelledAt` was set at 15:52:47.6Z, while the event was being processed. The next polling pass that returned the package started at 15:52:49.7Z |
+| Polling afterwards | That pass counted one updated order, so polling changed the order once more after the webhook had cancelled it. Its change version is 3: stored, the webhook's status change, and that pass. The fields the pass wrote are not recorded |
+
+**2026-11-03, accepting the first test order.** The order was accepted outside Wasla at about 16:38Z; Wasla's Web and Worker logged no accept action.
+
+| Topic | Observed |
+|---|---|
+| Event sent | None. No request reached the receiver, and the inbox gained no event. The documented event types have none for acceptance |
+| Polling | The next pass returned the package and counted one updated order. The order became Accepted in Wasla, with platform status `Picking`. `AcceptedAt` (16:38:49.9Z) falls within that pass (16:38:49.8–50.0Z) |
+| Conclusion | Polling, not the webhook, carries acceptance. Its delay is the polling interval |
+
+**2026-11-03, provider-side status actions.** Two more test orders, requested with `meal-webhook-integrator --action test-order` at 17:53Z and 17:56Z, and the first test order. The seller-side status changes the documentation lists are:
+- `picked` (Picking) and `invoiced` (Invoiced);
+- `manual-shipped` and `manual-delivered`, documented as valid only for restaurants that deliver with their own couriers;
+- `unsupplied`, with a restaurant reason id (621–627) and the package's item ids.
+
+`Cancelled` is documented as a cancellation that does not come from the restaurant, so no seller call causes it. The stage API accepts calls only from authorized IP addresses. The actions were therefore made through Wasla's own order actions on the deployment, which call those endpoints with the connection's credentials. Wasla then sets its own status after the provider's success, so in these tests the webhook or polling could only confirm a status, never set it first.
+
+| Topic | Observed |
+|---|---|
+| Test order creation | Each `created` event arrived 69 s after the request, not within seconds as before. Each was delivered twice in the same second and deduplicated (`Deliveries=2`). The fourth order's answers took 7 ms and 16 ms. The polling passes before the events imported nothing |
+| Processing retry | The third order's event was Processed / `Reconciled` on its first attempt, about 1.5 s after receipt. For the fourth, the targeted reconciliation 0.2 s after receipt did not yet return the package (`PackageNotVisibleException`). The retry 10 s later found it and created the order, as the processing schedule documents. The next polling pass returned it and inserted nothing |
+| Acceptance (`picked`) | Accepting the third order (17:55:13Z) succeeded on the stage API. No webhook arrived. Wasla's action set Accepted. The next polling pass (37 s later) returned platform status `Picking` and counted one updated order |
+| Prepared (`invoiced`) | Marking the first and third orders ready (17:52:33Z, 17:59:22Z) succeeded on the stage API. No webhook arrived. Wasla's action set Ready, and the next polling pass returned platform status `Invoiced` |
+| Restaurant cancellation (`unsupplied`) | Rejecting the fourth order from Wasla failed twice with HTTP 400 from the stage API. Wasla sends `reasonId` 0 and an empty `itemIdList`, while the documentation requires a listed reason id and the item ids. The order stayed New in Wasla and `Created` on stage, and no webhook arrived. The `unsupplied` webhook itself was observed earlier, after a cancellation made on the Trendyol GO side |
+| Courier events | None. Both orders stayed `Invoiced`, for 38 and 31 minutes, with no `pickupEtaCalculated`, `courierNearby`, `shipped` or `delivered` event. So stage did not simulate a courier for them, and the pilot's Ignored outcome for courier events was not observed on a real delivery |
+| `manual-shipped`, `manual-delivered` | Not tested. Wasla refuses Hand to courier and Delivered for platform-courier orders before any provider call. A direct call would need the seller's credentials outside Wasla. The documentation limits both endpoints to restaurants with their own couriers |
+| `cancelled` | Not observed. The fourth order, left unaccepted on stage, was not cancelled within 33 minutes |
+
+Not yet observed: Trendyol GO's retry timing after a failure or non-2xx answer, event ordering, `cancelled`, `shipped`, `delivered`, `courierNearby` and `pickupEtaCalculated`.
 
 ## Related docs
 
