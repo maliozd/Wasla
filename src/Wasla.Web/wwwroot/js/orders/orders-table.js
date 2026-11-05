@@ -363,11 +363,10 @@
         O.debugLog("orders poll", { url: u.toString(), status: resp.status, defaultLive: live });
       }
 
+      // Operators get a localized message; the status and other technical details stay in the debug log (WAS-129).
       if (!resp.ok) {
-        O.showOrdersWarning("orders-table-failed", O.getMessage("tableRefreshFailed") + " (HTTP " + resp.status + ")");
-        if (O.isDebugEnabled()) {
-          O.debugWarn("table refresh failed", resp.status);
-        }
+        O.showOrdersWarning("orders-table-failed", O.getMessage("tableRefreshFailed"));
+        O.debugWarn("table refresh failed", resp.status);
         return;
       }
 
@@ -399,16 +398,15 @@
       const hasRows = tmp.querySelectorAll("tr").length > 0;
       const hasCards = tmp.querySelectorAll("[data-order-id]").length > 0;
       const hasDataOrderIds = hasCards;
+      // A markup contract problem, not something an operator can act on: the table is still updated.
       if (hasRows && !hasDataOrderIds && !isLiveDisplayPage()) {
-        if (O.isDebugEnabled()) {
-          O.debugWarn("rows without data-order-id");
-        }
-        O.showOrdersWarning("orders-table-missing-data", O.getMessage("tableMissingDataOrderId"));
+        O.debugWarn("rows without data-order-id");
       }
 
       const container = getRefreshContainer();
       if (!container) {
-        O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableHostMissing"));
+        O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableRefreshException"));
+        O.debugWarn("table refresh target missing");
         return;
       }
 

@@ -234,13 +234,14 @@
       });
 
       if (!resp.ok) {
+        // The status stays in the debug log; operators get the localized message only (WAS-129).
         const base = O.getMessage("notificationSettingsLoadFailed");
         if (global.WaslaToast) {
-          global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
+          global.WaslaToast.error(base, { key: "notification-settings-load" });
         } else {
-          O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
+          O.showOrdersWarning("notification-settings-failed", base);
         }
-        O.debugWarn("Notification settings request failed", resp);
+        O.debugWarn("Notification settings request failed", resp.status);
         return;
       }
 
@@ -486,11 +487,11 @@
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
       if (global.WaslaToast) {
-        global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
+        global.WaslaToast.error(base, { key: "notification-settings-open" });
       } else {
-        O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
+        O.showOrdersWarning("notification-settings-modal-http", base);
       }
-      O.debugWarn("Notification settings modal HTTP failed", resp);
+      O.debugWarn("Notification settings modal HTTP failed", resp.status);
       return false;
     }
 

@@ -696,9 +696,6 @@
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Popup was blocked. Opening live display in this tab.</value>
   </data>
-  <data name="Orders.ItemsMore" xml:space="preserve">
-    <value>+{0} items</value>
-  </data>
   <data name="Orders.ViewMode.Label" xml:space="preserve">
     <value>Order display view</value>
   </data>
@@ -865,34 +862,28 @@
     <value>Notification settings could not be loaded.</value>
   </data>
   <data name="Orders.TableReturnedFullPage" xml:space="preserve">
-    <value>The order list returned a full page instead of a partial. Check your session or route.</value>
+    <value>The order list could not be refreshed. Reload the page and sign in again if asked.</value>
   </data>
   <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
-    <value>Notification settings returned an unexpected format. Check the console.</value>
+    <value>Some notification settings could not be read. Default values are used.</value>
   </data>
   <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
-    <value>An error occurred while loading notification settings. Check the console.</value>
-  </data>
-  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
-    <value>The order table was updated but row ids were not found (data-order-id).</value>
-  </data>
-  <data name="Orders.TableHostMissing" xml:space="preserve">
-    <value>The order table could not be updated: table target is missing on the page.</value>
+    <value>Notification settings could not be loaded. Reload the page to try again.</value>
   </data>
   <data name="Orders.TableRefreshException" xml:space="preserve">
-    <value>An error occurred while refreshing the order list. Check the console.</value>
+    <value>The order list could not be refreshed. Reload the page to see the latest orders.</value>
   </data>
   <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
-    <value>Could not open notification settings. Check the console.</value>
+    <value>Notification settings could not be opened. Try again.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
     <value>An error occurred while saving.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
-    <value>An error occurred while saving notification settings. Check the console.</value>
+    <value>Notification settings could not be saved. Try again.</value>
   </data>
   <data name="Orders.PageInitFailed" xml:space="preserve">
-    <value>An error occurred while starting the orders page. Check the console.</value>
+    <value>The orders page could not be started. Reload the page.</value>
   </data>
   <data name="Orders.GenericError" xml:space="preserve">
     <value>An unexpected error occurred. Please try again.</value>
@@ -4360,4 +4351,7 @@
   <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>Previous</value></data>
   <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>Next</value></data>
   <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Orders could not be loaded</value></data>
+  <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>The screen keeps trying automatically. Check the internet connection, or try again now.</value></data>
+  <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Reload page</value></data>
 </root>

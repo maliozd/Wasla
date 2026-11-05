@@ -2213,6 +2213,13 @@ body.wasla-orders-live-display.wasla-orders-view-kitchen .wasla-live-display-car
   overflow-wrap: anywhere;
 }
 
+/* Try again / Reload page on the Live Screen's first-load error (WAS-129). */
+.wasla-live-empty__action {
+  margin-top: 1rem;
+  max-width: 100%;
+  white-space: normal;
+}
+
 /* --- Orders: dedicated live display page --- */
 body.wasla-orders-live-display {
   margin: 0;

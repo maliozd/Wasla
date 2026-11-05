@@ -696,9 +696,6 @@
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Всплывающее окно было заблокировано. Открытие живого дисплея на этой вкладке.</value>
   </data>
-  <data name="Orders.ItemsMore" xml:space="preserve">
-    <value>+{0} предметы</value>
-  </data>
   <data name="Orders.ViewMode.Label" xml:space="preserve">
     <value>Заказать просмотр дисплея</value>
   </data>
@@ -865,34 +862,28 @@
     <value>Не удалось загрузить настройки уведомлений.</value>
   </data>
   <data name="Orders.TableReturnedFullPage" xml:space="preserve">
-    <value>Список заказов вернул полную страницу вместо частичной. Проверьте свою сессию или маршрут.</value>
+    <value>Не удалось обновить список заказов. Обновите страницу и при необходимости войдите снова.</value>
   </data>
   <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
-    <value>Настройки уведомлений вернули неожиданный формат. Проверьте консоль.</value>
+    <value>Не удалось прочитать некоторые настройки уведомлений. Используются значения по умолчанию.</value>
   </data>
   <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
-    <value>Произошла ошибка при загрузке настроек уведомлений. Проверьте консоль.</value>
-  </data>
-  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
-    <value>Таблица заказов была обновлена, но идентификаторы строк не найдены (идентификатор заказа данных).</value>
-  </data>
-  <data name="Orders.TableHostMissing" xml:space="preserve">
-    <value>Не удалось обновить таблицу заказов: на странице отсутствует цель таблицы.</value>
+    <value>Не удалось загрузить настройки уведомлений. Обновите страницу, чтобы повторить попытку.</value>
   </data>
   <data name="Orders.TableRefreshException" xml:space="preserve">
-    <value>Произошла ошибка при обновлении списка заказов. Проверьте консоль.</value>
+    <value>Не удалось обновить список заказов. Обновите страницу, чтобы увидеть последние заказы.</value>
   </data>
   <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
-    <value>Не удалось открыть настройки уведомлений. Проверьте консоль.</value>
+    <value>Не удалось открыть настройки уведомлений. Повторите попытку.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
     <value>При сохранении произошла ошибка.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
-    <value>Произошла ошибка при сохранении настроек уведомлений. Проверьте консоль.</value>
+    <value>Не удалось сохранить настройки уведомлений. Повторите попытку.</value>
   </data>
   <data name="Orders.PageInitFailed" xml:space="preserve">
-    <value>Произошла ошибка при запуске страницы заказов. Проверьте консоль.</value>
+    <value>Не удалось запустить страницу заказов. Обновите страницу.</value>
   </data>
   <data name="Orders.GenericError" xml:space="preserve">
     <value>Произошла непредвиденная ошибка. Пожалуйста, попробуйте еще раз.</value>
@@ -4854,4 +4845,7 @@
   <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>Назад</value></data>
   <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>Далее</value></data>
   <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>Страница {0} из {1}</value></data>
+  <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Не удалось загрузить заказы</value></data>
+  <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Экран продолжает попытки автоматически. Проверьте подключение к интернету или повторите попытку сейчас.</value></data>
+  <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Обновить страницу</value></data>
 </root>

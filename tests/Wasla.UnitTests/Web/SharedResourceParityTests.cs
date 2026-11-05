@@ -96,6 +96,22 @@ public sealed partial class SharedResourceParityTests
         Assert.Equal("Выключено", russian["Notification.Disabled"]);
     }
 
+    /// <summary>
+    /// WAS-129: operators were told to "check the console", shown an HTTP status or a markup attribute. Diagnostics belong
+    /// in the logs; no message in any language sends the reader to developer tools.
+    /// </summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData(".tr-TR")]
+    [InlineData(".en-US")]
+    [InlineData(".ar-SA")]
+    [InlineData(".ru-RU")]
+    public void NoMessage_SendsOperatorsToDeveloperTools(string culture)
+    {
+        var offending = Load(culture).Where(p => DeveloperCopy().IsMatch(p.Value)).Select(p => $"{p.Key}: {p.Value}").ToList();
+        Assert.True(offending.Count == 0, $"SharedResource{culture}.resx: {string.Join(" | ", offending)}");
+    }
+
     private static List<string> Names(string culture) =>
         Document(culture).Root!.Elements("data").Select(e => e.Attribute("name")?.Value ?? string.Empty).ToList();
 
@@ -137,4 +153,8 @@ public sealed partial class SharedResourceParityTests
 
     [GeneratedRegex(@"неполноцен|инвалид|недееспособ|ущербн", RegexOptions.IgnoreCase)]
     private static partial Regex RussianDisabilitySense();
+
+    // "Check the console" in each UI language, an HTTP status, or a data-* attribute name.
+    [GeneratedRegex(@"\bconsole\b|konsol|консол|وحدة التحكم|\bHTTP \d{3}\b|data-[a-z]+-", RegexOptions.IgnoreCase)]
+    private static partial Regex DeveloperCopy();
 }
