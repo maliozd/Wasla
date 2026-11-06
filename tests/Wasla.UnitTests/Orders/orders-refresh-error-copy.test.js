@@ -176,3 +176,72 @@ test("an expired session is still a failed load, never settings", async function
   assert.deepEqual(h.errors, ["msg:notificationSettingsLoadFailed"]);
   assert.deepEqual(h.timers.pending(), []);
 });
+
+test("a newer notification-settings load cancels the one in flight: aborted, its deadline cleared and its wait ended", async function () {
+  const requests = [];
+  const h = settingsHarness(function (url, init) {
+    return new Promise(resolve => requests.push({ signal: init.signal, resolve: resolve }));
+  });
+  let firstDone = false;
+  const first = h.O.notificationSettings.load().then(() => { firstDone = true; });
+  await flushAll();
+  assert.deepEqual(h.timers.pending(), [15000]);
+
+  // The settings modal (or a save) loads again while the page's first load still waits.
+  const second = h.O.notificationSettings.load();
+  await flushAll();
+  assert.equal(requests[0].signal.aborted, true, "the superseded request is cancelled");
+  assert.equal(requests[1].signal.aborted, false);
+  assert.deepEqual(h.timers.pending(), [15000], "only the newer load's deadline is left");
+  await first;
+  assert.equal(firstDone, true, "whatever awaited the first load (the Live Screen's start) goes on at once");
+  assert.equal(h.O.state.notificationSettings, null);
+  assert.deepEqual(h.errors, [], "a superseded load reports nothing");
+
+  // The superseded request answers late with sound and notifications on: ignored. The newer one applies.
+  requests[0].resolve(response(200, JSON.stringify(lateSettings), "application/json"));
+  await flushAll();
+  assert.equal(h.O.state.notificationSettings, null);
+  requests[1].resolve(response(200, JSON.stringify(Object.assign({}, lateSettings, { newOrderSoundEnabled: false, showBrowserNotification: false })), "application/json"));
+  await second;
+  assert.equal(h.O.state.notificationSettings.newOrderSoundEnabled, false);
+  assert.equal(h.O.state.notificationSettings.showBrowserNotification, false);
+  assert.deepEqual(h.timers.pending(), [], "no deadline is left running");
+  assert.deepEqual(h.errors, []);
+});
+
+test("a newer load that itself times out is aborted and reported once; the superseded one never reaches its deadline", async function () {
+  const requests = [];
+  const h = settingsHarness(function (url, init) {
+    return new Promise(resolve => requests.push({ signal: init.signal, resolve: resolve }));
+  });
+  const first = h.O.notificationSettings.load();
+  await flushAll();
+  const second = h.O.notificationSettings.load();
+  await flushAll();
+  await first;
+  assert.deepEqual(h.timers.pending(), [15000], "one deadline: the newer load's");
+  h.timers.fire();
+  await second;
+  assert.equal(requests[0].signal.aborted, true);
+  assert.equal(requests[1].signal.aborted, true, "the timed-out request is cancelled");
+  assert.deepEqual(h.errors, ["msg:notificationSettingsLoadTimedOut"], "reported once, by the latest load");
+  assert.equal(h.O.state.notificationSettings, null, "the startup fallback: no sound, no browser notification");
+  requests[1].resolve(response(200, JSON.stringify(lateSettings), "application/json"));
+  requests[0].resolve(response(200, JSON.stringify(lateSettings), "application/json"));
+  await flushAll();
+  assert.equal(h.O.state.notificationSettings, null, "neither late answer is applied");
+});
+
+test("a load that completes in time leaves its request alone and clears its deadline", async function () {
+  let signal;
+  const h = settingsHarness(async function (url, init) {
+    signal = init.signal;
+    return response(200, JSON.stringify(Object.assign({}, lateSettings, { newOrderSoundEnabled: false })), "application/json");
+  });
+  await h.O.notificationSettings.load();
+  assert.equal(signal.aborted, false);
+  assert.deepEqual(h.timers.pending(), []);
+  assert.equal(h.O.state.notificationSettings.newOrderSoundEnabled, false);
+  assert.deepEqual(h.errors, []);
+});

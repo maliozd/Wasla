@@ -77,6 +77,8 @@ Measured on `windows-latest` (wall time of the Windows job; the Node job takes a
 
 Results count theory cases, so they are higher than the test-method counts above. On the same commit the fast results plus the deferred groups' results (200 and 23) equal the full run's. Earlier full runs of the Windows job took 30 to 47 minutes, so a single run is only an indication.
 
+From 4 to 6 November 2026 the full scope's `Wasla.UnitTests` step took 33 to 52 minutes in passing runs (about 4,430 results). On 6 November a full run of WAS-129 ([run](https://github.com/maliozd/Wasla/actions/runs/42201277724), a newer runner image) took 57 minutes for that step: every test had reported, none stalled (the longest gap between results was 21 s), and the tests both runs share took 1.6 times as long, so the runner was slower throughout. The job's 60-minute limit then cancelled it before Print Bridge. The Windows job's limit is therefore 90 minutes; a hanging test is still stopped after 15 minutes by `--blame-hang-timeout`.
+
 ### Full validation of a feature branch
 
 A green fast run does not cover the browser or WebView2 runtime tests. Run the full scope on the branch before merging a pull request into `dev` that changes authentication, authorization or tenant isolation, payment, signup or provisioning, data integrity or migrations, the Web layouts, Live Screen or other browser-visible behavior, the Print Bridge WebView2 app or tray, this workflow or its scripts, or that comes from a machine where the full suite is not run locally:
@@ -108,7 +110,7 @@ How failures surface:
 
 - A build error or a failing test fails its step and the job. The Print Bridge tests still run after a unit-test failure, so one run reports both projects.
 - `scripts/ci/assert-test-results.ps1` then reads every result file, in both scopes. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A filter that selects no test still writes a result file and `dotnet test` still exits with 0, so this check is what fails such a run. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
-- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (60 minutes for Windows, 15 for Node).
+- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (90 minutes for Windows, see the measurements above; 15 for Node).
 - After the tests, the Windows job warns (it does not fail or kill anything) when an Edge, WebView2 or test host process outlived them.
 - Results are kept for 14 days as the `dotnet-test-results` (TRX files) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
 

@@ -231,8 +231,11 @@
   // settings load; highlights use their defaults (WAS-129).
   const LOAD_TIMEOUT_MS = 15000;
   const TIMED_OUT = {};
-  // Only the latest load may apply its result or report its failure: a slower, older one must not overwrite it.
-  let loadGeneration = 0;
+  const SUPERSEDED = {};
+  // Only the latest load may apply its result or report its failure: a newer load cancels the one in flight (its
+  // request is aborted, its deadline cleared and its wait ended at once, so nothing that awaits it is held), and a
+  // slower, older answer can never overwrite newer settings.
+  let currentLoad = null;
 
   async function readNotificationSettings(signal) {
     const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" }, signal: signal });
@@ -245,22 +248,29 @@
   }
 
   async function loadNotificationSettings() {
-    const generation = ++loadGeneration;
+    if (currentLoad) currentLoad.cancel();
     const controller = typeof AbortController === "function" ? new AbortController() : null;
     const timeoutMs = O.opts.notificationSettingsTimeoutMs > 0 ? O.opts.notificationSettingsTimeoutMs : LOAD_TIMEOUT_MS;
     let timer = null;
-    const deadline = new Promise(function (resolve) {
-      timer = setTimeout(function () { resolve(TIMED_OUT); }, timeoutMs);
-    });
+    let end = null;
+    const ended = new Promise(function (resolve) { end = resolve; });
+    function stop(reason) {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      end(reason);
+      if (controller) controller.abort();
+    }
+    const load = { cancel: function () { stop(SUPERSEDED); } };
+    currentLoad = load;
+    timer = setTimeout(function () { timer = null; stop(TIMED_OUT); }, timeoutMs);
     const read = readNotificationSettings(controller ? controller.signal : undefined);
-    // A read still running after the deadline settles later; its result is never used.
+    // A read still running after its load ended settles later; its result is never used.
     read.catch(function () { });
     try {
       // The race, not the abort, ends the wait: a request or body that ignores the abort cannot hold the page.
-      const resp = await Promise.race([read, deadline]);
-      if (generation !== loadGeneration) return;
+      const resp = await Promise.race([read, ended]);
+      if (resp === SUPERSEDED || currentLoad !== load) return;
       if (resp === TIMED_OUT) {
-        if (controller) controller.abort();
         if (global.WaslaToast) {
           global.WaslaToast.error(O.getMessage("notificationSettingsLoadTimedOut"), { key: "notification-settings-load" });
         } else {
@@ -303,7 +313,7 @@
         O.audio.syncSoundEnableUi();
       }
     } catch (error) {
-      if (generation !== loadGeneration) return;
+      if (currentLoad !== load) return;
       if (global.WaslaToast) {
         global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
@@ -311,7 +321,9 @@
       }
       O.debugWarn("loadNotificationSettings failed", error);
     } finally {
-      clearTimeout(timer);
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      if (currentLoad === load) currentLoad = null;
     }
   }
 
