@@ -1992,4 +1992,5 @@
   <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve"><value>Bildirim ayarları açılamadı. Yeniden deneyin.</value></data>
   <data name="Orders.NotificationSettingsSaveException" xml:space="preserve"><value>Bildirim ayarları kaydedilemedi. Yeniden deneyin.</value></data>
   <data name="Orders.PageInitFailed" xml:space="preserve"><value>Siparişler sayfası başlatılamadı. Sayfayı yenileyin.</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Bildirim ayarları zamanında yüklenemedi; yeni sipariş sesi ve tarayıcı bildirimleri şimdilik kapalı. Yeniden denemek için sayfayı yenileyin.</value></data>
 </root>

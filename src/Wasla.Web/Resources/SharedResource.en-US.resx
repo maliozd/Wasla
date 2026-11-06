@@ -4354,4 +4354,5 @@
   <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Orders could not be loaded</value></data>
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>The screen keeps trying automatically. Check the internet connection, or try again now.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Reload page</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Notification settings did not load in time, so the new-order sound and browser notifications are off for now. Reload the page to try again.</value></data>
 </root>

@@ -4848,4 +4848,5 @@
   <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Не удалось загрузить заказы</value></data>
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Экран продолжает попытки автоматически. Проверьте подключение к интернету или повторите попытку сейчас.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Обновить страницу</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Настройки уведомлений не загрузились вовремя, поэтому звук новых заказов и уведомления браузера пока отключены. Обновите страницу, чтобы повторить попытку.</value></data>
 </root>

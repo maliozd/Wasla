@@ -95,3 +95,84 @@ test("notification settings that fail to load show the localized message without
   assert.deepEqual(errors, ["msg:notificationSettingsLoadFailed"]);
   assert.deepEqual(h.debug, [["Notification settings request failed", 503]]);
 });
+
+// WAS-129: the Live Screen awaits this load before it starts reading orders, so a request (or body) that never finished
+// kept it on Loading. The whole load has a deadline; after it the page goes on without settings, as after a failure.
+function manualTimers() {
+  const timers = [];
+  return {
+    setTimeout: function (fn, ms) { const t = { fn: fn, ms: ms, cleared: false }; timers.push(t); return t; },
+    clearTimeout: function (t) { if (t) t.cleared = true; },
+    fire: function () { timers.filter(t => !t.cleared && !t.fired).forEach(t => { t.fired = true; t.fn(); }); },
+    pending: function () { return timers.filter(t => !t.cleared && !t.fired).map(t => t.ms); }
+  };
+}
+
+function settingsHarness(fetch) {
+  const errors = [];
+  const timers = manualTimers();
+  const h = orders(fetch);
+  h.window.WaslaToast = { error: function (message) { errors.push(message); } };
+  h.context.setTimeout = timers.setTimeout;
+  h.context.clearTimeout = timers.clearTimeout;
+  h.context.AbortController = AbortController;
+  load("orders-notification-settings.js", h.context);
+  return { O: h.O, errors: errors, timers: timers, debug: h.debug };
+}
+
+const flushAll = () => new Promise(resolve => setImmediate(resolve));
+const lateSettings = { newOrderSoundEnabled: true, newOrderSoundName: "bell1", newOrderSoundRepeatCount: 3, newOrderSoundVolumePercent: 100, showBrowserNotification: true };
+
+for (const mode of ["headers", "body"]) {
+  test("a notification-settings load whose " + mode + " never finish ends at the 15 s deadline without settings, and the late answer is ignored", async function () {
+    let finish;
+    let signal;
+    const h = settingsHarness(function (url, init) {
+      signal = init.signal;
+      if (mode === "headers") return new Promise(resolve => { finish = () => resolve(response(200, JSON.stringify(lateSettings), "application/json")); });
+      return Promise.resolve({
+        ok: true, status: 200, headers: { get: () => "application/json" },
+        json: () => new Promise(resolve => { finish = () => resolve(lateSettings); })
+      });
+    });
+    let done = false;
+    const loading = h.O.notificationSettings.load().then(() => { done = true; });
+    await flushAll();
+    assert.equal(done, false, "the load is still waiting");
+    assert.deepEqual(h.timers.pending(), [15000], "the same limit as a Live Screen snapshot read");
+    h.timers.fire();
+    await loading;
+    assert.equal(signal.aborted, true, "the request is cancelled");
+    assert.equal(h.O.state.notificationSettings, null, "no settings: no sound and no browser notification");
+    assert.deepEqual(h.errors, ["msg:notificationSettingsLoadTimedOut"]);
+
+    finish();
+    await flushAll();
+    assert.equal(h.O.state.notificationSettings, null, "the late answer does not turn sound or notifications on");
+    assert.deepEqual(h.errors, ["msg:notificationSettingsLoadTimedOut"], "nothing more is reported");
+  });
+}
+
+test("an older, slower notification-settings load never overwrites a newer one", async function () {
+  const answers = [];
+  const h = settingsHarness(function () { return new Promise(resolve => answers.push(resolve)); });
+  const first = h.O.notificationSettings.load();
+  const second = h.O.notificationSettings.load();
+  await flushAll();
+  answers[1](response(200, JSON.stringify(Object.assign({}, lateSettings, { newOrderSoundEnabled: false })), "application/json"));
+  await second;
+  assert.equal(h.O.state.notificationSettings.newOrderSoundEnabled, false);
+  answers[0](response(200, JSON.stringify(lateSettings), "application/json"));
+  await first;
+  assert.equal(h.O.state.notificationSettings.newOrderSoundEnabled, false, "the newer settings stay");
+  assert.deepEqual(h.errors, []);
+  assert.deepEqual(h.timers.pending(), [], "both deadlines are cleared");
+});
+
+test("an expired session is still a failed load, never settings", async function () {
+  const h = settingsHarness(async function () { return response(401, ""); });
+  await h.O.notificationSettings.load();
+  assert.equal(h.O.state.notificationSettings, null);
+  assert.deepEqual(h.errors, ["msg:notificationSettingsLoadFailed"]);
+  assert.deepEqual(h.timers.pending(), []);
+});

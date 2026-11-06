@@ -4354,4 +4354,5 @@
   <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Siparişler yüklenemedi</value></data>
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Ekran otomatik olarak yeniden denemeye devam ediyor. İnternet bağlantısını kontrol edin veya şimdi yeniden deneyin.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Sayfayı yenile</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Bildirim ayarları zamanında yüklenemedi; yeni sipariş sesi ve tarayıcı bildirimleri şimdilik kapalı. Yeniden denemek için sayfayı yenileyin.</value></data>
 </root>

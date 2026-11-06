@@ -89,7 +89,9 @@ function load(playback) {
     Audio: Audio,
     localStorage: { setItem: function () {}, getItem: function () { return null; } },
     AbortController: AbortController,
-    setTimeout: function (fn) { fn(); return 0; }
+    // The settings load has a 15 s deadline (WAS-129); it never fires here.
+    setTimeout: function (fn, ms) { if (!(ms >= 15000)) fn(); return 0; },
+    clearTimeout: function () {}
   };
   context.window.document = context.document;
   vm.runInNewContext(audioSource, context);

@@ -4354,4 +4354,5 @@
   <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>تعذر تحميل الطلبات</value></data>
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>تواصل الشاشة المحاولة تلقائيًا. تحقق من الاتصال بالإنترنت، أو أعد المحاولة الآن.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>إعادة تحميل الصفحة</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>لم تُحمَّل إعدادات الإشعارات في الوقت المحدد، لذا فإن صوت الطلب الجديد وإشعارات المتصفح متوقفة حاليًا. أعد تحميل الصفحة للمحاولة مرة أخرى.</value></data>
 </root>

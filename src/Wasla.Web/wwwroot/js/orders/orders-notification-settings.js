@@ -225,13 +225,50 @@
     };
   }
 
+  // The Live Screen starts reading orders only after this load (orders-live-display-page.js), so the whole operation,
+  // the response body included, has the same limit as a Live Screen snapshot read (liveDataTimeoutMs, 15 s). After it
+  // the page goes on without settings, exactly as after a failed load: no sound and no browser notification until
+  // settings load; highlights use their defaults (WAS-129).
+  const LOAD_TIMEOUT_MS = 15000;
+  const TIMED_OUT = {};
+  // Only the latest load may apply its result or report its failure: a slower, older one must not overwrite it.
+  let loadGeneration = 0;
+
+  async function readNotificationSettings(signal) {
+    const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" }, signal: signal });
+    O.debugLog("Loading notification settings", {
+      url: O.opts.notificationSettingsJsonUrl,
+      status: resp.status
+    });
+    if (!resp.ok) return { ok: false, status: resp.status };
+    return { ok: true, json: await resp.json() };
+  }
+
   async function loadNotificationSettings() {
+    const generation = ++loadGeneration;
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timeoutMs = O.opts.notificationSettingsTimeoutMs > 0 ? O.opts.notificationSettingsTimeoutMs : LOAD_TIMEOUT_MS;
+    let timer = null;
+    const deadline = new Promise(function (resolve) {
+      timer = setTimeout(function () { resolve(TIMED_OUT); }, timeoutMs);
+    });
+    const read = readNotificationSettings(controller ? controller.signal : undefined);
+    // A read still running after the deadline settles later; its result is never used.
+    read.catch(function () { });
     try {
-      const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" } });
-      O.debugLog("Loading notification settings", {
-        url: O.opts.notificationSettingsJsonUrl,
-        status: resp.status
-      });
+      // The race, not the abort, ends the wait: a request or body that ignores the abort cannot hold the page.
+      const resp = await Promise.race([read, deadline]);
+      if (generation !== loadGeneration) return;
+      if (resp === TIMED_OUT) {
+        if (controller) controller.abort();
+        if (global.WaslaToast) {
+          global.WaslaToast.error(O.getMessage("notificationSettingsLoadTimedOut"), { key: "notification-settings-load" });
+        } else {
+          O.showOrdersWarning("notification-settings-timeout", O.getMessage("notificationSettingsLoadTimedOut"));
+        }
+        O.debugWarn("Notification settings did not load within " + timeoutMs + " ms");
+        return;
+      }
 
       if (!resp.ok) {
         // The status stays in the debug log; operators get the localized message only (WAS-129).
@@ -245,7 +282,7 @@
         return;
       }
 
-      const json = await resp.json();
+      const json = resp.json;
       O.debugLog("Notification settings JSON", json);
 
       const required = [
@@ -266,12 +303,15 @@
         O.audio.syncSoundEnableUi();
       }
     } catch (error) {
+      if (generation !== loadGeneration) return;
       if (global.WaslaToast) {
         global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
         O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
       }
       O.debugWarn("loadNotificationSettings failed", error);
+    } finally {
+      clearTimeout(timer);
     }
   }
 

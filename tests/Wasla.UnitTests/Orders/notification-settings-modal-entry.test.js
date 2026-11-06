@@ -147,7 +147,9 @@ function settingsHarness(options) {
       this.fields = fields;
     },
     AbortController: AbortController,
-    setTimeout: function (fn) { fn(); }
+    // The settings load has a 15 s deadline (WAS-129); it never fires here.
+    setTimeout: function (fn, ms) { if (!(ms >= 15000)) fn(); },
+    clearTimeout: function () {}
   };
   vm.runInNewContext(settingsSource, context);
   return { O: O, ids: ids, calls: calls, win: win };

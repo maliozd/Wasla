@@ -373,6 +373,88 @@ public sealed class LiveScreenFirstLoadBrowserTests : IClassFixture<LiveScreenFi
         Assert.Equal([Resource(culture, "Orders.NotificationSettingsLoadFailed")], shown);
     }
 
+    // The page's first /notification-settings/current never answers ("headers"), or answers and never finishes its body
+    // ("body"), and the live hub cannot be reached. Neither honours the page's abort signal, so only a deadline that
+    // covers the whole operation can end the wait. release() completes it late with settings that turn sound and browser notifications on. Notification is a
+    // counting stub, so a permission request or a notification would show.
+    private static string HangingSettingsProbe(string mode) => $$"""
+        (() => {
+          const t = window.__settings = { calls: 0, mode: '{{mode}}', release: null, permissionRequests: 0, notifications: 0 };
+          const late = '{"newOrderSoundEnabled":true,"newOrderSoundName":"bell1","newOrderSoundRepeatCount":3,"newOrderSoundVolumePercent":100,"showBrowserNotification":true}';
+          const original = window.fetch;
+          window.fetch = function (input) {
+            const url = String((input && input.url) || input);
+            // The live connection cannot be established either: its connect would otherwise read the snapshot by itself.
+            if (url.indexOf('/hubs/') >= 0) return Promise.reject(new TypeError('Failed to fetch'));
+            if (url.indexOf('/notification-settings/current') < 0) return original.apply(this, arguments);
+            t.calls++;
+            const headers = { 'Content-Type': 'application/json' };
+            if (t.mode === 'headers') return new Promise(resolve => { t.release = () => resolve(new Response(late, { status: 200, headers })); });
+            const encoder = new TextEncoder();
+            const body = new ReadableStream({ start(controller) {
+              controller.enqueue(encoder.encode(late.slice(0, 20)));
+              t.release = () => { controller.enqueue(encoder.encode(late.slice(20))); controller.close(); };
+            } });
+            return Promise.resolve(new Response(body, { status: 200, headers }));
+          };
+          const N = function () { t.notifications++; };
+          N.permission = 'granted';
+          N.requestPermission = function () { t.permissionRequests++; return Promise.resolve('granted'); };
+          window.Notification = N;
+        })();
+        """;
+
+    [Theory]
+    [InlineData("headers", "en-US", 1280)]
+    [InlineData("body", "en-US", 1280)]
+    [InlineData("headers", "ar-SA", 390)]
+    [InlineData("body", "ru-RU", 390)]
+    public async Task NotificationSettingsNeverFinish_TheScreenStillLoadsOrders_WithSoundAndNotificationsOff(string mode, string culture, int width)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await OpenAsync(culture, width, "/orders/live-display", ct, HangingSettingsProbe(mode));
+        var started = DateTime.UtcNow;
+        // The deadline is the snapshot read's 15 s (liveDataTimeoutMs); the orders follow at once.
+        Assert.True(await browser.WaitForAsync(ScreenRendered, TimeSpan.FromSeconds(30), ct),
+            $"{mode} {culture}: the Live Screen stayed on Loading while notification settings never finished. {_fixture.Host.ServerErrors}");
+        var waited = DateTime.UtcNow - started;
+        Assert.True(waited < TimeSpan.FromSeconds(25), $"the orders appeared after {waited.TotalSeconds:0} s");
+
+        var page = await browser.EvaluateAsync<JsonElement>("""
+            (() => ({
+              settings: WaslaOrders.state.notificationSettings,
+              toasts: [...document.querySelectorAll('.wasla-toast__message, #ordersMessageHost .alert')].map(e => e.textContent.trim()),
+              sound: document.getElementById('ordersLiveDisplaySoundStatus').textContent.trim(),
+              calls: window.__settings.calls,
+              loading: !!document.querySelector('[data-live-loading]'),
+              loadError: !!document.querySelector('[data-live-load-error]')
+            }))()
+            """, ct);
+        // The fallback is the existing one for a failed load: no settings, so no sound and no browser notification.
+        Assert.Equal(JsonValueKind.Null, page.GetProperty("settings").ValueKind);
+        Assert.Contains(Resource(culture, "Orders.NotificationSettingsLoadTimedOut"), page.GetProperty("toasts").EnumerateArray().Select(t => t.GetString()));
+        Assert.Equal("…", page.GetProperty("sound").GetString());
+        Assert.Equal(1, page.GetProperty("calls").GetInt32());
+        Assert.False(page.GetProperty("loading").GetBoolean());
+        Assert.False(page.GetProperty("loadError").GetBoolean());
+
+        // The timed-out request completes late with sound and browser notifications on: nothing of it is applied.
+        await browser.EvaluateAsync<bool>("(() => { window.__settings.release(); return true; })()", ct);
+        await Task.Delay(1500, ct);
+        var late = await browser.EvaluateAsync<JsonElement>("""
+            (() => ({
+              settings: WaslaOrders.state.notificationSettings,
+              sound: document.getElementById('ordersLiveDisplaySoundStatus').textContent.trim(),
+              permissionRequests: window.__settings.permissionRequests,
+              notifications: window.__settings.notifications
+            }))()
+            """, ct);
+        Assert.Equal(JsonValueKind.Null, late.GetProperty("settings").ValueKind);
+        Assert.Equal("…", late.GetProperty("sound").GetString());
+        Assert.Equal(0, late.GetProperty("permissionRequests").GetInt32());
+        Assert.Equal(0, late.GetProperty("notifications").GetInt32());
+    }
+
     private async Task<int> ActiveOrdersAsync(CancellationToken ct)
     {
         await using var db = await _fixture.Host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(TenantVisualWebHost.TenantId, ct);

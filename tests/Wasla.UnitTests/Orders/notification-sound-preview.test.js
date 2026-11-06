@@ -160,7 +160,10 @@ test("opening settings without a loaded runtime uses the saved sound setting", a
         text: function () { return Promise.resolve("<div></div>"); }
       });
     },
-    AbortController: AbortController
+    AbortController: AbortController,
+    // The settings load has a 15 s deadline (WAS-129); it never fires here.
+    setTimeout: function () { return 0; },
+    clearTimeout: function () {}
   };
   context.window.document = context.document;
   vm.runInNewContext(settingsSource, context);
