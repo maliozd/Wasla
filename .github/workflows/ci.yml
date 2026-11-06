@@ -30,6 +30,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fails when a retired product or tenant name appears in any tracked file (docs/product/terminology.md). The patterns
+  # come from the repository variable WASLA_RETIRED_TERMS, so no tracked file contains them; an unset or invalid value
+  # fails the job. Same in every scope; see docs/operations/testing.md.
+  terminology-guard:
+    name: Retired-terminology guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Scan every tracked file for retired names
+        env:
+          WASLA_RETIRED_TERMS: ${{ vars.WASLA_RETIRED_TERMS }}
+        run: node scripts/ci/terminology-guard.js
+
   build-and-test:
     name: Release build, .NET and Print Bridge tests (Windows)
     runs-on: windows-latest

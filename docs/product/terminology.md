@@ -134,7 +134,7 @@ Prefer inventory assertions that fail when anything extra appears, for example:
 
 ### Repository scan
 
-The clean-break scan commands and the retired-term patterns are kept in Linear (WAS-134) and are not copied into the repository. Each clean-break issue runs the scan on the paths it changes. WAS-144 adds the repository-wide CI guard, which reads the retired-term patterns from a GitHub Actions repository variable so that no tracked file has to contain them.
+The clean-break scan commands and the retired-term patterns are kept in Linear (WAS-134) and are not copied into the repository. Each clean-break issue runs the scan on the paths it changes. The CI job `Retired-terminology guard` (WAS-144, `scripts/ci/terminology-guard.js`) checks every tracked file's content and path on every run. It reads the retired-term patterns from the GitHub Actions repository variable `WASLA_RETIRED_TERMS`, so no tracked file has to contain them, and it does not look for order-customer prose, which stays a review task. How it works and how to run it: [testing.md](../operations/testing.md#retired-terminology-guard).
 
 ### Historical migration exception
 
@@ -161,7 +161,7 @@ Rules:
 - The exception covers these exact files only, never a directory, glob or `*.Designer.cs` pattern. No CentralDb migration file is on the list.
 - Do not edit these files.
 - Not exempt: both model snapshots, every other migration file, the DbContexts, entity configurations and all runtime model code. The tenant model, its snapshot and every tenant migration designer outside the list use `Wasla.Domain.Entities.TenantDb` (WAS-142); the physical schema did not change.
-- The list is closed and may only shrink. A file is added only by an explicit product decision recorded in WAS-134, and this list must match that record.
+- The list is closed and may only shrink. A file is added only by an explicit product decision recorded in WAS-134, and this list must match that record. The guard holds the same list (a Node test compares the two) and accepts only paths the repository variable approves.
 - Every newly generated migration must contain no retired identifier.
 - WAS-143, the deferred destructive migration-baseline reset, later replaces these files with clean Wasla baselines and removes this exception. It is scheduled for a separate maintenance window and is not a prerequisite for the current rename work.
 
