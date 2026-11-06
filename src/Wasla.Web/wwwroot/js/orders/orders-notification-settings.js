@@ -225,26 +225,74 @@
     };
   }
 
-  async function loadNotificationSettings() {
-    try {
-      const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" } });
-      O.debugLog("Loading notification settings", {
-        url: O.opts.notificationSettingsJsonUrl,
-        status: resp.status
-      });
+  // The Live Screen starts reading orders only after this load (orders-live-display-page.js), so the whole operation,
+  // the response body included, has the same limit as a Live Screen snapshot read (liveDataTimeoutMs, 15 s). After it
+  // the page goes on without settings, exactly as after a failed load: no sound and no browser notification until
+  // settings load; highlights use their defaults (WAS-129).
+  const LOAD_TIMEOUT_MS = 15000;
+  const TIMED_OUT = {};
+  const SUPERSEDED = {};
+  // Only the latest load may apply its result or report its failure: a newer load cancels the one in flight (its
+  // request is aborted, its deadline cleared and its wait ended at once, so nothing that awaits it is held), and a
+  // slower, older answer can never overwrite newer settings.
+  let currentLoad = null;
 
-      if (!resp.ok) {
-        const base = O.getMessage("notificationSettingsLoadFailed");
+  async function readNotificationSettings(signal) {
+    const resp = await fetch(O.opts.notificationSettingsJsonUrl, { headers: { "X-Requested-With": "fetch" }, signal: signal });
+    O.debugLog("Loading notification settings", {
+      url: O.opts.notificationSettingsJsonUrl,
+      status: resp.status
+    });
+    if (!resp.ok) return { ok: false, status: resp.status };
+    return { ok: true, json: await resp.json() };
+  }
+
+  async function loadNotificationSettings() {
+    if (currentLoad) currentLoad.cancel();
+    const controller = typeof AbortController === "function" ? new AbortController() : null;
+    const timeoutMs = O.opts.notificationSettingsTimeoutMs > 0 ? O.opts.notificationSettingsTimeoutMs : LOAD_TIMEOUT_MS;
+    let timer = null;
+    let end = null;
+    const ended = new Promise(function (resolve) { end = resolve; });
+    function stop(reason) {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      end(reason);
+      if (controller) controller.abort();
+    }
+    const load = { cancel: function () { stop(SUPERSEDED); } };
+    currentLoad = load;
+    timer = setTimeout(function () { timer = null; stop(TIMED_OUT); }, timeoutMs);
+    const read = readNotificationSettings(controller ? controller.signal : undefined);
+    // A read still running after its load ended settles later; its result is never used.
+    read.catch(function () { });
+    try {
+      // The race, not the abort, ends the wait: a request or body that ignores the abort cannot hold the page.
+      const resp = await Promise.race([read, ended]);
+      if (resp === SUPERSEDED || currentLoad !== load) return;
+      if (resp === TIMED_OUT) {
         if (global.WaslaToast) {
-          global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-load" });
+          global.WaslaToast.error(O.getMessage("notificationSettingsLoadTimedOut"), { key: "notification-settings-load" });
         } else {
-          O.showOrdersWarning("notification-settings-failed", base + " (HTTP " + resp.status + ")");
+          O.showOrdersWarning("notification-settings-timeout", O.getMessage("notificationSettingsLoadTimedOut"));
         }
-        O.debugWarn("Notification settings request failed", resp);
+        O.debugWarn("Notification settings did not load within " + timeoutMs + " ms");
         return;
       }
 
-      const json = await resp.json();
+      if (!resp.ok) {
+        // The status stays in the debug log; operators get the localized message only (WAS-129).
+        const base = O.getMessage("notificationSettingsLoadFailed");
+        if (global.WaslaToast) {
+          global.WaslaToast.error(base, { key: "notification-settings-load" });
+        } else {
+          O.showOrdersWarning("notification-settings-failed", base);
+        }
+        O.debugWarn("Notification settings request failed", resp.status);
+        return;
+      }
+
+      const json = resp.json;
       O.debugLog("Notification settings JSON", json);
 
       const required = [
@@ -265,12 +313,17 @@
         O.audio.syncSoundEnableUi();
       }
     } catch (error) {
+      if (currentLoad !== load) return;
       if (global.WaslaToast) {
         global.WaslaToast.error(O.getMessage("notificationSettingsLoadException"), { key: "notification-settings-load-ex" });
       } else {
         O.showOrdersWarning("notification-settings-exception", O.getMessage("notificationSettingsLoadException"));
       }
       O.debugWarn("loadNotificationSettings failed", error);
+    } finally {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      if (currentLoad === load) currentLoad = null;
     }
   }
 
@@ -486,11 +539,11 @@
     if (!resp.ok) {
       const base = O.getMessage("notificationSettingsModalOpenFailed");
       if (global.WaslaToast) {
-        global.WaslaToast.error(base + " (HTTP " + resp.status + ")", { key: "notification-settings-open" });
+        global.WaslaToast.error(base, { key: "notification-settings-open" });
       } else {
-        O.showOrdersWarning("notification-settings-modal-http", base + " (HTTP " + resp.status + ")");
+        O.showOrdersWarning("notification-settings-modal-http", base);
       }
-      O.debugWarn("Notification settings modal HTTP failed", resp);
+      O.debugWarn("Notification settings modal HTTP failed", resp.status);
       return false;
     }
 

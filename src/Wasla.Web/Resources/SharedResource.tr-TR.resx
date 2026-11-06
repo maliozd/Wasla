@@ -696,9 +696,6 @@
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>Açılır pencere engellendi. Canlı ekran bu sekmede açılıyor.</value>
   </data>
-  <data name="Orders.ItemsMore" xml:space="preserve">
-    <value>+{0} ürün</value>
-  </data>
   <data name="Orders.ViewMode.Label" xml:space="preserve">
     <value>Sipariş görünümü</value>
   </data>
@@ -865,34 +862,28 @@
     <value>Bildirim ayarları yüklenemedi.</value>
   </data>
   <data name="Orders.TableReturnedFullPage" xml:space="preserve">
-    <value>Sipariş listesi yerine tam sayfa HTML döndü. Oturum veya route kontrol edilmeli.</value>
+    <value>Sipariş listesi yenilenemedi. Sayfayı yenileyin; istenirse yeniden giriş yapın.</value>
   </data>
   <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
-    <value>Bildirim ayarları beklenmeyen formatta döndü. Konsolu kontrol edin.</value>
+    <value>Bazı bildirim ayarları okunamadı. Varsayılan değerler kullanılıyor.</value>
   </data>
   <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
-    <value>Bildirim ayarları alınırken hata oluştu. Konsolu kontrol edin.</value>
-  </data>
-  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
-    <value>Sipariş tablosu güncellendi ancak satır kimlikleri bulunamadı (data-order-id).</value>
-  </data>
-  <data name="Orders.TableHostMissing" xml:space="preserve">
-    <value>Sipariş tablosu güncellenemedi: sayfada tablo hedefi bulunamadı.</value>
+    <value>Bildirim ayarları yüklenemedi. Yeniden denemek için sayfayı yenileyin.</value>
   </data>
   <data name="Orders.TableRefreshException" xml:space="preserve">
-    <value>Sipariş listesi yenilenirken hata oluştu. Konsolu kontrol edin.</value>
+    <value>Sipariş listesi yenilenemedi. Güncel siparişleri görmek için sayfayı yenileyin.</value>
   </data>
   <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
-    <value>Bildirim ayarları penceresi açılamadı. Konsolu kontrol edin.</value>
+    <value>Bildirim ayarları açılamadı. Yeniden deneyin.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
     <value>Kaydetme sırasında bir hata oluştu.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
-    <value>Bildirim ayarları kaydedilirken hata oluştu. Konsolu kontrol edin.</value>
+    <value>Bildirim ayarları kaydedilemedi. Yeniden deneyin.</value>
   </data>
   <data name="Orders.PageInitFailed" xml:space="preserve">
-    <value>Orders sayfası başlatılırken hata oluştu. Konsolu kontrol edin.</value>
+    <value>Siparişler sayfası başlatılamadı. Sayfayı yenileyin.</value>
   </data>
   <data name="Orders.GenericError" xml:space="preserve">
     <value>Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.</value>
@@ -4360,4 +4351,8 @@
   <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>Önceki</value></data>
   <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>Sonraki</value></data>
   <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>Sayfa {0} / {1}</value></data>
+  <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Siparişler yüklenemedi</value></data>
+  <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Ekran otomatik olarak yeniden denemeye devam ediyor. İnternet bağlantısını kontrol edin veya şimdi yeniden deneyin.</value></data>
+  <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Sayfayı yenile</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Bildirim ayarları zamanında yüklenemedi; yeni sipariş sesi ve tarayıcı bildirimleri şimdilik kapalı. Yeniden denemek için sayfayı yenileyin.</value></data>
 </root>

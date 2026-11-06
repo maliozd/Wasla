@@ -33,7 +33,11 @@ jobs:
   build-and-test:
     name: Release build, .NET and Print Bridge tests (Windows)
     runs-on: windows-latest
-    timeout-minutes: 60
+    # The full scope's Wasla.UnitTests step took 33 to 52 minutes in passing runs and about 57 minutes on a uniformly
+    # slower runner (2026-11-06, every test reported, cancelled at 60 before Print Bridge). With setup (~3 min) and
+    # Print Bridge plus result checks (~3 min) that no longer fits 60. A hanging test is still stopped by
+    # --blame-hang-timeout below.
+    timeout-minutes: 90
 
     env:
       DOTNET_NOLOGO: true

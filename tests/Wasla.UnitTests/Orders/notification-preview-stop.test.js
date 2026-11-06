@@ -322,7 +322,10 @@ test("closing the modal stops the active preview", async function () {
       }
       return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve("<div></div>"); } });
     },
-    AbortController: AbortController
+    AbortController: AbortController,
+    // The settings load has a 15 s deadline (WAS-129); it never fires here.
+    setTimeout: function () { return 0; },
+    clearTimeout: function () {}
   };
   context.window.document = context.document;
   vm.runInNewContext(settingsSource, context);

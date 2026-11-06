@@ -198,7 +198,8 @@
 
     @* Today's figures on one line, each as icon, count and label; read-only, not a control. The board's columns carry
        the per-status counts. orders-live-store.js writes the counts in the page culture's number format and marks a 0
-       with is-zero (quiet colours); active and cancelled start at 0 until the first snapshot. *@
+       with is-zero (quiet colours); active and cancelled show … until the first snapshot, so a screen whose first read failed
+       never claims 0 active orders (WAS-129). *@
     <div class="wasla-live-display-summary">
         <div class="wasla-live-summary">
             <div class="wasla-live-summary__metric@(Model.TotalCount == 0 ? " is-zero" : null)">
@@ -208,14 +209,14 @@
             </div>
             <div class="wasla-live-summary__metric is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--active" aria-hidden="true"></span>
-                <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">0</span>
+                <span class="wasla-live-summary__value" id="ordersLiveDisplayActiveCount">…</span>
                 @* During order training the board holds only the practice order: this count is the real orders waiting
                    outside it, and its label says so (the store keeps it in step with each snapshot). *@
                 <span class="wasla-live-summary__label" id="ordersLiveDisplayActiveLabel">@(Model.GuidedTraining is null ? L["Orders.ActiveOrders"] : L["Orders.LiveScreen.WaitingRealOrders"])</span>
             </div>
             <div class="wasla-live-summary__metric wasla-live-summary__metric--cancelled is-zero">
                 <span class="wasla-live-summary__icon wasla-live-summary__icon--cancelled" aria-hidden="true"></span>
-                <span class="wasla-live-summary__value" id="ordersLiveDisplayCancelledCount">0</span>
+                <span class="wasla-live-summary__value" id="ordersLiveDisplayCancelledCount">…</span>
                 <span class="wasla-live-summary__label">@L["Orders.CancelledOrders"]</span>
             </div>
         </div>
@@ -317,6 +318,7 @@
                 ["notificationSettingsLoadFailed"] = L["Orders.NotificationSettingsLoadFailed"].Value,
                 ["notificationSettingsUnexpectedFormat"] = L["Orders.NotificationSettingsUnexpectedFormat"].Value,
                 ["notificationSettingsLoadException"] = L["Orders.NotificationSettingsLoadException"].Value,
+                ["notificationSettingsLoadTimedOut"] = L["Orders.NotificationSettingsLoadTimedOut"].Value,
                 ["notificationSettingsModalOpenFailed"] = L["Orders.NotificationSettingsModalOpenFailed"].Value,
                 ["notificationSettingsSaveFailed"] = L["Orders.NotificationSettingsSaveFailed"].Value,
                 ["notificationSettingsSaveException"] = L["Orders.NotificationSettingsSaveException"].Value,
@@ -358,8 +360,6 @@
                 ["orderPrintFailed"] = L["Orders.Print.Failed"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
-                ["tableMissingDataOrderId"] = L["Orders.TableMissingDataOrderId"].Value,
-                ["tableHostMissing"] = L["Orders.TableHostMissing"].Value,
                 ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
                 ["ordersApproveConfirmTitle"] = L["Orders.ApproveConfirmTitle"].Value,
                 ["ordersApproveConfirmMessage"] = L["Orders.ApproveConfirmMessage"].Value,
@@ -387,7 +387,6 @@
                 ["columnElapsed"] = L["Orders.LiveScreen.ColumnElapsed"].Value,
                 ["columnProducts"] = L["Orders.Products"].Value,
                 ["noLiveOrdersDescription"] = L["Orders.NoLiveOrdersDescription"].Value,
-                ["itemsMore"] = L["Orders.ItemsMore"].Value,
                 ["boardItemsMore"] = L["Orders.LiveScreen.BoardItemsMore"].Value,
                 ["boardItemsHidden"] = L["Orders.LiveScreen.BoardItemsHidden"].Value,
                 ["ordersFullscreenCustomer"] = L["Orders.Customer"].Value,
@@ -401,6 +400,9 @@
                 ["elapsedHoursMinutes"] = L["Orders.LiveScreen.ElapsedHoursMinutes"].Value,
                 ["liveScreenStale"] = L["Orders.LiveScreen.ConnectionStale"].Value,
                 ["liveScreenSessionExpired"] = L["Orders.LiveScreen.SessionExpired"].Value,
+                ["liveScreenLoadFailed"] = L["Orders.LiveScreen.LoadFailed"].Value,
+                ["liveScreenLoadFailedDescription"] = L["Orders.LiveScreen.LoadFailedDescription"].Value,
+                ["liveScreenReloadPage"] = L["Orders.LiveScreen.ReloadPage"].Value,
                 ["liveScreenCountUnavailable"] = L["Orders.LiveScreen.CountUnavailable"].Value,
                 ["liveScreenActiveOrders"] = L["Orders.ActiveOrders"].Value,
                 ["liveScreenWaitingRealOrders"] = L["Orders.LiveScreen.WaitingRealOrders"].Value,

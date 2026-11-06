@@ -696,9 +696,6 @@
   <data name="Orders.LiveDisplay.PopupBlocked" xml:space="preserve">
     <value>تم حظر النافذة المنبثقة. يتم فتح العرض المباشر في هذا التبويب.</value>
   </data>
-  <data name="Orders.ItemsMore" xml:space="preserve">
-    <value>+{0} عناصر</value>
-  </data>
   <data name="Orders.ViewMode.Label" xml:space="preserve">
     <value>عرض الطلبات</value>
   </data>
@@ -865,34 +862,28 @@
     <value>تعذر تحميل إعدادات الإشعارات.</value>
   </data>
   <data name="Orders.TableReturnedFullPage" xml:space="preserve">
-    <value>عادت قائمة الطلبات كصفحة كاملة بدلاً من جزئية. تحقق من جلستك أو المسار.</value>
+    <value>تعذر تحديث قائمة الطلبات. أعد تحميل الصفحة وسجّل الدخول مجددًا إذا طُلب منك ذلك.</value>
   </data>
   <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve">
-    <value>عادت إعدادات الإشعارات بتنسيق غير متوقع. راجع وحدة التحكم.</value>
+    <value>تعذرت قراءة بعض إعدادات الإشعارات. تُستخدم القيم الافتراضية.</value>
   </data>
   <data name="Orders.NotificationSettingsLoadException" xml:space="preserve">
-    <value>حدث خطأ أثناء تحميل إعدادات الإشعارات. راجع وحدة التحكم.</value>
-  </data>
-  <data name="Orders.TableMissingDataOrderId" xml:space="preserve">
-    <value>تم تحديث جدول الطلبات لكن لم تُعثر على معرّفات الصفوف (data-order-id).</value>
-  </data>
-  <data name="Orders.TableHostMissing" xml:space="preserve">
-    <value>تعذر تحديث جدول الطلبات: هدف الجدول غير موجود في الصفحة.</value>
+    <value>تعذر تحميل إعدادات الإشعارات. أعد تحميل الصفحة للمحاولة مرة أخرى.</value>
   </data>
   <data name="Orders.TableRefreshException" xml:space="preserve">
-    <value>حدث خطأ أثناء تحديث قائمة الطلبات. راجع وحدة التحكم.</value>
+    <value>تعذر تحديث قائمة الطلبات. أعد تحميل الصفحة لعرض أحدث الطلبات.</value>
   </data>
   <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve">
-    <value>تعذر فتح إعدادات الإشعارات. راجع وحدة التحكم.</value>
+    <value>تعذر فتح إعدادات الإشعارات. حاول مرة أخرى.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveFailed" xml:space="preserve">
     <value>حدث خطأ أثناء الحفظ.</value>
   </data>
   <data name="Orders.NotificationSettingsSaveException" xml:space="preserve">
-    <value>حدث خطأ أثناء حفظ إعدادات الإشعارات. راجع وحدة التحكم.</value>
+    <value>تعذر حفظ إعدادات الإشعارات. حاول مرة أخرى.</value>
   </data>
   <data name="Orders.PageInitFailed" xml:space="preserve">
-    <value>حدث خطأ أثناء بدء صفحة الطلبات. راجع وحدة التحكم.</value>
+    <value>تعذر بدء صفحة الطلبات. أعد تحميل الصفحة.</value>
   </data>
   <data name="Orders.GenericError" xml:space="preserve">
     <value>حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.</value>
@@ -4360,4 +4351,8 @@
   <data name="Admin.ContactMessages.Previous" xml:space="preserve"><value>السابق</value></data>
   <data name="Admin.ContactMessages.Next" xml:space="preserve"><value>التالي</value></data>
   <data name="Admin.ContactMessages.PageOf" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>تعذر تحميل الطلبات</value></data>
+  <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>تواصل الشاشة المحاولة تلقائيًا. تحقق من الاتصال بالإنترنت، أو أعد المحاولة الآن.</value></data>
+  <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>إعادة تحميل الصفحة</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>لم تُحمَّل إعدادات الإشعارات في الوقت المحدد، لذا فإن صوت الطلب الجديد وإشعارات المتصفح متوقفة حاليًا. أعد تحميل الصفحة للمحاولة مرة أخرى.</value></data>
 </root>

@@ -1982,4 +1982,15 @@
   <data name="Orders.RejectReasonNotSupported" xml:space="preserve">
     <value>Bu neden bu sipariş için kullanılamaz. Listedeki nedenlerden birini seçin.</value>
   </data>
+  <data name="Orders.LiveScreen.LoadFailed" xml:space="preserve"><value>Siparişler yüklenemedi</value></data>
+  <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Ekran otomatik olarak yeniden denemeye devam ediyor. İnternet bağlantısını kontrol edin veya şimdi yeniden deneyin.</value></data>
+  <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Sayfayı yenile</value></data>
+  <data name="Orders.TableReturnedFullPage" xml:space="preserve"><value>Sipariş listesi yenilenemedi. Sayfayı yenileyin; istenirse yeniden giriş yapın.</value></data>
+  <data name="Orders.TableRefreshException" xml:space="preserve"><value>Sipariş listesi yenilenemedi. Güncel siparişleri görmek için sayfayı yenileyin.</value></data>
+  <data name="Orders.NotificationSettingsUnexpectedFormat" xml:space="preserve"><value>Bazı bildirim ayarları okunamadı. Varsayılan değerler kullanılıyor.</value></data>
+  <data name="Orders.NotificationSettingsLoadException" xml:space="preserve"><value>Bildirim ayarları yüklenemedi. Yeniden denemek için sayfayı yenileyin.</value></data>
+  <data name="Orders.NotificationSettingsModalOpenFailed" xml:space="preserve"><value>Bildirim ayarları açılamadı. Yeniden deneyin.</value></data>
+  <data name="Orders.NotificationSettingsSaveException" xml:space="preserve"><value>Bildirim ayarları kaydedilemedi. Yeniden deneyin.</value></data>
+  <data name="Orders.PageInitFailed" xml:space="preserve"><value>Siparişler sayfası başlatılamadı. Sayfayı yenileyin.</value></data>
+  <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Bildirim ayarları zamanında yüklenemedi; yeni sipariş sesi ve tarayıcı bildirimleri şimdilik kapalı. Yeniden denemek için sayfayı yenileyin.</value></data>
 </root>

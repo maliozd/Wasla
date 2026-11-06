@@ -874,7 +874,7 @@ function boardHarness(canManageOrders = true, extras) {
   let view = "board";
   const options = extras || {};
   const browser = store.attachBrowser({
-    opts: { displayCulture: options.culture || "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders },
+    opts: Object.assign({ displayCulture: options.culture || "tr-TR", timeZoneId: "Europe/Istanbul", canManageOrders }, options.opts),
     liveView: { getView: () => view },
     getMessage: options.getMessage || (key => key),
     liveDetailModal: options.liveDetailModal,
@@ -3795,4 +3795,182 @@ test("received times from an earlier day use the Gregorian calendar in every cul
   assert.ok(shown.length >= 4, "every culture formats the received time");
   for (const r of shown)
     assert.equal(r.options.calendar, "gregory", String(r.locales));
+});
+
+// WAS-129: the first snapshot failed and the screen stayed on "Loading…"; a List row said "New" twice; the Focus
+// queue said "+1 items"; the practice order was counted in "Showing x of y" but not in the column count.
+async function settle() {
+  for (let i = 0; i < 5; i++) await flush();
+}
+
+function jsonResponse(status, body) {
+  return {
+    ok: status >= 200 && status < 300, status: status, redirected: false,
+    headers: { get: function () { return "application/json"; } },
+    text: async function () { return JSON.stringify(body); }
+  };
+}
+
+function firstLoadHarness(responses) {
+  const time = clock();
+  const doc = fakeDocument();
+  const previousDocument = globalThis.document;
+  const previousFetch = globalThis.fetch;
+  globalThis.document = doc;
+  const host = doc.createElement("div");
+  host.id = "ordersLiveScreenHost";
+  doc.body.appendChild(host);
+  const loading = doc.createElement("p");
+  loading.setAttribute("data-live-loading", "");
+  host.appendChild(loading);
+  const connection = doc.createElement("span");
+  connection.id = "ordersLiveDisplayConnection";
+  connection.hidden = true;
+  doc.body.appendChild(connection);
+  let calls = 0;
+  globalThis.fetch = async function () {
+    calls += 1;
+    return responses.length > 1 ? responses.shift() : responses[0];
+  };
+  const browser = store.attachBrowser({
+    opts: { displayCulture: "en-US", timeZoneId: "Europe/Istanbul", canManageOrders: true },
+    liveView: { getView: function () { return "board"; } },
+    getMessage: function (key) { return key; }
+  }, {
+    setTimeout: time.setTimeout,
+    clearTimeout: time.clearTimeout,
+    location: { pathname: "/orders/live-display", search: "?from=menu" }
+  }, store);
+  return {
+    doc: doc, host: host, connection: connection, browser: browser, time: time,
+    calls: function () { return calls; },
+    respondWith: function (response) { responses.length = 0; responses.push(response); },
+    state: function () { return host.querySelectorAll("[data-live-load-error]"); },
+    restore: function () { globalThis.document = previousDocument; globalThis.fetch = previousFetch; }
+  };
+}
+
+test("a failed first snapshot replaces Loading with Try again, keeps retrying, and the next snapshot restores the screen", async function () {
+  const h = firstLoadHarness([jsonResponse(500, { status: 500 })]);
+  try {
+    await h.browser.start();
+    await settle();
+    const state = h.state();
+    assert.equal(state.length, 1, "one recovery state");
+    assert.equal(state[0].getAttribute("data-live-load-error"), "error");
+    assert.equal(state[0].getAttribute("role"), "alert");
+    assert.equal(h.host.querySelector("[data-live-loading]"), null, "Loading is replaced");
+    assert.equal(state[0].querySelector(".wasla-live-empty__title").textContent, "liveScreenLoadFailed");
+    assert.equal(state[0].querySelector(".wasla-live-empty__text").textContent, "liveScreenLoadFailedDescription");
+    const retry = state[0].querySelector("[data-live-retry]");
+    assert.equal(retry.tagName, "BUTTON");
+    assert.equal(retry.textContent, "detailRetry");
+    assert.equal(h.connection.hidden, true, "no 'showing the last update' before anything was shown");
+
+    // The coordinator's backoff retries by itself; a repeated failure keeps the same state (nothing is announced again).
+    await h.time.advance(2000);
+    assert.equal(h.calls(), 2);
+    assert.equal(h.state().length, 1);
+    assert.equal(h.state()[0], state[0]);
+
+    // Try again (a read at once) with focus on the button: the screen replaces the state and focus stays in the region.
+    retry.focus();
+    h.respondWith(jsonResponse(200, snapshot([guid(1)])));
+    const result = await h.browser.requestRefresh();
+    assert.equal(result.applied, true);
+    assert.equal(h.state().length, 0);
+    assert.ok(h.host.querySelector(".wasla-live-board"), "the Board is rendered");
+    assert.equal(h.doc.activeElement, h.host, "focus left the removed Try again button for the orders region");
+    assert.equal(h.connection.hidden, true);
+  } finally { h.restore(); }
+});
+
+test("a signed-out first snapshot offers a reload link and stops reading", async function () {
+  const h = firstLoadHarness([jsonResponse(401, {})]);
+  try {
+    await h.browser.start();
+    await settle();
+    const state = h.state();
+    assert.equal(state.length, 1);
+    assert.equal(state[0].getAttribute("data-live-load-error"), "session");
+    assert.equal(state[0].querySelector(".wasla-live-empty__text").textContent, "liveScreenSessionExpired");
+    assert.equal(state[0].querySelector("[data-live-retry]"), null);
+    const link = state[0].querySelector("[data-live-reload]");
+    assert.equal(link.tagName, "A");
+    assert.equal(link.href, "/orders/live-display?from=menu");
+    assert.equal(link.textContent, "liveScreenReloadPage");
+    await h.time.advance(60000);
+    assert.equal(h.calls(), 1, "a signed-out page stops reading");
+  } finally { h.restore(); }
+});
+
+test("a failure after a shown snapshot keeps the screen and uses the header line, as before", async function () {
+  const h = firstLoadHarness([jsonResponse(200, snapshot([guid(1)])), jsonResponse(500, { status: 500 })]);
+  try {
+    await h.browser.start();
+    await settle();
+    const result = await h.browser.requestRefresh();
+    assert.equal(result.applied, false);
+    assert.equal(h.state().length, 0, "no first-load state once orders were shown");
+    assert.ok(h.host.querySelector(".wasla-live-screen-card"), "the last accepted screen stays");
+    assert.equal(h.connection.hidden, false);
+    assert.equal(h.connection.textContent, "liveScreenStale");
+  } finally { h.restore(); }
+});
+
+test("a List row shows its arrival badge only when its status badge does not already say New", () => {
+  const h = boardHarness();
+  try {
+    h.view("list");
+    const body = snapshot([guid(1), guid(2)]);
+    body.orders[1].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    const badge = id => h.host.querySelector('[data-order-id="' + id + '"] [data-new-badge]');
+    assert.equal(badge(guid(1)).hidden, true, "a New order says New once, in its status badge");
+    assert.equal(badge(guid(2)).hidden, false, "a Preparing order can still be marked as newly arrived");
+    body.orders[0].status = "Preparing";
+    h.browser.renderSnapshot(body);
+    assert.equal(badge(guid(1)).hidden, false, "the row follows its status");
+    h.view("board");
+    h.browser.renderSnapshot(body);
+    assert.equal(h.host.querySelectorAll("[data-new-badge]").filter(b => b.hidden).length, 0, "the Board keeps its arrival badge");
+  } finally { h.restore(); }
+});
+
+for (const [culture, one] of [["en-US", "1"], ["ar-SA", "١"]]) {
+  test("the Focus queue counts the products it does not name with the previews' '+N more' (" + culture + ")", () => {
+    const templates = { boardItemsHidden: "+{0} more" };
+    const h = boardHarness(true, { culture: culture, getMessage: key => templates[key] || key });
+    try {
+      h.view("focus");
+      const body = snapshot([guid(1)]);
+      body.orders[0].items = [
+        { productName: "Adana", quantity: 2, notes: null },
+        { productName: "Ayran", quantity: 2, notes: null },
+        { productName: "Künefe", quantity: 1, notes: null }
+      ];
+      h.browser.renderSnapshot(body);
+      assert.equal(h.host.querySelector("[data-product-summary]").textContent, "2× Adana, 2× Ayran, +" + one + " more");
+    } finally { h.restore(); }
+  });
+}
+
+test("the practice order is rendered but counted neither in the column nor in 'Showing x of y', in every view", () => {
+  const templates = { groupShowing: "Showing {0} of {1}", groupShowMore: "Show {0} more" };
+  const h = boardHarness(true, { opts: { liveGroupPageSize: 1 }, getMessage: key => templates[key] || key });
+  try {
+    const body = snapshot([guid(1), guid(2), guid(3)]);
+    body.orders[0].isDemo = true;
+    for (const view of ["board", "list", "focus"]) {
+      h.view(view);
+      h.browser.renderSnapshot(body);
+      const column = h.host.querySelector('[data-board-column="new"]');
+      assert.equal(column.querySelector("[data-board-count]").textContent, "2", view + ": two real orders");
+      const rendered = column.querySelector("[data-board-list]").children.map(c => c.getAttribute("data-order-id"));
+      assert.ok(rendered.indexOf(guid(1)) >= 0, view + ": the practice order is always rendered");
+      assert.equal(rendered.length, 2, view + ": the practice order and one page of real orders");
+      assert.equal(column.querySelector("[data-live-more-status]").textContent, "Showing 1 of 2", view);
+      assert.equal(column.querySelector("[data-live-show-more]").textContent, "Show 1 more", view);
+    }
+  } finally { h.restore(); }
 });

@@ -743,6 +743,13 @@ function attachBrowser(O, global, api) {
   function onStatus(kind) {
     // The header's sync status must not keep saying "Live" while the screen cannot refresh.
     document.dispatchEvent(new CustomEvent("wasla:live-poll-status", { detail: { kind: kind } }));
+    // Before the first accepted snapshot there is no earlier screen to keep, so "Loading…" gives way to a recovery
+    // state in the orders region instead of the header's "showing the last update" (WAS-129).
+    const host = document.getElementById(hostId);
+    if (kind !== "ok" && host && !(coordinator && coordinator.lastSnapshot())) {
+      showLoadError(host, kind === "session" ? "session" : "error");
+      return;
+    }
     const el = connectionEl();
     if (!el) return;
     if (kind === "ok") {
@@ -1011,6 +1018,8 @@ function attachBrowser(O, global, api) {
     fresh.className = "badge text-bg-primary d-none wasla-orders-new-badge";
     fresh.setAttribute("data-new-badge", "");
     fresh.textContent = message("statusNewBadge");
+    // A New order's status badge already says "New"; the arrival badge would repeat it (WAS-129).
+    fresh.hidden = order.status === "New";
     statusSlot.appendChild(status);
     statusSlot.appendChild(fresh);
     headline.appendChild(platformHost);
@@ -1533,8 +1542,11 @@ function attachBrowser(O, global, api) {
     if (link) link.textContent = order.displayNumber || "";
     const boardCode = card.getAttribute("data-live-layout") === "board" ? card.querySelector(".wasla-live-screen-card__code > *") : null;
     if (boardCode) boardCode.title = order.displayNumber || "";
-    if (card.getAttribute("data-live-layout") === "list") syncListCustomer(card, order);
-    else if (card.getAttribute("data-live-layout") === "board") {
+    if (card.getAttribute("data-live-layout") === "list") {
+      syncListCustomer(card, order);
+      const fresh = card.querySelector("[data-new-badge]");
+      if (fresh) fresh.hidden = order.status === "New";
+    } else if (card.getAttribute("data-live-layout") === "board") {
       const customer = card.querySelector(".orders-card-customer");
       if (customer) customer.remove();
       syncBoardOrderNote(card, order);
@@ -1683,9 +1695,11 @@ function attachBrowser(O, global, api) {
 
   /** Counts the order in its group and says whether it is rendered. */
   function pageOrder(pager, key, order, pinned) {
+    // The practice order is always rendered and, as in the column count, never counted (order training).
+    if (order.isDemo) return true;
     pager.totals[key] = (pager.totals[key] || 0) + 1;
     const shown = pager.shown[key] || 0;
-    if (shown >= groupLimit(key) && !order.isDemo && !pinned.has(String(order.id))) return false;
+    if (shown >= groupLimit(key) && !pinned.has(String(order.id))) return false;
     pager.shown[key] = shown + 1;
     return true;
   }
@@ -1795,10 +1809,8 @@ function attachBrowser(O, global, api) {
     for (let i = 0; i < count; i++) {
       parts.push(String(list[i].quantity) + "× " + (list[i].productName || ""));
     }
-    if (list.length > max) {
-      const extra = message("itemsMore");
-      parts.push(extra.indexOf("{0}") >= 0 ? extra.replace("{0}", String(list.length - max)) : extra);
-    }
+    // The same "+N more" as the Board and List previews: no noun to inflect, the count in the page culture's digits.
+    if (list.length > max) parts.push(fillTemplate(message("boardItemsHidden"), [formatCount(list.length - max)]));
     return parts.join(", ");
   }
 
@@ -1864,10 +1876,81 @@ function attachBrowser(O, global, api) {
     const kind = api.isIsolatedSnapshot(renderedSnapshot) ? "practice" : "none";
     const existing = hostEmpty(host);
     if (existing && existing.getAttribute("data-live-empty") === kind) return existing;
-    if (existing) existing.remove();
+    if (existing) removeKeepingFocus(existing, host);
     const empty = createBrandedEmpty(kind);
     host.appendChild(empty);
     return empty;
+  }
+
+  /** Removes a host-level state; focus inside it (Try again) moves to the orders region instead of the page. */
+  function removeKeepingFocus(node, host) {
+    const hadFocus = typeof node.contains === "function" && node.contains(document.activeElement);
+    node.remove();
+    if (hadFocus && typeof host.focus === "function") host.focus({ preventScroll: true });
+  }
+
+  /**
+   * The first snapshot could not be read (WAS-129). The coordinator keeps retrying with its backoff and Try again reads
+   * at once; a signed-out page cannot recover by reading, so it offers a link that reloads it (and so leads to sign-in).
+   * One state at a time, written only when its kind changes, so a repeated failure is not announced again. The next
+   * accepted snapshot replaces it like any host-level empty state.
+   */
+  function showLoadError(host, kind) {
+    const existing = hostEmpty(host);
+    if (existing && existing.getAttribute("data-live-load-error") === kind) {
+      const busy = existing.querySelector("[data-live-retry]");
+      if (busy) busy.removeAttribute("aria-busy");
+      return existing;
+    }
+    const loading = host.querySelector("[data-live-loading]");
+    if (loading) loading.remove();
+    const state = document.createElement("div");
+    state.className = "wasla-live-empty wasla-live-load-error";
+    state.setAttribute("data-live-empty", "load-error");
+    state.setAttribute("data-live-load-error", kind);
+    state.setAttribute("role", "alert");
+    const mark = document.createElement("div");
+    mark.className = "wasla-live-empty__mark";
+    mark.setAttribute("aria-hidden", "true");
+    const title = document.createElement("h2");
+    title.className = "wasla-live-empty__title";
+    title.textContent = message("liveScreenLoadFailed");
+    const description = document.createElement("p");
+    description.className = "wasla-live-empty__text";
+    description.textContent = message(kind === "session" ? "liveScreenSessionExpired" : "liveScreenLoadFailedDescription");
+    let action;
+    if (kind === "session") {
+      action = document.createElement("a");
+      action.setAttribute("data-live-reload", "");
+      const location = global.location;
+      action.href = location ? String(location.pathname || "") + String(location.search || "") : "";
+      action.textContent = message("liveScreenReloadPage");
+    } else {
+      action = document.createElement("button");
+      action.type = "button";
+      action.setAttribute("data-live-retry", "");
+      action.textContent = message("detailRetry");
+    }
+    action.className = "btn btn-outline-secondary wasla-live-empty__action";
+    state.appendChild(mark);
+    state.appendChild(title);
+    state.appendChild(description);
+    state.appendChild(action);
+    const hadFocus = !!existing && typeof existing.contains === "function" && existing.contains(document.activeElement);
+    if (existing) existing.remove();
+    host.appendChild(state);
+    if (hadFocus) action.focus();
+    return state;
+  }
+
+  /** Try again on the first-load error: reads at once (coalesced with a read already under way). */
+  function retryFirstLoad(button) {
+    if (button.getAttribute("aria-busy") === "true") return;
+    button.setAttribute("aria-busy", "true");
+    const done = function () {
+      if (button.isConnected !== false) button.removeAttribute("aria-busy");
+    };
+    Promise.resolve(ensureCoordinator().requestRefresh()).then(done, done);
   }
 
   function createFocusShell() {
@@ -2328,7 +2411,7 @@ function attachBrowser(O, global, api) {
     const hadOrders = focusHadOrders;
     focusHadOrders = true;
     const hostLevelEmpty = hostEmpty(host);
-    if (hostLevelEmpty) hostLevelEmpty.remove();
+    if (hostLevelEmpty) removeKeepingFocus(hostLevelEmpty, host);
     const legacyEmpty = host.querySelector(".wasla-orders-empty");
     if (legacyEmpty) legacyEmpty.remove();
     let root = host.querySelector(".wasla-live-focus");
@@ -2619,7 +2702,7 @@ function attachBrowser(O, global, api) {
     const loading = host.querySelector("[data-live-loading]");
     if (loading) loading.remove();
     const hostLevelEmpty = hostEmpty(host);
-    if (hostLevelEmpty) hostLevelEmpty.remove();
+    if (hostLevelEmpty) removeKeepingFocus(hostLevelEmpty, host);
     const legacyEmpty = host.querySelector(".wasla-orders-empty");
     if (legacyEmpty) legacyEmpty.remove();
     let grid = host.querySelector(layout === "board" ? ".wasla-live-board" : ".wasla-live-groups");
@@ -2857,9 +2940,14 @@ function attachBrowser(O, global, api) {
   if (typeof document.addEventListener === "function") {
     document.addEventListener("submit", onTrainingFormSubmit);
     document.addEventListener("wasla:order-action-completed", onOrderAction);
-    // Delegated once: the "Show more" controls are rebuilt with their column.
+    // Delegated once: the "Show more" controls are rebuilt with their column, and Try again with the first-load error.
     document.addEventListener("click", function (ev) {
       const target = ev && ev.target;
+      const retry = target && target.closest ? target.closest("[data-live-retry]") : null;
+      if (retry && retry.closest("#" + hostId)) {
+        retryFirstLoad(retry);
+        return;
+      }
       const button = target && target.closest ? target.closest("[data-live-show-more]") : null;
       if (!button || !button.closest("#" + hostId)) return;
       showMoreInGroup(button.getAttribute("data-live-show-more"));
