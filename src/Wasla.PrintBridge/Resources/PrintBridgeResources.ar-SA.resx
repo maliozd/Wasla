@@ -494,6 +494,22 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge على هذا الكمبيوتر مسجل بالفعل كجهاز نشط. استخدم خيار "إعادة توصيل جهاز موجود" في Wasla Web بدل إعداد جهاز جديد، أو أزل سجل الجهاز القديم أولًا.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>لا تزال مهمة طباعة إيصال قيد الإكمال. لم يتم تغيير الاتصال؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. افتح رابط الإعداد مرة أخرى بعد انتهاء الطباعة.</value></data>
+  <data name="Auto.Transfer.Title" xml:space="preserve"><value>هل تريد الاتصال بمطعم آخر؟</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>هذا التطبيق متصل حاليًا بـ {0}. إذا تابعت، فستتوقف طباعة طلبات {0} وسيتصل التطبيق بـ {1}.</value></data>
+  <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>الاتصال بالمطعم الجديد</value></data>
+  <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>المطعم الحالي</value></data>
+  <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>الخادم الحالي</value></data>
+  <data name="Auto.Transfer.NewRestaurant" xml:space="preserve"><value>المطعم الجديد</value></data>
+  <data name="Auto.Transfer.NewServer" xml:space="preserve"><value>الخادم الجديد</value></data>
+  <data name="Auto.Transfer.UnknownRestaurant" xml:space="preserve"><value>مطعم بدون اسم</value></data>
+  <data name="Auto.Cancelled" xml:space="preserve"><value>لم يتم تغيير الاتصال. لا يزال Print Bridge متصلًا بالمطعم الحالي.</value></data>
+  <data name="Auto.CurrentConnectionUnverified" xml:space="preserve"><value>تعذّر على Print Bridge التحقق من اتصاله الحالي مع خادم Wasla، لذلك لم يُطبَّق رابط الإعداد. لم يتغير شيء. تحقّق من اتصال الإنترنت ثم افتح رابط الإعداد مرة أخرى. للاتصال بخادم مختلف بدلًا من ذلك، أعد تعيين الاتصال من الإعدادات أولًا.</value></data>
+  <data name="Auto.DeviceLimitReached" xml:space="preserve"><value>وصل المطعم الجديد إلى الحد الأقصى لأجهزة Print Bridge. لم يتغير شيء؛ لا يزال Print Bridge متصلًا بالمطعم الحالي.</value></data>
+  <data name="Auto.InstallationConflict" xml:space="preserve"><value>لا يمكن استخدام رابط إعداد المطعم الجديد لهذا الكمبيوتر: الجهاز المحدد في Wasla يخص كمبيوترًا آخر، أو أن هذا الكمبيوتر مسجل أيضًا كجهاز آخر. لم يتغير شيء. أنشئ رابط إعداد جديدًا لجهاز جديد، أو أزل سجل الجهاز الزائد في Wasla.</value></data>
+  <data name="Auto.InstallationRegisteredToAnotherRestaurant" xml:space="preserve"><value>لا يزال Print Bridge على هذا الكمبيوتر مسجلًا لدى مطعم آخر، وتعذّر التحقق من اتصاله بذلك المطعم. لم يتغير شيء. أعد ذلك الاتصال ثم افتح رابط الإعداد مرة أخرى، أو اطلب من ذلك المطعم إزالة هذا الجهاز من صفحة أجهزة Print Bridge لديه.</value></data>
+  <data name="Auto.ChangePending" xml:space="preserve"><value>لم يتم تأكيد نقل Print Bridge إلى المطعم الجديد بعد. سيُكمل Print Bridge التغيير تلقائيًا بمجرد إمكانية الوصول إلى خادم Wasla. وفي هذه الأثناء لن يطبع أبدًا طلبات مطعم لم يعد ينتمي إليه.</value></data>
+  <data name="Auto.DestinationDeviceDisabled" xml:space="preserve"><value>الجهاز الذي اختاره المطعم الجديد في Wasla متوقف (غير نشط)، لذلك لم يُنقل Print Bridge إليه. لم يتغير شيء. فعّل الجهاز في Wasla، أو أنشئ رابط إعداد لجهاز جديد.</value></data>
+  <data name="Auto.PreviousChangeCompleted" xml:space="preserve"><value>اكتمل أولًا تغيير المطعم الذي وافقت عليه سابقًا؛ أصبح Print Bridge الآن متصلًا بذلك المطعم. لم يُطبَّق رابط الإعداد الذي فتحته للتو؛ افتحه مرة أخرى إذا كنت لا تزال بحاجة إليه.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>جارٍ الاتصال</value>
   </data>

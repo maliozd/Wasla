@@ -1001,6 +1001,13 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<Guid?>("SourcePrintBridgeDeviceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceTokenHash")
+                        .HasMaxLength(88)
+                        .HasColumnType("nvarchar(88)");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 

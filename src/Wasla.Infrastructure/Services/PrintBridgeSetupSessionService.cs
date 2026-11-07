@@ -8,7 +8,7 @@ using Wasla.Infrastructure.Security;
 
 namespace Wasla.Infrastructure.Services;
 
-public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionService
+public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionService
 {
     /// <summary>Default lifetime of an automatic setup session (~5 minutes).</summary>
     public static readonly TimeSpan DefaultLifetime = TimeSpan.FromMinutes(5);
@@ -20,17 +20,20 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
     private readonly CentralDbContext _centralDb;
     private readonly IPrintBridgeDeviceManagementService _devices;
     private readonly IPrintBridgeSetupTenantLock _tenantLock;
+    private readonly IPrintBridgeActivePrintJobChecker _activePrintJobChecker;
     private readonly ILogger<PrintBridgeSetupSessionService> _logger;
 
     public PrintBridgeSetupSessionService(
         CentralDbContext centralDb,
         IPrintBridgeDeviceManagementService devices,
         IPrintBridgeSetupTenantLock tenantLock,
+        IPrintBridgeActivePrintJobChecker activePrintJobChecker,
         ILogger<PrintBridgeSetupSessionService> logger)
     {
         _centralDb = centralDb;
         _devices = devices;
         _tenantLock = tenantLock;
+        _activePrintJobChecker = activePrintJobChecker;
         _logger = logger;
     }
 
@@ -182,18 +185,45 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             }
 
             GeneratePrintBridgeTokenResult tokenResult;
+            InstallationBinding binding;
             try
             {
-                if (!await BindInstallationIdentityAsync(
+                binding = await BindInstallationIdentityAsync(
                         session.TenantId,
                         session.PrintBridgeDeviceId.Value,
                         clientInfo.InstallationId.Value,
-                        ct).ConfigureAwait(false))
-                {
-                    await MarkFailedAsync(session.Id, "installation_identity_conflict", ct).ConfigureAwait(false);
-                    return null;
-                }
+                        ct).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException)
+            {
+                await MarkFailedAsync(session.Id, "device_unavailable", ct).ConfigureAwait(false);
+                return null;
+            }
 
+            if (binding == InstallationBinding.RegisteredToAnotherTenant)
+            {
+                // Reconnecting would silently take this computer away from the other tenant (WAS-91); only the move
+                // approved in Print Bridge with that device's own token may do that.
+                await MarkFailedAsync(
+                    session.Id,
+                    PrintBridgeSetupFailureReasons.InstallationRegisteredToAnotherTenant,
+                    ct).ConfigureAwait(false);
+                _logger.LogWarning(
+                    "Print Bridge reconnect exchange rejected: the installation is registered to another tenant. " +
+                    "SessionId={SessionId}, TenantId={TenantId}",
+                    session.Id,
+                    session.TenantId);
+                throw new PrintBridgeSetupInstallationRegisteredToAnotherTenantException();
+            }
+
+            if (binding != InstallationBinding.Bound)
+            {
+                await MarkFailedAsync(session.Id, "installation_identity_conflict", ct).ConfigureAwait(false);
+                return null;
+            }
+
+            try
+            {
                 tokenResult = await _devices
                     .RegenerateTokenAsync(session.TenantId, session.PrintBridgeDeviceId.Value, ct)
                     .ConfigureAwait(false);
@@ -251,11 +281,13 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             return false;
 
         var now = DateTime.UtcNow;
+        // Completing a move also forgets the retired token's hash: the move can no longer be repeated (WAS-91).
         var updated = await _centralDb.PrintBridgeSetupSessions
             .Where(s => s.Id == sessionId && s.CompletedAtUtc == null && s.FailedAtUtc == null)
             .ExecuteUpdateAsync(set => set
                 .SetProperty(s => s.CompletedAtUtc, now)
                 .SetProperty(s => s.ConnectionVerified, connectionVerified)
+                .SetProperty(s => s.SourceTokenHash, (string?)null)
                 .SetProperty(s => s.UpdatedAt, now), ct)
             .ConfigureAwait(false);
 
@@ -327,14 +359,22 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         CancellationToken ct)
     {
         string? failedReason = null;
+        var installationId = clientInfo.InstallationId!.Value;
 
         await using (var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
             .ConfigureAwait(false))
         {
             try
             {
-                var appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(session.TenantId, ct)
+                // The installation lock first, then the tenant lock: the order every setup write uses (WAS-91).
+                var appLockResult = await _tenantLock.AcquireInstallationLockAsync(installationId, ct)
                     .ConfigureAwait(false);
+                if (appLockResult >= 0)
+                {
+                    appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(session.TenantId, ct)
+                        .ConfigureAwait(false);
+                }
+
                 if (appLockResult < 0)
                 {
                     failedReason = FailureReasonTenantLockUnavailable;
@@ -360,18 +400,28 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 }
                 else
                 {
-                    var installationId = clientInfo.InstallationId!.Value;
+                    var registration = await FindInstallationRegistrationAsync(
+                            session.TenantId,
+                            installationId,
+                            ignoredDeviceIds: [],
+                            ct)
+                        .ConfigureAwait(false);
 
-                    if (await ActiveInstallationExistsAsync(session.TenantId, installationId, ct).ConfigureAwait(false))
+                    if (registration != InstallationRegistration.None)
                     {
-                        failedReason = PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered;
+                        // Registered in this tenant: the existing refusal. Registered to another tenant: a new device
+                        // here would silently take the computer away from it (WAS-91); only the approved move may.
+                        failedReason = registration == InstallationRegistration.SameTenant
+                            ? PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered
+                            : PrintBridgeSetupFailureReasons.InstallationRegisteredToAnotherTenant;
                         await tx.RollbackAsync(ct).ConfigureAwait(false);
 
                         _logger.LogWarning(
                             "Print Bridge new-device exchange rejected: installation identity is already registered. " +
-                            "SessionId={SessionId}, TenantId={TenantId}",
+                            "SessionId={SessionId}, TenantId={TenantId}, Registration={Registration}",
                             session.Id,
-                            session.TenantId);
+                            session.TenantId,
+                            registration);
                     }
                     else
                     {
@@ -430,6 +480,14 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                     StringComparison.Ordinal))
             {
                 throw new PrintBridgeSetupInstallationAlreadyRegisteredException();
+            }
+
+            if (string.Equals(
+                    failedReason,
+                    PrintBridgeSetupFailureReasons.InstallationRegisteredToAnotherTenant,
+                    StringComparison.Ordinal))
+            {
+                throw new PrintBridgeSetupInstallationRegisteredToAnotherTenantException();
             }
         }
 
@@ -503,16 +561,57 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             .ConfigureAwait(false);
     }
 
-    private async Task<bool> ActiveInstallationExistsAsync(
+    /// <summary>
+    /// Where else <paramref name="installationId"/> is registered: on a device that is not removed (active or passive),
+    /// other than <paramref name="ignoredDeviceIds"/>. A registration in the session's own tenant wins over one elsewhere,
+    /// so the existing same-tenant refusal keeps its reason. Checked across all tenants (WAS-91): the per-tenant unique
+    /// index does not stop one computer from being registered to two tenants.
+    /// <para>
+    /// Every setup write that binds an installation holds its installation lock, so this read needs no key-range locks.
+    /// On SQL Server it reads with <c>READCOMMITTEDLOCK</c> inside the serializable transaction: a range lock across all
+    /// tenants' devices would make unrelated setups of different tenants block, and deadlock, each other.
+    /// </para>
+    /// </summary>
+    private async Task<InstallationRegistration> FindInstallationRegistrationAsync(
         Guid tenantId,
         Guid installationId,
-        CancellationToken ct) =>
-        await _centralDb.PrintBridgeDevices
+        Guid[] ignoredDeviceIds,
+        CancellationToken ct)
+    {
+        var devices = _centralDb.Database.IsSqlServer()
+            ? _centralDb.PrintBridgeDevices.FromSql(
+                $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK) WHERE [InstallationId] = {installationId}")
+            : _centralDb.PrintBridgeDevices;
+
+        var tenantIds = await devices
             .AsNoTracking()
-            .AnyAsync(d => d.TenantId == tenantId
-                && d.InstallationId == installationId
-                && d.RemovedAtUtc == null, ct)
+            .Where(d => d.InstallationId == installationId
+                && d.RemovedAtUtc == null
+                && !ignoredDeviceIds.Contains(d.Id))
+            .Select(d => d.TenantId)
+            .Distinct()
+            .ToListAsync(ct)
             .ConfigureAwait(false);
+
+        if (tenantIds.Contains(tenantId))
+            return InstallationRegistration.SameTenant;
+
+        return tenantIds.Count > 0 ? InstallationRegistration.OtherTenant : InstallationRegistration.None;
+    }
+
+    private enum InstallationRegistration
+    {
+        None,
+        SameTenant,
+        OtherTenant
+    }
+
+    private enum InstallationBinding
+    {
+        Bound,
+        Conflict,
+        RegisteredToAnotherTenant
+    }
 
     private async Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct)
     {
@@ -522,7 +621,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
             .ConfigureAwait(false);
     }
 
-    private async Task<bool> BindInstallationIdentityAsync(
+    private async Task<InstallationBinding> BindInstallationIdentityAsync(
         Guid tenantId,
         Guid deviceId,
         Guid installationId,
@@ -531,12 +630,18 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         await using var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
             .ConfigureAwait(false);
 
-        var appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(tenantId, ct)
+        var appLockResult = await _tenantLock.AcquireInstallationLockAsync(installationId, ct)
             .ConfigureAwait(false);
+        if (appLockResult >= 0)
+        {
+            appLockResult = await _tenantLock.AcquireNewDeviceExchangeLockAsync(tenantId, ct)
+                .ConfigureAwait(false);
+        }
+
         if (appLockResult < 0)
         {
             await tx.RollbackAsync(ct).ConfigureAwait(false);
-            return false;
+            return InstallationBinding.Conflict;
         }
 
         var device = await _centralDb.PrintBridgeDevices
@@ -546,7 +651,16 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         if (device is null)
         {
             await tx.RollbackAsync(ct).ConfigureAwait(false);
-            return false;
+            return InstallationBinding.Conflict;
+        }
+
+        // Even a device already bound to this installation may not take it while another tenant still has it
+        // registered (legacy duplicates from before WAS-91 included).
+        if (await FindInstallationRegistrationAsync(tenantId, installationId, [deviceId], ct).ConfigureAwait(false)
+            == InstallationRegistration.OtherTenant)
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+            return InstallationBinding.RegisteredToAnotherTenant;
         }
 
         if (device.InstallationId.HasValue)
@@ -556,7 +670,7 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
                 await tx.CommitAsync(ct).ConfigureAwait(false);
             else
                 await tx.RollbackAsync(ct).ConfigureAwait(false);
-            return ok;
+            return ok ? InstallationBinding.Bound : InstallationBinding.Conflict;
         }
 
         var duplicate = await _centralDb.PrintBridgeDevices
@@ -570,14 +684,14 @@ public sealed class PrintBridgeSetupSessionService : IPrintBridgeSetupSessionSer
         if (duplicate)
         {
             await tx.RollbackAsync(ct).ConfigureAwait(false);
-            return false;
+            return InstallationBinding.Conflict;
         }
 
         device.InstallationId = installationId;
         device.UpdatedAt = DateTime.UtcNow;
         await _centralDb.SaveChangesAsync(ct).ConfigureAwait(false);
         await tx.CommitAsync(ct).ConfigureAwait(false);
-        return true;
+        return InstallationBinding.Bound;
     }
 
     private static string ToPersistedSetupMode(PrintBridgeSetupMode setupMode) => setupMode switch

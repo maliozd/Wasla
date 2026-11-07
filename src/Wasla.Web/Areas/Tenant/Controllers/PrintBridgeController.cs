@@ -344,12 +344,15 @@ public sealed class PrintBridgeController : BaseController
     }
 
     private string? MapSetupFailureMessage(string? failureReason) =>
-        string.Equals(
-            failureReason,
-            PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered,
-            StringComparison.Ordinal)
-            ? _localizer["PrintBridge.Auto.InstallationAlreadyRegistered"].Value
-            : null;
+        failureReason switch
+        {
+            PrintBridgeSetupFailureReasons.InstallationAlreadyRegistered =>
+                _localizer["PrintBridge.Auto.InstallationAlreadyRegistered"].Value,
+            // The computer still belongs to another tenant (WAS-91); which one is never shown.
+            PrintBridgeSetupFailureReasons.InstallationRegisteredToAnotherTenant =>
+                _localizer["PrintBridge.Auto.InstallationRegisteredToAnotherTenant"].Value,
+            _ => null
+        };
 
     [HttpGet("download")]
     public IActionResult DownloadRedirect() =>

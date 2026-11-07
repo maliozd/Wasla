@@ -383,6 +383,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
             central,
             new PrintBridgeDeviceManagementService(central, NullLogger<PrintBridgeDeviceManagementService>.Instance, new NoActivePrintJobs()),
             new SqlServerPrintBridgeSetupTenantLock(central),
+            new NoActivePrintJobs(),
             NullLogger<PrintBridgeSetupSessionService>.Instance);
     }
 

@@ -522,6 +522,8 @@ public sealed partial class PrintBridgeManualConnectionTests
         public Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(string rawCode, PrintBridgeSetupClientInfo clientInfo, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> CompleteAsync(Guid sessionId, string completionCredential, bool connectionVerified, CancellationToken ct) => throw new NotSupportedException();
         public Task<PrintBridgeSetupStatusDto?> GetStatusAsync(Guid tenantId, Guid sessionId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<PrintBridgeTransferPreview> PreviewTransferAsync(PrintBridgeTransferRequest request, CancellationToken ct) => throw new NotSupportedException();
+        public Task<PrintBridgeTransferResult> TransferAsync(PrintBridgeTransferRequest request, CancellationToken ct) => throw new NotSupportedException();
     }
 
     /// <summary>Answers every policy check the same way and records what was asked, for whom.</summary>

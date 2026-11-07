@@ -30,7 +30,13 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly PrintBridgeAutoSetupCoordinator _autoSetup;
 
+    private readonly PrintBridgeServerTrustPolicy _trustPolicy;
+
+    /// <summary>1 while a setup link or the recovery of a pending connection change runs; they never overlap.</summary>
     private int _autoSetupRunning;
+
+    /// <summary>1 while the loop that finishes a pending connection change (WAS-91) is waiting or running.</summary>
+    private int _pendingChangeLoopRunning;
 
     private readonly ContextMenuStrip _trayMenu;
 
@@ -92,6 +98,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _localizer = services.GetRequiredService<PrintBridgeLocalizer>();
         _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
         _autoSetup = services.GetRequiredService<PrintBridgeAutoSetupCoordinator>();
+        _trustPolicy = services.GetRequiredService<PrintBridgeServerTrustPolicy>();
         _logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Tray");
 
         // The menu is the first control created here; creating it installs the Windows Forms context on this thread,
@@ -137,6 +144,12 @@ public sealed class TrayApplicationContext : ApplicationContext
         // installation starts in the tray only. Queued, so it runs once the message loop does.
         if (!HasConnectionSettings())
             _uiContext.Post(_ => ShowPrimaryWindow(), null);
+
+        // WAS-91: a move to another restaurant confirmed before a restart, a lost answer or a failed settings write is
+        // finished from its pending change. Meanwhile the old token cannot print for the old restaurant if the server
+        // stored the move (it retired that token), and still prints for it if the move was never stored.
+        if (_services.GetRequiredService<PrintBridgeSettingsStore>().PendingConnectionChangeExists())
+            _uiContext.Post(_ => StartPendingConnectionChangeLoop(), null);
     }
 
     private void ApplyTrayLocalization()
@@ -428,42 +441,21 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (shell is null)
             ShowRuntimeNotice();
 
+        var outcome = (PrintBridgeAutoSetupOutcome?)null;
         try
         {
-            if (!PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out _))
+            if (!PrintBridgeProtocolUri.TryParseSetup(uri, _trustPolicy, out var request, out _))
             {
                 ReportSetupResult(shell, ShellOperationOutcome.Failed, _localizer["Auto.InvalidLink"], MessageBoxIcon.Warning);
                 return;
             }
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-            cts.CancelAfter(TimeSpan.FromSeconds(60));
-            var outcome = await _autoSetup.ApplyAsync(request!, cts.Token).ConfigureAwait(true);
+            // The coordinator bounds its own network work; the user's decision in the confirmation has no time limit.
+            outcome = await _autoSetup.ApplyAsync(request!, ConfirmConnectionTransferAsync, _lifetime.Token).ConfigureAwait(true);
             if (IsShuttingDown)
                 return;
 
-            var result = DescribeAutoSetupOutcome(outcome);
-
-            UpdateTrayMenu();
-
-            // A refused link changed nothing, so the saved connection is neither reloaded nor re-verified.
-            if (result.Saved && !IsShuttingDown)
-            {
-                // Verify the saved connection and resume listening.
-                using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-                verify.CancelAfter(TimeSpan.FromSeconds(30));
-                await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
-            }
-
-            if (_lifetime.IsCancellationRequested)
-                return;
-
-            ReportSetupResult(
-                shell,
-                result.Connected ? ShellOperationOutcome.Succeeded : ShellOperationOutcome.Failed,
-                _localizer[result.MessageKey],
-                result.Icon,
-                outcome == PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing ? "printer" : null);
+            await ReportAutoSetupOutcomeAsync(shell, outcome.Value).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -480,7 +472,188 @@ public sealed class TrayApplicationContext : ApplicationContext
         {
             Interlocked.Exchange(ref _autoSetupRunning, 0);
         }
+
+        // A confirmed move whose result is not saved yet is finished in the background (WAS-91).
+        if (outcome == PrintBridgeAutoSetupOutcome.ChangePending)
+            StartPendingConnectionChangeLoop();
     }
+
+    /// <summary>Updates the tray, verifies a saved connection and resumes listening, then shows the result.</summary>
+    private async Task ReportAutoSetupOutcomeAsync(PrintBridgeShellForm? shell, PrintBridgeAutoSetupOutcome outcome)
+    {
+        var result = DescribeAutoSetupOutcome(outcome);
+
+        UpdateTrayMenu();
+
+        // A refused link changed nothing, so the saved connection is neither reloaded nor re-verified.
+        if (result.Saved && !IsShuttingDown)
+        {
+            // Verify the saved connection and resume listening.
+            using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            verify.CancelAfter(TimeSpan.FromSeconds(30));
+            await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
+        }
+
+        if (_lifetime.IsCancellationRequested)
+            return;
+
+        ReportSetupResult(
+            shell,
+            result.Connected
+                ? ShellOperationOutcome.Succeeded
+                : outcome == PrintBridgeAutoSetupOutcome.Cancelled ? ShellOperationOutcome.Cancelled : ShellOperationOutcome.Failed,
+            _localizer[result.MessageKey],
+            result.Icon,
+            outcome == PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing ? "printer" : null);
+    }
+
+    /// <summary>
+    /// The native confirmation before a setup link moves Print Bridge to another restaurant (WAS-91). Shown on the UI
+    /// thread, in the app window when it is open, otherwise on its own; exiting the app closes it as cancelled.
+    /// </summary>
+    private Task<bool> ConfirmConnectionTransferAsync(
+        PrintBridgeConnectionTransferConsentRequest request,
+        CancellationToken ct)
+    {
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (IsShuttingDown)
+        {
+            completion.SetResult(false);
+            return completion.Task;
+        }
+
+        try
+        {
+            _uiContext.Post(_ => _ = AskAsync(), null);
+        }
+        catch (InvalidOperationException)
+        {
+            completion.TrySetResult(false);
+        }
+
+        return completion.Task;
+
+        async Task AskAsync()
+        {
+            try
+            {
+                if (IsShuttingDown || ct.IsCancellationRequested)
+                {
+                    completion.TrySetResult(false);
+                    return;
+                }
+
+                bool approved;
+                if (_shellForm is { IsDisposed: false } shell)
+                {
+                    approved = await shell.ConfirmConnectionTransferAsync(request).ConfigureAwait(true);
+                }
+                else
+                {
+                    using var dialog = ShellConfirmDialog.ForConnectionTransfer(
+                        request,
+                        _localizer,
+                        _cultureService.IsRightToLeft,
+                        ShellWindowTheme.IsWindowsAppDarkModeEnabled());
+                    ConnectionTransferDialogCreatedForTests?.Invoke(dialog);
+                    using var close = _lifetime.Token.Register(() => _uiContext.Post(_ => dialog.Close(), null));
+                    approved = dialog.ShowDialog(_runtimeNotice is { IsDisposed: false } notice ? notice : null) == DialogResult.OK;
+                }
+
+                completion.TrySetResult(approved && !IsShuttingDown);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "The connection change confirmation could not be shown; nothing was changed.");
+                completion.TrySetResult(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finishes a confirmed move whose result is not saved yet (WAS-91), now and then every
+    /// <see cref="PendingChangeRetryInterval"/> while the server cannot be reached. One loop at a time; a setup link
+    /// running meanwhile finishes it itself first.
+    /// </summary>
+    private void StartPendingConnectionChangeLoop()
+    {
+        if (IsShuttingDown || Interlocked.Exchange(ref _pendingChangeLoopRunning, 1) == 1)
+            return;
+
+        _ = RunAsync();
+
+        async Task RunAsync()
+        {
+            try
+            {
+                while (!IsShuttingDown)
+                {
+                    if (Interlocked.Exchange(ref _autoSetupRunning, 1) == 0)
+                    {
+                        PrintBridgeAutoSetupOutcome? outcome;
+                        try
+                        {
+                            outcome = await _autoSetup.RecoverPendingChangeAsync(_lifetime.Token).ConfigureAwait(true);
+                        }
+                        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Finishing a pending connection change failed; it is tried again later.");
+                            outcome = PrintBridgeAutoSetupOutcome.ChangePending;
+                        }
+                        finally
+                        {
+                            Interlocked.Exchange(ref _autoSetupRunning, 0);
+                        }
+
+                        if (outcome is null)
+                            return;
+
+                        if (outcome != PrintBridgeAutoSetupOutcome.ChangePending)
+                        {
+                            // Saved now: shown in the app window if it is open, never as an unprompted message box.
+                            var shell = _shellForm is { IsDisposed: false, Visible: true } open ? open : null;
+                            if (shell is not null)
+                                await ReportAutoSetupOutcomeAsync(shell, outcome.Value).ConfigureAwait(true);
+                            else
+                                await ReportAutoSetupOutcomeQuietlyAsync(outcome.Value).ConfigureAwait(true);
+                            return;
+                        }
+                    }
+
+                    await Task.Delay(PendingChangeRetryInterval, _lifetime.Token).ConfigureAwait(true);
+                }
+            }
+            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+            {
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _pendingChangeLoopRunning, 0);
+            }
+        }
+    }
+
+    /// <summary>A move finished in the background: the tray and the engine follow it without a message.</summary>
+    private async Task ReportAutoSetupOutcomeQuietlyAsync(PrintBridgeAutoSetupOutcome outcome)
+    {
+        UpdateTrayMenu();
+        if (!DescribeAutoSetupOutcome(outcome).Saved || IsShuttingDown)
+            return;
+
+        using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        verify.CancelAfter(TimeSpan.FromSeconds(30));
+        await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
+    }
+
+    /// <summary>How often a pending connection change is tried again while its server cannot be reached.</summary>
+    internal TimeSpan PendingChangeRetryInterval { get; set; } = TimeSpan.FromMinutes(1);
+
+    /// <summary>For tests: runs once for a connection-change confirmation shown without the app window, before it is shown.</summary>
+    internal Action<ShellConfirmDialog>? ConnectionTransferDialogCreatedForTests { get; set; }
 
     /// <summary>How a setup-link outcome is shown, and whether a connection was saved.</summary>
     internal readonly record struct AutoSetupResultView(string MessageKey, MessageBoxIcon Icon, bool Saved, bool Connected);
@@ -502,6 +675,21 @@ public sealed class TrayApplicationContext : ApplicationContext
                 new("Auto.InvalidOrExpired", MessageBoxIcon.Warning, Saved: false, Connected: false),
             PrintBridgeAutoSetupOutcome.PrintingInProgress =>
                 new("Auto.PrintingInProgress", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.Cancelled =>
+                new("Auto.Cancelled", MessageBoxIcon.Information, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.CurrentConnectionUnverified =>
+                new("Auto.CurrentConnectionUnverified", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.DeviceLimitReached =>
+                new("Auto.DeviceLimitReached", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.InstallationConflict =>
+                new("Auto.InstallationConflict", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.ChangePending =>
+                new("Auto.ChangePending", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            PrintBridgeAutoSetupOutcome.DestinationDeviceDisabled =>
+                new("Auto.DestinationDeviceDisabled", MessageBoxIcon.Warning, Saved: false, Connected: false),
+            // An earlier approved move was saved first: connected (to that restaurant), the new link not applied.
+            PrintBridgeAutoSetupOutcome.PreviousChangeCompleted =>
+                new("Auto.PreviousChangeCompleted", MessageBoxIcon.Information, Saved: true, Connected: true),
             _ => new("Auto.Failed", MessageBoxIcon.Warning, Saved: false, Connected: false)
         };
 

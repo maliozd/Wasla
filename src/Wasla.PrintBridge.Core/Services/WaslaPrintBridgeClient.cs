@@ -3,7 +3,9 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
+using Wasla.PrintBridge.Setup;
 
 namespace Wasla.PrintBridge.Services;
 
@@ -167,6 +169,10 @@ public sealed class WaslaPrintBridgeClient
                 if (string.Equals(rejectionKind, "installation_already_registered", StringComparison.Ordinal))
                     throw new LocalizedApplicationException("Auto.InstallationAlreadyRegistered");
 
+                // WAS-91: still registered to another restaurant and not moved with that device's own token.
+                if (string.Equals(rejectionKind, "installation_registered_to_another_tenant", StringComparison.Ordinal))
+                    throw new LocalizedApplicationException("Auto.InstallationRegisteredToAnotherRestaurant");
+
                 return null;
             }
 
@@ -177,7 +183,7 @@ public sealed class WaslaPrintBridgeClient
 
             return new SetupExchangeResult(
                 payload.SessionId,
-                string.IsNullOrWhiteSpace(payload.ServerUrl) ? serverUrl : payload.ServerUrl,
+                ResolveSetupServerUrl(serverUrl, payload.ServerUrl),
                 payload.DeviceToken,
                 payload.DeviceName ?? string.Empty,
                 payload.InstallationId,
@@ -245,6 +251,193 @@ public sealed class WaslaPrintBridgeClient
             _logger.LogWarning(ex, "Print Bridge setup completion report failed. ServerUrl={ServerUrl}", serverUrl);
         }
     }
+
+    /// <summary>
+    /// Read-only check of a move to the setup link's restaurant (WAS-91), asked of the server Print Bridge is connected
+    /// to now, with its own token: the token never goes to the link's server. Returns the verified names for the
+    /// confirmation. Nothing changes on the server and the code stays unused.
+    /// </summary>
+    public Task<SetupTransferReply> PreviewSetupTransferAsync(
+        WaslaOptions current,
+        string installationId,
+        string setupServerUrl,
+        string code,
+        CancellationToken ct) =>
+        SendSetupTransferAsync(
+            current.ServerUrl,
+            current.AgentToken,
+            installationId,
+            "api/print-bridge/setup/transfer/preview",
+            new { code, serverUrl = setupServerUrl },
+            setupServerUrl,
+            isTransfer: false,
+            ct);
+
+    /// <summary>
+    /// The confirmed move, sent to the server it was confirmed against with the pending change's secrets. Repeating it
+    /// with the same pending change is safe: the server answers with the same result.
+    /// </summary>
+    public Task<SetupTransferReply> TransferSetupAsync(PrintBridgePendingConnectionChange change, CancellationToken ct)
+    {
+        var (_, bridge, _) = _holder.Snapshot();
+        return SendSetupTransferAsync(
+            change.SourceServerUrl,
+            change.SourceToken,
+            change.InstallationId,
+            "api/print-bridge/setup/transfer",
+            new
+            {
+                code = change.Code,
+                serverUrl = change.SetupServerUrl,
+                deviceToken = change.NewToken,
+                completionCredential = change.CompletionCredential,
+                machineName = Environment.MachineName,
+                printerName = bridge.PrinterName
+            },
+            change.SetupServerUrl,
+            isTransfer: true,
+            ct);
+    }
+
+    private async Task<SetupTransferReply> SendSetupTransferAsync(
+        string sourceServerUrl,
+        string sourceToken,
+        string installationId,
+        string path,
+        object body,
+        string setupServerUrl,
+        bool isTransfer,
+        CancellationToken ct)
+    {
+        if (!Uri.TryCreate(sourceServerUrl, UriKind.Absolute, out var serverUri))
+            return new SetupTransferReply(SetupTransferReplyKind.Unknown);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{sourceServerUrl.TrimEnd('/')}/{path}");
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Token", sourceToken);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Installation-Id", installationId);
+        request.Headers.TryAddWithoutValidation("X-PrintBridge-Version", _appVersion);
+        request.Content = JsonContent.Create(body);
+
+        try
+        {
+            using var setupHttp = _setupHttpClientFactory.Create(serverUri);
+            using var response = await setupHttp.SendAsync(request, ct).ConfigureAwait(false);
+            var status = (int)response.StatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                var reply = isTransfer
+                    ? await ReadTransferReplyAsync(response, setupServerUrl, ct).ConfigureAwait(false)
+                    : await ReadTransferPreviewAsync(response, setupServerUrl, ct).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "Print Bridge transfer request answered. Path={Path}, StatusCode={StatusCode}, Reply={Reply}",
+                    path,
+                    status,
+                    reply.Kind);
+                return reply;
+            }
+
+            // Only the error code is read and logged: the request carried secrets, the answer never does.
+            var errorCode = TryGetPrintBridgeErrorCode(response, await SafeReadBodyAsync(response, ct).ConfigureAwait(false));
+            var kind = ClassifyTransferRefusal(status, errorCode);
+            _logger.LogWarning(
+                "Print Bridge transfer request refused. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, ErrorCode={ErrorCode}, Reply={Reply}",
+                sourceServerUrl,
+                path,
+                status,
+                errorCode,
+                kind);
+            return new SetupTransferReply(kind);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException
+                                       || (ex is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // No answer, or one that cannot be read: whether the server stored a move is not known.
+            _logger.LogWarning(
+                ex,
+                "Print Bridge transfer request got no usable answer. ServerUrl={ServerUrl}, Path={Path}",
+                sourceServerUrl,
+                path);
+            return new SetupTransferReply(SetupTransferReplyKind.Unknown);
+        }
+    }
+
+    private static async Task<SetupTransferReply> ReadTransferPreviewAsync(
+        HttpResponseMessage response,
+        string setupServerUrl,
+        CancellationToken ct)
+    {
+        var payload = await response.Content.ReadFromJsonAsync<SetupTransferPreviewResponse>(JsonOptions, ct)
+            .ConfigureAwait(false);
+        if (payload is null)
+            return new SetupTransferReply(SetupTransferReplyKind.Unknown);
+
+        if (payload.SameTenant)
+            return new SetupTransferReply(SetupTransferReplyKind.SameTenant);
+
+        // The server checks that the session belongs to the link's server; a different answer is never shown.
+        if (!PrintBridgeServerTrustPolicy.IsSameOrigin(payload.TargetServerUrl, setupServerUrl))
+            return new SetupTransferReply(SetupTransferReplyKind.InvalidOrExpired);
+
+        return new SetupTransferReply(
+            SetupTransferReplyKind.Ready,
+            CurrentTenantName: payload.CurrentTenantName?.Trim() ?? string.Empty,
+            TargetTenantName: payload.TargetTenantName?.Trim() ?? string.Empty,
+            TargetServerUrl: payload.TargetServerUrl!);
+    }
+
+    private async Task<SetupTransferReply> ReadTransferReplyAsync(
+        HttpResponseMessage response,
+        string setupServerUrl,
+        CancellationToken ct)
+    {
+        var payload = await response.Content.ReadFromJsonAsync<SetupTransferResponse>(JsonOptions, ct)
+            .ConfigureAwait(false);
+        if (payload is null || payload.SessionId == Guid.Empty)
+            return new SetupTransferReply(SetupTransferReplyKind.Unknown);
+
+        return new SetupTransferReply(
+            SetupTransferReplyKind.Ready,
+            SessionId: payload.SessionId,
+            ServerUrl: ResolveSetupServerUrl(setupServerUrl, payload.ServerUrl),
+            DeviceName: payload.DeviceName ?? string.Empty,
+            InstallationId: payload.InstallationId);
+    }
+
+    /// <summary>
+    /// The server URL to save after setup: the server's canonical value only when it has the setup link's origin,
+    /// otherwise the link's server (WAS-91). The link's server is the one that was checked against the trust policy.
+    /// </summary>
+    private string ResolveSetupServerUrl(string setupServerUrl, string? responseServerUrl)
+    {
+        if (string.IsNullOrWhiteSpace(responseServerUrl))
+            return setupServerUrl;
+
+        if (PrintBridgeServerTrustPolicy.IsSameOrigin(setupServerUrl, responseServerUrl))
+            return responseServerUrl.Trim();
+
+        _logger.LogWarning(
+            "Print Bridge setup answer named a server with another origin than the setup link; the link's server is kept. ServerUrl={ServerUrl}",
+            setupServerUrl);
+        return setupServerUrl;
+    }
+
+    private static SetupTransferReplyKind ClassifyTransferRefusal(int statusCode, string? errorCode) =>
+        statusCode switch
+        {
+            400 => SetupTransferReplyKind.InvalidOrExpired,
+            401 or 403 => SetupTransferReplyKind.SourceRejected,
+            409 => errorCode switch
+            {
+                "printing_in_progress" => SetupTransferReplyKind.PrintingInProgress,
+                "device_limit_reached" => SetupTransferReplyKind.DeviceLimitReached,
+                "installation_conflict" => SetupTransferReplyKind.InstallationConflict,
+                "destination_device_disabled" => SetupTransferReplyKind.DestinationDeviceDisabled,
+                "same_tenant" => SetupTransferReplyKind.SameTenant,
+                _ => SetupTransferReplyKind.InvalidOrExpired
+            },
+            // 404 (a server without moves), 429 and 5xx: nothing is known, so nothing is given up.
+            _ => SetupTransferReplyKind.Unknown
+        };
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpMethod method,
@@ -440,6 +633,9 @@ public sealed class WaslaPrintBridgeClient
             if (body.Contains("installation_already_registered", StringComparison.OrdinalIgnoreCase))
                 return "installation_already_registered";
 
+            if (body.Contains("installation_registered_to_another_tenant", StringComparison.OrdinalIgnoreCase))
+                return "installation_registered_to_another_tenant";
+
             return "setup_conflict";
         }
 
@@ -503,4 +699,45 @@ public sealed class WaslaPrintBridgeClient
         string? DeviceName,
         Guid InstallationId,
         string? CompletionCredential);
+
+    /// <summary>
+    /// How the server answered a move or its preview (WAS-91). Every kind except <see cref="SetupTransferReplyKind.Unknown"/>
+    /// is the server's own answer; a refusal changed nothing.
+    /// </summary>
+    public enum SetupTransferReplyKind
+    {
+        Ready,
+        SameTenant,
+        SourceRejected,
+        InvalidOrExpired,
+        PrintingInProgress,
+        DeviceLimitReached,
+        InstallationConflict,
+        DestinationDeviceDisabled,
+
+        /// <summary>No answer or an unreadable one (network, timeout, 404, 429, 5xx): whether a move was stored is not known.</summary>
+        Unknown
+    }
+
+    public sealed record SetupTransferReply(
+        SetupTransferReplyKind Kind,
+        string CurrentTenantName = "",
+        string TargetTenantName = "",
+        string TargetServerUrl = "",
+        Guid SessionId = default,
+        string ServerUrl = "",
+        string DeviceName = "",
+        Guid InstallationId = default);
+
+    private sealed record SetupTransferPreviewResponse(
+        bool SameTenant,
+        string? CurrentTenantName,
+        string? TargetTenantName,
+        string? TargetServerUrl);
+
+    private sealed record SetupTransferResponse(
+        Guid SessionId,
+        string? ServerUrl,
+        string? DeviceName,
+        Guid InstallationId);
 }

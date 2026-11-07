@@ -494,6 +494,22 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge на этом компьютере уже зарегистрирован как активное устройство. Используйте в Wasla Web вариант "Повторно подключить существующее устройство" вместо настройки нового устройства или сначала удалите старую запись устройства.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено; чек завершается через сохранённое подключение. Откройте ссылку настройки ещё раз, когда печать закончится.</value></data>
+  <data name="Auto.Transfer.Title" xml:space="preserve"><value>Подключиться к другому ресторану?</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Это приложение сейчас подключено к ресторану {0}. Если продолжить, заказы {0} больше не будут печататься, а приложение подключится к ресторану {1}.</value></data>
+  <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Подключиться к новому ресторану</value></data>
+  <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Текущий ресторан</value></data>
+  <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Текущий сервер</value></data>
+  <data name="Auto.Transfer.NewRestaurant" xml:space="preserve"><value>Новый ресторан</value></data>
+  <data name="Auto.Transfer.NewServer" xml:space="preserve"><value>Новый сервер</value></data>
+  <data name="Auto.Transfer.UnknownRestaurant" xml:space="preserve"><value>Ресторан без названия</value></data>
+  <data name="Auto.Cancelled" xml:space="preserve"><value>Подключение не изменено. Print Bridge по-прежнему подключён к текущему ресторану.</value></data>
+  <data name="Auto.CurrentConnectionUnverified" xml:space="preserve"><value>Print Bridge не смог подтвердить текущее подключение на сервере Wasla, поэтому ссылка настройки не применена. Ничего не изменено. Проверьте подключение к интернету и откройте ссылку настройки ещё раз. Чтобы вместо этого подключиться к другому серверу, сначала сбросьте подключение в настройках.</value></data>
+  <data name="Auto.DeviceLimitReached" xml:space="preserve"><value>Новый ресторан достиг лимита устройств Print Bridge. Ничего не изменено; Print Bridge по-прежнему подключён к текущему ресторану.</value></data>
+  <data name="Auto.InstallationConflict" xml:space="preserve"><value>Ссылку настройки нового ресторана нельзя использовать для этого компьютера: выбранное в Wasla устройство принадлежит другому компьютеру, или этот компьютер зарегистрирован ещё и как другое устройство. Ничего не изменено. Создайте новую ссылку настройки для нового устройства или удалите лишнюю запись устройства в Wasla.</value></data>
+  <data name="Auto.InstallationRegisteredToAnotherRestaurant" xml:space="preserve"><value>Print Bridge на этом компьютере всё ещё зарегистрирован в другом ресторане, и подключение к нему не удалось подтвердить. Ничего не изменено. Восстановите это подключение и откройте ссылку настройки ещё раз или попросите тот ресторан удалить это устройство на своей странице устройств Print Bridge.</value></data>
+  <data name="Auto.ChangePending" xml:space="preserve"><value>Перенос Print Bridge в новый ресторан пока не подтверждён. Print Bridge завершит изменение автоматически, как только сервер Wasla станет доступен. До этого он никогда не печатает заказы ресторана, к которому больше не относится.</value></data>
+  <data name="Auto.DestinationDeviceDisabled" xml:space="preserve"><value>Устройство, выбранное новым рестораном в Wasla, отключено (неактивно), поэтому Print Bridge не был перенесён туда. Ничего не изменено. Включите устройство в Wasla или создайте ссылку настройки для нового устройства.</value></data>
+  <data name="Auto.PreviousChangeCompleted" xml:space="preserve"><value>Смена ресторана, которую вы подтвердили ранее, завершена первой; теперь Print Bridge подключён к тому ресторану. Только что открытая ссылка настройки не применена; откройте её ещё раз, если она всё ещё нужна.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Подключение</value>
   </data>

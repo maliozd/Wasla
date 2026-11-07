@@ -41,20 +41,26 @@ public sealed class PrintBridgeSetupCertificatePolicyTests
     }
 
     [Fact]
-    public void TrustedOriginValidation_RemainsUnchanged()
+    public void SetupLinkOrigins_FollowTheTrustPolicyOfTheBuild()
     {
         var localUri = BuildSetupUri("https://sushi-m.wasla.local:7200/");
-        var productionUri = BuildSetupUri("https://panel.wasla.com/");
+        var productionUri = BuildSetupUri("https://sushim.app.wasla.tr/");
         var rejectedUri = BuildSetupUri("https://evil.example.com/");
 
-        Assert.True(PrintBridgeProtocolUri.TryParseSetup(localUri, out _, out var localError));
+        // Local development hosts only under the development policy (Debug builds), never in production (WAS-91).
+        Assert.True(PrintBridgeProtocolUri.TryParseSetup(localUri, PrintBridgeServerTrustPolicy.Development, out _, out var localError));
         Assert.Null(localError);
+        Assert.False(PrintBridgeProtocolUri.TryParseSetup(localUri, PrintBridgeServerTrustPolicy.Production, out _, out localError));
+        Assert.Equal("untrusted_server_url", localError);
 
-        Assert.True(PrintBridgeProtocolUri.TryParseSetup(productionUri, out _, out var productionError));
-        Assert.Null(productionError);
+        foreach (var policy in new[] { PrintBridgeServerTrustPolicy.Production, PrintBridgeServerTrustPolicy.Development })
+        {
+            Assert.True(PrintBridgeProtocolUri.TryParseSetup(productionUri, policy, out _, out var productionError));
+            Assert.Null(productionError);
 
-        Assert.False(PrintBridgeProtocolUri.TryParseSetup(rejectedUri, out _, out var rejectedError));
-        Assert.Equal("untrusted_server_url", rejectedError);
+            Assert.False(PrintBridgeProtocolUri.TryParseSetup(rejectedUri, policy, out _, out var rejectedError));
+            Assert.Equal("untrusted_server_url", rejectedError);
+        }
     }
 
     private static string BuildSetupUri(string serverUrl) =>

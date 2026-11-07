@@ -58,5 +58,34 @@ public sealed record PrintBridgeSetupCompleteRequest(
 
 public sealed record PrintBridgeSetupCompleteResponse(bool Success);
 
+/// <summary>
+/// Body of the read-only move preview and of the move between tenants (WAS-91). Sent to the server Print Bridge is
+/// connected to now; the current device token travels in <c>X-PrintBridge-Token</c> and the installation identity in
+/// <c>X-PrintBridge-Installation-Id</c>. <see cref="ServerUrl"/> is the setup link's server. For the move, the app
+/// sends the destination token and completion credential it generated; only their hashes are stored.
+/// </summary>
+public sealed record PrintBridgeSetupTransferRequest(
+    string Code,
+    string ServerUrl,
+    string? DeviceToken = null,
+    string? CompletionCredential = null,
+    string? MachineName = null,
+    string? PrinterName = null);
+
+/// <summary>Verified names for the desktop app's confirmation. No identifier or secret.</summary>
+public sealed record PrintBridgeSetupTransferPreviewResponse(
+    bool SameTenant,
+    string? CurrentTenantName = null,
+    string? TargetTenantName = null,
+    string? TargetServerUrl = null,
+    DateTime? ExpiresAtUtc = null);
+
+/// <summary>A stored move. The same answer is returned when the identical request is repeated.</summary>
+public sealed record PrintBridgeSetupTransferResponse(
+    Guid SessionId,
+    string ServerUrl,
+    string DeviceName,
+    Guid InstallationId);
+
 public sealed record UpdatePrintBridgeDeviceNameRequest(string? DeviceName);
 

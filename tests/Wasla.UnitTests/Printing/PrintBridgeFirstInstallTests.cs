@@ -437,6 +437,8 @@ public sealed partial class PrintBridgeFirstInstallTests
         public Task<PrintBridgeSetupExchangeResult?> ExchangeAsync(string rawCode, PrintBridgeSetupClientInfo clientInfo, CancellationToken ct) => throw new InvalidOperationException();
         public Task<bool> CompleteAsync(Guid sessionId, string completionCredential, bool connectionVerified, CancellationToken ct) => throw new InvalidOperationException();
         public Task<PrintBridgeSetupStatusDto?> GetStatusAsync(Guid tenantId, Guid sessionId, CancellationToken ct) => throw new InvalidOperationException();
+        public Task<PrintBridgeTransferPreview> PreviewTransferAsync(PrintBridgeTransferRequest request, CancellationToken ct) => throw new InvalidOperationException();
+        public Task<PrintBridgeTransferResult> TransferAsync(PrintBridgeTransferRequest request, CancellationToken ct) => throw new InvalidOperationException();
     }
 
     private sealed class AllowAll : IAuthorizationService

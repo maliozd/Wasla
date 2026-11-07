@@ -14,7 +14,10 @@ public static class PrintBridgeAppServices
     internal static string LogFilePath =>
         Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "wasla-print-bridge-.log");
 
-    public static ServiceProvider Build()
+    public static ServiceProvider Build() => Build(configureForTests: null);
+
+    /// <summary>For tests: <paramref name="configureForTests"/> registers replacements after the application's own services.</summary>
+    internal static ServiceProvider Build(Action<IServiceCollection>? configureForTests)
     {
         PrintBridgePaths.EnsureProgramDataDirectories();
 
@@ -77,7 +80,10 @@ public static class PrintBridgeAppServices
         services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton<PrintBridgeRuntime>();
         services.AddSingleton<IPrintBridgeConnectionGuard>(sp => sp.GetRequiredService<PrintBridgeRuntime>());
+        // Release builds trust only HTTPS Wasla hosts for setup links; Debug builds also the local development hosts.
+        services.AddSingleton(Wasla.PrintBridge.Setup.PrintBridgeServerTrustPolicy.ForCurrentBuild());
         services.AddSingleton<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator>();
+        configureForTests?.Invoke(services);
 
         var provider = services.BuildServiceProvider();
         LogStartup(provider, holder);
