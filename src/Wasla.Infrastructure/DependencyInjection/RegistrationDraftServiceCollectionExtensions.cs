@@ -68,6 +68,8 @@ public static class RegistrationDraftServiceCollectionExtensions
 
             services.TryAddSingleton<FakeSmsOutbox>();
             services.TryAddSingleton<ISmsSender, FakeSmsSender>();
+            // Only here: a developer may read the fake codes of their own draft; no other mode or environment can.
+            services.TryAddSingleton<IDevelopmentSmsOutbox>(sp => sp.GetRequiredService<FakeSmsOutbox>());
             return services;
         }
 

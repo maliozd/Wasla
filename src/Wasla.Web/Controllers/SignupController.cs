@@ -12,7 +12,7 @@ using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
-using Wasla.Infrastructure.Sms;
+using Wasla.Application.Abstractions.Sms;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
 
@@ -39,6 +39,7 @@ public sealed class SignupController : Controller
     private readonly TimeProvider _time;
     private readonly SignupRegistrationOwnership _ownership;
     private readonly SignupDraftCookie _draftCookie;
+    private readonly bool _developmentSmsOutbox;
 
     public SignupController(
         IPendingRegistrationService pendingRegistrations,
@@ -52,7 +53,8 @@ public sealed class SignupController : Controller
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
         IDataProtectionProvider dataProtection,
-        TimeProvider time)
+        TimeProvider time,
+        IDevelopmentSmsOutbox? developmentSmsOutbox = null)
     {
         _pendingRegistrations = pendingRegistrations;
         _drafts = drafts;
@@ -67,6 +69,7 @@ public sealed class SignupController : Controller
         _time = time;
         _ownership = new SignupRegistrationOwnership(dataProtection, environment);
         _draftCookie = new SignupDraftCookie(dataProtection, environment);
+        _developmentSmsOutbox = environment.IsDevelopment() && developmentSmsOutbox is not null;
     }
 
     // While Wasla:TenantOnboarding:PublicSignupEnabled is false, this page and the routes that serve only it (the draft
@@ -174,7 +177,6 @@ public sealed class SignupController : Controller
         if (draft is null && SignupDraftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
 
-        var fakeOutbox = _environment.IsDevelopment() && HttpContext.RequestServices.GetService<FakeSmsOutbox>() is not null;
         model.InitialDraft = SignupDraftResponses.State(
             draft,
             _phoneVerification.IsAvailable,
@@ -182,7 +184,7 @@ public sealed class SignupController : Controller
             _localizer,
             registrationId => Url.Action(nameof(Pending), new { id = registrationId })!,
             _time.GetUtcNow().UtcDateTime);
-        model.Endpoints = SignupDraftResponses.Endpoints(Url, fakeOutbox);
+        model.Endpoints = SignupDraftResponses.Endpoints(Url, _developmentSmsOutbox);
         model.RequestedPlanCode = requestedPlanCode;
         model.IsPhoneVerificationAvailable = _phoneVerification.IsAvailable;
         model.PhoneCodeLength = PhoneVerificationPolicy.CodeLength;

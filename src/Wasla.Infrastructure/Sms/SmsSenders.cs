@@ -47,10 +47,11 @@ public sealed class FakeSmsSender : ISmsSender
 }
 
 /// <summary>
-/// The in-memory outbox of <see cref="FakeSmsSender"/>: the newest 100 messages of the process. Read by the
-/// Development-only fake outbox endpoint and, through DI, by tests. Never used by a real sender.
+/// The in-memory outbox of <see cref="FakeSmsSender"/>: the newest 100 messages of the process. Read by tests through DI
+/// and, in Development with the fake mode only, as <see cref="IDevelopmentSmsOutbox"/> by the fake outbox endpoint, which
+/// shows a browser only the messages of its own draft. Never used by a real sender.
 /// </summary>
-public sealed partial class FakeSmsOutbox
+public sealed partial class FakeSmsOutbox : IDevelopmentSmsOutbox
 {
     public const int Capacity = 100;
 
@@ -65,7 +66,8 @@ public sealed partial class FakeSmsOutbox
     public void Add(SmsMessage message, DateTime sentAtUtc)
     {
         var match = OneTimeCode().Match(message.Text);
-        _messages.Enqueue(new FakeSmsMessage(message.ToE164, message.Text, match.Success ? match.Value : string.Empty, message.Purpose, sentAtUtc));
+        _messages.Enqueue(new FakeSmsMessage(
+            message.ToE164, message.Text, match.Success ? match.Value : string.Empty, message.Purpose, sentAtUtc, message.Reference));
         while (_messages.Count > Capacity && _messages.TryDequeue(out _))
         {
         }
@@ -82,6 +84,13 @@ public sealed partial class FakeSmsOutbox
 
     public IReadOnlyList<FakeSmsMessage> All => _messages.Reverse().ToArray();
 
+    /// <inheritdoc />
+    public IReadOnlyList<DevelopmentSmsMessage> MessagesFor(string reference) =>
+        _messages.Where(m => string.Equals(m.Reference, reference, StringComparison.Ordinal))
+            .Reverse()
+            .Select(m => new DevelopmentSmsMessage(m.ToE164, m.Code, m.SentAtUtc))
+            .ToArray();
+
     public void Clear() => _messages.Clear();
 
     [GeneratedRegex(@"(?<!\d)\d{6}(?!\d)")]
@@ -89,7 +98,8 @@ public sealed partial class FakeSmsOutbox
 }
 
 /// <param name="Code">The 6-digit code found in the text.</param>
-public sealed record FakeSmsMessage(string ToE164, string Text, string Code, SmsPurpose Purpose, DateTime SentAtUtc)
+/// <param name="Reference">The message's reference: the registration draft it was sent for.</param>
+public sealed record FakeSmsMessage(string ToE164, string Text, string Code, SmsPurpose Purpose, DateTime SentAtUtc, string? Reference = null)
 {
     public override string ToString() => nameof(FakeSmsMessage);
 }
