@@ -17,6 +17,32 @@ public sealed class WaslaPrintBridgeClient
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>
+    /// The error codes the Wasla server answers Print Bridge with: <c>PrintBridgeAuthMiddleware</c> (Web and Api),
+    /// <c>PrintBridgeSetupApiController</c> and <c>PrintBridgeSetupFailureReasons</c>. Only these are ever logged.
+    /// </summary>
+    private static readonly string[] KnownServerErrorCodes =
+    [
+        "print_bridge_token_required",
+        "device_auth_invalid",
+        "device_removed",
+        "device_disabled",
+        "tenant_inactive",
+        "installation_invalid",
+        "installation_mismatch",
+        "installation_already_bound",
+        "invalid_or_expired_setup_code",
+        "source_credential_rejected",
+        "printing_in_progress",
+        "device_limit_reached",
+        "installation_conflict",
+        "destination_device_disabled",
+        "same_tenant",
+        "transfer_failed",
+        "installation_already_registered",
+        "installation_registered_to_another_tenant"
+    ];
+
     private readonly HttpClient _http;
     private readonly PrintBridgeSettingsHolder _holder;
     private readonly PrintBridgeSetupHttpClientFactory _setupHttpClientFactory;
@@ -157,14 +183,15 @@ public sealed class WaslaPrintBridgeClient
             using var response = await setupHttp.SendAsync(request, ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
+                // The body is read only to classify the rejection and is never logged: an echo of the request would
+                // contain the setup code.
                 var body = await SafeReadBodyAsync(response, ct).ConfigureAwait(false);
                 var rejectionKind = ClassifySetupExchangeRejection((int)response.StatusCode, body);
                 _logger.LogWarning(
-                    "Print Bridge setup exchange rejected by server. ServerUrl={ServerUrl}, StatusCode={StatusCode}, FailureKind={FailureKind}, Body={Body}",
+                    "Print Bridge setup exchange rejected by server. ServerUrl={ServerUrl}, StatusCode={StatusCode}, FailureKind={FailureKind}",
                     serverUrl,
                     (int)response.StatusCode,
-                    rejectionKind,
-                    body);
+                    rejectionKind);
 
                 if (string.Equals(rejectionKind, "installation_already_registered", StringComparison.Ordinal))
                     throw new LocalizedApplicationException("Auto.InstallationAlreadyRegistered");
@@ -341,7 +368,8 @@ public sealed class WaslaPrintBridgeClient
                 return reply;
             }
 
-            // Only the error code is read and logged: the request carried secrets, the answer never does.
+            // Only the error code is read, and it is logged only when the Wasla server sends it: the request carried
+            // secrets, and an answer that is not the server's own may echo them.
             var errorCode = TryGetPrintBridgeErrorCode(response, await SafeReadBodyAsync(response, ct).ConfigureAwait(false));
             var kind = ClassifyTransferRefusal(status, errorCode);
             _logger.LogWarning(
@@ -349,7 +377,7 @@ public sealed class WaslaPrintBridgeClient
                 sourceServerUrl,
                 path,
                 status,
-                errorCode,
+                LoggableErrorCode(errorCode),
                 kind);
             return new SetupTransferReply(kind);
         }
@@ -501,22 +529,20 @@ public sealed class WaslaPrintBridgeClient
         if (response.IsSuccessStatusCode)
             return response;
 
-        var body = await SafeReadBodyAsync(response, ct).ConfigureAwait(false);
-        var serverErrorCode = TryGetPrintBridgeErrorCode(response, body);
+        // The answer is read only to classify it. Its body and its error code are never logged: a server or proxy may
+        // echo what the request carried, such as the device token (WAS-191). Only a code the Wasla server sends is named.
+        var statusCode = (int)response.StatusCode;
+        var serverErrorCode = TryGetPrintBridgeErrorCode(response, await SafeReadBodyAsync(response, ct).ConfigureAwait(false));
+        var failure = PrintBridgeConnectionException.FromResponse(relativePath, serverUrl, statusCode, serverErrorCode);
         _logger.LogWarning(
-            "Print Bridge API failed. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, ErrorCode={ErrorCode}, Body={Body}",
+            "Print Bridge API failed. ServerUrl={ServerUrl}, Path={Path}, StatusCode={StatusCode}, ErrorCode={ErrorCode}, Issue={Issue}",
             serverUrl,
             relativePath,
-            (int)response.StatusCode,
-            serverErrorCode,
-            body);
+            statusCode,
+            LoggableErrorCode(serverErrorCode),
+            failure.IssueCode);
 
-        throw PrintBridgeConnectionException.FromResponse(
-            relativePath,
-            serverUrl,
-            (int)response.StatusCode,
-            body,
-            serverErrorCode);
+        throw failure;
     }
 
     private string BuildAbsoluteUrl(string relativeUrl, WaslaOptions? connection = null)
@@ -590,6 +616,24 @@ public sealed class WaslaPrintBridgeClient
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The error code as it may be logged: the name of a code the Wasla server sends, <c>unrecognized</c> for any other
+    /// value, and null when the answer has none. An unknown value is never written, because it may echo the request.
+    /// </summary>
+    private static string? LoggableErrorCode(string? errorCode)
+    {
+        if (string.IsNullOrWhiteSpace(errorCode))
+            return null;
+
+        foreach (var known in KnownServerErrorCodes)
+        {
+            if (string.Equals(known, errorCode, StringComparison.OrdinalIgnoreCase))
+                return known;
+        }
+
+        return "unrecognized";
     }
 
     private static bool IsSslFailure(HttpRequestException ex)

@@ -123,7 +123,7 @@ public sealed class ShellConnectionDialogTests : IDisposable
         RunDialogAsync(SentinelToken, async (dialog, engine, localizer) =>
         {
             engine.CheckConnectionFailure = PrintBridgeConnectionException.FromResponse(
-                "api/print-bridge/health", SentinelServerUrl, 401, "{\"error\":\"device_auth_invalid\"}", "device_auth_invalid");
+                "api/print-bridge/health", SentinelServerUrl, 401, "device_auth_invalid");
             var (_, token, _, _, cancel, status) = dialog.PartsForTests;
             token.Text = "typed-in-this-dialog";
 
@@ -138,6 +138,27 @@ public sealed class ShellConnectionDialogTests : IDisposable
             cancel.PerformClick();
             await WaitUntilAsync(() => !dialog.Visible);
             Assert.Equal(string.Empty, token.Text);
+        });
+
+    [Fact]
+    public Task RedirectingServer_PointsToTheAddress_AndSavesNothing() =>
+        RunDialogAsync(SentinelToken, async (dialog, engine, localizer) =>
+        {
+            // Even with a token error code, a redirect is not a rejected token (WAS-191).
+            engine.CheckConnectionFailure = PrintBridgeConnectionException.FromResponse(
+                "api/print-bridge/health", SentinelServerUrl, 301, "device_auth_invalid");
+            var (url, token, _, _, _, status) = dialog.PartsForTests;
+            token.Text = "typed-in-this-dialog";
+
+            await dialog.ConnectAsync();
+
+            var message = localizer["Connection.RedirectNotFollowed"];
+            Assert.True(dialog.Visible);
+            Assert.Equal(message, status.Text);
+            Assert.StartsWith(message, url.AccessibleDescription, StringComparison.Ordinal);
+            Assert.Same(url, ActiveTextBox(dialog));
+            Assert.Equal("typed-in-this-dialog", token.Text);
+            Assert.Equal(0, engine.ApplyConnectionCalls);
         });
 
     [Fact]

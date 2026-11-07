@@ -62,6 +62,9 @@
   <data name="Connection.RequestFailed" xml:space="preserve">
     <value>فشل طلب Print Bridge (HTTP {0}).</value>
   </data>
+  <data name="Connection.RedirectNotFollowed" xml:space="preserve">
+    <value>أعاد الخادم توجيه الطلب إلى عنوان آخر، ولا يتبع Print Bridge عمليات إعادة التوجيه. أدخل رابط لوحة Wasla Web كما يظهر في صفحة إعداد Print Bridge في لوحة Wasla Web.</value>
+  </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
     <value>خادم Wasla غير متاح. حاول مرة أخرى لاحقاً.</value>
   </data>
