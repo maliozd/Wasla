@@ -613,13 +613,9 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         RegisteredToAnotherTenant
     }
 
-    private async Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct)
-    {
-        // Quota check stays inside the serializable transaction so concurrent exchanges cannot both succeed at limit.
-        return await _centralDb.PrintBridgeDevices
-            .CountAsync(d => d.TenantId == tenantId && d.IsActive && d.RemovedAtUtc == null, ct)
-            .ConfigureAwait(false);
-    }
+    // The caller holds the tenant's setup lock, which every writer of the quota takes (WAS-190): see PrintBridgeDeviceQuota.
+    private Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct) =>
+        PrintBridgeDeviceQuota.CountActiveDevicesAsync(_centralDb, tenantId, ct);
 
     private async Task<InstallationBinding> BindInstallationIdentityAsync(
         Guid tenantId,

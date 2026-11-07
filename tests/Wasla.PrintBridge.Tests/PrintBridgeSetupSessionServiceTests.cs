@@ -39,7 +39,8 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         _devices = new PrintBridgeDeviceManagementService(
             _db,
             NullLogger<PrintBridgeDeviceManagementService>.Instance,
-            NoActivePrintJobChecker.Instance);
+            NoActivePrintJobChecker.Instance,
+            new SqlServerPrintBridgeSetupTenantLock(_db));
         _deviceId = _devices.CreateDeviceAsync(_tenantId, "Kitchen PC", CancellationToken.None)
             .GetAwaiter().GetResult().DeviceId;
 
@@ -813,7 +814,8 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         new(
             db,
             NullLogger<PrintBridgeDeviceManagementService>.Instance,
-            NoActivePrintJobChecker.Instance);
+            NoActivePrintJobChecker.Instance,
+            SuccessfulTenantLock.Instance);
 
     private static PrintBridgeSetupSessionService CreateSetupService(
         CentralDbContext db,
