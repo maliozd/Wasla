@@ -103,7 +103,7 @@ public sealed class PublicSignupClosedTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.NotFound, response.Status);
         Assert.Equal(string.Empty, response.Body);
-        Assert.DoesNotContain(response.SetCookies, c => c.Name.Value is SignupDraftCookie.CookieName or SignupRegistrationOwnership.CookieName);
+        Assert.DoesNotContain(response.SetCookies, c => c.Name.Value is SignupDraftCookie.SecureCookieName or SignupRegistrationOwnership.CookieName);
         await using var db = NewDb();
         Assert.Equal(0, await db.RegistrationDrafts.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, await RegistrationCountAsync());

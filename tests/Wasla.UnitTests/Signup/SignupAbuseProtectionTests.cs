@@ -113,7 +113,7 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.TooManyRequests, refused.Status);
         Assert.Equal("Signup.TooManyAttempts", refused.Json.GetProperty("code").GetString());
         Assert.NotNull(refused.RetryAfter);
-        Assert.Null(second.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        Assert.Null(second.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
         await SignupDraftClient.AssertOkAsync(first.SaveRestaurantAsync());
     }
 

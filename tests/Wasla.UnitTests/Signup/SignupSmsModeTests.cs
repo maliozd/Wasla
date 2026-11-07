@@ -82,7 +82,13 @@ public sealed class SignupSmsModeTests : IAsyncLifetime
             configuration: new Dictionary<string, string?> { ["Wasla:Sms:Mode"] = "Fake" },
             fakeSms: false);
         using var client = new SignupDraftClient(_host);
-        await client.SaveSectionsAsync();
+        var plan = await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        // Development over plain HTTP cannot set a __Host- cookie, so the draft cookie keeps its unprefixed name there.
+        var cookie = Assert.Single(plan.SetCookies, c => c.Name.Value == Wasla.Web.Security.SignupDraftCookie.DevelopmentHttpCookieName);
+        Assert.False(cookie.Secure);
+        Assert.Equal("/", cookie.Path.Value);
+        await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync());
+        await SignupDraftClient.AssertOkAsync(client.SaveOwnerAsync());
         var sent = await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
 
         var outbox = await SignupDraftClient.AssertOkAsync(client.Browser.GetAsync("/signup/draft/phone/fake-outbox"));

@@ -174,7 +174,7 @@ public sealed class SignupController : Controller
     {
         var draftId = _draftCookie.Read(Request);
         var draft = draftId is { } id ? await _drafts.GetAsync(id, ct) : null;
-        if (draft is null && SignupDraftCookie.IsPresent(Request))
+        if (draft is null && _draftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
 
         model.InitialDraft = SignupDraftResponses.State(

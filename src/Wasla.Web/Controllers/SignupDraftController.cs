@@ -91,7 +91,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     {
         var draftId = _draftCookie.Read(Request);
         var draft = draftId is { } id ? await _drafts.GetAsync(id, ct) : null;
-        if (draft is null && SignupDraftCookie.IsPresent(Request))
+        if (draft is null && _draftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
         return Json(await StateAsync(draft, ct));
     }
@@ -331,7 +331,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     private async Task<IActionResult> SaveAsync(Func<Guid?, Task<RegistrationDraftSaveResult>> save, CancellationToken ct)
     {
         Guid? draftId = null;
-        if (SignupDraftCookie.IsPresent(Request))
+        if (_draftCookie.IsPresent(Request))
         {
             if (DraftIdOrMissing() is not { } id)
                 return Error(SignupErrorCodes.DraftMissing);
@@ -391,7 +391,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     private Guid? DraftIdOrMissing()
     {
         var draftId = _draftCookie.Read(Request);
-        if (draftId is null && SignupDraftCookie.IsPresent(Request))
+        if (draftId is null && _draftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
         return draftId;
     }
