@@ -67,7 +67,7 @@
                             @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
                             {
                                 <dt class="col-sm-4">@L["Signup.OwnerPhone"]</dt>
-                                <dd class="col-sm-8">@Model.OwnerPhone</dd>
+                                <dd class="col-sm-8">@TurkishPhoneDisplayFormatter.FormatStored(Model.OwnerPhone)</dd>
                             }
                         </dl>
 

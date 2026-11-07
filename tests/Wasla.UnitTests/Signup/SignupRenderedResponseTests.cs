@@ -61,7 +61,9 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         Assert.Contains(Html(applicant.Entity.OwnerEmail), ownerPage.Body);
         Assert.Contains(Html(applicant.Entity.BusinessName), ownerPage.Body);
         Assert.Contains(Html(applicant.Entity.BusinessEmail!), ownerPage.Body);
-        Assert.Contains(Html(TurkishPhoneDisplayFormatter.FormatWithCountryCode(applicant.Entity.OwnerPhone)), ownerPage.Body);
+        // The owner phone is stored in E.164 since WAS-192 and shown in the Turkish format, never with a doubled prefix.
+        Assert.Contains(Html(applicant.OwnerPhoneDisplay), ownerPage.Body);
+        Assert.DoesNotContain("+90 +90", ownerPage.Body, StringComparison.Ordinal);
         Assert.Contains(Html(TurkishPhoneDisplayFormatter.FormatWithCountryCode(applicant.Entity.BusinessPhone)), ownerPage.Body);
         Assert.Equal(
             status == PendingRegistrationStatus.AwaitingPayment,
@@ -262,7 +264,7 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         var entity = applicant.Entity;
         foreach (var value in new[]
                  {
-                     entity.OwnerFullName, entity.OwnerEmail, entity.OwnerPhone!, entity.BusinessName,
+                     entity.OwnerFullName, entity.OwnerEmail, applicant.OwnerPhoneDisplay, entity.BusinessName,
                      entity.BusinessPhone, entity.StreetAddress!, entity.BuildingNumber!, entity.Floor!,
                      entity.DoorNumber!, entity.AddressNote!, entity.PostalCode!
                  })
@@ -632,7 +634,8 @@ internal sealed class SentinelApplicant
             PostalCode = $"Pcq{token}",
             OwnerFullName = $"Ownerq{token}",
             OwnerEmail = $"owner.{token}@sentinel.test",
-            OwnerPhone = NewPhone(),
+            // A verified owner phone, as the registration draft submit stores it (WAS-192).
+            OwnerPhone = "+90" + NewPhone(),
             PasswordHash = $"Hashq{token}",
             PlanCode = WaslaPlanCodes.Starter,
             BillingPeriod = "Monthly",
@@ -676,6 +679,16 @@ internal sealed class SentinelApplicant
                 yield return TurkishPhoneDisplayFormatter.FormatWithCountryCode(phone);
                 yield return TurkishPhoneDisplayFormatter.FormatLocalMobile(phone);
             }
+        }
+    }
+
+    /// <summary>The owner phone as the pages show it: <c>+90 532 123 45 67</c>.</summary>
+    public string OwnerPhoneDisplay
+    {
+        get
+        {
+            var national = Entity.OwnerPhone![3..];
+            return $"+90 {national[..3]} {national[3..6]} {national[6..8]} {national[8..]}";
         }
     }
 
