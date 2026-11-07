@@ -72,7 +72,8 @@ internal static class RegistrationDraftRecords
             ? lastSent + rules.ResendWait - now
             : TimeSpan.Zero;
 
-        if (row?.ProtectedCode is not null && row.CodeExpiresAtUtc is { } expiresAt)
+        // A code whose attempts are used up (its lock has passed) can no longer be entered; a new one must be requested.
+        if (row?.ProtectedCode is not null && row.CodeExpiresAtUtc is { } expiresAt && row.FailedAttempts < rules.MaxFailedAttempts)
         {
             if (expiresAt > now)
             {

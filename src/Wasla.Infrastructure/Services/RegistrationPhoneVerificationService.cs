@@ -110,7 +110,16 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
         SmsDeliveryResult delivery;
         try
         {
-            delivery = await _sms.SendAsync(new SmsMessage(number, text, SmsPurpose.RegistrationPhoneVerification), ct);
+            delivery = await _sms.SendAsync(
+                new SmsMessage(number, text, SmsPurpose.RegistrationPhoneVerification, draftId.ToString("N")),
+                ct);
+        }
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            // The sender gave up (for example an HttpClient timeout) while the request itself goes on: a timeout, whose
+            // code must not stay usable. Adapters should report this as a result; this guards one that throws instead.
+            _logger.LogWarning("Phone verification SMS timed out. DraftId={DraftId} ExceptionType={ExceptionType}", draftId, ex.GetType().Name);
+            delivery = SmsDeliveryResult.Failed(SmsDeliveryFailure.Timeout);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -167,16 +176,21 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
         if (row.CodeExpiresAtUtc <= now)
             return await FailedAsync(SignupErrorCodes.PhoneCodeExpired, draft, now, null, ct);
 
-        // Reserve one attempt before comparing: concurrent checks can never use more than the limit.
+        // Reserve one attempt before comparing: concurrent checks can never use more than the limit. The reservation that
+        // reaches the limit sets the lock in the same statement, so no later failure can leave the limit used up without a
+        // lock; a right code checked with that last attempt still verifies and lifts the lock.
         var max = Rules.MaxFailedAttempts;
         var rowId = row.Id;
+        var lockedUntilIfLast = now + Rules.LockoutDuration;
         var reservedAttempt = await _central.RegistrationPhoneVerifications
             .Where(r => r.Id == rowId
                         && r.ProtectedCode != null
                         && r.CodeExpiresAtUtc > now
                         && r.FailedAttempts < max
                         && (r.LockedUntilUtc == null || r.LockedUntilUtc <= now))
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.FailedAttempts, r => r.FailedAttempts + 1), ct);
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.FailedAttempts, r => r.FailedAttempts + 1)
+                .SetProperty(r => r.LockedUntilUtc, r => r.FailedAttempts + 1 >= max ? lockedUntilIfLast : r.LockedUntilUtc), ct);
         if (reservedAttempt != 1)
             return await RefusedCheckAsync(draft, rowId, now, ct);
 
@@ -195,16 +209,15 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
 
         if (current.FailedAttempts >= max)
         {
-            // The last allowed wrong code: lock the number and drop its code.
-            var lockedUntilUtc = now + Rules.LockoutDuration;
+            // The last allowed wrong code: the reservation locked the number; its code is dropped too.
             await _central.RegistrationPhoneVerifications
-                .Where(r => r.Id == rowId && r.FailedAttempts >= max && (r.LockedUntilUtc == null || r.LockedUntilUtc <= now))
+                .Where(r => r.Id == rowId && r.FailedAttempts >= max)
                 .ExecuteUpdateAsync(s => s
-                    .SetProperty(r => r.LockedUntilUtc, lockedUntilUtc)
                     .SetProperty(r => r.ProtectedCode, (string?)null)
                     .SetProperty(r => r.CodeExpiresAtUtc, (DateTime?)null), ct);
             _logger.LogInformation("Owner phone verification locked after wrong codes. DraftId={DraftId}", draftId);
-            return await FailedAsync(SignupErrorCodes.PhoneLocked, draft, now, Rules.LockoutDuration, ct);
+            var lockedFor = current.LockedUntilUtc is { } until && until > now ? until - now : Rules.LockoutDuration;
+            return await FailedAsync(SignupErrorCodes.PhoneLocked, draft, now, lockedFor, ct);
         }
 
         return await FailedAsync(SignupErrorCodes.PhoneCodeIncorrect, draft, now, null, ct);
@@ -289,11 +302,12 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
                 CreatedAtUtc = now
             };
 
-            if (row.LockedUntilUtc is { } lockedUntil)
+            if (row.LockedUntilUtc is { } lockedUntil && lockedUntil > now)
+                return SendReservation.Refused(SignupErrorCodes.PhoneLocked, lockedUntil - now);
+            if (row.LockedUntilUtc is not null || row.FailedAttempts >= Rules.MaxFailedAttempts)
             {
-                if (lockedUntil > now)
-                    return SendReservation.Refused(SignupErrorCodes.PhoneLocked, lockedUntil - now);
-                // The lock has passed: the number starts again with a full attempt budget.
+                // The lock has passed (or, for a row written before the lock was set with the last attempt, the attempts
+                // are used up without one): the number starts again with a full attempt budget.
                 row.LockedUntilUtc = null;
                 row.FailedAttempts = 0;
             }
@@ -393,23 +407,14 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
             _logger.LogWarning("Phone verification SMS volume limit reached; sends are refused until the window has room.");
     }
 
-    /// <summary>Consumes the code (only if it is still the stored one) and stores the proof for the draft's current number.</summary>
+    /// <summary>
+    /// Stores the proof for the draft's current number and consumes the code (only if it is still the stored one), in one
+    /// transaction. Like every write that touches both, it locks the draft first and then its verification row (a number
+    /// change and the submit do the same), so two of them can never deadlock.
+    /// </summary>
     private async Task<bool> ConsumeAsync(Guid draftId, string number, Guid rowId, string protectedCode, DateTime now, CancellationToken ct)
     {
         await using var transaction = await _central.Database.BeginTransactionAsync(ct);
-        var consumed = await _central.RegistrationPhoneVerifications
-            .Where(r => r.Id == rowId && r.ProtectedCode == protectedCode)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(r => r.ProtectedCode, (string?)null)
-                .SetProperty(r => r.CodeExpiresAtUtc, (DateTime?)null)
-                .SetProperty(r => r.VerifiedAtUtc, now)
-                .SetProperty(r => r.FailedAttempts, r => r.FailedAttempts > 0 ? r.FailedAttempts - 1 : 0), ct);
-        if (consumed != 1)
-        {
-            await transaction.RollbackAsync(ct);
-            return false;
-        }
-
         var proven = await _central.RegistrationDrafts
             .Where(d => d.Id == draftId && d.OwnerMobilePhone == number && d.SubmittedAtUtc == null && d.ExpiresAtUtc > now)
             .ExecuteUpdateAsync(s => s
@@ -419,6 +424,21 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
         if (proven != 1)
         {
             // The number changed (or the draft was submitted) while the code was checked: nothing is verified.
+            await transaction.RollbackAsync(ct);
+            return false;
+        }
+
+        var consumed = await _central.RegistrationPhoneVerifications
+            .Where(r => r.Id == rowId && r.ProtectedCode == protectedCode)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(r => r.ProtectedCode, (string?)null)
+                .SetProperty(r => r.CodeExpiresAtUtc, (DateTime?)null)
+                .SetProperty(r => r.VerifiedAtUtc, now)
+                .SetProperty(r => r.LockedUntilUtc, (DateTime?)null)
+                .SetProperty(r => r.FailedAttempts, r => r.FailedAttempts > 0 ? r.FailedAttempts - 1 : 0), ct);
+        if (consumed != 1)
+        {
+            // Another check used the code, or a resend replaced it: this one verifies nothing.
             await transaction.RollbackAsync(ct);
             return false;
         }
@@ -437,14 +457,15 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
             return await FailedAsync(SignupErrorCodes.PhoneAlreadyVerified, fresh, now, null, ct);
 
         var row = await _central.RegistrationPhoneVerifications.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rowId, ct);
-        if (row?.LockedUntilUtc is { } lockedUntil && lockedUntil > now)
-            return await FailedAsync(SignupErrorCodes.PhoneLocked, fresh, now, lockedUntil - now, ct);
-        if (row is not null && row.FailedAttempts >= Rules.MaxFailedAttempts)
-            return await FailedAsync(SignupErrorCodes.PhoneLocked, fresh, now, Rules.LockoutDuration, ct);
-        if (row?.ProtectedCode is not null && row.CodeExpiresAtUtc <= now)
-            return await FailedAsync(SignupErrorCodes.PhoneCodeExpired, fresh, now, null, ct);
         if (row?.ProtectedCode is null)
             return await FailedAsync(SignupErrorCodes.PhoneNoActiveCode, fresh, now, null, ct);
+        if (row.LockedUntilUtc is { } lockedUntil && lockedUntil > now)
+            return await FailedAsync(SignupErrorCodes.PhoneLocked, fresh, now, lockedUntil - now, ct);
+        // The attempts are used up and the lock has passed: the code is spent; a new one must be requested.
+        if (row.FailedAttempts >= Rules.MaxFailedAttempts)
+            return await FailedAsync(SignupErrorCodes.PhoneNoActiveCode, fresh, now, null, ct);
+        if (row.CodeExpiresAtUtc <= now)
+            return await FailedAsync(SignupErrorCodes.PhoneCodeExpired, fresh, now, null, ct);
         return await FailedAsync(SignupErrorCodes.PhoneCodeIncorrect, fresh, now, null, ct);
     }
 

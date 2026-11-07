@@ -86,6 +86,31 @@ public sealed class RegistrationDraftSqlServerTests : IClassFixture<SqlServerSig
         Assert.Equal(row.VerifiedAtUtc, draft.PhoneVerifiedAtUtc);
     }
 
+    [Fact]
+    public async Task ChecksOfTheRightCodeRacingANumberChange_NeverDeadlock_AndNeverVerifyTheNewNumber()
+    {
+        // The check stores the proof and consumes the code, a number change updates the draft and clears its codes: both
+        // lock the draft first and then the verification row, so they wait for each other instead of deadlocking.
+        for (var round = 0; round < 6; round++)
+        {
+            var mobile = SqlServerSignupDatabase.NewMobileE164();
+            var draftId = await _db.SavedDraftAsync(mobile);
+            var code = await _db.SendAsync(draftId, mobile);
+            var other = SqlServerSignupDatabase.NewMobileE164();
+
+            var results = await RaceAsync(5, (db, i) => i == 0
+                ? _db.Phone(db).ChangeNumberAsync(draftId, other, Ct)
+                : _db.Phone(db).VerifyCodeAsync(draftId, code, Ct));
+
+            Assert.True(results[0].Succeeded, results[0].ErrorCode);
+            await using var check = _db.Open();
+            var draft = await check.RegistrationDrafts.AsNoTracking().SingleAsync(d => d.Id == draftId, Ct);
+            Assert.Equal(other, draft.OwnerMobilePhone);
+            Assert.NotEqual(other, draft.PhoneVerifiedNumber);
+            Assert.False(await check.RegistrationPhoneVerifications.AnyAsync(r => r.DraftId == draftId && r.ProtectedCode != null, Ct));
+        }
+    }
+
     // --- Send -----------------------------------------------------------------------------------------
 
     [Fact]

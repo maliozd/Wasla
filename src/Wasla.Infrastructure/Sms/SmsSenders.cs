@@ -36,6 +36,8 @@ public sealed class FakeSmsSender : ISmsSender
     public Task<SmsDeliveryResult> SendAsync(SmsMessage message, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(message);
+        if (_outbox.ThrowOnSend is { } exception)
+            throw exception;
         if (_outbox.FailDeliveriesWith is { } failure && failure != SmsDeliveryFailure.None)
             return Task.FromResult(SmsDeliveryResult.Failed(failure));
 
@@ -56,6 +58,9 @@ public sealed partial class FakeSmsOutbox
 
     /// <summary>For tests: while set, every send fails with this category and nothing is stored.</summary>
     public SmsDeliveryFailure? FailDeliveriesWith { get; set; }
+
+    /// <summary>For tests: while set, every send throws it, as a misbehaving adapter would (for example a timeout).</summary>
+    public Exception? ThrowOnSend { get; set; }
 
     public void Add(SmsMessage message, DateTime sentAtUtc)
     {
