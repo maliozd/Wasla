@@ -290,7 +290,7 @@ internal static class CliCommandTree
 
         var optTenantSlug = new Option<string>("--tenant-slug", "Tenant slug in CentralDb") { IsRequired = true };
         var optEmail = new Option<string>("--email", "User email") { IsRequired = true };
-        var optPassword = new Option<string>("--password", "Plaintext password (visible in history)") { IsRequired = true };
+        var optPassword = new Option<string>("--password", "Plaintext password, at least 8 characters (visible in shell history)") { IsRequired = true };
         var optRole = new Option<string>("--role", "Owner, Manager, Kitchen, Cashier, or Viewer") { IsRequired = true };
         var optFullName = new Option<string?>("--name", "User full name");
 

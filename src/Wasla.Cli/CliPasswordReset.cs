@@ -275,7 +275,7 @@ internal static class CliPasswordReset
         Console.ResetColor();
     }
 
-    private static string DescribePolicyError(string key) => key switch
+    internal static string DescribePolicyError(string key) => key switch
     {
         "Validation.PasswordRequired" => "Password is required.",
         "Validation.PasswordMinLength" => "Password must be at least 8 characters.",

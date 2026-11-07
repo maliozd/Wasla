@@ -21,6 +21,8 @@ UI may hide buttons; **hiding UI is not authorization**. Controllers and service
 
 Assignable roles for create/update (`TenantUserRoleService` / `TenantUsersController`): Owner, Manager, Kitchen, Cashier, Viewer only.
 
+The local CLI command `create-user` assigns the same five roles by name and applies the same password policy. It is a server operator's tool without an acting user, so the acting-Owner rules below do not apply to it; see [../operations/cli.md](../operations/cli.md#tenant-users).
+
 ## How enforcement works
 
 1. Policies and the roles each admits are defined once, for Web and API, in `WaslaTenantPolicies` (`src/Wasla.Application/Security/WaslaTenantPolicies.cs`). Web's `TenantPolicies` (`src/Wasla.Web/Security/TenantPolicies.cs`) only aliases those names
