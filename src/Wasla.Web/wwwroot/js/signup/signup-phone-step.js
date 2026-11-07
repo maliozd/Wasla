@@ -422,7 +422,7 @@
                 revision += 1;
                 local.sending = false;
                 if (result.ok) {
-                    sentAt = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date());
+                    sentAt = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { hour: "2-digit", minute: "2-digit", calendar: "gregory" }).format(new Date());
                     local.codeExpired = false;
                     if (el.code) {
                         el.code.value = "";
