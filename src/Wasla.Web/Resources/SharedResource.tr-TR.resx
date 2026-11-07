@@ -2894,13 +2894,13 @@
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Özel anlaşma ve limitler</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Wasla hesabı oluştur</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
-  <data name="Signup.StepPlan" xml:space="preserve"><value>Plan seçimi</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Seçiminiz</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} Paketi</value></data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>Bu paketle:</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Özel teklif</value></data>
-  <data name="Signup.StepBusiness" xml:space="preserve"><value>İşletme bilgileri</value></data>
-  <data name="Signup.StepOwner" xml:space="preserve"><value>Hesap sahibi</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>Restoran</value></data>
+  <data name="Signup.StepOwner" xml:space="preserve"><value>Yetkili hesabı</value></data>
   <data name="Signup.StepCreate" xml:space="preserve"><value>Hesabı oluştur</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>Faturalandırma dönemi</value></data>
@@ -2915,7 +2915,7 @@
   <data name="Signup.DistrictLabel" xml:space="preserve"><value>İlçe</value></data>
   <data name="Signup.SelectCity" xml:space="preserve"><value>Şehir seçin</value></data>
   <data name="Signup.SelectDistrict" xml:space="preserve"><value>İlçe seçin</value></data>
-  <data name="Signup.StepContact" xml:space="preserve"><value>İletişim bilgileri</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>İletişim</value></data>
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Telefon türü</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Cep telefonu</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Sabit hat</value></data>
@@ -2942,7 +2942,7 @@
   <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>Listede yoksa mahalle adını elle yazabilirsiniz.</value></data>
   <data name="Signup.StreetManualHint" xml:space="preserve"><value>Listede yoksa cadde veya sokak adını elle yazabilirsiniz.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>Posta kodu</value></data>
-  <data name="Signup.StepAddress" xml:space="preserve"><value>Adres bilgileri</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>Adres</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>Alt alan adı</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>Giriş adresiniz:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>Ad soyad</value></data>
@@ -4356,4 +4356,76 @@
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Ekran otomatik olarak yeniden denemeye devam ediyor. İnternet bağlantısını kontrol edin veya şimdi yeniden deneyin.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Sayfayı yenile</value></data>
   <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Bildirim ayarları zamanında yüklenemedi; yeni sipariş sesi ve tarayıcı bildirimleri şimdilik kapalı. Yeniden denemek için sayfayı yenileyin.</value></data>
+  <data name="Signup.StepReview" xml:space="preserve"><value>Özet</value></data>
+  <data name="Signup.Flow.StepCounter" xml:space="preserve"><value>Adım {0} / {1}</value></data>
+  <data name="Signup.Flow.BackTo" xml:space="preserve"><value>Geri: {0}</value></data>
+  <data name="Signup.Flow.PlanTitle" xml:space="preserve"><value>Hangi planla başlıyorsunuz?</value></data>
+  <data name="Signup.Flow.PlanLead" xml:space="preserve"><value>Planınızı ve ödeme döneminizi seçin. Seçiminizi kaydı tamamlamadan önce değiştirebilirsiniz.</value></data>
+  <data name="Signup.Flow.PlanPriceMeta" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Flow.EnterpriseQuestion" xml:space="preserve"><value>Birden fazla şube veya özel entegrasyon mu gerekiyor?</value></data>
+  <data name="Signup.Flow.EnterpriseLink" xml:space="preserve"><value>Enterprise için teklif isteyin</value></data>
+  <data name="Signup.Flow.ToRestaurant" xml:space="preserve"><value>İşletme bilgilerine geç</value></data>
+  <data name="Signup.Flow.RestaurantTitle" xml:space="preserve"><value>Restoranınız</value></data>
+  <data name="Signup.Flow.RestaurantLead" xml:space="preserve"><value>Panel adresinizi oluşturalım ve işletmenize nasıl ulaşacağımızı bilelim. Platform bağlantılarını ödemeden sonra panelden kurarsınız.</value></data>
+  <data name="Signup.Flow.SectionBusiness" xml:space="preserve"><value>İşletme</value></data>
+  <data name="Signup.Flow.SubtypesFor" xml:space="preserve"><value>{0} için alt tür</value></data>
+  <data name="Signup.Flow.SectionPanelAddress" xml:space="preserve"><value>Panel adresi</value></data>
+  <data name="Signup.Flow.PanelAddressHint" xml:space="preserve"><value>Restoran panelinize bu adresten giriş yapacaksınız.</value></data>
+  <data name="Signup.Flow.SlugRules" xml:space="preserve"><value>Küçük harf (a-z), rakam, tire (-) ve alt çizgi (_) kullanabilirsiniz.</value></data>
+  <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>Şimdilik Türkiye'deki işletmeler kayıt olabilir.</value></data>
+  <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>Adres notu ve harita bağlantısı ekle</value></data>
+  <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>Yetkili hesabına geç</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>Restoran panelinize ilk giriş yapacak kişi sizsiniz. Çalışanlarınızı kurulumdan sonra panelden ekleyebilirsiniz.</value></data>
+  <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>Kişi bilgileri</value></data>
+  <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>Panele bu e-posta adresiyle giriş yapacaksınız. Panel hazır olduğunda bilgilendirme de bu adrese gönderilir.</value></data>
+  <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>Cep telefonu</value></data>
+  <data name="Signup.Flow.PasswordRuleLength" xml:space="preserve"><value>En az 8 karakter</value></data>
+  <data name="Signup.Flow.PasswordRuleMatch" xml:space="preserve"><value>İki şifre aynı olmalı</value></data>
+  <data name="Signup.Flow.RuleMet" xml:space="preserve"><value>karşılandı</value></data>
+  <data name="Signup.Flow.RuleUnmet" xml:space="preserve"><value>karşılanmadı</value></data>
+  <data name="Signup.Flow.ToReview" xml:space="preserve"><value>Özete geç</value></data>
+  <data name="Signup.Flow.ReviewTitle" xml:space="preserve"><value>Bilgilerinizi kontrol edin</value></data>
+  <data name="Signup.Flow.ReviewLead" xml:space="preserve"><value>Bir bölümü değiştirmek için Düzenle'yi kullanın; girdiğiniz bilgiler korunur.</value></data>
+  <data name="Signup.Flow.ErrorSummaryTitle" xml:space="preserve"><value>Devam etmek için şu alanları düzeltin</value></data>
+  <data name="Signup.Receipt.Title" xml:space="preserve"><value>Kaydınız</value></data>
+  <data name="Signup.Receipt.Now" xml:space="preserve"><value>Şimdi</value></data>
+  <data name="Signup.Receipt.StateDone" xml:space="preserve"><value>tamamlandı</value></data>
+  <data name="Signup.Receipt.StateCurrent" xml:space="preserve"><value>şu anki adım</value></data>
+  <data name="Signup.Receipt.StateUpcoming" xml:space="preserve"><value>henüz başlamadı</value></data>
+  <data name="Signup.Receipt.HintPlan" xml:space="preserve"><value>Plan ve ödeme dönemi</value></data>
+  <data name="Signup.Receipt.HintRestaurant" xml:space="preserve"><value>İşletme, panel adresi ve adres</value></data>
+  <data name="Signup.Receipt.HintOwner" xml:space="preserve"><value>Ad soyad, e-posta ve şifre</value></data>
+  <data name="Signup.Receipt.HintReview" xml:space="preserve"><value>Bilgileri kontrol edip kaydı tamamlayın</value></data>
+  <data name="Signup.Receipt.DueToday" xml:space="preserve"><value>Bugün ödenecek</value></data>
+  <data name="Signup.Receipt.PlanLine" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Receipt.PriceLine" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Signup.Receipt.StripDetail" xml:space="preserve"><value>{0}, {1}, {2}</value></data>
+  <data name="Signup.Receipt.PeriodMonthly" xml:space="preserve"><value>aylık</value></data>
+  <data name="Signup.Receipt.PeriodYearly" xml:space="preserve"><value>yıllık</value></data>
+  <data name="Signup.Receipt.PeriodNoteMonthly" xml:space="preserve"><value>{0} planı, 1 aylık dönem. Her ay otomatik yenilenir.</value></data>
+  <data name="Signup.Receipt.PeriodNoteYearly" xml:space="preserve"><value>{0} planı, 12 aylık dönem. Her 12 ayda bir otomatik yenilenir.</value></data>
+  <data name="Signup.Receipt.ChoosePlan" xml:space="preserve"><value>Bir plan seçin</value></data>
+  <data name="Signup.Strip.Continue" xml:space="preserve"><value>Devam et</value></data>
+  <data name="Signup.Strip.OpenSummary" xml:space="preserve"><value>Kayıt bilgilerinizi gösterin</value></data>
+  <data name="Signup.Pay.Title" xml:space="preserve"><value>Abonelik özeti</value></data>
+  <data name="Signup.Pay.PlanRow" xml:space="preserve"><value>{0} planı, {1}</value></data>
+  <data name="Signup.Pay.Vat" xml:space="preserve"><value>KDV</value></data>
+  <data name="Signup.Pay.VatIncluded" xml:space="preserve"><value>Tutara dahil</value></data>
+  <data name="Signup.Pay.VatExcluded" xml:space="preserve"><value>Tutara dahil değil</value></data>
+  <data name="Signup.Pay.Period" xml:space="preserve"><value>Dönem</value></data>
+  <data name="Signup.Pay.PeriodMonthly" xml:space="preserve"><value>1 ay</value></data>
+  <data name="Signup.Pay.PeriodYearly" xml:space="preserve"><value>12 ay</value></data>
+  <data name="Signup.Pay.AutoRenew" xml:space="preserve"><value>Otomatik yenileme</value></data>
+  <data name="Signup.Pay.RenewMonthly" xml:space="preserve"><value>Her ay</value></data>
+  <data name="Signup.Pay.RenewYearly" xml:space="preserve"><value>Her 12 ayda bir</value></data>
+  <data name="Signup.Review.Amount" xml:space="preserve"><value>Tutar</value></data>
+  <data name="Signup.Review.NotProvidedOptional" xml:space="preserve"><value>Eklenmedi (isteğe bağlı)</value></data>
+  <data name="Signup.Review.PasswordSet" xml:space="preserve"><value>Belirlendi</value></data>
+  <data name="Signup.Review.BusinessTypeLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Signup.Review.AddressBuilding" xml:space="preserve"><value>No {0}</value></data>
+  <data name="Signup.Review.AddressFloor" xml:space="preserve"><value>Kat {0}</value></data>
+  <data name="Signup.Review.AddressDoor" xml:space="preserve"><value>Daire {0}</value></data>
+  <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>Doğrulama kodu</value></data>
+  <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>Kodu girin</value></data>
+  <data name="Validation.PlanRequired" xml:space="preserve"><value>Devam etmek için bir plan seçin.</value></data>
 </root>

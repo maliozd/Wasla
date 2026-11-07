@@ -1,0 +1,47 @@
+@model Wasla.Web.Views.Signup.SignupReceiptView
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* The registration receipt (kayıt fişi, Figma "02 · Claude — Kayıt ve Ödeme"): the steps with what the visitor chose
+   so far, a perforation, and the amount due. Rendered twice by Signup/Index: in the desktop aside and in the mobile
+   summary sheet, with different id prefixes. signup-flow.js keeps both copies current; the server renders the
+   initial values so nothing shifts when the script starts. *@
+<section class="su-receipt" aria-labelledby="@(Model.IdPrefix)-title" data-su-receipt>
+    <header class="su-receipt__head">
+        <h2 class="su-receipt__title" id="@(Model.IdPrefix)-title">@L["Signup.Receipt.Title"]</h2>
+        <time class="su-receipt__date" data-su-today hidden></time>
+    </header>
+    <ol class="su-receipt__steps">
+        @foreach (var step in Model.Steps)
+        {
+            var status = Model.StatusOf(step.Id);
+            <li class="su-tstep" data-su-receipt-step="@step.Id" data-state="@status" aria-current="@(status == "current" ? "step" : null)">
+                <span class="su-tstep__marker" aria-hidden="true">
+                    <span class="su-tstep__number">@step.Number</span>
+                    <i class="bi bi-check2"></i>
+                </span>
+                <div class="su-tstep__body">
+                    <span class="su-tstep__name">@step.Name<span class="su-visually-hidden">, <span data-su-step-state>@L[status == "done" ? "Signup.Receipt.StateDone" : status == "current" ? "Signup.Receipt.StateCurrent" : "Signup.Receipt.StateUpcoming"]</span></span></span>
+                    @foreach (var line in step.Lines)
+                    {
+                        var showValue = status != "upcoming" && !string.IsNullOrWhiteSpace(line.Value);
+                        <span class="su-tstep__line@(line.Ltr ? " su-ltr" : string.Empty)" data-su-text="@line.Key" hidden="@(showValue ? null : "hidden")">@line.Value</span>
+                    }
+                    <span class="su-tstep__line" data-su-hint hidden="@(status != "upcoming" && step.Lines.Any(l => !string.IsNullOrWhiteSpace(l.Value)) ? "hidden" : null)">@step.Hint</span>
+                </div>
+                <span class="su-tstep__aside">
+                    <span class="su-tstep__now" aria-hidden="true">@L["Signup.Receipt.Now"]</span>
+                    <button type="button" class="su-tstep__edit" data-su-go="@step.Id">@L["Common.Edit"]<span class="su-visually-hidden">: @step.Name</span></button>
+                </span>
+            </li>
+        }
+    </ol>
+    <div class="su-receipt__cut" aria-hidden="true"></div>
+    <div class="su-receipt__total">
+        <span class="su-receipt__total-label">@L["Signup.Receipt.DueToday"]</span>
+        <div class="su-receipt__amount-row">
+            <span class="su-receipt__amount@(Model.AmountSet ? string.Empty : " su-receipt__amount--unset")" data-su-amount><bdi data-su-text="amount">@Model.Amount</bdi></span>
+            <span class="su-receipt__vat" data-su-text="vat">@Model.Vat</span>
+        </div>
+        <p class="su-receipt__period" data-su-text="periodNote">@Model.PeriodNote</p>
+    </div>
+</section>

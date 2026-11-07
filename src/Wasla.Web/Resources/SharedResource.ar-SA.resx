@@ -2894,12 +2894,12 @@
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>اتفاق وحدود مخصصة</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب Wasla</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات عبر الإنترنت وأدر كل شيء من مكان واحد.</value></data>
-  <data name="Signup.StepPlan" xml:space="preserve"><value>اختيار الخطة</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>الخطة</value></data>
   <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>اختيارك</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>باقة {0}</value></data>
   <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>مع هذه الباقة:</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>عرض مخصص</value></data>
-  <data name="Signup.StepBusiness" xml:space="preserve"><value>بيانات العمل</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>المطعم</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>حساب المالك</value></data>
   <data name="Signup.StepCreate" xml:space="preserve"><value>إنشاء الحساب</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>الخطة</value></data>
@@ -2915,11 +2915,11 @@
   <data name="Signup.DistrictLabel" xml:space="preserve"><value>المنطقة</value></data>
   <data name="Signup.SelectCity" xml:space="preserve"><value>اختر المدينة</value></data>
   <data name="Signup.SelectDistrict" xml:space="preserve"><value>اختر المنطقة</value></data>
-  <data name="Signup.StepContact" xml:space="preserve"><value>معلومات الاتصال</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>التواصل</value></data>
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>نوع الهاتف</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>جوال</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>هاتف أرضي</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: +90 531 324 12 45</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: ⁦+90 531 324 12 45⁩</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>بريد العمل الإلكتروني</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
@@ -2942,7 +2942,7 @@
   <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>إذا لم يكن في القائمة، يمكنك كتابة اسم الحي يدويًا.</value></data>
   <data name="Signup.StreetManualHint" xml:space="preserve"><value>إذا لم يكن في القائمة، يمكنك كتابة اسم الشارع يدويًا.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>الرمز البريدي</value></data>
-  <data name="Signup.StepAddress" xml:space="preserve"><value>تفاصيل العنوان</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>العنوان</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>النطاق الفرعي</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>عنوان تسجيل الدخول:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>الاسم الكامل</value></data>
@@ -4356,4 +4356,76 @@
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>تواصل الشاشة المحاولة تلقائيًا. تحقق من الاتصال بالإنترنت، أو أعد المحاولة الآن.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>إعادة تحميل الصفحة</value></data>
   <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>لم تُحمَّل إعدادات الإشعارات في الوقت المحدد، لذا فإن صوت الطلب الجديد وإشعارات المتصفح متوقفة حاليًا. أعد تحميل الصفحة للمحاولة مرة أخرى.</value></data>
+  <data name="Signup.StepReview" xml:space="preserve"><value>الملخص</value></data>
+  <data name="Signup.Flow.StepCounter" xml:space="preserve"><value>الخطوة {0} من {1}</value></data>
+  <data name="Signup.Flow.BackTo" xml:space="preserve"><value>رجوع: {0}</value></data>
+  <data name="Signup.Flow.PlanTitle" xml:space="preserve"><value>بأي خطة تريد أن تبدأ؟</value></data>
+  <data name="Signup.Flow.PlanLead" xml:space="preserve"><value>اختر خطتك وفترة الفوترة. يمكنك تغيير اختيارك إلى أن تُكمل التسجيل.</value></data>
+  <data name="Signup.Flow.PlanPriceMeta" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Flow.EnterpriseQuestion" xml:space="preserve"><value>هل تحتاج إلى عدة فروع أو إلى تكامل مخصص؟</value></data>
+  <data name="Signup.Flow.EnterpriseLink" xml:space="preserve"><value>اطلب عرض سعر لخطة Enterprise</value></data>
+  <data name="Signup.Flow.ToRestaurant" xml:space="preserve"><value>المتابعة إلى بيانات النشاط التجاري</value></data>
+  <data name="Signup.Flow.RestaurantTitle" xml:space="preserve"><value>مطعمك</value></data>
+  <data name="Signup.Flow.RestaurantLead" xml:space="preserve"><value>لننشئ عنوان لوحة التحكم الخاصة بك ونعرف كيف نتواصل مع نشاطك التجاري. ستُعِدّ الربط مع المنصات من لوحة التحكم بعد الدفع.</value></data>
+  <data name="Signup.Flow.SectionBusiness" xml:space="preserve"><value>النشاط التجاري</value></data>
+  <data name="Signup.Flow.SubtypesFor" xml:space="preserve"><value>الأنواع الفرعية لـ {0}</value></data>
+  <data name="Signup.Flow.SectionPanelAddress" xml:space="preserve"><value>عنوان لوحة التحكم</value></data>
+  <data name="Signup.Flow.PanelAddressHint" xml:space="preserve"><value>ستسجّل الدخول إلى لوحة تحكم مطعمك من هذا العنوان.</value></data>
+  <data name="Signup.Flow.SlugRules" xml:space="preserve"><value>يمكنك استخدام الأحرف الصغيرة (a-z) والأرقام والشرطة (-) والشرطة السفلية (_).</value></data>
+  <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>يمكن حاليًا تسجيل الأنشطة التجارية الموجودة في تركيا فقط.</value></data>
+  <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>أضف ملاحظة على العنوان ورابط الخريطة</value></data>
+  <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>المتابعة إلى حساب المالك</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>ستكون أول من يسجّل الدخول إلى لوحة تحكم مطعمك. يمكنك إضافة موظفيك من لوحة التحكم بعد الإعداد.</value></data>
+  <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>بياناتك</value></data>
+  <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>ستسجّل الدخول إلى لوحة التحكم بهذا البريد الإلكتروني، وإليه نرسل الإشعار عندما تصبح اللوحة جاهزة.</value></data>
+  <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>رقم الجوال</value></data>
+  <data name="Signup.Flow.PasswordRuleLength" xml:space="preserve"><value>8 أحرف على الأقل</value></data>
+  <data name="Signup.Flow.PasswordRuleMatch" xml:space="preserve"><value>تطابق كلمتي المرور</value></data>
+  <data name="Signup.Flow.RuleMet" xml:space="preserve"><value>مستوفى</value></data>
+  <data name="Signup.Flow.RuleUnmet" xml:space="preserve"><value>غير مستوفى</value></data>
+  <data name="Signup.Flow.ToReview" xml:space="preserve"><value>المتابعة إلى الملخص</value></data>
+  <data name="Signup.Flow.ReviewTitle" xml:space="preserve"><value>راجع بياناتك</value></data>
+  <data name="Signup.Flow.ReviewLead" xml:space="preserve"><value>استخدم «تعديل» لتغيير أي قسم؛ تبقى البيانات التي أدخلتها محفوظة.</value></data>
+  <data name="Signup.Flow.ErrorSummaryTitle" xml:space="preserve"><value>صحّح هذه الحقول للمتابعة</value></data>
+  <data name="Signup.Receipt.Title" xml:space="preserve"><value>تسجيلك</value></data>
+  <data name="Signup.Receipt.Now" xml:space="preserve"><value>الآن</value></data>
+  <data name="Signup.Receipt.StateDone" xml:space="preserve"><value>مكتملة</value></data>
+  <data name="Signup.Receipt.StateCurrent" xml:space="preserve"><value>الخطوة الحالية</value></data>
+  <data name="Signup.Receipt.StateUpcoming" xml:space="preserve"><value>لم تبدأ بعد</value></data>
+  <data name="Signup.Receipt.HintPlan" xml:space="preserve"><value>الخطة وفترة الفوترة</value></data>
+  <data name="Signup.Receipt.HintRestaurant" xml:space="preserve"><value>النشاط التجاري وعنوان لوحة التحكم والعنوان</value></data>
+  <data name="Signup.Receipt.HintOwner" xml:space="preserve"><value>الاسم والبريد الإلكتروني وكلمة المرور</value></data>
+  <data name="Signup.Receipt.HintReview" xml:space="preserve"><value>راجع البيانات وأكمل التسجيل</value></data>
+  <data name="Signup.Receipt.DueToday" xml:space="preserve"><value>المستحق اليوم</value></data>
+  <data name="Signup.Receipt.PlanLine" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Receipt.PriceLine" xml:space="preserve"><value>{0}، {1}</value></data>
+  <data name="Signup.Receipt.StripDetail" xml:space="preserve"><value>{0}، {1}، {2}</value></data>
+  <data name="Signup.Receipt.PeriodMonthly" xml:space="preserve"><value>شهري</value></data>
+  <data name="Signup.Receipt.PeriodYearly" xml:space="preserve"><value>سنوي</value></data>
+  <data name="Signup.Receipt.PeriodNoteMonthly" xml:space="preserve"><value>خطة {0}، لفترة شهر واحد. تتجدد تلقائيًا كل شهر.</value></data>
+  <data name="Signup.Receipt.PeriodNoteYearly" xml:space="preserve"><value>خطة {0}، لفترة 12 شهرًا. تتجدد تلقائيًا كل 12 شهرًا.</value></data>
+  <data name="Signup.Receipt.ChoosePlan" xml:space="preserve"><value>اختر خطة</value></data>
+  <data name="Signup.Strip.Continue" xml:space="preserve"><value>متابعة</value></data>
+  <data name="Signup.Strip.OpenSummary" xml:space="preserve"><value>اعرض تفاصيل تسجيلك</value></data>
+  <data name="Signup.Pay.Title" xml:space="preserve"><value>ملخص الاشتراك</value></data>
+  <data name="Signup.Pay.PlanRow" xml:space="preserve"><value>خطة {0}، {1}</value></data>
+  <data name="Signup.Pay.Vat" xml:space="preserve"><value>ضريبة القيمة المضافة</value></data>
+  <data name="Signup.Pay.VatIncluded" xml:space="preserve"><value>مشمولة في المبلغ</value></data>
+  <data name="Signup.Pay.VatExcluded" xml:space="preserve"><value>غير مشمولة في المبلغ</value></data>
+  <data name="Signup.Pay.Period" xml:space="preserve"><value>الفترة</value></data>
+  <data name="Signup.Pay.PeriodMonthly" xml:space="preserve"><value>شهر واحد</value></data>
+  <data name="Signup.Pay.PeriodYearly" xml:space="preserve"><value>12 شهرًا</value></data>
+  <data name="Signup.Pay.AutoRenew" xml:space="preserve"><value>التجديد التلقائي</value></data>
+  <data name="Signup.Pay.RenewMonthly" xml:space="preserve"><value>كل شهر</value></data>
+  <data name="Signup.Pay.RenewYearly" xml:space="preserve"><value>كل 12 شهرًا</value></data>
+  <data name="Signup.Review.Amount" xml:space="preserve"><value>المبلغ</value></data>
+  <data name="Signup.Review.NotProvidedOptional" xml:space="preserve"><value>لم تتم الإضافة (اختياري)</value></data>
+  <data name="Signup.Review.PasswordSet" xml:space="preserve"><value>تم تعيينها</value></data>
+  <data name="Signup.Review.BusinessTypeLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Signup.Review.AddressBuilding" xml:space="preserve"><value>رقم {0}</value></data>
+  <data name="Signup.Review.AddressFloor" xml:space="preserve"><value>الطابق {0}</value></data>
+  <data name="Signup.Review.AddressDoor" xml:space="preserve"><value>شقة {0}</value></data>
+  <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>أدخل الرمز</value></data>
+  <data name="Validation.PlanRequired" xml:space="preserve"><value>اختر خطة للمتابعة.</value></data>
 </root>

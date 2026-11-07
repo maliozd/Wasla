@@ -3001,7 +3001,7 @@
     <value>Подключите свой ресторан к платформам онлайн-заказов и управляйте всем в одном месте.</value>
   </data>
   <data name="Signup.StepPlan" xml:space="preserve">
-    <value>Выбрать план</value>
+    <value>План</value>
   </data>
   <data name="Signup.SelectedPlanTitle" xml:space="preserve">
     <value>Ваш выбор</value>
@@ -3016,7 +3016,7 @@
     <value>Индивидуальное предложение</value>
   </data>
   <data name="Signup.StepBusiness" xml:space="preserve">
-    <value>Детали бизнеса</value>
+    <value>Ресторан</value>
   </data>
   <data name="Signup.StepOwner" xml:space="preserve">
     <value>Аккаунт владельца</value>
@@ -3064,7 +3064,7 @@
     <value>Выберите район</value>
   </data>
   <data name="Signup.StepContact" xml:space="preserve">
-    <value>Контактная информация</value>
+    <value>Контакты</value>
   </data>
   <data name="Signup.BusinessPhoneType" xml:space="preserve">
     <value>Тип телефона</value>
@@ -3145,7 +3145,7 @@
     <value>Почтовый индекс</value>
   </data>
   <data name="Signup.StepAddress" xml:space="preserve">
-    <value>Детали адреса</value>
+    <value>Адрес</value>
   </data>
   <data name="Signup.Slug" xml:space="preserve">
     <value>Субдомен</value>
@@ -4850,4 +4850,76 @@
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Экран продолжает попытки автоматически. Проверьте подключение к интернету или повторите попытку сейчас.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Обновить страницу</value></data>
   <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Настройки уведомлений не загрузились вовремя, поэтому звук новых заказов и уведомления браузера пока отключены. Обновите страницу, чтобы повторить попытку.</value></data>
+  <data name="Signup.StepReview" xml:space="preserve"><value>Сводка</value></data>
+  <data name="Signup.Flow.StepCounter" xml:space="preserve"><value>Шаг {0} из {1}</value></data>
+  <data name="Signup.Flow.BackTo" xml:space="preserve"><value>Назад: {0}</value></data>
+  <data name="Signup.Flow.PlanTitle" xml:space="preserve"><value>С какого плана вы начнёте?</value></data>
+  <data name="Signup.Flow.PlanLead" xml:space="preserve"><value>Выберите план и период оплаты. Выбор можно изменить до завершения регистрации.</value></data>
+  <data name="Signup.Flow.PlanPriceMeta" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Flow.EnterpriseQuestion" xml:space="preserve"><value>Нужно несколько точек или индивидуальная интеграция?</value></data>
+  <data name="Signup.Flow.EnterpriseLink" xml:space="preserve"><value>Запросить предложение Enterprise</value></data>
+  <data name="Signup.Flow.ToRestaurant" xml:space="preserve"><value>Перейти к данным заведения</value></data>
+  <data name="Signup.Flow.RestaurantTitle" xml:space="preserve"><value>Ваш ресторан</value></data>
+  <data name="Signup.Flow.RestaurantLead" xml:space="preserve"><value>Создадим адрес вашей панели и узнаем, как связаться с заведением. Подключение платформ вы настроите в панели после оплаты.</value></data>
+  <data name="Signup.Flow.SectionBusiness" xml:space="preserve"><value>Заведение</value></data>
+  <data name="Signup.Flow.SubtypesFor" xml:space="preserve"><value>Подтипы: {0}</value></data>
+  <data name="Signup.Flow.SectionPanelAddress" xml:space="preserve"><value>Адрес панели</value></data>
+  <data name="Signup.Flow.PanelAddressHint" xml:space="preserve"><value>По этому адресу вы будете входить в панель ресторана.</value></data>
+  <data name="Signup.Flow.SlugRules" xml:space="preserve"><value>Можно использовать строчные буквы (a-z), цифры, дефис (-) и подчёркивание (_).</value></data>
+  <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>Пока зарегистрироваться могут только заведения в Турции.</value></data>
+  <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>Добавить примечание к адресу и ссылку на карту</value></data>
+  <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>Перейти к аккаунту владельца</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>Вы первым войдёте в панель ресторана. Сотрудников можно добавить в панели после настройки.</value></data>
+  <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>Ваши данные</value></data>
+  <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>С этим адресом вы будете входить в панель. На него же придёт уведомление, когда панель будет готова.</value></data>
+  <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>Мобильный телефон</value></data>
+  <data name="Signup.Flow.PasswordRuleLength" xml:space="preserve"><value>Не менее 8 символов</value></data>
+  <data name="Signup.Flow.PasswordRuleMatch" xml:space="preserve"><value>Пароли совпадают</value></data>
+  <data name="Signup.Flow.RuleMet" xml:space="preserve"><value>выполнено</value></data>
+  <data name="Signup.Flow.RuleUnmet" xml:space="preserve"><value>не выполнено</value></data>
+  <data name="Signup.Flow.ToReview" xml:space="preserve"><value>Перейти к сводке</value></data>
+  <data name="Signup.Flow.ReviewTitle" xml:space="preserve"><value>Проверьте данные</value></data>
+  <data name="Signup.Flow.ReviewLead" xml:space="preserve"><value>Чтобы изменить раздел, нажмите «Редактировать»; введённые данные сохранятся.</value></data>
+  <data name="Signup.Flow.ErrorSummaryTitle" xml:space="preserve"><value>Исправьте эти поля, чтобы продолжить</value></data>
+  <data name="Signup.Receipt.Title" xml:space="preserve"><value>Ваша регистрация</value></data>
+  <data name="Signup.Receipt.Now" xml:space="preserve"><value>Сейчас</value></data>
+  <data name="Signup.Receipt.StateDone" xml:space="preserve"><value>выполнен</value></data>
+  <data name="Signup.Receipt.StateCurrent" xml:space="preserve"><value>текущий шаг</value></data>
+  <data name="Signup.Receipt.StateUpcoming" xml:space="preserve"><value>ещё не начат</value></data>
+  <data name="Signup.Receipt.HintPlan" xml:space="preserve"><value>План и период оплаты</value></data>
+  <data name="Signup.Receipt.HintRestaurant" xml:space="preserve"><value>Заведение, адрес панели и адрес</value></data>
+  <data name="Signup.Receipt.HintOwner" xml:space="preserve"><value>Имя, эл. почта и пароль</value></data>
+  <data name="Signup.Receipt.HintReview" xml:space="preserve"><value>Проверьте данные и завершите регистрацию</value></data>
+  <data name="Signup.Receipt.DueToday" xml:space="preserve"><value>К оплате сегодня</value></data>
+  <data name="Signup.Receipt.PlanLine" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Receipt.PriceLine" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Signup.Receipt.StripDetail" xml:space="preserve"><value>{0}, {1}, {2}</value></data>
+  <data name="Signup.Receipt.PeriodMonthly" xml:space="preserve"><value>ежемесячно</value></data>
+  <data name="Signup.Receipt.PeriodYearly" xml:space="preserve"><value>ежегодно</value></data>
+  <data name="Signup.Receipt.PeriodNoteMonthly" xml:space="preserve"><value>План {0}, период 1 месяц. Продлевается автоматически каждый месяц.</value></data>
+  <data name="Signup.Receipt.PeriodNoteYearly" xml:space="preserve"><value>План {0}, период 12 месяцев. Продлевается автоматически каждые 12 месяцев.</value></data>
+  <data name="Signup.Receipt.ChoosePlan" xml:space="preserve"><value>Выберите план</value></data>
+  <data name="Signup.Strip.Continue" xml:space="preserve"><value>Продолжить</value></data>
+  <data name="Signup.Strip.OpenSummary" xml:space="preserve"><value>Показать данные регистрации</value></data>
+  <data name="Signup.Pay.Title" xml:space="preserve"><value>Сводка подписки</value></data>
+  <data name="Signup.Pay.PlanRow" xml:space="preserve"><value>План {0}, {1}</value></data>
+  <data name="Signup.Pay.Vat" xml:space="preserve"><value>НДС</value></data>
+  <data name="Signup.Pay.VatIncluded" xml:space="preserve"><value>Включён</value></data>
+  <data name="Signup.Pay.VatExcluded" xml:space="preserve"><value>Не включён</value></data>
+  <data name="Signup.Pay.Period" xml:space="preserve"><value>Период</value></data>
+  <data name="Signup.Pay.PeriodMonthly" xml:space="preserve"><value>1 месяц</value></data>
+  <data name="Signup.Pay.PeriodYearly" xml:space="preserve"><value>12 месяцев</value></data>
+  <data name="Signup.Pay.AutoRenew" xml:space="preserve"><value>Автопродление</value></data>
+  <data name="Signup.Pay.RenewMonthly" xml:space="preserve"><value>Каждый месяц</value></data>
+  <data name="Signup.Pay.RenewYearly" xml:space="preserve"><value>Каждые 12 месяцев</value></data>
+  <data name="Signup.Review.Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Signup.Review.NotProvidedOptional" xml:space="preserve"><value>Не указано (необязательно)</value></data>
+  <data name="Signup.Review.PasswordSet" xml:space="preserve"><value>Задан</value></data>
+  <data name="Signup.Review.BusinessTypeLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Signup.Review.AddressBuilding" xml:space="preserve"><value>д. {0}</value></data>
+  <data name="Signup.Review.AddressFloor" xml:space="preserve"><value>эт. {0}</value></data>
+  <data name="Signup.Review.AddressDoor" xml:space="preserve"><value>кв. {0}</value></data>
+  <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>Код подтверждения</value></data>
+  <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>Введите код</value></data>
+  <data name="Validation.PlanRequired" xml:space="preserve"><value>Выберите план, чтобы продолжить.</value></data>
 </root>

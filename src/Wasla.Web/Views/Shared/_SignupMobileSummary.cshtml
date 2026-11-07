@@ -1,0 +1,25 @@
+@model Wasla.Web.Views.Signup.SignupReceiptView
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* Below 992 px the receipt becomes a strip fixed to the bottom of the screen (Figma "Mobile action bar", M1–M5):
+   the amount due on every step, opening the summary sheet (Figma M-Özet), and the step's main action. The strip's
+   button only presses the open step's own button, so the step keeps one action and one set of rules. *@
+<div class="su-strip" data-su-strip>
+    <button type="button" class="su-strip__summary" data-su-sheet-open aria-controls="@(Model.IdPrefix)" aria-haspopup="dialog">
+        <span class="su-strip__label">@L["Signup.Receipt.DueToday"] <i class="bi bi-chevron-up" aria-hidden="true"></i></span>
+        <span class="su-strip__amount@(Model.AmountSet ? string.Empty : " su-strip__amount--unset")" data-su-amount><bdi data-su-text="amount">@Model.Amount</bdi></span>
+        <span class="su-strip__detail" data-su-text="stripDetail">@Model.StripDetail</span>
+        <span class="su-visually-hidden">@L["Signup.Strip.OpenSummary"]</span>
+    </button>
+    <button type="button" class="su-btn su-btn--primary" data-su-strip-action></button>
+</div>
+<dialog class="su-sheet" id="@(Model.IdPrefix)" aria-labelledby="@(Model.IdPrefix)-sheet-title">
+    <span class="su-sheet__grip" aria-hidden="true"></span>
+    <div class="su-sheet__head">
+        <h2 class="su-sheet__title" id="@(Model.IdPrefix)-sheet-title">@L["Signup.Receipt.Title"]</h2>
+        <button type="button" class="su-sheet__close" data-su-sheet-close aria-label="@L["Common.Close"]">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </div>
+    <partial name="_SignupReceipt" model="Model" />
+</dialog>
