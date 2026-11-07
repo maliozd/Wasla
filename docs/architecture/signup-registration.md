@@ -18,7 +18,7 @@ Implemented (WAS-192): the draft and its cookie, the section saves, owner phone 
 | SMS | `src/Wasla.Infrastructure/Sms/` (`DisabledSmsSender`, `FakeSmsSender`, `FakeSmsOutbox`, `SmsMessageTemplates`, `Templates/*.txt`) |
 | Registration | `AddWaslaRegistrationDrafts` and `AddWaslaSms` in `src/Wasla.Infrastructure/DependencyInjection/RegistrationDraftServiceCollectionExtensions.cs`, called by Web `Program.cs` |
 | Web | `SignupDraftController`, `SignupController` (page), `Models/Signup/SignupDraftApiModels.cs`, `SignupDraftResponses.cs`, `Security/SignupDraftCookie.cs` |
-| Tests | `tests/Wasla.UnitTests/Signup/SignupDraftApiTests.cs`, `SignupSmsModeTests.cs`, the draft helper `SignupDraftClient.cs` |
+| Tests | `tests/Wasla.UnitTests/Signup/`: `SignupDraftApiTests` and `SignupSmsModeTests` over HTTP, `RegistrationDraftCleanupTests`, `RegistrationPhoneRulesTests`, and on SQL Server `RegistrationDraftSqlServerTests` and `RegistrationDraftMigrationSqlServerTests` ([../operations/testing.md](../operations/testing.md#sql-server-concurrency-tests)); the draft helper `SignupDraftClient.cs` |
 
 ## Flow
 
@@ -245,7 +245,7 @@ CentralDb only, migration `AddRegistrationDrafts`:
 | `RegistrationPhoneVerificationSends` | One row per send for the number and global windows: draft id (no foreign key, so counts survive the draft), E.164 number, time, outcome. Indexes on number and time, and time. Kept for 24 hours |
 | `PendingRegistrations` | New nullable `OwnerPhoneVerifiedAtUtc`; check constraint: set only together with `OwnerPhone` |
 
-The migration is additive. `Down` drops the three tables and the column, and refuses (error 50192) while any registration has `OwnerPhoneVerifiedAtUtc` set, because that is verification evidence. Apply with `migrate-central` ([../operations/migrations.md](../operations/migrations.md)); the application never applies it.
+The migration is additive. `Down` drops the three tables and the column, and refuses (error 50192) while any registration has `OwnerPhoneVerifiedAtUtc` set, because that is verification evidence ([rollback guards](../operations/migrations.md#rollback-guards)). Apply it with `migrate-central` before the new Web starts; the application never applies it. It was verified on throwaway LocalDB databases only (`RegistrationDraftMigrationSqlServerTests`).
 
 ## Cleanup
 
@@ -299,4 +299,3 @@ Existing keys the API returns: `Signup.TooManyAttempts`, `Signup.SlugUnavailable
 ## Known discrepancies
 
 - WAS-192 assigns the draft → `PendingRegistration` promotion to WAS-149. Replacing the form `POST /signup` needs a gated submit now, so WAS-192 implements the minimal submit above and WAS-149 extends it.
-- [tenancy.md](tenancy.md#signup-and-checkout-access) still describes the form `POST /signup` and its limits; it is updated with the rest of the WAS-192 documentation.

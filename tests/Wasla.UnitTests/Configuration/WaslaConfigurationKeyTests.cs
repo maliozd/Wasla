@@ -335,6 +335,13 @@ public sealed partial class WaslaConfigurationKeyTests
         };
         approved.UnionWith(typeof(TenantOnboardingOptions).GetProperties().Select(p => $"{TenantOnboardingOptions.SectionName}:{p.Name}"));
         approved.UnionWith(typeof(MarketingSiteOptions).GetProperties().Select(p => $"{MarketingSiteOptions.SectionName}:{p.Name}"));
+        // Registration drafts and owner phone verification (WAS-192).
+        approved.Add($"{SmsOptions.SectionName}:{nameof(SmsOptions.Mode)}");
+        approved.Add($"{SignupOptions.SectionName}:{nameof(SignupOptions.SupportEmail)}");
+        approved.UnionWith(typeof(RegistrationDraftLifetimeOptions).GetProperties()
+            .Select(p => $"{SignupOptions.SectionName}:{nameof(SignupOptions.Draft)}:{p.Name}"));
+        approved.UnionWith(typeof(PhoneVerificationOptions).GetProperties()
+            .Select(p => $"{SignupOptions.SectionName}:{nameof(SignupOptions.PhoneVerification)}:{p.Name}"));
 
         return approved.Contains(key) || approved.Any(a => a.StartsWith(key + ":", StringComparison.Ordinal));
     }
