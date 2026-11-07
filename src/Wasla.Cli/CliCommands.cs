@@ -1100,6 +1100,18 @@ internal static class CliCommands
         }
     }
 
+    /// <summary>The roles create-user assigns, the same as the Web panel's tenant user management.</summary>
+    private static readonly UserRole[] AssignableUserRoles =
+        [UserRole.Owner, UserRole.Manager, UserRole.Kitchen, UserRole.Cashier, UserRole.Viewer];
+
+    /// <summary>
+    /// Adds a user to an existing, active tenant's database (WAS-42). Every check runs before anything is written: the
+    /// tenant slug, the email, the role by name, the password policy the Web panel applies, the tenant (found by its
+    /// slug, under CentralDb's collation, and active) and the tenant's existing emails. The password is stored only as a
+    /// BCrypt hash and is never printed, and this method's failure messages carry no exception message, so the tenant's
+    /// decrypted connection string cannot reach the output.
+    /// </summary>
+    /// <param name="openTenant">Opens the tenant's database; tests pass their own, the CLI decrypts the stored connection string.</param>
     public static async Task<int> CreateUserAsync(
         IHost host,
         string tenantSlug,
@@ -1107,7 +1119,8 @@ internal static class CliCommands
         string password,
         string role,
         string? fullName,
-        CancellationToken ct)
+        CancellationToken ct,
+        Func<Tenant, CancellationToken, Task<TenantDbContext>>? openTenant = null)
     {
         if (!SlugRegex.IsMatch(tenantSlug))
         {
@@ -1115,10 +1128,26 @@ internal static class CliCommands
             return 2;
         }
 
-        if (!Enum.TryParse<UserRole>(role, true, out var userRole) ||
-            userRole is not (UserRole.Owner or UserRole.Manager or UserRole.Kitchen or UserRole.Cashier or UserRole.Viewer))
+        var emailNorm = (email ?? string.Empty).Trim();
+        // The Web panel's create form applies the same [EmailAddress] check.
+        if (emailNorm.Length == 0 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(emailNorm))
+        {
+            WriteError("Email must be a valid email address.");
+            return 2;
+        }
+
+        if (!TryParseAssignableUserRole(role, out var userRole))
         {
             WriteError("Role must be one of: Owner, Manager, Kitchen, Cashier, Viewer.");
+            return 2;
+        }
+
+        var passwordPolicy = new DefaultPasswordPolicy().Validate(password ?? string.Empty);
+        if (!passwordPolicy.IsValid)
+        {
+            foreach (var error in passwordPolicy.Errors)
+                WriteError(CliPasswordReset.DescribePolicyError(error));
+            WriteError("No user was created.");
             return 2;
         }
 
@@ -1126,7 +1155,10 @@ internal static class CliCommands
         {
             using var scope = host.Services.CreateScope();
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
-            var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
+            openTenant ??= (selected, token) => CliPasswordReset.OpenTenantDatabaseAsync(
+                scope.ServiceProvider.GetRequiredService<ISecretManager>(),
+                selected,
+                token);
 
             var tenant = await central.Tenants
                 .AsNoTracking()
@@ -1143,14 +1175,8 @@ internal static class CliCommands
                 return 2;
             }
 
-            var plain = await secret.DecryptAsync(tenant.EncryptedConnectionString, tenant.EncryptionKeyVersion, ct)
-                .ConfigureAwait(false);
-            var options = new DbContextOptionsBuilder<TenantDbContext>()
-                .UseSqlServer(plain)
-                .Options;
-            await using var db = new TenantDbContext(options);
+            await using var db = await openTenant(tenant, ct).ConfigureAwait(false);
 
-            var emailNorm = email.Trim();
             if (await db.AppUsers.AnyAsync(u => u.Email == emailNorm, ct).ConfigureAwait(false))
             {
                 WriteError("A user with this email already exists.");
@@ -1176,16 +1202,37 @@ internal static class CliCommands
             Console.ResetColor();
             return 0;
         }
-        catch (Exception ex) when (ex is SqlException or Microsoft.EntityFrameworkCore.DbUpdateException)
+        catch (Exception ex) when (ex is SqlException or DbUpdateException)
         {
-            WriteError(ex.Message);
+            // The unique email index also lands here when another writer added the same email after the check.
+            WriteError("Database operation failed. No user was created.");
             return 3;
         }
         catch (Exception ex)
         {
-            WriteError(ex.Message);
+            WriteError($"create-user failed ({ex.GetType().Name}). No user was created.");
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Accepts only a role's name, ignoring case and surrounding spaces. <see cref="Enum.TryParse{TEnum}(string, bool, out TEnum)"/>
+    /// would also accept a number ("1") or a comma-separated list whose values it combines ("Owner,Manager" is Kitchen).
+    /// </summary>
+    internal static bool TryParseAssignableUserRole(string? value, out UserRole role)
+    {
+        var name = (value ?? string.Empty).Trim();
+        foreach (var candidate in AssignableUserRoles)
+        {
+            if (string.Equals(candidate.ToString(), name, StringComparison.OrdinalIgnoreCase))
+            {
+                role = candidate;
+                return true;
+            }
+        }
+
+        role = default;
+        return false;
     }
 
     public static async Task<int> DeleteTenantAsync(
