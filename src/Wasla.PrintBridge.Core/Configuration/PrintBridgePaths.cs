@@ -46,6 +46,13 @@ public static class PrintBridgePaths
     public static string ProgramDataHistoryPath =>
         Path.Combine(ProgramDataRoot, "print-history.json");
 
+    /// <summary>
+    /// A confirmed move to another restaurant that may have been stored by the server but not yet saved here (WAS-91).
+    /// Present only between the confirmation and the saved result; it holds secrets, like the settings file.
+    /// </summary>
+    public static string PendingConnectionChangePath =>
+        Path.Combine(ProgramDataRoot, "pending-connection-change.json");
+
     public static void EnsureProgramDataDirectories()
     {
         Directory.CreateDirectory(ProgramDataRoot);

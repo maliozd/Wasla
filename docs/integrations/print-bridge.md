@@ -89,6 +89,7 @@ Canonical root (Windows CommonApplicationData):
 | `...\appsettings.json` | Runtime config (preferred over Program Files / repo) |
 | `...\logs\` | Client logs, one file per day: `wasla-print-bridge-<yyyyMMdd>.log`. Log files with another name were written by earlier versions and can be deleted manually |
 | `...\print-history.json` | Local print history store |
+| `...\pending-connection-change.json` | Only between the approval of a move to another restaurant and its saved result (WAS-91, see [Moving to another restaurant](#moving-to-another-restaurant-was-91)). Holds secrets like the settings file |
 
 Source: `PrintBridgePaths`.
 
@@ -162,6 +163,7 @@ Typical client routes (relative to `ServerUrl`):
 - `POST api/print-bridge/jobs/{id}/mark-printed`
 - `POST api/print-bridge/jobs/{id}/mark-failed`
 - Setup: `api/print-bridge/setup/exchange`, `api/print-bridge/setup/complete`
+- Moving to another restaurant (WAS-91), on the server Print Bridge is connected to: `api/print-bridge/setup/transfer/preview`, `api/print-bridge/setup/transfer`
 
 The health response (`PrintBridgeHealthResponse`) has the properties `success`, `tenantName` (the restaurant's name), `deviceName`, `serverTimeUtc`, `machineName` and `installationId`. A client older than WAS-135 reads no restaurant name (it is only logged) until it is updated.
 
@@ -172,6 +174,44 @@ Controllers exist on both **Web** (`PrintBridgeApiController`, setup APIs) and *
 - Device display name is managed from the Wasla Web panel / token identity.
 - Local Windows machine name may be shown separately.
 - `InstallationId` is a stable local installation identity synced to the server for device binding.
+- A setup link binds an installation to one tenant at a time (WAS-91). While it is registered (active or passive, not removed) to a device of another tenant, the ordinary exchange refuses it, for a new device and for a reconnect, with `installation_registered_to_another_tenant`; the Web panel explains it without naming the other restaurant. Only the approved move below, proven by that device's own token, or that tenant removing the device, frees it. A new InstallationId never stands in for that proof.
+
+## Moving to another restaurant (WAS-91)
+
+Opening a setup link of restaurant B on a Print Bridge connected to restaurant A never replaces the connection silently. The user approves the move in Print Bridge itself; nobody has to remove the device in A's Web panel first.
+
+**Server trust.** `PrintBridgeServerTrustPolicy` decides which servers a setup link may name. Release builds accept only HTTPS Wasla Orders hosts, classified by `WaslaHostClassifier` exactly as the server does: `wasla.tr`, `www.wasla.tr`, `app.wasla.tr` and `{slug}.app.wasla.tr`. Look-alike suffixes, extra labels, reserved names, credentials in the address and plain HTTP are refused. `localhost`, loopback addresses and `wasla.local` with its subdomains (HTTP or HTTPS) are accepted only by Debug builds. The earlier allowlist (`wasla.com`, `wasla.app`, and the development hosts in every build) is gone. A `ServerUrl` in a setup answer is saved only when it has the link's origin; otherwise the link's server is saved. Setup requests (exchange, preview, move and completion) go through `PrintBridgeSetupHttpClientFactory`, whose handler never follows a redirect (`AllowAutoRedirect = false`), so the token, the code and the generated credentials are sent once, to the server they were meant for. A redirect answers an exchange as a failed setup, a preview as `CurrentConnectionUnverified` and a move as an unknown result, which keeps the pending change for recovery. `PrintBridgeSetupRedirectTests` and `PrintBridgeConnectionTransferTests` check 300–308 over real loopback sockets.
+
+**Flow (`PrintBridgeAutoSetupCoordinator`).**
+
+1. The WAS-58 guard is checked first; a print job in progress refuses the link before any request.
+2. Without a saved token, the ordinary exchange runs at the link's server (first setup, unchanged).
+3. With a saved connection, its *own* server is asked (`transfer/preview`, read-only) with the saved token in `X-PrintBridge-Token` and the link's code and server. The token never goes to the link's server. A saved server that setup links cannot verify (for example an address typed by hand) gets neither the code nor any request.
+   - Same restaurant → the ordinary exchange (same-tenant reconnect, unchanged, no question).
+   - Saved token rejected (removed, disabled, revoked, other installation) → no verified connection to keep → the ordinary exchange, which the server still refuses while this computer is registered to another restaurant.
+   - Unreachable, timeout, 404, 429 or 5xx → `CurrentConnectionUnverified`: nothing sent to the link's server, nothing changed.
+   - Invalid or expired code, a link whose server is not the session's, a full destination, a reconnect device that B turned off, a receipt still Printing for this computer at A (server recheck) or a conflicting registration → refused before asking.
+4. Another restaurant → the native confirmation (`ShellConfirmDialog.ForConnectionTransfer`): "This application is currently connected to A. If you continue, this computer will stop printing A's orders and connect to B" (only this computer: A's other devices keep printing), with both restaurants (as the server verified them) and both server hosts, nothing secret. Cancel has the initial focus; Escape, Enter on that focus and closing the window cancel. The guard lease is released while the user decides, so A keeps printing; it is taken again after approval, and a job started meanwhile refuses the move before any request. A declined move sends nothing more and leaves the settings file byte-for-byte unchanged.
+5. After approval, Print Bridge generates the destination token and a completion credential (32 random bytes, Base64Url, the server's own format) and writes them, with the saved token, the code and both servers, to `pending-connection-change.json` **before** requesting the move. If that write fails, nothing is requested.
+6. `transfer` on the same (current) server. In one serializable transaction, under the installation lock and both tenants' locks (in a fixed order), the server checks both proofs again (A's device: valid token, active, not removed, bound to exactly this installation; B's session: unexpired, unused, created for the link's server), the destination quota and conflicting registrations, then uses the code, creates B's device (named after the machine, never after A's name for it) or binds B's reconnect device, stores only the hash of the app's token, and retires A's device with the soft removal of the Web panel (`RemovedAtUtc`, inactive, token hash replaced). A's device keeps its record and A keeps its print history; it leaves A's list and quota. Nothing moves between tenant databases.
+7. Print Bridge saves B's server and token in one settings write, deletes the pending change, checks health with the new token and reports completion, which also forgets the retired token's hash.
+
+**Recovery.** The server keeps no plaintext secret, and the session records the retired device and its former token hash, so the identical request (same old token, code, installation, new token and completion credential) is answered with the same result and changes nothing, until the session is completed or for `TransferRecoveryWindow` (7 days). A duplicate that races the first request is answered as a repeat, whether it waited for the locks or its checks already saw the stored move (the code used, the source retired). Every other variation is refused. A pending change that cannot be read for the moment (another program holds it) is kept, never set aside; only content that is not a pending change is. A move finished while a different setup link is being opened is reported as such (`PreviousChangeCompleted`), and that link is not applied. A health check cut short after the move was saved reports "saved, not verified", never a failure.
+
+| Interruption | Outcome |
+|--------------|---------|
+| Answer lost, timeout, 5xx, a redirect | Repeated after 1 and 3 seconds (never to the redirect's target); then `ChangePending`: the pending change is kept and tried again every minute and at the next start, and before any later setup link |
+| Process exit or crash after the request | At the next start the pending change is repeated and its result saved |
+| Settings file cannot be written | `ChangePending`; the old settings and the pending change stay; the next attempt saves the result |
+| The request never reached the server and the code expires | The repeat is refused as invalid; the pending change is discarded and A's still valid connection stays |
+| The connection was changed by hand meanwhile | The pending change no longer matches and is discarded without being applied |
+| Refused by the server (code, source, quota, printing, conflict) | Nothing was stored; the pending change is deleted |
+
+While a move is pending, A's token either still works (the move was not stored, so A still owns the computer) or is rejected (it was stored), so no job of the wrong restaurant is ever printed, and there is never more than one usable binding.
+
+**Concurrency.** The installation lock serializes every setup write that binds one installation; the cross-tenant registration check reads with `READCOMMITTEDLOCK` on SQL Server so that unrelated setups of different tenants take no key-range locks on each other's devices. `PrintBridgeTransferSqlServerTests` race moves of one computer to two restaurants, a move against an ordinary exchange of the same code, the same move twice, and two moves into one free place, and deleting the restaurant a move left.
+
+**Migration and rollback.** `20261107105613_AddPrintBridgeSetupTransfer` adds two nullable columns to `PrintBridgeSetupSessions`: `SourcePrintBridgeDeviceId` (a plain reference to the other tenant's retired device, deliberately without a foreign key, so deleting that tenant, which cascades to its devices, is not blocked) and `SourceTokenHash` (`nvarchar(88)`). Existing rows are not rewritten. Rolling it back drops only those columns; retired source devices stay removed. Roll back only when no move is pending: a Print Bridge with a pending change would then get 404 for its repeat and keep trying, and needs a new setup link. Deploy the server before handing out a Print Bridge build with this change: against an older server the preview answers 404 and a configured Print Bridge refuses setup links (`CurrentConnectionUnverified`) until the server is updated. Older Print Bridge builds against the new server keep working for first setups and same-restaurant reconnects; a link that would move them is refused (they show their generic "invalid or expired" text) instead of being applied silently.
 
 ## Devices page presence (Web panel)
 
@@ -331,6 +371,12 @@ See [../operations/cli.md](../operations/cli.md):
 - Without the WebView2 Runtime a device can be connected only through a setup link; manual setup needs the app window.
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
+- WAS-91 moves were verified against the real setup and device services in-process and on LocalDB with fake data, not against a deployed server or a physical installation. The confirmation was checked on one machine at 96 DPI.
+- A link from another Wasla deployment (for example staging while connected to production) is answered "invalid or expired" by the current server; there is no federation between deployments. Reset the connection first.
+- A receipt left in Printing for this computer at the old restaurant (see the claim lease below) refuses the move until it is resolved.
+- Fail closed by design: while the old restaurant's device is turned off, or that restaurant is deactivated, its token proves nothing, so neither a move nor a new device elsewhere is possible until that restaurant (or a Central Admin) turns the device on again or removes it.
+- Connecting by hand with another restaurant's manually created token is an explicit choice in the connection dialog and not a setup link: the server binds the installation to that device at its first request and the old restaurant's device stays registered until it is removed there. Unchanged by WAS-91.
+- Two ordinary new-device exchanges of different tenants at the same moment can deadlock on SQL Server (the serializable quota count scans the devices table when it is small); one session then fails with `device_creation_failed` and needs a new link. This predates WAS-91 (reproduced on its base commit) and is tracked as WAS-190. A move that loses such a race answers 503 and is repeated by the app.
 - The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.

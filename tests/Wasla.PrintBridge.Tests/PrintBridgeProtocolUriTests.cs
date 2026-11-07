@@ -6,12 +6,16 @@ public sealed class PrintBridgeProtocolUriTests
 {
     private const string ValidCode = "abcDEF123456789_-abcDEF1234567890";
 
+    // Development hosts are accepted only under the development policy (Debug builds); the policy itself is covered by
+    // PrintBridgeServerTrustPolicyTests.
+    private static readonly PrintBridgeServerTrustPolicy Development = PrintBridgeServerTrustPolicy.Development;
+
     [Fact]
     public void TryParseSetup_AcceptsValidUri()
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://sushim.wasla.local:7200/")}&code={ValidCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out var request, out var error);
 
         Assert.True(ok);
         Assert.Null(error);
@@ -23,12 +27,12 @@ public sealed class PrintBridgeProtocolUriTests
     [Fact]
     public void TryParseSetup_RoundTripsBuiltUri()
     {
-        var built = PrintBridgeProtocolUri.BuildSetupUri("https://panel.wasla.com/", ValidCode);
+        var built = PrintBridgeProtocolUri.BuildSetupUri("https://sushim.app.wasla.tr/", ValidCode);
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(built, out var request, out _);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(built, Development, out var request, out _);
 
         Assert.True(ok);
-        Assert.Equal("https://panel.wasla.com/", request!.ServerUrl);
+        Assert.Equal("https://sushim.app.wasla.tr/", request!.ServerUrl);
         Assert.Equal(ValidCode, request.Code);
     }
 
@@ -37,7 +41,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}&code={ValidCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out var request, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out var request, out var error);
 
         Assert.False(ok);
         Assert.Null(request);
@@ -49,7 +53,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://configure?server={Uri.EscapeDataString("https://x.example.com")}&code={ValidCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("action", error);
@@ -60,7 +64,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("missing_code", error);
@@ -73,7 +77,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString(server)}&code={ValidCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("invalid_server_url", error);
@@ -85,7 +89,7 @@ public sealed class PrintBridgeProtocolUriTests
     [InlineData("   ")]
     public void TryParseSetup_RejectsMalformedOrEmpty(string uri)
     {
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.NotNull(error);
@@ -96,7 +100,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}&code={ValidCode}&token=secret";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("unexpected_param", error);
@@ -108,7 +112,7 @@ public sealed class PrintBridgeProtocolUriTests
         var hugeCode = new string('a', PrintBridgeProtocolUri.MaxUriLength + 10);
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://x.example.com")}&code={hugeCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("too_long", error);
@@ -120,7 +124,7 @@ public sealed class PrintBridgeProtocolUriTests
         var badCode = "abc$def%ghi*jkl/mno+pqr";
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://sushim.wasla.local")}&code={Uri.EscapeDataString(badCode)}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("invalid_code", error);
@@ -131,7 +135,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://evil.example.com")}&code={ValidCode}";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("untrusted_server_url", error);
@@ -142,7 +146,7 @@ public sealed class PrintBridgeProtocolUriTests
     {
         var uri = $"wasla-printbridge://setup?server={Uri.EscapeDataString("https://sushim.wasla.local")}&code=short";
 
-        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, out _, out var error);
+        var ok = PrintBridgeProtocolUri.TryParseSetup(uri, Development, out _, out var error);
 
         Assert.False(ok);
         Assert.Equal("invalid_code", error);

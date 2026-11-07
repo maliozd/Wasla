@@ -508,6 +508,22 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Print Bridge on this computer is already registered as an active device. Use "Reconnect existing device" in Wasla Web instead of setting up a new device, or remove the old device record first.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>A receipt print job is still being completed. The connection was not changed; the receipt finishes on the saved connection. Open the setup link again when printing has finished.</value></data>
+  <data name="Auto.Transfer.Title" xml:space="preserve"><value>Connect to another restaurant?</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>This application is currently connected to {0}. If you continue, this computer will stop printing {0}'s orders and connect to {1}.</value></data>
+  <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Connect to the new restaurant</value></data>
+  <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Current restaurant</value></data>
+  <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Current server</value></data>
+  <data name="Auto.Transfer.NewRestaurant" xml:space="preserve"><value>New restaurant</value></data>
+  <data name="Auto.Transfer.NewServer" xml:space="preserve"><value>New server</value></data>
+  <data name="Auto.Transfer.UnknownRestaurant" xml:space="preserve"><value>Unnamed restaurant</value></data>
+  <data name="Auto.Cancelled" xml:space="preserve"><value>The connection was not changed. Print Bridge is still connected to the current restaurant.</value></data>
+  <data name="Auto.CurrentConnectionUnverified" xml:space="preserve"><value>Print Bridge could not confirm its current connection with its Wasla server, so the setup link was not applied. Nothing was changed. Check the internet connection and open the setup link again. To connect to a different server instead, reset the connection in Settings first.</value></data>
+  <data name="Auto.DeviceLimitReached" xml:space="preserve"><value>The new restaurant has reached its Print Bridge device limit. Nothing was changed; Print Bridge is still connected to the current restaurant.</value></data>
+  <data name="Auto.InstallationConflict" xml:space="preserve"><value>The new restaurant's setup link cannot be used for this computer: the device chosen in Wasla belongs to another computer, or this computer is also registered as another device. Nothing was changed. Create a new setup link for a new device, or remove the extra device record in Wasla.</value></data>
+  <data name="Auto.InstallationRegisteredToAnotherRestaurant" xml:space="preserve"><value>Print Bridge on this computer is still registered to another restaurant, and its connection to that restaurant could not be confirmed. Nothing was changed. Restore that connection and open the setup link again, or ask that restaurant to remove this device on its Print Bridge devices page.</value></data>
+  <data name="Auto.ChangePending" xml:space="preserve"><value>Moving Print Bridge to the new restaurant could not be confirmed yet. Print Bridge finishes the change automatically as soon as the Wasla server can be reached. Meanwhile it never prints orders for a restaurant it no longer belongs to.</value></data>
+  <data name="Auto.DestinationDeviceDisabled" xml:space="preserve"><value>The device the new restaurant chose in Wasla is turned off (passive), so Print Bridge was not moved there. Nothing was changed. Turn the device on in Wasla, or create a setup link for a new device.</value></data>
+  <data name="Auto.PreviousChangeCompleted" xml:space="preserve"><value>The restaurant change you approved earlier was finished first; Print Bridge is now connected to that restaurant. The setup link you just opened was not applied; open it again if you still need it.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Connecting</value>
   </data>

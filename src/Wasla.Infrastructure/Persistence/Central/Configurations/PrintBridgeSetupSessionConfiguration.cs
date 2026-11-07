@@ -42,5 +42,11 @@ public sealed class PrintBridgeSetupSessionConfiguration : IEntityTypeConfigurat
             .HasForeignKey(x => x.PrintBridgeDeviceId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
+
+        // A move between tenants (WAS-91) records the retired source device of *another* tenant as a plain reference,
+        // without a foreign key: deleting that tenant cascades to its devices, and a key from this tenant's session would
+        // stop the deletion (no cascade or set-null is possible next to the tenant cascade on SQL Server).
+        builder.Property(x => x.SourcePrintBridgeDeviceId);
+        builder.Property(x => x.SourceTokenHash).HasMaxLength(88);
     }
 }

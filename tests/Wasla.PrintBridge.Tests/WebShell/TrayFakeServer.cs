@@ -118,6 +118,14 @@ internal sealed class TrayFakeServer : IDisposable
                 return;
             }
 
+            // WAS-91: a setup link opened while connected asks this server first whether it is for the same restaurant.
+            // It is, so the link takes the ordinary exchange.
+            if (path == "api/print-bridge/setup/transfer/preview")
+            {
+                Write(context, HttpStatusCode.OK, new { sameTenant = true });
+                return;
+            }
+
             if (path == "api/print-bridge/health")
             {
                 Write(context, HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = "QA Kasa", serverTimeUtc = DateTime.UtcNow });

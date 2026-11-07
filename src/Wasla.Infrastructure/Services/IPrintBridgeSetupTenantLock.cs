@@ -5,9 +5,21 @@ using Wasla.Infrastructure.Persistence.Central;
 
 namespace Wasla.Infrastructure.Services;
 
+/// <summary>
+/// Transaction-owned SQL Server application locks that serialize Print Bridge setup writes. Callers that need both take
+/// the installation lock first and then the tenant lock, so no two setup operations wait for each other in reverse
+/// order. Each method returns the <c>sp_getapplock</c> result: negative when the lock was not granted.
+/// </summary>
 public interface IPrintBridgeSetupTenantLock
 {
+    /// <summary>Serializes device creation, quota checks and session endings within one tenant.</summary>
     Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct);
+
+    /// <summary>
+    /// Serializes every registration change of one desktop installation across all tenants (WAS-91), so two setup
+    /// operations can never both bind it.
+    /// </summary>
+    Task<int> AcquireInstallationLockAsync(Guid installationId, CancellationToken ct);
 }
 
 public sealed class SqlServerPrintBridgeSetupTenantLock : IPrintBridgeSetupTenantLock
@@ -21,7 +33,13 @@ public sealed class SqlServerPrintBridgeSetupTenantLock : IPrintBridgeSetupTenan
         _centralDb = centralDb;
     }
 
-    public async Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct)
+    public Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct) =>
+        AcquireAsync($"Wasla:PrintBridgeSetup:NewDevice:{tenantId:N}", ct);
+
+    public Task<int> AcquireInstallationLockAsync(Guid installationId, CancellationToken ct) =>
+        AcquireAsync($"Wasla:PrintBridgeSetup:Installation:{installationId:N}", ct);
+
+    private async Task<int> AcquireAsync(string resource, CancellationToken ct)
     {
         if (!_centralDb.Database.IsSqlServer())
             return 0;
@@ -35,7 +53,7 @@ public sealed class SqlServerPrintBridgeSetupTenantLock : IPrintBridgeSetupTenan
         command.CommandType = CommandType.StoredProcedure;
         command.CommandText = "sp_getapplock";
 
-        AddParameter(command, "@Resource", $"Wasla:PrintBridgeSetup:NewDevice:{tenantId:N}");
+        AddParameter(command, "@Resource", resource);
         AddParameter(command, "@LockMode", "Exclusive");
         AddParameter(command, "@LockOwner", "Transaction");
         AddParameter(command, "@LockTimeout", LockTimeoutMilliseconds);

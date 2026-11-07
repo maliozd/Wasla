@@ -415,7 +415,13 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
             PrintBridgeSettingsHolder holder,
             PrintBridgeRuntime runtime,
             ILoggerFactory loggers) =>
-            new(client, store, holder, runtime, loggers.CreateLogger<PrintBridgeAutoSetupCoordinator>());
+            new(
+                client,
+                store,
+                holder,
+                runtime,
+                PrintBridgeServerTrustPolicy.ForTests(HostA, HostB),
+                loggers.CreateLogger<PrintBridgeAutoSetupCoordinator>());
 
         public Task<PrintBridgeAutoSetupOutcome> ApplyLinkAsync() => Coordinator.ApplyAsync(LinkToB, Ct);
 
@@ -477,8 +483,9 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
 
     /// <summary>
     /// Two Wasla servers, A and B, each accepting only its own token and following the job contract of
-    /// <c>PrintBridgeJobService</c>. B also answers the setup-link exchange with B's connection. Every request is recorded
-    /// with the host and token it used. A request cancelled before it was sent, or while it was held, is not processed.
+    /// <c>PrintBridgeJobService</c>. B also answers the setup-link exchange with B's connection, and A answers the move
+    /// preview with "same restaurant". Every request is recorded with the host and token it used. A request cancelled
+    /// before it was sent, or while it was held, is not processed.
     /// </summary>
     private sealed class FakeServers : HttpMessageHandler
     {
@@ -587,6 +594,14 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
 
             if (path == "api/print-bridge/setup/complete")
                 return Json(HttpStatusCode.OK, new { success = true });
+
+            // WAS-91: before a link replaces a verified connection, its server is asked whether the link is for the same
+            // restaurant. A says yes, so these WAS-58 tests keep the ordinary exchange with B; moves to another restaurant
+            // are covered by PrintBridgeConnectionTransferTests.
+            if (path == "api/print-bridge/setup/transfer/preview")
+                return host == HostA && token == TokenA
+                    ? Json(HttpStatusCode.OK, new { sameTenant = true })
+                    : Json(HttpStatusCode.Unauthorized, new { error = "source_credential_rejected" });
 
             var expectedToken = host == HostA ? TokenA : TokenB;
             if (!string.Equals(token, expectedToken, StringComparison.Ordinal))

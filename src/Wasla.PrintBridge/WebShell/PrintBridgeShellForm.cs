@@ -188,6 +188,23 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
                 _localizer["Shell.Action.Cancel"]),
             whenUnavailable: false);
 
+    /// <summary>
+    /// Asks before a setup link moves Print Bridge to another restaurant (WAS-91). Tracked like the connection dialog,
+    /// so exiting the app closes it as cancelled.
+    /// </summary>
+    public Task<bool> ConfirmConnectionTransferAsync(Wasla.PrintBridge.Setup.PrintBridgeConnectionTransferConsentRequest request) =>
+        ShowModalAsync(
+            () =>
+            {
+                using var dialog = ShellConfirmDialog.ForConnectionTransfer(
+                    request,
+                    _localizer,
+                    _cultureService.IsRightToLeft,
+                    _useDarkPalette);
+                return RunDialog(dialog, () => dialog.DialogResult == DialogResult.OK);
+            },
+            whenUnavailable: false);
+
     public bool OpenLogFolder() => ShellLogFolder.TryOpen();
 
     protected override void OnHandleCreated(EventArgs e)

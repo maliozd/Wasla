@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
 
@@ -70,7 +71,9 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                 Exception? failure = null;
                 try
                 {
-                    var services = PrintBridgeAppServices.Build();
+                    // The fake servers listen on plain HTTP localhost, which Release builds never trust for setup links.
+                    var services = PrintBridgeAppServices.Build(
+                        collection => collection.AddSingleton(PrintBridgeServerTrustPolicy.ForTests("localhost")));
                     tray = new TrayApplicationContext(services, new FixedProbe(available));
                     // No icon or balloon on the desktop; the menu is driven directly.
                     tray.TrayIconForTests.Visible = false;

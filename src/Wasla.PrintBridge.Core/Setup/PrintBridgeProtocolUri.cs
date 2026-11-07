@@ -21,15 +21,20 @@ public static class PrintBridgeProtocolUri
     public const int MinCodeLength = 16;
     public const int MaxCodeLength = 512;
 
-    private static readonly string[] AllowedProductionHostSuffixes =
-    [
-        "wasla.local",
-        "wasla.com",
-        "wasla.app"
-    ];
-
+    /// <summary>Parses with the trust policy of this build (<see cref="PrintBridgeServerTrustPolicy.ForCurrentBuild"/>).</summary>
     public static bool TryParseSetup(
         string? uri,
+        out PrintBridgeProtocolSetupRequest? request,
+        out string? errorCode) =>
+        TryParseSetup(uri, PrintBridgeServerTrustPolicy.ForCurrentBuild(), out request, out errorCode);
+
+    /// <summary>
+    /// Parses and validates a setup link. Its server must be trusted by <paramref name="trustPolicy"/> (WAS-91): in
+    /// Release builds only HTTPS Wasla hosts.
+    /// </summary>
+    public static bool TryParseSetup(
+        string? uri,
+        PrintBridgeServerTrustPolicy trustPolicy,
         out PrintBridgeProtocolSetupRequest? request,
         out string? errorCode)
     {
@@ -118,7 +123,7 @@ public static class PrintBridgeProtocolUri
             return false;
         }
 
-        if (!IsAllowedSetupServer(serverUri))
+        if (!trustPolicy.IsTrusted(serverUri))
         {
             errorCode = "untrusted_server_url";
             return false;
@@ -169,30 +174,6 @@ public static class PrintBridgeProtocolUri
 
         return true;
     }
-
-    private static bool IsAllowedSetupServer(Uri serverUri)
-    {
-        var host = serverUri.Host.Trim().TrimEnd('.').ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(host))
-            return false;
-
-        if (IsLocalDevelopmentHost(host))
-            return true;
-
-        if (!string.Equals(serverUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        return AllowedProductionHostSuffixes.Any(suffix =>
-            string.Equals(host, suffix, StringComparison.Ordinal) ||
-            host.EndsWith("." + suffix, StringComparison.Ordinal));
-    }
-
-    private static bool IsLocalDevelopmentHost(string host) =>
-        string.Equals(host, "localhost", StringComparison.Ordinal) ||
-        string.Equals(host, "127.0.0.1", StringComparison.Ordinal) ||
-        string.Equals(host, "::1", StringComparison.Ordinal) ||
-        string.Equals(host, "wasla.local", StringComparison.Ordinal) ||
-        host.EndsWith(".wasla.local", StringComparison.Ordinal);
 
     /// <summary>Builds the canonical protocol URI. Used for diagnostics/round-trip tests only.</summary>
     public static string BuildSetupUri(string serverUrl, string code) =>

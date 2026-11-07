@@ -46,4 +46,18 @@ public sealed class PrintBridgeSetupSession : BaseEntity
     public bool ConnectionVerified { get; set; }
 
     public string? FailureReason { get; set; }
+
+    /// <summary>
+    /// Set only when the session moved an installation from another tenant's device (WAS-91): the device whose
+    /// registration the move retired. Its record and print history stay with that tenant. A plain reference, not a
+    /// foreign key: it may outlive that tenant's deletion.
+    /// </summary>
+    public Guid? SourcePrintBridgeDeviceId { get; set; }
+
+    /// <summary>
+    /// SHA-256 Base64 hash of the retired device's former token, kept only until the move is completed so the desktop
+    /// app can repeat the identical move request after a lost response. That token no longer authenticates any device
+    /// request. Never store the raw value.
+    /// </summary>
+    public string? SourceTokenHash { get; set; }
 }

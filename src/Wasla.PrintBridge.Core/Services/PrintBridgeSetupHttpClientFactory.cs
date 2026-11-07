@@ -27,6 +27,9 @@ public sealed class PrintBridgeSetupHttpClientFactory
     public HttpClientHandler CreateHandler(Uri serverUri) =>
         new()
         {
+            // Setup requests carry the device token, the setup code and the generated credentials. A redirect is
+            // returned to the caller as an answer and never followed, so nothing is sent again, to any origin (WAS-91).
+            AllowAutoRedirect = false,
             // Keep hostname and chain validation enabled. For local mkcert development
             // origins only, skip revocation because Windows Schannel cannot check a
             // local development CA revocation endpoint.

@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using Wasla.PrintBridge.Configuration;
+using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
 
 namespace Wasla.PrintBridge.Services;
@@ -65,6 +66,54 @@ public sealed class PrintBridgeSettingsStore
 
     public bool ProgramDataConfigExists() =>
         File.Exists(PrintBridgePaths.ProgramDataConfigPath);
+
+    /// <summary>
+    /// The confirmed move to another restaurant that is not finished yet (WAS-91), or null. Only content that is not a
+    /// complete pending change (invalid JSON, missing values) is set aside like a corrupt settings file and counts as
+    /// none. A file that cannot be read now (held by another program, access denied) is left in place and the
+    /// <see cref="IOException"/> or <see cref="UnauthorizedAccessException"/> reaches the caller: the move may have been
+    /// stored by the server, and these secrets are the only way to finish it.
+    /// </summary>
+    public PrintBridgePendingConnectionChange? LoadPendingConnectionChange()
+    {
+        var path = PrintBridgePaths.PendingConnectionChangePath;
+        if (!File.Exists(path))
+            return null;
+
+        var json = File.ReadAllText(path);
+        try
+        {
+            var change = JsonSerializer.Deserialize<PrintBridgePendingConnectionChange>(json, JsonOptions);
+            if (change is not null && change.IsComplete)
+                return change;
+        }
+        catch (JsonException)
+        {
+        }
+
+        TryBackupCorruptedFile(path);
+        return null;
+    }
+
+    /// <summary>Whether a pending move is on disk, without reading it (WAS-91).</summary>
+    public bool PendingConnectionChangeExists() => File.Exists(PrintBridgePaths.PendingConnectionChangePath);
+
+    /// <summary>
+    /// Writes the pending move atomically (a temporary file replaces the old one). It must be on disk before the move is
+    /// requested, so a lost response, a restart or a failed settings write can always be finished.
+    /// </summary>
+    public void SavePendingConnectionChange(PrintBridgePendingConnectionChange change)
+    {
+        PrintBridgePaths.EnsureProgramDataDirectories();
+        WriteJson(PrintBridgePaths.PendingConnectionChangePath, JsonSerializer.Serialize(change, JsonOptions));
+    }
+
+    public void DeletePendingConnectionChange()
+    {
+        var path = PrintBridgePaths.PendingConnectionChangePath;
+        if (File.Exists(path))
+            File.Delete(path);
+    }
 
     private static AppSettingsDocument? TryLoadExeLocalConfig()
     {

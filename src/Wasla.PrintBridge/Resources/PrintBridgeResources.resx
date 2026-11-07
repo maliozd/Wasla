@@ -494,6 +494,22 @@
   <data name="Auto.InstallationAlreadyRegistered" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge zaten aktif bir cihaz olarak kayıtlı. Yeni cihaz kurmak yerine Wasla Web'de "Mevcut cihazı yeniden bağla" seçeneğini kullanın veya önce eski cihaz kaydını kaldırın.</value></data>
   <data name="Auto.Failed" xml:space="preserve"><value>Otomatik kurulum tamamlanamadı.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Bir fiş yazdırma işi hâlâ tamamlanıyor. Bağlantı değiştirilmedi; fiş kayıtlı bağlantıyla tamamlanıyor. Yazdırma bitince kurulum bağlantısını yeniden açın.</value></data>
+  <data name="Auto.Transfer.Title" xml:space="preserve"><value>Başka bir restorana bağlanılsın mı?</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Bu uygulama şu anda {0} restoranına bağlı. Devam ederseniz bu bilgisayar {0} siparişlerini yazdırmayı bırakacak ve {1} restoranına bağlanacak.</value></data>
+  <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Yeni restorana bağlan</value></data>
+  <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Mevcut restoran</value></data>
+  <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Mevcut sunucu</value></data>
+  <data name="Auto.Transfer.NewRestaurant" xml:space="preserve"><value>Yeni restoran</value></data>
+  <data name="Auto.Transfer.NewServer" xml:space="preserve"><value>Yeni sunucu</value></data>
+  <data name="Auto.Transfer.UnknownRestaurant" xml:space="preserve"><value>Adsız restoran</value></data>
+  <data name="Auto.Cancelled" xml:space="preserve"><value>Bağlantı değiştirilmedi. Print Bridge hâlâ mevcut restorana bağlı.</value></data>
+  <data name="Auto.CurrentConnectionUnverified" xml:space="preserve"><value>Print Bridge mevcut bağlantısını Wasla sunucusuyla doğrulayamadığı için kurulum bağlantısı uygulanmadı. Hiçbir şey değiştirilmedi. İnternet bağlantısını kontrol edip kurulum bağlantısını yeniden açın. Bunun yerine farklı bir sunucuya bağlanmak için önce Ayarlar'dan bağlantıyı sıfırlayın.</value></data>
+  <data name="Auto.DeviceLimitReached" xml:space="preserve"><value>Yeni restoran Print Bridge cihaz sınırına ulaştı. Hiçbir şey değiştirilmedi; Print Bridge hâlâ mevcut restorana bağlı.</value></data>
+  <data name="Auto.InstallationConflict" xml:space="preserve"><value>Yeni restoranın kurulum bağlantısı bu bilgisayar için kullanılamıyor: Wasla'da seçilen cihaz başka bir bilgisayara ait ya da bu bilgisayar başka bir cihaz olarak da kayıtlı. Hiçbir şey değiştirilmedi. Yeni cihaz için yeni bir kurulum bağlantısı oluşturun veya Wasla'daki fazla cihaz kaydını kaldırın.</value></data>
+  <data name="Auto.InstallationRegisteredToAnotherRestaurant" xml:space="preserve"><value>Bu bilgisayardaki Print Bridge hâlâ başka bir restorana kayıtlı ve o restoranla bağlantısı doğrulanamadı. Hiçbir şey değiştirilmedi. O bağlantıyı geri getirip kurulum bağlantısını yeniden açın veya o restorandan bu cihazı Print Bridge cihazları sayfasından kaldırmasını isteyin.</value></data>
+  <data name="Auto.ChangePending" xml:space="preserve"><value>Yeni restorana geçiş henüz doğrulanamadı. Print Bridge, Wasla sunucusuna ulaşılır ulaşılmaz değişikliği kendiliğinden tamamlar. Bu arada artık ait olmadığı bir restoranın siparişlerini hiçbir zaman yazdırmaz.</value></data>
+  <data name="Auto.DestinationDeviceDisabled" xml:space="preserve"><value>Yeni restoranın Wasla'da seçtiği cihaz kapalı (pasif), bu yüzden Print Bridge oraya taşınmadı. Hiçbir şey değiştirilmedi. Cihazı Wasla'da etkinleştirin veya yeni bir cihaz için kurulum bağlantısı oluşturun.</value></data>
+  <data name="Auto.PreviousChangeCompleted" xml:space="preserve"><value>Daha önce onayladığınız restoran değişikliği önce tamamlandı; Print Bridge artık o restorana bağlı. Az önce açtığınız kurulum bağlantısı uygulanmadı; gerekiyorsa yeniden açın.</value></data>
   <data name="Shell.Connection.Connecting" xml:space="preserve">
     <value>Bağlanıyor</value>
   </data>

@@ -47,6 +47,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             _db,
             _devices,
             SuccessfulTenantLock.Instance,
+            NoActivePrintJobChecker.Instance,
             NullLogger<PrintBridgeSetupSessionService>.Instance);
     }
 
@@ -487,6 +488,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             _db,
             _devices,
             new FixedTenantLockResult(-1),
+            NoActivePrintJobChecker.Instance,
             NullLogger<PrintBridgeSetupSessionService>.Instance);
 
         var deviceCountBefore = await _db.PrintBridgeDevices
@@ -821,6 +823,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             db,
             devices,
             tenantLock ?? SuccessfulTenantLock.Instance,
+            NoActivePrintJobChecker.Instance,
             NullLogger<PrintBridgeSetupSessionService>.Instance);
 
     private sealed class SuccessfulTenantLock : IPrintBridgeSetupTenantLock
@@ -832,6 +835,9 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
         }
 
         public Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct) =>
+            Task.FromResult(0);
+
+        public Task<int> AcquireInstallationLockAsync(Guid installationId, CancellationToken ct) =>
             Task.FromResult(0);
     }
 
@@ -884,6 +890,10 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
 
         public Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(_result);
+
+        // Granted, so the tenant lock result is the one under test.
+        public Task<int> AcquireInstallationLockAsync(Guid installationId, CancellationToken ct) =>
+            Task.FromResult(0);
     }
 
     public void Dispose()
