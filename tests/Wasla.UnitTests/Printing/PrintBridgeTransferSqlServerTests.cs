@@ -243,7 +243,7 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     private static PrintBridgeSetupSessionService Service(CentralDbContext db) =>
         new(
             db,
-            new PrintBridgeDeviceManagementService(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, NoPrinting.Instance),
+            new PrintBridgeDeviceManagementService(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, NoPrinting.Instance, new SqlServerPrintBridgeSetupTenantLock(db)),
             new SqlServerPrintBridgeSetupTenantLock(db),
             NoPrinting.Instance,
             Errors);

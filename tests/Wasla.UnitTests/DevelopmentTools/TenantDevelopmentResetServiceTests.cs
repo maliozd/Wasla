@@ -381,7 +381,7 @@ public sealed class TenantDevelopmentResetServiceTests : IDisposable
         var central = new CentralDbContext(builder.Options);
         return new PrintBridgeSetupSessionService(
             central,
-            new PrintBridgeDeviceManagementService(central, NullLogger<PrintBridgeDeviceManagementService>.Instance, new NoActivePrintJobs()),
+            new PrintBridgeDeviceManagementService(central, NullLogger<PrintBridgeDeviceManagementService>.Instance, new NoActivePrintJobs(), new SqlServerPrintBridgeSetupTenantLock(central)),
             new SqlServerPrintBridgeSetupTenantLock(central),
             new NoActivePrintJobs(),
             NullLogger<PrintBridgeSetupSessionService>.Instance);

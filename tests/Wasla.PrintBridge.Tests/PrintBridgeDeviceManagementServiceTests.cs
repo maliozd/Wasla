@@ -34,7 +34,8 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         _service = new PrintBridgeDeviceManagementService(
             _db,
             NullLogger<PrintBridgeDeviceManagementService>.Instance,
-            _activePrintJobChecker);
+            _activePrintJobChecker,
+            new SqlServerPrintBridgeSetupTenantLock(_db));
     }
 
     [Fact]
