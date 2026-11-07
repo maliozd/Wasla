@@ -7,14 +7,14 @@
     var (tz, turkeyToday) = OrderUiHelper.GetTurkeyDisplayContext();
     var todayLabel = turkeyToday.ToDateTime(TimeOnly.MinValue).ToString("d", CultureInfo.CurrentCulture);
     var averageOrderValue = Model.TodayOrderCount > 0
-        ? Model.TodayRevenue / Model.TodayOrderCount
+        ? Model.TodayOrderValue / Model.TodayOrderCount
         : 0m;
     var kpis = new[]
     {
         (Modifier: "orders", Icon: "bi-receipt", LabelKey: "Dashboard.TodayOrders", HintKey: "Dashboard.OrdersReceivedToday",
             Value: Model.TodayOrderCount.ToString("N0", CultureInfo.CurrentCulture)),
-        (Modifier: "revenue", Icon: "bi-cash-stack", LabelKey: "Dashboard.TodayRevenue", HintKey: "Dashboard.TotalOrderAmountToday",
-            Value: OrderUiHelper.FormatMoney(Model.TodayRevenue)),
+        (Modifier: "revenue", Icon: "bi-cash-stack", LabelKey: "Dashboard.TodayOrderValue", HintKey: "Dashboard.TodayOrderValueHint",
+            Value: OrderUiHelper.FormatMoney(Model.TodayOrderValue)),
         (Modifier: "active", Icon: "bi-lightning-charge", LabelKey: "Dashboard.ActiveOrders", HintKey: "Dashboard.CurrentlyActiveOrders",
             Value: Model.ActiveOrderCount.ToString("N0", CultureInfo.CurrentCulture)),
         (Modifier: "cancelled", Icon: "bi-x-circle", LabelKey: "Dashboard.CancelledOrders", HintKey: "Dashboard.CancelledToday",
@@ -165,8 +165,8 @@
                         <div class="wasla-dash-platform-list">
                             @foreach (var p in Model.PlatformSummary)
                             {
-                                var share = Model.TodayRevenue > 0
-                                    ? Math.Round(p.Revenue / Model.TodayRevenue * 100m, 1)
+                                var share = Model.TodayOrderValue > 0
+                                    ? Math.Round(p.OrderValue / Model.TodayOrderValue * 100m, 1)
                                     : 0m;
                                 <div class="wasla-dash-platform-item">
                                     <div class="wasla-dash-platform-item__header">
@@ -175,7 +175,7 @@
                                             <span class="wasla-dash-platform-item__count">
                                                 @p.Count <span class="text-muted">@L["Dashboard.Orders"]</span>
                                             </span>
-                                            <span class="wasla-dash-platform-item__revenue">@OrderUiHelper.FormatMoney(p.Revenue)</span>
+                                            <span class="wasla-dash-platform-item__revenue">@OrderUiHelper.FormatMoney(p.OrderValue)</span>
                                         </div>
                                     </div>
                                     @if (share > 0)

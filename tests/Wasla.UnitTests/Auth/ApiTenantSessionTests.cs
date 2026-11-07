@@ -587,6 +587,9 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         await Expect("GET /api/orders/{id}", api.GetAsync($"/api/orders/{order.Id}"), HttpStatusCode.OK, isAllowed: true);
         await ExpectAdmitted("GET /api/dashboard/summary", api.GetAsync("/api/dashboard/summary"), reports);
         await ExpectAdmitted("GET /api/dashboard/today", api.GetAsync("/api/dashboard/today"), reports);
+        await ExpectAdmitted("GET /api/dashboard/report", api.GetAsync("/api/dashboard/report?preset=last7days"), reports);
+        // The filter is checked before any database is read, so an invalid one answers 400 to every role that may see reports.
+        await Expect("GET /api/dashboard/report (invalid filter)", api.GetAsync("/api/dashboard/report?preset=last90days"), HttpStatusCode.BadRequest, reports);
         await Expect("GET /api/branches", api.GetAsync("/api/branches"), HttpStatusCode.OK, isOwner);
         await Expect("GET /api/platform-connections", api.GetAsync("/api/platform-connections"), HttpStatusCode.OK, isOwner);
 

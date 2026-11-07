@@ -167,7 +167,7 @@ public sealed class TenantTablesAndDashboardPolishTests
             Assert.Contains($"(Modifier: \"{modifier}\"", dashboard);
         foreach (var key in new[]
                  {
-                     "Dashboard.TodayOrders", "Dashboard.TodayRevenue", "Dashboard.ActiveOrders",
+                     "Dashboard.TodayOrders", "Dashboard.TodayOrderValue", "Dashboard.ActiveOrders",
                      "Dashboard.CancelledOrders", "Dashboard.AverageOrderValue"
                  })
             Assert.Contains($"\"{key}\"", dashboard);

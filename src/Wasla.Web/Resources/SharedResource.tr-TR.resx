@@ -327,8 +327,8 @@
   <data name="Dashboard.TodayOrders" xml:space="preserve">
     <value>Bugünkü Siparişler</value>
   </data>
-  <data name="Dashboard.TodayRevenue" xml:space="preserve">
-    <value>Bugünkü Ciro</value>
+  <data name="Dashboard.TodayOrderValue" xml:space="preserve">
+    <value>Bugünkü Sipariş Tutarı</value>
   </data>
   <data name="Dashboard.ActiveConnections" xml:space="preserve">
     <value>Aktif Bağlantılar</value>
@@ -369,8 +369,8 @@
   <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
     <value>Bugün alınan siparişler</value>
   </data>
-  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
-    <value>Bugünkü toplam sipariş tutarı</value>
+  <data name="Dashboard.TodayOrderValueHint" xml:space="preserve">
+    <value>İptaller dahil bugünkü tüm siparişler</value>
   </data>
   <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
     <value>Şu an aktif siparişler</value>

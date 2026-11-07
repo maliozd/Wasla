@@ -327,8 +327,8 @@
   <data name="Dashboard.TodayOrders" xml:space="preserve">
     <value>Сегодняшние заказы</value>
   </data>
-  <data name="Dashboard.TodayRevenue" xml:space="preserve">
-    <value>Сегодняшний доход</value>
+  <data name="Dashboard.TodayOrderValue" xml:space="preserve">
+    <value>Сумма заказов за сегодня</value>
   </data>
   <data name="Dashboard.ActiveConnections" xml:space="preserve">
     <value>Активные соединения</value>
@@ -369,8 +369,8 @@
   <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
     <value>Заказы получены сегодня</value>
   </data>
-  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
-    <value>Общая сумма заказа сегодня</value>
+  <data name="Dashboard.TodayOrderValueHint" xml:space="preserve">
+    <value>Все заказы за сегодня, включая отменённые</value>
   </data>
   <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
     <value>На данный момент активные заказы</value>
