@@ -495,7 +495,7 @@
   <data name="Auto.Failed" xml:space="preserve"><value>تعذّر إكمال الإعداد التلقائي.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>لا تزال مهمة طباعة إيصال قيد الإكمال. لم يتم تغيير الاتصال؛ ستكتمل طباعة الإيصال عبر الاتصال المحفوظ. افتح رابط الإعداد مرة أخرى بعد انتهاء الطباعة.</value></data>
   <data name="Auto.Transfer.Title" xml:space="preserve"><value>هل تريد الاتصال بمطعم آخر؟</value></data>
-  <data name="Auto.Transfer.Message" xml:space="preserve"><value>هذا التطبيق متصل حاليًا بـ {0}. إذا تابعت، فستتوقف طباعة طلبات {0} وسيتصل التطبيق بـ {1}.</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>هذا التطبيق متصل حاليًا بـ {0}. إذا تابعت، فسيتوقف هذا الكمبيوتر عن طباعة طلبات {0} وسيتصل بـ {1}.</value></data>
   <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>الاتصال بالمطعم الجديد</value></data>
   <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>المطعم الحالي</value></data>
   <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>الخادم الحالي</value></data>

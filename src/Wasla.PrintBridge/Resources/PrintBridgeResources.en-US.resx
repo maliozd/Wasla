@@ -509,7 +509,7 @@
   <data name="Auto.Failed" xml:space="preserve"><value>Automatic setup could not be completed.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>A receipt print job is still being completed. The connection was not changed; the receipt finishes on the saved connection. Open the setup link again when printing has finished.</value></data>
   <data name="Auto.Transfer.Title" xml:space="preserve"><value>Connect to another restaurant?</value></data>
-  <data name="Auto.Transfer.Message" xml:space="preserve"><value>This application is currently connected to {0}. Continuing will stop printing {0}'s orders and connect it to {1}.</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>This application is currently connected to {0}. If you continue, this computer will stop printing {0}'s orders and connect to {1}.</value></data>
   <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Connect to the new restaurant</value></data>
   <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Current restaurant</value></data>
   <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Current server</value></data>

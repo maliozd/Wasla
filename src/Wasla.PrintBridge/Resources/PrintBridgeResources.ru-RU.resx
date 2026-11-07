@@ -495,7 +495,7 @@
   <data name="Auto.Failed" xml:space="preserve"><value>Не удалось завершить автоматическую настройку.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Задание печати чека ещё выполняется. Подключение не изменено; чек завершается через сохранённое подключение. Откройте ссылку настройки ещё раз, когда печать закончится.</value></data>
   <data name="Auto.Transfer.Title" xml:space="preserve"><value>Подключиться к другому ресторану?</value></data>
-  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Это приложение сейчас подключено к ресторану {0}. Если продолжить, заказы {0} больше не будут печататься, а приложение подключится к ресторану {1}.</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Это приложение сейчас подключено к ресторану {0}. Если продолжить, этот компьютер перестанет печатать заказы {0} и подключится к ресторану {1}.</value></data>
   <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Подключиться к новому ресторану</value></data>
   <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Текущий ресторан</value></data>
   <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Текущий сервер</value></data>

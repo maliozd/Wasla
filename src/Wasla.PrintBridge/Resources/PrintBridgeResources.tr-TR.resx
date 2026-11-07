@@ -495,7 +495,7 @@
   <data name="Auto.Failed" xml:space="preserve"><value>Otomatik kurulum tamamlanamadı.</value></data>
   <data name="Auto.PrintingInProgress" xml:space="preserve"><value>Bir fiş yazdırma işi hâlâ tamamlanıyor. Bağlantı değiştirilmedi; fiş kayıtlı bağlantıyla tamamlanıyor. Yazdırma bitince kurulum bağlantısını yeniden açın.</value></data>
   <data name="Auto.Transfer.Title" xml:space="preserve"><value>Başka bir restorana bağlanılsın mı?</value></data>
-  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Bu uygulama şu anda {0} restoranına bağlı. Devam ederseniz {0} siparişleri artık yazdırılmaz ve uygulama {1} restoranına bağlanır.</value></data>
+  <data name="Auto.Transfer.Message" xml:space="preserve"><value>Bu uygulama şu anda {0} restoranına bağlı. Devam ederseniz bu bilgisayar {0} siparişlerini yazdırmayı bırakacak ve {1} restoranına bağlanacak.</value></data>
   <data name="Auto.Transfer.Confirm" xml:space="preserve"><value>Yeni restorana bağlan</value></data>
   <data name="Auto.Transfer.CurrentRestaurant" xml:space="preserve"><value>Mevcut restoran</value></data>
   <data name="Auto.Transfer.CurrentServer" xml:space="preserve"><value>Mevcut sunucu</value></data>

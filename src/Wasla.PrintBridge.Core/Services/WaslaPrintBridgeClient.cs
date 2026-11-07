@@ -238,13 +238,18 @@ public sealed class WaslaPrintBridgeClient
         if (sessionId == Guid.Empty || string.IsNullOrWhiteSpace(completionCredential))
             return;
 
+        if (!Uri.TryCreate(serverUrl, UriKind.Absolute, out var serverUri))
+            return;
+
         var url = $"{serverUrl.TrimEnd('/')}/api/print-bridge/setup/complete";
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Content = JsonContent.Create(new { sessionId, completionCredential, connectionVerified });
 
         try
         {
-            using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+            // The setup client, which never follows a redirect: the completion credential is not sent again elsewhere.
+            using var setupHttp = _setupHttpClientFactory.Create(serverUri);
+            using var response = await setupHttp.SendAsync(request, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -424,6 +429,9 @@ public sealed class WaslaPrintBridgeClient
     private static SetupTransferReplyKind ClassifyTransferRefusal(int statusCode, string? errorCode) =>
         statusCode switch
         {
+            // A redirect is never followed: the request carried the token and the move's secrets. Whether the server
+            // stored the move before answering is not known, so the pending change is kept for recovery.
+            >= 300 and < 400 => SetupTransferReplyKind.Unknown,
             400 => SetupTransferReplyKind.InvalidOrExpired,
             401 or 403 => SetupTransferReplyKind.SourceRejected,
             409 => errorCode switch
@@ -623,6 +631,10 @@ public sealed class WaslaPrintBridgeClient
 
         if (statusCode == tooManyRequests)
             return "rate_limited";
+
+        // Setup redirects are never followed, so the code is not sent again; whether it was used is not known.
+        if (statusCode is >= 300 and < 400)
+            return "redirect_not_followed";
 
         if (statusCode == badRequest &&
             body.Contains("invalid_or_expired_setup_code", StringComparison.OrdinalIgnoreCase))

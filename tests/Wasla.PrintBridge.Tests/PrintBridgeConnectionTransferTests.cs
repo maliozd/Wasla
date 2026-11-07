@@ -529,6 +529,85 @@ public sealed class PrintBridgeConnectionTransferTests : IDisposable
         Assert.True((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
     }
 
+    // Redirects, over real sockets ---------------------------------------------------------------
+
+    /// <summary>
+    /// The current server answers the confirmed move with a redirect, before or after it stored the move. The redirect is
+    /// never followed, so nothing reaches the other origin. The result is unknown, so the pending change is kept with the
+    /// settings untouched and finished once the server answers again.
+    /// </summary>
+    [Theory]
+    [InlineData(307, false)]
+    [InlineData(307, true)]
+    [InlineData(308, false)]
+    [InlineData(308, true)]
+    [InlineData(302, true)]
+    public async Task AMoveAnsweredWithARedirect_IsNotFollowed_AndThePendingChangeIsFinishedLater(int status, bool storedBeforeTheRedirect)
+    {
+        using var serverA = new LoopbackSetupServer(_handler);
+        using var serverB = new LoopbackSetupServer(_handler);
+        using var elsewhere = new LoopbackSetupServer(_handler);
+        var (_, tokenA, _) = await ConnectedToAAsync(serverA.Url);
+        var app = App.Load(_handler, _logs, overLoopback: true);
+        var code = await _backend.CreateSessionAsync(_backend.TenantB, serverB.Url + "/");
+        serverA.Redirect = new LoopbackRedirect(status, elsewhere.Url, TransferPath, AfterForwarding: storedBeforeTheRedirect);
+        var before = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
+
+        var outcome = await app.Coordinator.ApplyAsync(Link(serverB.Url, code), new Consent(approve: true).Ask, Ct);
+
+        Assert.Equal(PrintBridgeAutoSetupOutcome.ChangePending, outcome);
+        Assert.Empty(elsewhere.Requests);
+        Assert.Empty(serverB.Requests);
+        // The identical request was repeated to A only, and every answer was the redirect.
+        Assert.Equal(1 + app.Coordinator.TransferRetryDelays.Count, serverA.Count(TransferPath));
+        Assert.True(File.Exists(PrintBridgePaths.PendingConnectionChangePath));
+        Assert.Equal(before, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
+        Assert.Equal(tokenA, app.Holder.Connection.AgentToken);
+        // Exactly one working binding either way: A's, or (once stored) the one only the pending change can save.
+        Assert.Equal(!storedBeforeTheRedirect, (await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        Assert.Equal(storedBeforeTheRedirect, (await _backend.SessionAsync(code)).ExchangedAtUtc is not null);
+
+        // The server answers again: the pending change is repeated and saved.
+        serverA.Redirect = null;
+        var recovered = await app.Coordinator.RecoverPendingChangeAsync(Ct);
+
+        Assert.Contains(recovered, new PrintBridgeAutoSetupOutcome?[] { PrintBridgeAutoSetupOutcome.Connected, PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing });
+        var saved = app.Store.Load().Wasla;
+        Assert.Equal(serverB.Url, saved.ServerUrl);
+        Assert.Equal(_backend.TenantB, (await _backend.AuthenticateAsync(saved.AgentToken, _installation)).Context!.TenantId);
+        Assert.False((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        Assert.False(File.Exists(PrintBridgePaths.PendingConnectionChangePath));
+        Assert.Single(await _backend.DevicesWithAsync(_installation), d => d.RemovedAtUtc == null);
+        Assert.NotNull((await _backend.SessionAsync(code)).CompletedAtUtc);
+        Assert.Empty(elsewhere.Requests);
+    }
+
+    [Fact]
+    public async Task APreviewAnsweredWithARedirect_FailsClosed_WithoutAskingOrSendingAnythingElsewhere()
+    {
+        using var serverA = new LoopbackSetupServer(_handler);
+        using var serverB = new LoopbackSetupServer(_handler);
+        using var elsewhere = new LoopbackSetupServer(_handler);
+        var (_, tokenA, _) = await ConnectedToAAsync(serverA.Url);
+        var app = App.Load(_handler, _logs, overLoopback: true);
+        var code = await _backend.CreateSessionAsync(_backend.TenantB, serverB.Url + "/");
+        serverA.Redirect = new LoopbackRedirect(307, elsewhere.Url, PreviewPath);
+        var before = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
+        var consent = new Consent(approve: true);
+
+        var outcome = await app.Coordinator.ApplyAsync(Link(serverB.Url, code), consent.Ask, Ct);
+
+        Assert.Equal(PrintBridgeAutoSetupOutcome.CurrentConnectionUnverified, outcome);
+        Assert.Empty(consent.Requests);
+        Assert.Equal(1, serverA.Count(PreviewPath));
+        Assert.Empty(elsewhere.Requests);
+        Assert.Empty(serverB.Requests);
+        Assert.Equal(before, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
+        Assert.False(File.Exists(PrintBridgePaths.PendingConnectionChangePath));
+        Assert.Null((await _backend.SessionAsync(code)).ExchangedAtUtc);
+        Assert.True((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+    }
+
     // Helpers ------------------------------------------------------------------------------------
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -578,7 +657,11 @@ public sealed class PrintBridgeConnectionTransferTests : IDisposable
         PrintBridgeAutoSetupCoordinator Coordinator,
         TestGuard Guard)
     {
-        public static App Load(PrintBridgeTransferHandler handler, CapturingLogs logs)
+        /// <param name="overLoopback">
+        /// Setup requests go through the production setup factory (a real handler) to loopback servers, trusted by name;
+        /// otherwise straight to <paramref name="handler"/> under the production policy.
+        /// </param>
+        public static App Load(PrintBridgeTransferHandler handler, CapturingLogs logs, bool overLoopback = false)
         {
             var store = new PrintBridgeSettingsStore();
             var document = store.Load();
@@ -587,7 +670,7 @@ public sealed class PrintBridgeConnectionTransferTests : IDisposable
             var client = new WaslaPrintBridgeClient(
                 new HttpClient(handler, disposeHandler: false),
                 holder,
-                new PrintBridgeSetupHttpClientFactory(handler),
+                overLoopback ? new PrintBridgeSetupHttpClientFactory() : new PrintBridgeSetupHttpClientFactory(handler),
                 logs.CreateLogger<WaslaPrintBridgeClient>(),
                 "1.0.0.0");
             var guard = new TestGuard();
@@ -596,7 +679,7 @@ public sealed class PrintBridgeConnectionTransferTests : IDisposable
                 store,
                 holder,
                 guard,
-                PrintBridgeServerTrustPolicy.Production,
+                overLoopback ? PrintBridgeServerTrustPolicy.ForTests("localhost") : PrintBridgeServerTrustPolicy.Production,
                 logs.CreateLogger<PrintBridgeAutoSetupCoordinator>())
             {
                 TransferRetryDelays = [TimeSpan.Zero, TimeSpan.Zero]
