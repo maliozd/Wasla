@@ -198,6 +198,9 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
         // The live tenant hub, its notifier and (with Realtime:Internal) the loopback listener, as in Web Program.cs.
         services.AddWaslaRealtime(builder.Configuration);
+        // Registration drafts with the fake SMS sender (WAS-192), as the signup page on this host needs them.
+        services.AddWaslaRegistrationDrafts(builder.Configuration, builder.Environment);
+        Wasla.UnitTests.Signup.SignupWebHost.UseFakeSms(services);
         configureServices?.Invoke(services);
 
         var app = builder.Build();

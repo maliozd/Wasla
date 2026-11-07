@@ -21,10 +21,10 @@ public interface IRegistrationPhoneVerificationService
     /// <summary>
     /// Sends a new code to the draft's current owner mobile phone (first send or resend). A new code replaces the previous
     /// one and does not reset accumulated failures. Refused while the resend wait, a lock or a draft, number or global
-    /// send limit applies. <paramref name="messageFormat"/> is the localized SMS text, a composite format with
-    /// <c>{0}</c> for the code and <c>{1}</c> for its lifetime in minutes.
+    /// send limit applies. The SMS text is the backend's template for <paramref name="culture"/> (Turkish when the culture
+    /// has none; no Turkish template fails closed with <see cref="SignupErrorCodes.PhoneUnavailable"/>).
     /// </summary>
-    Task<PhoneVerificationResult> SendCodeAsync(Guid draftId, string messageFormat, CancellationToken ct);
+    Task<PhoneVerificationResult> SendCodeAsync(Guid draftId, System.Globalization.CultureInfo culture, CancellationToken ct);
 
     /// <summary>
     /// Checks a code against the active code of the draft's current number and, when it matches, consumes it atomically

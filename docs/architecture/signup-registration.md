@@ -8,13 +8,17 @@ It does not own payment ([billing.md](billing.md), WAS-149), the real SMS provid
 
 ## Status
 
-**Phase 1 (contract).** What exists:
+Implemented (WAS-192): the draft and its cookie, the section saves, owner phone verification with the fake sender, the address check, the gated submit, the SMS sender modes, migration `AddRegistrationDrafts` and the cleanup service. The form `POST /signup` is gone; the signup page's script uses the API below.
 
-- Application contracts in `src/Wasla.Application/Abstractions/Onboarding/RegistrationDrafts/`: `IRegistrationDraftService`, `IRegistrationPhoneVerificationService`, their inputs, views and results, `PhoneVerificationPolicy` and the stable error codes `SignupErrorCodes`; and `ISmsSender` in `src/Wasla.Application/Abstractions/Sms/`.
-- Web: `SignupDraftController` with every route and filter below, answering `501 Not Implemented` for now (the fake outbox answers 404 outside Development); the JSON models in `src/Wasla.Web/Models/Signup/SignupDraftApiModels.cs`; the page fields added to `SignupViewModel`; the draft cookie `SignupDraftCookie`.
-- Infrastructure: `SignupOptions` (`Wasla:Signup`) and `SmsOptions` (`Wasla:Sms`), not yet bound; five new network rate-limit policies, bound and validated with the existing ones.
-
-Not yet: persistence and migration, the service implementations, the SMS sender registration and fake outbox, cleanup, wiring `GET /signup` to the draft, and removing the form `POST /signup`. Until then the current form submission keeps working; the sections below describe the target behavior.
+| Layer | Where |
+|-------|-------|
+| Contracts | `src/Wasla.Application/Abstractions/Onboarding/RegistrationDrafts/` (`IRegistrationDraftService`, `IRegistrationPhoneVerificationService`, models, `SignupErrorCodes`), `src/Wasla.Application/Abstractions/Sms/ISmsSender.cs` |
+| Rules | `src/Wasla.Application/Onboarding/PendingRegistrationRequestValidator.cs` (`PendingRegistrationRules` by section), `TurkishMobilePhone.cs` |
+| Services | `src/Wasla.Infrastructure/Services/RegistrationDraftService.cs`, `RegistrationPhoneVerificationService.cs`, `RegistrationDraftRecords.cs`, `RegistrationPhoneVerificationSendLock.cs`, `RegistrationDraftCleanup.cs`; `PendingRegistrationService.CreateAsync` (internal) |
+| SMS | `src/Wasla.Infrastructure/Sms/` (`DisabledSmsSender`, `FakeSmsSender`, `FakeSmsOutbox`, `SmsMessageTemplates`, `Templates/*.txt`) |
+| Registration | `AddWaslaRegistrationDrafts` and `AddWaslaSms` in `src/Wasla.Infrastructure/DependencyInjection/RegistrationDraftServiceCollectionExtensions.cs`, called by Web `Program.cs` |
+| Web | `SignupDraftController`, `SignupController` (page), `Models/Signup/SignupDraftApiModels.cs`, `SignupDraftResponses.cs`, `Security/SignupDraftCookie.cs` |
+| Tests | `tests/Wasla.UnitTests/Signup/SignupDraftApiTests.cs`, `SignupSmsModeTests.cs`, the draft helper `SignupDraftClient.cs` |
 
 ## Flow
 
@@ -112,7 +116,7 @@ Approved values are product decisions; change them only with one. The host refus
 | Any other value | The host refuses to start |
 
 - The real adapter, its mode value, credentials, sender identity, approved message text and WebOTP format are WAS-193. It implements `ISmsSender` in Infrastructure and keeps vendor types and credentials on its side.
-- The SMS text is the SharedResource key `Signup.Phone.SmsText` in the request culture (`{0}` the code, `{1}` its lifetime in minutes). If the key is missing for the culture, the send fails closed with `Signup.Phone.Unavailable` and logs an error.
+- The SMS text is a backend template, embedded like the e-mail templates: `src/Wasla.Infrastructure/Sms/Templates/RegistrationPhoneVerification.{tr,en,ar,ru}.txt`, with `{{Code}}` and `{{Minutes}}` and the request's UI culture. A culture without its own template uses Turkish; without the Turkish template the send fails closed with `Signup.Phone.Unavailable` and logs an error. The wording (Wasla identity, the code, its validity, "do not share") is a draft until WAS-193 approves it, and each template says so in a `#` comment line, which is never sent.
 - **Reading the fake code.** In Development with `Fake`, `GET /signup/draft/phone/fake-outbox` returns the messages sent to the current draft's numbers with their codes (404 everywhere else, like the checkout simulator). Tests do not use it: test hosts register the fake sender and its `FakeSmsOutbox` explicitly and read the outbox through DI, also in a Production-environment host. Configuration can never enable the fake outside Development.
 - Logs name the draft, the operation and the outcome category; never the code, the message text or the full number.
 
@@ -198,7 +202,7 @@ Error:
 
 ## Signup page
 
-`GET /signup` stays one Razor page whose steps call the API above. Besides the existing fields of `SignupViewModel` (plans, prices, business categories, cities, application domain, simulator flag) it receives, set by the server and never bound:
+`GET /signup` stays one Razor page whose steps call the API above. It embeds the browser's draft, so it is sent with `Cache-Control: no-store` (and `Pragma: no-cache`), like the API. Besides the existing fields of `SignupViewModel` (plans, prices, business categories, cities, application domain, simulator flag) it receives, set by the server and never bound:
 
 | Field | Meaning |
 |-------|---------|
@@ -209,7 +213,7 @@ Error:
 | `PhoneCodeLength` | 6 |
 | `SupportEmail` | `Wasla:Signup:SupportEmail`, default `destek@wasla.tr` |
 
-The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. The form `POST /signup` is removed in Phase 2; the page then submits only through `POST /signup/draft/submit`.
+The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. There is no form `POST /signup` any more (it answers 405 and creates nothing); the page submits only through `POST /signup/draft/submit`.
 
 ## Submit boundary
 
@@ -224,7 +228,7 @@ The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as
 
 A missing price does not block the submit, as today ([billing.md](billing.md#plan-prices)).
 
-To keep later work from bypassing verification, Phase 2 removes `SubmitAsync` from `IPendingRegistrationService`: creating a registration becomes an internal Infrastructure operation that only the draft submit calls. For WAS-149: start a checkout only for a registration with `OwnerPhoneVerifiedAtUtc` set (registrations created before WAS-192 have none), and add the idempotency identity, price pinning and consent, the atomic address reservation (the `Slug` index on `PendingRegistrations` is not unique; the submit's check is a read followed by an insert, as today) and the hosted payment form.
+To keep later work from bypassing verification, `IPendingRegistrationService` offers no way to create a registration: `PendingRegistrationService.CreateAsync` is internal to Infrastructure and only the draft submit calls it, with the stored hash and the verified phone. For WAS-149: start a checkout only for a registration with `OwnerPhoneVerifiedAtUtc` set (registrations created before WAS-192 have none), and add the idempotency identity, price pinning and consent, the atomic address reservation (the `Slug` index on `PendingRegistrations` is not unique; the submit's check is a read followed by an insert, as today) and the hosted payment form.
 
 ## Provisioning
 
@@ -232,12 +236,12 @@ The tenant owner `AppUser` has no phone field, and `TenantMembership` stores no 
 
 ## Persistence
 
-CentralDb only, migration `AddRegistrationDrafts` (Phase 2):
+CentralDb only, migration `AddRegistrationDrafts`:
 
 | Table | Holds |
 |-------|-------|
 | `RegistrationDrafts` | Id, created, updated and expiry times; plan code and period; the restaurant fields (business type codes as one delimited string); owner name, email, E.164 mobile phone and password hash; the time each section was saved; `PhoneVerifiedNumber`, `PhoneVerifiedAtUtc`; `SubmittedAtUtc`, `PendingRegistrationId` (unique when set). Every personal field nullable, cleared at submit. Index on the expiry |
-| `RegistrationPhoneVerifications` | One row per draft and number (unique), cascading with the draft: protected code, issue and expiry times, last send, sends, failed attempts, lock end, verification time |
+| `RegistrationPhoneVerifications` | One row per draft and number (unique), cascading with the draft and deleted at submit: protected code, issue and expiry times, last send (also the concurrency token of sends), sends, failed attempts, lock end, verification time |
 | `RegistrationPhoneVerificationSends` | One row per send for the number and global windows: draft id (no foreign key, so counts survive the draft), E.164 number, time, outcome. Indexes on number and time, and time. Kept for 24 hours |
 | `PendingRegistrations` | New nullable `OwnerPhoneVerifiedAtUtc`; check constraint: set only together with `OwnerPhone` |
 
@@ -271,11 +275,10 @@ New keys returned by the API (the page adds them in every culture):
 | `Signup.Phone.DeliveryFailed` | Kod gönderilemedi. Numaranızı kontrol edip tekrar deneyin. | The code could not be sent. Check your number and try again. |
 | `Signup.Phone.Unavailable` | Telefon doğrulaması şu anda kullanılamıyor. Lütfen destek ile iletişime geçin. | Phone verification is not available right now. Please contact support. |
 | `Signup.Phone.CapacityReached` | Telefon doğrulaması geçici olarak kullanılamıyor. Lütfen birkaç dakika sonra tekrar deneyin. | Phone verification is temporarily unavailable. Please try again in a few minutes. |
-| `Signup.Phone.SmsText` | Wasla doğrulama kodunuz: {0}. Kod {1} dakika geçerlidir. Bu kodu kimseyle paylaşmayın. | Your Wasla verification code is {0}. It is valid for {1} minutes. Do not share it with anyone. |
 | `Validation.MobilePhoneRequired` | Cep telefonu numarası gereklidir. | Mobile phone number is required. |
 | `Validation.MobilePhoneInvalid` | Geçerli bir Türkiye cep telefonu numarası girin, örneğin 532 123 45 67. | Enter a valid Turkish mobile number, for example 532 123 45 67. |
 
-Existing keys the API returns: `Signup.TooManyAttempts`, `Signup.SlugUnavailable`, `Signup.EnterpriseContactOnly`, `Signup.ProvisioningFailed`, `Billing.PriceNotSet`, `Billing.CurrencyTry`, `Billing.VatIncluded`, `Billing.VatExcluded`, `Pricing.PricePerMonth`, `Pricing.PricePerYear`, and the field codes `Validation.*` of the signup validator. `Signup.Phone.SmsText` is sent by SMS, not shown on the page; its final wording is approved in WAS-193.
+Existing keys the API returns: `Signup.TooManyAttempts`, `Signup.SlugUnavailable`, `Signup.EnterpriseContactOnly`, `Signup.ProvisioningFailed`, `Billing.PriceNotSet`, `Billing.CurrencyTry`, `Billing.VatIncluded`, `Billing.VatExcluded`, `Pricing.PricePerMonth`, `Pricing.PricePerYear`, and the field codes `Validation.*` of the signup validator. The SMS text is not a page resource (see [SMS sender](#sms-sender)).
 
 ## Open decisions
 
@@ -296,4 +299,4 @@ Existing keys the API returns: `Signup.TooManyAttempts`, `Signup.SlugUnavailable
 ## Known discrepancies
 
 - WAS-192 assigns the draft → `PendingRegistration` promotion to WAS-149. Replacing the form `POST /signup` needs a gated submit now, so WAS-192 implements the minimal submit above and WAS-149 extends it.
-- [tenancy.md](tenancy.md#signup-and-checkout-access) still describes the form `POST /signup`; it changes with Phase 2.
+- [tenancy.md](tenancy.md#signup-and-checkout-access) still describes the form `POST /signup` and its limits; it is updated with the rest of the WAS-192 documentation.

@@ -123,8 +123,8 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
     public async Task ContactSubmission_IsRefusedAfterTheAntiforgeryCheck_AndStoresNothing()
     {
         using var browser = _host.NewBrowser();
-        // An antiforgery token is not bound to a form; the signup page issues one.
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
+        // An antiforgery token is not bound to a form; the host's antiforgery service issues one.
+        var token = _host.IssueAntiforgeryToken(browser);
 
         var page = await browser.PostFormAsync(PublicSiteUrls.ContactPath, new List<KeyValuePair<string, string>>
         {

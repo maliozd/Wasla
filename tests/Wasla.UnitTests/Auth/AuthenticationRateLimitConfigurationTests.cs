@@ -217,11 +217,28 @@ public sealed class AuthenticationRateLimitConfigurationTests
         Assert.Equal(AuthenticationRateLimitPolicies.CentralAdminLogin, LoginPolicy<AdminAuthController>(post: true));
         Assert.Null(LoginPolicy<AdminAuthController>(post: false));
 
-        // Every anonymous action that creates or changes a pending registration, and nothing that only reads one.
-        var signupPost = Assert.Single(typeof(SignupController).GetMethods(), m => m.Name == nameof(SignupController.Index) && m.GetCustomAttribute<HttpPostAttribute>() is not null);
-        Assert.Equal(AuthenticationRateLimitPolicies.SignupSubmission, signupPost.GetCustomAttribute<AuthenticationRateLimitAttribute>()?.Policy);
-        foreach (var action in typeof(SignupController).GetMethods().Where(m => m.GetCustomAttribute<HttpGetAttribute>() is not null))
+        // Every anonymous action that creates or changes a registration draft or a pending registration, and the phone
+        // verification and address check (WAS-192); nothing that only reads the browser's own draft or the signup page.
+        foreach (var action in typeof(SignupController).GetMethods().Where(m => m.DeclaringType == typeof(SignupController)))
             Assert.Null(action.GetCustomAttribute<AuthenticationRateLimitAttribute>());
+        var draftPolicies = typeof(SignupDraftController).GetMethods()
+            .Where(m => m.DeclaringType == typeof(SignupDraftController)
+                        && m.GetCustomAttribute<Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute>() is not null)
+            .ToDictionary(m => m.Name, m => m.GetCustomAttribute<AuthenticationRateLimitAttribute>()?.Policy);
+        Assert.Equal(new Dictionary<string, string?>
+        {
+            [nameof(SignupDraftController.GetDraft)] = null,
+            [nameof(SignupDraftController.SavePlan)] = AuthenticationRateLimitPolicies.SignupDraftSave,
+            [nameof(SignupDraftController.SaveRestaurant)] = AuthenticationRateLimitPolicies.SignupDraftSave,
+            [nameof(SignupDraftController.SaveOwner)] = AuthenticationRateLimitPolicies.SignupDraftSave,
+            [nameof(SignupDraftController.Submit)] = AuthenticationRateLimitPolicies.SignupSubmission,
+            [nameof(SignupDraftController.PhoneStatus)] = null,
+            [nameof(SignupDraftController.SendPhoneCode)] = AuthenticationRateLimitPolicies.SignupPhoneSend,
+            [nameof(SignupDraftController.VerifyPhoneCode)] = AuthenticationRateLimitPolicies.SignupPhoneVerify,
+            [nameof(SignupDraftController.ChangePhone)] = AuthenticationRateLimitPolicies.SignupDraftSave,
+            [nameof(SignupDraftController.FakeSmsOutbox)] = null,
+            [nameof(SignupDraftController.AddressAvailability)] = AuthenticationRateLimitPolicies.SignupAddressAvailability
+        }, draftPolicies);
         foreach (var action in typeof(CheckoutController).GetMethods().Where(m => m.DeclaringType == typeof(CheckoutController)))
         {
             var expected = action.GetCustomAttribute<HttpPostAttribute>() is not null ? AuthenticationRateLimitPolicies.SignupCheckout : null;

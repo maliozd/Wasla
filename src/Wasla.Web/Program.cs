@@ -145,6 +145,9 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddWaslaInfrastructure(builder.Configuration);
 // The public contact form: messages are stored in CentralDb and emailed to Wasla:Contact:RecipientEmail.
 builder.Services.AddWaslaContactMessages(builder.Configuration);
+// Registration drafts and mandatory owner phone verification (WAS-192): Wasla:Signup, and the SMS sender of
+// Wasla:Sms:Mode (missing or Disabled fails closed; Fake only in Development).
+builder.Services.AddWaslaRegistrationDrafts(builder.Configuration, builder.Environment);
 // Marketing and application host domains: outside Development they must be set to public host names (WAS-66).
 builder.Services.AddWaslaHostDomains(builder.Configuration, builder.Environment);
 builder.Services.AddWaslaHealthChecks();

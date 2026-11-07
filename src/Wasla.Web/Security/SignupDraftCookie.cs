@@ -53,8 +53,12 @@ public sealed class SignupDraftCookie
 
     public void Issue(HttpContext context, Guid draftId, DateTimeOffset expiresAt)
     {
-        context.Response.Cookies.Append(CookieName, _protector.Protect(draftId.ToString("N"), expiresAt), Options(context, expiresAt));
+        context.Response.Cookies.Append(CookieName, CreateValue(draftId, expiresAt), Options(context, expiresAt));
     }
+
+    /// <summary>The protected cookie value naming <paramref name="draftId"/> until <paramref name="expiresAt"/>.</summary>
+    public string CreateValue(Guid draftId, DateTimeOffset expiresAt) =>
+        _protector.Protect(draftId.ToString("N"), expiresAt);
 
     public void Clear(HttpContext context)
     {
