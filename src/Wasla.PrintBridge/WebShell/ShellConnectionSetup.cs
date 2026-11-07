@@ -244,6 +244,13 @@ public sealed class ShellConnectionSetup
             return new ShellConnectionSetupResult(ShellConnectionSetupOutcome.VerificationFailed, _localizer["Shell.Op.Failed"]);
 
         var issue = new PrintBridgeRuntimeIssue(connection.IssueCode, connection.UserMessageKey, connection.FormatArgs);
+        // A redirect is not followed (WAS-191); usually the address differs from the one the Web panel shows.
+        if (connection.StatusCode is >= 300 and < 400)
+        {
+            return new ShellConnectionSetupResult(
+                ShellConnectionSetupOutcome.VerificationFailed, _localizer.GetRuntimeIssueDetail(issue), ShellConnectionSetupField.ServerUrl);
+        }
+
         return connection.IssueCode switch
         {
             PrintBridgeRuntimeIssueCode.ReconnectRequired => new(

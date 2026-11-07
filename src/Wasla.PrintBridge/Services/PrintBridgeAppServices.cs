@@ -10,6 +10,9 @@ namespace Wasla.PrintBridge.Services;
 
 public static class PrintBridgeAppServices
 {
+    /// <summary>The named <see cref="HttpClient"/> of <see cref="WaslaPrintBridgeClient"/> for device requests.</summary>
+    internal const string DeviceApiClientName = "PrintBridgeApi";
+
     /// <summary>Serilog adds the date before the extension: one <c>wasla-print-bridge-yyyyMMdd.log</c> per day.</summary>
     internal static string LogFilePath =>
         Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "wasla-print-bridge-.log");
@@ -58,25 +61,7 @@ public static class PrintBridgeAppServices
             throw new PlatformNotSupportedException("Wasla Print Bridge requires Windows.");
 
         services.AddSingleton<IReceiptPrinter, WindowsReceiptPrinter>();
-
-        services.AddHttpClient("PrintBridgeApi", client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-        services.AddSingleton<PrintBridgeSetupHttpClientFactory>();
-
-        services.AddSingleton(sp =>
-        {
-            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("PrintBridgeApi");
-            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<WaslaPrintBridgeClient>();
-            return new WaslaPrintBridgeClient(
-                http,
-                sp.GetRequiredService<PrintBridgeSettingsHolder>(),
-                sp.GetRequiredService<PrintBridgeSetupHttpClientFactory>(),
-                logger,
-                appVersion.HeaderValue);
-        });
-
+        AddWaslaApiClient(services, appVersion);
         services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton<PrintBridgeRuntime>();
         services.AddSingleton<IPrintBridgeConnectionGuard>(sp => sp.GetRequiredService<PrintBridgeRuntime>());
@@ -88,6 +73,39 @@ public static class PrintBridgeAppServices
         var provider = services.BuildServiceProvider();
         LogStartup(provider, holder);
         return provider;
+    }
+
+    /// <summary>
+    /// Registers <see cref="WaslaPrintBridgeClient"/> with the device API client (health, polling, job reports, reprint,
+    /// device name and manual-setup checks) and the setup client factory. Needs the
+    /// <see cref="PrintBridgeSettingsHolder"/> and logging. Tests use it to get the production client.
+    /// </summary>
+    internal static void AddWaslaApiClient(IServiceCollection services, AppVersionInfo appVersion)
+    {
+        services.AddHttpClient(DeviceApiClientName, client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            // Every device request carries X-PrintBridge-Token, and some a body. HttpClient keeps custom headers on a
+            // redirect, to any origin, and 307/308 also send the body again. So a redirect is returned to the client as
+            // an answer and never followed (WAS-191), as for setup requests (WAS-91).
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+            // The factory logs request headers at Trace, values included. The app's logger filters that category to
+            // Warning, but a lowered level must still never write the device token.
+            .RedactLoggedHeaders(static _ => true);
+        services.AddSingleton<PrintBridgeSetupHttpClientFactory>();
+
+        services.AddSingleton(sp =>
+        {
+            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient(DeviceApiClientName);
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<WaslaPrintBridgeClient>();
+            return new WaslaPrintBridgeClient(
+                http,
+                sp.GetRequiredService<PrintBridgeSettingsHolder>(),
+                sp.GetRequiredService<PrintBridgeSetupHttpClientFactory>(),
+                logger,
+                appVersion.HeaderValue);
+        });
     }
 
     private static void LogStartup(ServiceProvider provider, PrintBridgeSettingsHolder holder)
