@@ -8,7 +8,11 @@ public class PendingRegistrationConfiguration : IEntityTypeConfiguration<Pending
 {
     public void Configure(EntityTypeBuilder<PendingRegistration> builder)
     {
-        builder.ToTable("PendingRegistrations");
+        // A verification time without the verified number would be evidence of nothing (WAS-192).
+        builder.ToTable("PendingRegistrations", table =>
+            table.HasCheckConstraint(
+                "CK_PendingRegistrations_OwnerPhoneVerified",
+                "[OwnerPhoneVerifiedAtUtc] IS NULL OR [OwnerPhone] IS NOT NULL"));
 
         builder.HasKey(x => x.Id);
 

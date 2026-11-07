@@ -788,6 +788,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("OwnerPhoneVerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -860,7 +863,10 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
                     b.HasIndex("StreetId");
 
-                    b.ToTable("PendingRegistrations", (string)null);
+                    b.ToTable("PendingRegistrations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PendingRegistrations_OwnerPhoneVerified", "[OwnerPhoneVerifiedAtUtc] IS NULL OR [OwnerPhone] IS NOT NULL");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.PendingRegistrationBusinessType", b =>
@@ -1029,6 +1035,254 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasDatabaseName("IX_PrintBridgeSetupSessions_TenantId");
 
                     b.ToTable("PrintBridgeSetupSessions", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.RegistrationDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AddressNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("BillingPeriod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BuildingNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("BusinessEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("BusinessName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("BusinessPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("BusinessPhoneType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BusinessTypeCodes")
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("CityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("District")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("DistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DoorNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Floor")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("LocationUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Neighborhood")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("NeighborhoodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnerEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OwnerFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OwnerMobilePhone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("OwnerSavedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("PendingRegistrationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("PhoneVerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneVerifiedNumber")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("PlanCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("PlanSavedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("RestaurantSavedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StreetAddress")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("StreetId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc")
+                        .HasDatabaseName("IX_RegistrationDrafts_ExpiresAtUtc");
+
+                    b.HasIndex("PendingRegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RegistrationDrafts_PendingRegistrationId")
+                        .HasFilter("[PendingRegistrationId] IS NOT NULL");
+
+                    b.ToTable("RegistrationDrafts", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.RegistrationPhoneVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CodeExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CodeIssuedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastSentAtUtc")
+                        .IsConcurrencyToken()
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("ProtectedCode")
+                        .HasMaxLength(1024)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1024)");
+
+                    b.Property<int>("SendCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DraftId", "PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RegistrationPhoneVerifications_DraftId_PhoneNumber");
+
+                    b.ToTable("RegistrationPhoneVerifications", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RegistrationPhoneVerifications_FailedAttempts", "[FailedAttempts] >= 0");
+
+                            t.HasCheckConstraint("CK_RegistrationPhoneVerifications_SendCount", "[SendCount] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.RegistrationPhoneVerificationSend", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SentAtUtc")
+                        .HasDatabaseName("IX_RegistrationPhoneVerificationSends_SentAtUtc");
+
+                    b.HasIndex("PhoneNumber", "SentAtUtc")
+                        .HasDatabaseName("IX_RegistrationPhoneVerificationSends_PhoneNumber_SentAtUtc");
+
+                    b.ToTable("RegistrationPhoneVerificationSends", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.Street", b =>
@@ -1342,6 +1596,23 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Navigation("Device");
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.RegistrationDraft", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Central.PendingRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("PendingRegistrationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.RegistrationPhoneVerification", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.Central.RegistrationDraft", null)
+                        .WithMany()
+                        .HasForeignKey("DraftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.Street", b =>

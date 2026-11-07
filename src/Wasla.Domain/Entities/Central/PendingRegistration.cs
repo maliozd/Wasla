@@ -64,7 +64,18 @@ public class PendingRegistration
 
     public string OwnerEmail { get; set; } = default!;
 
+    /// <summary>
+    /// The owner's mobile phone. From WAS-192 the verified E.164 number (<c>+905321234567</c>); older registrations hold
+    /// what was typed.
+    /// </summary>
     public string? OwnerPhone { get; set; }
+
+    /// <summary>
+    /// When <see cref="OwnerPhone"/> was verified by SMS (WAS-192). Null for registrations created before mandatory
+    /// verification; payment must not start for those. Kept after provisioning (with <see cref="TenantId"/>) until the
+    /// owner account can hold it (WAS-195).
+    /// </summary>
+    public DateTime? OwnerPhoneVerifiedAtUtc { get; set; }
 
     public string PasswordHash { get; set; } = default!;
 
