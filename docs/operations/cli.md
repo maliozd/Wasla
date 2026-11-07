@@ -59,7 +59,7 @@ Most commands call `AesSecretManager.ValidateMasterKeyOrThrow()` before the host
 - `generate-print-bridge-token`
 - `reset-password` when `--scope central`
 
-All other registered commands require the master key (including tenant operations, migrations, encrypt, Print Bridge seed/list, etc.).
+All other registered commands require the master key (including tenant operations, migrations, encrypt, `create-user`, Print Bridge seed/list, etc.).
 
 ## Destructive confirmation and production block
 
@@ -135,6 +135,33 @@ There is no command that deactivates or reactivates a central admin; see [../arc
 
 **This is the supported setup method.** Do not use `CentralAdmin__Email` / `CentralAdmin__PasswordHash` environment variables as the setup path — they are obsolete relative to current CentralDb authentication.
 
+### Tenant users
+
+| Command | Purpose |
+|---------|---------|
+| `create-user` | Add a user with a role to an existing, active tenant (`--tenant-slug`, `--email`, `--password`, `--role`, optional `--name`) |
+
+**Who may run it.** `create-user` is a local administrative command for the server operator, not a tenant feature. It works only where the operator already has `ENCRYPTION_MASTER_KEY` (it decrypts the tenant's stored connection string), the CentralDb connection and SQL Server access to the tenant database. Without the master key the CLI stops before it reads any configuration. The command has no acting user, so the Web panel's acting-Owner rules ([roles-and-permissions.md](../product/roles-and-permissions.md#user-management-rules-acting-owner-own-account-last-owner)) do not apply to it; it can add an Owner. Tenant Owners add users on the Web panel's Users page (`/settings/users`).
+
+**Checks.** Nothing is written unless every check passes (`src/Wasla.Cli/CliCommands.cs`, `CreateUserAsync`):
+
+- `--tenant-slug` matches `^[a-zA-Z0-9_-]+$` and is the slug of a tenant in CentralDb. An inactive tenant is refused.
+- `--email`, trimmed, is a valid email address (the Web create form's `[EmailAddress]` check) that no user of that tenant has. The comparison follows the tenant database's collation, case-insensitive on SQL Server; the unique email index refuses an email another writer adds at the same moment.
+- `--role` is `Owner`, `Manager`, `Kitchen`, `Cashier` or `Viewer`, by name, ignoring case. A number, a list such as `Owner,Manager` and the obsolete `Staff` are refused.
+- `--password` passes the Web panel's password policy (`DefaultPasswordPolicy`: not blank, at least 8 characters).
+
+The user is created active, for all branches, with only a BCrypt hash of the password. `--name` is optional: without it the user has an empty name, which the Web create form would not accept; an Owner can add it on the Users page.
+
+**Output and secrets.** On success the command prints the email and the role. Its own messages never include the password, its hash or an exception message, so the tenant's decrypted connection string cannot reach the output. As for every CLI command, EF Core's error log (on at `Warning` in the CLI's `appsettings.json`) prints a failed CentralDb read with its SQL Server error, server and database name, never a password. `--password` is visible in shell history and in the process list while the command runs. To keep the real password out of both, create the user with a temporary password and set the real one with `reset-password --scope tenant`, which prompts for it.
+
+Exit codes: `0` created; `2` a check failed; `3` a SQL Server or EF Core save error: CentralDb or the tenant database could not be reached or refused the write (for example through the unique email index); `1` any other failure, and a missing required option, which the parser reports before the command runs. Nothing is written unless the code is `0`.
+
+Example (fake values):
+
+```powershell
+dotnet run --project src\Wasla.Cli -- create-user --tenant-slug demo --email kitchen@example.com --password "Fake-password-1" --role Kitchen --name "Demo Kitchen"
+```
+
 ### Password reset
 
 | Command | Purpose |
@@ -165,16 +192,6 @@ Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-web
 | `encrypt` | Encrypt plaintext with `ENCRYPTION_MASTER_KEY` |
 | `hash-password` | Print BCrypt hash (no config / master key) |
 | `help` | Custom help |
-
-## Known inconsistency: `create-user`
-
-`CliCommandTree.cs` registers a `create-user` command (`--tenant-slug`, `--email`, `--password`, `--role`, `--name`) on `RootCommand` with a handler.
-
-`CliHelpPrinter.IsKnownCommand` does **not** include `create-user`. The early gate in `Program.cs` treats unknown first tokens as errors and prints general help **before** `RootCommand.InvokeAsync`.
-
-Therefore `create-user` is **not** a working supported command today. Documented here as a known inconsistency only — do not present it as operational.
-
-Use `seed-tenant-admin` or tenant user management in Web for admin/user creation paths that actually run.
 
 ## Related docs
 

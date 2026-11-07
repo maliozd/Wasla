@@ -53,12 +53,6 @@ public sealed class CliCommandInventoryTests
     /// <summary>Handled in Program.cs before the command tree is built, so they are known but not registered.</summary>
     private static readonly string[] HandledBeforeTheTree = ["help", "hash-password"];
 
-    /// <summary>
-    /// Registered, but missing from the help printer's known-command gate, so Program.cs rejects it as unknown before
-    /// the tree runs (documented in docs/operations/cli.md). Kept as is; this test fails when either side changes.
-    /// </summary>
-    private const string GatedOutCommand = "create-user";
-
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     // --- Registered tree ----------------------------------------------------------------------------
@@ -126,18 +120,22 @@ public sealed class CliCommandInventoryTests
     // --- Known-command gate -------------------------------------------------------------------------
 
     [Fact]
-    public void TheKnownCommandGate_MatchesTheRegisteredCommands_ExceptTheDocumentedCreateUserGap()
+    public void TheKnownCommandGate_MatchesTheRegisteredCommands()
     {
-        var registered = CliCommandTree.Build(EmptyHost()).Subcommands.Select(c => c.Name).ToHashSet(StringComparer.Ordinal);
+        var registered = CliCommandTree.Build(EmptyHost()).Subcommands.Select(c => c.Name);
 
-        var expected = registered
-            .Where(name => name != GatedOutCommand)
-            .Concat(HandledBeforeTheTree)
-            .Order(StringComparer.Ordinal);
+        Assert.Equal(
+            registered.Concat(HandledBeforeTheTree).Order(StringComparer.Ordinal),
+            CliHelpPrinter.KnownCommands.Order(StringComparer.Ordinal));
+    }
 
-        Assert.Equal(expected, CliHelpPrinter.KnownCommands.Order(StringComparer.Ordinal));
-        Assert.Contains(GatedOutCommand, registered);
-        Assert.False(CliHelpPrinter.IsKnownCommand(GatedOutCommand));
+    [Fact]
+    public void TheKnownCommandGate_LetsTheRegisteredCreateUserCommandThrough()
+    {
+        var root = CliCommandTree.Build(EmptyHost());
+
+        Assert.Single(root.Subcommands, c => c.Name == "create-user");
+        Assert.True(CliHelpPrinter.IsKnownCommand("create-user"));
     }
 
     // --- Help text ----------------------------------------------------------------------------------
@@ -176,11 +174,40 @@ public sealed class CliCommandInventoryTests
     [InlineData("reset-tenant-db", "reset-tenant-db --tenant-id <guid> --confirm")]
     [InlineData("reset-all-tenant-dbs", "reset-all-tenant-dbs --confirm")]
     [InlineData("migrate-all-tenants", "-- migrate-all-tenants")]
+    [InlineData("create-user", "create-user --tenant-slug <slug> --email <email> --password <password> --role <role> [--name <full name>]")]
     public async Task CommandHelp_ShowsTheTenantCommandUsage(string command, string expected)
     {
         var output = await CaptureAsync(() => { CliHelpPrinter.PrintCommandHelp(command); return Task.FromResult(0); });
 
         Assert.Contains(expected, output.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CreateUserHelp_SaysWhoRunsIt_TheRolesAndPasswordRules_AndUsesAFakeExample()
+    {
+        var output = (await CaptureAsync(() => { CliHelpPrinter.PrintCommandHelp("create-user"); return Task.FromResult(0); })).Output;
+
+        Assert.Contains("A local administrative command for", output, StringComparison.Ordinal);
+        Assert.Contains("it needs ENCRYPTION_MASTER_KEY and access to CentralDb and the tenant", output, StringComparison.Ordinal);
+        Assert.Contains("Tenant Owners add users on the Web panel's Users page (/settings/users) instead.", output, StringComparison.Ordinal);
+        Assert.Contains("--role is one of: Owner, Manager, Kitchen, Cashier, Viewer (by name).", output, StringComparison.Ordinal);
+        Assert.Contains("--password must have at least 8 characters.", output, StringComparison.Ordinal);
+        Assert.Contains("--password is visible in shell history and in the process list", output, StringComparison.Ordinal);
+        Assert.Contains("-- create-user --tenant-slug demo --email kitchen@example.com --password \"Fake-password-1\" --role Kitchen", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GeneralHelp_ListsCreateUser_UnderAccountCommands()
+    {
+        var lines = (await CaptureAsync(() => { CliHelpPrinter.PrintGeneralHelp(); return Task.FromResult(0); })).Output
+            .Split(Environment.NewLine);
+
+        var account = Array.IndexOf(lines, "Account commands:");
+        var next = Array.FindIndex(lines, account + 1, line => line.EndsWith(" commands:", StringComparison.Ordinal));
+        Assert.True(account >= 0 && next > account);
+        Assert.Contains(
+            "  create-user               Add a user with a role to an existing active tenant.",
+            lines[account..next]);
     }
 
     // --- Parser routing -----------------------------------------------------------------------------
@@ -220,6 +247,46 @@ public sealed class CliCommandInventoryTests
         Assert.Equal(value, parsed is string[] values ? string.Join(",", values) : Convert.ToString(parsed));
     }
 
+    [Fact]
+    public void CreateUser_ParsesEveryOption()
+    {
+        var root = CliCommandTree.Build(EmptyHost());
+
+        var result = root.Parse(["create-user", "--tenant-slug", "demo", "--email", "kitchen@example.com", "--password", "Fake-password-1", "--role", "Kitchen", "--name", "Demo Kitchen"]);
+
+        Assert.Empty(result.Errors);
+        var options = result.CommandResult.Command.Options.ToDictionary(o => Assert.Single(o.Aliases), StringComparer.Ordinal);
+        Assert.Equal("demo", result.GetValueForOption(options["--tenant-slug"]));
+        Assert.Equal("kitchen@example.com", result.GetValueForOption(options["--email"]));
+        Assert.Equal("Fake-password-1", result.GetValueForOption(options["--password"]));
+        Assert.Equal("Kitchen", result.GetValueForOption(options["--role"]));
+        Assert.Equal("Demo Kitchen", result.GetValueForOption(options["--name"]));
+    }
+
+    [Theory]
+    [InlineData("--tenant-slug")]
+    [InlineData("--email")]
+    [InlineData("--password")]
+    [InlineData("--role")]
+    public async Task CreateUser_WithoutARequiredOption_IsRefusedByTheParser_BeforeItsHandler(string missing)
+    {
+        string[] full = ["create-user", "--tenant-slug", "demo", "--email", "kitchen@example.com", "--password", "Fake-password-1", "--role", "Kitchen"];
+        var index = Array.IndexOf(full, missing);
+        var args = full.Where((_, i) => i != index && i != index + 1).ToArray();
+
+        var parsed = CliCommandTree.Build(EmptyHost()).Parse(args);
+        Assert.Contains(parsed.Errors, e => e.Message == $"Option '{missing}' is required.");
+
+        // The handler, had it run, would end with "No user was created." or a validation message and exit code 2.
+        using var host = EmptyHost();
+        var (code, output) = await CaptureAsync(() => CliCommandTree.Build(host).InvokeAsync(args));
+
+        Assert.Equal(1, code);
+        Assert.Contains($"Option '{missing}' is required.", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("No user was created.", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Fake-password-1", output, StringComparison.Ordinal);
+    }
+
     public static TheoryData<string[], int, string> TenantCommandHandlers => new()
     {
         { ["migrate-tenant"], 2, "Specify --slug or --tenant-id." },
@@ -235,6 +302,10 @@ public sealed class CliCommandInventoryTests
         { ["seed-print-job", "--tenant-id", "not-a-guid"], 2, "--tenant-id must be a valid GUID." },
         { ["list-print-jobs"], 2, "Specify --slug or --tenant-id." },
         { ["create-user", "--tenant-slug", "not a slug", "--email", "user@demo.test", "--password", "Fake-password-1", "--role", "Viewer"], 2, "Tenant slug must match" },
+        { ["create-user", "--tenant-slug", "demo", "--email", "not-an-email", "--password", "Fake-password-1", "--role", "Viewer"], 2, "Email must be a valid email address." },
+        { ["create-user", "--tenant-slug", "demo", "--email", "user@demo.test", "--password", "Fake-password-1", "--role", "Owner,Manager"], 2, "Role must be one of: Owner, Manager, Kitchen, Cashier, Viewer." },
+        { ["create-user", "--tenant-slug", "demo", "--email", "user@demo.test", "--password", "Fake-1!", "--role", "Viewer"], 2, "Password must be at least 8 characters." },
+        { ["create-user", "--tenant-slug", "unknown-tenant", "--email", "user@demo.test", "--password", "Fake-password-1", "--role", "Viewer"], 2, "Tenant not found for slug." },
     };
 
     [Theory]

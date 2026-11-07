@@ -45,6 +45,7 @@ internal static class CliHelpPrinter
 
     private static readonly string[] AccountCommands =
     [
+        "create-user",
         "reset-password"
     ];
 
@@ -91,6 +92,7 @@ internal static class CliHelpPrinter
         Console.WriteLine();
 
         Console.WriteLine("Account commands:");
+        Console.WriteLine("  create-user               Add a user with a role to an existing active tenant.");
         Console.WriteLine("  reset-password            Reset an existing central or tenant user password.");
         Console.WriteLine();
 
@@ -303,6 +305,29 @@ internal static class CliHelpPrinter
                 Console.WriteLine();
                 Console.WriteLine("Example:");
                 Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- reset-central-admin-password --email admin@Wasla.com --password \"NewPassword123!\"");
+                return;
+
+            case "create-user":
+                Console.WriteLine("create-user");
+                Console.WriteLine();
+                Console.WriteLine("Adds a user to an existing, active tenant's database. A local administrative command for");
+                Console.WriteLine("server operators: it needs ENCRYPTION_MASTER_KEY and access to CentralDb and the tenant");
+                Console.WriteLine("database. Tenant Owners add users on the Web panel's Users page (/settings/users) instead.");
+                Console.WriteLine();
+                Console.WriteLine("--role is one of: Owner, Manager, Kitchen, Cashier, Viewer (by name).");
+                Console.WriteLine("--email must be a valid email address that no user of this tenant has yet.");
+                Console.WriteLine("--password must have at least 8 characters. Only its BCrypt hash is stored; it is never printed.");
+                Console.WriteLine("Nothing is created when a check fails.");
+                Console.WriteLine();
+                Console.WriteLine("--password is visible in shell history and in the process list while the command runs.");
+                Console.WriteLine("To keep the real password out of both, create the user with a temporary password and set");
+                Console.WriteLine("the real one with reset-password --scope tenant, which prompts for it.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  create-user --tenant-slug <slug> --email <email> --password <password> --role <role> [--name <full name>]");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- create-user --tenant-slug demo --email kitchen@example.com --password \"Fake-password-1\" --role Kitchen --name \"Demo Kitchen\"");
                 return;
 
             case "reset-password":

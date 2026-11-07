@@ -26,10 +26,12 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
     private const int NewColumn = LargeActiveOrderSeed.NewOrders + 1;
     private const int PreparingColumn = LargeActiveOrderSeed.PreparingOrders + 2;
 
-    // Counts and optionally slows down or fails the page's snapshot requests; everything else passes through.
+    // Counts and optionally slows down or fails the page's snapshot requests; everything else passes through. inFlight
+    // ends when a response arrives; the read itself ends once its snapshot is rendered ("wasla:live-rendered").
     private const string SnapshotProbe = """
         (() => {
-          const t = window.__liveData = { requests: 0, inFlight: 0, maxInFlight: 0, delayMs: 0, fail: false };
+          const t = window.__liveData = { requests: 0, inFlight: 0, maxInFlight: 0, delayMs: 0, fail: false, rendered: 0 };
+          document.addEventListener('wasla:live-rendered', () => { t.rendered++; });
           const original = window.fetch;
           window.fetch = function (input) {
             const url = String((input && input.url) || input);
@@ -224,7 +226,23 @@ public sealed class LiveScreenLargeSnapshotBrowserTests : IClassFixture<LiveScre
         await using var browser = await OpenAsync("en-US", 1280, 900, "light", ct);
         var orderId = await browser.EvaluateAsync<string>(
             "document.querySelector('#ordersLiveScreenHost [data-board-column=\"new\"] .wasla-live-screen-card').getAttribute('data-order-id')", ct);
-        await browser.EvaluateAsync<bool>("(() => { window.__liveData.requests = 0; window.__liveData.maxInFlight = 0; window.__liveData.delayMs = 1500; return true; })()", ct);
+        // Count from a page with no read under way. Right after the page became usable the live connection's first read
+        // (WAS-24) is usually still running. A read already under way is not counted, yet the whole burst can fold into
+        // it: on a slow runner it outlasted every round, so only its follow-up was counted (1 read, in CI run
+        // 42359052707). Wait until every started read has been rendered, then reset in the same task, so that no read
+        // can start in between.
+        Assert.True(await browser.EvaluateAsync<bool>("""
+            (async () => {
+              const t = window.__liveData;
+              const deadline = performance.now() + 20000;
+              while (t.inFlight !== 0 || t.rendered < t.requests) {
+                if (performance.now() > deadline) return false;
+                await new Promise(r => setTimeout(r, 25));
+              }
+              t.requests = 0; t.rendered = 0; t.maxInFlight = 0; t.delayMs = 1500;
+              return true;
+            })()
+            """, ct), "a snapshot read was still under way 20 s after the Live Screen became usable");
 
         // Bursts arrive while a slow snapshot is being read; the order changes on the server in the middle of them.
         var burst = browser.EvaluateAsync<bool>("""
