@@ -8,7 +8,7 @@ It does not own payment ([billing.md](billing.md), WAS-149), the real SMS provid
 
 ## Status
 
-Implemented (WAS-192): the draft and its cookie, the section saves, owner phone verification with the fake sender, the address check, the gated submit, the SMS sender modes, migration `AddRegistrationDrafts` and the cleanup service. The form `POST /signup` is gone; the signup page's script uses the API below.
+Implemented (WAS-192): the draft and its cookie, the section saves, owner phone verification with the fake sender, the address check, the gated submit, the SMS sender modes, migration `AddRegistrationDrafts` and the cleanup service. The form `POST /signup` is gone. The signup page's script that uses the API below, and the new resource keys, arrive with WAS-194; on the WAS-192 branch alone the old page's form posts to a `405`, so the two pull requests ship together.
 
 | Layer | Where |
 |-------|-------|
@@ -38,7 +38,8 @@ No `PendingRegistration` exists before the submit. The restaurant contact phone 
 
 ## Draft identity
 
-- Cookie `.Wasla.SignupDraft` (`SignupDraftCookie`): a Data Protection payload (purpose `Wasla.Signup.RegistrationDraft.v1`, time-limited to the draft's expiry) naming one draft id. HttpOnly, `SameSite=Lax`, host-only, path `/signup`, Secure outside Development (as the ownership and auth cookies). It works across instances only when they share the Data Protection key ring.
+- Cookie `__Host-Wasla.SignupDraft` (`SignupDraftCookie`): a Data Protection payload (purpose `Wasla.Signup.RegistrationDraft.v1`, time-limited to the draft's expiry) naming one draft id. HttpOnly, `SameSite=Lax`, Secure, host-only, path `/`. The `__Host-` prefix makes the browser accept it only from this host over HTTPS without a Domain, so a cookie planted from a sibling or parent domain (cookie tossing) cannot stand in for it, and only this name is read. Development over plain HTTP, where a prefixed cookie cannot be set, uses `.Wasla.SignupDraft` (not Secure, path `/`). It works across instances only when they share the Data Protection key ring.
+- Residual risk: whoever holds a browser's draft cookie holds its draft, including a verified phone proof. Editing the owner's email or password keeps the proof (only a number change clears it), as the issue requires; the cookie is HttpOnly and host-only, and the draft's lifetime bounds the exposure.
 - The draft id comes only from this cookie: never from a body, query or route. A tampered, expired or unreadable cookie names no draft.
 - The first successful section save of a browser without a draft cookie creates the draft and issues the cookie. Every successful write issues it again with the extended expiry. A write whose cookie names no live draft gets `409 Signup.Draft.Missing` and the cookie is cleared; the next save starts a new draft. Two first saves sent at the same moment create two drafts, and the later cookie wins; the page should finish its first save before sending another write.
 - A successful submit clears the draft cookie and grants the existing ownership cookie `.Wasla.SignupRegistration` for the new registration.
@@ -79,12 +80,13 @@ Approved values are product decisions; change them only with one. The host refus
 - **Codes.** `RandomNumberGenerator`, 6 digits with leading zeros. Stored only as a Data Protection payload (purpose `Wasla.Signup.PhoneVerificationCode.v1`) that binds the code to its verification row; compared in constant time. Never stored in plaintext, never logged, never returned by an ordinary endpoint.
 - **One verification row per draft and number.** It holds the active code, its expiry, the time of the last send, sends, failed attempts, a lock end and the verification time. Changing to an earlier number of the same draft finds that number's row again, with its failures and lock.
 - **Resend.** Allowed from 60 seconds after the last send. The new code replaces the old one, which no longer verifies. Failures are kept. A send is refused while the number is locked.
-- **Verify.** Each check first reserves one attempt with a conditional increment (`attempts < max`, code active, not expired, not locked) and only then compares. A match consumes the code with an update conditional on the exact stored code (so a resend that replaced it in between wins) and stores the proof on the draft conditional on the draft's current number and on the draft not being submitted, in one transaction. Concurrent checks can therefore never use more than 5 attempts or consume a code twice.
-- **Wrong code.** `Signup.Phone.CodeIncorrect` with `attemptsRemaining`. The 5th wrong code locks the number for the lock duration and clears its code (`Signup.Phone.Locked`). After the lock the next send resets the failures. An expired code is `Signup.Phone.CodeExpired` and not counted; a value that is not 6 digits is `Signup.Phone.CodeFormatInvalid` and not counted.
+- **Verify.** Each check first reserves one attempt with a conditional increment (`attempts < max`, code active, not expired, not locked) and only then compares. The reservation that reaches the limit sets the lock in the same statement, so no stopped request can leave the attempts used up without a lock. A match stores the proof on the draft (conditional on the draft's current number and on the draft not being submitted) and then consumes the code with an update conditional on the exact stored code (so a resend that replaced it in between wins), in one transaction; a right code checked with the last attempt verifies and lifts the lock. Concurrent checks can therefore never use more than 5 attempts or consume a code twice. When the same right code is checked several times at once, a check beyond the fifth finds the attempts used up and answers `Signup.Phone.Locked` until the winning check has finished; the page then reads the status, which says `verified`.
+- **Lock order.** Every write that touches both locks the draft first and then its verification rows (storing a proof, a number change, the submit), so they wait for each other on SQL Server instead of deadlocking.
+- **Wrong code.** `Signup.Phone.CodeIncorrect` with `attemptsRemaining`. The 5th wrong code locks the number for the lock duration and clears its code (`Signup.Phone.Locked`). After the lock the next send resets the failures; a code whose attempts are used up after its lock passed is spent (`Signup.Phone.NoActiveCode`, status `notSent`). A row with every attempt used and no lock, which an earlier build could leave, counts like a passed lock. An expired code is `Signup.Phone.CodeExpired` and not counted; a value that is not 6 digits is `Signup.Phone.CodeFormatInvalid` and not counted.
 - **Number change** (owner save with another number, or `PUT /signup/draft/phone`). The proof is cleared and every outstanding code of the draft is cleared, so a code sent to the previous number is rejected (`Signup.Phone.NoActiveCode`). The same number changes nothing. Restaurant or other owner edits keep the proof.
 - **Replay and foreign codes.** A consumed code is gone (`Signup.Phone.AlreadyVerified` or `NoActiveCode`). A code is only ever compared with the requesting draft's own row for its current number, so another draft's code is simply wrong.
 - **Proof.** `PhoneVerifiedNumber` and `PhoneVerifiedAtUtc` on the draft. It counts while the number equals the owner's current number and for the proof lifetime. The client never states that a number is verified.
-- **Delivery.** A send is reserved in a short transaction (limits counted, code stored) and the SMS is handed to the sender after the commit, outside any transaction. A refused, failed or timed-out delivery clears that code, keeps the send counted and the resend wait, and answers `502 Signup.Phone.DeliveryFailed`. A message that was delivered after a timeout carries an unusable code; the user requests a new one.
+- **Delivery.** A send is reserved in a short transaction (limits counted, code stored) and the SMS is handed to the sender after the commit, outside any transaction. A refused, failed or timed-out delivery clears that code, keeps the send counted and the resend wait, and answers `502 Signup.Phone.DeliveryFailed`. Adapters report timeouts as results; one that throws instead is handled the same way (a cancellation that is not the request's own as a timeout, anything else as unavailable), never with a `500` that leaves a usable code. A message that was delivered after a timeout carries an unusable code; the user requests a new one.
 - **Status state.** `verified` when the proof counts; else `unavailable` when no sender is configured; else `locked` while locked; else `codeSent` while a code is active; else `expired` when the last code expired unused; else `notSent`.
 
 ## Limits
@@ -92,7 +94,7 @@ Approved values are product decisions; change them only with one. The host refus
 | Bound | Default | Scope and store | Over the bound |
 |-------|---------|-----------------|----------------|
 | Draft writes (section saves, number change) | 60 per 10 minutes | Client network, process memory (`AuthenticationRateLimiting:SignupDraftSave`) | `429 Signup.TooManyAttempts` |
-| Draft creation | 20 per hour | Client network, process memory (`SignupDraftCreation`), counted only for a write that creates a draft | `429 Signup.TooManyAttempts` |
+| Draft creation | 20 per hour | Client network, process memory (`SignupDraftCreation`), taken by every draft write without a draft cookie, also one that then fails validation | `429 Signup.TooManyAttempts` |
 | Code sends | 10 per hour | Client network, process memory (`SignupPhoneSend`) | `429 Signup.TooManyAttempts` |
 | Code checks | 30 per 10 minutes | Client network, process memory (`SignupPhoneVerify`) | `429 Signup.TooManyAttempts` |
 | Address checks | 60 per 5 minutes | Client network, process memory (`SignupAddressAvailability`) | `429 Signup.TooManyAttempts` |
@@ -104,8 +106,8 @@ Approved values are product decisions; change them only with one. The host refus
 | Active registrations per owner email | 3 (existing) | CentralDb, at submit | `429 Signup.TooManyAttempts` (same answer as the network limit) |
 
 - The client network is the existing trusted-proxy identity (`ClientNetworkPartition`: IPv4 address or IPv6 /64, a forwarded address only from a trusted proxy). Network limits use the existing limiter and are per process, like the other signup limits ([authentication.md](authentication.md#credential-rate-limiting)).
-- Draft, number and global limits are counted in CentralDb, so they hold across processes and restarts. On SQL Server a send counts and records itself under the session-owned application lock `Wasla.RegistrationPhoneVerification.Send`, held only for that short transaction, so simultaneous sends cannot exceed them. SQLite tests run without the lock.
-- Every value except the approved ones is an operational default to tune. The global volume needs the SMS price and expected signup volume (WAS-193); the per-number values need real delivery data.
+- Draft, number and global limits are counted in CentralDb, so they hold across processes and restarts. On SQL Server a send counts and records itself under the transaction-owned application lock `Wasla.RegistrationPhoneVerification.Send`, released when that short transaction ends, so simultaneous sends cannot exceed them. SQLite tests run without the lock.
+- Every value except the approved ones is an operational default to tune. The global volume needs the SMS price and expected signup volume (WAS-193); the per-number values need real delivery data. The per-network limits on code sends and draft creation count an IPv4 address as one client: many users behind one carrier NAT or office router share them, so they need tuning against real traffic.
 
 ## SMS sender
 
@@ -117,7 +119,7 @@ Approved values are product decisions; change them only with one. The host refus
 
 - The real adapter, its mode value, credentials, sender identity, approved message text and WebOTP format are WAS-193. It implements `ISmsSender` in Infrastructure and keeps vendor types and credentials on its side.
 - The SMS text is a backend template, embedded like the e-mail templates: `src/Wasla.Infrastructure/Sms/Templates/RegistrationPhoneVerification.{tr,en,ar,ru}.txt`, with `{{Code}}` and `{{Minutes}}` and the request's UI culture. A culture without its own template uses Turkish; without the Turkish template the send fails closed with `Signup.Phone.Unavailable` and logs an error. The wording (Wasla identity, the code, its validity, "do not share") is a draft until WAS-193 approves it, and each template says so in a `#` comment line, which is never sent.
-- **Reading the fake code.** In Development with `Fake`, `GET /signup/draft/phone/fake-outbox` returns the messages sent to the current draft's numbers with their codes (404 everywhere else, like the checkout simulator). Tests do not use it: test hosts register the fake sender and its `FakeSmsOutbox` explicitly and read the outbox through DI, also in a Production-environment host. Configuration can never enable the fake outside Development.
+- **Reading the fake code.** In Development with `Fake`, `GET /signup/draft/phone/fake-outbox` returns the messages sent for the browser's own draft, with their codes; each fake message carries its draft as `SmsMessage.Reference`. It answers 404 everywhere else, like the checkout simulator, and while public signup is closed. Web reads it through the Application abstraction `IDevelopmentSmsOutbox`, which only the Development `Fake` mode registers. Tests do not use the endpoint: test hosts register the fake sender and its `FakeSmsOutbox` explicitly and read the outbox through DI, also in a Production-environment host. Configuration can never enable the fake outside Development.
 - Logs name the draft, the operation and the outcome category; never the code, the message text or the full number.
 
 ## HTTP API
@@ -126,7 +128,7 @@ Conventions:
 
 - Base path `/signup` on the marketing host (other hosts redirect there, [tenancy.md](tenancy.md#host-and-path-policy)). JSON with camelCase names; enumerations are strings.
 - Writes validate the antiforgery token from the header `RequestVerificationToken` (the page renders the token; the antiforgery cookie comes with the page). A failed check is `400` without a JSON body.
-- Every route is closed with public signup (`Wasla:TenantOnboarding:PublicSignupEnabled`): `404` without a body.
+- Every route, the Development fake outbox included, is closed with public signup (`Wasla:TenantOnboarding:PublicSignupEnabled`): `404` without a body.
 - Answers are `Cache-Control: no-store`. Request bodies are limited to 16 KB.
 - Errors are `SignupApiError`: `{ code, message, fieldErrors, retryAfterSeconds, phone, missingSections, registrationUrl }`. `code` is a stable SharedResource key and `message` its text in the request culture. `429` and `503` answers carry `Retry-After` when waiting helps.
 
@@ -213,7 +215,7 @@ Error:
 | `PhoneCodeLength` | 6 |
 | `SupportEmail` | `Wasla:Signup:SupportEmail`, default `destek@wasla.tr` |
 
-The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. There is no form `POST /signup` any more (it answers 405 and creates nothing); the page submits only through `POST /signup/draft/submit`.
+The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. There is no form `POST /signup` any more (it answers 405 and creates nothing); the page submits only through `POST /signup/draft/submit`. The page that does so is WAS-194's, shipped together with this change.
 
 ## Submit boundary
 
