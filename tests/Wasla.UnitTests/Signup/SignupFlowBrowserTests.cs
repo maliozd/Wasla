@@ -203,7 +203,17 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     public async Task ChangingTheNumber_SendsANewCode_AndOnlyTheNewNumbersCodeVerifies()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var browser = await BrowserAsync("tr-TR", 1440, 900, mobile: false, ct);
+        // The draft read made after the number change is held back, so it answers after the new code was sent: its older
+        // phone state must not replace the code-sent state.
+        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: """
+            (() => {
+              const original = window.fetch.bind(window);
+              window.fetch = (url, init) => new URL(String(url), location.href).pathname === '/signup/draft' && (!init || !init.method || init.method === 'GET')
+                ? new Promise(resolve => setTimeout(() => resolve(original(url, init)), 1500))
+                : original(url, init);
+            })();
+            """);
+        await using var _ = browser;
         var applicant = Applicant.New();
         await ReachPhoneStepAsync(browser, applicant, ct);
         var oldCode = Outbox.LatestCodeTo(applicant.E164)!;

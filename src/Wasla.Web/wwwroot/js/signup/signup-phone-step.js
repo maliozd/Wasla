@@ -64,6 +64,9 @@
 
         var status = options.status || { state: "notSent" };
         var local = { sending: false, changing: false, codeExpired: false, busy: false };
+        // Counts the phone requests started and answered here, so a draft read that overlapped one of them does not
+        // put back the older phone state it carries.
+        var revision = 0;
         var sentAt = null;
         var resendTimer = null;
         var expiryTimer = null;
@@ -411,10 +414,12 @@
                 return Promise.resolve();
             }
             local.sending = true;
+            revision += 1;
             clearAlert();
             setCodeError("");
             render();
             return api.sendCode().then(function (result) {
+                revision += 1;
                 local.sending = false;
                 if (result.ok) {
                     sentAt = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date());
@@ -444,9 +449,11 @@
                 return Promise.resolve();
             }
             local.busy = true;
+            revision += 1;
             setCodeError("");
             render();
             return api.verifyCode(normalized).then(function (result) {
+                revision += 1;
                 local.busy = false;
                 if (result.ok) {
                     clearAlert();
@@ -487,9 +494,11 @@
                 return Promise.resolve();
             }
             local.busy = true;
+            revision += 1;
             render();
             var number = el.changeInput ? el.changeInput.value : "";
             return api.changePhone(number).then(function (result) {
+                revision += 1;
                 local.busy = false;
                 if (result.ok) {
                     local.changing = false;
@@ -602,6 +611,7 @@
                 render();
             },
             status: function () { return status; },
+            revision: function () { return revision; },
             primaryAction: primaryAction
         };
     }

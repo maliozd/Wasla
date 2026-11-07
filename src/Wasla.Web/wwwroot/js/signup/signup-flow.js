@@ -647,16 +647,23 @@
         });
     }
 
-    function applyDraft(next) {
+    // keepPhone: the phone step's own state is newer than the phone state in this draft read.
+    function applyDraft(next, options) {
         if (!next) {
             return;
+        }
+        var keepPhone = !!phone && !!(options && options.keepPhone);
+        if (keepPhone) {
+            next.phone = phone.status();
         }
         draft = next;
         syncCompletion();
         passwordKeptHint();
         if (phone) {
             phone.setFullNumber(fullOwnerPhone());
-            phone.apply(draft.phone || { state: "notSent" });
+            if (!keepPhone) {
+                phone.apply(draft.phone || { state: "notSent" });
+            }
         }
         if (state.current === "review") {
             fillReview();
@@ -664,10 +671,13 @@
         renderReceipt();
     }
 
+    // A phone request started or answered while this read was out (a new number's code being sent, say) leaves a newer
+    // phone state than the one the read carries, so that state is kept.
     function refreshDraft() {
+        var phoneRevision = phone ? phone.revision() : 0;
         return api.getDraft().then(function (result) {
             if (result.ok) {
-                applyDraft(result.data);
+                applyDraft(result.data, { keepPhone: !!phone && phone.revision() !== phoneRevision });
             }
             return result;
         });
@@ -964,7 +974,13 @@
                     show("owner", { history: "push" });
                     focusElement(showPageAlert(error.message, null));
                 },
-                onNumberChanged: function () {
+                onNumberChanged: function (number) {
+                    // The accepted number is the owner's number from now on; the draft read below confirms it.
+                    if (draft.owner) {
+                        draft.owner.mobilePhone = phoneDigits(number, true);
+                        setValue("signupOwnerPhone", Draft.formatMobile(draft.owner.mobilePhone));
+                        phone.setFullNumber(fullOwnerPhone());
+                    }
                     refreshDraft().then(function () {
                         setValue("signupOwnerPhone", Draft.formatMobile(draft.owner && draft.owner.mobilePhone));
                     });
