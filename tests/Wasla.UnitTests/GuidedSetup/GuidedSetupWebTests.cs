@@ -1241,6 +1241,9 @@ public sealed partial class GuidedSetupWebTests
     {
         public Task<Wasla.Application.Abstractions.Dashboard.DashboardResult> GetTodayAsync(Guid tenantId, CancellationToken ct) =>
             Task.FromResult(new Wasla.Application.Abstractions.Dashboard.DashboardResult());
+
+        public Task<Wasla.Application.Abstractions.Dashboard.DashboardSyncStatistics> GetTodaySyncStatisticsAsync(Guid tenantId, CancellationToken ct) =>
+            Task.FromResult(new Wasla.Application.Abstractions.Dashboard.DashboardSyncStatistics(0, 0));
     }
 
     private sealed class DenyAll : IAuthorizationService

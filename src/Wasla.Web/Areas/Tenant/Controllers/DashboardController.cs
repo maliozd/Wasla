@@ -55,11 +55,11 @@ public sealed class DashboardController : BaseController
         var vm = new DashboardViewModel
         {
             TodayOrderCount = dto.TodayOrderCount,
-            TodayRevenue = dto.TodayRevenue,
+            TodayOrderValue = dto.TodayOrderValue,
             ActiveOrderCount = dto.ActiveOrderCount,
             CancelledOrderCount = dto.CancelledOrderCount,
             PlatformSummary = dto.PlatformSummary
-                .Select(p => new DashboardViewModel.PlatformSummaryRow { Platform = p.Platform, Count = p.Count, Revenue = p.Revenue })
+                .Select(p => new DashboardViewModel.PlatformSummaryRow { Platform = p.Platform, Count = p.Count, OrderValue = p.OrderValue })
                 .ToList(),
             RecentOrders = dto.RecentOrders
                 .Select(o => new DashboardViewModel.RecentOrderRow
