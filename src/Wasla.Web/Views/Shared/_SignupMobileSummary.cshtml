@@ -1,4 +1,4 @@
-@model Wasla.Web.Views.Signup.SignupReceiptView
+@model Wasla.Web.Models.Signup.SignupReceiptView
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @* Below 992 px the receipt becomes a strip fixed to the bottom of the screen (Figma "Mobile action bar", M1–M5):
@@ -6,7 +6,7 @@
    button only presses the open step's own button, so the step keeps one action and one set of rules. *@
 <div class="su-strip" data-su-strip>
     <button type="button" class="su-strip__summary" data-su-sheet-open aria-controls="@(Model.IdPrefix)" aria-haspopup="dialog">
-        <span class="su-strip__label">@L["Signup.Receipt.DueToday"] <i class="bi bi-chevron-up" aria-hidden="true"></i></span>
+        <span class="su-strip__label">@Model.AmountLabel <i class="bi bi-chevron-up" aria-hidden="true"></i></span>
         <span class="su-strip__amount@(Model.AmountSet ? string.Empty : " su-strip__amount--unset")" data-su-amount><bdi data-su-text="amount">@Model.Amount</bdi></span>
         <span class="su-strip__detail" data-su-text="stripDetail">@Model.StripDetail</span>
         <span class="su-visually-hidden">@L["Signup.Strip.OpenSummary"]</span>

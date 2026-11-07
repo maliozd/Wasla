@@ -1,4 +1,4 @@
-@model Wasla.Web.Views.Signup.SignupReceiptView
+@model Wasla.Web.Models.Signup.SignupReceiptView
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @* The registration receipt (kayıt fişi, Figma "02 · Claude — Kayıt ve Ödeme"): the steps with what the visitor chose
@@ -37,7 +37,7 @@
     </ol>
     <div class="su-receipt__cut" aria-hidden="true"></div>
     <div class="su-receipt__total">
-        <span class="su-receipt__total-label">@L["Signup.Receipt.DueToday"]</span>
+        <span class="su-receipt__total-label">@Model.AmountLabel</span>
         <div class="su-receipt__amount-row">
             <span class="su-receipt__amount@(Model.AmountSet ? string.Empty : " su-receipt__amount--unset")" data-su-amount><bdi data-su-text="amount">@Model.Amount</bdi></span>
             <span class="su-receipt__vat" data-su-text="vat">@Model.Vat</span>

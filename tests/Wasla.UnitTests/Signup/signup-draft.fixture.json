@@ -1,0 +1,78 @@
+{
+  "none": {
+    "exists": false,
+    "expiresInSeconds": null,
+    "submitted": false,
+    "registrationUrl": null,
+    "plan": { "complete": false, "planCode": null, "billingPeriod": null },
+    "restaurant": {
+      "complete": false, "businessName": null, "businessTypeCodes": [], "businessPhoneType": null, "businessPhone": null,
+      "businessEmail": null, "slug": null, "country": null, "cityId": null, "districtId": null, "neighborhoodId": null,
+      "streetId": null, "city": null, "district": null, "neighborhood": null, "streetAddress": null, "buildingNumber": null,
+      "floor": null, "doorNumber": null, "addressNote": null, "postalCode": null, "locationUrl": null
+    },
+    "owner": { "complete": false, "fullName": null, "email": null, "mobilePhone": null, "passwordSet": false },
+    "phone": { "state": "notSent", "maskedPhone": null, "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": null, "lockedForSeconds": null, "attemptsRemaining": null },
+    "canReview": false,
+    "price": null
+  },
+  "codeSent": {
+    "exists": true,
+    "expiresInSeconds": 86357,
+    "submitted": false,
+    "registrationUrl": null,
+    "plan": { "complete": true, "planCode": "Pro", "billingPeriod": "Monthly" },
+    "restaurant": {
+      "complete": true, "businessName": "Burger House", "businessTypeCodes": ["burger"], "businessPhoneType": "Landline",
+      "businessPhone": "212 555 12 34", "businessEmail": null, "slug": "burger-house", "country": "Türkiye", "cityId": 34,
+      "districtId": 451, "neighborhoodId": null, "streetId": null, "city": "İstanbul", "district": "Kadıköy",
+      "neighborhood": null, "streetAddress": "Moda Cad.", "buildingNumber": "12", "floor": null, "doorNumber": null,
+      "addressNote": null, "postalCode": null, "locationUrl": null
+    },
+    "owner": { "complete": true, "fullName": "Ayşe Yılmaz", "email": "ayse@example.test", "mobilePhone": "5321234567", "passwordSet": true },
+    "phone": { "state": "codeSent", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": 241, "resendAvailableInSeconds": 0, "lockedForSeconds": null, "attemptsRemaining": 4 },
+    "canReview": false,
+    "price": { "planCode": "Pro", "billingPeriod": "Monthly", "isSet": true, "amount": 600.00, "currency": "TRY", "vatIncluded": true, "priceText": "600 TL / ay", "vatText": "KDV dahil" }
+  },
+  "phoneStatuses": {
+    "notSentNow": { "state": "notSent", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": 0, "lockedForSeconds": null, "attemptsRemaining": null },
+    "codeSentWaiting": { "state": "codeSent", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": 299, "resendAvailableInSeconds": 59, "lockedForSeconds": null, "attemptsRemaining": 5 },
+    "expired": { "state": "expired", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": 0, "lockedForSeconds": null, "attemptsRemaining": null },
+    "locked": { "state": "locked", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": null, "lockedForSeconds": 812, "attemptsRemaining": null },
+    "verified": { "state": "verified", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": null, "lockedForSeconds": null, "attemptsRemaining": null },
+    "unavailable": { "state": "unavailable", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": null, "resendAvailableInSeconds": null, "lockedForSeconds": null, "attemptsRemaining": null }
+  },
+  "errors": {
+    "codeIncorrect": {
+      "code": "Signup.Phone.CodeIncorrect",
+      "message": "Kod hatalı. Lütfen tekrar deneyin.",
+      "fieldErrors": [],
+      "retryAfterSeconds": null,
+      "phone": { "state": "codeSent", "maskedPhone": "+90 5** *** ** 67", "codeLength": 6, "codeExpiresInSeconds": 180, "resendAvailableInSeconds": 0, "lockedForSeconds": null, "attemptsRemaining": 2 },
+      "missingSections": null,
+      "registrationUrl": null
+    },
+    "validation": {
+      "code": "Signup.Draft.ValidationFailed",
+      "message": "Lütfen işaretli alanları düzeltin.",
+      "fieldErrors": [
+        { "section": "owner", "field": "mobilePhone", "code": "Validation.MobilePhoneInvalid", "message": "Geçerli bir Türkiye cep telefonu numarası girin, örneğin 532 123 45 67." },
+        { "section": "restaurant", "field": "slug", "code": "Signup.SlugUnavailable", "message": "Bu alt alan adı zaten kullanılıyor." },
+        { "section": "restaurant", "field": "businessName", "code": "Validation.BusinessNameRequired", "message": "İşletme adı zorunludur." }
+      ],
+      "retryAfterSeconds": null,
+      "phone": null,
+      "missingSections": null,
+      "registrationUrl": null
+    },
+    "tooMany": {
+      "code": "Signup.TooManyAttempts",
+      "message": "Çok fazla deneme.",
+      "fieldErrors": [],
+      "retryAfterSeconds": 120,
+      "phone": null,
+      "missingSections": null,
+      "registrationUrl": null
+    }
+  }
+}

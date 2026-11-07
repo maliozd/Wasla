@@ -1,31 +1,36 @@
-// The signup steps on one page (WAS-194, Figma "02 · Claude — Kayıt ve Ödeme"): Plan, Restaurant, Account owner and
-// Review, each a section of the one signup form. Moving forward checks the open step with the form's own validation
-// (the server's rules, rendered by the tag helpers) and the server checks everything again on submit. Each step has
-// its own history entry, so the browser's Back and Forward move between steps. The receipt (desktop aside, mobile
-// sheet and strip) follows every change. Localized text comes from the page's configuration; nothing here decides
-// prices, availability or verification.
+// The signup flow on one page (WAS-194, Figma "02 · Claude — Kayıt ve Ödeme") over the registration draft API
+// (WAS-192, docs/architecture/signup-registration.md): Plan, Restaurant, Account owner, Phone verification and Review.
+// Each section step saves through its PUT before the next step opens; the page restores itself from the server's draft
+// (embedded on render), so a reload, Back, Forward and Edit keep what the server holds. Forward moves first run the
+// form's own validation as a convenience; the server validates every save and the submit again. Each step has a
+// history entry. The receipt (desktop aside, mobile sheet and strip) follows every change. Localized text comes from
+// the page's configuration or from the server's localized error messages; nothing here decides prices, availability
+// or verification.
 (function () {
     "use strict";
 
     var Steps = window.WaslaSignupSteps;
     var Receipt = window.WaslaSignupReceipt;
     var Review = window.WaslaSignupReview;
+    var Draft = window.WaslaSignupDraft;
+    var Api = window.WaslaSignupApi;
     var shell = document.querySelector("[data-su-root]");
     var form = document.getElementById("signupForm");
-    if (!Steps || !Receipt || !Review || !shell || !form) {
+    if (!Steps || !Receipt || !Review || !Draft || !Api || !shell || !form) {
         return;
     }
 
-    function readConfig() {
-        var element = document.getElementById("signupFormConfig");
+    function readJson(id) {
+        var element = document.getElementById(id);
         try {
-            return element ? JSON.parse(element.textContent || "{}") : {};
+            return element ? JSON.parse(element.textContent || "null") : null;
         } catch (e) {
-            return {};
+            return null;
         }
     }
 
-    var config = readConfig();
+    var config = readJson("signupFormConfig") || {};
+    var draft = readJson("signupDraftState") || { exists: false, phone: { state: "notSent" } };
     var messages = config.messages || {};
     var flow = config.flow || {};
     var panels = {};
@@ -37,12 +42,21 @@
         return;
     }
 
-    var state = Steps.create(order, flow.initial, flow.completed);
+    var SECTIONS = ["plan", "restaurant", "owner"];
+    var state = Steps.create(order, Draft.currentStep(draft), Draft.completedSteps(draft));
     var baseTitle = document.title;
     var strip = shell.querySelector("[data-su-strip]");
     var stripAction = strip ? strip.querySelector("[data-su-strip-action]") : null;
     var submitButton = document.getElementById("signupSubmitButton");
+    var pageAlert = shell.querySelector("[data-su-page-alert]");
+    var busy = false;
     var submitting = false;
+    var phone = null;
+    var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+    var api = Api.create({
+        endpoints: readJson("signupEndpoints") || {},
+        token: function () { return tokenInput ? tokenInput.value : ""; }
+    });
     var sheet = window.WaslaSignupSheet
         ? window.WaslaSignupSheet.init({
             dialog: shell.querySelector(".su-sheet"),
@@ -62,28 +76,181 @@
 
     function valueOf(name) {
         var element = field(name);
-        if (!element) {
-            return "";
-        }
-        if (typeof element.length === "number" && !element.tagName) {
-            // A radio group (RadioNodeList).
-            return element.value || "";
-        }
-        return typeof element.value === "string" ? element.value : "";
+        return element && typeof element.value === "string" ? element.value : "";
     }
 
-    function checkedLabel(name) {
-        var checked = form.querySelector('input[name="' + name + '"]:checked');
-        var label = checked && checked.id ? form.querySelector('label[for="' + checked.id + '"]') : null;
+    function byId(id) {
+        return document.getElementById(id);
+    }
+
+    function setValue(id, value) {
+        var element = byId(id);
+        if (element) {
+            element.value = value == null ? "" : String(value);
+        }
+    }
+
+    function checkRadio(name, value) {
+        Array.prototype.forEach.call(form.querySelectorAll('input[name="' + name + '"]'), function (input) {
+            input.checked = value != null && input.value === value;
+        });
+    }
+
+    function labelFor(input) {
+        var label = input && input.id ? form.querySelector('label[for="' + input.id + '"]') : null;
         return label ? label.textContent.trim() : "";
     }
 
+    function radioLabel(name, value) {
+        return labelFor(form.querySelector('input[name="' + name + '"][value="' + value + '"]'));
+    }
+
     function selectedOptionText(id) {
-        var select = document.getElementById(id);
+        var select = byId(id);
         if (!select || !select.value || select.selectedIndex < 0) {
             return "";
         }
         return select.options[select.selectedIndex].text.trim();
+    }
+
+    function phoneDigits(value, mobile) {
+        var helper = window.WaslaSignupPhone;
+        if (mobile && helper) {
+            return helper.normalizeTurkishLocalDigits(value);
+        }
+        return String(value || "").replace(/\D/g, "").slice(0, 50);
+    }
+
+    // ---------------------------------------------------------------- Draft → form
+
+    function restoreForm(source) {
+        var values = Draft.formValues(source);
+        var plan = Draft.initialPlan(source, config.requestedPlanCode, config.selfServicePlans);
+        if (plan) {
+            checkRadio("PlanCode", plan);
+        }
+        if (values.plan.billingPeriod) {
+            checkRadio("BillingPeriod", values.plan.billingPeriod);
+        }
+
+        if (!source || !source.exists) {
+            return;
+        }
+
+        var restaurant = values.restaurant;
+        setValue("signupBusinessName", restaurant.businessName);
+        var types = byId("signupBusinessTypes");
+        if (types && restaurant.businessTypeCodes.length) {
+            Array.prototype.forEach.call(types.querySelectorAll('input[name="SelectedBusinessTypeCodes"]'), function (input) {
+                input.checked = restaurant.businessTypeCodes.indexOf(input.value) >= 0;
+            });
+            Array.prototype.forEach.call(types.querySelectorAll("[data-category-toggle]"), function (toggle) {
+                var code = toggle.getAttribute("data-category-toggle");
+                toggle.checked = !!types.querySelector('input[data-category="' + code + '"]:checked');
+                toggle.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+        }
+        if (restaurant.businessPhoneType) {
+            checkRadio("BusinessPhoneType", restaurant.businessPhoneType);
+        }
+        setValue("signupBusinessPhone", Draft.formatMobile(restaurant.businessPhone));
+        setValue("signupBusinessEmail", restaurant.businessEmail);
+        if (restaurant.slug) {
+            var slug = byId("signupSlug");
+            slug.value = restaurant.slug;
+            // Marks the address as chosen, so typing the business name no longer rewrites it.
+            slug.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        if (restaurant.country) {
+            setValue("signupCountry", restaurant.country);
+        }
+        setValue("signupPostalCode", restaurant.postalCode);
+        setValue("signupBuildingNumber", restaurant.buildingNumber);
+        setValue("signupFloor", restaurant.floor);
+        setValue("signupDoorNumber", restaurant.doorNumber);
+        setValue("signupAddressNote", restaurant.addressNote);
+        setValue("signupLocationUrl", restaurant.locationUrl);
+        if (restaurant.addressNote || restaurant.locationUrl) {
+            var more = shell.querySelector(".su-disclosure");
+            if (more) {
+                more.open = true;
+            }
+        }
+        if (window.WaslaSignupForm && restaurant.cityId != null) {
+            window.WaslaSignupForm.restoreAddress({
+                cityId: restaurant.cityId,
+                districtId: restaurant.districtId,
+                neighborhoodId: restaurant.neighborhoodId,
+                neighborhood: restaurant.neighborhood,
+                streetId: restaurant.streetId,
+                streetAddress: restaurant.streetAddress
+            }).then(renderReceipt);
+        } else {
+            setValue("signupNeighborhood", restaurant.neighborhood);
+            setValue("signupStreetAddress", restaurant.streetAddress);
+        }
+
+        setValue("signupOwnerFullName", values.owner.fullName);
+        setValue("signupOwnerEmail", values.owner.email);
+        setValue("signupOwnerPhone", values.owner.mobilePhone);
+        if (window.WaslaSignupPhone) {
+            window.WaslaSignupPhone.refreshExistingValues();
+        }
+    }
+
+    function passwordKeptHint() {
+        var hint = shell.querySelector("[data-su-password-kept]");
+        if (hint) {
+            hint.hidden = !(draft.owner && draft.owner.passwordSet);
+        }
+    }
+
+    // ---------------------------------------------------------------- Form → requests
+
+    function restaurantValues() {
+        var mobile = valueOf("BusinessPhoneType") === "Mobile";
+        return {
+            businessName: valueOf("BusinessName"),
+            businessTypeCodes: Array.prototype.map.call(
+                form.querySelectorAll('input[name="SelectedBusinessTypeCodes"]:checked'), function (input) { return input.value; }),
+            businessPhoneType: valueOf("BusinessPhoneType"),
+            businessPhone: phoneDigits(valueOf("BusinessPhone"), mobile),
+            businessEmail: valueOf("BusinessEmail"),
+            slug: valueOf("Slug").trim().toLowerCase(),
+            country: valueOf("Country"),
+            cityId: valueOf("CityId"),
+            districtId: valueOf("DistrictId"),
+            neighborhoodId: valueOf("NeighborhoodId"),
+            streetId: valueOf("StreetId"),
+            neighborhood: valueOf("Neighborhood"),
+            streetAddress: valueOf("StreetAddress"),
+            buildingNumber: valueOf("BuildingNumber"),
+            floor: valueOf("Floor"),
+            doorNumber: valueOf("DoorNumber"),
+            addressNote: valueOf("AddressNote"),
+            postalCode: valueOf("PostalCode"),
+            locationUrl: valueOf("LocationUrl")
+        };
+    }
+
+    function ownerValues() {
+        return {
+            fullName: valueOf("OwnerFullName"),
+            email: valueOf("OwnerEmail"),
+            mobilePhone: phoneDigits(valueOf("OwnerPhone"), true),
+            password: valueOf("Password"),
+            confirmPassword: valueOf("ConfirmPassword")
+        };
+    }
+
+    function saveSection(id) {
+        if (id === "plan") {
+            return api.savePlan(Draft.planRequest({ planCode: valueOf("PlanCode"), billingPeriod: valueOf("BillingPeriod") }));
+        }
+        if (id === "restaurant") {
+            return api.saveRestaurant(Draft.restaurantRequest(restaurantValues()));
+        }
+        return api.saveOwner(Draft.ownerRequest(ownerValues()));
     }
 
     // ---------------------------------------------------------------- Receipt, strip, payment card
@@ -96,12 +263,22 @@
         return Receipt.findPlan(config.plans, valueOf("PlanCode"));
     }
 
+    function phoneVerified() {
+        return !!(draft.phone && draft.phone.state === "verified");
+    }
+
+    function fullOwnerPhone() {
+        var digits = draft.owner && draft.owner.mobilePhone;
+        return digits ? (config.defaultCountryCode || "+90") + " " + Draft.formatMobile(digits) : "";
+    }
+
     function receiptValues() {
         var plan = selectedPlan();
         var yearly = isYearly();
         var view = Receipt.planView(plan, yearly, messages);
         var period = plan ? (yearly ? plan.yearly : plan.monthly) || {} : {};
         var periodWord = yearly ? messages.periodYearly : messages.periodMonthly;
+        var verified = phoneVerified();
 
         return {
             view: view,
@@ -116,6 +293,8 @@
                 domain: Receipt.domainOf(valueOf("Slug"), config.baseDomain),
                 ownerName: valueOf("OwnerFullName").trim(),
                 ownerEmail: valueOf("OwnerEmail").trim(),
+                phoneLine: verified ? fullOwnerPhone() : ((draft.phone && draft.phone.maskedPhone) || ""),
+                phoneState: verified ? messages.phoneVerified : "",
                 payPlanRow: plan ? Receipt.format(messages.payPlanRow, [view.name, periodWord]) : "",
                 payAmount: plan ? view.amount : "",
                 payVat: view.amountSet && typeof period.vatIncluded === "boolean"
@@ -152,7 +331,7 @@
         shell.setAttribute("data-su-period-shown", isYearly() ? "Yearly" : "Monthly");
     }
 
-    // ---------------------------------------------------------------- Review
+    // ---------------------------------------------------------------- Review (from the server's draft)
 
     function setReview(key, text, emptyText) {
         Array.prototype.forEach.call(shell.querySelectorAll('[data-su-review="' + key + '"]'), function (element) {
@@ -166,41 +345,560 @@
         });
     }
 
-    function fillReview() {
-        var receipt = receiptValues();
-        var plan = selectedPlan();
-        var businessTypes = window.WaslaSignupBusinessTypes
-            ? Review.businessTypes(window.WaslaSignupBusinessTypes.selectedLabels(document), messages.reviewBusinessTypeLine)
-            : "";
-        var businessPhone = Review.phone(valueOf("BusinessPhone"), config.defaultCountryCode);
-        var phoneType = checkedLabel("BusinessPhoneType");
+    function businessTypesText(codes) {
+        var root = byId("signupBusinessTypes");
+        if (!root || !codes || !codes.length) {
+            return "";
+        }
+        var categories = [];
+        var byCategory = {};
+        codes.forEach(function (code) {
+            var input = root.querySelector('input[name="SelectedBusinessTypeCodes"][value="' + code + '"]');
+            if (!input) {
+                return;
+            }
+            var category = input.getAttribute("data-category");
+            if (!byCategory[category]) {
+                byCategory[category] = { label: labelFor(root.querySelector('[data-category-toggle="' + category + '"]')), subtypes: [] };
+                categories.push(byCategory[category]);
+            }
+            byCategory[category].subtypes.push(labelFor(input));
+        });
+        return Review.businessTypes(categories, messages.reviewBusinessTypeLine);
+    }
 
-        setReview("plan", plan ? plan.name : "");
-        setReview("period", checkedLabel("BillingPeriod"));
-        setReview("price", receipt.values.priceLine);
-        setReview("businessName", valueOf("BusinessName"));
-        setReview("businessTypes", businessTypes);
-        setReview("domain", receipt.values.domain);
+    function fillReview() {
+        var plan = draft.plan || {};
+        var restaurant = draft.restaurant || {};
+        var owner = draft.owner || {};
+        var price = draft.price;
+        var planDef = Receipt.findPlan(config.plans, plan.planCode);
+        // The number in groups ("216 330 45 67"), isolated left to right so the "+90" stays in front in Arabic.
+        var businessPhone = Review.phone(Draft.formatMobile(restaurant.businessPhone), config.defaultCountryCode);
+        var phoneType = restaurant.businessPhoneType ? radioLabel("BusinessPhoneType", restaurant.businessPhoneType) : "";
+        if (businessPhone) {
+            businessPhone = "\u2066" + businessPhone + "\u2069";
+        }
+
+        setReview("plan", planDef ? planDef.name : (plan.planCode || ""));
+        setReview("period", plan.billingPeriod ? radioLabel("BillingPeriod", plan.billingPeriod) : "");
+        setReview("price", price ? (price.vatText ? Receipt.format(messages.priceLine, [price.priceText, price.vatText]) : price.priceText) : "");
+        setReview("businessName", restaurant.businessName || "");
+        setReview("businessTypes", businessTypesText(restaurant.businessTypeCodes));
+        setReview("domain", Receipt.domainOf(restaurant.slug, config.baseDomain));
         setReview("businessPhone", businessPhone && phoneType ? businessPhone + " · " + phoneType : businessPhone);
-        setReview("businessEmail", valueOf("BusinessEmail"), messages.reviewNotProvided);
+        setReview("businessEmail", restaurant.businessEmail || "", messages.reviewNotProvided);
         setReview("address", Review.composeAddress({
-            street: valueOf("StreetAddress"),
-            building: valueOf("BuildingNumber"),
-            floor: valueOf("Floor"),
-            door: valueOf("DoorNumber"),
-            neighborhood: valueOf("Neighborhood"),
-            postalCode: valueOf("PostalCode"),
-            district: selectedOptionText("signupDistrictId"),
-            city: selectedOptionText("signupCityId")
+            street: restaurant.streetAddress,
+            building: restaurant.buildingNumber,
+            floor: restaurant.floor,
+            door: restaurant.doorNumber,
+            neighborhood: restaurant.neighborhood,
+            postalCode: restaurant.postalCode,
+            district: restaurant.district || selectedOptionText("signupDistrictId"),
+            city: restaurant.city || selectedOptionText("signupCityId")
         }, {
             building: messages.reviewBuilding,
             floor: messages.reviewFloor,
             door: messages.reviewDoor
         }));
-        setReview("ownerName", valueOf("OwnerFullName"));
-        setReview("ownerEmail", valueOf("OwnerEmail"));
-        setReview("ownerPhone", Review.phone(valueOf("OwnerPhone"), config.defaultCountryCode), messages.reviewNotProvided);
-        setReview("password", valueOf("Password") ? messages.reviewPasswordSet : "");
+        setReview("ownerName", owner.fullName || "");
+        setReview("ownerEmail", owner.email || "");
+        setReview("ownerPhone", fullOwnerPhone());
+        setReview("password", owner.passwordSet ? messages.reviewPasswordSet : "");
+        Array.prototype.forEach.call(shell.querySelectorAll("[data-su-review-verified]"), function (badge) {
+            badge.hidden = !phoneVerified();
+        });
+    }
+
+    // ---------------------------------------------------------------- Messages
+
+    function showPageAlert(text, action) {
+        if (!pageAlert) {
+            return null;
+        }
+        pageAlert.querySelector("[data-su-page-alert-text]").textContent = text || "";
+        var link = pageAlert.querySelector("[data-su-page-alert-link]");
+        if (link) {
+            link.hidden = !action;
+            if (action) {
+                link.textContent = action.text;
+                link.href = action.href;
+            }
+        }
+        pageAlert.hidden = false;
+        return pageAlert;
+    }
+
+    function hidePageAlert() {
+        if (pageAlert) {
+            pageAlert.hidden = true;
+        }
+    }
+
+    function reloadAction() {
+        return { text: messages.reload, href: window.location.pathname + window.location.search };
+    }
+
+    // An answer that is not about a field: the request could not be checked or the draft is gone. Returns the
+    // element to focus.
+    function presentFailure(result) {
+        if (!result || result.ok) {
+            return null;
+        }
+        if (result.kind === "antiforgery" || result.kind === "closed") {
+            return showPageAlert(messages.invalidRequest, reloadAction());
+        }
+        if (result.kind === "network") {
+            return showPageAlert(messages.networkError, null);
+        }
+        if (result.kind !== "api") {
+            return showPageAlert(messages.serverError, null);
+        }
+
+        var error = result.error || {};
+        if (error.code === "Signup.Draft.Missing") {
+            return showPageAlert(error.message, { text: messages.startAgain, href: window.location.pathname });
+        }
+        if (error.code === "Signup.Draft.Submitted") {
+            if (error.registrationUrl) {
+                window.location.assign(error.registrationUrl);
+                return null;
+            }
+            return showPageAlert(error.message, null);
+        }
+        return showPageAlert(error.message || messages.serverError, null);
+    }
+
+    // ---------------------------------------------------------------- Field errors
+
+    function validator() {
+        var $ = window.jQuery;
+        if (!$ || !$.fn || typeof $.fn.validate !== "function") {
+            return null;
+        }
+        return $(form).data("validator") || $(form).validate();
+    }
+
+    function messageFor(element) {
+        var span = element.name ? form.querySelector('[data-valmsg-for="' + element.name + '"]') : null;
+        var text = span ? span.textContent.trim() : "";
+        return text || element.validationMessage || "";
+    }
+
+    function validatableFields(panel) {
+        var seen = {};
+        return Array.prototype.filter.call(panel.querySelectorAll("input, select, textarea"), function (element) {
+            var type = (element.getAttribute("type") || "").toLowerCase();
+            if (!element.name || element.disabled || type === "hidden" || type === "button" || type === "submit"
+                || element.name === "SelectedBusinessTypeCodes" || element.closest("[data-su-skip-validation]")) {
+                return false;
+            }
+            if (type === "radio") {
+                if (seen[element.name]) {
+                    return false;
+                }
+                seen[element.name] = true;
+            }
+            return true;
+        });
+    }
+
+    function sortByPage(errors) {
+        return errors.sort(function (a, b) {
+            return a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+        });
+    }
+
+    function setFieldError(key, message) {
+        var span = form.querySelector('[data-su-error-for="' + key + '"]');
+        var input = form.querySelector('[data-su-field="' + key + '"]');
+        if (span) {
+            span.textContent = message || "";
+            span.className = message ? "field-validation-error" : "field-validation-valid";
+            if (message) {
+                span.setAttribute("data-su-server-error", "");
+            } else {
+                span.removeAttribute("data-su-server-error");
+            }
+        }
+        if (input) {
+            if (message) {
+                input.setAttribute("aria-invalid", "true");
+            } else {
+                input.removeAttribute("aria-invalid");
+            }
+        }
+        return input;
+    }
+
+    function clearServerErrors(panel) {
+        if (!panel) {
+            return;
+        }
+        Array.prototype.forEach.call(panel.querySelectorAll("[data-su-server-error]"), function (span) {
+            setFieldError(span.getAttribute("data-su-error-for"), "");
+        });
+    }
+
+    // The page's own checks of a step (the model's validation attributes): a convenience before the save.
+    function validateStep(id) {
+        var panel = panels[id];
+        var errors = [];
+        if (!panel || SECTIONS.indexOf(id) < 0) {
+            return errors;
+        }
+
+        var instance = validator();
+        var keepPassword = id === "owner" && Draft.passwordOptional(draft, valueOf("Password"), valueOf("ConfirmPassword"));
+        validatableFields(panel).forEach(function (element) {
+            if (keepPassword && (element.name === "Password" || element.name === "ConfirmPassword")) {
+                return;
+            }
+            var valid = instance ? instance.element(element) !== false : element.checkValidity();
+            if (!valid) {
+                errors.push({ element: element, message: messageFor(element) });
+            }
+        });
+
+        if (id === "plan" && !valueOf("PlanCode")) {
+            var firstPlan = setFieldError("plan.planCode", messages.planRequired);
+            if (firstPlan) {
+                errors.unshift({ element: firstPlan, message: messages.planRequired || "" });
+            }
+        }
+
+        if (id === "restaurant" && window.WaslaSignupBusinessTypes) {
+            var types = window.WaslaSignupBusinessTypes.check(document);
+            if (!types.ok && types.focusTarget) {
+                errors.push({ element: types.focusTarget, message: types.message });
+            }
+        }
+
+        return sortByPage(errors);
+    }
+
+    // The server's field errors of one step, shown at their fields. Returns them as { element, message }.
+    function showFieldErrors(step, fieldErrors) {
+        var panel = panels[step];
+        clearServerErrors(panel);
+        var heading = panel ? panel.querySelector(".su-title") : null;
+        return sortByPage((fieldErrors || []).map(function (error) {
+            var input = setFieldError(error.section + "." + error.field, error.message);
+            return { element: input || heading, message: error.message };
+        }).filter(function (error) { return !!error.element; }));
+    }
+
+    function scrollIntoView(element, block) {
+        if (element && typeof element.scrollIntoView === "function") {
+            element.scrollIntoView({ block: block || "center", inline: "nearest" });
+        }
+    }
+
+    // One error: focus its field (its message is in its description). Several: a summary of links, focused.
+    function presentErrors(id, errors) {
+        var panel = panels[id];
+        var summary = panel ? panel.querySelector("[data-su-error-summary]") : null;
+        if (!summary || errors.length < 2) {
+            if (summary) {
+                summary.hidden = true;
+            }
+            return errors.length ? errors[0].element : null;
+        }
+
+        var list = summary.querySelector("ul");
+        list.textContent = "";
+        errors.forEach(function (error) {
+            var item = document.createElement("li");
+            var link = document.createElement("a");
+            link.href = "#" + error.element.id;
+            link.textContent = error.message || labelFor(error.element) || error.element.name;
+            link.setAttribute("data-su-error-link", error.element.id);
+            item.appendChild(link);
+            list.appendChild(item);
+        });
+        summary.hidden = false;
+        return summary;
+    }
+
+    function hideErrorSummary(id) {
+        var summary = panels[id] ? panels[id].querySelector("[data-su-error-summary]") : null;
+        if (summary) {
+            summary.hidden = true;
+        }
+    }
+
+    function focusElement(element) {
+        if (!element) {
+            return;
+        }
+        scrollIntoView(element, element.matches("[data-su-error-summary], .su-title, [data-su-page-alert], .su-notice") ? "start" : "center");
+        element.focus({ preventScroll: true });
+    }
+
+    // ---------------------------------------------------------------- Draft state
+
+    function syncCompletion() {
+        var done = Draft.completedSteps(draft);
+        order.forEach(function (id) {
+            if (id !== "review") {
+                state = Steps.setComplete(state, id, done.indexOf(id) >= 0);
+            }
+        });
+    }
+
+    function applyDraft(next) {
+        if (!next) {
+            return;
+        }
+        draft = next;
+        syncCompletion();
+        passwordKeptHint();
+        if (phone) {
+            phone.setFullNumber(fullOwnerPhone());
+            phone.apply(draft.phone || { state: "notSent" });
+        }
+        if (state.current === "review") {
+            fillReview();
+        }
+        renderReceipt();
+    }
+
+    function refreshDraft() {
+        return api.getDraft().then(function (result) {
+            if (result.ok) {
+                applyDraft(result.data);
+            }
+            return result;
+        });
+    }
+
+    // ---------------------------------------------------------------- Showing a step
+
+    function stepUrl(id) {
+        return Steps.urlForStep(window.location.href, id);
+    }
+
+    function show(id, options) {
+        options = options || {};
+        var previous = state.current;
+        state = Steps.goTo(state, id);
+        var current = state.current;
+
+        order.forEach(function (stepId) {
+            panels[stepId].hidden = stepId !== current;
+        });
+        shell.setAttribute("data-su-current", current);
+
+        var panel = panels[current];
+        if (stripAction) {
+            var carries = panel.hasAttribute("data-su-strip-carries");
+            stripAction.hidden = !carries;
+            stripAction.textContent = carries ? (panel.getAttribute("data-su-strip-label") || "") : "";
+        }
+
+        var heading = panel.querySelector(".su-title");
+        if (heading) {
+            document.title = heading.textContent.trim() + " - " + baseTitle;
+        }
+
+        if (previous === "phone" && current !== "phone" && phone) {
+            phone.leave();
+        }
+        if (current === "review") {
+            fillReview();
+        }
+        renderReceipt();
+
+        if (options.history === "push") {
+            window.history.pushState({ suStep: current }, "", stepUrl(current));
+        } else if (options.history === "replace") {
+            window.history.replaceState({ suStep: current }, "", stepUrl(current));
+        } else if (options.history === "mark") {
+            window.history.replaceState({ suStep: current }, "");
+        }
+
+        return heading;
+    }
+
+    function setBusy(on) {
+        busy = on;
+        var panel = panels[state.current];
+        var buttons = [stripAction].concat(panel ? Array.prototype.slice.call(panel.querySelectorAll("[data-su-next]")) : []);
+        buttons.forEach(function (button) {
+            if (!button) {
+                return;
+            }
+            if (on) {
+                button.setAttribute("aria-busy", "true");
+            } else {
+                button.removeAttribute("aria-busy");
+            }
+        });
+    }
+
+    // What happens on arriving at a step; resolves to an element to focus instead of the heading, if any.
+    function enterStep(id, options) {
+        if (id === "phone" && phone) {
+            return phone.enter({ autoSend: !!(options && options.autoSend) }).then(function () {
+                return phone.focusTarget();
+            });
+        }
+        return Promise.resolve(null);
+    }
+
+    // Moves to a step. A forward move from a section first checks it on the page, then saves it; the server's answer
+    // decides what is complete. Resolves to the element that should get focus.
+    function navigate(target, options) {
+        options = options || {};
+        if (!target || !panels[target]) {
+            return Promise.resolve(null);
+        }
+
+        var from = state.current;
+        var forward = order.indexOf(target) > order.indexOf(from);
+        if (!forward || SECTIONS.indexOf(from) < 0) {
+            if (target === state.current) {
+                return Promise.resolve(panels[target].querySelector(".su-title"));
+            }
+            var heading = show(target, { history: "push" });
+            return enterStep(state.current, options).then(function (focus) { return focus || heading; });
+        }
+
+        var errors = validateStep(from);
+        if (errors.length) {
+            return Promise.resolve(presentErrors(from, errors));
+        }
+
+        setBusy(true);
+        return saveSection(from).then(function (result) {
+            setBusy(false);
+            if (result.ok) {
+                hidePageAlert();
+                hideErrorSummary(from);
+                clearServerErrors(panels[from]);
+                if (from === "owner") {
+                    setValue("signupPassword", "");
+                    setValue("signupConfirmPassword", "");
+                    updatePasswordRules();
+                }
+                applyDraft(result.data);
+                var opened = show(target, { history: "push" });
+                return enterStep(state.current, options).then(function (focus) { return focus || opened; });
+            }
+
+            if (result.kind === "api" && result.error && result.error.fieldErrors && result.error.fieldErrors.length) {
+                var groups = Draft.groupFieldErrors(result.error.fieldErrors);
+                var step = Draft.firstStepOf(Object.keys(groups)) || from;
+                if (step !== state.current) {
+                    show(step, { history: "push" });
+                }
+                return presentErrors(step, showFieldErrors(step, groups[step]));
+            }
+            return presentFailure(result);
+        });
+    }
+
+    function navigateAndFocus(target, options) {
+        if (busy) {
+            return;
+        }
+        var fromSheet = options && options.fromSheet;
+        navigate(target, options).then(function (focusTarget) {
+            if (fromSheet && sheet && sheet.isOpen && sheet.isOpen()) {
+                sheet.close(focusTarget || undefined);
+                if (focusTarget) {
+                    scrollIntoView(focusTarget, "start");
+                }
+                return;
+            }
+            focusElement(focusTarget);
+        });
+    }
+
+    // ---------------------------------------------------------------- Submit
+
+    function setSubmitBusy(on) {
+        [submitButton, stripAction].forEach(function (button) {
+            if (!button) {
+                return;
+            }
+            if (on) {
+                button.setAttribute("aria-busy", "true");
+            } else {
+                button.removeAttribute("aria-busy");
+            }
+        });
+    }
+
+    function submitDraft() {
+        if (submitting || busy) {
+            return;
+        }
+        submitting = true;
+        setSubmitBusy(true);
+
+        api.submit().then(function (result) {
+            if (result.ok && result.data && result.data.redirectUrl) {
+                window.location.assign(result.data.redirectUrl);
+                return;
+            }
+
+            submitting = false;
+            setSubmitBusy(false);
+
+            var error = result.kind === "api" ? (result.error || {}) : null;
+            if (!error) {
+                focusElement(presentFailure(result));
+                return;
+            }
+
+            if (error.code === "Signup.SlugUnavailable") {
+                // Figma S10: the address was taken meanwhile. Back to the restaurant step; everything else is kept.
+                state = Steps.setComplete(state, "restaurant", false);
+                show("restaurant", { history: "push" });
+                var notice = panels.restaurant.querySelector("[data-su-address-taken]");
+                if (notice) {
+                    notice.querySelector("[data-su-address-taken-text]").textContent =
+                        Receipt.format(messages.addressTakenBody, [Receipt.domainOf(valueOf("Slug"), config.baseDomain)]);
+                    notice.hidden = false;
+                }
+                var slugErrors = showFieldErrors("restaurant", (error.fieldErrors || []).length
+                    ? error.fieldErrors
+                    : [{ section: "restaurant", field: "slug", code: error.code, message: error.message }]);
+                focusElement(slugErrors.length ? slugErrors[0].element : byId("signupSlug"));
+                return;
+            }
+
+            if (error.code === "Signup.Draft.Incomplete" || error.code === "Signup.Draft.ValidationFailed") {
+                var groups = Draft.groupFieldErrors(error.fieldErrors);
+                var step = Draft.firstStepOf(Object.keys(groups)) || Draft.firstStepOf(error.missingSections);
+                if (step) {
+                    (error.missingSections || []).forEach(function (section) {
+                        state = Steps.setComplete(state, section, false);
+                    });
+                    if (groups[step]) {
+                        state = Steps.setComplete(state, step, false);
+                    }
+                    show(step, { history: "push" });
+                    var shown = groups[step] ? showFieldErrors(step, groups[step]) : [];
+                    showPageAlert(error.message, null);
+                    focusElement(shown.length ? presentErrors(step, shown) : pageAlert);
+                    return;
+                }
+            }
+
+            if (error.code === "Signup.Phone.NotVerified") {
+                state = Steps.setComplete(state, "phone", false);
+                show("phone", { history: "push" });
+                showPageAlert(error.message, null);
+                refreshDraft();
+                focusElement(pageAlert);
+                return;
+            }
+
+            focusElement(presentFailure(result));
+        });
     }
 
     // ---------------------------------------------------------------- Password rules (the model's own rules, shown live)
@@ -239,214 +937,116 @@
         });
     }
 
-    // ---------------------------------------------------------------- Validation of one step
+    // ---------------------------------------------------------------- Phone step
 
-    function validator() {
-        var $ = window.jQuery;
-        if (!$ || !$.fn || typeof $.fn.validate !== "function") {
-            return null;
-        }
-        return $(form).data("validator") || $(form).validate();
-    }
-
-    function messageFor(element) {
-        var span = element.name ? form.querySelector('[data-valmsg-for="' + element.name + '"]') : null;
-        var text = span ? span.textContent.trim() : "";
-        return text || element.validationMessage || "";
-    }
-
-    function validatableFields(panel) {
-        var seen = {};
-        return Array.prototype.filter.call(panel.querySelectorAll("input, select, textarea"), function (element) {
-            var type = (element.getAttribute("type") || "").toLowerCase();
-            if (!element.name || element.disabled || type === "hidden" || type === "button" || type === "submit"
-                || element.name === "SelectedBusinessTypeCodes") {
-                return false;
-            }
-            if (type === "radio") {
-                if (seen[element.name]) {
-                    return false;
+    phone = window.WaslaSignupPhoneStep && panels.phone
+        ? window.WaslaSignupPhoneStep.init({
+            root: panels.phone,
+            api: api,
+            messages: config.phoneMessages || {},
+            codeLength: config.codeLength || 6,
+            status: draft.phone || { state: "notSent" },
+            fullNumber: fullOwnerPhone(),
+            currentNumber: function () { return valueOf("OwnerPhone"); },
+            hooks: {
+                onStatus: function (status) {
+                    draft.phone = status;
+                    var verified = !!status && status.state === "verified";
+                    state = Steps.setComplete(state, "phone", verified && !!(draft.owner && draft.owner.complete));
+                    renderReceipt();
+                },
+                onVerified: function () {
+                    hidePageAlert();
+                    navigateAndFocus("review");
+                },
+                onOwnerIncomplete: function (error) {
+                    state = Steps.setComplete(state, "owner", false);
+                    show("owner", { history: "push" });
+                    focusElement(showPageAlert(error.message, null));
+                },
+                onNumberChanged: function () {
+                    refreshDraft().then(function () {
+                        setValue("signupOwnerPhone", Draft.formatMobile(draft.owner && draft.owner.mobilePhone));
+                    });
+                },
+                onRequestFailed: function (result) {
+                    focusElement(presentFailure(result));
                 }
-                seen[element.name] = true;
             }
-            return true;
-        });
-    }
+        })
+        : null;
 
-    // The invalid fields of a step, in page order: { element, message }.
-    function validateStep(id) {
-        var panel = panels[id];
-        var errors = [];
-        if (!panel) {
-            return errors;
-        }
+    // ---------------------------------------------------------------- Panel address check (advisory)
 
-        var instance = validator();
-        validatableFields(panel).forEach(function (element) {
-            var valid = instance ? instance.element(element) !== false : element.checkValidity();
-            if (!valid) {
-                errors.push({ element: element, message: messageFor(element) });
-            }
-        });
+    var slugInput = byId("signupSlug");
+    var slugStatus = byId("signupSlugStatus");
 
-        if (id === "plan" && !valueOf("PlanCode")) {
-            var firstPlan = form.querySelector('input[name="PlanCode"]');
-            var planError = document.getElementById("signupPlanCode-error");
-            if (planError) {
-                planError.textContent = messages.planRequired || "";
-                planError.className = "field-validation-error";
-            }
-            if (firstPlan) {
-                errors.unshift({ element: firstPlan, message: messages.planRequired || "" });
-            }
-        } else if (id === "plan") {
-            var clearPlanError = document.getElementById("signupPlanCode-error");
-            if (clearPlanError && clearPlanError.textContent === messages.planRequired) {
-                clearPlanError.textContent = "";
-                clearPlanError.className = "field-validation-valid";
-            }
-        }
-
-        if (id === "restaurant" && window.WaslaSignupBusinessTypes) {
-            var types = window.WaslaSignupBusinessTypes.check(document);
-            if (!types.ok && types.focusTarget) {
-                errors.push({ element: types.focusTarget, message: types.message });
-            }
-        }
-
-        errors.sort(function (a, b) {
-            return a.element.compareDocumentPosition(b.element) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
-        });
-        return errors;
-    }
-
-    function scrollIntoView(element, block) {
-        if (element && typeof element.scrollIntoView === "function") {
-            element.scrollIntoView({ block: block || "center", inline: "nearest" });
-        }
-    }
-
-    // One error: focus its field (its message is in its description). Several: a summary of links, focused.
-    // Returns the element to focus.
-    function presentErrors(id, errors) {
-        var panel = panels[id];
-        var summary = panel ? panel.querySelector("[data-su-error-summary]") : null;
-        if (!summary || errors.length < 2) {
-            if (summary) {
-                summary.hidden = true;
-            }
-            return errors.length ? errors[0].element : null;
-        }
-
-        var list = summary.querySelector("ul");
-        list.textContent = "";
-        errors.forEach(function (error) {
-            var item = document.createElement("li");
-            var link = document.createElement("a");
-            link.href = "#" + error.element.id;
-            link.textContent = error.message || (error.element.labels && error.element.labels[0] ? error.element.labels[0].textContent.trim() : error.element.name);
-            link.setAttribute("data-su-error-link", error.element.id);
-            item.appendChild(link);
-            list.appendChild(item);
-        });
-        summary.hidden = false;
-        return summary;
-    }
-
-    function hideErrorSummary(id) {
-        var summary = panels[id] ? panels[id].querySelector("[data-su-error-summary]") : null;
-        if (summary) {
-            summary.hidden = true;
-        }
-    }
-
-    function focusElement(element) {
-        if (!element) {
+    function renderSlugStatus(result) {
+        if (!slugStatus) {
             return;
         }
-        scrollIntoView(element, element.matches("[data-su-error-summary], .su-title") ? "start" : "center");
-        element.focus({ preventScroll: true });
+        var message = slugStatus.querySelector("[data-su-slug-message]");
+        var preview = slugStatus.querySelector("[data-su-slug-preview]");
+        var text = "";
+        var stateName = result.state;
+        if (stateName === "checking") {
+            text = messages.slugChecking;
+        } else if (stateName === "available") {
+            text = Receipt.format(messages.slugAvailable, [Receipt.domainOf(result.slug, config.baseDomain)]);
+        } else if (stateName === "taken") {
+            text = messages.slugTaken;
+        } else if (stateName === "invalid") {
+            text = messages.slugInvalid;
+        } else if (stateName === "error") {
+            text = messages.slugCheckFailed;
+        } else {
+            stateName = "preview";
+        }
+        slugStatus.setAttribute("data-state", stateName);
+        if (message) {
+            message.textContent = text;
+            message.hidden = stateName === "preview";
+        }
+        if (preview) {
+            preview.hidden = stateName !== "preview";
+        }
     }
 
-    // ---------------------------------------------------------------- Showing a step
+    var addressCheck = window.WaslaSignupAddressCheck && slugInput
+        ? window.WaslaSignupAddressCheck.create({
+            check: function (slug, signal) {
+                return api.checkAddress(slug, signal).then(function (result) {
+                    if (result.kind === "aborted") {
+                        throw new Error("aborted");
+                    }
+                    if (!result.ok || !result.data) {
+                        return { state: "error" };
+                    }
+                    // An answer for another spelling than the one in the field is not shown.
+                    if (result.data.slug !== slug) {
+                        return { state: "idle" };
+                    }
+                    return { state: result.data.status };
+                });
+            },
+            onState: renderSlugStatus
+        })
+        : null;
 
-    function stepUrl(id) {
-        return Steps.urlForStep(window.location.href, id);
-    }
-
-    function show(id, options) {
-        options = options || {};
-        state = Steps.goTo(state, id);
-        var current = state.current;
-
-        order.forEach(function (stepId) {
-            panels[stepId].hidden = stepId !== current;
+    if (addressCheck) {
+        slugInput.addEventListener("input", function () {
+            addressCheck.input(slugInput.value.trim().toLowerCase());
         });
-        shell.setAttribute("data-su-current", current);
-
-        var panel = panels[current];
-        if (stripAction) {
-            var carries = panel.hasAttribute("data-su-strip-carries");
-            stripAction.hidden = !carries;
-            stripAction.textContent = carries ? (panel.getAttribute("data-su-strip-label") || "") : "";
+        slugInput.addEventListener("blur", function () {
+            addressCheck.flush();
+        });
+        var businessName = byId("signupBusinessName");
+        if (businessName) {
+            // The address follows the business name until the visitor edits it (signup-form.js); check what it shows.
+            businessName.addEventListener("input", function () {
+                addressCheck.input(slugInput.value.trim().toLowerCase());
+            });
         }
-
-        var heading = panel.querySelector(".su-title");
-        if (heading) {
-            document.title = heading.textContent.trim() + " - " + baseTitle;
-        }
-
-        if (current === "review") {
-            fillReview();
-        }
-        renderReceipt();
-
-        if (options.history === "push") {
-            window.history.pushState({ suStep: current }, "", stepUrl(current));
-        } else if (options.history === "replace") {
-            window.history.replaceState({ suStep: current }, "", stepUrl(current));
-        } else if (options.history === "mark") {
-            // The landing entry keeps its address; it only learns which step it shows, for Back.
-            window.history.replaceState({ suStep: current }, "");
-        }
-
-        return heading;
-    }
-
-    // Moves to a step; forward moves check the open step first. Returns the element that should get focus.
-    function navigate(target) {
-        if (!target || !panels[target]) {
-            return null;
-        }
-
-        var from = state.current;
-        if (order.indexOf(target) > order.indexOf(from)) {
-            var errors = validateStep(from);
-            if (errors.length) {
-                state = Steps.setComplete(state, from, false);
-                renderReceipt();
-                return presentErrors(from, errors);
-            }
-            state = Steps.setComplete(state, from, true);
-            hideErrorSummary(from);
-        }
-
-        if (target === state.current) {
-            return panels[target].querySelector(".su-title");
-        }
-        return show(target, { history: "push" });
-    }
-
-    function navigateAndFocus(target, fromSheet) {
-        var focusTarget = navigate(target);
-        if (fromSheet && sheet && sheet.isOpen && sheet.isOpen()) {
-            sheet.close(focusTarget || undefined);
-            if (focusTarget) {
-                scrollIntoView(focusTarget, "start");
-            }
-            return;
-        }
-        focusElement(focusTarget);
     }
 
     // ---------------------------------------------------------------- Events
@@ -460,44 +1060,60 @@
         var errorLink = target.closest("[data-su-error-link]");
         if (errorLink) {
             event.preventDefault();
-            focusElement(document.getElementById(errorLink.getAttribute("data-su-error-link")));
+            focusElement(byId(errorLink.getAttribute("data-su-error-link")));
             return;
         }
 
-        if (target.closest("[data-su-next]")) {
+        var next = target.closest("[data-su-next]");
+        if (next) {
             event.preventDefault();
-            navigateAndFocus(Steps.next(state), false);
+            navigateAndFocus(Steps.next(state), { autoSend: next.hasAttribute("data-su-autosend") });
+            return;
+        }
+
+        // The form's only submit button, so Enter in a field "clicks" it (implicit submission): on the review step it
+        // sends the registration, on any other step it continues that step.
+        if (target.closest("[data-su-submit]")) {
+            event.preventDefault();
+            continueOpenStep();
             return;
         }
 
         var go = target.closest("[data-su-go]");
         if (go) {
             event.preventDefault();
-            navigateAndFocus(go.getAttribute("data-su-go"), !!go.closest(".su-sheet"));
+            navigateAndFocus(go.getAttribute("data-su-go"), { fromSheet: !!go.closest(".su-sheet") });
             return;
         }
 
         if (stripAction && target.closest("[data-su-strip-action]")) {
             event.preventDefault();
-            if (state.current === "review" && submitButton) {
-                if (typeof form.requestSubmit === "function") {
-                    form.requestSubmit(submitButton);
-                } else {
-                    submitButton.click();
-                }
+            if (state.current === "review") {
+                submitDraft();
                 return;
             }
-            var next = panels[state.current].querySelector("[data-su-next]");
-            if (next) {
-                next.click();
+            var stepNext = panels[state.current].querySelector("[data-su-next]");
+            if (stepNext) {
+                stepNext.click();
             }
         }
     });
 
     form.addEventListener("input", function (event) {
-        var name = event.target && event.target.name;
+        var target = event.target;
+        var name = target && target.name;
         if (name === "Password" || name === "ConfirmPassword") {
             updatePasswordRules();
+        }
+        var key = target && target.getAttribute && target.getAttribute("data-su-field");
+        if (key && form.querySelector('[data-su-error-for="' + key + '"][data-su-server-error]')) {
+            setFieldError(key, "");
+        }
+        if (target && target.id === "signupSlug" && panels.restaurant) {
+            var taken = panels.restaurant.querySelector("[data-su-address-taken]");
+            if (taken) {
+                taken.hidden = true;
+            }
         }
         renderReceipt();
     });
@@ -506,57 +1122,31 @@
         renderReceipt();
     });
 
-    // Capture phase, so this runs before the other submit handlers of the form. Enter in a field of an earlier step
-    // continues to the next step; the registration is sent only from the review step, with every step complete.
-    form.addEventListener("submit", function (event) {
-        if (submitting) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-        }
-
-        if (state.current !== "review") {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            navigateAndFocus(Steps.next(state), false);
-            return;
-        }
-
-        var incomplete = order.filter(function (id) {
-            return id !== "review" && !Steps.isComplete(state, id);
-        })[0];
-        if (incomplete) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            show(incomplete, { history: "push" });
-            var errors = validateStep(incomplete);
-            focusElement(errors.length ? presentErrors(incomplete, errors) : panels[incomplete].querySelector(".su-title"));
-            return;
-        }
-
-        // Busy once no other handler (the form's validation) has stopped this submission; a second press is ignored.
-        window.setTimeout(function () {
-            if (event.defaultPrevented) {
-                return;
+    function continueOpenStep() {
+        if (state.current === "review") {
+            submitDraft();
+        } else if (state.current === "phone") {
+            if (phone) {
+                phone.primaryAction();
             }
-            submitting = true;
-            [submitButton, stripAction].forEach(function (button) {
-                if (button) {
-                    button.setAttribute("aria-busy", "true");
-                }
-            });
-        }, 0);
+        } else {
+            var stepNext = panels[state.current].querySelector("[data-su-next]");
+            navigateAndFocus(Steps.next(state), { autoSend: !!(stepNext && stepNext.hasAttribute("data-su-autosend")) });
+        }
+    }
+
+    // Nothing posts this form: Enter continues the open step, the review step submits the draft.
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        continueOpenStep();
     }, true);
 
-    // A page restored from the back/forward cache after a submission can be used again.
     window.addEventListener("pageshow", function (event) {
         if (event.persisted) {
             submitting = false;
-            [submitButton, stripAction].forEach(function (button) {
-                if (button) {
-                    button.removeAttribute("aria-busy");
-                }
-            });
+            setBusy(false);
+            setSubmitBusy(false);
         }
     });
 
@@ -572,16 +1162,12 @@
         if (state.current !== requested) {
             window.history.replaceState({ suStep: state.current }, "", stepUrl(state.current));
         }
-        focusElement(heading);
+        enterStep(state.current, {}).then(function (focus) {
+            focusElement(focus || heading);
+        });
     });
 
     // ---------------------------------------------------------------- Start
-
-    function markServerErrors() {
-        Array.prototype.forEach.call(form.querySelectorAll(".input-validation-error"), function (element) {
-            element.setAttribute("aria-invalid", "true");
-        });
-    }
 
     function showToday() {
         if (typeof Intl === "undefined" || !Intl.DateTimeFormat) {
@@ -604,28 +1190,22 @@
         });
     }
 
-    markServerErrors();
+    restoreForm(draft);
+    passwordKeptHint();
     showToday();
     updatePasswordRules();
 
-    // A step named in the address opens when it may (a reload or a shared link); after a submission the server's
-    // choice (the first step with an error) wins.
-    var requested = flow.restoreFocus ? null : Steps.readStepFromUrl(window.location.href, order);
+    if (draft.submitted) {
+        showPageAlert(messages.submitted, draft.registrationUrl ? { text: messages.openRegistration, href: draft.registrationUrl } : null);
+    }
+
+    // A step named in the address opens when it may (a reload or a shared link); otherwise where the draft continues.
+    var requested = Steps.readStepFromUrl(window.location.href, order);
     show(requested || state.current, { history: "mark" });
     if (requested && requested !== state.current) {
         window.history.replaceState({ suStep: state.current }, "", stepUrl(state.current));
     }
-
-    if (flow.restoreFocus) {
-        var serverErrors = validatableFields(panels[state.current])
-            .filter(function (element) { return element.classList.contains("input-validation-error"); })
-            .map(function (element) { return { element: element, message: messageFor(element) }; });
-        var formErrors = form.querySelector(".su-model-errors.validation-summary-errors");
-        if (serverErrors.length) {
-            focusElement(presentErrors(state.current, serverErrors));
-        } else if (formErrors) {
-            formErrors.setAttribute("tabindex", "-1");
-            focusElement(formErrors);
-        }
+    if (state.current === "phone" && phone) {
+        phone.enter({ autoSend: false });
     }
 })();

@@ -4,7 +4,7 @@
 @using Microsoft.Extensions.Localization
 @using Wasla.Application.Abstractions.Plans
 @using Wasla.Web.Formatting
-@using Wasla.Web.Views.Signup
+@using Wasla.Web.Models.Signup
 @using BusinessPhoneTypeEnum = Wasla.Domain.Enums.BusinessPhoneType
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @inject IWaslaPlanCatalog PlanCatalog
@@ -12,10 +12,15 @@
     Layout = "_PublicLayout";
     ViewData["Title"] = L["Signup.Title"];
 
+    // The browser's registration draft (WAS-192): the page restores its steps from it; nothing posts this form.
+    var draft = Model.InitialDraft;
+    var simulator = Model.IsPaymentSimulatorAvailable;
+
     // ---- Plans and prices: every amount, VAT text and saving is the Central Admin price in effect (WAS-147). ----
     var publicPlans = PlanCatalog.GetPublicPlans();
     var selfServicePlans = publicPlans.Where(plan => !plan.IsContactSales).ToList();
-    var isYearly = string.Equals(Model.BillingPeriod, PlanPriceText.Yearly, StringComparison.OrdinalIgnoreCase);
+    var billingPeriod = draft.Plan.BillingPeriod ?? Model.BillingPeriod;
+    var isYearly = string.Equals(billingPeriod, PlanPriceText.Yearly, StringComparison.OrdinalIgnoreCase);
     var shownPeriod = isYearly ? PlanPriceText.Yearly : PlanPriceText.Monthly;
     var periodWordMonthly = L["Signup.Receipt.PeriodMonthly"].Value;
     var periodWordYearly = L["Signup.Receipt.PeriodYearly"].Value;
@@ -59,8 +64,20 @@
         };
     }).ToArray();
 
+    // The plan the page starts with: the saved one, else ?plan= (a self-service plan), else the model's default.
+    var requestedPlan = PlanCatalog.FindByCode(Model.RequestedPlanCode);
+    var startPlanCode = draft.Plan.PlanCode
+        ?? (requestedPlan is { IsContactSales: false } ? requestedPlan.PlanCode : null)
+        ?? (requestedPlan is { IsContactSales: true } ? null : Model.PlanCode);
+    var showEnterpriseNotice = draft.Plan.PlanCode is null && requestedPlan is { IsContactSales: true };
+
     // ---- The receipt's first render, so nothing shifts when the script starts (signup-receipt.js planView). ----
-    var selectedPlan = selfServicePlans.FirstOrDefault(plan => string.Equals(plan.PlanCode, Model.PlanCode, StringComparison.OrdinalIgnoreCase));
+    // "Due today" and "renews automatically" only where a payment step can follow (the Development simulator);
+    // elsewhere the amount is the plan price with its period and VAT text (WAS-194 decision).
+    var amountLabel = L[simulator ? "Signup.Receipt.DueToday" : "Signup.Receipt.PlanPrice"].Value;
+    var periodNoteMonthlyKey = simulator ? "Signup.Receipt.PeriodNoteMonthly" : "Signup.Receipt.PeriodLineMonthly";
+    var periodNoteYearlyKey = simulator ? "Signup.Receipt.PeriodNoteYearly" : "Signup.Receipt.PeriodLineYearly";
+    var selectedPlan = selfServicePlans.FirstOrDefault(plan => string.Equals(plan.PlanCode, startPlanCode, StringComparison.OrdinalIgnoreCase));
     var selectedName = selectedPlan is null ? string.Empty : L[selectedPlan.DisplayNameKey].Value;
     var selectedQuote = selectedPlan is null ? null : PlanPriceText.Find(Model.PlanPrices, selectedPlan.PlanCode, shownPeriod);
     var periodWord = isYearly ? periodWordYearly : periodWordMonthly;
@@ -76,77 +93,60 @@
         : selectedPlan is null ? L["Signup.Receipt.ChoosePlan"].Value : L["Billing.PriceNotSet"].Value;
     var receiptPeriodNote = selectedQuote is null
         ? null
-        : string.Format(L[isYearly ? "Signup.Receipt.PeriodNoteYearly" : "Signup.Receipt.PeriodNoteMonthly"].Value, selectedName);
+        : string.Format(L[isYearly ? periodNoteYearlyKey : periodNoteMonthlyKey].Value, selectedName);
     var receiptStripDetail = selectedPlan is null
         ? string.Empty
         : receiptVat is null ? receiptPlanLine : string.Format(L["Signup.Receipt.StripDetail"].Value, selectedName, periodWord, receiptVat);
-    var domain = string.IsNullOrWhiteSpace(Model.Slug) ? string.Empty : $"{Model.Slug.Trim().ToLowerInvariant()}.{Model.ApplicationBaseDomain}";
+    var slugValue = draft.Restaurant.Slug;
+    var domain = string.IsNullOrWhiteSpace(slugValue) ? string.Empty : $"{slugValue.Trim().ToLowerInvariant()}.{Model.ApplicationBaseDomain}";
 
-    // ---- Steps. The phone verification step joins between Owner and Review with the server draft (WAS-192). ----
+    string FormatMobile(string? digits) =>
+        digits is { Length: 10 } d ? $"+90 {d[..3]} {d[3..6]} {d[6..8]} {d[8..]}" : string.Empty;
+
+    var phoneVerified = draft.Phone.State == SignupPhoneStates.Verified;
+    var fullPhone = FormatMobile(draft.Owner.MobilePhone);
+
+    // ---- Steps, in flow order. Where the visitor continues comes from the draft (signup-draft.js currentStep). ----
     var flowSteps = new List<SignupFlowStep>
     {
         new("plan", 1, L["Signup.StepPlan"], L["Signup.Receipt.HintPlan"],
             [new("planLine", receiptPlanLine), new("priceLine", receiptPriceLine)]),
         new("restaurant", 2, L["Signup.StepBusiness"], L["Signup.Receipt.HintRestaurant"],
-            [new("businessName", Model.BusinessName), new("domain", domain, Ltr: true)]),
+            [new("businessName", draft.Restaurant.BusinessName), new("domain", domain, Ltr: true)]),
         new("owner", 3, L["Signup.StepOwner"], L["Signup.Receipt.HintOwner"],
-            [new("ownerName", Model.OwnerFullName), new("ownerEmail", Model.OwnerEmail, Ltr: true)]),
-        new("review", 4, L["Signup.StepReview"], L["Signup.Receipt.HintReview"], [])
+            [new("ownerName", draft.Owner.FullName), new("ownerEmail", draft.Owner.Email, Ltr: true)]),
+        new("phone", 4, L["Signup.StepPhone"], L["Signup.Receipt.HintPhone"],
+            [new("phoneLine", phoneVerified ? fullPhone : draft.Phone.MaskedPhone, Ltr: true),
+             new("phoneState", phoneVerified ? L["Signup.Receipt.PhoneVerified"].Value : null)]),
+        new("review", 5, L["Signup.StepReview"], L["Signup.Receipt.HintReview"], [])
     };
     var stepOrder = flowSteps.Select(step => step.Id).ToList();
-
-    // After a submission the form opens on the first step that has an error; a form-level error opens the review.
-    var fieldSteps = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        [nameof(Model.PlanCode)] = "plan",
-        [nameof(Model.BillingPeriod)] = "plan",
-        [nameof(Model.BusinessName)] = "restaurant",
-        [nameof(Model.SelectedBusinessTypeCodes)] = "restaurant",
-        [nameof(Model.Slug)] = "restaurant",
-        [nameof(Model.BusinessPhoneType)] = "restaurant",
-        [nameof(Model.BusinessPhone)] = "restaurant",
-        [nameof(Model.BusinessEmail)] = "restaurant",
-        [nameof(Model.Country)] = "restaurant",
-        [nameof(Model.CityId)] = "restaurant",
-        [nameof(Model.DistrictId)] = "restaurant",
-        [nameof(Model.City)] = "restaurant",
-        [nameof(Model.District)] = "restaurant",
-        [nameof(Model.NeighborhoodId)] = "restaurant",
-        [nameof(Model.Neighborhood)] = "restaurant",
-        [nameof(Model.StreetId)] = "restaurant",
-        [nameof(Model.StreetAddress)] = "restaurant",
-        [nameof(Model.BuildingNumber)] = "restaurant",
-        [nameof(Model.Floor)] = "restaurant",
-        [nameof(Model.DoorNumber)] = "restaurant",
-        [nameof(Model.PostalCode)] = "restaurant",
-        [nameof(Model.AddressNote)] = "restaurant",
-        [nameof(Model.LocationUrl)] = "restaurant",
-        [nameof(Model.OwnerFullName)] = "owner",
-        [nameof(Model.OwnerEmail)] = "owner",
-        [nameof(Model.OwnerPhone)] = "owner",
-        [nameof(Model.Password)] = "owner",
-        [nameof(Model.ConfirmPassword)] = "owner"
-    };
-    var fieldsWithErrors = ViewData.ModelState.Where(entry => entry.Value?.Errors.Count > 0).Select(entry => entry.Key).ToHashSet(StringComparer.Ordinal);
-    var isPostBack = string.Equals(Context.Request.Method, "POST", StringComparison.OrdinalIgnoreCase);
-    var initialStep = stepOrder.FirstOrDefault(id => fieldsWithErrors.Any(field => fieldSteps.TryGetValue(field, out var owner) && owner == id))
-        ?? (isPostBack ? "review" : "plan");
-    var completedSteps = isPostBack ? stepOrder.TakeWhile(id => id != initialStep).ToList() : new List<string>();
-    var stepIndex = stepOrder.IndexOf(initialStep);
+    var completedSteps = new List<string>();
+    if (draft.Plan.Complete) completedSteps.Add("plan");
+    if (draft.Restaurant.Complete) completedSteps.Add("restaurant");
+    if (draft.Owner.Complete) completedSteps.Add("owner");
+    if (draft.Owner.Complete && phoneVerified) completedSteps.Add("phone");
+    var initialStep = !draft.Plan.Complete ? "plan"
+        : !draft.Restaurant.Complete ? "restaurant"
+        : !draft.Owner.Complete ? "owner"
+        : phoneVerified ? "review" : "phone";
     string StepStatus(string id) => id == initialStep ? "current" : completedSteps.Contains(id) ? "done" : "upcoming";
+    string Counter(int number) => string.Format(CultureInfo.CurrentCulture, L["Signup.Flow.StepCounter"].Value, number, flowSteps.Count);
+    string? Hidden(string id) => initialStep == id ? null : "hidden";
 
-    var asideReceipt = new SignupReceiptView("signupReceipt", flowSteps, initialStep, completedSteps, receiptAmount,
+    var asideReceipt = new SignupReceiptView("signupReceipt", flowSteps, initialStep, completedSteps, amountLabel, receiptAmount,
         selectedQuote is not null, receiptVat, receiptPeriodNote, receiptStripDetail);
     var sheetReceipt = asideReceipt with { IdPrefix = "signupSummarySheet" };
 
-    var submitLabel = L[Model.IsPaymentSimulatorAvailable ? "Signup.ContinueToPayment" : "Signup.SubmitRegistration"].Value;
+    var submitLabel = L[simulator ? "Signup.ContinueToPayment" : "Signup.SubmitRegistration"].Value;
+    var supportEmail = Model.SupportEmail;
 
     var signupConfig = new
     {
         cities = Model.Cities.Select(c => new { id = c.Id, name = c.Name, phoneAreaCode = c.PhoneAreaCode }),
-        districtsUrl = Url.Action("Districts", "Signup"),
-        neighborhoodsUrl = Url.Action("Neighborhoods", "Signup"),
-        streetsUrl = Url.Action("Streets", "Signup"),
+        districtsUrl = Model.Endpoints?.Districts ?? Url.Action("Districts", "Signup"),
+        neighborhoodsUrl = Model.Endpoints?.Neighborhoods ?? Url.Action("Neighborhoods", "Signup"),
+        streetsUrl = Model.Endpoints?.Streets ?? Url.Action("Streets", "Signup"),
         selectDistrictText = L["Signup.SelectDistrict"].Value,
         neighborhoodManualHint = L["Signup.NeighborhoodManualHint"].Value,
         streetManualHint = L["Signup.StreetManualHint"].Value,
@@ -157,30 +157,28 @@
         mobileHint = L["Signup.MobilePhoneHint"].Value,
         defaultCountryCode = "+90",
         plans = planSummaries,
+        selfServicePlans = selfServicePlans.Select(plan => plan.PlanCode),
+        requestedPlanCode = Model.RequestedPlanCode,
         businessSubtypeRequiredText = L["Validation.BusinessSubtypeRequired"].Value,
         businessCategorySubtypeRequiredText = L["Validation.BusinessCategorySubtypeRequired"].Value,
         baseDomain = Model.ApplicationBaseDomain,
-        flow = new
-        {
-            order = stepOrder,
-            initial = initialStep,
-            completed = completedSteps,
-            restoreFocus = isPostBack
-        },
+        codeLength = Model.PhoneCodeLength,
+        flow = new { order = stepOrder },
         messages = new
         {
             periodMonthly = periodWordMonthly,
             periodYearly = periodWordYearly,
             planLine = L["Signup.Receipt.PlanLine"].Value,
             priceLine = L["Signup.Receipt.PriceLine"].Value,
-            periodNoteMonthly = L["Signup.Receipt.PeriodNoteMonthly"].Value,
-            periodNoteYearly = L["Signup.Receipt.PeriodNoteYearly"].Value,
+            periodNoteMonthly = L[periodNoteMonthlyKey].Value,
+            periodNoteYearly = L[periodNoteYearlyKey].Value,
             stripDetail = L["Signup.Receipt.StripDetail"].Value,
             choosePlan = L["Signup.Receipt.ChoosePlan"].Value,
             priceNotSet = L["Billing.PriceNotSet"].Value,
             stateDone = L["Signup.Receipt.StateDone"].Value,
             stateCurrent = L["Signup.Receipt.StateCurrent"].Value,
             stateUpcoming = L["Signup.Receipt.StateUpcoming"].Value,
+            phoneVerified = L["Signup.Receipt.PhoneVerified"].Value,
             planRequired = L["Validation.PlanRequired"].Value,
             payPlanRow = L["Signup.Pay.PlanRow"].Value,
             payVatIncluded = L["Signup.Pay.VatIncluded"].Value,
@@ -195,10 +193,33 @@
             reviewBuilding = L["Signup.Review.AddressBuilding"].Value,
             reviewFloor = L["Signup.Review.AddressFloor"].Value,
             reviewDoor = L["Signup.Review.AddressDoor"].Value,
-            phoneMobile = L["Signup.PhoneTypeMobile"].Value,
-            phoneLandline = L["Signup.PhoneTypeLandline"].Value,
             passwordRuleMet = L["Signup.Flow.RuleMet"].Value,
-            passwordRuleUnmet = L["Signup.Flow.RuleUnmet"].Value
+            passwordRuleUnmet = L["Signup.Flow.RuleUnmet"].Value,
+            slugChecking = L["Signup.Flow.SlugChecking"].Value,
+            slugAvailable = L["Signup.Flow.SlugAvailable"].Value,
+            slugTaken = L["Signup.SlugUnavailable"].Value,
+            slugInvalid = L["Validation.SlugInvalid"].Value,
+            slugCheckFailed = L["Signup.Flow.SlugCheckFailed"].Value,
+            addressTakenBody = L["Signup.Flow.AddressTakenBody"].Value,
+            invalidRequest = L["Signup.Draft.InvalidRequest"].Value,
+            networkError = L["Signup.Flow.NetworkError"].Value,
+            serverError = L["Signup.Flow.ServerError"].Value,
+            reload = L["Signup.Flow.Reload"].Value,
+            startAgain = L["Signup.Flow.StartAgain"].Value,
+            submitted = L["Signup.Draft.Submitted"].Value,
+            openRegistration = L["Signup.Flow.OpenRegistration"].Value
+        },
+        phoneMessages = new
+        {
+            send = L["Signup.Phone.Send"].Value,
+            resend = L["Signup.Phone.Resend"].Value,
+            verify = L["Signup.Phone.Verify"].Value,
+            toReview = L["Signup.Flow.ToReview"].Value,
+            sendToNumber = L["Signup.Phone.SendToNumber"].Value,
+            sent = L["Signup.Phone.Sent"].Value,
+            codeExpired = L["Signup.Phone.CodeExpired"].Value,
+            codeFormat = L["Signup.Phone.CodeFormatInvalid"].Value,
+            deliveryFailedTitle = L["Signup.Phone.DeliveryFailedTitle"].Value
         }
     };
 
@@ -209,6 +230,13 @@
     <div class="su-container">
         <h1 class="su-visually-hidden">@L["Signup.Title"]</h1>
 
+        <noscript>
+            <div class="su-notice su-notice--danger su-noscript">
+                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                <p>@L["Signup.Flow.NoScript"]</p>
+            </div>
+        </noscript>
+
         <div class="su-progress" aria-hidden="true">
             @foreach (var step in flowSteps)
             {
@@ -216,43 +244,61 @@
             }
         </div>
 
+        @* The page needs the draft API: nothing posts this form. The action only keeps a stray submission (no script)
+           away from the address bar; the server answers it with 405 and stores nothing. *@
         <form asp-action="Index" method="post" novalidate id="signupForm" class="su-layout">
             <div class="su-main">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="su-notice su-notice--danger su-model-errors" role="alert"></div>
+                <div class="su-notice su-notice--danger su-page-alert" data-su-page-alert role="alert" tabindex="-1" hidden>
+                    <i class="bi bi-x-circle" aria-hidden="true"></i>
+                    <div>
+                        <p data-su-page-alert-text></p>
+                        <a class="su-link" data-su-page-alert-link href="#" hidden></a>
+                    </div>
+                </div>
+
+                @if (!Model.IsPhoneVerificationAvailable)
+                {
+                    <div class="su-notice su-notice--danger" role="status">
+                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                        <div>
+                            <strong class="su-notice__title">@L["Signup.Flow.PhoneUnavailableTitle"]</strong>
+                            <p>@L["Signup.Phone.Unavailable"]</p>
+                            @if (!string.IsNullOrWhiteSpace(supportEmail))
+                            {
+                                <p><a class="su-link" href="mailto:@supportEmail"><bdi>@supportEmail</bdi></a></p>
+                            }
+                        </div>
+                    </div>
+                }
 
                 @* ---------------------------------------------------------------- 1. Plan (Figma D1, M1) *@
                 <section class="su-step" id="signupStep-plan" data-su-step="plan" aria-labelledby="signupStep-plan-title"
-                         data-su-strip-label="@L["Signup.Strip.Continue"]" data-su-strip-carries hidden="@(initialStep == "plan" ? null : "hidden")">
+                         data-su-strip-label="@L["Signup.Strip.Continue"]" data-su-strip-carries hidden="@Hidden("plan")">
                     <div class="su-step__bar">
-                        <span class="su-step__counter">@string.Format(CultureInfo.CurrentCulture, L["Signup.Flow.StepCounter"].Value, 1, flowSteps.Count)</span>
+                        <span class="su-step__counter">@Counter(1)</span>
                     </div>
                     <h2 class="su-title" id="signupStep-plan-title" tabindex="-1">@L["Signup.Flow.PlanTitle"]</h2>
                     <p class="su-lead">@L["Signup.Flow.PlanLead"]</p>
-                    <div class="su-notice su-notice--danger su-error-summary" data-su-error-summary tabindex="-1" hidden>
-                        <i class="bi bi-x-circle" aria-hidden="true"></i>
-                        <div>
-                            <strong class="su-notice__title">@L["Signup.Flow.ErrorSummaryTitle"]</strong>
-                            <ul></ul>
-                        </div>
-                    </div>
+                    <partial name="_SignupErrorSummary" />
 
                     <div class="su-section">
                         <fieldset class="su-field">
                             <legend class="su-label">@L["Signup.BillingPeriod"]</legend>
                             <div class="su-segment">
-                                <span class="su-segment__option">
-                                    <input class="su-segment__input" type="radio" asp-for="BillingPeriod" value="Monthly" id="signupBillingPeriod-Monthly" data-su-period-input />
-                                    <label class="su-segment__label" for="signupBillingPeriod-Monthly">@L["Signup.BillingMonthly"]</label>
-                                </span>
-                                <span class="su-segment__option">
-                                    <input class="su-segment__input" type="radio" asp-for="BillingPeriod" value="Yearly" id="signupBillingPeriod-Yearly" data-su-period-input />
-                                    <label class="su-segment__label" for="signupBillingPeriod-Yearly">@L["Signup.BillingYearly"]</label>
-                                </span>
+                                @foreach (var period in new[] { PlanPriceText.Monthly, PlanPriceText.Yearly })
+                                {
+                                    <span class="su-segment__option">
+                                        <input class="su-segment__input" type="radio" name="BillingPeriod" value="@period" id="signupBillingPeriod-@period"
+                                               data-su-field="@(period == PlanPriceText.Monthly ? "plan.billingPeriod" : null)"
+                                               checked="@(string.Equals(billingPeriod, period, StringComparison.OrdinalIgnoreCase) ? "checked" : null)" />
+                                        <label class="su-segment__label" for="signupBillingPeriod-@period">@L[period == PlanPriceText.Monthly ? "Signup.BillingMonthly" : "Signup.BillingYearly"]</label>
+                                    </span>
+                                }
                             </div>
+                            <span class="field-validation-valid" data-su-error-for="plan.billingPeriod"></span>
                         </fieldset>
 
-                        <div id="signupEnterpriseNotice" class="su-notice" role="status" hidden="@(Model.IsContactSalesPlan ? null : "hidden")">
+                        <div id="signupEnterpriseNotice" class="su-notice" role="status" hidden="@(showEnterpriseNotice ? null : "hidden")">
                             <i class="bi bi-info-circle" aria-hidden="true"></i>
                             <div>
                                 <strong class="su-notice__title">@L["Signup.EnterpriseNoticeTitle"]</strong>
@@ -263,12 +309,15 @@
                         <fieldset class="su-field" aria-describedby="signupPlanCode-error">
                             <legend class="su-visually-hidden">@L["Signup.Plan"]</legend>
                             <div class="su-plans" id="signupPlans">
-                                @foreach (var plan in selfServicePlans)
+                                @for (var i = 0; i < selfServicePlans.Count; i++)
                                 {
+                                    var plan = selfServicePlans[i];
                                     var summary = planSummaries.First(p => p.code == plan.PlanCode);
                                     var inputId = $"signupPlan-{plan.PlanCode}";
                                     <div class="su-plan" data-su-plan="@plan.PlanCode">
-                                        <input class="su-plan__input" type="radio" asp-for="PlanCode" value="@plan.PlanCode" id="@inputId"
+                                        <input class="su-plan__input" type="radio" name="PlanCode" value="@plan.PlanCode" id="@inputId"
+                                               data-su-field="@(i == 0 ? "plan.planCode" : null)"
+                                               checked="@(string.Equals(plan.PlanCode, startPlanCode, StringComparison.OrdinalIgnoreCase) ? "checked" : null)"
                                                aria-describedby="@inputId-description @inputId-price" />
                                         <div class="su-plan__body">
                                             <label class="su-plan__name" for="@inputId">@summary.name</label>
@@ -307,66 +356,71 @@
                                     </div>
                                 }
                             </div>
-                            <span asp-validation-for="PlanCode" id="signupPlanCode-error"></span>
+                            <span class="field-validation-valid" id="signupPlanCode-error" data-su-error-for="plan.planCode"></span>
                         </fieldset>
                     </div>
 
-                    <p class="su-inline-note">
-                        @L["Signup.Flow.EnterpriseQuestion"]
-                        <a class="su-link" href="mailto:support@wasla.local">@L["Signup.Flow.EnterpriseLink"]</a>
-                    </p>
+                    @if (!string.IsNullOrWhiteSpace(supportEmail))
+                    {
+                        <p class="su-inline-note">
+                            @L["Signup.Flow.EnterpriseQuestion"]
+                            <a class="su-link" href="mailto:@supportEmail">@L["Signup.Flow.EnterpriseLink"]</a>
+                        </p>
+                    }
 
                     <div class="su-actions su-actions--strip">
                         <button type="button" class="su-btn su-btn--primary" data-su-next>@L["Signup.Flow.ToRestaurant"]</button>
                     </div>
                 </section>
 
-                @* ---------------------------------------------------------------- 2. Restaurant (Figma D2, M2, P1, L1) *@
+                @* ---------------------------------------------------------------- 2. Restaurant (Figma D2, M2, P1, L1, S10) *@
                 <section class="su-step" id="signupStep-restaurant" data-su-step="restaurant" aria-labelledby="signupStep-restaurant-title"
-                         data-su-strip-label="@L["Signup.Strip.Continue"]" data-su-strip-carries hidden="@(initialStep == "restaurant" ? null : "hidden")">
+                         data-su-strip-label="@L["Signup.Strip.Continue"]" data-su-strip-carries hidden="@Hidden("restaurant")">
                     <div class="su-step__bar">
                         <button type="button" class="su-back" data-su-go="plan" aria-label="@string.Format(L["Signup.Flow.BackTo"].Value, L["Signup.StepPlan"].Value)">
                             <i class="bi bi-chevron-left su-flip-rtl" aria-hidden="true"></i>@L["Signup.StepPlan"]
                         </button>
-                        <span class="su-step__counter">@string.Format(CultureInfo.CurrentCulture, L["Signup.Flow.StepCounter"].Value, 2, flowSteps.Count)</span>
+                        <span class="su-step__counter">@Counter(2)</span>
                     </div>
                     <h2 class="su-title" id="signupStep-restaurant-title" tabindex="-1">@L["Signup.Flow.RestaurantTitle"]</h2>
                     <p class="su-lead">@L["Signup.Flow.RestaurantLead"]</p>
-                    <div class="su-notice su-notice--danger su-error-summary" data-su-error-summary tabindex="-1" hidden>
+                    <div class="su-notice su-notice--danger" data-su-address-taken role="alert" hidden>
                         <i class="bi bi-x-circle" aria-hidden="true"></i>
                         <div>
-                            <strong class="su-notice__title">@L["Signup.Flow.ErrorSummaryTitle"]</strong>
-                            <ul></ul>
+                            <strong class="su-notice__title">@L["Signup.Flow.AddressTakenTitle"]</strong>
+                            <p data-su-address-taken-text></p>
                         </div>
                     </div>
+                    <partial name="_SignupErrorSummary" />
 
                     <div class="su-section">
                         <h3 class="su-section__title">@L["Signup.Flow.SectionBusiness"]</h3>
                         <div class="su-field">
                             <label class="su-label" for="signupBusinessName">@L["Signup.BusinessName"]</label>
-                            <input asp-for="BusinessName" class="su-input" id="signupBusinessName" dir="auto" autocomplete="organization" aria-describedby="signupBusinessName-error" />
-                            <span asp-validation-for="BusinessName" id="signupBusinessName-error"></span>
+                            <input asp-for="BusinessName" class="su-input" id="signupBusinessName" dir="auto" autocomplete="organization"
+                                   data-su-field="restaurant.businessName" aria-describedby="signupBusinessName-error" />
+                            <span asp-validation-for="BusinessName" id="signupBusinessName-error" data-su-error-for="restaurant.businessName"></span>
                         </div>
                         <fieldset class="su-field" aria-describedby="signupBusinessTypesHint signupBusinessTypeClientError signupBusinessTypes-error">
                             <legend class="su-label">@L["Signup.BusinessType"]</legend>
                             <p class="su-help" id="signupBusinessTypesHint">@L["Signup.BusinessSubtypeHint"]</p>
                             <div id="signupBusinessTypes">
                                 <div class="su-chips">
-                                    @foreach (var category in Model.BusinessCategories)
+                                    @for (var i = 0; i < Model.BusinessCategories.Count; i++)
                                     {
+                                        var category = Model.BusinessCategories[i];
                                         var categoryId = $"businessCategory-{category.CategoryCode}";
-                                        var categorySelected = category.Subtypes.Any(subtype => subtype.Selected);
                                         <span class="su-chip">
                                             <input class="su-chip__input" type="checkbox" id="@categoryId" data-category-toggle="@category.CategoryCode"
-                                                   aria-controls="businessSubtypes-@category.CategoryCode" @(categorySelected ? "checked" : null) />
+                                                   data-su-field="@(i == 0 ? "restaurant.businessTypeCodes" : null)"
+                                                   aria-controls="businessSubtypes-@category.CategoryCode" />
                                             <label class="su-chip__label" for="@categoryId"><i class="bi bi-check2" aria-hidden="true"></i>@category.Label</label>
                                         </span>
                                     }
                                 </div>
                                 @foreach (var category in Model.BusinessCategories)
                                 {
-                                    var categorySelected = category.Subtypes.Any(subtype => subtype.Selected);
-                                    <div class="su-subtypes@(categorySelected ? string.Empty : " is-collapsed")" id="businessSubtypes-@category.CategoryCode"
+                                    <div class="su-subtypes is-collapsed" id="businessSubtypes-@category.CategoryCode"
                                          data-category-panel="@category.CategoryCode" role="group" aria-labelledby="businessSubtypes-@category.CategoryCode-title">
                                         <p class="su-subtypes__title" id="businessSubtypes-@category.CategoryCode-title">@string.Format(L["Signup.Flow.SubtypesFor"].Value, category.Label)</p>
                                         <div class="su-chips">
@@ -375,7 +429,7 @@
                                                 var subtypeId = $"businessType-{subtype.Code}";
                                                 <span class="su-chip">
                                                     <input class="su-chip__input" type="checkbox" name="SelectedBusinessTypeCodes" value="@subtype.Code" id="@subtypeId"
-                                                           data-category="@category.CategoryCode" @(subtype.Selected ? "checked" : null) />
+                                                           data-category="@category.CategoryCode" />
                                                     <label class="su-chip__label" for="@subtypeId"><i class="bi bi-check2" aria-hidden="true"></i>@subtype.Label</label>
                                                 </span>
                                             }
@@ -384,7 +438,7 @@
                                 }
                             </div>
                             <p class="su-error" id="signupBusinessTypeClientError" hidden></p>
-                            <span asp-validation-for="SelectedBusinessTypeCodes" id="signupBusinessTypes-error"></span>
+                            <span class="field-validation-valid" id="signupBusinessTypes-error" data-su-error-for="restaurant.businessTypeCodes"></span>
                         </fieldset>
                     </div>
 
@@ -395,12 +449,15 @@
                             <label class="su-label" for="signupSlug">@L["Signup.Slug"]</label>
                             <div class="su-group" dir="ltr">
                                 <input asp-for="Slug" class="su-input" id="signupSlug" pattern="[a-z0-9][a-z0-9_-]*" autocomplete="off" autocapitalize="off"
-                                       autocorrect="off" spellcheck="false" aria-describedby="signupSlug-error signupSlugStatus signupSlugRules" />
+                                       autocorrect="off" spellcheck="false" data-su-field="restaurant.slug"
+                                       aria-describedby="signupSlug-error signupSlugStatus signupSlugRules" />
                                 <span class="su-group__addon su-group__addon--suffix">.@Model.ApplicationBaseDomain</span>
                             </div>
-                            <span asp-validation-for="Slug" id="signupSlug-error"></span>
+                            <span asp-validation-for="Slug" id="signupSlug-error" data-su-error-for="restaurant.slug"></span>
                             <p class="su-status" id="signupSlugStatus" data-su-slug-status data-state="preview" aria-live="polite">
-                                <span>@L["Signup.SlugHelp"] <bdi class="su-domain" id="signupDomainPreview">@(string.IsNullOrEmpty(domain) ? $"your-name.{Model.ApplicationBaseDomain}" : domain)</bdi></span>
+                                <i class="bi su-status__icon" aria-hidden="true"></i>
+                                <span data-su-slug-preview>@L["Signup.SlugHelp"] <bdi class="su-domain" id="signupDomainPreview">@(string.IsNullOrEmpty(domain) ? $"your-name.{Model.ApplicationBaseDomain}" : domain)</bdi></span>
+                                <span data-su-slug-message hidden></span>
                             </p>
                             <p class="su-help" id="signupSlugRules">@L["Signup.Flow.SlugRules"]</p>
                         </div>
@@ -413,32 +470,34 @@
                                 <legend class="su-label">@L["Signup.BusinessPhoneType"]</legend>
                                 <div class="su-segment su-segment--fill">
                                     <span class="su-segment__option">
-                                        <input class="su-segment__input" type="radio" asp-for="BusinessPhoneType" value="@nameof(BusinessPhoneTypeEnum.Mobile)" id="signupBusinessPhoneType-Mobile" data-su-business-phone-type />
+                                        <input class="su-segment__input" type="radio" asp-for="BusinessPhoneType" value="@nameof(BusinessPhoneTypeEnum.Mobile)" id="signupBusinessPhoneType-Mobile"
+                                               data-su-field="restaurant.businessPhoneType" />
                                         <label class="su-segment__label" for="signupBusinessPhoneType-Mobile">@L["Signup.PhoneTypeMobile"]</label>
                                     </span>
                                     <span class="su-segment__option">
-                                        <input class="su-segment__input" type="radio" asp-for="BusinessPhoneType" value="@nameof(BusinessPhoneTypeEnum.Landline)" id="signupBusinessPhoneType-Landline" data-su-business-phone-type />
+                                        <input class="su-segment__input" type="radio" asp-for="BusinessPhoneType" value="@nameof(BusinessPhoneTypeEnum.Landline)" id="signupBusinessPhoneType-Landline" />
                                         <label class="su-segment__label" for="signupBusinessPhoneType-Landline">@L["Signup.PhoneTypeLandline"]</label>
                                     </span>
                                 </div>
-                                <span asp-validation-for="BusinessPhoneType"></span>
+                                <span class="field-validation-valid" data-su-error-for="restaurant.businessPhoneType"></span>
                             </fieldset>
                             <div class="su-field">
                                 <label class="su-label" for="signupBusinessPhone">@L["Signup.BusinessPhone"]</label>
                                 <div class="su-group" dir="ltr">
                                     <span class="su-group__addon su-group__addon--prefix" id="signupPhonePrefix">+90</span>
                                     <input asp-for="BusinessPhone" class="su-input" id="signupBusinessPhone" autocomplete="tel-national" inputmode="tel"
-                                           aria-describedby="signupPhonePrefix signupBusinessPhone-error signupPhoneHint" />
+                                           data-su-field="restaurant.businessPhone" aria-describedby="signupPhonePrefix signupBusinessPhone-error signupPhoneHint" />
                                 </div>
-                                <span asp-validation-for="BusinessPhone" id="signupBusinessPhone-error"></span>
+                                <span asp-validation-for="BusinessPhone" id="signupBusinessPhone-error" data-su-error-for="restaurant.businessPhone"></span>
                                 <p id="signupPhoneHint" class="su-help"></p>
                             </div>
                         </div>
                         <div class="su-field">
                             <label class="su-label" for="signupBusinessEmail">@L["Signup.BusinessEmail"] <span class="su-optional">@Optional()</span></label>
                             <input asp-for="BusinessEmail" class="su-input" id="signupBusinessEmail" placeholder="@L["Signup.BusinessEmailPlaceholder"]"
-                                   autocomplete="email" inputmode="email" aria-describedby="signupBusinessEmail-error signupBusinessEmailHelp" />
-                            <span asp-validation-for="BusinessEmail" id="signupBusinessEmail-error"></span>
+                                   autocomplete="email" inputmode="email" dir="ltr" data-su-field="restaurant.businessEmail"
+                                   aria-describedby="signupBusinessEmail-error signupBusinessEmailHelp" />
+                            <span asp-validation-for="BusinessEmail" id="signupBusinessEmail-error" data-su-error-for="restaurant.businessEmail"></span>
                             <p class="su-help" id="signupBusinessEmailHelp">@L["Signup.BusinessEmailHelp"]</p>
                         </div>
                     </div>
@@ -452,75 +511,82 @@
                             <strong>@Model.Country</strong>
                         </p>
                         <input type="hidden" asp-for="Country" id="signupCountry" />
-                        <span asp-validation-for="Country"></span>
+                        <span class="field-validation-valid" data-su-error-for="restaurant.country"></span>
                         <div class="su-row su-row--aligned su-row--2">
                             <div class="su-field">
                                 <label class="su-label" for="signupCityId">@L["Signup.CityLabel"]</label>
-                                <select asp-for="CityId" asp-items="Model.CityOptions" class="su-select" id="signupCityId" aria-describedby="signupCityId-error"></select>
-                                <span asp-validation-for="CityId" id="signupCityId-error"></span>
+                                <select asp-for="CityId" asp-items="Model.CityOptions" class="su-select" id="signupCityId"
+                                        data-su-field="restaurant.cityId" aria-describedby="signupCityId-error"></select>
+                                <span asp-validation-for="CityId" id="signupCityId-error" data-su-error-for="restaurant.cityId"></span>
                             </div>
                             <div class="su-field">
                                 <label class="su-label" for="signupDistrictId">@L["Signup.DistrictLabel"]</label>
-                                <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="su-select" id="signupDistrictId" aria-describedby="signupDistrictId-error"></select>
-                                <span asp-validation-for="DistrictId" id="signupDistrictId-error"></span>
+                                <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="su-select" id="signupDistrictId"
+                                        data-su-field="restaurant.districtId" aria-describedby="signupDistrictId-error"></select>
+                                <span asp-validation-for="DistrictId" id="signupDistrictId-error" data-su-error-for="restaurant.districtId"></span>
                             </div>
                         </div>
                         <div class="su-row su-row--aligned su-row--2">
                             <div class="su-field">
                                 <label class="su-label" for="signupNeighborhood">@L["Signup.Neighborhood"] <span class="su-optional">@Optional()</span></label>
                                 <input asp-for="Neighborhood" class="su-input" id="signupNeighborhood" dir="auto" list="signupNeighborhoodList" autocomplete="off"
-                                       aria-describedby="signupNeighborhoodId-error signupNeighborhoodHint" />
+                                       data-su-field="restaurant.neighborhood" aria-describedby="signupNeighborhood-error signupNeighborhoodHint" />
                                 <input type="hidden" asp-for="NeighborhoodId" id="signupNeighborhoodId" />
                                 <datalist id="signupNeighborhoodList"></datalist>
-                                <span asp-validation-for="NeighborhoodId" id="signupNeighborhoodId-error"></span>
+                                <span class="field-validation-valid" id="signupNeighborhood-error" data-su-error-for="restaurant.neighborhood"></span>
                                 <p id="signupNeighborhoodHint" class="su-help"></p>
                             </div>
                             <div class="su-field">
                                 <label class="su-label" for="signupPostalCode">@L["Signup.PostalCode"] <span class="su-optional">@Optional()</span></label>
-                                <input asp-for="PostalCode" class="su-input" id="signupPostalCode" autocomplete="postal-code" inputmode="numeric" aria-describedby="signupPostalCode-error" />
-                                <span asp-validation-for="PostalCode" id="signupPostalCode-error"></span>
+                                <input asp-for="PostalCode" class="su-input" id="signupPostalCode" autocomplete="postal-code" inputmode="numeric"
+                                       data-su-field="restaurant.postalCode" aria-describedby="signupPostalCode-error" />
+                                <span asp-validation-for="PostalCode" id="signupPostalCode-error" data-su-error-for="restaurant.postalCode"></span>
                             </div>
                         </div>
                         <div class="su-field">
                             <label class="su-label" for="signupStreetAddress">@L["Signup.StreetAddress"]</label>
                             <input asp-for="StreetAddress" class="su-input" id="signupStreetAddress" dir="auto" list="signupStreetList" autocomplete="address-line1"
-                                   aria-describedby="signupStreetAddress-error signupStreetHint" />
+                                   data-su-field="restaurant.streetAddress" aria-describedby="signupStreetAddress-error signupStreetId-error signupStreetHint" />
                             <input type="hidden" asp-for="StreetId" id="signupStreetId" />
                             <datalist id="signupStreetList"></datalist>
-                            <span asp-validation-for="StreetAddress" id="signupStreetAddress-error"></span>
-                            <span asp-validation-for="StreetId"></span>
+                            <span asp-validation-for="StreetAddress" id="signupStreetAddress-error" data-su-error-for="restaurant.streetAddress"></span>
+                            <span class="field-validation-valid" id="signupStreetId-error" data-su-error-for="restaurant.streetId"></span>
                             <p id="signupStreetHint" class="su-help"></p>
                         </div>
                         <div class="su-row su-row--aligned su-row--3">
                             <div class="su-field">
                                 <label class="su-label" for="signupBuildingNumber">@L["Signup.BuildingNumber"] <span class="su-optional">@Optional()</span></label>
-                                <input asp-for="BuildingNumber" class="su-input" id="signupBuildingNumber" dir="auto" aria-describedby="signupBuildingNumber-error" />
-                                <span asp-validation-for="BuildingNumber" id="signupBuildingNumber-error"></span>
+                                <input asp-for="BuildingNumber" class="su-input" id="signupBuildingNumber" dir="auto"
+                                       data-su-field="restaurant.buildingNumber" aria-describedby="signupBuildingNumber-error" />
+                                <span asp-validation-for="BuildingNumber" id="signupBuildingNumber-error" data-su-error-for="restaurant.buildingNumber"></span>
                             </div>
                             <div class="su-field">
                                 <label class="su-label" for="signupFloor">@L["Signup.Floor"] <span class="su-optional">@Optional()</span></label>
-                                <input asp-for="Floor" class="su-input" id="signupFloor" dir="auto" aria-describedby="signupFloor-error" />
-                                <span asp-validation-for="Floor" id="signupFloor-error"></span>
+                                <input asp-for="Floor" class="su-input" id="signupFloor" dir="auto"
+                                       data-su-field="restaurant.floor" aria-describedby="signupFloor-error" />
+                                <span asp-validation-for="Floor" id="signupFloor-error" data-su-error-for="restaurant.floor"></span>
                             </div>
                             <div class="su-field">
                                 <label class="su-label" for="signupDoorNumber">@L["Signup.DoorNumber"] <span class="su-optional">@Optional()</span></label>
-                                <input asp-for="DoorNumber" class="su-input" id="signupDoorNumber" dir="auto" aria-describedby="signupDoorNumber-error" />
-                                <span asp-validation-for="DoorNumber" id="signupDoorNumber-error"></span>
+                                <input asp-for="DoorNumber" class="su-input" id="signupDoorNumber" dir="auto"
+                                       data-su-field="restaurant.doorNumber" aria-describedby="signupDoorNumber-error" />
+                                <span asp-validation-for="DoorNumber" id="signupDoorNumber-error" data-su-error-for="restaurant.doorNumber"></span>
                             </div>
                         </div>
-                        <details class="su-disclosure" open="@(string.IsNullOrWhiteSpace(Model.AddressNote) && string.IsNullOrWhiteSpace(Model.LocationUrl) && !fieldsWithErrors.Contains(nameof(Model.LocationUrl)) ? null : "open")">
+                        <details class="su-disclosure">
                             <summary><i class="bi bi-plus-lg" aria-hidden="true"></i>@L["Signup.Flow.AddressMore"]</summary>
                             <div class="su-disclosure__body">
                                 <div class="su-field">
                                     <label class="su-label" for="signupAddressNote">@L["Signup.AddressNote"] <span class="su-optional">@Optional()</span></label>
-                                    <input asp-for="AddressNote" class="su-input" id="signupAddressNote" dir="auto" aria-describedby="signupAddressNote-error" />
-                                    <span asp-validation-for="AddressNote" id="signupAddressNote-error"></span>
+                                    <input asp-for="AddressNote" class="su-input" id="signupAddressNote" dir="auto"
+                                           data-su-field="restaurant.addressNote" aria-describedby="signupAddressNote-error" />
+                                    <span asp-validation-for="AddressNote" id="signupAddressNote-error" data-su-error-for="restaurant.addressNote"></span>
                                 </div>
                                 <div class="su-field">
                                     <label class="su-label" for="signupLocationUrl">@L["Signup.LocationUrl"] <span class="su-optional">@Optional()</span></label>
                                     <input asp-for="LocationUrl" class="su-input" id="signupLocationUrl" placeholder="@L["Signup.LocationUrlPlaceholder"]" inputmode="url"
-                                           dir="ltr" aria-describedby="signupLocationUrl-error signupLocationUrlHelp" />
-                                    <span asp-validation-for="LocationUrl" id="signupLocationUrl-error"></span>
+                                           dir="ltr" data-su-field="restaurant.locationUrl" aria-describedby="signupLocationUrl-error signupLocationUrlHelp" />
+                                    <span asp-validation-for="LocationUrl" id="signupLocationUrl-error" data-su-error-for="restaurant.locationUrl"></span>
                                     <p class="su-help" id="signupLocationUrlHelp">@L["Signup.LocationUrlHelp"]</p>
                                 </div>
                             </div>
@@ -534,35 +600,30 @@
 
                 @* ---------------------------------------------------------------- 3. Account owner (Figma D3, M3) *@
                 <section class="su-step" id="signupStep-owner" data-su-step="owner" aria-labelledby="signupStep-owner-title"
-                         data-su-strip-label="@L["Signup.Strip.Continue"]" data-su-strip-carries hidden="@(initialStep == "owner" ? null : "hidden")">
+                         data-su-strip-label="@L["Signup.Phone.Send"]" data-su-strip-carries hidden="@Hidden("owner")">
                     <div class="su-step__bar">
                         <button type="button" class="su-back" data-su-go="restaurant" aria-label="@string.Format(L["Signup.Flow.BackTo"].Value, L["Signup.StepBusiness"].Value)">
                             <i class="bi bi-chevron-left su-flip-rtl" aria-hidden="true"></i>@L["Signup.StepBusiness"]
                         </button>
-                        <span class="su-step__counter">@string.Format(CultureInfo.CurrentCulture, L["Signup.Flow.StepCounter"].Value, 3, flowSteps.Count)</span>
+                        <span class="su-step__counter">@Counter(3)</span>
                     </div>
                     <h2 class="su-title" id="signupStep-owner-title" tabindex="-1">@L["Signup.StepOwner"]</h2>
                     <p class="su-lead">@L["Signup.Flow.OwnerLead"]</p>
-                    <div class="su-notice su-notice--danger su-error-summary" data-su-error-summary tabindex="-1" hidden>
-                        <i class="bi bi-x-circle" aria-hidden="true"></i>
-                        <div>
-                            <strong class="su-notice__title">@L["Signup.Flow.ErrorSummaryTitle"]</strong>
-                            <ul></ul>
-                        </div>
-                    </div>
+                    <partial name="_SignupErrorSummary" />
 
                     <div class="su-section">
                         <h3 class="su-section__title">@L["Signup.Flow.SectionPerson"]</h3>
                         <div class="su-field">
                             <label class="su-label" for="signupOwnerFullName">@L["Signup.OwnerFullName"]</label>
-                            <input asp-for="OwnerFullName" class="su-input" id="signupOwnerFullName" dir="auto" autocomplete="name" aria-describedby="signupOwnerFullName-error" />
-                            <span asp-validation-for="OwnerFullName" id="signupOwnerFullName-error"></span>
+                            <input asp-for="OwnerFullName" class="su-input" id="signupOwnerFullName" dir="auto" autocomplete="name"
+                                   data-su-field="owner.fullName" aria-describedby="signupOwnerFullName-error" />
+                            <span asp-validation-for="OwnerFullName" id="signupOwnerFullName-error" data-su-error-for="owner.fullName"></span>
                         </div>
                         <div class="su-field">
                             <label class="su-label" for="signupOwnerEmail">@L["Signup.OwnerEmail"]</label>
                             <input asp-for="OwnerEmail" class="su-input" id="signupOwnerEmail" autocomplete="email" inputmode="email" dir="ltr"
-                                   aria-describedby="signupOwnerEmail-error signupOwnerEmailHelp" />
-                            <span asp-validation-for="OwnerEmail" id="signupOwnerEmail-error"></span>
+                                   data-su-field="owner.email" aria-describedby="signupOwnerEmail-error signupOwnerEmailHelp" />
+                            <span asp-validation-for="OwnerEmail" id="signupOwnerEmail-error" data-su-error-for="owner.email"></span>
                             <p class="su-help" id="signupOwnerEmailHelp">@L["Signup.Flow.OwnerEmailHelp"]</p>
                         </div>
                         <div class="su-field">
@@ -570,37 +631,38 @@
                             <div class="su-group" dir="ltr">
                                 <span class="su-group__addon su-group__addon--prefix" id="signupOwnerPhonePrefix">+90</span>
                                 <input asp-for="OwnerPhone" class="su-input" id="signupOwnerPhone" autocomplete="tel-national" inputmode="tel"
-                                       aria-describedby="signupOwnerPhonePrefix signupOwnerPhone-error signupOwnerPhoneHint" />
+                                       data-su-field="owner.mobilePhone" aria-describedby="signupOwnerPhonePrefix signupOwnerPhone-error signupOwnerPhoneHint" />
                             </div>
-                            <span asp-validation-for="OwnerPhone" id="signupOwnerPhone-error"></span>
-                            <p id="signupOwnerPhoneHint" class="su-help">@L["Signup.MobilePhoneHint"]</p>
+                            <span asp-validation-for="OwnerPhone" id="signupOwnerPhone-error" data-su-error-for="owner.mobilePhone"></span>
+                            <p id="signupOwnerPhoneHint" class="su-help">@L["Signup.Flow.OwnerPhoneHelp"]</p>
                         </div>
                     </div>
 
                     <div class="su-section">
                         <h3 class="su-section__title">@L["Signup.Password"]</h3>
+                        <p class="su-section__hint" data-su-password-kept hidden="@(draft.Owner.PasswordSet ? null : "hidden")">@L["Signup.Flow.PasswordKept"]</p>
                         <div class="su-row su-row--aligned su-row--2 su-row--stack-sm">
                             <div class="su-field">
                                 <label class="su-label" for="signupPassword">@L["Signup.Password"]</label>
                                 <div class="su-group">
                                     <input asp-for="Password" type="password" class="su-input" id="signupPassword" autocomplete="new-password"
-                                           aria-describedby="signupPassword-error signupPasswordRules" />
+                                           data-su-field="owner.password" aria-describedby="signupPassword-error signupPasswordRules" />
                                     <button type="button" class="su-group__button signup-password-toggle" data-target="signupPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
                                         <i class="bi bi-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
-                                <span asp-validation-for="Password" id="signupPassword-error"></span>
+                                <span asp-validation-for="Password" id="signupPassword-error" data-su-error-for="owner.password"></span>
                             </div>
                             <div class="su-field">
                                 <label class="su-label" for="signupConfirmPassword">@L["Signup.ConfirmPassword"]</label>
                                 <div class="su-group">
                                     <input asp-for="ConfirmPassword" type="password" class="su-input" id="signupConfirmPassword" autocomplete="new-password"
-                                           aria-describedby="signupConfirmPassword-error" />
+                                           data-su-field="owner.confirmPassword" aria-describedby="signupConfirmPassword-error" />
                                     <button type="button" class="su-group__button signup-password-toggle" data-target="signupConfirmPassword" aria-label="@L["Common.ShowPassword"]" title="@L["Common.ShowPassword"]">
                                         <i class="bi bi-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
-                                <span asp-validation-for="ConfirmPassword" id="signupConfirmPassword-error"></span>
+                                <span asp-validation-for="ConfirmPassword" id="signupConfirmPassword-error" data-su-error-for="owner.confirmPassword"></span>
                             </div>
                         </div>
                         <ul class="su-rules" id="signupPasswordRules" data-su-password-rules>
@@ -620,18 +682,29 @@
                     <p class="su-help su-inline-note">@L["Signup.SetupLaterNote"]</p>
 
                     <div class="su-actions su-actions--strip">
-                        <button type="button" class="su-btn su-btn--primary" data-su-next>@L["Signup.Flow.ToReview"]</button>
+                        <button type="button" class="su-btn su-btn--primary" data-su-next data-su-autosend>@L["Signup.Flow.ToPhone"]</button>
                     </div>
                 </section>
 
-                @* ---------------------------------------------------------------- 4. Review (Figma D4, M4) *@
-                <section class="su-step" id="signupStep-review" data-su-step="review" aria-labelledby="signupStep-review-title"
-                         data-su-strip-label="@submitLabel" data-su-strip-carries hidden="@(initialStep == "review" ? null : "hidden")">
+                @* ---------------------------------------------------------------- 4. Phone verification (Figma T1–T7, MT1–MT7, L3) *@
+                <section class="su-step" id="signupStep-phone" data-su-step="phone" aria-labelledby="signupStep-phone-title" hidden="@Hidden("phone")">
                     <div class="su-step__bar">
                         <button type="button" class="su-back" data-su-go="owner" aria-label="@string.Format(L["Signup.Flow.BackTo"].Value, L["Signup.StepOwner"].Value)">
                             <i class="bi bi-chevron-left su-flip-rtl" aria-hidden="true"></i>@L["Signup.StepOwner"]
                         </button>
-                        <span class="su-step__counter">@string.Format(CultureInfo.CurrentCulture, L["Signup.Flow.StepCounter"].Value, 4, flowSteps.Count)</span>
+                        <span class="su-step__counter">@Counter(4)</span>
+                    </div>
+                    <partial name="_SignupPhoneVerification" model="Model" />
+                </section>
+
+                @* ---------------------------------------------------------------- 5. Review (Figma D4, M4) *@
+                <section class="su-step" id="signupStep-review" data-su-step="review" aria-labelledby="signupStep-review-title"
+                         data-su-strip-label="@submitLabel" data-su-strip-carries hidden="@Hidden("review")">
+                    <div class="su-step__bar">
+                        <button type="button" class="su-back" data-su-go="phone" aria-label="@string.Format(L["Signup.Flow.BackTo"].Value, L["Signup.StepPhone"].Value)">
+                            <i class="bi bi-chevron-left su-flip-rtl" aria-hidden="true"></i>@L["Signup.StepPhone"]
+                        </button>
+                        <span class="su-step__counter">@Counter(5)</span>
                     </div>
                     <h2 class="su-title" id="signupStep-review-title" tabindex="-1">@L["Signup.Flow.ReviewTitle"]</h2>
                     <p class="su-lead">@L["Signup.Flow.ReviewLead"]</p>
@@ -670,9 +743,16 @@
                             <dl class="su-review__list">
                                 <div class="su-review__item"><dt>@L["Signup.OwnerFullName"]</dt><dd dir="auto" data-su-review="ownerName"></dd></div>
                                 <div class="su-review__item"><dt>@L["Signup.OwnerEmail"]</dt><dd><bdi data-su-review="ownerEmail"></bdi></dd></div>
-                                <div class="su-review__item"><dt>@L["Signup.Flow.OwnerMobile"]</dt><dd><bdi data-su-review="ownerPhone"></bdi></dd></div>
-                                <div class="su-review__item"><dt>@L["Signup.Password"]</dt><dd dir="auto" data-su-review="password"></dd></div>
+                                <div class="su-review__item">
+                                    <dt>@L["Signup.Flow.OwnerMobile"]</dt>
+                                    <dd class="su-review__phone">
+                                        <bdi data-su-review="ownerPhone"></bdi>
+                                        <span class="su-badge su-badge--success" data-su-review-verified hidden="@(phoneVerified ? null : "hidden")"><i class="bi bi-check2" aria-hidden="true"></i>@L["Signup.Receipt.PhoneVerified"]</span>
+                                    </dd>
+                                </div>
+                                <div class="su-review__item"><dt>@L["Signup.Password"]</dt><dd data-su-review="password"></dd></div>
                             </dl>
+                            <p class="su-help">@L["Signup.Review.ReverifyNote"]</p>
                         </section>
                     </div>
                 </section>
@@ -681,9 +761,13 @@
             <aside class="su-aside">
                 <div class="su-receipt-block">
                     <partial name="_SignupReceipt" model="asideReceipt" />
+                    <p class="su-receipt__note" data-su-note-step="phone">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        <span>@L["Signup.Phone.ShareWarning"]</span>
+                    </p>
                 </div>
 
-                @* The review step's payment card (Figma D4 aside, M4 inline): below 992 px it follows the review content. *@
+                @* The review step's card (Figma D4 aside, M4 inline): below 992 px it follows the review content. *@
                 <section class="su-receipt su-pay" aria-labelledby="signupPayTitle">
                     <header class="su-receipt__head">
                         <h2 class="su-receipt__title" id="signupPayTitle">@L["Signup.Pay.Title"]</h2>
@@ -692,19 +776,26 @@
                         <div class="su-pay__row"><dt data-su-text="payPlanRow"></dt><dd><bdi data-su-text="payAmount"></bdi></dd></div>
                         <div class="su-pay__row"><dt>@L["Signup.Pay.Vat"]</dt><dd data-su-text="payVat"></dd></div>
                         <div class="su-pay__row"><dt>@L["Signup.Pay.Period"]</dt><dd data-su-text="payPeriod"></dd></div>
-                        <div class="su-pay__row"><dt>@L["Signup.Pay.AutoRenew"]</dt><dd data-su-text="payRenewal"></dd></div>
+                        @if (simulator)
+                        {
+                            <div class="su-pay__row"><dt>@L["Signup.Pay.AutoRenew"]</dt><dd data-su-text="payRenewal"></dd></div>
+                        }
                     </dl>
                     <div class="su-receipt__cut" aria-hidden="true"></div>
                     <div class="su-pay__body">
                         <div class="su-receipt__total">
-                            <span class="su-receipt__total-label">@L["Signup.Receipt.DueToday"]</span>
+                            <span class="su-receipt__total-label">@amountLabel</span>
                             <div class="su-receipt__amount-row">
                                 <span class="su-receipt__amount@(selectedQuote is null ? " su-receipt__amount--unset" : string.Empty)" data-su-amount><bdi data-su-text="amount">@receiptAmount</bdi></span>
                                 <span class="su-receipt__vat" data-su-text="vat">@receiptVat</span>
                             </div>
                             <p class="su-receipt__period" data-su-text="periodNote">@receiptPeriodNote</p>
                         </div>
-                        <p class="su-help">@L[Model.IsPaymentSimulatorAvailable ? "Signup.BillingNote" : "Signup.BillingNoteAwaitingPayment"]</p>
+                        <p class="su-help">@L[simulator ? "Signup.BillingNote" : "Signup.BillingNoteAwaitingPayment"]</p>
+                        @if (!string.IsNullOrWhiteSpace(supportEmail))
+                        {
+                            <p class="su-help">@Html.Raw(string.Format(L["Signup.Pay.SupportLine"].Value, $"<a class=\"su-link\" href=\"mailto:{System.Net.WebUtility.HtmlEncode(supportEmail)}\"><bdi>{System.Net.WebUtility.HtmlEncode(supportEmail)}</bdi></a>"))</p>
+                        }
                         <div class="su-actions su-actions--strip">
                             <button type="submit" id="signupSubmitButton" class="su-btn su-btn--primary su-btn--block" data-su-submit>@submitLabel</button>
                         </div>
@@ -721,14 +812,22 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script type="application/json" id="signupFormConfig">@Html.Raw(JsonSerializer.Serialize(signupConfig))</script>
+    <script type="application/json" id="signupDraftState">@Json.Serialize(Model.InitialDraft)</script>
+    <script type="application/json" id="signupEndpoints">@Json.Serialize(Model.Endpoints)</script>
     <script src="~/js/signup/signup-phone-format.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-business-types.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-plan-price.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-steps.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-receipt.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-review.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-countdown.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-code-input.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-address-check.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-api.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-draft.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-sheet.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-viewport.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-phone-step.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-flow.js" asp-append-version="true"></script>
 }

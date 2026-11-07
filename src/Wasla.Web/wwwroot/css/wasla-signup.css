@@ -1437,6 +1437,11 @@
   color: var(--su-text-muted);
 }
 
+/* Values keep their own direction (dir="auto"), but line up with the page's side right to left. */
+[dir="rtl"] .su-review__item dd {
+  text-align: right;
+}
+
 @media (min-width: 768px) {
   .su-review__item {
     grid-template-columns: 184px minmax(0, 1fr);
@@ -1878,6 +1883,171 @@
   }
 
   .su-btn[aria-busy="true"]::before {
+    animation-duration: 2.4s;
+  }
+}
+
+/* ---------- Draft flow (WAS-192/194): page alert, no-script, phone step, address check ---------- */
+
+.su-shell [hidden] {
+  display: none !important;
+}
+
+/* The steps need the draft API: without scripts only the no-script notice shows. */
+.wm-no-js .su-shell .su-layout,
+.wm-no-js .su-shell .su-progress,
+.wm-no-js .su-shell .su-strip {
+  display: none !important;
+}
+
+.su-page-alert:focus {
+  outline: none;
+}
+
+.su-page-alert:focus-visible {
+  outline: 2px solid var(--su-action);
+  outline-offset: 2px;
+}
+
+.su-page-alert p,
+.su-noscript p {
+  margin: 0;
+}
+
+.su-page-alert .su-link {
+  display: inline-block;
+  margin-block-start: 6px;
+}
+
+.su-receipt__note[data-su-note-step] {
+  display: none;
+}
+
+.su-shell[data-su-current="phone"] .su-receipt__note[data-su-note-step="phone"] {
+  display: flex;
+}
+
+.su-phone-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.su-phone-stack > .su-actions {
+  margin-block-start: 4px;
+}
+
+.su-phone-card .su-btn--quiet {
+  flex: none;
+}
+
+.su-phone-changer {
+  gap: 12px;
+}
+
+.su-phone-changer .su-help .bi {
+  margin-inline-end: 4px;
+}
+
+.su-actions--inline {
+  margin-block-start: 0;
+}
+
+.su-btn--inline {
+  min-block-size: 36px;
+  padding-inline: 0;
+  margin-inline-start: -2px;
+}
+
+.su-btn--inline:hover {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.su-spinner {
+  flex: none;
+  inline-size: 14px;
+  block-size: 14px;
+  margin-block-start: 3px;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: su-spin 0.8s linear infinite;
+}
+
+.su-status[data-state="sending"] {
+  color: var(--su-text-body);
+}
+
+.su-status[data-state="sending"] .su-spinner {
+  color: var(--su-action);
+}
+
+.su-dev-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.su-review__phone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+/* Panel address status (Figma P1): the icon follows the state. */
+.su-status__icon {
+  display: none;
+}
+
+.su-status[data-state="available"] .su-status__icon,
+.su-status[data-state="taken"] .su-status__icon,
+.su-status[data-state="invalid"] .su-status__icon,
+.su-status[data-state="error"] .su-status__icon {
+  display: inline-block;
+}
+
+.su-status[data-state="available"] .su-status__icon::before {
+  content: "\F272";
+}
+
+.su-status[data-state="taken"] .su-status__icon::before,
+.su-status[data-state="invalid"] .su-status__icon::before {
+  content: "\F33B";
+}
+
+.su-status[data-state="error"] .su-status__icon::before {
+  content: "\F431";
+}
+
+.su-status[data-state="checking"]::before {
+  content: "";
+  flex: none;
+  inline-size: 12px;
+  block-size: 12px;
+  margin-block-start: 3px;
+  border: 2px solid var(--su-action);
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: su-spin 0.8s linear infinite;
+}
+
+.su-status[data-state="error"] {
+  color: var(--su-text-muted);
+}
+
+/* While the on-screen keyboard is open the step chrome steps aside (Figma MT2k). */
+@media (max-width: 991.98px) {
+  .su-shell.is-keyboard-open .su-progress,
+  .su-shell.is-keyboard-open .su-step__bar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .su-spinner,
+  .su-status[data-state="checking"]::before {
     animation-duration: 2.4s;
   }
 }

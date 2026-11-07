@@ -128,13 +128,13 @@
             setDistrictDisabled(true);
             clearNeighborhoodFields();
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
         setDistrictDisabled(true);
         clearNeighborhoodFields();
         clearStreetFields();
-        fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
+        return fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -196,17 +196,20 @@
         idInput.value = match ? String(match.id) : "";
     }
 
-    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName) {
+    // selectedStreetId / selectedStreetName: the street to restore after the neighbourhood's streets are loaded.
+    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName, selectedStreetId, selectedStreetName) {
         if (!districtId) {
             clearNeighborhoodFields();
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
+        var streetIdToRestore = selectedStreetId === undefined ? null : selectedStreetId;
+        var streetNameToRestore = selectedStreetName === undefined ? null : selectedStreetName;
         clearNeighborhoodFields();
         clearStreetFields();
 
-        fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
+        return fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -232,8 +235,12 @@
                 }
 
                 if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                    loadStreets(neighborhoodIdInput.value, streetIdInput ? streetIdInput.value : null, streetInput ? streetInput.value : null);
+                    return loadStreets(neighborhoodIdInput.value, streetIdToRestore, streetNameToRestore);
                 }
+                if (streetNameToRestore && streetInput) {
+                    streetInput.value = streetNameToRestore;
+                }
+                return undefined;
             })
             .catch(function () {
                 neighborhoodsCache = [];
@@ -246,12 +253,12 @@
     function loadStreets(neighborhoodId, selectedStreetId, selectedStreetName) {
         if (!neighborhoodId) {
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
         clearStreetFields();
 
-        fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
+        return fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -503,6 +510,38 @@
             }
         });
     });
+
+    // Puts a saved address back (WAS-194: the page restores the registration draft): the city, then its districts with
+    // the saved one selected, then the neighbourhood and street lists with the saved values.
+    function restoreAddress(values) {
+        if (!citySelect) {
+            return Promise.resolve();
+        }
+
+        citySelect.value = values && values.cityId != null ? String(values.cityId) : "";
+        updatePhoneUi();
+        if (!citySelect.value) {
+            setDistrictDisabled(true);
+            return Promise.resolve();
+        }
+
+        return loadDistricts(citySelect.value, values.districtId).then(function () {
+            if (!values.districtId) {
+                return undefined;
+            }
+            return loadNeighborhoods(
+                String(values.districtId),
+                values.neighborhoodId,
+                values.neighborhood || null,
+                values.streetId,
+                values.streetAddress || null);
+        });
+    }
+
+    window.WaslaSignupForm = {
+        restoreAddress: restoreAddress,
+        refreshDomainPreview: updateDomainPreview
+    };
 
     initPasswordToggles();
     initOptionalBusinessEmailValidation();

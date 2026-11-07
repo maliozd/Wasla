@@ -4,11 +4,12 @@
     // The code length is the server's (the phone verification status reports codeLength); without one the field
     // takes any number of digits and signup-code-input.js does not submit by itself.
     var codeLength = ViewData["SignupCodeLength"] as int?;
+    var hidden = ViewData["SignupCodeHidden"] is true;
 }
 @* The SMS code field of the phone verification step (Figma "Kaynak · Code input", T1–T7, MT2k): one field, not one
    box per digit, so paste, the keyboard's one-time-code suggestion and WebOTP fill it in one go. Digits are Latin and
    the field stays left to right in Arabic (Figma L3). Errors are under the field and named by aria-describedby. *@
-<div class="su-field" data-su-code-field>
+<div class="su-field" data-su-code-field hidden="@(hidden ? "hidden" : null)">
     <label class="su-label" for="signupPhoneCode">@L["Signup.Phone.CodeLabel"]</label>
     <div class="su-code" data-su-code data-state="">
         <input class="su-code__input"

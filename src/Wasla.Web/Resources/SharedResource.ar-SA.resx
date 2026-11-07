@@ -2895,13 +2895,10 @@
   <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب Wasla</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات عبر الإنترنت وأدر كل شيء من مكان واحد.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>الخطة</value></data>
-  <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>اختيارك</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>باقة {0}</value></data>
-  <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>مع هذه الباقة:</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>عرض مخصص</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>المطعم</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>حساب المالك</value></data>
-  <data name="Signup.StepCreate" xml:space="preserve"><value>إنشاء الحساب</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>الخطة</value></data>
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>فترة الفوترة</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>شهري</value></data>
@@ -2919,7 +2916,7 @@
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>نوع الهاتف</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>جوال</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>هاتف أرضي</value></data>
-  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: ⁦+90 531 324 12 45⁩</value></data>
+  <data name="Signup.MobilePhoneHint" xml:space="preserve"><value>مثال: &#x2066;+90 531 324 12 45&#x2069;</value></data>
   <data name="Signup.BusinessPhone" xml:space="preserve"><value>هاتف العمل</value></data>
   <data name="Signup.BusinessEmail" xml:space="preserve"><value>بريد العمل الإلكتروني</value></data>
   <data name="Signup.BusinessEmailPlaceholder" xml:space="preserve"><value>info@yourrestaurant.com</value></data>
@@ -4375,7 +4372,7 @@
   <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>يمكن حاليًا تسجيل الأنشطة التجارية الموجودة في تركيا فقط.</value></data>
   <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>أضف ملاحظة على العنوان ورابط الخريطة</value></data>
   <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>المتابعة إلى حساب المالك</value></data>
-  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>ستكون أول من يسجّل الدخول إلى لوحة تحكم مطعمك. يمكنك إضافة موظفيك من لوحة التحكم بعد الإعداد.</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>ستكون أول من يسجّل الدخول إلى لوحة تحكم مطعمك. سنتحقق من رقم جوالك برسالة نصية في الخطوة التالية، ويمكنك إضافة موظفيك من لوحة التحكم بعد الإعداد.</value></data>
   <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>بياناتك</value></data>
   <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>ستسجّل الدخول إلى لوحة التحكم بهذا البريد الإلكتروني، وإليه نرسل الإشعار عندما تصبح اللوحة جاهزة.</value></data>
   <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>رقم الجوال</value></data>
@@ -4428,4 +4425,69 @@
   <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>رمز التحقق</value></data>
   <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>أدخل الرمز</value></data>
   <data name="Validation.PlanRequired" xml:space="preserve"><value>اختر خطة للمتابعة.</value></data>
+  <data name="Signup.Draft.Missing" xml:space="preserve"><value>انتهت صلاحية جلسة التسجيل. حُذفت البيانات التي أدخلتها حفاظًا على أمانك؛ يرجى البدء من جديد.</value></data>
+  <data name="Signup.Draft.Submitted" xml:space="preserve"><value>تم إرسال هذا التسجيل بالفعل.</value></data>
+  <data name="Signup.Draft.ValidationFailed" xml:space="preserve"><value>يرجى تصحيح الحقول المحددة.</value></data>
+  <data name="Signup.Draft.Incomplete" xml:space="preserve"><value>أكمل جميع الخطوات قبل المتابعة.</value></data>
+  <data name="Signup.Draft.InvalidRequest" xml:space="preserve"><value>تعذّرت معالجة الطلب. أعد تحميل الصفحة وحاول مرة أخرى.</value></data>
+  <data name="Signup.Phone.OwnerIncomplete" xml:space="preserve"><value>احفظ بيانات صاحب الحساب قبل طلب رمز التحقق.</value></data>
+  <data name="Signup.Phone.AlreadyVerified" xml:space="preserve"><value>تم التحقق من رقم الهاتف هذا بالفعل.</value></data>
+  <data name="Signup.Phone.NotVerified" xml:space="preserve"><value>تحقّق من رقم جوالك للمتابعة.</value></data>
+  <data name="Signup.Phone.CodeIncorrect" xml:space="preserve"><value>الرمز غير صحيح. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Signup.Phone.CodeExpired" xml:space="preserve"><value>انتهت صلاحية الرمز. اطلب رمزًا جديدًا.</value></data>
+  <data name="Signup.Phone.CodeFormatInvalid" xml:space="preserve"><value>أدخل الرمز المكوّن من 6 أرقام.</value></data>
+  <data name="Signup.Phone.NoActiveCode" xml:space="preserve"><value>لا يوجد رمز صالح. اطلب رمزًا جديدًا.</value></data>
+  <data name="Signup.Phone.ResendNotAvailable" xml:space="preserve"><value>يرجى الانتظار قليلًا قبل طلب رمز جديد.</value></data>
+  <data name="Signup.Phone.Locked" xml:space="preserve"><value>محاولات خاطئة كثيرة جدًا. انتظر قليلًا ثم اطلب رمزًا جديدًا.</value></data>
+  <data name="Signup.Phone.SendLimitReached" xml:space="preserve"><value>تم إرسال عدد كبير جدًا من الرموز. يرجى المحاولة لاحقًا.</value></data>
+  <data name="Signup.Phone.DeliveryFailed" xml:space="preserve"><value>تعذّر إرسال الرمز. تحقّق من رقمك وحاول مرة أخرى.</value></data>
+  <data name="Signup.Phone.Unavailable" xml:space="preserve"><value>التحقق من الهاتف غير متاح حاليًا. يرجى التواصل مع الدعم.</value></data>
+  <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>التحقق من الهاتف غير متاح مؤقتًا. يرجى المحاولة بعد بضع دقائق.</value></data>
+  <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>رقم الجوال مطلوب.</value></data>
+  <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>أدخل رقم جوال تركيًا صالحًا، مثل &#x2066;532 123 45 67&#x2069;.</value></data>
+  <data name="Signup.StepPhone" xml:space="preserve"><value>التحقق من الهاتف</value></data>
+  <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>التحقق عبر رسالة نصية</value></data>
+  <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>تم التحقق</value></data>
+  <data name="Signup.Receipt.PlanPrice" xml:space="preserve"><value>سعر الخطة</value></data>
+  <data name="Signup.Receipt.PeriodLineMonthly" xml:space="preserve"><value>خطة {0}، فترة فوترة شهرية.</value></data>
+  <data name="Signup.Receipt.PeriodLineYearly" xml:space="preserve"><value>خطة {0}، فترة فوترة سنوية.</value></data>
+  <data name="Signup.Flow.ToPhone" xml:space="preserve"><value>إرسال رمز التحقق</value></data>
+  <data name="Signup.Flow.OwnerPhoneHelp" xml:space="preserve"><value>سنرسل رمز التحقق إلى هذا الرقم برسالة نصية، ويمكن أن يختلف عن هاتف النشاط التجاري.</value></data>
+  <data name="Signup.Flow.PasswordKept" xml:space="preserve"><value>كلمة المرور محفوظة. اترك الحقلين فارغين للإبقاء عليها.</value></data>
+  <data name="Signup.Flow.SlugChecking" xml:space="preserve"><value>جارٍ التحقق…</value></data>
+  <data name="Signup.Flow.SlugAvailable" xml:space="preserve"><value>{0} متاح الآن، وسنتحقق منه مرة أخرى عند إرسال التسجيل.</value></data>
+  <data name="Signup.Flow.SlugCheckFailed" xml:space="preserve"><value>تعذّر التحقق من العنوان الآن، وسنتحقق منه مرة أخرى عند إرسال التسجيل.</value></data>
+  <data name="Signup.Flow.AddressTakenTitle" xml:space="preserve"><value>عنوان لوحة التحكم لم يعد متاحًا</value></data>
+  <data name="Signup.Flow.AddressTakenBody" xml:space="preserve"><value>تم حجز {0} لتسجيل آخر بينما كنت تراجع بياناتك. اختر عنوانًا جديدًا؛ تبقى بياناتك الأخرى والتحقق من هاتفك محفوظة.</value></data>
+  <data name="Signup.Flow.NetworkError" xml:space="preserve"><value>تعذّر الاتصال. تحقّق من اتصالك بالإنترنت وحاول مرة أخرى.</value></data>
+  <data name="Signup.Flow.ServerError" xml:space="preserve"><value>حدث خطأ. يرجى المحاولة مرة أخرى بعد قليل.</value></data>
+  <data name="Signup.Flow.Reload" xml:space="preserve"><value>أعد تحميل الصفحة</value></data>
+  <data name="Signup.Flow.StartAgain" xml:space="preserve"><value>ابدأ من جديد</value></data>
+  <data name="Signup.Flow.OpenRegistration" xml:space="preserve"><value>اعرض حالة تسجيلك</value></data>
+  <data name="Signup.Flow.NoScript" xml:space="preserve"><value>تحتاج خطوات التسجيل إلى JavaScript. فعّل JavaScript في متصفحك ثم أعد تحميل الصفحة.</value></data>
+  <data name="Signup.Flow.PhoneUnavailableTitle" xml:space="preserve"><value>لا يمكن إكمال التسجيل الآن</value></data>
+  <data name="Signup.Phone.Title" xml:space="preserve"><value>تأكيد رقم الهاتف</value></data>
+  <data name="Signup.Phone.TitleVerified" xml:space="preserve"><value>تم التحقق من هاتفك</value></data>
+  <data name="Signup.Phone.LeadSent" xml:space="preserve"><value>أرسلنا رمز التحقق إلى جوالك برسالة نصية. لا يمكنك المتابعة إلى الملخص قبل التحقق من الرمز.</value></data>
+  <data name="Signup.Phone.LeadNotSent" xml:space="preserve"><value>سنرسل رمز التحقق إلى جوالك برسالة نصية.</value></data>
+  <data name="Signup.Phone.LeadVerified" xml:space="preserve"><value>تم التحقق من جوالك. يمكنك الآن مراجعة بياناتك.</value></data>
+  <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>الرقم الذي سيُرسل إليه الرمز</value></data>
+  <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>الرقم الذي أُرسل إليه الرمز</value></data>
+  <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>الرقم الذي تم التحقق منه</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>تغيير الرقم</value></data>
+  <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>أدخل رقم الجوال الذي تريد استلام الرمز عليه.</value></data>
+  <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>سنرسل رمزًا إلى الرقم الجديد، ولن يعود التحقق من الرقم السابق ساريًا.</value></data>
+  <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>أرسل الرمز إلى هذا الرقم</value></data>
+  <data name="Signup.Phone.Send" xml:space="preserve"><value>إرسال الرمز</value></data>
+  <data name="Signup.Phone.Resend" xml:space="preserve"><value>أرسل رمزًا جديدًا</value></data>
+  <data name="Signup.Phone.Verify" xml:space="preserve"><value>تحقّق وانتقل إلى الملخص</value></data>
+  <data name="Signup.Phone.Sending" xml:space="preserve"><value>جارٍ إرسال الرمز…</value></data>
+  <data name="Signup.Phone.Sent" xml:space="preserve"><value>تم إرسال الرمز الساعة {0}.</value></data>
+  <data name="Signup.Phone.ResendIn" xml:space="preserve"><value>يمكنك طلب رمز جديد بعد {0}.</value></data>
+  <data name="Signup.Phone.DeliveryFailedTitle" xml:space="preserve"><value>تعذّر إرسال الرسالة النصية</value></data>
+  <data name="Signup.Phone.SupportLine" xml:space="preserve"><value>إذا استمرت المشكلة، راسلنا على {0}.</value></data>
+  <data name="Signup.Phone.ShareWarning" xml:space="preserve"><value>لا تشارك الرمز الوارد في الرسالة مع أي شخص. لا تطلب Wasla هذا الرمز عبر الهاتف أو البريد الإلكتروني.</value></data>
+  <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>بيئة التطوير: عرض رموز الاختبار المرسلة</value></data>
+  <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>إذا غيّرت رقم الجوال، فعليك التحقق من الرقم الجديد برسالة نصية مرة أخرى.</value></data>
+  <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>للاستفسارات حول اشتراكك أو لإلغائه، راسلنا على {0}.</value></data>
 </root>

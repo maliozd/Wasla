@@ -2895,13 +2895,10 @@
   <data name="Signup.Title" xml:space="preserve"><value>Wasla hesabı oluştur</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Plan</value></data>
-  <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Seçiminiz</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} Paketi</value></data>
-  <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>Bu paketle:</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Özel teklif</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>Restoran</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Yetkili hesabı</value></data>
-  <data name="Signup.StepCreate" xml:space="preserve"><value>Hesabı oluştur</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>Faturalandırma dönemi</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>Aylık</value></data>
@@ -4375,7 +4372,7 @@
   <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>Şimdilik Türkiye'deki işletmeler kayıt olabilir.</value></data>
   <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>Adres notu ve harita bağlantısı ekle</value></data>
   <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>Yetkili hesabına geç</value></data>
-  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>Restoran panelinize ilk giriş yapacak kişi sizsiniz. Çalışanlarınızı kurulumdan sonra panelden ekleyebilirsiniz.</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>Restoran panelinize ilk giriş yapacak kişi sizsiniz. Cep telefonunuzu sonraki adımda SMS ile doğrulayacağız; çalışanlarınızı kurulumdan sonra panelden ekleyebilirsiniz.</value></data>
   <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>Kişi bilgileri</value></data>
   <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>Panele bu e-posta adresiyle giriş yapacaksınız. Panel hazır olduğunda bilgilendirme de bu adrese gönderilir.</value></data>
   <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>Cep telefonu</value></data>
@@ -4428,4 +4425,69 @@
   <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>Doğrulama kodu</value></data>
   <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>Kodu girin</value></data>
   <data name="Validation.PlanRequired" xml:space="preserve"><value>Devam etmek için bir plan seçin.</value></data>
+  <data name="Signup.Draft.Missing" xml:space="preserve"><value>Kayıt oturumunuzun süresi doldu. Güvenliğiniz için girdiğiniz bilgiler silindi; lütfen yeniden başlayın.</value></data>
+  <data name="Signup.Draft.Submitted" xml:space="preserve"><value>Bu kayıt zaten gönderildi.</value></data>
+  <data name="Signup.Draft.ValidationFailed" xml:space="preserve"><value>Lütfen işaretli alanları düzeltin.</value></data>
+  <data name="Signup.Draft.Incomplete" xml:space="preserve"><value>Devam etmeden önce tüm adımları tamamlayın.</value></data>
+  <data name="Signup.Draft.InvalidRequest" xml:space="preserve"><value>İstek işlenemedi. Sayfayı yenileyip tekrar deneyin.</value></data>
+  <data name="Signup.Phone.OwnerIncomplete" xml:space="preserve"><value>Doğrulama kodu istemeden önce hesap sahibi bilgilerini kaydedin.</value></data>
+  <data name="Signup.Phone.AlreadyVerified" xml:space="preserve"><value>Bu telefon numarası zaten doğrulandı.</value></data>
+  <data name="Signup.Phone.NotVerified" xml:space="preserve"><value>Devam etmek için cep telefonu numaranızı doğrulayın.</value></data>
+  <data name="Signup.Phone.CodeIncorrect" xml:space="preserve"><value>Kod hatalı. Lütfen tekrar deneyin.</value></data>
+  <data name="Signup.Phone.CodeExpired" xml:space="preserve"><value>Kodun süresi doldu. Yeni bir kod isteyin.</value></data>
+  <data name="Signup.Phone.CodeFormatInvalid" xml:space="preserve"><value>6 haneli kodu girin.</value></data>
+  <data name="Signup.Phone.NoActiveCode" xml:space="preserve"><value>Geçerli bir kod yok. Yeni bir kod isteyin.</value></data>
+  <data name="Signup.Phone.ResendNotAvailable" xml:space="preserve"><value>Yeni kod istemeden önce biraz bekleyin.</value></data>
+  <data name="Signup.Phone.Locked" xml:space="preserve"><value>Çok fazla hatalı deneme yapıldı. Biraz bekleyip yeni bir kod isteyin.</value></data>
+  <data name="Signup.Phone.SendLimitReached" xml:space="preserve"><value>Çok fazla kod gönderildi. Lütfen daha sonra tekrar deneyin.</value></data>
+  <data name="Signup.Phone.DeliveryFailed" xml:space="preserve"><value>Kod gönderilemedi. Numaranızı kontrol edip tekrar deneyin.</value></data>
+  <data name="Signup.Phone.Unavailable" xml:space="preserve"><value>Telefon doğrulaması şu anda kullanılamıyor. Lütfen destek ile iletişime geçin.</value></data>
+  <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Telefon doğrulaması geçici olarak kullanılamıyor. Lütfen birkaç dakika sonra tekrar deneyin.</value></data>
+  <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Cep telefonu numarası gereklidir.</value></data>
+  <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Geçerli bir Türkiye cep telefonu numarası girin, örneğin 532 123 45 67.</value></data>
+  <data name="Signup.StepPhone" xml:space="preserve"><value>Telefon doğrulama</value></data>
+  <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>SMS ile doğrulama</value></data>
+  <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Doğrulandı</value></data>
+  <data name="Signup.Receipt.PlanPrice" xml:space="preserve"><value>Plan fiyatı</value></data>
+  <data name="Signup.Receipt.PeriodLineMonthly" xml:space="preserve"><value>{0} planı, aylık ödeme dönemi.</value></data>
+  <data name="Signup.Receipt.PeriodLineYearly" xml:space="preserve"><value>{0} planı, yıllık ödeme dönemi.</value></data>
+  <data name="Signup.Flow.ToPhone" xml:space="preserve"><value>Doğrulama kodu gönder</value></data>
+  <data name="Signup.Flow.OwnerPhoneHelp" xml:space="preserve"><value>Bu numaraya SMS ile doğrulama kodu göndereceğiz. İşletme telefonundan farklı olabilir.</value></data>
+  <data name="Signup.Flow.PasswordKept" xml:space="preserve"><value>Şifreniz kayıtlı. Değiştirmek istemiyorsanız alanları boş bırakın.</value></data>
+  <data name="Signup.Flow.SlugChecking" xml:space="preserve"><value>Kontrol ediliyor…</value></data>
+  <data name="Signup.Flow.SlugAvailable" xml:space="preserve"><value>{0} şu an kullanılabilir. Kaydı gönderirken yeniden kontrol edilir.</value></data>
+  <data name="Signup.Flow.SlugCheckFailed" xml:space="preserve"><value>Adres şu an kontrol edilemedi. Kaydı gönderirken yeniden kontrol edilir.</value></data>
+  <data name="Signup.Flow.AddressTakenTitle" xml:space="preserve"><value>Panel adresi artık kullanılamıyor</value></data>
+  <data name="Signup.Flow.AddressTakenBody" xml:space="preserve"><value>{0} siz bilgileri kontrol ederken başka bir kayıt için alındı. Yeni bir adres seçin; diğer bilgileriniz ve telefon doğrulamanız korunur.</value></data>
+  <data name="Signup.Flow.NetworkError" xml:space="preserve"><value>Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.</value></data>
+  <data name="Signup.Flow.ServerError" xml:space="preserve"><value>Bir sorun oluştu. Lütfen biraz sonra tekrar deneyin.</value></data>
+  <data name="Signup.Flow.Reload" xml:space="preserve"><value>Sayfayı yenile</value></data>
+  <data name="Signup.Flow.StartAgain" xml:space="preserve"><value>Yeniden başla</value></data>
+  <data name="Signup.Flow.OpenRegistration" xml:space="preserve"><value>Kaydınızın durumunu görün</value></data>
+  <data name="Signup.Flow.NoScript" xml:space="preserve"><value>Kayıt adımları için tarayıcınızda JavaScript açık olmalıdır. JavaScript'i açıp sayfayı yenileyin.</value></data>
+  <data name="Signup.Flow.PhoneUnavailableTitle" xml:space="preserve"><value>Kayıt şu anda tamamlanamıyor</value></data>
+  <data name="Signup.Phone.Title" xml:space="preserve"><value>Telefonunuzu doğrulayın</value></data>
+  <data name="Signup.Phone.TitleVerified" xml:space="preserve"><value>Telefonunuz doğrulandı</value></data>
+  <data name="Signup.Phone.LeadSent" xml:space="preserve"><value>Doğrulama kodunu cep telefonunuza SMS ile gönderdik. Kod doğrulanmadan özet adımına geçilemez.</value></data>
+  <data name="Signup.Phone.LeadNotSent" xml:space="preserve"><value>Doğrulama kodunu cep telefonunuza SMS ile göndereceğiz.</value></data>
+  <data name="Signup.Phone.LeadVerified" xml:space="preserve"><value>Cep telefonunuz doğrulandı. Şimdi bilgilerinizi kontrol edebilirsiniz.</value></data>
+  <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>Kodun gönderileceği numara</value></data>
+  <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>Kodun gönderildiği numara</value></data>
+  <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Doğrulanan numara</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Numarayı değiştir</value></data>
+  <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Kodu almak istediğiniz cep telefonu numarasını girin.</value></data>
+  <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>Yeni numaraya kod göndereceğiz. Önceki numaranın doğrulaması geçerliliğini yitirir.</value></data>
+  <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Kodu bu numaraya gönder</value></data>
+  <data name="Signup.Phone.Send" xml:space="preserve"><value>Kod gönder</value></data>
+  <data name="Signup.Phone.Resend" xml:space="preserve"><value>Yeni kod gönder</value></data>
+  <data name="Signup.Phone.Verify" xml:space="preserve"><value>Doğrula ve özete geç</value></data>
+  <data name="Signup.Phone.Sending" xml:space="preserve"><value>Kod gönderiliyor…</value></data>
+  <data name="Signup.Phone.Sent" xml:space="preserve"><value>Kod gönderildi, {0}.</value></data>
+  <data name="Signup.Phone.ResendIn" xml:space="preserve"><value>Yeni kodu {0} sonra isteyebilirsiniz.</value></data>
+  <data name="Signup.Phone.DeliveryFailedTitle" xml:space="preserve"><value>SMS gönderilemedi</value></data>
+  <data name="Signup.Phone.SupportLine" xml:space="preserve"><value>Sorun sürerse {0} adresine yazın.</value></data>
+  <data name="Signup.Phone.ShareWarning" xml:space="preserve"><value>SMS'teki kodu kimseyle paylaşmayın. Wasla bu kodu telefonla veya e-postayla istemez.</value></data>
+  <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>Geliştirme ortamı: gönderilen test kodlarını görün</value></data>
+  <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>Cep telefonunu değiştirirseniz yeni numarayı SMS ile yeniden doğrulamanız gerekir.</value></data>
+  <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>Aboneliğinizle ilgili sorular ve iptal talepleri için {0} adresine yazın.</value></data>
 </root>
