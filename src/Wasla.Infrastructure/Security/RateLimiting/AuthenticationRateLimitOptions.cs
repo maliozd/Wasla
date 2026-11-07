@@ -17,7 +17,10 @@ public static class AuthenticationRateLimitPolicies
     /// <summary>Api credential check, <c>POST /api/auth/validate</c>. Partitioned by resolved tenant and client network.</summary>
     public const string ApiCredentialValidation = "auth-api-credential-validation";
 
-    /// <summary>Anonymous signup, <c>POST /signup</c>, which creates a pending registration. Partitioned by client network.</summary>
+    /// <summary>
+    /// The registration draft submit, <c>POST /signup/draft/submit</c>, which creates a pending registration (WAS-192).
+    /// Partitioned by client network.
+    /// </summary>
     public const string SignupSubmission = "signup-submission";
 
     /// <summary>

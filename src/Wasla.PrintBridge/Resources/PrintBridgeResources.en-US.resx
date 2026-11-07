@@ -66,6 +66,9 @@
   <data name="Connection.RequestFailed" xml:space="preserve">
     <value>Print Bridge request failed (HTTP {0}).</value>
   </data>
+  <data name="Connection.RedirectNotFollowed" xml:space="preserve">
+    <value>The server redirected the request to another address, and Print Bridge does not follow redirects. Enter the Wasla Web Panel URL exactly as shown on the Wasla Web Print Bridge setup page.</value>
+  </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
     <value>Wasla server is unavailable. Try again later.</value>
   </data>

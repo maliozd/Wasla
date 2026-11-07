@@ -6,11 +6,11 @@ using System.Text;
 namespace Wasla.PrintBridge.Tests;
 
 /// <summary>
-/// A real HTTP server on a free loopback port, so that setup requests go through the real handler of
-/// <see cref="Wasla.PrintBridge.Services.PrintBridgeSetupHttpClientFactory"/> over a socket (WAS-91). Every request that
-/// arrives is recorded with its method, path, token and body. Requests are forwarded to <c>forward</c> (the fake Wasla
-/// API) when one is given, and answered <c>{}</c> otherwise. A <see cref="Redirect"/> answers chosen paths with a
-/// redirect instead: before forwarding (the API never saw the request) or after it (the API processed it).
+/// A real HTTP server on a free loopback port, so that setup requests (WAS-91) and device requests (WAS-191) go through
+/// the real production handler over a socket. Every request that arrives is recorded with its method, path, token and
+/// body. Requests are forwarded to <c>forward</c> (the fake Wasla API) when one is given, and answered <c>{}</c>
+/// otherwise. A <see cref="Redirect"/> answers chosen paths with a redirect instead: before forwarding (the API never saw
+/// the request) or after it (the API processed it).
 /// </summary>
 internal sealed class LoopbackSetupServer : IDisposable
 {
@@ -20,6 +20,8 @@ internal sealed class LoopbackSetupServer : IDisposable
     private readonly HttpListener _listener = new();
     private readonly HttpMessageInvoker? _forward;
     private readonly Task _serving;
+    private LoopbackRedirect? _redirect;
+    private int _redirected;
 
     public LoopbackSetupServer(HttpMessageHandler? forward = null)
     {
@@ -35,7 +37,16 @@ internal sealed class LoopbackSetupServer : IDisposable
 
     public ConcurrentQueue<LoopbackRequest> Requests { get; } = new();
 
-    public LoopbackRedirect? Redirect { get; set; }
+    /// <summary>Setting it starts counting <see cref="LoopbackRedirect.Times"/> again.</summary>
+    public LoopbackRedirect? Redirect
+    {
+        get => Volatile.Read(ref _redirect);
+        set
+        {
+            Volatile.Write(ref _redirected, 0);
+            Volatile.Write(ref _redirect, value);
+        }
+    }
 
     public int Count(string path) => Requests.Count(r => r.Path == path);
 
@@ -84,7 +95,9 @@ internal sealed class LoopbackSetupServer : IDisposable
             Requests.Enqueue(new LoopbackRequest(request.HttpMethod, path, request.Headers["X-PrintBridge-Token"], body));
 
             var redirect = Redirect;
-            var redirects = redirect is not null && (redirect.Path is null || redirect.Path == path);
+            var redirects = redirect is not null
+                && (redirect.Path is null || redirect.Path == path)
+                && (redirect.Times is null || Interlocked.Increment(ref _redirected) <= redirect.Times);
             if (redirects && !redirect!.AfterForwarding)
             {
                 WriteRedirect(response, redirect, path);
@@ -135,7 +148,18 @@ internal sealed class LoopbackSetupServer : IDisposable
     {
         response.StatusCode = redirect.Status;
         response.RedirectLocation = $"{redirect.Location.TrimEnd('/')}/{path}";
-        response.ContentLength64 = 0;
+        if (redirect.ErrorCode is null)
+        {
+            response.ContentLength64 = 0;
+            return;
+        }
+
+        // A redirect that also looks like a Print Bridge API rejection, in the header and the body.
+        var body = Encoding.UTF8.GetBytes($$"""{"error":"{{redirect.ErrorCode}}"}""");
+        response.Headers["X-PrintBridge-Error-Code"] = redirect.ErrorCode;
+        response.ContentType = "application/json";
+        response.ContentLength64 = body.Length;
+        response.OutputStream.Write(body);
     }
 
     private static async Task WriteAsync(HttpListenerResponse response, int status, string? contentType, byte[] bytes, string? errorCode)
@@ -165,5 +189,13 @@ internal sealed record LoopbackRequest(string Method, string Path, string? Token
 /// <summary>
 /// Answer <paramref name="Path"/> (every path when null) with <paramref name="Status"/> and a <c>Location</c> on
 /// <paramref name="Location"/> with the same path; after forwarding the request when <paramref name="AfterForwarding"/>.
+/// Only the first <paramref name="Times"/> matching requests when given; with <paramref name="ErrorCode"/> as a Print
+/// Bridge error code in the header and the body.
 /// </summary>
-internal sealed record LoopbackRedirect(int Status, string Location, string? Path = null, bool AfterForwarding = false);
+internal sealed record LoopbackRedirect(
+    int Status,
+    string Location,
+    string? Path = null,
+    bool AfterForwarding = false,
+    int? Times = null,
+    string? ErrorCode = null);

@@ -62,6 +62,9 @@
   <data name="Connection.RequestFailed" xml:space="preserve">
     <value>Print Bridge isteği başarısız oldu (HTTP {0}).</value>
   </data>
+  <data name="Connection.RedirectNotFollowed" xml:space="preserve">
+    <value>Sunucu isteği başka bir adrese yönlendirdi ve Print Bridge yönlendirmeleri izlemez. Wasla Web Panel linkini, Wasla Web panelindeki Print Bridge kurulum sayfasında gösterildiği gibi girin.</value>
+  </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
     <value>Wasla sunucusu kullanılamıyor. Daha sonra tekrar deneyin.</value>
   </data>

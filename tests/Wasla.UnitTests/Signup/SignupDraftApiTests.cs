@@ -73,7 +73,14 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         Assert.False(empty.Json.GetProperty("exists").GetBoolean());
 
         var plan = await SignupDraftClient.AssertOkAsync(client.SavePlanAsync("Pro", "Yearly"));
-        Assert.Contains(plan.SetCookies, c => c.Name.Value == SignupDraftCookie.CookieName && c.HttpOnly && c.Path.Value == "/signup");
+        // A __Host- cookie: Secure, host-only, root path, so no sibling or parent domain can plant one in its place.
+        var draftCookie = Assert.Single(plan.SetCookies, c => c.Name.Value == SignupDraftCookie.SecureCookieName);
+        Assert.Equal("__Host-Wasla.SignupDraft", draftCookie.Name.Value);
+        Assert.True(draftCookie.Secure);
+        Assert.True(draftCookie.HttpOnly);
+        Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Lax, draftCookie.SameSite);
+        Assert.Equal("/", draftCookie.Path.Value);
+        Assert.True(string.IsNullOrEmpty(draftCookie.Domain.Value));
         var restaurant = SignupDraftClient.Restaurant();
         await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync(restaurant));
         var owner = client.Owner();
@@ -151,8 +158,8 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         AssertFieldError(invalidRestaurant, "restaurant", "slug", "Validation.SlugInvalid");
         AssertFieldError(reserved, "restaurant", "slug", "Signup.SlugUnavailable");
         AssertError(noBody, HttpStatusCode.BadRequest, "Signup.Draft.InvalidRequest");
-        Assert.DoesNotContain(plan.SetCookies, c => c.Name.Value == SignupDraftCookie.CookieName);
-        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        Assert.DoesNotContain(plan.SetCookies, c => c.Name.Value == SignupDraftCookie.SecureCookieName);
+        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
     }
 
     [Fact]
@@ -163,7 +170,7 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         var refused = await client.PutAsync("/signup/draft/plan", new Dictionary<string, object?> { ["planCode"] = "Starter", ["billingPeriod"] = "Monthly" }, antiforgery: false);
 
         Assert.Equal(HttpStatusCode.BadRequest, refused.Status);
-        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
     }
 
     [Fact]
@@ -207,7 +214,7 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         Assert.True(proof.HttpOnly);
         Assert.True(proof.Secure);
         Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Strict, proof.SameSite);
-        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
 
         await using var db = _host.Db();
         var registration = await db.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Slug == slug, TestContext.Current.CancellationToken);
@@ -240,10 +247,10 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
         await SignupDraftClient.AssertOkAsync(client.VerifyAsync(client.LatestCode()));
         // A double click: the second request carries the draft cookie the first answer clears.
-        var draftCookie = client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName)!;
+        var draftCookie = client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName)!;
 
         var first = await SignupDraftClient.AssertOkAsync(client.SubmitAsync());
-        client.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName, draftCookie);
+        client.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName, draftCookie);
         var second = await SignupDraftClient.AssertOkAsync(client.SubmitAsync());
 
         var id = first.Json.GetProperty("registrationId").GetGuid();
@@ -253,7 +260,7 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         Assert.True(await db.PendingRegistrations.AnyAsync(r => r.Id == id, TestContext.Current.CancellationToken));
 
         // A submitted draft can no longer be changed.
-        client.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName, draftCookie);
+        client.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName, draftCookie);
         var edit = await client.SavePlanAsync();
         AssertError(edit, HttpStatusCode.Conflict, "Signup.Draft.Submitted");
         Assert.Equal($"/signup/pending/{id}", edit.Json.GetProperty("registrationUrl").GetString());
@@ -342,17 +349,26 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
             draftCookie.CreateValue(Guid.NewGuid(), DateTimeOffset.UtcNow.AddMinutes(-1))
         };
 
+        // A valid reference under the unprefixed name, as a cookie planted from another domain could be, is not read.
+        using (var planted = Client())
+        {
+            planted.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.DevelopmentHttpCookieName,
+                draftCookie.CreateValue(await DraftIdOfAsync(victim), DateTimeOffset.UtcNow.AddDays(1)));
+            Assert.False((await SignupDraftClient.AssertOkAsync(planted.GetDraftAsync())).Json.GetProperty("exists").GetBoolean());
+            AssertError(await planted.SubmitAsync(), HttpStatusCode.Conflict, "Signup.Draft.Missing");
+        }
+
         foreach (var value in cookies)
         {
             using var attacker = Client();
-            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName, value);
+            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName, value);
 
             AssertError(await attacker.SubmitAsync(), HttpStatusCode.Conflict, "Signup.Draft.Missing");
-            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName, value);
+            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName, value);
             AssertError(await attacker.SendCodeAsync(), HttpStatusCode.Conflict, "Signup.Draft.Missing");
-            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName, value);
+            attacker.Browser.SetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName, value);
             AssertError(await attacker.SavePlanAsync(), HttpStatusCode.Conflict, "Signup.Draft.Missing");
-            Assert.Null(attacker.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+            Assert.Null(attacker.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
         }
 
         await using var db = _host.Db();
@@ -368,7 +384,7 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         _host.Clock.Advance(TimeSpan.FromHours(25));
 
         AssertError(await client.SaveOwnerAsync(), HttpStatusCode.Conflict, "Signup.Draft.Missing");
-        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        Assert.Null(client.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.SecureCookieName));
         Assert.False((await SignupDraftClient.AssertOkAsync(client.GetDraftAsync())).Json.GetProperty("exists").GetBoolean());
     }
 
@@ -618,6 +634,13 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         await using var db = _host.Db();
         return (await db.RegistrationDrafts.AsNoTracking()
             .SingleAsync(d => d.OwnerMobilePhone == client.MobileE164, TestContext.Current.CancellationToken)).PasswordHash!;
+    }
+
+    private async Task<Guid> DraftIdOfAsync(SignupDraftClient client)
+    {
+        await using var db = _host.Db();
+        return (await db.RegistrationDrafts.AsNoTracking()
+            .SingleAsync(d => d.OwnerMobilePhone == client.MobileE164, TestContext.Current.CancellationToken)).Id;
     }
 
     private async Task<int> DraftCountForAsync(SignupDraftClient client)

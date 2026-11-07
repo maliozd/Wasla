@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
 using Wasla.Application.Abstractions.Onboarding.RegistrationDrafts;
+using Wasla.Application.Abstractions.Sms;
 using Wasla.Application.Onboarding;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Security.RateLimiting;
-using Wasla.Infrastructure.Sms;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
 
@@ -52,6 +52,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     private readonly TimeProvider _time;
     private readonly SignupDraftCookie _draftCookie;
     private readonly SignupRegistrationOwnership _ownership;
+    private readonly IDevelopmentSmsOutbox? _developmentSmsOutbox;
 
     public SignupDraftController(
         IRegistrationDraftService drafts,
@@ -63,7 +64,8 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
         IDataProtectionProvider dataProtection,
-        TimeProvider time)
+        TimeProvider time,
+        IDevelopmentSmsOutbox? developmentSmsOutbox = null)
     {
         _drafts = drafts;
         _phone = phone;
@@ -76,6 +78,8 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
         _time = time;
         _draftCookie = new SignupDraftCookie(dataProtection, environment);
         _ownership = new SignupRegistrationOwnership(dataProtection, environment);
+        // Registered only in Development with the fake sender; never read anywhere else.
+        _developmentSmsOutbox = environment.IsDevelopment() ? developmentSmsOutbox : null;
     }
 
     // --- Draft ----------------------------------------------------------------------------------------
@@ -87,7 +91,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     {
         var draftId = _draftCookie.Read(Request);
         var draft = draftId is { } id ? await _drafts.GetAsync(id, ct) : null;
-        if (draft is null && SignupDraftCookie.IsPresent(Request))
+        if (draft is null && _draftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
         return Json(await StateAsync(draft, ct));
     }
@@ -256,28 +260,25 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
             : PhoneAsync(id => _phone.ChangeNumberAsync(id, body.MobilePhone, ct), ct, extendsDraft: true);
 
     /// <summary>
-    /// Development with the fake SMS sender only: the fake messages sent to this draft's current number, with their codes.
-    /// 404 everywhere else, like the checkout payment simulator.
+    /// Development with the fake SMS sender only: the fake messages sent for this browser's draft, with their codes. 404
+    /// everywhere else, like the checkout payment simulator, and while public signup is closed.
     /// </summary>
+    [PublicSignupRequired]
     [HttpGet("draft/phone/fake-outbox")]
     public async Task<IActionResult> FakeSmsOutbox(CancellationToken ct)
     {
-        var outbox = _environment.IsDevelopment() ? HttpContext.RequestServices.GetService<FakeSmsOutbox>() : null;
-        if (outbox is null)
+        if (_developmentSmsOutbox is null)
             return NotFound();
 
-        if (DraftIdOrMissing() is not { } draftId || await _drafts.GetAsync(draftId, ct) is not { } draft)
+        if (DraftIdOrMissing() is not { } draftId || await _drafts.GetAsync(draftId, ct) is null)
             return Error(SignupErrorCodes.DraftMissing);
 
-        var phone = draft.Phone.PhoneE164;
-        var messages = phone is null
-            ? Array.Empty<SignupFakeSmsMessage>()
-            : outbox.MessagesTo(phone).Select(m => new SignupFakeSmsMessage
-            {
-                MaskedPhone = TurkishMobilePhone.Mask(m.ToE164),
-                Code = m.Code,
-                SentAtUtc = m.SentAtUtc
-            }).ToArray();
+        var messages = _developmentSmsOutbox.MessagesFor(draftId.ToString("N")).Select(m => new SignupFakeSmsMessage
+        {
+            MaskedPhone = TurkishMobilePhone.Mask(m.ToE164),
+            Code = m.Code,
+            SentAtUtc = m.SentAtUtc
+        }).ToArray();
         return Json(new SignupFakeSmsOutboxResponse { Messages = messages });
     }
 
@@ -330,7 +331,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     private async Task<IActionResult> SaveAsync(Func<Guid?, Task<RegistrationDraftSaveResult>> save, CancellationToken ct)
     {
         Guid? draftId = null;
-        if (SignupDraftCookie.IsPresent(Request))
+        if (_draftCookie.IsPresent(Request))
         {
             if (DraftIdOrMissing() is not { } id)
                 return Error(SignupErrorCodes.DraftMissing);
@@ -390,7 +391,7 @@ public sealed class SignupDraftController : Controller, IAuthenticationRateLimit
     private Guid? DraftIdOrMissing()
     {
         var draftId = _draftCookie.Read(Request);
-        if (draftId is null && SignupDraftCookie.IsPresent(Request))
+        if (draftId is null && _draftCookie.IsPresent(Request))
             _draftCookie.Clear(HttpContext);
         return draftId;
     }

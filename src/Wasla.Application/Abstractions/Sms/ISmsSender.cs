@@ -7,8 +7,12 @@ namespace Wasla.Application.Abstractions.Sms;
 /// its side of this interface.
 /// </summary>
 /// <remarks>
-/// A message carries a one-time code. Implementations never log its text or the full number, and never place either in
-/// an exception message.
+/// <para>A message carries a one-time code. Implementations never log its text or the full number, and never place either
+/// in an exception message.</para>
+/// <para>Adapters report a refusal, a provider failure and a timeout as a <see cref="SmsDeliveryResult"/> and do not throw
+/// for them; only the caller's own cancellation ends a send with an exception. If an adapter throws anyway, the send counts
+/// as failed (a cancellation that is not the caller's as <see cref="SmsDeliveryFailure.Timeout"/>) and its code is
+/// dropped.</para>
 /// </remarks>
 public interface ISmsSender
 {
@@ -29,7 +33,11 @@ public enum SmsPurpose
 /// <param name="ToE164">The recipient in E.164, for example <c>+905321234567</c>.</param>
 /// <param name="Text">The full message text, already localized.</param>
 /// <param name="Purpose">Why it is sent.</param>
-public sealed record SmsMessage(string ToE164, string Text, SmsPurpose Purpose)
+/// <param name="Reference">
+/// An opaque Wasla reference of what the message is for (the registration draft id), which an adapter may pass as the
+/// provider's client reference. Never personal data.
+/// </param>
+public sealed record SmsMessage(string ToE164, string Text, SmsPurpose Purpose, string? Reference = null)
 {
     public override string ToString() => $"{nameof(SmsMessage)} {{ Purpose = {Purpose} }}";
 }

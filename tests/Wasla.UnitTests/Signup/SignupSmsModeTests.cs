@@ -82,7 +82,13 @@ public sealed class SignupSmsModeTests : IAsyncLifetime
             configuration: new Dictionary<string, string?> { ["Wasla:Sms:Mode"] = "Fake" },
             fakeSms: false);
         using var client = new SignupDraftClient(_host);
-        await client.SaveSectionsAsync();
+        var plan = await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        // Development over plain HTTP cannot set a __Host- cookie, so the draft cookie keeps its unprefixed name there.
+        var cookie = Assert.Single(plan.SetCookies, c => c.Name.Value == Wasla.Web.Security.SignupDraftCookie.DevelopmentHttpCookieName);
+        Assert.False(cookie.Secure);
+        Assert.Equal("/", cookie.Path.Value);
+        await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync());
+        await SignupDraftClient.AssertOkAsync(client.SaveOwnerAsync());
         var sent = await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
 
         var outbox = await SignupDraftClient.AssertOkAsync(client.Browser.GetAsync("/signup/draft/phone/fake-outbox"));
@@ -97,5 +103,36 @@ public sealed class SignupSmsModeTests : IAsyncLifetime
         // Another browser has no draft, so it sees no code.
         using var stranger = new SignupDraftClient(_host);
         Assert.Equal(HttpStatusCode.Conflict, (await stranger.Browser.GetAsync("/signup/draft/phone/fake-outbox")).Status);
+
+        // Another draft for the same number sees only its own message, and this one only its own.
+        using var other = new SignupDraftClient(_host) { MobileE164 = client.MobileE164 };
+        await other.SaveSectionsAsync();
+        await SignupDraftClient.AssertOkAsync(other.SendCodeAsync());
+        var otherOutbox = await SignupDraftClient.AssertOkAsync(other.Browser.GetAsync("/signup/draft/phone/fake-outbox"));
+        var otherCode = Assert.Single(otherOutbox.Json.GetProperty("messages").EnumerateArray()).GetProperty("code").GetString();
+        Assert.Equal(_host.FakeSms.LatestCodeTo(client.MobileE164), otherCode);
+        var mine = await SignupDraftClient.AssertOkAsync(client.Browser.GetAsync("/signup/draft/phone/fake-outbox"));
+        Assert.Equal(code, Assert.Single(mine.Json.GetProperty("messages").EnumerateArray()).GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task InDevelopment_TheFakeOutboxIsClosedWithPublicSignup()
+    {
+        _host = await SignupWebHost.StartAsync(
+            _connection,
+            _keyRing,
+            Environments.Development,
+            configuration: new Dictionary<string, string?>
+            {
+                ["Wasla:Sms:Mode"] = "Fake",
+                ["Wasla:TenantOnboarding:PublicSignupEnabled"] = "false"
+            },
+            fakeSms: false);
+        using var browser = _host.NewBrowser();
+
+        var outbox = await browser.GetAsync("/signup/draft/phone/fake-outbox");
+
+        Assert.Equal(HttpStatusCode.NotFound, outbox.Status);
+        Assert.Equal(string.Empty, outbox.Body);
     }
 }

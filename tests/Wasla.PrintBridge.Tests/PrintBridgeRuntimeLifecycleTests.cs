@@ -59,7 +59,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             "api/print-bridge/health",
             "https://sushim.wasla.local",
             403,
-            """{"error":"device_disabled"}""",
             "device_disabled");
 
         Assert.False(authResult.Succeeded);
@@ -97,7 +96,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             "api/print-bridge/jobs/pending",
             "https://sushim.wasla.local",
             401,
-            $$"""{"error":"{{serverErrorCode}}"}""",
             serverErrorCode);
         var issue = new PrintBridgeRuntimeIssue(ex.IssueCode, ex.UserMessageKey, ex.FormatArgs);
         var connection = new WaslaOptions
@@ -137,7 +135,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             "api/print-bridge/health",
             "https://sushim.wasla.local",
             401,
-            $$"""{"error":"{{serverErrorCode}}"}""",
             serverErrorCode);
         var issue = new PrintBridgeRuntimeIssue(ex.IssueCode, ex.UserMessageKey, ex.FormatArgs);
 
@@ -382,7 +379,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             "api/print-bridge/health",
             "https://sushim.wasla.local",
             401,
-            $$"""{"error":"{{serverErrorCode}}"}""",
             serverErrorCode);
 
         Assert.Equal(PrintBridgeRuntimeIssueCode.ReconnectRequired, ex.IssueCode);
@@ -396,7 +392,6 @@ public sealed class PrintBridgeRuntimeLifecycleTests : IDisposable
             "api/print-bridge/health",
             "https://sushim.wasla.local",
             401,
-            null,
             null);
 
         Assert.Equal(PrintBridgeRuntimeIssueCode.ReconnectRequired, ex.IssueCode);
