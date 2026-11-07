@@ -141,7 +141,9 @@ public sealed class BusinessSubtypeFlowTests : IDisposable
             Options.Create(new TenantOnboardingOptions()),
             NullLogger<PendingRegistrationService>.Instance);
 
-        return await service.SubmitAsync(Request(codes), TestContext.Current.CancellationToken);
+        return await service.CreateAsync(
+            new VerifiedRegistration(Request(codes), "fake-hash", "+905321234567", DateTime.UtcNow),
+            TestContext.Current.CancellationToken);
     }
 
     private static PendingRegistrationRequest Request(IReadOnlyList<string> codes) =>

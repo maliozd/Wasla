@@ -1,198 +1,84 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
+using Wasla.Application.Abstractions.Onboarding.RegistrationDrafts;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Signup;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Options;
-using Wasla.Infrastructure.Security.RateLimiting;
+using Wasla.Infrastructure.Sms;
 using Wasla.Web.Models.Signup;
 using Wasla.Web.Security;
 
 namespace Wasla.Web.Controllers;
 
+/// <summary>
+/// The signup page, its address lookups and the registration status page. The page saves its steps and submits through
+/// the draft API (<see cref="SignupDraftController"/>, WAS-192); there is no form submission.
+/// </summary>
 [AllowAnonymous]
 [Route("signup")]
-public sealed class SignupController : Controller, IAuthenticationRateLimitResponder
+public sealed class SignupController : Controller
 {
     private readonly IPendingRegistrationService _pendingRegistrations;
+    private readonly IRegistrationDraftService _drafts;
+    private readonly IRegistrationPhoneVerificationService _phoneVerification;
     private readonly ISignupReferenceDataService _referenceData;
     private readonly IWaslaPlanCatalog _planCatalog;
     private readonly IBillingPlanPriceReader _planPrices;
-    private readonly IValidator<PendingRegistrationRequest> _signupValidator;
     private readonly TenantOnboardingOptions _options;
+    private readonly SignupOptions _signupOptions;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IWebHostEnvironment _environment;
+    private readonly TimeProvider _time;
     private readonly SignupRegistrationOwnership _ownership;
+    private readonly SignupDraftCookie _draftCookie;
 
     public SignupController(
         IPendingRegistrationService pendingRegistrations,
+        IRegistrationDraftService drafts,
+        IRegistrationPhoneVerificationService phoneVerification,
         ISignupReferenceDataService referenceData,
         IWaslaPlanCatalog planCatalog,
         IBillingPlanPriceReader planPrices,
-        IValidator<PendingRegistrationRequest> signupValidator,
         IOptions<TenantOnboardingOptions> options,
+        IOptions<SignupOptions> signupOptions,
         IStringLocalizer<SharedResource> localizer,
         IWebHostEnvironment environment,
-        IDataProtectionProvider dataProtection)
+        IDataProtectionProvider dataProtection,
+        TimeProvider time)
     {
         _pendingRegistrations = pendingRegistrations;
+        _drafts = drafts;
+        _phoneVerification = phoneVerification;
         _referenceData = referenceData;
         _planCatalog = planCatalog;
         _planPrices = planPrices;
-        _signupValidator = signupValidator;
         _options = options.Value;
+        _signupOptions = signupOptions.Value;
         _localizer = localizer;
         _environment = environment;
+        _time = time;
         _ownership = new SignupRegistrationOwnership(dataProtection, environment);
+        _draftCookie = new SignupDraftCookie(dataProtection, environment);
     }
 
-    // While Wasla:TenantOnboarding:PublicSignupEnabled is false, this page and the routes that serve only its form
-    // (submission and address lookups) are closed; existing registrations keep their status and checkout pages (WAS-76).
+    // While Wasla:TenantOnboarding:PublicSignupEnabled is false, this page and the routes that serve only it (the draft
+    // API and the address lookups) are closed; existing registrations keep their status and checkout pages (WAS-76).
+    // The page embeds the browser's draft (personal data), so no cache may store it (WAS-192).
     [PublicSignupRequired(showUnavailablePage: true)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("")]
     public async Task<IActionResult> Index([FromQuery] string? plan, CancellationToken ct)
     {
         var model = await CreateViewModelAsync(plan, ct);
         return View(model);
-    }
-
-    // Limited per client network before any lookup, password hash or insert (AuthenticationRateLimiting:SignupSubmission);
-    // the service also caps active registrations per owner email.
-    [ValidateAntiForgeryToken]
-    [PublicSignupRequired(showUnavailablePage: true)]
-    [AuthenticationRateLimit(AuthenticationRateLimitPolicies.SignupSubmission)]
-    [HttpPost("")]
-    public async Task<IActionResult> Index(SignupViewModel model, CancellationToken ct)
-    {
-        await PopulateReferenceDataAsync(model, ct);
-        LocalizeModelStateErrors();
-
-        if (!ModelState.IsValid)
-            return View(model);
-
-        if (!_planCatalog.IsSelfServicePlan(model.PlanCode))
-        {
-            ModelState.AddModelError(nameof(model.PlanCode), _localizer["Signup.EnterpriseContactOnly"].Value);
-            return View(model);
-        }
-
-        if (!await _pendingRegistrations.IsSlugAvailableAsync(model.Slug, ct))
-        {
-            ModelState.AddModelError(nameof(model.Slug), _localizer["Signup.SlugUnavailable"].Value);
-            return View(model);
-        }
-
-        var selectedSubtypes = model.SelectedBusinessTypeCodes
-            .Where(code => !string.IsNullOrWhiteSpace(code))
-            .Select(code => code.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        model.SelectedBusinessTypeCodes = selectedSubtypes;
-        if (selectedSubtypes.Count == 0 || selectedSubtypes.Any(code => !BusinessSubtypeCatalog.IsSubtypeCode(code)))
-        {
-            ModelState.AddModelError(
-                nameof(model.SelectedBusinessTypeCodes),
-                _localizer[selectedSubtypes.Count == 0
-                    ? "Validation.BusinessSubtypeRequired"
-                    : "Validation.BusinessTypeInvalid"].Value);
-            return View(model);
-        }
-
-        var address = await ResolveAddressAsync(model, ct);
-        if (address is null)
-            return View(model);
-
-        var request = new PendingRegistrationRequest(
-            model.PlanCode,
-            model.BillingPeriod,
-            model.BusinessName,
-            model.SelectedBusinessTypeCodes,
-            model.BusinessPhoneType,
-            model.BusinessPhone,
-            model.BusinessEmail,
-            model.Slug,
-            model.Country,
-            model.CityId,
-            model.DistrictId,
-            address.NeighborhoodId,
-            address.StreetId,
-            address.CityName,
-            address.DistrictName,
-            address.NeighborhoodName,
-            address.StreetAddress,
-            model.BuildingNumber,
-            model.Floor,
-            model.DoorNumber,
-            model.AddressNote,
-            model.PostalCode,
-            model.LocationUrl,
-            model.OwnerFullName,
-            model.OwnerEmail,
-            model.OwnerPhone,
-            model.Password);
-
-        var validation = await _signupValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            foreach (var error in validation.Errors)
-            {
-                var field = MapValidationField(error.PropertyName);
-                var message = LocalizeValidationMessage(error.ErrorMessage);
-                ModelState.AddModelError(field, message);
-            }
-
-            return View(model);
-        }
-
-        var result = await _pendingRegistrations.SubmitAsync(request, ct);
-        if (result.Error == PendingRegistrationError.TooManyActiveRegistrations)
-            return TooManySignups(model);
-
-        if (!result.Success)
-        {
-            ApplySignupError(result);
-            return View(model);
-        }
-
-        var registrationId = result.RegistrationId!.Value;
-        // The only place ownership proof is issued: this browser just submitted this registration.
-        _ownership.Grant(
-            HttpContext,
-            registrationId,
-            DateTimeOffset.UtcNow.AddDays(Math.Max(1, _options.PendingRegistrationExpiryDays)));
-
-        return RedirectToAction(nameof(Pending), new { id = registrationId });
-    }
-
-    /// <summary>
-    /// The signup form again, as for a validation error: its option lists (the reads a GET of this page makes), the
-    /// submitted values (never the password) and the throttling message in the validation summary, with status 429.
-    /// </summary>
-    async Task<IActionResult> IAuthenticationRateLimitResponder.RateLimitedAsync(ActionExecutingContext context)
-    {
-        var model = context.ActionArguments.Values.OfType<SignupViewModel>().FirstOrDefault() ?? new SignupViewModel();
-        await PopulateReferenceDataAsync(model, context.HttpContext.RequestAborted);
-        LocalizeModelStateErrors();
-        return TooManySignups(model);
-    }
-
-    // The same answer for the network limit and the per-email cap, so it does not say which applied.
-    private ViewResult TooManySignups(SignupViewModel model)
-    {
-        ModelState.AddModelError(string.Empty, _localizer["Signup.TooManyAttempts"].Value);
-        var result = View(nameof(Index), model);
-        result.StatusCode = StatusCodes.Status429TooManyRequests;
-        return result;
     }
 
     [PublicSignupRequired]
@@ -276,7 +162,31 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
         };
 
         await PopulateReferenceDataAsync(model, ct);
+        await PopulateDraftAsync(model, found?.PlanCode, ct);
         return model;
+    }
+
+    /// <summary>The browser's draft, the API URLs and the page facts the script needs (WAS-192).</summary>
+    private async Task PopulateDraftAsync(SignupViewModel model, string? requestedPlanCode, CancellationToken ct)
+    {
+        var draftId = _draftCookie.Read(Request);
+        var draft = draftId is { } id ? await _drafts.GetAsync(id, ct) : null;
+        if (draft is null && SignupDraftCookie.IsPresent(Request))
+            _draftCookie.Clear(HttpContext);
+
+        var fakeOutbox = _environment.IsDevelopment() && HttpContext.RequestServices.GetService<FakeSmsOutbox>() is not null;
+        model.InitialDraft = SignupDraftResponses.State(
+            draft,
+            _phoneVerification.IsAvailable,
+            model.PlanPrices,
+            _localizer,
+            registrationId => Url.Action(nameof(Pending), new { id = registrationId })!,
+            _time.GetUtcNow().UtcDateTime);
+        model.Endpoints = SignupDraftResponses.Endpoints(Url, fakeOutbox);
+        model.RequestedPlanCode = requestedPlanCode;
+        model.IsPhoneVerificationAvailable = _phoneVerification.IsAvailable;
+        model.PhoneCodeLength = PhoneVerificationPolicy.CodeLength;
+        model.SupportEmail = _signupOptions.SupportEmail;
     }
 
     private async Task PopulateReferenceDataAsync(SignupViewModel model, CancellationToken ct)
@@ -345,166 +255,6 @@ public sealed class SignupController : Controller, IAuthenticationRateLimitRespo
             })
             .ToList();
     }
-
-    private async Task<ResolvedSignupAddress?> ResolveAddressAsync(SignupViewModel model, CancellationToken ct)
-    {
-        string? cityName = null;
-        string? districtName = null;
-        var neighborhoodName = model.Neighborhood;
-        var streetAddress = model.StreetAddress;
-        int? neighborhoodId = model.NeighborhoodId;
-        int? streetId = model.StreetId;
-
-        if (IsTurkey(model.Country))
-        {
-            if (model.CityId is not int cityId || cityId <= 0
-                || model.DistrictId is not int districtId || districtId <= 0)
-            {
-                return null;
-            }
-
-            var resolved = await _referenceData.ResolveCityDistrictAsync(cityId, districtId, model.Country, ct);
-            if (resolved is null)
-            {
-                ModelState.AddModelError(nameof(model.DistrictId), _localizer["Validation.CityDistrictInvalid"].Value);
-                return null;
-            }
-
-            cityName = resolved.CityName;
-            districtName = resolved.DistrictName;
-            model.City = cityName;
-            model.District = districtName;
-
-            if (model.NeighborhoodId is int resolvedNeighborhoodId)
-            {
-                var neighborhood = await _referenceData.ResolveNeighborhoodAsync(districtId, resolvedNeighborhoodId, ct);
-                if (neighborhood is null)
-                {
-                    ModelState.AddModelError(nameof(model.NeighborhoodId), _localizer["Validation.NeighborhoodInvalid"].Value);
-                    return null;
-                }
-
-                neighborhoodName = neighborhood.NeighborhoodName;
-                neighborhoodId = neighborhood.NeighborhoodId;
-
-                if (model.StreetId is int resolvedStreetId)
-                {
-                    var street = await _referenceData.ResolveStreetAsync(resolvedNeighborhoodId, resolvedStreetId, ct);
-                    if (street is null)
-                    {
-                        ModelState.AddModelError(nameof(model.StreetId), _localizer["Validation.StreetInvalid"].Value);
-                        return null;
-                    }
-
-                    streetAddress = FormatStreetDisplay(street.StreetName, street.StreetType);
-                    streetId = street.StreetId;
-                }
-            }
-        }
-        else
-        {
-            cityName = model.City?.Trim();
-            districtName = model.District?.Trim();
-        }
-
-        return new ResolvedSignupAddress(cityName, districtName, neighborhoodName, streetAddress, neighborhoodId, streetId);
-    }
-
-    private sealed record ResolvedSignupAddress(
-        string? CityName,
-        string? DistrictName,
-        string? NeighborhoodName,
-        string? StreetAddress,
-        int? NeighborhoodId,
-        int? StreetId);
-
-    private void ApplySignupError(PendingRegistrationResult result)
-    {
-        var message = result.Error switch
-        {
-            PendingRegistrationError.DuplicateSlug => _localizer["Signup.SlugUnavailable"].Value,
-            PendingRegistrationError.DuplicateDomain => _localizer["Signup.SlugUnavailable"].Value,
-            PendingRegistrationError.InvalidSlug => _localizer["Validation.SlugInvalid"].Value,
-            PendingRegistrationError.InvalidPlan => _localizer["Validation.PlanInvalid"].Value,
-            PendingRegistrationError.DuplicateDatabaseName => _localizer["Signup.ProvisioningFailed"].Value,
-            _ => _localizer["Signup.ProvisioningFailed"].Value
-        };
-
-        if (result.Error is PendingRegistrationError.DuplicateSlug
-            or PendingRegistrationError.DuplicateDomain
-            or PendingRegistrationError.InvalidSlug)
-        {
-            ModelState.AddModelError(nameof(SignupViewModel.Slug), message);
-        }
-        else if (result.Error == PendingRegistrationError.InvalidPlan)
-        {
-            ModelState.AddModelError(nameof(SignupViewModel.PlanCode), message);
-        }
-        else
-        {
-            ModelState.AddModelError(string.Empty, message);
-        }
-    }
-
-    private static string MapValidationField(string propertyName) => propertyName switch
-    {
-        nameof(PendingRegistrationRequest.BusinessName) => nameof(SignupViewModel.BusinessName),
-        nameof(PendingRegistrationRequest.BusinessTypeCodes) => nameof(SignupViewModel.SelectedBusinessTypeCodes),
-        nameof(PendingRegistrationRequest.BusinessPhoneType) => nameof(SignupViewModel.BusinessPhoneType),
-        nameof(PendingRegistrationRequest.BusinessPhone) => nameof(SignupViewModel.BusinessPhone),
-        nameof(PendingRegistrationRequest.BusinessEmail) => nameof(SignupViewModel.BusinessEmail),
-        nameof(PendingRegistrationRequest.Slug) => nameof(SignupViewModel.Slug),
-        nameof(PendingRegistrationRequest.Country) => nameof(SignupViewModel.Country),
-        nameof(PendingRegistrationRequest.CityId) => nameof(SignupViewModel.CityId),
-        nameof(PendingRegistrationRequest.DistrictId) => nameof(SignupViewModel.DistrictId),
-        nameof(PendingRegistrationRequest.City) => nameof(SignupViewModel.City),
-        nameof(PendingRegistrationRequest.District) => nameof(SignupViewModel.District),
-        nameof(PendingRegistrationRequest.Neighborhood) => nameof(SignupViewModel.Neighborhood),
-        nameof(PendingRegistrationRequest.NeighborhoodId) => nameof(SignupViewModel.NeighborhoodId),
-        nameof(PendingRegistrationRequest.StreetId) => nameof(SignupViewModel.StreetId),
-        nameof(PendingRegistrationRequest.StreetAddress) => nameof(SignupViewModel.StreetAddress),
-        nameof(PendingRegistrationRequest.BuildingNumber) => nameof(SignupViewModel.BuildingNumber),
-        nameof(PendingRegistrationRequest.Floor) => nameof(SignupViewModel.Floor),
-        nameof(PendingRegistrationRequest.DoorNumber) => nameof(SignupViewModel.DoorNumber),
-        nameof(PendingRegistrationRequest.AddressNote) => nameof(SignupViewModel.AddressNote),
-        nameof(PendingRegistrationRequest.PostalCode) => nameof(SignupViewModel.PostalCode),
-        nameof(PendingRegistrationRequest.LocationUrl) => nameof(SignupViewModel.LocationUrl),
-        nameof(PendingRegistrationRequest.OwnerFullName) => nameof(SignupViewModel.OwnerFullName),
-        nameof(PendingRegistrationRequest.OwnerEmail) => nameof(SignupViewModel.OwnerEmail),
-        nameof(PendingRegistrationRequest.OwnerPhone) => nameof(SignupViewModel.OwnerPhone),
-        nameof(PendingRegistrationRequest.Password) => nameof(SignupViewModel.Password),
-        nameof(PendingRegistrationRequest.PlanCode) => nameof(SignupViewModel.PlanCode),
-        nameof(PendingRegistrationRequest.BillingPeriod) => nameof(SignupViewModel.BillingPeriod),
-        _ => string.Empty
-    };
-
-    private void LocalizeModelStateErrors()
-    {
-        foreach (var state in ModelState.Values)
-        {
-            for (var i = 0; i < state.Errors.Count; i++)
-            {
-                var raw = state.Errors[i].ErrorMessage;
-                if (string.IsNullOrEmpty(raw))
-                    continue;
-
-                var localized = LocalizeValidationMessage(raw);
-                if (!string.Equals(localized, raw, StringComparison.Ordinal))
-                    state.Errors[i] = new ModelError(localized);
-            }
-        }
-    }
-
-    private string LocalizeValidationMessage(string message)
-    {
-        var localized = _localizer[message];
-        return !localized.ResourceNotFound ? localized.Value : message;
-    }
-
-    private static bool IsTurkey(string country) =>
-        string.Equals(country.Trim(), "Türkiye", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(country.Trim(), "Turkey", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(country.Trim(), "TR", StringComparison.OrdinalIgnoreCase);
 
     private static string FormatStreetDisplay(string name, string? streetType) =>
         string.IsNullOrWhiteSpace(streetType) ? name.Trim() : $"{name.Trim()} {streetType.Trim()}";

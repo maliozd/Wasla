@@ -16,8 +16,8 @@ using Wasla.Web.Security;
 namespace Wasla.UnitTests.Signup;
 
 /// <summary>
-/// Abuse limits on anonymous signup (WAS-90): the per-network limit on <c>POST /signup</c> and on the checkout POSTs that
-/// change a registration, and the cap on active registrations per owner email. Every test serves the real signup and
+/// Abuse limits on anonymous signup (WAS-90, WAS-192): the per-network limits on the registration draft submit and draft
+/// creation and on the checkout POSTs that change a registration, and the cap on active registrations per owner email. Every test serves the real signup and
 /// checkout controllers, views and production rate-limit registration (<see cref="SignupWebHost"/>) over its own
 /// in-memory CentralDb with its own limits. The client connects from 127.0.0.1; all data is fake.
 /// </summary>
@@ -41,12 +41,17 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
         try { Directory.Delete(_keyRing, recursive: true); } catch (IOException) { }
     }
 
-    private async Task<SignupWebHost> StartAsync(int signupLimit = 1000, int checkoutLimit = 1000, string environment = "Production")
+    private async Task<SignupWebHost> StartAsync(
+        int signupLimit = 1000,
+        int checkoutLimit = 1000,
+        string environment = "Production",
+        int draftCreationLimit = 1000)
     {
         _host = await SignupWebHost.StartAsync(_connection, _keyRing, environment, configuration: new Dictionary<string, string?>
         {
             ["AuthenticationRateLimiting:SignupSubmission:PermitLimit"] = signupLimit.ToString(CultureInfo.InvariantCulture),
-            ["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = checkoutLimit.ToString(CultureInfo.InvariantCulture)
+            ["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = checkoutLimit.ToString(CultureInfo.InvariantCulture),
+            ["AuthenticationRateLimiting:SignupDraftCreation:PermitLimit"] = draftCreationLimit.ToString(CultureInfo.InvariantCulture)
         });
         return _host;
     }
@@ -54,73 +59,62 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
     // --- Per-network limit ------------------------------------------------------------------------
 
     [Fact]
-    public async Task SignupOverTheNetworkLimit_Gets429WithTheFormAgain_AndCreatesNoRegistration()
+    public async Task DraftSubmitOverTheNetworkLimit_Gets429WithRetryAfter_AndCreatesNoRegistration()
     {
         var host = await StartAsync(signupLimit: 2);
-        using var browser = host.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
-
         for (var i = 0; i < 2; i++)
         {
-            var accepted = await browser.PostFormAsync("/signup", SignupForm(token));
-            Assert.Equal(HttpStatusCode.Redirect, accepted.Status);
-            Assert.StartsWith("/signup/pending/", accepted.Location);
+            using var accepted = new SignupDraftClient(host);
+            await accepted.RegisterAsync();
         }
 
         Assert.Equal(2, await RegistrationCountAsync());
-        var form = SignupForm(token);
+        using var client = new SignupDraftClient(host);
 
-        var limited = await browser.PostFormAsync("/signup", form);
+        var limited = await client.CompleteAsync();
 
         Assert.Equal(HttpStatusCode.TooManyRequests, limited.Status);
-        Assert.Null(limited.Location);
+        Assert.Equal("Signup.TooManyAttempts", limited.Json.GetProperty("code").GetString());
         Assert.InRange(limited.RetryAfter!.Value, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1));
         Assert.Equal(2, await RegistrationCountAsync());
         Assert.DoesNotContain(limited.SetCookies, cookie => cookie.Name.Value == SignupRegistrationOwnership.CookieName);
-        var html = WebUtility.HtmlDecode(limited.Body);
-        Assert.Contains(Localized(host, "tr-TR", "Signup.TooManyAttempts"), html, StringComparison.Ordinal);
-        Assert.Contains(Value(form, "BusinessName"), html, StringComparison.Ordinal);
-        Assert.Contains(Value(form, "OwnerEmail"), html, StringComparison.Ordinal);
-        Assert.DoesNotContain(Value(form, "Password"), html, StringComparison.Ordinal);
-        Assert.Contains("name=\"__RequestVerificationToken\"", html, StringComparison.Ordinal);
-    }
-
-    public static TheoryData<string> Cultures => ["tr-TR", "en-US", "ar-SA", "ru-RU"];
-
-    [Theory]
-    [MemberData(nameof(Cultures))]
-    public async Task SignupLimitMessage_IsLocalized_AndArabicIsRightToLeft(string culture)
-    {
-        var host = await StartAsync(signupLimit: 1);
-        using var browser = host.NewBrowser();
-        browser.SetCookie(SignupWebHost.CentralHost, CookieRequestCultureProvider.DefaultCookieName,
-            Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture))));
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
-        await browser.PostFormAsync("/signup", SignupForm(token));
-
-        var limited = await browser.PostFormAsync("/signup", SignupForm(token));
-
-        Assert.Equal(HttpStatusCode.TooManyRequests, limited.Status);
-        var html = WebUtility.HtmlDecode(limited.Body);
-        Assert.Contains($"lang=\"{culture}\" dir=\"{(culture == "ar-SA" ? "rtl" : "ltr")}\"", html, StringComparison.Ordinal);
-        Assert.Contains(Localized(host, culture, "Signup.TooManyAttempts"), html, StringComparison.Ordinal);
+        Assert.DoesNotContain(SignupDraftClient.Password, limited.Body, StringComparison.Ordinal);
+        // The draft is kept: the browser can submit it once the window has passed.
+        Assert.True((await client.GetDraftAsync()).Json.GetProperty("canReview").GetBoolean());
     }
 
     [Fact]
     public async Task Antiforgery_RunsBeforeTheLimit_AndARejectedTokenUsesNoPermit()
     {
         var host = await StartAsync(signupLimit: 1);
-        using var browser = host.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
+        using var client = new SignupDraftClient(host);
+        await client.SaveSectionsAsync();
+        await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
+        await SignupDraftClient.AssertOkAsync(client.VerifyAsync(client.LatestCode()));
 
-        var withoutToken = await browser.PostFormAsync("/signup", SignupForm(token).Where(f => f.Key != "__RequestVerificationToken"));
-        var accepted = await browser.PostFormAsync("/signup", SignupForm(token));
-        var limitedWithoutToken = await browser.PostFormAsync("/signup", SignupForm(token).Where(f => f.Key != "__RequestVerificationToken"));
+        var withoutToken = await client.PostAsync("/signup/draft/submit", antiforgery: false);
+        var accepted = await client.SubmitAsync();
 
         Assert.Equal(HttpStatusCode.BadRequest, withoutToken.Status);
-        Assert.Equal(HttpStatusCode.Redirect, accepted.Status);
-        Assert.Equal(HttpStatusCode.BadRequest, limitedWithoutToken.Status);
+        Assert.Equal(HttpStatusCode.OK, accepted.Status);
         Assert.Equal(1, await RegistrationCountAsync());
+    }
+
+    [Fact]
+    public async Task DraftCreationOverItsNetworkLimit_Gets429_AndAnExistingDraftCanStillBeSaved()
+    {
+        var host = await StartAsync(draftCreationLimit: 1);
+        using var first = new SignupDraftClient(host);
+        await SignupDraftClient.AssertOkAsync(first.SavePlanAsync());
+        using var second = new SignupDraftClient(host);
+
+        var refused = await second.SavePlanAsync();
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, refused.Status);
+        Assert.Equal("Signup.TooManyAttempts", refused.Json.GetProperty("code").GetString());
+        Assert.NotNull(refused.RetryAfter);
+        Assert.Null(second.Browser.GetCookie(SignupWebHost.CentralHost, SignupDraftCookie.CookieName));
+        await SignupDraftClient.AssertOkAsync(first.SaveRestaurantAsync());
     }
 
     // --- Per-email cap --------------------------------------------------------------------------------
@@ -129,21 +123,23 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
     public async Task OneOwnerEmail_GetsAtMostThreeActiveRegistrations_WithTheSameAnswerAsTheNetworkLimit()
     {
         var host = await StartAsync();
-        using var browser = host.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
         var email = $"owner.{SentinelApplicant.NewToken()}@sentinel.test";
 
         for (var i = 0; i < 3; i++)
-            Assert.Equal(HttpStatusCode.Redirect, (await browser.PostFormAsync("/signup", SignupForm(token, email))).Status);
+        {
+            using var client = new SignupDraftClient(host);
+            await client.RegisterAsync(email: email);
+        }
 
         // Upper case does not make it another email.
-        var refused = await browser.PostFormAsync("/signup", SignupForm(token, email.ToUpperInvariant()));
+        using var refusedClient = new SignupDraftClient(host);
+        var refused = await refusedClient.CompleteAsync(email: email.ToUpperInvariant());
 
         Assert.Equal(HttpStatusCode.TooManyRequests, refused.Status);
-        Assert.Contains(Localized(host, "tr-TR", "Signup.TooManyAttempts"), WebUtility.HtmlDecode(refused.Body), StringComparison.Ordinal);
+        Assert.Equal("Signup.TooManyAttempts", refused.Json.GetProperty("code").GetString());
         Assert.Equal(3, await RegistrationCountAsync(email));
 
-        // The cap counts active registrations only: once one is cancelled, the email may sign up again.
+        // The cap counts active registrations only: once one is cancelled, the same draft may be submitted.
         await using (var db = NewDb())
         {
             var one = await db.PendingRegistrations.FirstAsync(r => r.OwnerEmail == email, TestContext.Current.CancellationToken);
@@ -151,7 +147,7 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        Assert.Equal(HttpStatusCode.Redirect, (await browser.PostFormAsync("/signup", SignupForm(token, email))).Status);
+        Assert.Equal(HttpStatusCode.OK, (await refusedClient.SubmitAsync()).Status);
         Assert.Equal(4, await RegistrationCountAsync(email));
     }
 
@@ -169,7 +165,7 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
         }
 
         using var stranger = host.NewBrowser();
-        var strangerToken = await stranger.GetAntiforgeryTokenAsync("/signup");
+        var strangerToken = host.IssueAntiforgeryToken(stranger);
         using var owner = host.NewBrowser();
         owner.SetCookie(SignupWebHost.CentralHost, SignupRegistrationOwnership.CookieName, ProofFor(host, applicant.Id));
         var review = await owner.GetAsync($"/checkout/review/{applicant.Id}");
@@ -223,34 +219,6 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
     }
 
     // --- Helpers --------------------------------------------------------------------------------------
-
-    private static List<KeyValuePair<string, string>> SignupForm(string antiforgeryToken, string? ownerEmail = null)
-    {
-        var token = SentinelApplicant.NewToken();
-        return
-        [
-            new("__RequestVerificationToken", antiforgeryToken),
-            new("PlanCode", WaslaPlanCodes.Starter),
-            new("BillingPeriod", "Monthly"),
-            new("BusinessName", $"Bizname{token}"),
-            new("SelectedBusinessTypeCodes", "burger"),
-            new("BusinessPhoneType", "Mobile"),
-            new("BusinessPhone", SentinelApplicant.NewPhone()),
-            new("Slug", $"s{token}"),
-            new("Country", "Germany"),
-            new("CityId", "1"),
-            new("DistrictId", "1"),
-            new("City", "Berlin"),
-            new("District", "Mitte"),
-            new("StreetAddress", $"Streetq{token}"),
-            new("OwnerFullName", $"Ownerq{token}"),
-            new("OwnerEmail", ownerEmail ?? $"owner.{token}@sentinel.test"),
-            new("Password", $"Secret-pass-{token}"),
-            new("ConfirmPassword", $"Secret-pass-{token}")
-        ];
-    }
-
-    private static string Value(IEnumerable<KeyValuePair<string, string>> form, string key) => form.Single(f => f.Key == key).Value;
 
     private async Task<int> RegistrationCountAsync(string? ownerEmail = null)
     {

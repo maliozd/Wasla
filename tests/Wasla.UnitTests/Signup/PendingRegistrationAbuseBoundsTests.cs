@@ -13,8 +13,8 @@ using Wasla.UnitTests.Admin;
 namespace Wasla.UnitTests.Signup;
 
 /// <summary>
-/// The bounds <see cref="PendingRegistrationService.SubmitAsync"/> puts on anonymous signups (WAS-90): at most three
-/// active registrations per owner email, refused before any lookup, hash or insert; and a database-name search with a
+/// The bounds <see cref="PendingRegistrationService.CreateAsync"/> puts on anonymous signups (WAS-90): at most three
+/// active registrations per owner email, refused before any other lookup or insert; and a database-name search with a
 /// fixed number of queries. Database names are server-assigned and paid registrations keep their reservation (WAS-93). File-backed SQLite; every SQL command the
 /// service sends is recorded. All data is fake.
 /// </summary>
@@ -164,8 +164,8 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
             NullLogger<PendingRegistrationService>.Instance);
 
         var token = SentinelApplicant.NewToken();
-        return await service.SubmitAsync(
-            new PendingRegistrationRequest(
+        return await service.CreateAsync(
+            new VerifiedRegistration(new PendingRegistrationRequest(
                 PlanCode: "starter",
                 BillingPeriod: "Monthly",
                 BusinessName: businessName,
@@ -192,7 +192,10 @@ public sealed class PendingRegistrationAbuseBoundsTests : IDisposable
                 OwnerFullName: "Owner Name",
                 OwnerEmail: ownerEmail ?? $"owner.{token}@sentinel.test",
                 OwnerPhone: null,
-                Password: "Fake-password-1"),
+                Password: string.Empty),
+                PasswordHash: "fake-hash",
+                OwnerPhoneE164: "+905321234567",
+                OwnerPhoneVerifiedAtUtc: DateTime.UtcNow),
             TestContext.Current.CancellationToken);
     }
 

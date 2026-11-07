@@ -53,8 +53,16 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
         return !await IsSlugOrDomainTakenAsync(normalized, primaryDomain, ct);
     }
 
-    public async Task<PendingRegistrationResult> SubmitAsync(PendingRegistrationRequest request, CancellationToken ct)
+    /// <summary>
+    /// Creates a payment-pending registration. Internal: the only caller is the registration draft submit (WAS-192),
+    /// which passes the values of a stored, re-validated draft, the stored password hash and the verified owner phone,
+    /// so no other path can create a registration without phone verification. Runs inside the caller's transaction when
+    /// there is one. <see cref="PendingRegistrationRequest.Password"/> and <see cref="PendingRegistrationRequest.OwnerPhone"/>
+    /// of <see cref="VerifiedRegistration.Details"/> are ignored.
+    /// </summary>
+    internal async Task<PendingRegistrationResult> CreateAsync(VerifiedRegistration verified, CancellationToken ct)
     {
+        var request = verified.Details;
         var slug = RegistrationNameNormalizer.NormalizeSlug(request.Slug);
         if (!RegistrationNameNormalizer.IsValidSlugFormat(slug))
         {
@@ -67,7 +75,7 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             return new PendingRegistrationResult(false, null, null, null, null, PendingRegistrationError.InvalidPlan);
         }
 
-        // Before any other lookup, the password hash and the insert: one email cannot accumulate registrations.
+        // Before any other lookup and the insert: one email cannot accumulate registrations.
         if (await HasMaximumActiveRegistrationsAsync(request.OwnerEmail, ct))
         {
             _logger.LogInformation("Pending registration refused: the owner email has the maximum number of active registrations.");
@@ -144,8 +152,9 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             LocationUrl = string.IsNullOrWhiteSpace(request.LocationUrl) ? null : request.LocationUrl.Trim(),
             OwnerFullName = request.OwnerFullName.Trim(),
             OwnerEmail = request.OwnerEmail.Trim(),
-            OwnerPhone = string.IsNullOrWhiteSpace(request.OwnerPhone) ? null : request.OwnerPhone.Trim(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            OwnerPhone = verified.OwnerPhoneE164,
+            OwnerPhoneVerifiedAtUtc = verified.OwnerPhoneVerifiedAtUtc,
+            PasswordHash = verified.PasswordHash,
             Status = PendingRegistrationStatus.AwaitingPayment,
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddDays(expiryDays)
@@ -534,4 +543,17 @@ public sealed class PendingRegistrationService : IPendingRegistrationService
             : BusinessPhoneType.Mobile;
 
     private static string NormalizeBusinessPhone(string value) => value.Trim();
+}
+
+/// <summary>
+/// The values of a submitted registration draft (WAS-192): the details, the BCrypt hash the draft stored (never a
+/// plaintext password), and the owner's verified E.164 mobile phone with its verification time.
+/// </summary>
+internal sealed record VerifiedRegistration(
+    PendingRegistrationRequest Details,
+    string PasswordHash,
+    string OwnerPhoneE164,
+    DateTime OwnerPhoneVerifiedAtUtc)
+{
+    public override string ToString() => nameof(VerifiedRegistration);
 }

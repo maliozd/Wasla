@@ -212,24 +212,6 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         Assert.Null(stored.SimulatedPaymentReference);
     }
 
-    // The copy follows the host environment; a posted form field cannot switch it to the simulator text.
-    [Fact]
-    public async Task SignupForm_InStaging_IgnoresAPostedSimulatorFlag()
-    {
-        using var browser = _hosts.Staging.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
-
-        var page = await browser.PostFormAsync("/signup",
-        [
-            new("__RequestVerificationToken", token),
-            new("IsPaymentSimulatorAvailable", "true")
-        ]);
-
-        AssertHtml(page);
-        Assert.Contains(Text("Signup.BillingNoteAwaitingPayment", "tr-TR"), page.Body);
-        Assert.DoesNotContain(Text("Signup.BillingNote", "tr-TR"), page.Body);
-    }
-
     private async Task<PaymentPages> RenderPaymentPagesAsync(SignupWebHost host, string culture)
     {
         var awaiting = await _hosts.SeedAsync(PendingRegistrationStatus.AwaitingPayment);
@@ -419,15 +401,22 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
     [Fact]
     public async Task SignupThenCheckout_TheSubmittingBrowserCanReviewAndCancel_AnotherBrowserCannot()
     {
-        using var applicantBrowser = _hosts.Production.NewBrowser();
-        var token = await applicantBrowser.GetAntiforgeryTokenAsync("/signup");
-        var form = SentinelSignupForm(token);
+        // The registration draft flow (WAS-192): the verified draft submit issues the proof.
+        using var applicant = new SignupDraftClient(_hosts.Production);
+        var applicantBrowser = applicant.Browser;
+        var owner = applicant.Owner();
+        await SignupDraftClient.AssertOkAsync(applicant.SavePlanAsync());
+        await SignupDraftClient.AssertOkAsync(applicant.SaveRestaurantAsync());
+        await SignupDraftClient.AssertOkAsync(applicant.SaveOwnerAsync(owner));
+        await SignupDraftClient.AssertOkAsync(applicant.SendCodeAsync());
+        await SignupDraftClient.AssertOkAsync(applicant.VerifyAsync(applicant.LatestCode()));
 
-        var submitted = await applicantBrowser.PostFormAsync("/signup", form);
+        var submitted = await applicant.SubmitAsync();
 
-        Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
-        Assert.StartsWith("/signup/pending/", submitted.Location);
-        var registrationId = Guid.Parse(submitted.Location!["/signup/pending/".Length..]);
+        Assert.Equal(HttpStatusCode.OK, submitted.Status);
+        var statusPage = submitted.Json.GetProperty("redirectUrl").GetString()!;
+        Assert.StartsWith("/signup/pending/", statusPage);
+        var registrationId = submitted.Json.GetProperty("registrationId").GetGuid();
         var proofCookie = Assert.Single(submitted.SetCookies, c => c.Name.Value == SignupRegistrationOwnership.CookieName);
         Assert.True(proofCookie.Secure);
         Assert.True(proofCookie.HttpOnly);
@@ -435,18 +424,18 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         Assert.Equal("/", proofCookie.Path.Value);
         Assert.True(string.IsNullOrEmpty(proofCookie.Domain.Value));
         Assert.InRange(proofCookie.Expires!.Value, DateTimeOffset.UtcNow.AddDays(6.9), DateTimeOffset.UtcNow.AddDays(7.1));
-        Assert.DoesNotContain(proofCookie.Value.Value!, submitted.Location);
+        Assert.DoesNotContain(proofCookie.Value.Value!, statusPage);
 
-        var ownerName = form.Single(f => f.Key == "OwnerFullName").Value;
-        var ownerEmail = form.Single(f => f.Key == "OwnerEmail").Value;
-        var pending = await applicantBrowser.GetAsync(submitted.Location!);
+        var ownerName = (string)owner["fullName"]!;
+        var ownerEmail = (string)owner["email"]!;
+        var pending = await applicantBrowser.GetAsync(statusPage);
         Assert.Contains(Html(ownerName), pending.Body);
         Assert.Contains($"/checkout/review/{registrationId}", pending.Body);
 
         // Another browser with the ID and a valid antiforgery token of its own.
         using var stranger = _hosts.Production.NewBrowser();
-        var strangerToken = await stranger.GetAntiforgeryTokenAsync("/signup");
-        var strangerPending = await stranger.GetAsync(submitted.Location!);
+        var strangerToken = _hosts.Production.IssueAntiforgeryToken(stranger);
+        var strangerPending = await stranger.GetAsync(statusPage);
         var strangerCancel = await stranger.PostFormAsync(
             $"/checkout/cancel/{registrationId}", [new("__RequestVerificationToken", strangerToken)]);
         var strangerSimulate = await stranger.PostFormAsync(
@@ -483,7 +472,7 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
         using var owner = _hosts.OwnerBrowser(_hosts.Development, applicant);
         using var stranger = _hosts.Development.NewBrowser();
 
-        var strangerToken = await stranger.GetAntiforgeryTokenAsync("/signup");
+        var strangerToken = _hosts.Development.IssueAntiforgeryToken(stranger);
         var strangerAttempt = await stranger.PostFormAsync(
             $"/checkout/simulate-success/{victim.Id}", [new("__RequestVerificationToken", strangerToken)]);
         var review = await owner.GetAsync($"/checkout/review/{applicant.Id}");
@@ -538,32 +527,6 @@ public sealed class SignupRenderedResponseTests : IClassFixture<SignupRenderedRe
     }
 
     private static string Tamper(string proof) => proof[..^4] + (proof[^4] == 'A' ? "BBBB" : "AAAA");
-
-    private static List<KeyValuePair<string, string>> SentinelSignupForm(string antiforgeryToken)
-    {
-        var token = SentinelApplicant.NewToken();
-        return
-        [
-            new("__RequestVerificationToken", antiforgeryToken),
-            new("PlanCode", WaslaPlanCodes.Starter),
-            new("BillingPeriod", "Monthly"),
-            new("BusinessName", $"Bizname{token}"),
-            new("SelectedBusinessTypeCodes", "burger"),
-            new("BusinessPhoneType", "Mobile"),
-            new("BusinessPhone", SentinelApplicant.NewPhone()),
-            new("Slug", $"s{token}"),
-            new("Country", "Germany"),
-            new("CityId", "1"),
-            new("DistrictId", "1"),
-            new("City", "Berlin"),
-            new("District", "Mitte"),
-            new("StreetAddress", $"Streetq{token}"),
-            new("OwnerFullName", $"Ownerq{token}"),
-            new("OwnerEmail", $"owner.{token}@sentinel.test"),
-            new("Password", "Sentinel-pass-1"),
-            new("ConfirmPassword", "Sentinel-pass-1")
-        ];
-    }
 
     /// <summary>A Production, a Staging and a Development host over one isolated CentralDb and key ring.</summary>
     public sealed class Hosts : IAsyncLifetime
