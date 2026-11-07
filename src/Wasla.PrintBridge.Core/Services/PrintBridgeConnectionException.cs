@@ -43,6 +43,19 @@ public sealed class PrintBridgeConnectionException : Exception
         string? responseBody,
         string? serverErrorCode)
     {
+        // Device requests never follow a redirect (WAS-191), and a redirect is not an answer of the Print Bridge API.
+        // Whatever error code it carries, it is a failed request: never a success, a rejected token or a removed device,
+        // so it never clears the token or stops polling.
+        if (statusCode is >= 300 and < 400)
+        {
+            return new PrintBridgeConnectionException(
+                "Connection.RedirectNotFollowed",
+                endpointPath,
+                serverUrl,
+                issueCode: PrintBridgeRuntimeIssueCode.RequestFailed,
+                statusCode: statusCode);
+        }
+
         var issueCode = MapServerErrorCode(serverErrorCode, statusCode);
         var (key, args) = issueCode switch
         {

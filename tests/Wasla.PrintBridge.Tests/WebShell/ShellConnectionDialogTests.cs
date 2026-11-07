@@ -141,6 +141,27 @@ public sealed class ShellConnectionDialogTests : IDisposable
         });
 
     [Fact]
+    public Task RedirectingServer_PointsToTheAddress_AndSavesNothing() =>
+        RunDialogAsync(SentinelToken, async (dialog, engine, localizer) =>
+        {
+            // Even with a token error code, a redirect is not a rejected token (WAS-191).
+            engine.CheckConnectionFailure = PrintBridgeConnectionException.FromResponse(
+                "api/print-bridge/health", SentinelServerUrl, 301, "{\"error\":\"device_auth_invalid\"}", "device_auth_invalid");
+            var (url, token, _, _, _, status) = dialog.PartsForTests;
+            token.Text = "typed-in-this-dialog";
+
+            await dialog.ConnectAsync();
+
+            var message = localizer["Connection.RedirectNotFollowed"];
+            Assert.True(dialog.Visible);
+            Assert.Equal(message, status.Text);
+            Assert.StartsWith(message, url.AccessibleDescription, StringComparison.Ordinal);
+            Assert.Same(url, ActiveTextBox(dialog));
+            Assert.Equal("typed-in-this-dialog", token.Text);
+            Assert.Equal(0, engine.ApplyConnectionCalls);
+        });
+
+    [Fact]
     public Task Success_ClosesAsConnected_AndForgetsTheTypedToken() =>
         RunDialogAsync(string.Empty, async (dialog, engine, localizer) =>
         {

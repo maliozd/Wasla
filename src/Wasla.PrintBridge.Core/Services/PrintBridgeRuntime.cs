@@ -746,7 +746,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     }
 
     /// <summary>
-    /// Sends mark-printed, repeating it after a server or network failure (<see cref="PrintedReportRetryDelays"/>). If
+    /// Sends mark-printed, repeating it after a server or network failure or a redirect (<see cref="PrintedReportRetryDelays"/>). If
     /// every attempt fails, the exception reaches the polling loop, which records the connection problem; the job stays
     /// printed and is never reported failed.
     /// </summary>
@@ -771,9 +771,13 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         }
     }
 
-    /// <summary>The server could not be reached, timed out or failed (5xx); rejected credentials are not transient.</summary>
+    /// <summary>
+    /// The server could not be reached, timed out, failed (5xx) or answered with a redirect, which is never followed
+    /// (WAS-191): the report may or may not have been stored, and repeating it to the same server is safe. Rejected
+    /// credentials are not transient.
+    /// </summary>
     private static bool IsTransient(PrintBridgeConnectionException ex) =>
-        ex.IssueCode == PrintBridgeRuntimeIssueCode.ServerUnreachable || ex.StatusCode >= 500;
+        ex.IssueCode == PrintBridgeRuntimeIssueCode.ServerUnreachable || ex.StatusCode is >= 500 or (>= 300 and < 400);
 
     private void UpsertRecentJob(LocalPrintJobRecord record)
     {
