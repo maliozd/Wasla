@@ -567,9 +567,9 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
     /// so the existing same-tenant refusal keeps its reason. Checked across all tenants (WAS-91): the per-tenant unique
     /// index does not stop one computer from being registered to two tenants.
     /// <para>
-    /// Every setup write that binds an installation holds its installation lock, so this read needs no key-range locks.
-    /// On SQL Server it reads with <c>READCOMMITTEDLOCK</c> inside the serializable transaction: a range lock across all
-    /// tenants' devices would make unrelated setups of different tenants block, and deadlock, each other.
+    /// Every setup write that binds an installation holds its installation lock, so this read needs no key-range locks: a
+    /// range lock across all tenants' devices would make unrelated setups of different tenants block, and deadlock, each
+    /// other. See <see cref="PrintBridgeDeviceRowReads"/>.
     /// </para>
     /// </summary>
     private async Task<InstallationRegistration> FindInstallationRegistrationAsync(
@@ -578,12 +578,7 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         Guid[] ignoredDeviceIds,
         CancellationToken ct)
     {
-        var devices = _centralDb.Database.IsSqlServer()
-            ? _centralDb.PrintBridgeDevices.FromSql(
-                $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK) WHERE [InstallationId] = {installationId}")
-            : _centralDb.PrintBridgeDevices;
-
-        var tenantIds = await devices
+        var tenantIds = await PrintBridgeDeviceRowReads.ByInstallation(_centralDb, installationId)
             .AsNoTracking()
             .Where(d => d.InstallationId == installationId
                 && d.RemovedAtUtc == null
