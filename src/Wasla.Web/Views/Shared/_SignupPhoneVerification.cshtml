@@ -1,0 +1,104 @@
+@model Wasla.Web.Models.Signup.SignupViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Signup
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    // The phone verification step (Figma T1–T7, MT1–MT7, MT2k, L3). signup-phone-step.js shows the server's phone
+    // status: the masked number, the code field, the countdowns, the change-number form and the verified state. The
+    // first render follows the embedded draft so nothing jumps when the script starts.
+    var phone = Model.InitialDraft.Phone;
+    var verified = phone.State == SignupPhoneStates.Verified;
+    var sent = phone.State is SignupPhoneStates.CodeSent or SignupPhoneStates.Expired;
+    var digits = Model.InitialDraft.Owner.MobilePhone;
+    var fullNumber = digits is { Length: 10 } d ? $"+90 {d[..3]} {d[3..6]} {d[6..8]} {d[8..]}" : string.Empty;
+    var supportEmail = Model.SupportEmail;
+    ViewData["SignupCodeLength"] = Model.PhoneCodeLength;
+    ViewData["SignupCodeHidden"] = !(sent || verified);
+}
+<h2 class="su-title" id="signupStep-phone-title" tabindex="-1" data-su-phone-title
+    data-title-default="@L["Signup.Phone.Title"]" data-title-verified="@L["Signup.Phone.TitleVerified"]">@L[verified ? "Signup.Phone.TitleVerified" : "Signup.Phone.Title"]</h2>
+<p class="su-lead" data-su-phone-lead
+   data-lead-notsent="@L["Signup.Phone.LeadNotSent"]" data-lead-sent="@L["Signup.Phone.LeadSent"]" data-lead-verified="@L["Signup.Phone.LeadVerified"]">@L[verified ? "Signup.Phone.LeadVerified" : sent ? "Signup.Phone.LeadSent" : "Signup.Phone.LeadNotSent"]</p>
+
+<div class="su-notice su-notice--danger" data-su-phone-alert role="alert" tabindex="-1" hidden>
+    <i class="bi bi-x-circle" aria-hidden="true"></i>
+    <div>
+        <strong class="su-notice__title" data-su-phone-alert-title hidden></strong>
+        <p data-su-phone-alert-text></p>
+        @if (!string.IsNullOrWhiteSpace(supportEmail))
+        {
+            <p data-su-phone-alert-support hidden>@Html.Raw(string.Format(L["Signup.Phone.SupportLine"].Value, $"<a class=\"su-link\" href=\"mailto:{System.Net.WebUtility.HtmlEncode(supportEmail)}\"><bdi>{System.Net.WebUtility.HtmlEncode(supportEmail)}</bdi></a>"))</p>
+        }
+    </div>
+</div>
+
+<div class="su-phone-stack">
+    <div class="su-phone-card" data-su-phone-card hidden="@(verified || phone.State == SignupPhoneStates.Unavailable ? "hidden" : null)">
+        <div>
+            <span class="su-phone-card__label" data-su-phone-card-label
+                  data-label-default="@L["Signup.Phone.NumberLabel"]" data-label-sent="@L["Signup.Phone.NumberLabelSent"]">@L[sent ? "Signup.Phone.NumberLabelSent" : "Signup.Phone.NumberLabel"]</span>
+            <bdi class="su-phone-card__number" dir="ltr" data-su-phone-masked>@phone.MaskedPhone</bdi>
+        </div>
+        <button type="button" class="su-btn su-btn--quiet" data-su-phone-change>
+            <i class="bi bi-pencil" aria-hidden="true"></i>@L["Signup.Phone.ChangeNumber"]
+        </button>
+    </div>
+
+    <div class="su-phone-card su-phone-card--verified" data-su-phone-verified hidden="@(verified ? null : "hidden")">
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        <div>
+            <span class="su-phone-card__label">@L["Signup.Phone.VerifiedNumberLabel"]</span>
+            <bdi class="su-phone-card__number" dir="ltr" data-su-phone-full>@fullNumber</bdi>
+        </div>
+    </div>
+
+    <fieldset class="su-field su-phone-changer" data-su-phone-changer data-su-skip-validation hidden>
+        <legend class="su-label">@L["Signup.Phone.ChangeLead"]</legend>
+        <label class="su-visually-hidden" for="signupPhoneChange">@L["Signup.Flow.OwnerMobile"]</label>
+        <div class="su-group" dir="ltr">
+            <span class="su-group__addon su-group__addon--prefix" id="signupPhoneChangePrefix">+90</span>
+            <input class="su-input" id="signupPhoneChange" type="text" inputmode="tel" autocomplete="tel-national"
+                   data-su-phone-change-input aria-describedby="signupPhoneChangePrefix signupPhoneChange-error signupPhoneChangeHelp" />
+        </div>
+        <span class="field-validation-valid" id="signupPhoneChange-error" data-su-phone-change-error></span>
+        <p class="su-help" id="signupPhoneChangeHelp"><i class="bi bi-info-circle" aria-hidden="true"></i> @L["Signup.Phone.ChangeHelp"]</p>
+        <div class="su-actions su-actions--inline">
+            <button type="button" class="su-btn su-btn--quiet" data-su-phone-change-cancel>@L["Common.Cancel"]</button>
+        </div>
+    </fieldset>
+
+    <div data-su-skip-validation>
+        <partial name="_SignupCodeInput" />
+    </div>
+
+    <ul class="su-meta-list" data-su-phone-meta>
+        <li class="su-status" data-state="sending" data-su-phone-sending hidden>
+            <span class="su-spinner" aria-hidden="true"></span><span>@L["Signup.Phone.Sending"]</span>
+        </li>
+        <li class="su-status" data-state="sent" data-su-phone-sent hidden>
+            <i class="bi bi-check2" aria-hidden="true"></i><span></span>
+        </li>
+        <li class="su-status" data-su-phone-countdown hidden>
+            <i class="bi bi-clock" aria-hidden="true"></i>
+            <span>@Html.Raw(string.Format(L["Signup.Phone.ResendIn"].Value, "<bdi class=\"su-countdown\" dir=\"ltr\">0:00</bdi>"))</span>
+        </li>
+        <li data-su-phone-resend-wrap>
+            <button type="button" class="su-btn su-btn--quiet su-btn--inline" data-su-phone-resend hidden>
+                <i class="bi bi-arrow-repeat" aria-hidden="true"></i>@L["Signup.Phone.Resend"]
+            </button>
+        </li>
+    </ul>
+
+    <div class="su-actions">
+        <button type="button" class="su-btn su-btn--primary" data-su-phone-primary>@L[verified ? "Signup.Flow.ToReview" : sent ? "Signup.Phone.Verify" : "Signup.Phone.Send"]</button>
+    </div>
+
+    @if (Model.Endpoints?.FakeSmsOutbox is { } outbox)
+    {
+        @* Development with the fake SMS sender only: the codes "sent" to this draft's number. Never filled in for the visitor. *@
+        <p class="su-help su-dev-note">
+            <i class="bi bi-wrench" aria-hidden="true"></i>
+            <a class="su-link" href="@outbox" target="_blank" rel="noopener noreferrer">@L["Signup.Phone.FakeOutboxLink"]<span class="su-visually-hidden"> (@L["Common.OpensInNewTab"])</span></a>
+        </p>
+    }
+</div>

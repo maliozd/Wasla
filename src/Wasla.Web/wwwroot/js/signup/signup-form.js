@@ -47,11 +47,8 @@
     var slugInput = document.getElementById("signupSlug");
     var businessNameInput = document.getElementById("signupBusinessName");
     var preview = document.getElementById("signupDomainPreview");
-    var planSelect = document.getElementById("signupPlanCode");
-    var billingSelect = document.getElementById("signupBillingPeriod");
+    var planInputs = document.querySelectorAll('input[name="PlanCode"]');
     var enterpriseNotice = document.getElementById("signupEnterpriseNotice");
-    var selfServiceSections = document.getElementById("signupSelfServiceSections");
-    var billingCol = document.getElementById("signupBillingCol");
     var baseDomainEl = document.getElementById("signupBaseDomain");
     var baseDomain = baseDomainEl ? baseDomainEl.value : "";
     var slugManuallyEdited = false;
@@ -66,7 +63,7 @@
     var streetIdInput = document.getElementById("signupStreetId");
     var streetList = document.getElementById("signupStreetList");
     var streetHint = document.getElementById("signupStreetHint");
-    var phoneTypeSelect = document.getElementById("signupBusinessPhoneType");
+    var phoneTypeInputs = document.querySelectorAll('input[name="BusinessPhoneType"]');
     var phonePrefix = document.getElementById("signupPhonePrefix");
     var phoneHint = document.getElementById("signupPhoneHint");
     var citiesById = {};
@@ -89,71 +86,14 @@
         preview.textContent = slug + "." + baseDomain;
     }
 
-    function findSelectedPlan() {
-        if (!planSelect || !Array.isArray(config.plans)) return null;
-        var code = planSelect.value;
-        for (var i = 0; i < config.plans.length; i++) {
-            if (config.plans[i].code === code) {
-                return config.plans[i];
-            }
-        }
-        return config.plans[0] || null;
-    }
-
-    function updatePlanSummary() {
-        var plan = findSelectedPlan();
-        var nameEl = document.getElementById("signupPlanSummaryName");
-        var descriptionEl = document.getElementById("signupPlanSummaryDescription");
-        var priceEl = document.getElementById("signupPlanSummaryPrice");
-        var vatEl = document.getElementById("signupPlanSummaryVat");
-        var yearlyNoteEl = document.getElementById("signupPlanSummaryYearlyNote");
-        var deviceEl = document.getElementById("signupPlanSummaryDevice");
-        var featuresEl = document.getElementById("signupPlanSummaryFeatures");
-
-        if (!plan || !nameEl || !descriptionEl || !priceEl || !deviceEl || !featuresEl) {
-            return;
-        }
-
-        var isYearly = billingSelect && billingSelect.value === "Yearly";
-        nameEl.textContent = plan.packageTitle || "";
-        descriptionEl.textContent = plan.description || "";
-        var shown = window.WaslaSignupPlanPrice
-            ? window.WaslaSignupPlanPrice.forPeriod(plan, isYearly)
-            : { price: "", vat: "", saving: "" };
-        priceEl.textContent = shown.price;
-
-        if (vatEl) {
-            vatEl.textContent = shown.vat;
-        }
-
-        if (yearlyNoteEl) {
-            yearlyNoteEl.textContent = shown.saving;
-            yearlyNoteEl.classList.toggle("d-none", !shown.saving);
-        }
-
-        deviceEl.textContent = plan.deviceLimit || "";
-        featuresEl.innerHTML = "";
-        (plan.features || []).forEach(function (feature) {
-            var item = document.createElement("li");
-            item.textContent = feature;
-            featuresEl.appendChild(item);
-        });
-    }
-
+    // The plan list (WAS-194) has only the self-service plans; the Enterprise notice shown for ?plan=Enterprise goes
+    // away once a plan is chosen. The receipt and the prices follow the selection in signup-flow.js.
     function updatePlanUi() {
-        if (!planSelect) return;
-        var option = planSelect.options[planSelect.selectedIndex];
-        var isContactSales = option && option.getAttribute("data-contact-sales") === "true";
-        if (enterpriseNotice) {
-            enterpriseNotice.classList.toggle("d-none", !isContactSales);
+        if (!enterpriseNotice) return;
+        var chosen = Array.prototype.some.call(planInputs, function (input) { return input.checked; });
+        if (chosen) {
+            enterpriseNotice.hidden = true;
         }
-        if (selfServiceSections) {
-            selfServiceSections.classList.toggle("d-none", isContactSales);
-        }
-        if (billingCol) {
-            billingCol.classList.toggle("d-none", isContactSales);
-        }
-        updatePlanSummary();
     }
 
     function setDistrictDisabled(disabled) {
@@ -188,13 +128,13 @@
             setDistrictDisabled(true);
             clearNeighborhoodFields();
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
         setDistrictDisabled(true);
         clearNeighborhoodFields();
         clearStreetFields();
-        fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
+        return fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -256,17 +196,20 @@
         idInput.value = match ? String(match.id) : "";
     }
 
-    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName) {
+    // selectedStreetId / selectedStreetName: the street to restore after the neighbourhood's streets are loaded.
+    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName, selectedStreetId, selectedStreetName) {
         if (!districtId) {
             clearNeighborhoodFields();
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
+        var streetIdToRestore = selectedStreetId === undefined ? null : selectedStreetId;
+        var streetNameToRestore = selectedStreetName === undefined ? null : selectedStreetName;
         clearNeighborhoodFields();
         clearStreetFields();
 
-        fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
+        return fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -292,8 +235,12 @@
                 }
 
                 if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                    loadStreets(neighborhoodIdInput.value, streetIdInput ? streetIdInput.value : null, streetInput ? streetInput.value : null);
+                    return loadStreets(neighborhoodIdInput.value, streetIdToRestore, streetNameToRestore);
                 }
+                if (streetNameToRestore && streetInput) {
+                    streetInput.value = streetNameToRestore;
+                }
+                return undefined;
             })
             .catch(function () {
                 neighborhoodsCache = [];
@@ -306,12 +253,12 @@
     function loadStreets(neighborhoodId, selectedStreetId, selectedStreetName) {
         if (!neighborhoodId) {
             clearStreetFields();
-            return;
+            return Promise.resolve();
         }
 
         clearStreetFields();
 
-        fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
+        return fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
             headers: { Accept: "application/json" }
         })
             .then(function (response) {
@@ -355,9 +302,14 @@
         return citiesById[Number(citySelect.value)] || null;
     }
 
+    function currentPhoneType() {
+        var checked = document.querySelector('input[name="BusinessPhoneType"]:checked');
+        return checked ? checked.value : "";
+    }
+
     function updatePhoneUi() {
-        if (!phoneTypeSelect) return;
-        var isMobile = phoneTypeSelect.value === "Mobile";
+        if (!phoneTypeInputs.length) return;
+        var isMobile = currentPhoneType() === "Mobile";
         var city = getSelectedCity();
 
         if (phonePrefix) {
@@ -459,14 +411,10 @@
         });
     }
 
-    if (planSelect) {
-        planSelect.addEventListener("change", updatePlanUi);
-        updatePlanUi();
-    }
-
-    if (billingSelect) {
-        billingSelect.addEventListener("change", updatePlanSummary);
-    }
+    Array.prototype.forEach.call(planInputs, function (input) {
+        input.addEventListener("change", updatePlanUi);
+    });
+    updatePlanUi();
 
     if (slugInput) {
         slugInput.addEventListener("input", function () {
@@ -554,14 +502,46 @@
         });
     }
 
-    if (phoneTypeSelect) {
-        phoneTypeSelect.addEventListener("change", function () {
+    Array.prototype.forEach.call(phoneTypeInputs, function (input) {
+        input.addEventListener("change", function () {
             updatePhoneUi();
             if (window.WaslaSignupPhone) {
                 window.WaslaSignupPhone.refreshExistingValues();
             }
         });
+    });
+
+    // Puts a saved address back (WAS-194: the page restores the registration draft): the city, then its districts with
+    // the saved one selected, then the neighbourhood and street lists with the saved values.
+    function restoreAddress(values) {
+        if (!citySelect) {
+            return Promise.resolve();
+        }
+
+        citySelect.value = values && values.cityId != null ? String(values.cityId) : "";
+        updatePhoneUi();
+        if (!citySelect.value) {
+            setDistrictDisabled(true);
+            return Promise.resolve();
+        }
+
+        return loadDistricts(citySelect.value, values.districtId).then(function () {
+            if (!values.districtId) {
+                return undefined;
+            }
+            return loadNeighborhoods(
+                String(values.districtId),
+                values.neighborhoodId,
+                values.neighborhood || null,
+                values.streetId,
+                values.streetAddress || null);
+        });
     }
+
+    window.WaslaSignupForm = {
+        restoreAddress: restoreAddress,
+        refreshDomainPreview: updateDomainPreview
+    };
 
     initPasswordToggles();
     initOptionalBusinessEmailValidation();

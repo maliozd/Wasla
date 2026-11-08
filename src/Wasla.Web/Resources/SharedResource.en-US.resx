@@ -2894,14 +2894,11 @@
   <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Custom agreement and limits</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Create your Wasla account</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms and manage everything in one place.</value></data>
-  <data name="Signup.StepPlan" xml:space="preserve"><value>Choose plan</value></data>
-  <data name="Signup.SelectedPlanTitle" xml:space="preserve"><value>Your selection</value></data>
+  <data name="Signup.StepPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} package</value></data>
-  <data name="Signup.SelectedPlanIncludes" xml:space="preserve"><value>With this package:</value></data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Custom offer</value></data>
-  <data name="Signup.StepBusiness" xml:space="preserve"><value>Business details</value></data>
+  <data name="Signup.StepBusiness" xml:space="preserve"><value>Restaurant</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Owner account</value></data>
-  <data name="Signup.StepCreate" xml:space="preserve"><value>Create account</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.BillingPeriod" xml:space="preserve"><value>Billing period</value></data>
   <data name="Signup.BillingMonthly" xml:space="preserve"><value>Monthly</value></data>
@@ -2915,7 +2912,7 @@
   <data name="Signup.DistrictLabel" xml:space="preserve"><value>District</value></data>
   <data name="Signup.SelectCity" xml:space="preserve"><value>Select city</value></data>
   <data name="Signup.SelectDistrict" xml:space="preserve"><value>Select district</value></data>
-  <data name="Signup.StepContact" xml:space="preserve"><value>Contact information</value></data>
+  <data name="Signup.StepContact" xml:space="preserve"><value>Contact</value></data>
   <data name="Signup.BusinessPhoneType" xml:space="preserve"><value>Phone type</value></data>
   <data name="Signup.PhoneTypeMobile" xml:space="preserve"><value>Mobile</value></data>
   <data name="Signup.PhoneTypeLandline" xml:space="preserve"><value>Landline</value></data>
@@ -2942,7 +2939,7 @@
   <data name="Signup.NeighborhoodManualHint" xml:space="preserve"><value>If not listed, you can type the neighborhood name manually.</value></data>
   <data name="Signup.StreetManualHint" xml:space="preserve"><value>If not listed, you can type the street name manually.</value></data>
   <data name="Signup.PostalCode" xml:space="preserve"><value>Postal code</value></data>
-  <data name="Signup.StepAddress" xml:space="preserve"><value>Address details</value></data>
+  <data name="Signup.StepAddress" xml:space="preserve"><value>Address</value></data>
   <data name="Signup.Slug" xml:space="preserve"><value>Subdomain</value></data>
   <data name="Signup.SlugHelp" xml:space="preserve"><value>Your sign-in address:</value></data>
   <data name="Signup.OwnerFullName" xml:space="preserve"><value>Full name</value></data>
@@ -4356,4 +4353,141 @@
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>The screen keeps trying automatically. Check the internet connection, or try again now.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Reload page</value></data>
   <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Notification settings did not load in time, so the new-order sound and browser notifications are off for now. Reload the page to try again.</value></data>
+  <data name="Signup.StepReview" xml:space="preserve"><value>Summary</value></data>
+  <data name="Signup.Flow.StepCounter" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="Signup.Flow.BackTo" xml:space="preserve"><value>Back: {0}</value></data>
+  <data name="Signup.Flow.PlanTitle" xml:space="preserve"><value>Which plan would you like to start with?</value></data>
+  <data name="Signup.Flow.PlanLead" xml:space="preserve"><value>Choose your plan and billing period. You can change your choice until you complete the registration.</value></data>
+  <data name="Signup.Flow.PlanPriceMeta" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Flow.EnterpriseQuestion" xml:space="preserve"><value>Need several locations or a custom integration?</value></data>
+  <data name="Signup.Flow.EnterpriseLink" xml:space="preserve"><value>Request an Enterprise quote</value></data>
+  <data name="Signup.Flow.ToRestaurant" xml:space="preserve"><value>Continue to business details</value></data>
+  <data name="Signup.Flow.RestaurantTitle" xml:space="preserve"><value>Your restaurant</value></data>
+  <data name="Signup.Flow.RestaurantLead" xml:space="preserve"><value>Let's create your panel address and note how to reach your business. You set up platform connections in the panel after payment.</value></data>
+  <data name="Signup.Flow.SectionBusiness" xml:space="preserve"><value>Business</value></data>
+  <data name="Signup.Flow.SubtypesFor" xml:space="preserve"><value>Subtypes for {0}</value></data>
+  <data name="Signup.Flow.SectionPanelAddress" xml:space="preserve"><value>Panel address</value></data>
+  <data name="Signup.Flow.PanelAddressHint" xml:space="preserve"><value>You will sign in to your restaurant panel at this address.</value></data>
+  <data name="Signup.Flow.SlugRules" xml:space="preserve"><value>Use lowercase letters (a-z), digits, hyphens (-) and underscores (_).</value></data>
+  <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>For now, only businesses in Türkiye can register.</value></data>
+  <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>Add an address note and a map link</value></data>
+  <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>Continue to the owner account</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>You will be the first person to sign in to your restaurant panel. We verify your mobile phone by SMS in the next step; you can add your staff in the panel after setup.</value></data>
+  <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>Your details</value></data>
+  <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>You will sign in to the panel with this email address. When the panel is ready, we also send the notice here.</value></data>
+  <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>Mobile phone</value></data>
+  <data name="Signup.Flow.PasswordRuleLength" xml:space="preserve"><value>At least 8 characters</value></data>
+  <data name="Signup.Flow.PasswordRuleMatch" xml:space="preserve"><value>Both passwords match</value></data>
+  <data name="Signup.Flow.RuleMet" xml:space="preserve"><value>met</value></data>
+  <data name="Signup.Flow.RuleUnmet" xml:space="preserve"><value>not met</value></data>
+  <data name="Signup.Flow.ToReview" xml:space="preserve"><value>Continue to the summary</value></data>
+  <data name="Signup.Flow.ReviewTitle" xml:space="preserve"><value>Check your details</value></data>
+  <data name="Signup.Flow.ReviewLead" xml:space="preserve"><value>Use Edit to change a section; what you entered is kept.</value></data>
+  <data name="Signup.Flow.ErrorSummaryTitle" xml:space="preserve"><value>Fix these fields to continue</value></data>
+  <data name="Signup.Receipt.Title" xml:space="preserve"><value>Your registration</value></data>
+  <data name="Signup.Receipt.Now" xml:space="preserve"><value>Now</value></data>
+  <data name="Signup.Receipt.StateDone" xml:space="preserve"><value>completed</value></data>
+  <data name="Signup.Receipt.StateCurrent" xml:space="preserve"><value>current step</value></data>
+  <data name="Signup.Receipt.StateUpcoming" xml:space="preserve"><value>not started</value></data>
+  <data name="Signup.Receipt.HintPlan" xml:space="preserve"><value>Plan and billing period</value></data>
+  <data name="Signup.Receipt.HintRestaurant" xml:space="preserve"><value>Business, panel address and address</value></data>
+  <data name="Signup.Receipt.HintOwner" xml:space="preserve"><value>Name, email and password</value></data>
+  <data name="Signup.Receipt.HintReview" xml:space="preserve"><value>Check the details and complete the registration</value></data>
+  <data name="Signup.Receipt.DueToday" xml:space="preserve"><value>Due today</value></data>
+  <data name="Signup.Receipt.PlanLine" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Receipt.PriceLine" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Signup.Receipt.StripDetail" xml:space="preserve"><value>{0}, {1}, {2}</value></data>
+  <data name="Signup.Receipt.PeriodMonthly" xml:space="preserve"><value>monthly</value></data>
+  <data name="Signup.Receipt.PeriodYearly" xml:space="preserve"><value>yearly</value></data>
+  <data name="Signup.Receipt.PeriodNoteMonthly" xml:space="preserve"><value>{0} plan, 1-month period. Renews automatically every month.</value></data>
+  <data name="Signup.Receipt.PeriodNoteYearly" xml:space="preserve"><value>{0} plan, 12-month period. Renews automatically every 12 months.</value></data>
+  <data name="Signup.Receipt.ChoosePlan" xml:space="preserve"><value>Choose a plan</value></data>
+  <data name="Signup.Strip.Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Signup.Strip.OpenSummary" xml:space="preserve"><value>Show your registration details</value></data>
+  <data name="Signup.Pay.Title" xml:space="preserve"><value>Subscription summary</value></data>
+  <data name="Signup.Pay.PlanRow" xml:space="preserve"><value>{0} plan, {1}</value></data>
+  <data name="Signup.Pay.Vat" xml:space="preserve"><value>VAT</value></data>
+  <data name="Signup.Pay.VatIncluded" xml:space="preserve"><value>Included</value></data>
+  <data name="Signup.Pay.VatExcluded" xml:space="preserve"><value>Not included</value></data>
+  <data name="Signup.Pay.Period" xml:space="preserve"><value>Period</value></data>
+  <data name="Signup.Pay.PeriodMonthly" xml:space="preserve"><value>1 month</value></data>
+  <data name="Signup.Pay.PeriodYearly" xml:space="preserve"><value>12 months</value></data>
+  <data name="Signup.Pay.AutoRenew" xml:space="preserve"><value>Automatic renewal</value></data>
+  <data name="Signup.Pay.RenewMonthly" xml:space="preserve"><value>Every month</value></data>
+  <data name="Signup.Pay.RenewYearly" xml:space="preserve"><value>Every 12 months</value></data>
+  <data name="Signup.Review.Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Signup.Review.NotProvidedOptional" xml:space="preserve"><value>Not added (optional)</value></data>
+  <data name="Signup.Review.PasswordSet" xml:space="preserve"><value>Set</value></data>
+  <data name="Signup.Review.BusinessTypeLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Signup.Review.AddressBuilding" xml:space="preserve"><value>No. {0}</value></data>
+  <data name="Signup.Review.AddressFloor" xml:space="preserve"><value>Floor {0}</value></data>
+  <data name="Signup.Review.AddressDoor" xml:space="preserve"><value>Apt. {0}</value></data>
+  <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>Verification code</value></data>
+  <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>Enter the code</value></data>
+  <data name="Validation.PlanRequired" xml:space="preserve"><value>Choose a plan to continue.</value></data>
+  <data name="Signup.Draft.Missing" xml:space="preserve"><value>Your registration session has expired. For your security, the details you entered were removed; please start again.</value></data>
+  <data name="Signup.Draft.Submitted" xml:space="preserve"><value>This registration has already been submitted.</value></data>
+  <data name="Signup.Draft.ValidationFailed" xml:space="preserve"><value>Please correct the highlighted fields.</value></data>
+  <data name="Signup.Draft.Incomplete" xml:space="preserve"><value>Complete every step before you continue.</value></data>
+  <data name="Signup.Draft.InvalidRequest" xml:space="preserve"><value>The request could not be processed. Reload the page and try again.</value></data>
+  <data name="Signup.Phone.OwnerIncomplete" xml:space="preserve"><value>Save the account owner details before requesting a verification code.</value></data>
+  <data name="Signup.Phone.AlreadyVerified" xml:space="preserve"><value>This phone number is already verified.</value></data>
+  <data name="Signup.Phone.NotVerified" xml:space="preserve"><value>Verify your mobile phone number to continue.</value></data>
+  <data name="Signup.Phone.CodeIncorrect" xml:space="preserve"><value>The code is incorrect. Please try again.</value></data>
+  <data name="Signup.Phone.CodeExpired" xml:space="preserve"><value>The code has expired. Request a new code.</value></data>
+  <data name="Signup.Phone.CodeFormatInvalid" xml:space="preserve"><value>Enter the 6-digit code.</value></data>
+  <data name="Signup.Phone.NoActiveCode" xml:space="preserve"><value>There is no active code. Request a new code.</value></data>
+  <data name="Signup.Phone.ResendNotAvailable" xml:space="preserve"><value>Please wait before requesting a new code.</value></data>
+  <data name="Signup.Phone.Locked" xml:space="preserve"><value>Too many incorrect attempts. Wait a while, then request a new code.</value></data>
+  <data name="Signup.Phone.SendLimitReached" xml:space="preserve"><value>Too many codes have been sent. Please try again later.</value></data>
+  <data name="Signup.Phone.DeliveryFailed" xml:space="preserve"><value>The code could not be sent. Check your number and try again.</value></data>
+  <data name="Signup.Phone.Unavailable" xml:space="preserve"><value>Phone verification is not available right now. Please contact support.</value></data>
+  <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Phone verification is temporarily unavailable. Please try again in a few minutes.</value></data>
+  <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Mobile phone number is required.</value></data>
+  <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Enter a valid Turkish mobile number, for example 532 123 45 67.</value></data>
+  <data name="Signup.StepPhone" xml:space="preserve"><value>Phone verification</value></data>
+  <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Verification by SMS</value></data>
+  <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Verified</value></data>
+  <data name="Signup.Receipt.PlanPrice" xml:space="preserve"><value>Plan price</value></data>
+  <data name="Signup.Receipt.PeriodLineMonthly" xml:space="preserve"><value>{0} plan, monthly billing period.</value></data>
+  <data name="Signup.Receipt.PeriodLineYearly" xml:space="preserve"><value>{0} plan, yearly billing period.</value></data>
+  <data name="Signup.Flow.ToPhone" xml:space="preserve"><value>Send verification code</value></data>
+  <data name="Signup.Flow.OwnerPhoneHelp" xml:space="preserve"><value>We will send a verification code to this number by SMS. It can differ from the business phone.</value></data>
+  <data name="Signup.Flow.PasswordKept" xml:space="preserve"><value>Your password is saved. Leave these fields empty to keep it.</value></data>
+  <data name="Signup.Flow.SlugChecking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="Signup.Flow.SlugAvailable" xml:space="preserve"><value>{0} is available right now. It is checked again when you submit the registration.</value></data>
+  <data name="Signup.Flow.SlugCheckFailed" xml:space="preserve"><value>The address could not be checked right now. It is checked again when you submit the registration.</value></data>
+  <data name="Signup.Flow.AddressTakenTitle" xml:space="preserve"><value>The panel address is no longer available</value></data>
+  <data name="Signup.Flow.AddressTakenBody" xml:space="preserve"><value>{0} was taken by another registration while you were checking your details. Choose a new address; your other details and your phone verification are kept.</value></data>
+  <data name="Signup.Flow.NetworkError" xml:space="preserve"><value>We could not connect. Check your internet connection and try again.</value></data>
+  <data name="Signup.Flow.ServerError" xml:space="preserve"><value>Something went wrong. Please try again in a moment.</value></data>
+  <data name="Signup.Flow.Reload" xml:space="preserve"><value>Reload the page</value></data>
+  <data name="Signup.Flow.StartAgain" xml:space="preserve"><value>Start again</value></data>
+  <data name="Signup.Flow.OpenRegistration" xml:space="preserve"><value>See the status of your registration</value></data>
+  <data name="Signup.Flow.NoScript" xml:space="preserve"><value>The registration steps need JavaScript. Turn on JavaScript in your browser and reload the page.</value></data>
+  <data name="Signup.Flow.PhoneUnavailableTitle" xml:space="preserve"><value>Registration cannot be completed right now</value></data>
+  <data name="Signup.Phone.Title" xml:space="preserve"><value>Verify your phone</value></data>
+  <data name="Signup.Phone.TitleVerified" xml:space="preserve"><value>Your phone is verified</value></data>
+  <data name="Signup.Phone.LeadSent" xml:space="preserve"><value>We sent a verification code to your mobile phone by SMS. You can continue to the summary once the code is verified.</value></data>
+  <data name="Signup.Phone.LeadNotSent" xml:space="preserve"><value>We will send a verification code to your mobile phone by SMS.</value></data>
+  <data name="Signup.Phone.LeadVerified" xml:space="preserve"><value>Your mobile phone is verified. You can now check your details.</value></data>
+  <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>The code goes to</value></data>
+  <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>The code was sent to</value></data>
+  <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Verified number</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Change number</value></data>
+  <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Enter the mobile number that should receive the code.</value></data>
+  <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>We will send a code to the new number. The previous number's verification no longer counts.</value></data>
+  <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Send the code to this number</value></data>
+  <data name="Signup.Phone.Send" xml:space="preserve"><value>Send code</value></data>
+  <data name="Signup.Phone.Resend" xml:space="preserve"><value>Send a new code</value></data>
+  <data name="Signup.Phone.Verify" xml:space="preserve"><value>Verify and continue to the summary</value></data>
+  <data name="Signup.Phone.Sending" xml:space="preserve"><value>Sending the code…</value></data>
+  <data name="Signup.Phone.Sent" xml:space="preserve"><value>Code sent at {0}.</value></data>
+  <data name="Signup.Phone.ResendIn" xml:space="preserve"><value>You can request a new code in {0}.</value></data>
+  <data name="Signup.Phone.DeliveryFailedTitle" xml:space="preserve"><value>The SMS could not be sent</value></data>
+  <data name="Signup.Phone.SupportLine" xml:space="preserve"><value>If the problem continues, write to {0}.</value></data>
+  <data name="Signup.Phone.ShareWarning" xml:space="preserve"><value>Do not share the code from the SMS with anyone. Wasla never asks for it by phone or email.</value></data>
+  <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>Development: view the test codes sent</value></data>
+  <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>If you change the mobile phone, you need to verify the new number by SMS again.</value></data>
+  <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>For questions about your subscription or to cancel it, write to {0}.</value></data>
 </root>

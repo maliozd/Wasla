@@ -60,8 +60,9 @@
         }
     }
 
-    function getPhoneTypeSelect() {
-        return document.getElementById("signupBusinessPhoneType");
+    // The business phone type is a pair of radio buttons (Mobile / Landline) on the restaurant step (WAS-194).
+    function getPhoneTypeInputs() {
+        return document.querySelectorAll('input[name="BusinessPhoneType"]');
     }
 
     function getBusinessPhoneInput() {
@@ -72,8 +73,9 @@
         return document.getElementById("signupOwnerPhone");
     }
 
-    function isBusinessMobileSelected(phoneTypeSelect) {
-        return phoneTypeSelect && phoneTypeSelect.value === MOBILE_TYPE;
+    function isBusinessMobileSelected() {
+        var checked = document.querySelector('input[name="BusinessPhoneType"]:checked');
+        return !!checked && checked.value === MOBILE_TYPE;
     }
 
     function bindPasteFormatter(input, shouldFormat) {
@@ -110,46 +112,41 @@
         formatMobileInput(input);
     }
 
-    function bindBusinessPhoneInput(businessInput, phoneTypeSelect) {
-        if (!businessInput || !phoneTypeSelect || businessInput.dataset.waslaBusinessPhoneBound === "true") {
+    function bindBusinessPhoneInput(businessInput, phoneTypeInputs) {
+        if (!businessInput || !phoneTypeInputs || phoneTypeInputs.length === 0
+            || businessInput.dataset.waslaBusinessPhoneBound === "true") {
             return;
         }
 
         businessInput.dataset.waslaBusinessPhoneBound = "true";
 
         function handleBusinessInput() {
-            if (isBusinessMobileSelected(phoneTypeSelect)) {
+            if (isBusinessMobileSelected()) {
                 formatMobileInput(businessInput);
             }
         }
 
         businessInput.addEventListener("input", handleBusinessInput);
         businessInput.addEventListener("blur", handleBusinessInput);
-        bindPasteFormatter(businessInput, function () {
-            return isBusinessMobileSelected(phoneTypeSelect);
+        bindPasteFormatter(businessInput, isBusinessMobileSelected);
+
+        Array.prototype.forEach.call(phoneTypeInputs, function (input) {
+            if (input.dataset.waslaPhoneTypeBound === "true") {
+                return;
+            }
+            input.dataset.waslaPhoneTypeBound = "true";
+            input.addEventListener("change", handleBusinessInput);
         });
 
-        if (phoneTypeSelect.dataset.waslaPhoneTypeBound !== "true") {
-            phoneTypeSelect.dataset.waslaPhoneTypeBound = "true";
-            phoneTypeSelect.addEventListener("change", function () {
-                if (isBusinessMobileSelected(phoneTypeSelect)) {
-                    formatMobileInput(businessInput);
-                }
-            });
-        }
-
-        if (isBusinessMobileSelected(phoneTypeSelect)) {
-            formatMobileInput(businessInput);
-        }
+        handleBusinessInput();
     }
 
     function normalizeForSubmit() {
-        var phoneTypeSelect = getPhoneTypeSelect();
         var businessInput = getBusinessPhoneInput();
         var ownerInput = getOwnerPhoneInput();
 
         if (businessInput) {
-            if (isBusinessMobileSelected(phoneTypeSelect)) {
+            if (isBusinessMobileSelected()) {
                 businessInput.value = normalizeTurkishLocalDigits(businessInput.value);
             } else {
                 businessInput.value = stripPhoneDigits(businessInput.value).slice(0, 50);
@@ -174,15 +171,14 @@
     function refreshExistingValues() {
         formatMobileInput(getOwnerPhoneInput());
 
-        var phoneTypeSelect = getPhoneTypeSelect();
-        if (isBusinessMobileSelected(phoneTypeSelect)) {
+        if (isBusinessMobileSelected()) {
             formatMobileInput(getBusinessPhoneInput());
         }
     }
 
     function init() {
         bindOwnerPhoneInput(getOwnerPhoneInput());
-        bindBusinessPhoneInput(getBusinessPhoneInput(), getPhoneTypeSelect());
+        bindBusinessPhoneInput(getBusinessPhoneInput(), getPhoneTypeInputs());
         bindSubmitNormalization();
         refreshExistingValues();
         window.setTimeout(refreshExistingValues, 0);
@@ -194,9 +190,7 @@
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
         normalizeForSubmit: normalizeForSubmit,
         refreshExistingValues: refreshExistingValues,
-        isBusinessMobileSelected: function () {
-            return isBusinessMobileSelected(getPhoneTypeSelect());
-        }
+        isBusinessMobileSelected: isBusinessMobileSelected
     };
 
     runWhenReady(init);
