@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
@@ -11,27 +11,48 @@ namespace Wasla.UnitTests.Printing;
 
 /// <summary>
 /// WAS-190 on a real SQL Server (a throwaway CentralDb, see <see cref="SqlServerCentralDatabase"/>): Print Bridge devices
-/// added at the same moment. Every caller has its own DbContext and connection pool, as separate requests or Web
-/// instances would, and all are released at one barrier. Restaurants never wait for each other's quota: the quota count
-/// took serializable range locks across every restaurant's devices, so two new-device setups of different restaurants
-/// deadlocked on their inserts and one failed. Within one restaurant the tenant's setup lock, which every writer that
-/// adds or reactivates an active device takes, keeps the device limit exact. Nothing retries a failed exchange, so a
-/// deadlock fails these tests. SQLite runs no application locks, so these races are only meaningful here.
+/// added at the same moment, each caller on its own DbContext and connection pool (see <see cref="PrintBridgeSqlServerRace"/>).
+/// <para>
+/// Restaurants adding devices at once all succeed. The quota count took serializable key-range locks across every
+/// restaurant's devices, so two new-device setups of different restaurants deadlocked on their inserts and one failed.
+/// Those races hold every caller right before its device write until all have reached it, so each has taken its locks and
+/// counted while the others' transactions are open.
+/// </para>
+/// <para>
+/// Within one restaurant, the tenant's setup lock keeps the device limit exact for the writers that take it: the setup
+/// exchange, the move (WAS-91), and the Web panel's create and reactivate. Those races hold one writer right before its
+/// device write and let it go only once SQL Server shows the other waiting for its tenant lock, in both orders.
+/// </para>
+/// Every writer's outcome is explicit: it added an active device, or the device limit refused it. Any other failure,
+/// error log, deadlock or lock timeout fails the test; nothing retries. SQLite runs no application locks, so these races
+/// are only meaningful here. Two moves for one place left are in <see cref="PrintBridgeTransferSqlServerTests"/>.
 /// </summary>
 public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
 {
     private const int Rounds = 10;
+    private const int ContendedRounds = 6;
     private const string ServerUrl = "https://anadolu.app.wasla.tr/";
+
+    /// <summary>The reason a setup session records when the device limit refused its exchange.</summary>
+    private const string QuotaExceeded = "quota_exceeded";
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    /// <summary>Unexpected failures logged by the services, shown in an assertion's message.</summary>
-    private readonly ErrorLog _errors = new();
+    private readonly ServiceLog _log = new();
     private readonly SqlServerCentralDatabase _database = new();
+    private readonly PrintBridgeSqlServerRace _race;
+
+    public PrintBridgeDeviceQuotaSqlServerTests() => _race = new PrintBridgeSqlServerRace(_database);
 
     public ValueTask InitializeAsync() => _database.InitializeAsync();
 
     public ValueTask DisposeAsync() => _database.DisposeAsync();
+
+    private enum Outcome
+    {
+        Added,
+        RefusedByDeviceLimit
+    }
 
     [Fact]
     public async Task NewDeviceExchangesOfDifferentRestaurants_AtOnce_AllSucceed()
@@ -44,11 +65,13 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
             var firstCode = await CreateSessionAsync(first);
             var secondCode = await CreateSessionAsync(second);
 
-            var results = await RaceAsync(
-                db => Exchange(db, firstCode),
-                db => Exchange(db, secondCode));
+            var results = await _race.RaceAsync(
+                meetAtDeviceWrite: true,
+                db => ExchangeAsync(db, firstCode),
+                db => ExchangeAsync(db, secondCode));
 
-            Assert.True(results.All(added => added), $"Round {round}: {string.Join(", ", results)}; errors: {_errors.Text()}");
+            Assert.True(results.All(r => r == Outcome.Added), $"Round {round}: {string.Join(", ", results)}; log: {_log.Text()}");
+            _log.AssertNoErrors();
             Assert.Equal(1, await ActiveCountAsync(first));
             Assert.Equal(1, await ActiveCountAsync(second));
         }
@@ -59,43 +82,56 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     {
         for (var round = 0; round < Rounds; round++)
         {
-            var writers = new List<Func<CentralDbContext, Task<bool>>>();
+            var tenants = new List<Guid>();
+            var writers = new List<Func<CentralDbContext, Task<Outcome>>>();
             foreach (var kind in new[] { "exchange", "exchange", "create", "reactivate", "move" })
-                writers.Add(await PrepareAsync(kind, await TenantAsync()));
+            {
+                var tenant = await TenantAsync();
+                tenants.Add(tenant);
+                writers.Add(await PrepareAsync(kind, tenant));
+            }
 
-            var results = await RaceAsync([.. writers]);
+            var results = await _race.RaceAsync(meetAtDeviceWrite: true, [.. writers]);
 
-            Assert.True(results.All(added => added), $"Round {round}: {string.Join(", ", results)}; errors: {_errors.Text()}");
+            Assert.True(results.All(r => r == Outcome.Added), $"Round {round}: {string.Join(", ", results)}; log: {_log.Text()}");
+            _log.AssertNoErrors();
+            foreach (var tenant in tenants)
+                Assert.Equal(1, await ActiveCountAsync(tenant));
         }
     }
 
     /// <summary>
-    /// Two writers race for a restaurant's last device place: exactly one gets it and the limit holds. Each writer that
-    /// adds or turns on an active device is covered: the setup exchange, the move (WAS-91), and the Web panel's create
-    /// and reactivate.
+    /// Two writers for a restaurant's last device place. The one holding the tenant lock adds its device; the other waited
+    /// for that lock and is then refused by the device limit, and nothing else. Each pair runs in both orders.
     /// </summary>
     [Theory]
     [InlineData("exchange", "exchange")]
     [InlineData("exchange", "create")]
     [InlineData("exchange", "reactivate")]
     [InlineData("move", "exchange")]
+    [InlineData("move", "create")]
     [InlineData("move", "reactivate")]
+    [InlineData("create", "create")]
     [InlineData("create", "reactivate")]
     [InlineData("reactivate", "reactivate")]
-    public async Task TwoWritersForTheLastPlace_AtOnce_FillItOnce(string firstKind, string secondKind)
+    public async Task TwoWritersForTheLastPlace_OneWaitingForTheOther_FillItOnce(string firstKind, string secondKind)
     {
-        for (var round = 0; round < Rounds / 2; round++)
+        for (var round = 0; round < ContendedRounds; round++)
         {
             var tenant = await TenantAsync();
             for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount - 1; i++)
                 await AddDeviceAsync(tenant, isActive: true);
 
-            var first = await PrepareAsync(firstKind, tenant);
-            var second = await PrepareAsync(secondKind, tenant);
+            var (holderKind, waiterKind) = round % 2 == 0 ? (firstKind, secondKind) : (secondKind, firstKind);
+            var holder = await PrepareAsync(holderKind, tenant);
+            var waiter = await PrepareAsync(waiterKind, tenant);
 
-            var results = await RaceAsync(first, second);
+            var (held, waited) = await _race.ContendAsync(holder, waiter);
 
-            Assert.True(results.Count(added => added) == 1, $"Round {round}: {string.Join(", ", results)}; errors: {_errors.Text()}");
+            Assert.True(
+                (held, waited) == (Outcome.Added, Outcome.RefusedByDeviceLimit),
+                $"Round {round} ({holderKind} holding, {waiterKind} waiting): {held}, {waited}; log: {_log.Text()}");
+            _log.AssertNoErrors();
             Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, await ActiveCountAsync(tenant));
         }
     }
@@ -104,16 +140,16 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
 
     /// <summary>
     /// Everything a writer of <paramref name="kind"/> needs for <paramref name="tenantId"/>, made beforehand, and the call
-    /// itself: true when it added (or turned on) an active device, false when the device limit refused it.
+    /// itself. The call returns what the writer did; anything but adding a device or a device-limit refusal fails it.
     /// </summary>
-    private async Task<Func<CentralDbContext, Task<bool>>> PrepareAsync(string kind, Guid tenantId)
+    private async Task<Func<CentralDbContext, Task<Outcome>>> PrepareAsync(string kind, Guid tenantId)
     {
         switch (kind)
         {
             case "exchange":
             {
                 var code = await CreateSessionAsync(tenantId);
-                return db => Exchange(db, code);
+                return db => ExchangeAsync(db, code);
             }
             case "create":
                 return async db =>
@@ -121,11 +157,11 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
                     try
                     {
                         await Devices(db).CreateDeviceAsync(tenantId, "Web", CancellationToken.None);
-                        return true;
+                        return Outcome.Added;
                     }
                     catch (PrintBridgeDeviceLimitReachedException)
                     {
-                        return false;
+                        return Outcome.RefusedByDeviceLimit;
                     }
                 };
             case "reactivate":
@@ -135,12 +171,12 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
                 {
                     try
                     {
-                        Assert.True(await Devices(db).SetDeviceActiveAsync(tenantId, deviceId, true, CancellationToken.None));
-                        return true;
+                        Assert.True(await Devices(db).SetDeviceActiveAsync(tenantId, deviceId, true, CancellationToken.None), "The device to reactivate was not found.");
+                        return Outcome.Added;
                     }
                     catch (PrintBridgeDeviceLimitReachedException)
                     {
-                        return false;
+                        return Outcome.RefusedByDeviceLimit;
                     }
                 };
             }
@@ -156,8 +192,12 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
                 return async db =>
                 {
                     var outcome = (await Service(db).TransferAsync(request, CancellationToken.None)).Outcome;
-                    Assert.Contains(outcome, new[] { PrintBridgeTransferOutcome.Ready, PrintBridgeTransferOutcome.DeviceLimitReached });
-                    return outcome == PrintBridgeTransferOutcome.Ready;
+                    return outcome switch
+                    {
+                        PrintBridgeTransferOutcome.Ready => Outcome.Added,
+                        PrintBridgeTransferOutcome.DeviceLimitReached => Outcome.RefusedByDeviceLimit,
+                        _ => throw new Xunit.Sdk.XunitException($"The move ended {outcome}, not added or refused by the device limit; log: {_log.Text()}")
+                    };
                 };
             }
             default:
@@ -165,24 +205,26 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
         }
     }
 
-    private async Task<bool> Exchange(CentralDbContext db, string code) =>
-        await Service(db).ExchangeAsync(code, new PrintBridgeSetupClientInfo("QA-PC", "1.0.0.0", null, Guid.NewGuid()), CancellationToken.None)
-            is not null;
-
-    /// <summary>Runs each call on its own context and connection pool, all released together.</summary>
-    private async Task<T[]> RaceAsync<T>(params Func<CentralDbContext, Task<T>>[] calls)
+    /// <summary>
+    /// A new-device exchange. Its public result is null for every refusal, so a refusal is read from the setup session's
+    /// recorded failure reason, which must be the device limit.
+    /// </summary>
+    private async Task<Outcome> ExchangeAsync(CentralDbContext db, string code)
     {
-        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var tasks = calls.Select((call, index) => Task.Run(async () =>
-        {
-            await using var db = _database.Open($"Racer{index}");
-            await db.Database.OpenConnectionAsync();
-            await start.Task;
-            return await call(db);
-        })).ToArray();
+        var exchanged = await Service(db).ExchangeAsync(
+            code, new PrintBridgeSetupClientInfo("QA-PC", "1.0.0.0", null, Guid.NewGuid()), CancellationToken.None);
+        if (exchanged is not null)
+            return Outcome.Added;
 
-        start.SetResult();
-        return await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(60));
+        var codeHash = PrintBridgeSetupCode.Hash(code);
+        await using var inspector = _database.Open("Inspector");
+        var reason = await inspector.PrintBridgeSetupSessions.AsNoTracking()
+            .Where(s => s.CodeHash == codeHash)
+            .Select(s => s.FailureReason)
+            .SingleAsync(CancellationToken.None);
+        if (reason != QuotaExceeded)
+            throw new Xunit.Sdk.XunitException($"The exchange failed with \"{reason ?? "no recorded reason"}\", not the device limit; log: {_log.Text()}");
+        return Outcome.RefusedByDeviceLimit;
     }
 
     private async Task<int> ActiveCountAsync(Guid tenantId)
@@ -236,25 +278,34 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     }
 
     private PrintBridgeSetupSessionService Service(CentralDbContext db) =>
-        new(db, Devices(db), new SqlServerPrintBridgeSetupTenantLock(db), NoPrinting.Instance, _errors);
+        new(db, Devices(db), new SqlServerPrintBridgeSetupTenantLock(db), NoPrinting.Instance, _log.For<PrintBridgeSetupSessionService>());
 
-    private static PrintBridgeDeviceManagementService Devices(CentralDbContext db) =>
-        new(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, NoPrinting.Instance, new SqlServerPrintBridgeSetupTenantLock(db));
+    private PrintBridgeDeviceManagementService Devices(CentralDbContext db) =>
+        new(db, _log.For<PrintBridgeDeviceManagementService>(), NoPrinting.Instance, new SqlServerPrintBridgeSetupTenantLock(db));
 
-    private sealed class ErrorLog : Microsoft.Extensions.Logging.ILogger<PrintBridgeSetupSessionService>
+    /// <summary>What both services log at Warning and above. An Error entry fails the test.</summary>
+    private sealed class ServiceLog
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<string> _errors = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<(LogLevel Level, string Text)> _entries = new();
 
-        public string Text() => string.Join(" | ", _errors);
+        public ILogger<T> For<T>() => new CapturingLogger<T>(this);
 
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public string Text() => _entries.IsEmpty ? "(empty)" : string.Join(" | ", _entries.Select(e => $"{e.Level}: {e.Text}"));
 
-        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => logLevel >= Microsoft.Extensions.Logging.LogLevel.Error;
+        public void AssertNoErrors() =>
+            Assert.False(_entries.Any(e => e.Level >= LogLevel.Error), $"A service logged an error: {Text()}");
 
-        public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        private sealed class CapturingLogger<T>(ServiceLog log) : ILogger<T>
         {
-            if (IsEnabled(logLevel))
-                _errors.Enqueue(formatter(state, exception) + " " + exception?.GetBaseException().Message);
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                if (IsEnabled(logLevel))
+                    log._entries.Enqueue((logLevel, formatter(state, exception) + (exception is null ? "" : " " + exception.GetBaseException().Message)));
+            }
         }
     }
 

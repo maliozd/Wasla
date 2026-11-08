@@ -613,7 +613,7 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         RegisteredToAnotherTenant
     }
 
-    // The caller holds the tenant's setup lock, which every writer of the quota takes (WAS-190): see PrintBridgeDeviceQuota.
+    // The caller holds the tenant's setup lock, as the exchange, the move and the Web panel do (WAS-190): see PrintBridgeDeviceQuota.
     private Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct) =>
         PrintBridgeDeviceQuota.CountActiveDevicesAsync(_centralDb, tenantId, ct);
 

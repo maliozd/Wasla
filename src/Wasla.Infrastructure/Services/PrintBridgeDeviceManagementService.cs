@@ -157,8 +157,8 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
     {
         await using var tx = await _centralDb.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
 
-        // Turning a device on adds to the quota, so it counts and writes under the tenant's setup lock, like every
-        // other writer of the quota (WAS-190).
+        // Turning a device on adds to the quota, so it counts and writes under the tenant's setup lock, like the setup
+        // exchange and the move (WAS-190).
         if (isActive)
             await AcquireQuotaLockAsync(tenantId, ct).ConfigureAwait(false);
 
@@ -281,7 +281,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
         if (!tenantExists)
             throw new InvalidOperationException("Tenant not found or inactive.");
 
-        // Counts and adds under the tenant's setup lock, like every other writer of the quota (WAS-190).
+        // Counts and adds under the tenant's setup lock, like the setup exchange and the move (WAS-190).
         await using var tx = await _centralDb.Database.BeginTransactionAsync(ct).ConfigureAwait(false);
         await AcquireQuotaLockAsync(tenantId, ct).ConfigureAwait(false);
 
@@ -319,9 +319,9 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
     }
 
     /// <summary>
-    /// The tenant's setup lock, held until the caller's transaction ends. Every writer that adds or reactivates an active
-    /// device takes it before counting the quota (WAS-190). A lock not granted in time fails the request; nothing is
-    /// written.
+    /// The tenant's setup lock, held until the caller's transaction ends. The Web panel's create and reactivate take it
+    /// before counting the quota, as the setup exchange and the move do (WAS-190). A lock not granted in time fails the
+    /// request; nothing is written.
     /// </summary>
     private async Task AcquireQuotaLockAsync(Guid tenantId, CancellationToken ct)
     {
