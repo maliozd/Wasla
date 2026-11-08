@@ -22,6 +22,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |
+| [orders/reporting.md](orders/reporting.md) | Report metrics, the shared period and platform filter, time zone and range policy, Dashboard and report routes |
 | [integrations/food-platforms.md](integrations/food-platforms.md) | Trendyol GO, Yemeksepeti, Getir, Mock/Real |
 | [integrations/provider-webhooks.md](integrations/provider-webhooks.md) | Decision: provider webhook evidence, polling as reconciliation, provider questions (WAS-17) |
 | [integrations/trendyol-go-meal-webhook-stage-pilot.md](integrations/trendyol-go-meal-webhook-stage-pilot.md) | Trendyol GO Meal webhook pilot against the provider's stage API, on the existing deployment: one configured seller, receiver, inbox, processing, test procedure |
@@ -56,6 +57,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | Live Screen | [orders/live-screen.md](orders/live-screen.md), [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md), [frontend/design-system.md](frontend/design-system.md) |
 | Guided setup or order training | [product/onboarding.md](product/onboarding.md), [orders/live-screen.md](orders/live-screen.md) |
 | Orders management UI | [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md) |
+| Dashboard, reports or report export | [orders/reporting.md](orders/reporting.md), [orders/lifecycle.md](orders/lifecycle.md), [product/roles-and-permissions.md](product/roles-and-permissions.md) |
 | Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md), [integrations/provider-webhooks.md](integrations/provider-webhooks.md) |
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
 | Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections), [operations/observability.md](operations/observability.md#live-notification-metrics) |

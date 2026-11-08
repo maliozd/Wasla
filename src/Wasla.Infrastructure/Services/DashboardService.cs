@@ -1,88 +1,104 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Dashboard;
+using Wasla.Application.Abstractions.Reports;
+using Wasla.Application.Reports;
+using Wasla.Application.Time;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
 
+/// <summary>
+/// The Web and API Dashboards. Today's figures are the shared order report for today (WAS-182); this service adds the
+/// latest orders and the API's synchronization statistics, which are not report figures.
+/// </summary>
 public sealed class DashboardService : IDashboardService
 {
-    private readonly ITenantDbContextFactory _dbFactory;
+    private const int RecentOrderCount = 10;
 
-    public DashboardService(ITenantDbContextFactory dbFactory)
+    private readonly ITenantDbContextFactory _dbFactory;
+    private readonly IOrderReportService _reports;
+    private readonly TimeProvider _time;
+
+    public DashboardService(ITenantDbContextFactory dbFactory, IOrderReportService reports, TimeProvider time)
     {
         _dbFactory = dbFactory;
+        _reports = reports;
+        _time = time;
     }
 
     public async Task<DashboardResult> GetTodayAsync(Guid tenantId, CancellationToken ct)
     {
+        var period = TodayPeriod();
+        var report = await _reports.GetAsync(tenantId, new OrderReportFilter(period, Platform: null), ct);
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
-        var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
-        var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-        var todayStartLocal = DateTime.SpecifyKind(nowLocal.Date, DateTimeKind.Unspecified);
-        var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(todayStartLocal, tz);
-        var todayEndUtc = todayStartUtc.AddDays(1);
-
-        // "Today" and the latest orders go by the operational order time (WAS-125), like Orders and Live Screen.
-        var todayOrders = db.Orders.AsNoTracking()
-            .Where(o => o.OrderedAt >= todayStartUtc && o.OrderedAt < todayEndUtc);
-
-        var todayOrderCount = await todayOrders.CountAsync(ct);
-        var todayRevenue = await todayOrders.SumAsync(o => o.TotalAmount, ct);
-
-        var activeCount = await todayOrders.CountAsync(o =>
-            o.InternalStatus == OrderStatus.New ||
-            o.InternalStatus == OrderStatus.Preparing ||
-            o.InternalStatus == OrderStatus.ReadyForPickup ||
-            o.InternalStatus == OrderStatus.OnTheWay, ct);
-
-        var cancelledCount = await todayOrders.CountAsync(o => o.InternalStatus == OrderStatus.Cancelled, ct);
-
-        // EF Core translation can be finicky with record constructors inside GroupBy projections.
-        // Keep the DB query to anonymous types, then map in-memory.
-        var platformRaw = await todayOrders
-            .GroupBy(o => o.Platform)
-            .Select(g => new
-            {
-                Platform = g.Key,
-                Count = g.Count(),
-                Revenue = (decimal?)g.Sum(x => x.TotalAmount)
-            })
-            .OrderByDescending(x => x.Count)
-            .ToListAsync(ct);
-
-        var platform = platformRaw
-            .Select(x => new DashboardResult.PlatformSummaryRow(
-                x.Platform,
-                x.Count,
-                x.Revenue ?? 0m))
-            .ToList();
-
+        // The latest orders of any day by the operational order time (WAS-125), like Orders and Live Screen.
         var recent = await db.Orders.AsNoTracking()
             .OrderByDescending(o => o.OrderedAt)
             .ThenBy(o => o.Id)
-            .Take(10)
-            .Select(o => new DashboardResult.RecentOrderRow(
+            .Take(RecentOrderCount)
+            .Select(o => new
+            {
                 o.Id,
                 o.Platform,
+                o.ExternalOrderId,
                 o.ExternalOrderCode,
                 o.InternalStatus,
+                o.PlatformStatus,
                 o.CustomerName,
                 o.TotalAmount,
-                o.OrderedAt,
-                o.CreatedAtPlatform != null))
+                o.CreatedAtPlatform,
+                o.ReceivedAt,
+                o.OrderedAt
+            })
             .ToListAsync(ct);
 
+        var summary = report.Summary;
         return new DashboardResult
         {
-            TodayOrderCount = todayOrderCount,
-            TodayRevenue = todayRevenue,
-            ActiveOrderCount = activeCount,
-            CancelledOrderCount = cancelledCount,
-            PlatformSummary = platform,
+            Today = report,
+            TodayOrderCount = summary.OrderCount,
+            TodayOrderValue = summary.OrderValue,
+            ActiveOrderCount = summary.InProgressOrderCount,
+            CancelledOrderCount = summary.CancelledOrderCount,
+            PlatformSummary = report.Platforms
+                .Select(p => new DashboardResult.PlatformSummaryRow(p.Platform, p.Figures.OrderCount, p.Figures.OrderValue))
+                .ToList(),
             RecentOrders = recent
+                .Select(o => new DashboardResult.RecentOrderRow(
+                    o.Id,
+                    o.Platform,
+                    o.ExternalOrderCode,
+                    o.InternalStatus,
+                    o.CustomerName,
+                    o.TotalAmount,
+                    o.OrderedAt,
+                    o.CreatedAtPlatform != null)
+                {
+                    ExternalOrderId = o.ExternalOrderId,
+                    PlatformStatus = o.PlatformStatus,
+                    CreatedAtPlatformUtc = o.CreatedAtPlatform,
+                    ReceivedAtUtc = o.ReceivedAt
+                })
+                .ToList()
         };
     }
-}
 
+    public async Task<DashboardSyncStatistics> GetTodaySyncStatisticsAsync(Guid tenantId, CancellationToken ct)
+    {
+        var period = TodayPeriod();
+        var start = period.UtcStartInclusive;
+        var end = period.UtcEndExclusive;
+
+        await using var db = await _dbFactory.CreateAsync(tenantId, ct);
+        var runs = db.SyncLogs.AsNoTracking().Where(s => s.StartedAt >= start && s.StartedAt < end);
+        var total = await runs.CountAsync(ct);
+        var succeeded = await runs.CountAsync(s => s.Status == SyncStatus.Success, ct);
+        return new DashboardSyncStatistics(succeeded, total);
+    }
+
+    private OrderReportPeriod TodayPeriod() =>
+        OrderReportFilters.ForPreset(OrderReportPreset.Today, _time.GetUtcNow().UtcDateTime, TimeZoneHelper.ResolveTurkeyTimeZone());
+}
