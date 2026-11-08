@@ -6,8 +6,8 @@
     var total = report.Summary;
     var presenter = new ReportPresenter(L);
     var filtered = report.Filter.Platform;
-    var reports = filtered is null ? Model.PlatformReports : new[] { report };
-    var axis = ReportPresenter.SharedAxis(reports);
+    var platformDays = report.PlatformDays;
+    var axis = ReportPresenter.SharedAxis(report);
     var isOneDay = report.Days.Count == 1;
 
     string Label(string key) => L[key].Value;
@@ -95,7 +95,7 @@ else if (report.Platforms.Count > 1)
     </div>
 </section>
 
-@if (!isOneDay && reports.Count > 0)
+@if (!isOneDay && platformDays.Count > 0)
 {
     <section class="rpt-panel" data-rpt-panel="platform-daily" aria-labelledby="rptPlatformDailyTitle">
         <div class="rpt-panel__head">
@@ -106,12 +106,11 @@ else if (report.Platforms.Count > 1)
             @await Html.PartialAsync("_ReportViewToggle")
         </div>
         <div class="rpt-multiples" data-rpt-panel-chart>
-            @foreach (var platformReport in reports)
+            @foreach (var platform in platformDays)
             {
-                var platform = platformReport.Filter.Platform!.Value;
                 <div class="rpt-multiple">
-                    @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)platform, DisplayName: (string?)null))
-                    @await Html.PartialAsync("_ReportBarChart", presenter.PlatformChart(platformReport, platform, axis))
+                    @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)platform.Platform, DisplayName: (string?)null))
+                    @await Html.PartialAsync("_ReportBarChart", presenter.PlatformChart(report, platform, axis))
                 </div>
             }
         </div>
@@ -122,9 +121,9 @@ else if (report.Platforms.Count > 1)
                     <thead>
                         <tr>
                             <th scope="col">@L["Reports.Day"]</th>
-                            @foreach (var platformReport in reports)
+                            @foreach (var platform in platformDays)
                             {
-                                <th scope="col" class="wasla-table__num">@L[ReportFormat.PlatformKey(platformReport.Filter.Platform!.Value)]</th>
+                                <th scope="col" class="wasla-table__num">@L[ReportFormat.PlatformKey(platform.Platform)]</th>
                             }
                         </tr>
                     </thead>
@@ -133,9 +132,9 @@ else if (report.Platforms.Count > 1)
                         {
                             <tr>
                                 <th scope="row">@ReportFormat.DayWithWeekday(report.Days[i].Date)</th>
-                                @foreach (var platformReport in reports)
+                                @foreach (var platform in platformDays)
                                 {
-                                    <td class="wasla-table__num"><bdi>@ReportFormat.Count(platformReport.Days[i].Figures.OrderCount)</bdi></td>
+                                    <td class="wasla-table__num"><bdi>@ReportFormat.Count(platform.Days[i].Figures.OrderCount)</bdi></td>
                                 }
                             </tr>
                         }

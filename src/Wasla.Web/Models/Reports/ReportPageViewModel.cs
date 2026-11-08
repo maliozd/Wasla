@@ -40,9 +40,6 @@ public sealed class ReportPageViewModel
 
     public OrderReport? Previous { get; init; }
 
-    /// <summary>The report of each platform in the cohort, for the daily chart per platform; empty unless that section shows.</summary>
-    public IReadOnlyList<OrderReport> PlatformReports { get; init; } = [];
-
     public IReadOnlyList<ReportFilterProblem> Problems { get; init; } = [];
 
     public DateTime GeneratedAtLocal { get; init; }
@@ -79,6 +76,21 @@ public sealed record ReportChartSegment(string Series, double HeightPercent);
 public sealed record ReportChartTipRow(string Label, string Value);
 
 public sealed record ReportChartTick(string Label, double Percent);
+
+/// <summary>The y-axis width a chart needs when its longest label is wider than the stylesheet's default gutter.</summary>
+public static class ReportChartAxis
+{
+    private const int LabelCharactersInDefaultGutter = 8;
+
+    /// <summary>A custom property for the chart's style attribute, or nothing for labels that already fit.</summary>
+    public static string GutterStyle(IReadOnlyList<ReportChartTick> ticks)
+    {
+        var longest = ticks.Max(t => t.Label.Length);
+        return longest <= LabelCharactersInDefaultGutter
+            ? ""
+            : FormattableString.Invariant($"--rpt-axis-gutter:min({longest * 0.45m + 0.5m:0.##}rem, 45%)");
+    }
+}
 
 public sealed record ReportBarChart(string AccessibleName, IReadOnlyList<ReportChartColumn> Columns, IReadOnlyList<ReportChartTick> Ticks, bool ShowZeroLabels);
 

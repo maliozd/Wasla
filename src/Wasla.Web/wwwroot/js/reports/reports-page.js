@@ -9,13 +9,21 @@
   const SKELETON_DELAY_MS = 120;
   const SHEET_QUERY = "(max-width: 767.98px)";
   const STORAGE_KEY = "Wasla.reports.query";
+  const FILTER_PARAMETERS = ["preset", "startDate", "endDate", "platform"];
 
-  /** The page state from a query string, with the page's defaults (ReportPageQuery on the server). */
+  function isPreset(state, name) {
+    return state.preset.toLowerCase() === name;
+  }
+
+  /**
+   * The page state from a query string, with the page's defaults (ReportPageQuery on the server). Whether a value is
+   * valid, and its canonical form, is the server's to say: the page takes the state of every answer (data-query).
+   */
   function readState(search) {
     const params = new URLSearchParams(search);
     const startDate = params.get("startDate") || "";
     const endDate = params.get("endDate") || "";
-    return {
+    const state = {
       preset: params.get("preset") || (startDate || endDate ? "custom" : DEFAULT_PRESET),
       startDate,
       endDate,
@@ -23,17 +31,30 @@
       compare: params.get("compare") === "1",
       section: params.get("section") || DEFAULT_SECTION
     };
+    FILTER_PARAMETERS.forEach(function (name) {
+      const values = params.getAll(name);
+      if (values.length > 1) {
+        state.repeated = state.repeated || {};
+        state.repeated[name] = values;
+      }
+    });
+    return state;
   }
 
-  /** The query string of a state, defaults left out, in the order the server writes it. */
+  /** The query string of a state, defaults left out, in the order the server writes it. A refused filter stays as submitted. */
   function toQuery(state) {
     const params = new URLSearchParams();
-    if (state.preset !== DEFAULT_PRESET) params.set("preset", state.preset);
-    if (state.preset === "custom") {
-      params.set("startDate", state.startDate || "");
-      params.set("endDate", state.endDate || "");
+    const repeated = state.repeated || {};
+    function filter(name, value, keepEmpty) {
+      if (repeated[name]) repeated[name].forEach(function (item) { params.append(name, item); });
+      else if (value || keepEmpty) params.set(name, value || "");
     }
-    if (state.platform) params.set("platform", state.platform);
+
+    const custom = isPreset(state, "custom");
+    filter("preset", isPreset(state, DEFAULT_PRESET) ? "" : state.preset);
+    filter("startDate", state.startDate, custom);
+    filter("endDate", state.endDate, custom);
+    filter("platform", state.platform);
     if (state.compare) params.set("compare", "1");
     if (state.section !== DEFAULT_SECTION) params.set("section", state.section);
     const query = params.toString();
@@ -41,7 +62,21 @@
   }
 
   function isDefaultFilter(state) {
-    return state.preset === DEFAULT_PRESET && !state.platform && !state.compare;
+    return isPreset(state, DEFAULT_PRESET) && !state.platform && !state.compare && !state.repeated;
+  }
+
+  /** The state with the given values; a choice replaces any repeated values of that filter. */
+  function withChanges(state, changes) {
+    const next = Object.assign({}, state, changes);
+    if (state.repeated) {
+      const kept = Object.keys(state.repeated).filter(function (name) { return !(name in changes); });
+      delete next.repeated;
+      kept.forEach(function (name) {
+        next.repeated = next.repeated || {};
+        next.repeated[name] = state.repeated[name];
+      });
+    }
+    return next;
   }
 
   /**
@@ -129,7 +164,10 @@
     const contentUrl = root.dataset.contentUrl;
     const viewModes = new Map();
 
-    let applied = readState(global.location.search);
+    const firstAnswer = result.querySelector("[data-rpt-result-root]");
+    const openedBare = !global.location.search;
+
+    let applied = readState(firstAnswer.dataset.query);
     let draft = null;
     let skeletonTimer = null;
 
@@ -176,20 +214,21 @@
         link.classList.toggle("is-selected", selected);
         if (selected) link.setAttribute("aria-current", "true");
         else link.removeAttribute("aria-current");
-        link.href = pageUrl + toQuery(Object.assign({}, state, { preset: link.dataset.rptPreset, startDate: "", endDate: "" }));
+        link.href = pageUrl + toQuery(withChanges(state, { preset: link.dataset.rptPreset, startDate: "", endDate: "" }));
       });
-      customToggle.classList.toggle("is-selected", state.preset === "custom");
-      if (state.preset === "custom") {
+      customToggle.classList.toggle("is-selected", isPreset(state, "custom"));
+      if (isPreset(state, "custom")) {
         startInput.value = state.startDate;
         endInput.value = state.endDate;
       }
 
       platformSelect.value = state.platform;
+      if (platformSelect.selectedIndex < 0) platformSelect.value = "";
       compareInput.checked = state.compare;
       compareWrap.hidden = state.section !== DEFAULT_SECTION;
 
       resetLink.hidden = isDefaultFilter(state);
-      resetLink.href = pageUrl + toQuery(Object.assign({}, state, { preset: DEFAULT_PRESET, startDate: "", endDate: "", platform: "", compare: false }));
+      resetLink.href = pageUrl + toQuery(resetState(state));
 
       root.querySelectorAll("[data-rpt-section]").forEach(function (link) {
         const current = state.section === link.dataset.rptSection;
@@ -198,6 +237,19 @@
         else link.removeAttribute("aria-current");
         link.href = pageUrl + toQuery(Object.assign({}, state, { section: link.dataset.rptSection }));
       });
+    }
+
+    function resetState(state) {
+      return withChanges(state, { preset: DEFAULT_PRESET, startDate: "", endDate: "", platform: "", compare: false });
+    }
+
+    /** Takes the state the server answered with: what ran, in its canonical form, is what the URL and controls show. */
+    function adopt(answer) {
+      const query = answer.dataset.query;
+      applied = readState(query);
+      if (global.location.search !== query) global.history.replaceState(null, "", pageUrl + query);
+      syncControls(draft || applied);
+      if (!draft) compareInput.checked = answer.dataset.compareActive === "true";
     }
 
     function applyViewModes(scope) {
@@ -253,7 +305,7 @@
         setFieldError(endInput, endError, answer.dataset.endError);
         if (answer.dataset.startError || answer.dataset.endError) setCustomOpen(true);
 
-        compareInput.checked = answer.dataset.compareActive === "true";
+        adopt(answer);
         replaceResult(holder.content);
         applyViewModes(result);
         result.setAttribute("aria-busy", "false");
@@ -305,7 +357,7 @@
     }
 
     function withCustomRange(state) {
-      return Object.assign({}, state, { preset: "custom", startDate: startInput.value, endDate: endInput.value });
+      return withChanges(state, { preset: "custom", startDate: startInput.value, endDate: endInput.value });
     }
 
     function applyDraft() {
@@ -331,7 +383,7 @@
       if (presetLink && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
         event.preventDefault();
         setCustomOpen(false);
-        choose(Object.assign({}, current(), { preset: presetLink.dataset.rptPreset, startDate: "", endDate: "" }));
+        choose(withChanges(current(), { preset: presetLink.dataset.rptPreset, startDate: "", endDate: "" }));
         return;
       }
 
@@ -361,8 +413,8 @@
 
     document.getElementById("rptCustomCancel").addEventListener("click", function () {
       setCustomOpen(false);
-      startInput.value = applied.preset === "custom" ? applied.startDate : "";
-      endInput.value = applied.preset === "custom" ? applied.endDate : "";
+      startInput.value = isPreset(applied, "custom") ? applied.startDate : "";
+      endInput.value = isPreset(applied, "custom") ? applied.endDate : "";
       setFieldError(startInput, startError, "");
       setFieldError(endInput, endError, "");
       customToggle.focus();
@@ -384,18 +436,18 @@
     });
 
     platformSelect.addEventListener("change", function () {
-      choose(Object.assign({}, current(), { platform: platformSelect.value }));
+      choose(withChanges(current(), { platform: platformSelect.value }));
     });
 
     compareInput.addEventListener("change", function () {
-      choose(Object.assign({}, current(), { compare: compareInput.checked }));
+      choose(withChanges(current(), { compare: compareInput.checked }));
     });
 
     document.getElementById("rptSheetApply").addEventListener("click", applyDraft);
 
     document.getElementById("rptSheetReset").addEventListener("click", function () {
       setCustomOpen(false);
-      navigate(Object.assign({}, applied, { preset: DEFAULT_PRESET, startDate: "", endDate: "", platform: "", compare: false })).then(function () {
+      navigate(resetState(applied)).then(function () {
         const offcanvas = sheet();
         if (offcanvas) offcanvas.hide();
       });
@@ -414,13 +466,13 @@
 
     initCharts(root, document);
 
-    syncControls(applied);
-    if (!global.location.search && remembered()) {
+    if (openedBare && remembered()) {
       // Back from another page through the sidebar: bring the last filter back.
       global.history.replaceState(null, "", pageUrl + remembered());
       navigate(readState(global.location.search), { fromHistory: true });
     } else {
-      remember();
+      adopt(firstAnswer);
+      if (firstAnswer.dataset.state !== "InvalidFilter") remember();
     }
   }
 
@@ -511,7 +563,7 @@
   }
 
   if (typeof module === "object" && module.exports) {
-    module.exports = { readState, toQuery, isDefaultFilter, createLoader, nextColumnIndex };
+    module.exports = { readState, toQuery, isDefaultFilter, withChanges, createLoader, nextColumnIndex };
   } else {
     global.document.addEventListener("DOMContentLoaded", function () {
       init(global.document);

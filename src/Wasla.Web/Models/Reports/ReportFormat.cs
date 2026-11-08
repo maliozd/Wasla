@@ -21,6 +21,9 @@ public static class ReportFormat
 
     public static string Count(int value) => value.ToString("N0", CultureInfo.CurrentCulture);
 
+    /// <summary>A count axis label, which can be above the largest count.</summary>
+    public static string Count(decimal value) => value.ToString("N0", CultureInfo.CurrentCulture);
+
     public static string Money(decimal value) => OrderUiHelper.FormatMoney(value);
 
     public static string Money(decimal? value) => value is { } v ? Money(v) : NoValue;

@@ -42,11 +42,52 @@ test("URLs round-trip in the order the server writes them", () => {
   ]) {
     assert.equal(reports.toQuery(reports.readState(query)), query);
   }
+  // Dates without a preset mean custom on the server too, and the repeated value still refuses the query.
+  assert.equal(
+    reports.toQuery(reports.readState("?startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05")),
+    "?preset=custom&startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05"
+  );
 });
 
-test("dates without a preset are a custom range, and only a custom range carries dates", () => {
+test("dates without a preset are a custom range, and a preset choice that clears them writes none", () => {
   assert.equal(reports.readState("?startDate=2026-10-01").preset, "custom");
-  assert.equal(reports.toQuery({ preset: "today", startDate: "2026-10-01", endDate: "2026-10-02", platform: "", compare: false, section: "overview" }), "?preset=today");
+  assert.equal(reports.toQuery({ preset: "today", startDate: "", endDate: "", platform: "", compare: false, section: "overview" }), "?preset=today");
+});
+
+test("a custom preset keeps both dates in any letter case", () => {
+  for (const preset of ["CUSTOM", "Custom", "cUsToM"]) {
+    const query = `?preset=${preset}&startDate=2026-10-01&endDate=2026-10-05`;
+    const state = Object.assign(reports.readState(query), { section: "platforms" });
+    assert.equal(reports.toQuery(state), `${query}&section=platforms`);
+  }
+});
+
+test("the default preset in another letter case is still the default", () => {
+  const state = reports.readState("?preset=LAST30DAYS");
+  assert.equal(reports.isDefaultFilter(state), true);
+  assert.equal(reports.toQuery(state), "");
+});
+
+test("a refused query is written back as submitted, so a section change cannot make it valid", () => {
+  for (const query of [
+    "?platform=1&platform=2",
+    "?preset=today&preset=yesterday",
+    "?preset=custom&startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05",
+    "?preset=today&startDate=2026-10-01"
+  ]) {
+    assert.equal(reports.toQuery(reports.readState(query)), query);
+  }
+  // Dates without a preset mean custom on the server too, and the repeated value still refuses the query.
+  assert.equal(
+    reports.toQuery(reports.readState("?startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05")),
+    "?preset=custom&startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05"
+  );
+});
+
+test("choosing a filter replaces only that filter's repeated values", () => {
+  const state = reports.readState("?preset=today&platform=1&platform=2");
+  assert.equal(reports.toQuery(reports.withChanges(state, { platform: "GetirYemek" })), "?preset=today&platform=GetirYemek");
+  assert.equal(reports.toQuery(reports.withChanges(state, { section: "platforms" })), "?preset=today&platform=1&platform=2&section=platforms");
 });
 
 test("a newer load drops the older answer, even when the older one arrives last", async () => {

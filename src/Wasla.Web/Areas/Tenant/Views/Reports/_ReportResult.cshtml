@@ -10,7 +10,7 @@
     var endError = Model.EndDateError is { } e ? L[e, OrderReportFilters.MaxRangeDays].Value : "";
 }
 <template data-rpt-period-source>@await Html.PartialAsync("_ReportPeriod", Model)</template>
-<div data-rpt-result-root data-state="@Model.State" data-summary="@summary"
+<div data-rpt-result-root data-state="@Model.State" data-query="@q.QueryString()" data-summary="@summary"
      data-start-error="@startError" data-end-error="@endError"
      data-compare-active="@(Model.Comparison == ReportComparisonState.Active ? "true" : "false")">
     @switch (Model.State)

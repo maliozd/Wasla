@@ -1,8 +1,11 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Reports;
 using Wasla.Application.Reports;
 using Wasla.Application.Time;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Services;
 using Wasla.Web.Models.Reports;
 
 namespace Wasla.UnitTests.Reports;
@@ -45,6 +48,22 @@ public sealed class ReportPageQueryTests
 
     [Fact]
     public void AParameterGivenTwice_IsReported() => Assert.Equal(["platform"], Parse("?platform=1&platform=2").DuplicatedParameters);
+
+    [Theory]
+    [InlineData("?platform=1&platform=2")]
+    [InlineData("?preset=today&preset=yesterday")]
+    [InlineData("?preset=custom&startDate=2026-10-01&startDate=2026-10-02&endDate=2026-10-05")]
+    [InlineData("?preset=today&startDate=2026-10-01")]
+    [InlineData("?platform=%203")]
+    public void ARefusedQuery_IsWrittenBackAsSubmitted(string query) =>
+        Assert.Equal("/reports" + query + (query.Contains('?') ? "&" : "?") + "section=platforms", Parse(query).UrlForSection(ReportSections.Platforms));
+
+    [Fact]
+    public void Reset_DropsRepeatedFilters() => Assert.Equal("/reports?section=platforms", Parse("?platform=1&platform=2&section=platforms").ResetUrl());
+
+    [Fact]
+    public void AChosenPreset_ReplacesARepeatedPreset_AndKeepsARepeatedPlatform() =>
+        Assert.Equal("/reports?preset=today&platform=1&platform=2", Parse("?preset=a&preset=b&platform=1&platform=2").UrlForPreset("today"));
 
     [Fact]
     public void ReleasedSections_AreExactlyTheDataSupportedOnes() =>
@@ -108,4 +127,107 @@ public sealed class ReportPageQueryTests
     [InlineData(150, 200)]
     [InlineData(16759, 20000)]
     public void NiceMax_IsARoundEvenAxis(int max, int expected) => Assert.Equal(expected, ReportPresenter.NiceMax(max));
+
+    /// <summary>The top of the integer range, where multiplying the axis as an int wraps around and never ends.</summary>
+    [Theory]
+    [InlineData(1_000_000_000, "1000000000")]
+    [InlineData(1_000_000_001, "2000000000")]
+    [InlineData(int.MaxValue, "4000000000")]
+    public async Task NiceMax_OfAVeryLargeCount_Ends_WithoutWrappingAround(int max, string expected)
+    {
+        var axis = await BoundedAsync(() => (decimal)ReportPresenter.NiceMax(max));
+        Assert.Equal(decimal.Parse(expected, CultureInfo.InvariantCulture), axis);
+    }
+
+    public static TheoryData<decimal, string> AxisThresholds => new()
+    {
+        { 0.50m, "₺2" },
+        { 9m, "₺10" },
+        { 16_759.25m, "₺20,000" },
+        { 2_147_483_646.50m, "₺4,000,000,000" },
+        { 2_147_483_647m, "₺4,000,000,000" },
+        { 2_147_483_647.01m, "₺4,000,000,000" },
+        { 2_147_483_648m, "₺4,000,000,000" },
+        { 4_000_000_000m, "₺4,000,000,000" },
+        { 4_000_000_000.01m, "₺5,000,000,000" },
+        { 9_999_999_999.99m, "₺10,000,000,000" },
+        { 10_000_000_000m, "₺10,000,000,000" },
+        { 10_000_000_000.01m, "₺20,000,000,000" },
+        { 10_000_000_000_000_000.02m, "₺20,000,000,000,000,000" },
+        { 10_000_000_000_000_000_000_000_000_000m, "₺10,000,000,000,000,000,000,000,000,000" },
+        { 60_000_000_000_000_000_000_000_000_000m, "₺60,000,000,000,000,000,000,000,000,000" },
+        // No round axis fits above this: an axis of 80e27 is past the largest decimal.
+        { 60_000_000_000_000_000_000_000_000_001m, "₺60,000,000,000,000,000,000,000,000,001" },
+        { decimal.MaxValue, "₺79,228,162,514,264,337,593,543,950,335" }
+    };
+
+    [Theory]
+    [MemberData(nameof(AxisThresholds))]
+    public async Task ValueChart_ScalesAnyAmount_AndLeavesItExact(decimal value, string expectedTop)
+    {
+        using var culture = new CultureScope("en-US");
+        var report = OrderReportService.Build(Filter("yesterday"), [new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, new DateOnly(2026, 11, 7), 1, value)], Now);
+
+        var chart = await BoundedAsync(() => new ReportPresenter(new KeyLocalizer()).ValueChart(report));
+
+        Assert.Equal(expectedTop, chart.Ticks[0].Label);
+        var height = Assert.Single(Assert.Single(chart.Columns).Segments).HeightPercent;
+        Assert.InRange(height, 0d, 100d);
+        Assert.Equal(value, report.Summary.CompletedOrderValue);
+        Assert.Contains(ReportFormat.Money(value), Assert.Single(chart.Columns).TipRows.Select(r => r.Value));
+    }
+
+    [Fact]
+    public async Task ValueChart_ShowsTheExactAmount_AboveTheIntegerRange()
+    {
+        using var culture = new CultureScope("en-US");
+        var report = OrderReportService.Build(Filter("yesterday"), [new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, new DateOnly(2026, 11, 7), 3, 2_147_483_648.57m)], Now);
+
+        var chart = await BoundedAsync(() => new ReportPresenter(new KeyLocalizer()).ValueChart(report));
+
+        Assert.Contains("₺2,147,483,648.57", Assert.Single(chart.Columns).TipRows.Select(r => r.Value));
+        Assert.Equal("₺2,000,000,000", chart.Ticks[1].Label);
+        Assert.Equal(53.69, Assert.Single(Assert.Single(chart.Columns).Segments).HeightPercent, 2);
+    }
+
+    [Fact]
+    public async Task OrdersChart_ScalesTheLargestCount()
+    {
+        using var culture = new CultureScope("en-US");
+        var report = OrderReportService.Build(Filter("yesterday"), [new(FoodPlatform.TrendyolYemek, OrderStatus.New, new DateOnly(2026, 11, 7), int.MaxValue, 1m)], Now);
+
+        var chart = await BoundedAsync(() => new ReportPresenter(new KeyLocalizer()).OrdersChart(report));
+
+        Assert.Equal(["4,000,000,000", "2,000,000,000", "0"], chart.Ticks.Select(t => t.Label));
+    }
+
+    [Theory]
+    [InlineData("₺100,000", "")]
+    [InlineData("₺4,000,000,000", "--rpt-axis-gutter:min(6.8rem, 45%)")]
+    [InlineData("₺1,000,000,000,000", "--rpt-axis-gutter:min(8.6rem, 45%)")]
+    public void AxisGutter_GrowsOnlyForLabelsTheDefaultCannotHold(string label, string expected) =>
+        Assert.Equal(expected, ReportChartAxis.GutterStyle([new ReportChartTick(label, 100), new ReportChartTick("0", 0)]));
+
+    /// <summary>Scaling that wraps around never returns, so a chart is built under a time limit and the failure is reported.</summary>
+    private static Task<T> BoundedAsync<T>(Func<T> build) =>
+        Task.Run(build, TestContext.Current.CancellationToken)
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+    private sealed class CultureScope : IDisposable
+    {
+        private readonly CultureInfo _culture = CultureInfo.CurrentCulture;
+
+        public CultureScope(string name) => CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
+
+        public void Dispose() => CultureInfo.CurrentCulture = _culture;
+    }
+
+    private sealed class KeyLocalizer : IStringLocalizer
+    {
+        public LocalizedString this[string name] => new(name, name);
+
+        public LocalizedString this[string name, params object[] arguments] => new(name, name);
+
+        public IEnumerable<LocalizedString> GetAllStrings(bool includeParentCultures) => [];
+    }
 }

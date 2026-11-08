@@ -5,7 +5,7 @@ namespace Wasla.Application.Abstractions.Reports;
 
 /// <summary>
 /// The tenant's order report for a resolved filter (WAS-182). Every figure comes from one aggregate query over stored
-/// orders, so the summary, platform rows and day rows always reconcile. See docs/orders/reporting.md.
+/// orders, so the summary, platform rows, day rows and days per platform always reconcile. See docs/orders/reporting.md.
 /// </summary>
 public interface IOrderReportService
 {
@@ -22,10 +22,17 @@ public sealed record OrderReport(
     DateTime GeneratedAtUtc,
     OrderReportFigures Summary,
     IReadOnlyList<OrderReportPlatformRow> Platforms,
-    IReadOnlyList<OrderReportDayRow> Days);
+    IReadOnlyList<OrderReportDayRow> Days,
+    IReadOnlyList<OrderReportPlatformDays> PlatformDays);
 
 /// <summary>One platform with at least one order in the cohort. Rows are ordered by order count, then platform.</summary>
 public sealed record OrderReportPlatformRow(FoodPlatform Platform, OrderReportFigures Figures);
+
+/// <summary>
+/// The days of one platform of <see cref="OrderReport.Platforms"/>, in the same order, with every local day of the period.
+/// Its days sum to that platform's row, and each day summed over the platforms is that day's row of the report.
+/// </summary>
+public sealed record OrderReportPlatformDays(FoodPlatform Platform, IReadOnlyList<OrderReportDayRow> Days);
 
 /// <summary>One local day of the period with its UTC bounds; days without orders are included with zero figures.</summary>
 public sealed record OrderReportDayRow(DateOnly Date, DateTime UtcStartInclusive, DateTime UtcEndExclusive, OrderReportFigures Figures);

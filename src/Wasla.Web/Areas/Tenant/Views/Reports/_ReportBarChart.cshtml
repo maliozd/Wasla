@@ -1,11 +1,12 @@
 @model Wasla.Web.Models.Reports.ReportBarChart
 @using System.Globalization
 @using System.Text.Json
+@using Wasla.Web.Models.Reports
 @{
     static string Css(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
     var last = Model.Columns.Count - 1;
 }
-<div class="rpt-chart" data-rpt-chart style="--rpt-columns:@Model.Columns.Count">
+<div class="rpt-chart" data-rpt-chart style="--rpt-columns:@Model.Columns.Count;@ReportChartAxis.GutterStyle(Model.Ticks)">
     <div class="rpt-chart__plot">
         <div class="rpt-chart__ticks" aria-hidden="true">
             @foreach (var tick in Model.Ticks)

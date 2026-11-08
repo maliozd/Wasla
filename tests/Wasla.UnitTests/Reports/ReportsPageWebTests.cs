@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wasla.Application.Abstractions.Reports;
@@ -96,9 +98,108 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
                  })
             Assert.Contains(expected, html, StringComparison.Ordinal);
 
-        // The summary report, then one per platform for the daily charts.
-        Assert.Equal(4, hosts.Reports.Calls.Count);
-        Assert.Equal(new FoodPlatform?[] { null, FoodPlatform.TrendyolYemek, FoodPlatform.Yemeksepeti, FoodPlatform.GetirYemek }, hosts.Reports.Calls.Select(c => c.Filter.Platform));
+        // One read holds the summary, the platform rows and the daily charts.
+        var call = Assert.Single(hosts.Reports.Calls);
+        Assert.Null(call.Filter.Platform);
+    }
+
+    /// <summary>The orders change after every read, so a page built from two reads would show two different pictures.</summary>
+    [Theory]
+    [InlineData("", 4, 3, 1, 8)]
+    [InlineData("&platform=TrendyolYemek", 4, 0, 0, 4)]
+    [InlineData("&platform=Yemeksepeti", 0, 3, 0, 3)]
+    public async Task PlatformSummaryAndDailyFigures_ComeFromOneRead_WhileOrdersChange(string platform, int trendyol, int yemeksepeti, int getir, int total)
+    {
+        Reset(ReportMode.ChangesAfterEveryRead);
+        var html = await PageAsync($"/reports?preset=custom&startDate=2026-10-06&endDate=2026-10-08&section=platforms{platform}");
+
+        Assert.Single(hosts.Reports.Calls);
+
+        var perDay = Regex.Matches(html, """<td class="wasla-table__num"><bdi>(\d+)</bdi></td>""").Select(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).ToArray();
+        var columns = new[] { trendyol, yemeksepeti, getir }.Count(c => c > 0);
+        Assert.Equal(3 * columns, perDay.Length);
+        Assert.Equal(total, perDay.Sum());
+
+        // Rows are newest first and platforms are in the order of the platform table: the second day holds a quarter of the orders.
+        var expected = new[] { trendyol, yemeksepeti, getir }.Where(c => c > 0).ToArray();
+        Assert.Equal(expected.Select(c => c - 1), perDay.Skip(columns * 2).Take(columns));
+        Assert.Equal(expected.Select(_ => 1), perDay.Skip(columns).Take(columns));
+        Assert.Equal(expected.Select(_ => 0), perDay.Take(columns));
+        Assert.Contains($"<bdi>{total}</bdi>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AmountsAboveTheIntegerRange_RenderExactly_OnEverySection()
+    {
+        Reset(ReportMode.Large);
+        foreach (var section in new[] { "overview", "platforms", "cancellations" })
+        {
+            var html = await PageAsync($"/reports?preset=custom&startDate=2026-10-06&endDate=2026-10-08&section={section}");
+            Assert.DoesNotContain("data-state=\"Failed\"", html, StringComparison.Ordinal);
+        }
+
+        var overview = await PageAsync("/reports?preset=custom&startDate=2026-10-06&endDate=2026-10-08");
+        Assert.Contains("<bdi>₺3,000,000,000.57</bdi>", overview, StringComparison.Ordinal);
+        Assert.Contains("<bdi>₺4,000,000,000</bdi>", overview, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("?preset=CUSTOM&startDate=2026-10-01&endDate=2026-10-05", "?preset=custom&startDate=2026-10-01&endDate=2026-10-05", "")]
+    [InlineData("?preset=CuStOm&startDate=2026-10-01&endDate=2026-10-05&compare=1", "?preset=custom&startDate=2026-10-01&endDate=2026-10-05&compare=1", "")]
+    [InlineData("?PRESET=Yesterday", "?preset=yesterday", "")]
+    [InlineData("?preset=LAST30DAYS", "", "")]
+    [InlineData("?platform=3", "?platform=TrendyolYemek", "TrendyolYemek")]
+    [InlineData("?platform=0002", "?platform=GetirYemek", "GetirYemek")]
+    [InlineData("?platform=getiryemek", "?platform=GetirYemek", "GetirYemek")]
+    [InlineData("?Platform=YEMEKSEPETI", "?platform=Yemeksepeti", "Yemeksepeti")]
+    [InlineData("?preset=TODAY&platform=1&section=PLATFORMS", "?preset=today&platform=Yemeksepeti", "Yemeksepeti")]
+    public async Task EverySupportedForm_IsRenderedInItsOneCanonicalForm(string submitted, string canonical, string option)
+    {
+        Reset();
+        foreach (var path in new[] { "/reports", "/reports/content" })
+            Assert.Contains($"data-query=\"{canonical}\"", await PageAsync(path + submitted), StringComparison.Ordinal);
+
+        var html = await PageAsync("/reports" + submitted);
+        Assert.Contains($"href=\"/reports{canonical}{(canonical.Length == 0 ? "?" : "&")}section=cancellations\"", html, StringComparison.Ordinal);
+        if (option.Length > 0)
+            Assert.Contains($"<option value=\"{option}\" selected", html, StringComparison.Ordinal);
+
+        // The filter that ran is the one the page shows.
+        Assert.All(hosts.Reports.Calls, c => Assert.Equal(option.Length == 0 ? null : Enum.Parse<FoodPlatform>(option), c.Filter.Platform));
+    }
+
+    [Theory]
+    [InlineData("?platform=1&platform=2")]
+    [InlineData("?PLATFORM=1&platform=1")]
+    [InlineData("?preset=today&preset=today")]
+    [InlineData("?preset=custom&startDate=2026-10-01&startDate=2026-10-01&endDate=2026-10-05")]
+    [InlineData("?platform=%203")]
+    [InlineData("?platform=3%20")]
+    [InlineData("?platform=%2B3")]
+    [InlineData("?platform=-3")]
+    [InlineData("?platform=4")]
+    [InlineData("?platform=getir")]
+    [InlineData("?preset=%20custom&startDate=2026-10-01&endDate=2026-10-05")]
+    [InlineData("?preset=CUSTOM%20&startDate=2026-10-01&endDate=2026-10-05")]
+    [InlineData("?preset=CUSTOM&startDate=2026-10-01")]
+    [InlineData("?preset=CUSTOM&startDate=%202026-10-01&endDate=2026-10-05")]
+    [InlineData("?preset=TODAY&startDate=2026-10-01")]
+    public async Task RefusedForms_StayRefused_AndAreNotRepairedByAnyLink(string submitted)
+    {
+        Reset();
+        foreach (var path in new[] { "/reports", "/reports/content" })
+        {
+            var html = await PageAsync(path + submitted, HttpStatusCode.BadRequest);
+            Assert.Contains("data-state=\"InvalidFilter\"", html, StringComparison.Ordinal);
+        }
+
+        var page = await PageAsync("/reports" + submitted, HttpStatusCode.BadRequest);
+        var written = Regex.Match(page, "data-query=\"([^\"]*)\"").Groups[1].Value;
+        Assert.NotEmpty(written);
+        foreach (var query in new[] { written, Regex.Match(page, "href=\"/reports([^\"]*)\"[^>]*data-rpt-section=\"cancellations\"").Groups[1].Value })
+            await PageAsync("/reports/content" + query, HttpStatusCode.BadRequest);
+
+        Assert.Empty(hosts.Reports.Calls);
     }
 
     [Fact]
@@ -295,6 +396,8 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
         Empty,
         NoneCompleted,
         PreviousEmpty,
+        ChangesAfterEveryRead,
+        Large,
         Fail
     }
 
@@ -371,6 +474,22 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
                 groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.Delivered, day, 2, 410.20m));
                 groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.New, day, 1, 55.50m));
                 groups.Add(new(FoodPlatform.GetirYemek, OrderStatus.Failed, day, 1, 77m));
+            }
+
+            else if (Mode == ReportMode.Large)
+            {
+                groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, day, 2, 2_147_483_648.57m));
+                groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.Delivered, day.AddDays(1), 1, 852_516_352m));
+            }
+            else if (Mode == ReportMode.ChangesAfterEveryRead)
+            {
+                // Each read after the first sees orders the first one did not.
+                var extra = Calls.Count - 1;
+                groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, day, 3 + extra * 5, 900.30m));
+                groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, day.AddDays(1), 1 + extra * 5, 100m));
+                groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.New, day, 2 + extra * 5, 410.20m));
+                groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.New, day.AddDays(1), 1 + extra * 5, 55.50m));
+                groups.Add(new(FoodPlatform.GetirYemek, OrderStatus.Failed, day.AddDays(1), 1 + extra * 5, 77m));
             }
 
             if (filter.Platform is { } platform)

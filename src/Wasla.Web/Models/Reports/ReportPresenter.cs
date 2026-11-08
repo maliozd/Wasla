@@ -36,7 +36,7 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
     {
         var max = report.Days.Select(d => d.Figures.OrderCount).DefaultIfEmpty(0).Max();
         var axis = NiceMax(max);
-        return Bars(report, L("Reports.OrdersPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
+        return Bars(report, report.Days, L("Reports.OrdersPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
         {
             var f = day.Figures;
             return IsPartialDay(report, day)
@@ -48,8 +48,8 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
     public ReportBarChart ValueChart(OrderReport report)
     {
         var max = report.Days.Select(d => d.Figures.CompletedOrderValue).DefaultIfEmpty(0m).Max();
-        var axis = NiceMax((int)Math.Ceiling(max));
-        return Bars(report, L("Reports.CompletedValuePerDay"), ReportFormat.WholeMoney(axis), ReportFormat.WholeMoney(axis / 2m), ReportFormat.WholeMoney(0m), day =>
+        var axis = NiceMax(max);
+        return Bars(report, report.Days, L("Reports.CompletedValuePerDay"), ReportFormat.WholeMoney(axis), ReportFormat.WholeMoney(axis / 2m), ReportFormat.WholeMoney(0m), day =>
             [new ReportChartSegment(IsPartialDay(report, day) ? SeriesPartial : SeriesCompletedValue, Height(day.Figures.CompletedOrderValue, axis))],
             f => f.CompletedOrderValue == 0m, DayTip);
     }
@@ -58,19 +58,19 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
     {
         var max = report.Days.Select(d => d.Figures.CancelledOrderCount).DefaultIfEmpty(0).Max();
         var axis = NiceMax(max);
-        return Bars(report, L("Reports.CancellationsPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
+        return Bars(report, report.Days, L("Reports.CancellationsPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
             [new ReportChartSegment(SeriesCancelled, Height(day.Figures.CancelledOrderCount, axis))],
             f => f.CancelledOrderCount == 0, CancellationTip);
     }
 
     /// <summary>One platform's daily orders; the charts of all platforms share <paramref name="axis"/> so they compare.</summary>
-    public ReportBarChart PlatformChart(OrderReport report, FoodPlatform platform, int axis) =>
-        Bars(report, L("Reports.OrdersPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
-            [new ReportChartSegment(PlatformSeries(platform), Height(day.Figures.OrderCount, axis))],
+    public ReportBarChart PlatformChart(OrderReport report, OrderReportPlatformDays platform, decimal axis) =>
+        Bars(report, platform.Days, L("Reports.OrdersPerDay"), ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0), day =>
+            [new ReportChartSegment(PlatformSeries(platform.Platform), Height(day.Figures.OrderCount, axis))],
             f => f.OrderCount == 0, DayTip);
 
-    public static int SharedAxis(IEnumerable<OrderReport> reports) =>
-        NiceMax(reports.SelectMany(r => r.Days).Select(d => d.Figures.OrderCount).DefaultIfEmpty(0).Max());
+    public static decimal SharedAxis(OrderReport report) =>
+        NiceMax(report.PlatformDays.SelectMany(p => p.Days).Select(d => d.Figures.OrderCount).DefaultIfEmpty(0).Max());
 
     public IReadOnlyList<ReportShareRow> ShareRows(OrderReport report)
     {
@@ -154,27 +154,37 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
         return new ReportLineChart(Path(current), Path(previous), Ticks(ReportFormat.Count(axis), ReportFormat.Count(axis / 2), ReportFormat.Count(0)), labels);
     }
 
-    /// <summary>A round even axis maximum at or above <paramref name="max"/>, so the middle gridline is whole.</summary>
-    public static int NiceMax(int max)
+    /// <summary>
+    /// A round even axis maximum at or above <paramref name="max"/>, so the middle gridline is whole. The axis only scales
+    /// bars and labels its gridlines: figures keep their exact values. Near the top of the decimal range, where no round
+    /// axis fits, it is the smallest whole number at or above <paramref name="max"/>.
+    /// </summary>
+    public static decimal NiceMax(decimal max)
     {
-        if (max <= 2)
-            return 2;
+        var top = Math.Ceiling(max);
+        if (top <= 2m)
+            return 2m;
 
-        var power = 1;
-        while (power * 10 <= max)
-            power *= 10;
+        var power = 1m;
+        while (power <= top / 10m)
+            power *= 10m;
 
-        foreach (var factor in new[] { 1, 2, 4, 5, 6, 8, 10 })
+        foreach (var factor in new[] { 1m, 2m, 4m, 5m, 6m, 8m, 10m })
         {
-            if (factor * power >= max && (factor * power) % 2 == 0)
-                return factor * power;
+            if (power > decimal.MaxValue / factor)
+                break;
+
+            var axis = factor * power;
+            if (axis >= top && axis % 2m == 0m)
+                return axis;
         }
 
-        return 10 * power;
+        return top;
     }
 
     private ReportBarChart Bars(
         OrderReport report,
+        IReadOnlyList<OrderReportDayRow> days,
         string name,
         string top,
         string middle,
@@ -183,10 +193,10 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
         Func<OrderReportFigures, bool> isZero,
         Func<OrderReport, OrderReportDayRow, IReadOnlyList<ReportChartTipRow>> tip)
     {
-        var count = report.Days.Count;
+        var count = days.Count;
         var step = LabelStep(count);
         var partial = !report.Filter.Period.IsComplete;
-        var columns = report.Days.Select((day, index) =>
+        var columns = days.Select((day, index) =>
         {
             var isLast = index == count - 1;
             var isPartial = partial && isLast;

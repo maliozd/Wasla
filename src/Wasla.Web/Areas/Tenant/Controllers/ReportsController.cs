@@ -80,6 +80,7 @@ public sealed class ReportsController : BaseController
             return new ReportPageViewModel { Query = query, State = ReportResultState.InvalidFilter, Today = today, Problems = problems };
 
         var filter = resolved.Filter;
+        query = query.Canonicalized(filter);
         try
         {
             var report = await _reports.GetAsync(tenantId, filter, ct);
@@ -106,13 +107,6 @@ public sealed class ReportsController : BaseController
                 }
             }
 
-            var platformReports = new List<OrderReport>();
-            if (query.Section == ReportSections.Platforms && filter.Platform is null)
-            {
-                foreach (var row in report.Platforms)
-                    platformReports.Add(await _reports.GetAsync(tenantId, filter with { Platform = row.Platform }, ct));
-            }
-
             var hasOrders = report.Summary.OrderCount > 0 || previous?.Summary.OrderCount > 0;
             return new ReportPageViewModel
             {
@@ -122,7 +116,6 @@ public sealed class ReportsController : BaseController
                 Report = report,
                 Comparison = comparison,
                 Previous = previous,
-                PlatformReports = platformReports,
                 CompleteDaysUrl = completeDaysUrl,
                 GeneratedAtLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(report.GeneratedAtUtc, DateTimeKind.Utc), timeZone)
             };

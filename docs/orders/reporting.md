@@ -18,7 +18,7 @@ Reporting is deterministic: the same stored orders, filter and clock give the sa
 
 ## Metric definitions
 
-Every figure comes from one SQL statement that groups the cohort by platform, stored status and local day (`OrderReportService`). Summary, platform rows and day rows are sums of those groups, so they always reconcile with each other.
+Every figure comes from one SQL statement that groups the cohort by platform, stored status and local day (`OrderReportService`). Summary, platform rows, day rows and the days per platform are sums of those groups, so they always reconcile with each other.
 
 | Figure | Formula | Statuses | Time | Empty cohort |
 | --- | --- | --- | --- | --- |
@@ -40,6 +40,7 @@ Every figure comes from one SQL statement that groups the cohort by platform, st
 - **Currency** is `OrderCurrency.Code` (`TRY`). Orders store no currency; the UI culture formats amounts and never changes the currency.
 - **Platform rows** list each platform with at least one order in the cohort, by `OrderCount` descending, then platform value ascending.
 - **Day rows** list every local day of the period, oldest first, including days without orders (all counts 0, values 0.00, average null). Each row carries its UTC bounds.
+- **Days per platform** (`OrderReport.PlatformDays`) repeat the day rows for each platform row, in the same order and from the same groups. A platform's days sum to its platform row, and each day summed over the platforms is that day's row. They are part of the shared result, not of `OrderReportDto`.
 
 ### What is in the cohort
 
@@ -105,8 +106,10 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 `/reports` shows Overview, Platforms and Cancellations. `ReportsController` resolves the filter with `OrderReportFilters` and reads `IOrderReportService`; the views scale and format those figures and calculate none of their own.
 
 - **Filter state** is in the query string with the API's parameter names, plus `compare=1` and `section` (`overview`, `platforms`, `cancellations`). The page's default period is the last 30 days, because the Dashboard already covers today. Without a preset or dates the shared contract still means today; only this page passes `last30days`.
-- **Refused filters** answer 400 and show the state without running a report. A duplicate parameter is refused as on the API.
-- **Platforms** also reads the report once per platform in the cohort for the daily chart per platform. One platform filter shows that platform and a link to all.
+- **Canonical form.** Every accepted form of a filter (a preset in any letter case, a platform by name in any letter case or by number) is written back in one form: lowercase preset, platform name, dates only for `custom`, defaults left out. The form comes from the filter `OrderReportFilters` accepted. Each answer carries it (`data-query`), and the browser takes its URL, links and controls from it, so it decides nothing about validity itself.
+- **Refused filters** answer 400 and show the state without running a report. A duplicate parameter is refused as on the API. A refused filter is never tidied: its values stay as submitted, repeated ones included, in the URL and in every link that keeps the filter, and it is not remembered for the next visit.
+- **Platforms** takes the platform rows and the daily chart per platform from the same report as the summary (`PlatformDays`), so they cannot disagree. One platform filter shows that platform and a link to all.
+- **Chart axes** only scale the bars and label the gridlines. They are calculated in decimal, so any stored amount fits, and every figure and tooltip keeps its exact value. An axis widens when its labels need it, up to 45% of the chart.
 - **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected". No reason or rejection split exists until those are stored (WAS-200).
 - **Comparison** is on Overview only. It reads the report of `PrecedingPeriod` and shows both periods with their dates, the difference and the percentage change. A change against a previous value of 0, or where either average does not exist, is shown as not comparable. A period that includes today is not compared: the page offers the same number of complete days ending yesterday.
 

@@ -29,10 +29,11 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
         return browser;
     }
 
-    private async Task OpenAsync(HeadlessChromium browser, string path, CancellationToken ct)
+    private async Task OpenAsync(HeadlessChromium browser, string path, CancellationToken ct, bool waitForResult = true)
     {
         await browser.NavigateAsync(new Uri(_host.BaseAddress, path), ct);
-        Assert.True(await browser.WaitForAsync($"!!{Result}", TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
+        if (waitForResult)
+            Assert.True(await browser.WaitForAsync($"!!{Result}", TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
     }
 
     private static Task<bool> SettledAsync(HeadlessChromium browser, CancellationToken ct) =>
@@ -66,6 +67,120 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
         await browser.WaitForNavigationAsync("__onOrders", ct);
         Assert.True(await browser.WaitForAsync($"location.search.includes('preset=yesterday') && {Range} === {JsonSerializer.Serialize(yesterday)}", TimeSpan.FromSeconds(15), ct),
             "The filter was not restored after navigating away.");
+    }
+
+    private static string Day(int daysAgo) => DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-daysAgo).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Leaves the current document for <paramref name="script"/> and waits for the next one to load.</summary>
+    private static async Task LeaveAsync(HeadlessChromium browser, string script, CancellationToken ct)
+    {
+        await browser.EvaluateAsync<bool>($"(window.__leaving = true, setTimeout(() => {{ {script} }}, 0), true)", ct);
+        await browser.WaitForNavigationAsync("__leaving", ct);
+    }
+
+    /// <summary>Opens a link that the page rewrites, which <c>NavigateAsync</c> would wait on forever.</summary>
+    private async Task OpenRewrittenAsync(HeadlessChromium browser, string path, CancellationToken ct)
+    {
+        await OpenAsync(browser, "/orders?__start=1", ct, waitForResult: false);
+        await LeaveAsync(browser, $"location.href = {JsonSerializer.Serialize(path)};", ct);
+        Assert.True(await SettledAsync(browser, ct), $"{path} did not render. {_host.ServerErrors}");
+    }
+
+    private static async Task ClickSectionAsync(HeadlessChromium browser, string section, CancellationToken ct)
+    {
+        await browser.EvaluateAsync<bool>($"(document.querySelector('a[data-rpt-section={section}]').click(), true)", ct);
+        Assert.True(await browser.WaitForAsync($"document.querySelector('a[data-rpt-section={section}]').getAttribute('aria-current') === 'page'", TimeSpan.FromSeconds(15), ct));
+        Assert.True(await SettledAsync(browser, ct));
+    }
+
+    [Theory]
+    [InlineData("CUSTOM")]
+    [InlineData("CuStOm")]
+    public async Task ACustomPresetInAnyCase_KeepsBothDates_ThroughSectionsReloadHistoryAndRestore(string preset)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("en-US", 1280, false, ct);
+        var (start, end) = (Day(12), Day(8));
+        await OpenRewrittenAsync(browser, $"/reports?preset={preset}&startDate={start}&endDate={end}", ct);
+        var range = JsonSerializer.Serialize(await browser.EvaluateAsync<string>(Range, ct));
+        var dates = $"startDate={start}&endDate={end}";
+
+        await ClickSectionAsync(browser, "platforms", ct);
+        Assert.Equal($"?preset=custom&{dates}&section=platforms", await browser.EvaluateAsync<string>("location.search", ct));
+        Assert.True(await browser.WaitForAsync($"{Range} === {range}", TimeSpan.FromSeconds(15), ct), "The section change lost the custom range.");
+        Assert.True(await browser.EvaluateAsync<bool>("document.getElementById('rptCustomToggle').classList.contains('is-selected')", ct));
+
+        await LeaveAsync(browser, "location.reload();", ct);
+        Assert.True(await SettledAsync(browser, ct));
+        Assert.Equal($"?preset=custom&{dates}&section=platforms", await browser.EvaluateAsync<string>("location.search", ct));
+        Assert.True(await browser.WaitForAsync($"{Range} === {range} && document.getElementById('rptStartDate').value === '{start}' && document.getElementById('rptEndDate').value === '{end}'", TimeSpan.FromSeconds(15), ct));
+
+        await browser.EvaluateAsync<bool>("(history.back(), true)", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}' && {Range} === {range} && document.getElementById('rptResult').getAttribute('aria-busy') !== 'true'", TimeSpan.FromSeconds(15), ct), "Back lost the custom range.");
+        await browser.EvaluateAsync<bool>("(history.forward(), true)", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}&section=platforms' && {Range} === {range}", TimeSpan.FromSeconds(15), ct), "Forward lost the custom range.");
+
+        await browser.NavigateAsync(new Uri(_host.BaseAddress, "/orders"), ct);
+        await LeaveAsync(browser, "location.href = '/reports';", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}&section=platforms' && {Range} === {range}", TimeSpan.FromSeconds(15), ct), "The custom range was not restored.");
+    }
+
+    [Theory]
+    [InlineData("3", "TrendyolYemek")]
+    [InlineData("0002", "GetirYemek")]
+    [InlineData("getiryemek", "GetirYemek")]
+    [InlineData("YEMEKSEPETI", "Yemeksepeti")]
+    public async Task APlatformInAnySupportedForm_SelectsItsOption_ThroughSectionsReloadHistoryAndRestore(string submitted, string option)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("en-US", 1280, false, ct);
+        const string Select = "document.getElementById('rptPlatform').value";
+        await OpenRewrittenAsync(browser, $"/reports?preset=yesterday&platform={submitted}", ct);
+
+        Assert.Equal(option, await browser.EvaluateAsync<string>(Select, ct));
+        Assert.Equal($"?preset=yesterday&platform={option}", await browser.EvaluateAsync<string>("location.search", ct));
+
+        await ClickSectionAsync(browser, "cancellations", ct);
+        Assert.Equal(option, await browser.EvaluateAsync<string>(Select, ct));
+        Assert.Equal($"?preset=yesterday&platform={option}&section=cancellations", await browser.EvaluateAsync<string>("location.search", ct));
+
+        await LeaveAsync(browser, "location.reload();", ct);
+        Assert.True(await SettledAsync(browser, ct));
+        Assert.Equal(option, await browser.EvaluateAsync<string>(Select, ct));
+
+        await browser.EvaluateAsync<bool>("(history.back(), true)", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "Back lost the platform.");
+        await browser.EvaluateAsync<bool>("(history.forward(), true)", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}&section=cancellations' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "Forward lost the platform.");
+
+        await browser.NavigateAsync(new Uri(_host.BaseAddress, "/orders"), ct);
+        await LeaveAsync(browser, "location.href = '/reports';", ct);
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}&section=cancellations' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "The platform was not restored.");
+    }
+
+    [Theory]
+    [InlineData("platform=1&platform=2")]
+    [InlineData("platform=%203")]
+    [InlineData("preset=%20custom&startDate=2026-10-01&endDate=2026-10-05")]
+    [InlineData("preset=today&startDate=2026-10-01")]
+    public async Task ARefusedFilter_StaysRefused_ThroughSectionsAndIsNeverRestored(string query)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("en-US", 1280, false, ct);
+        const string Refused = "document.querySelector('#rptResult [data-rpt-result-root]').dataset.state === 'InvalidFilter'";
+        await OpenRewrittenAsync(browser, "/reports?" + query, ct);
+        Assert.True(await browser.EvaluateAsync<bool>(Refused, ct), "The filter was not refused.");
+
+        await ClickSectionAsync(browser, "cancellations", ct);
+        Assert.True(await browser.EvaluateAsync<bool>(Refused, ct), "A section change made a refused filter valid.");
+        await ClickSectionAsync(browser, "overview", ct);
+        Assert.True(await browser.EvaluateAsync<bool>(Refused, ct), "A second section change made a refused filter valid.");
+
+        await browser.NavigateAsync(new Uri(_host.BaseAddress, "/orders"), ct);
+        await LeaveAsync(browser, "location.href = '/reports';", ct);
+        Assert.True(await SettledAsync(browser, ct));
+        Assert.Equal("", await browser.EvaluateAsync<string>("location.search", ct));
+        Assert.False(await browser.EvaluateAsync<bool>(Refused, ct), "A refused filter was remembered.");
     }
 
     [Fact]

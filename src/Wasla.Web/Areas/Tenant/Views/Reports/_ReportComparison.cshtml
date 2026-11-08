@@ -81,7 +81,7 @@
             <li><span class="rpt-line-key rpt-line-key--current"></span>@L["Reports.ThisPeriod"]</li>
             <li><span class="rpt-line-key rpt-line-key--previous"></span>@L["Reports.PreviousPeriod"]</li>
         </ul>
-        <div class="rpt-line" role="img" aria-label="@L["Reports.ComparisonChartHint"]">
+        <div class="rpt-line" role="img" aria-label="@L["Reports.ComparisonChartHint"]" style="@ReportChartAxis.GutterStyle(line.Ticks)">
             <div class="rpt-chart__plot">
                 <div class="rpt-chart__ticks" aria-hidden="true">
                     @foreach (var tick in line.Ticks)
