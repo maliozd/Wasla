@@ -49,17 +49,90 @@ public sealed class RegistrationDraftSqlServerTests : IClassFixture<SqlServerSig
 
         Assert.All(results, r => Assert.Contains(r.ErrorCode, new[] { SignupErrorCodes.PhoneCodeIncorrect, SignupErrorCodes.PhoneLocked }));
         Assert.InRange(results.Count(r => r.ErrorCode == SignupErrorCodes.PhoneCodeIncorrect), 0, 4);
+        // Every lock reported, however the caller met it, is the one lock, with its full duration and a matching status.
+        Assert.All(results.Where(r => r.ErrorCode == SignupErrorCodes.PhoneLocked), AssertLockedForTheFullDuration);
         await using var check = _db.Open();
         var row = await check.RegistrationPhoneVerifications.AsNoTracking().SingleAsync(r => r.DraftId == draftId, Ct);
         Assert.Equal(5, row.FailedAttempts);
-        Assert.NotNull(row.LockedUntilUtc);
+        Assert.Equal(Now + Lockout, row.LockedUntilUtc);
         Assert.Null(row.ProtectedCode);
+        Assert.Null(row.CodeExpiresAtUtc);
         var draft = await check.RegistrationDrafts.AsNoTracking().SingleAsync(d => d.Id == draftId, Ct);
         Assert.Null(draft.PhoneVerifiedAtUtc);
 
         // The right code no longer verifies: it was dropped with the lock.
         await using var late = _db.Open("Late");
         Assert.Equal(SignupErrorCodes.PhoneLocked, (await _db.Phone(late).VerifyCodeAsync(draftId, code, Ct)).ErrorCode);
+    }
+
+    [Fact]
+    public async Task ACheckRefusedAfterAnotherUsedTheLastAttempt_ReportsTheLock_NotAMissingCode()
+    {
+        // The interleaving behind the race above, made certain: a check reads an open code with one attempt left, then
+        // another check uses that attempt, which locks the number and drops the code at once. The first check's
+        // reservation is then refused, and it must report the lock, as its status does, not a missing code.
+        var mobile = SqlServerSignupDatabase.NewMobileE164();
+        var draftId = await _db.SavedDraftAsync(mobile);
+        var code = await _db.SendAsync(draftId, mobile);
+        await using (var setup = _db.Open("Setup"))
+        {
+            for (var i = 0; i < 4; i++)
+                Assert.Equal(SignupErrorCodes.PhoneCodeIncorrect, (await _db.Phone(setup).VerifyCodeAsync(draftId, Wrong(code), Ct)).ErrorCode);
+        }
+
+        var pause = Pause.Before(IsAttemptReservation);
+        await using var refusedDb = _db.Open("Refused", pause);
+        var refused = Task.Run(() => _db.Phone(refusedDb).VerifyCodeAsync(draftId, Wrong(code), Ct), Ct);
+        await pause.Reached.WaitAsync(Deadline, Ct);
+
+        await using (var lastDb = _db.Open("LastAttempt"))
+        {
+            var last = await _db.Phone(lastDb).VerifyCodeAsync(draftId, Wrong(code), Ct);
+            AssertLockedForTheFullDuration(last);
+        }
+
+        pause.Resume();
+        var result = await refused.WaitAsync(Deadline, Ct);
+
+        AssertLockedForTheFullDuration(result);
+        await using var check = _db.Open();
+        var row = await check.RegistrationPhoneVerifications.AsNoTracking().SingleAsync(r => r.DraftId == draftId, Ct);
+        Assert.Equal(5, row.FailedAttempts);
+        Assert.Equal(Now + Lockout, row.LockedUntilUtc);
+        Assert.Null(row.ProtectedCode);
+        Assert.Null(row.CodeExpiresAtUtc);
+    }
+
+    [Fact]
+    public async Task ACheckWhoseCodeWasUsedWhileItHeldAnAttempt_ReportsTheProof_NotAWrongCode()
+    {
+        // The interleaving behind the occasional extra error in the right-code race: a check has reserved its attempt,
+        // and before it compares, another check uses the right code. The code is gone and the number verified, so the
+        // first check reports the proof, as its status does, and never calls the right code wrong.
+        var mobile = SqlServerSignupDatabase.NewMobileE164();
+        var draftId = await _db.SavedDraftAsync(mobile);
+        var code = await _db.SendAsync(draftId, mobile);
+
+        var pause = Pause.After(IsAttemptReservation);
+        await using var heldDb = _db.Open("Held", pause);
+        var held = Task.Run(() => _db.Phone(heldDb).VerifyCodeAsync(draftId, code, Ct), Ct);
+        await pause.Reached.WaitAsync(Deadline, Ct);
+
+        await using (var winnerDb = _db.Open("Winner"))
+            Assert.True((await _db.Phone(winnerDb).VerifyCodeAsync(draftId, code, Ct)).Succeeded);
+
+        pause.Resume();
+        var result = await held.WaitAsync(Deadline, Ct);
+
+        Assert.Equal(SignupErrorCodes.PhoneAlreadyVerified, result.ErrorCode);
+        Assert.Equal(PhoneVerificationState.Verified, result.Status?.State);
+        await using var check = _db.Open();
+        var draft = await check.RegistrationDrafts.AsNoTracking().SingleAsync(d => d.Id == draftId, Ct);
+        Assert.Equal(mobile, draft.PhoneVerifiedNumber);
+        var row = await check.RegistrationPhoneVerifications.AsNoTracking().SingleAsync(r => r.DraftId == draftId, Ct);
+        Assert.Null(row.ProtectedCode);
+        Assert.Null(row.LockedUntilUtc);
+        Assert.NotNull(row.VerifiedAtUtc);
     }
 
     [Fact]
@@ -225,7 +298,7 @@ public sealed class RegistrationDraftSqlServerTests : IClassFixture<SqlServerSig
         var mobile = SqlServerSignupDatabase.NewMobileE164();
         var slug = $"held{SentinelApplicant.NewToken()}".ToLowerInvariant();
         var draftId = await VerifiedDraftAsync(mobile, slug);
-        var pause = new PauseAfter(IsDraftClaim);
+        var pause = Pause.After(IsDraftClaim);
         await using var firstDb = _db.Open("FirstSubmit", pause);
         var firstSession = await SessionIdAsync(firstDb);
 
@@ -352,16 +425,53 @@ public sealed class RegistrationDraftSqlServerTests : IClassFixture<SqlServerSig
         Assert.Fail("The second submit was never blocked by the session holding the draft.");
     }
 
-    /// <summary>Holds the context once, right after the first command <paramref name="match"/> accepts has executed.</summary>
-    private sealed class PauseAfter(Func<DbCommand, bool> match) : DbCommandInterceptor
+    /// <summary>A check's reservation of one attempt: the update outside a transaction that counts it.</summary>
+    private static bool IsAttemptReservation(DbCommand command) =>
+        command.Transaction is null
+        && command.CommandText.Contains("UPDATE", StringComparison.Ordinal)
+        && command.CommandText.Contains("[RegistrationPhoneVerifications]", StringComparison.Ordinal)
+        && command.CommandText.Contains("[FailedAttempts] + 1", StringComparison.Ordinal);
+
+    private DateTime Now => _db.Clock.GetUtcNow().UtcDateTime;
+
+    private static TimeSpan Lockout => new SignupOptions().PhoneVerification.LockoutDuration;
+
+    private static void AssertLockedForTheFullDuration(PhoneVerificationResult result)
+    {
+        Assert.Equal(SignupErrorCodes.PhoneLocked, result.ErrorCode);
+        Assert.Equal(Lockout, result.RetryAfter);
+        Assert.Equal(PhoneVerificationState.Locked, result.Status?.State);
+        Assert.Equal(Lockout, result.Status?.LockedFor);
+    }
+
+    /// <summary>
+    /// Holds the context once at the first command <paramref name="match"/> accepts: just before it runs, or right after it
+    /// has run.
+    /// </summary>
+    private sealed class Pause(Func<DbCommand, bool> match, bool beforeRunning) : DbCommandInterceptor
     {
         private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _resume = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _paused;
 
+        public static Pause Before(Func<DbCommand, bool> match) => new(match, beforeRunning: true);
+
+        public static Pause After(Func<DbCommand, bool> match) => new(match, beforeRunning: false);
+
         public Task Reached => _reached.Task;
 
         public void Resume() => _resume.TrySetResult();
+
+        public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (beforeRunning)
+                await HoldOnceAsync(command, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
 
         public override async ValueTask<int> NonQueryExecutedAsync(
             DbCommand command,
@@ -369,13 +479,18 @@ public sealed class RegistrationDraftSqlServerTests : IClassFixture<SqlServerSig
             int result,
             CancellationToken cancellationToken = default)
         {
+            if (!beforeRunning)
+                await HoldOnceAsync(command, cancellationToken).ConfigureAwait(false);
+            return result;
+        }
+
+        private async Task HoldOnceAsync(DbCommand command, CancellationToken cancellationToken)
+        {
             if (match(command) && Interlocked.Exchange(ref _paused, 1) == 0)
             {
                 _reached.TrySetResult();
                 await _resume.Task.WaitAsync(Deadline, cancellationToken).ConfigureAwait(false);
             }
-
-            return result;
         }
     }
 }
