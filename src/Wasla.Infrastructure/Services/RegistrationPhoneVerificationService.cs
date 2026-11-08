@@ -195,7 +195,11 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
             return await RefusedCheckAsync(draft, rowId, now, ct);
 
         var current = await _central.RegistrationPhoneVerifications.AsNoTracking().FirstAsync(r => r.Id == rowId, ct);
-        if (current.ProtectedCode is not null && Matches(current.ProtectedCode, rowId, entered))
+        // The code went after this check reserved its attempt: another check used it or used the last attempt, or the
+        // number changed. Nothing is left to compare; the stored state says why.
+        if (current.ProtectedCode is null)
+            return await RefusedCheckAsync(draft, rowId, now, ct);
+        if (Matches(current.ProtectedCode, rowId, entered))
         {
             var consumed = await ConsumeAsync(draftId, number, rowId, current.ProtectedCode, now, ct);
             if (consumed)
@@ -447,26 +451,39 @@ public sealed class RegistrationPhoneVerificationService : IRegistrationPhoneVer
         return true;
     }
 
-    /// <summary>Why a check could not reserve an attempt or consume its code, from the stored state.</summary>
+    /// <summary>
+    /// Why a check could not reserve an attempt or consume its code. The error and the status sent with it come from one
+    /// read of the stored state, in the status's order, so they never disagree: an active lock comes before a missing
+    /// code, because the check that uses the last attempt locks the number and drops its code together.
+    /// </summary>
     private async Task<PhoneVerificationResult> RefusedCheckAsync(RegistrationDraft draft, Guid rowId, DateTime now, CancellationToken ct)
     {
         var fresh = await RegistrationDraftRecords.LoadLiveAsync(_central, draft.Id, now, tracking: false, ct);
         if (fresh is null)
             return PhoneVerificationResult.Failed(SignupErrorCodes.DraftMissing);
-        if (RegistrationDraftRecords.ProofIsCurrent(fresh, now, _options.Draft))
-            return await FailedAsync(SignupErrorCodes.PhoneAlreadyVerified, fresh, now, null, ct);
+        if (fresh.SubmittedAtUtc is not null)
+            return PhoneVerificationResult.Failed(SignupErrorCodes.DraftSubmitted);
 
-        var row = await _central.RegistrationPhoneVerifications.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rowId, ct);
-        if (row?.ProtectedCode is null)
-            return await FailedAsync(SignupErrorCodes.PhoneNoActiveCode, fresh, now, null, ct);
-        if (row.LockedUntilUtc is { } lockedUntil && lockedUntil > now)
-            return await FailedAsync(SignupErrorCodes.PhoneLocked, fresh, now, lockedUntil - now, ct);
-        // The attempts are used up and the lock has passed: the code is spent; a new one must be requested.
-        if (row.FailedAttempts >= Rules.MaxFailedAttempts)
-            return await FailedAsync(SignupErrorCodes.PhoneNoActiveCode, fresh, now, null, ct);
-        if (row.CodeExpiresAtUtc <= now)
-            return await FailedAsync(SignupErrorCodes.PhoneCodeExpired, fresh, now, null, ct);
-        return await FailedAsync(SignupErrorCodes.PhoneCodeIncorrect, fresh, now, null, ct);
+        // The row of the draft's current number, as the status reads it; after a number change it is not the checked one.
+        var row = fresh.OwnerMobilePhone is null
+            ? null
+            : await RegistrationDraftRecords.LoadVerificationAsync(_central, fresh.Id, fresh.OwnerMobilePhone, tracking: false, ct);
+        var status = RegistrationDraftRecords.Status(fresh, row, _options, _sms.IsAvailable, now);
+        PhoneVerificationResult Refused(string error, TimeSpan? retryAfter = null) => PhoneVerificationResult.Failed(error, status, retryAfter);
+
+        if (RegistrationDraftRecords.ProofIsCurrent(fresh, now, _options.Draft))
+            return Refused(SignupErrorCodes.PhoneAlreadyVerified);
+        if (row?.LockedUntilUtc is { } lockedUntil && lockedUntil > now)
+            return Refused(SignupErrorCodes.PhoneLocked, lockedUntil - now);
+        // No code, a code whose attempts are used up (its lock has passed), or the code of a number since changed: a new
+        // code must be requested.
+        if (row is null
+            || row.Id != rowId
+            || row.ProtectedCode is null
+            || row.CodeExpiresAtUtc is not { } expiresAt
+            || row.FailedAttempts >= Rules.MaxFailedAttempts)
+            return Refused(SignupErrorCodes.PhoneNoActiveCode);
+        return Refused(expiresAt <= now ? SignupErrorCodes.PhoneCodeExpired : SignupErrorCodes.PhoneCodeIncorrect);
     }
 
     private string Protect(Guid rowId, string code) => _protector.Protect($"{rowId:N}:{code}");
