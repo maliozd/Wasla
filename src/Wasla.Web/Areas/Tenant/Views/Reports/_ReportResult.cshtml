@@ -1,0 +1,85 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Application.Reports
+@using Wasla.Web.Models.Reports
+@{
+    var q = Model.Query;
+    var summary = Model.Report is { } report
+        ? L["Reports.UpdatedSummary", ReportFormat.Range(report.Filter.Period.StartDate, report.Filter.Period.EndDate), ReportFormat.Count(report.Summary.OrderCount)].Value
+        : "";
+    var startError = Model.StartDateError is { } s ? L[s, OrderReportFilters.MaxRangeDays].Value : "";
+    var endError = Model.EndDateError is { } e ? L[e, OrderReportFilters.MaxRangeDays].Value : "";
+}
+<template data-rpt-period-source>@await Html.PartialAsync("_ReportPeriod", Model)</template>
+<div data-rpt-result-root data-state="@Model.State" data-summary="@summary"
+     data-start-error="@startError" data-end-error="@endError"
+     data-compare-active="@(Model.Comparison == ReportComparisonState.Active ? "true" : "false")">
+    @switch (Model.State)
+    {
+        case ReportResultState.Failed:
+            @await Html.PartialAsync("_ReportFailure")
+            break;
+
+        case ReportResultState.InvalidFilter:
+            <div class="rpt-panel rpt-state">
+                <span class="rpt-state__icon rpt-state__icon--warning" aria-hidden="true"><i class="bi bi-exclamation-triangle"></i></span>
+                <h2 class="rpt-state__title">@L["Reports.InvalidTitle"]</h2>
+                @foreach (var message in Model.Problems.Select(p => L[p.ResourceKey, OrderReportFilters.MaxRangeDays].Value).Distinct())
+                {
+                    <p class="rpt-state__text">@message</p>
+                }
+                <a class="wasla-btn rpt-btn" href="@q.ResetUrl()" data-rpt-link>@L["Reports.ResetFilters"]</a>
+            </div>
+            break;
+
+        case ReportResultState.NoOrders:
+            <div class="rpt-panel rpt-state">
+                <span class="rpt-state__icon" aria-hidden="true"><i class="bi bi-bag"></i></span>
+                <h2 class="rpt-state__title">@L["Reports.NoOrdersTitle"]</h2>
+                <p class="rpt-state__text">@L["Reports.NoOrdersHint"]</p>
+                @if (q.HasNonDefaultFilter)
+                {
+                    <a class="wasla-btn rpt-btn" href="@q.ResetUrl()" data-rpt-link>@L["Reports.ResetFilters"]</a>
+                }
+            </div>
+            break;
+
+        default:
+            if (q.Section == ReportSections.Platforms)
+            {
+                @await Html.PartialAsync("_ReportPlatforms", Model)
+            }
+            else if (q.Section == ReportSections.Cancellations)
+            {
+                @await Html.PartialAsync("_ReportCancellations", Model)
+            }
+            else
+            {
+                if (Model.Comparison == ReportComparisonState.NeedsCompletePeriod)
+                {
+                    <div class="rpt-notice rpt-notice--warning">
+                        <p class="rpt-notice__text"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>@L["Reports.ComparisonNeedsComplete"]</p>
+                        <div class="rpt-notice__actions">
+                            <a class="wasla-btn rpt-btn rpt-btn--primary" href="@Model.CompleteDaysUrl" data-rpt-link>@L["Reports.PickCompleteDays", ReportFormat.Count(Model.Report!.Filter.Period.DayCount)]</a>
+                            <a class="wasla-btn rpt-btn" href="@q.UrlWithoutComparison()" data-rpt-link>@L["Reports.Cancel"]</a>
+                        </div>
+                    </div>
+                }
+                else if (Model.Comparison == ReportComparisonState.Unavailable)
+                {
+                    <div class="rpt-notice rpt-notice--warning">
+                        <p class="rpt-notice__text"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>@L["Reports.ComparisonUnavailable"]</p>
+                    </div>
+                }
+
+                if (Model.Comparison == ReportComparisonState.Active)
+                {
+                    @await Html.PartialAsync("_ReportComparison", Model)
+                }
+                else
+                {
+                    @await Html.PartialAsync("_ReportOverview", Model)
+                }
+            }
+            break;
+    }
+</div>

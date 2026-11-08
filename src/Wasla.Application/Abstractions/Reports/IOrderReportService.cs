@@ -54,6 +54,13 @@ public sealed record OrderReportFigures(
         ? null
         : Math.Round(CompletedOrderValue / CompletedOrderCount, 2, MidpointRounding.AwayFromZero);
 
+    /// <summary>
+    /// The share of the cohort that was cancelled or rejected, from 0 to 1: <see cref="CancelledOrderCount"/> divided by
+    /// <see cref="OrderCount"/>, every status included, so orders still in progress count in the denominator. Null when
+    /// the cohort is empty.
+    /// </summary>
+    public decimal? CancellationRate => OrderCount == 0 ? null : (decimal)CancelledOrderCount / OrderCount;
+
     /// <summary>The figures of <paramref name="count"/> orders in one stored status with a total of <paramref name="value"/>.</summary>
     public static OrderReportFigures ForStatus(OrderStatus status, int count, decimal value) =>
         OrderReportStatuses.Classify(status) switch

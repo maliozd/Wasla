@@ -1,0 +1,198 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Web.Models.Reports
+@{
+    var report = Model.Report!;
+    var f = report.Summary;
+    var presenter = new ReportPresenter(L);
+    var isOneDay = report.Days.Count == 1;
+    var isPartial = !report.Filter.Period.IsComplete;
+    var outcomes = new List<(string Series, string Icon, string Key, int Count)>
+    {
+        ("delivered", "bi-check2", "Reports.Outcome.Delivered", f.CompletedOrderCount),
+        ("progress", "bi-clock-history", "Reports.Outcome.InProgress", f.InProgressOrderCount),
+        ("cancelled", "bi-x-circle", "Reports.Outcome.Cancelled", f.CancelledOrderCount),
+        ("failed", "bi-exclamation-triangle", "Reports.Outcome.Failed", f.FailedOrderCount)
+    };
+    if (f.OtherStatusOrderCount > 0)
+    {
+        outcomes.Add(("other", "bi-dash-circle", "Reports.Outcome.Other", f.OtherStatusOrderCount));
+    }
+
+    var stripLabel = string.Join(", ", outcomes.Select(o => $"{L[o.Key]} {ReportFormat.Count(o.Count)}"));
+    var zeroDays = report.Days.Where(d => d.Figures.OrderCount == 0).ToList();
+    var busiest = report.Days.MaxBy(d => d.Figures.OrderCount)!;
+    var topValue = report.Days.MaxBy(d => d.Figures.CompletedOrderValue)!;
+}
+
+<section class="rpt-panel rpt-summary" aria-label="@L["Reports.Section.Overview"]">
+    <div class="rpt-summary__outcomes">
+        <p class="rpt-label">@L["Reports.TotalOrders"]</p>
+        <p class="rpt-figure rpt-figure--xl"><bdi>@ReportFormat.Count(f.OrderCount)</bdi></p>
+        <div class="rpt-strip" role="img" aria-label="@stripLabel">
+            @foreach (var outcome in outcomes.Where(o => o.Count > 0))
+            {
+                <span class="rpt-strip__seg rpt-fill--@outcome.Series" style="flex-grow:@outcome.Count"></span>
+            }
+        </div>
+        <ul class="rpt-outcomes">
+            @foreach (var outcome in outcomes)
+            {
+                <li class="rpt-outcome">
+                    <span class="rpt-outcome__label"><i class="bi @outcome.Icon rpt-ink--@outcome.Series" aria-hidden="true"></i>@L[outcome.Key]</span>
+                    <span class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Count(outcome.Count)</bdi></span>
+                    <span class="rpt-muted"><bdi>@ReportFormat.Percent(ReportPresenter.Share(outcome.Count, f.OrderCount))</bdi></span>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="rpt-summary__values">
+        <p class="rpt-label">@L["Reports.CompletedValue"]</p>
+        <p class="rpt-figure rpt-figure--l"><bdi>@ReportFormat.Money(f.CompletedOrderValue)</bdi></p>
+        <p class="rpt-muted mb-0">
+            @(f.CompletedOrderCount == 0 ? L["Reports.NoDeliveredOrders"] : L["Reports.DeliveredOrdersCount", ReportFormat.Count(f.CompletedOrderCount)])
+        </p>
+        <dl class="rpt-ledger">
+            <div class="rpt-ledger__row">
+                <dt>
+                    @L["Reports.AverageCompletedValue"]
+                    @if (f.AverageCompletedOrderValue is null)
+                    {
+                        <span class="rpt-muted d-block">@L["Reports.AverageNoDelivered"]</span>
+                    }
+                </dt>
+                <dd class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Money(f.AverageCompletedOrderValue)</bdi></dd>
+            </div>
+            <div class="rpt-ledger__row">
+                <dt>@L["Reports.AllOrderValue"]<span class="rpt-muted d-block">@L["Reports.AllOrderValueHint"]</span></dt>
+                <dd class="rpt-ledger__secondary"><bdi>@ReportFormat.Money(f.OrderValue)</bdi></dd>
+            </div>
+        </dl>
+        <p class="rpt-muted rpt-disclaimer mb-0">@L["Reports.ValueDisclaimer"]</p>
+    </div>
+</section>
+
+@if (isOneDay)
+{
+    <div class="rpt-notice rpt-notice--info">
+        <p class="rpt-notice__text"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Reports.SingleDayNotice"]</p>
+    </div>
+}
+else
+{
+    <section class="rpt-panel" data-rpt-panel="daily" aria-labelledby="rptDailyTitle">
+        <div class="rpt-panel__head">
+            <div>
+                <h2 class="rpt-panel__title" id="rptDailyTitle">@L["Reports.DailyTrend"]</h2>
+                <p class="rpt-muted mb-0">@L["Reports.DailyTrendHint"]</p>
+            </div>
+            @await Html.PartialAsync("_ReportViewToggle")
+        </div>
+        <div data-rpt-panel-chart>
+            <ul class="rpt-legend">
+                <li><span class="rpt-swatch rpt-fill--delivered-bar"></span>@L["Reports.Outcome.Delivered"]</li>
+                <li><span class="rpt-swatch rpt-fill--context"></span>@L["Reports.OtherStatuses"]</li>
+                @if (isPartial)
+                {
+                    <li><span class="rpt-swatch rpt-fill--partial"></span>@L["Reports.TodayNotFinished"]</li>
+                }
+            </ul>
+            <h3 class="rpt-chart-title">@L["Reports.OrderCount"]</h3>
+            @await Html.PartialAsync("_ReportBarChart", presenter.OrdersChart(report))
+            <h3 class="rpt-chart-title">@L["Reports.CompletedValue"]</h3>
+            @await Html.PartialAsync("_ReportBarChart", presenter.ValueChart(report))
+            @if (zeroDays.Count > 0)
+            {
+                <p class="rpt-muted rpt-zero-note mb-0">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    @if (zeroDays.Count == 1)
+                    {
+                        @L["Reports.NoOrderDayNote", ReportFormat.Day(zeroDays[0].Date)]
+                    }
+                    else
+                    {
+                        @L["Reports.NoOrderDaysNote", ReportFormat.Count(zeroDays.Count)]
+                    }
+                </p>
+            }
+        </div>
+        <div data-rpt-panel-table hidden>
+            <div class="wasla-table-wrap">
+                <table class="wasla-table rpt-table">
+                    <caption class="visually-hidden">@L["Reports.DailyTrend"]</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">@L["Reports.Day"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Delivered"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.OtherStatuses"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.CompletedValue"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.AllOrderValue"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var day in report.Days.Reverse())
+                        {
+                            <tr>
+                                <th scope="row">@ReportFormat.DayWithWeekday(day.Date)</th>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.OrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.CompletedOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(ReportPresenter.OtherCount(day.Figures))</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Money(day.Figures.CompletedOrderValue)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Money(day.Figures.OrderValue)</bdi></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+}
+
+<div class="rpt-columns @(report.Filter.Platform is null ? "" : "rpt-columns--single")">
+    @if (report.Filter.Platform is null)
+    {
+        <section class="rpt-panel" aria-labelledby="rptShareTitle">
+            <div class="rpt-panel__head">
+                <div>
+                    <h2 class="rpt-panel__title" id="rptShareTitle">@L["Reports.PlatformShare"]</h2>
+                    <p class="rpt-muted mb-0">@L["Reports.PlatformShareHint"]</p>
+                </div>
+                <a class="rpt-link" href="@Model.Query.UrlForSection(ReportSections.Platforms)" data-rpt-link>@L["Reports.PlatformReportLink"]</a>
+            </div>
+            <ul class="rpt-shares">
+                @foreach (var row in presenter.ShareRows(report))
+                {
+                    <li class="rpt-share-row">
+                        @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)row.Platform, DisplayName: (string?)null))
+                        <span class="rpt-share-row__track"><span class="rpt-share-row__bar rpt-fill--@ReportPresenter.PlatformSeries(row.Platform)" style="width:@row.BarPercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span></span>
+                        <span class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Count(row.Count)</bdi></span>
+                        <span class="rpt-muted"><bdi>@ReportFormat.Percent(row.Share)</bdi></span>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+    <section class="rpt-panel" aria-labelledby="rptHighlightsTitle">
+        <h2 class="rpt-panel__title" id="rptHighlightsTitle">@L["Reports.Highlights"]</h2>
+        <dl class="rpt-ledger rpt-ledger--plain">
+            <div class="rpt-ledger__row">
+                <dt>@L["Reports.BusiestDay"]<span class="rpt-muted d-block">@ReportFormat.DayWithWeekday(busiest.Date)</span></dt>
+                <dd class="rpt-figure rpt-figure--s"><bdi>@L["Reports.OrdersCountValue", ReportFormat.Count(busiest.Figures.OrderCount)]</bdi></dd>
+            </div>
+            <div class="rpt-ledger__row">
+                <dt>
+                    @L["Reports.TopValueDay"]
+                    @if (topValue.Figures.CompletedOrderValue > 0m)
+                    {
+                        <span class="rpt-muted d-block">@ReportFormat.DayWithWeekday(topValue.Date)</span>
+                    }
+                </dt>
+                <dd class="rpt-figure rpt-figure--s"><bdi>@(topValue.Figures.CompletedOrderValue > 0m ? ReportFormat.Money(topValue.Figures.CompletedOrderValue) : ReportFormat.NoValue)</bdi></dd>
+            </div>
+            <div class="rpt-ledger__row">
+                <dt>@L["Reports.ZeroOrderDays"]</dt>
+                <dd class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Count(zeroDays.Count)</bdi></dd>
+            </div>
+        </dl>
+    </section>
+</div>

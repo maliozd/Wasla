@@ -1,0 +1,42 @@
+@model Wasla.Web.Models.Reports.ReportBarChart
+@using System.Globalization
+@using System.Text.Json
+@{
+    static string Css(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    var last = Model.Columns.Count - 1;
+}
+<div class="rpt-chart" data-rpt-chart style="--rpt-columns:@Model.Columns.Count">
+    <div class="rpt-chart__plot">
+        <div class="rpt-chart__ticks" aria-hidden="true">
+            @foreach (var tick in Model.Ticks)
+            {
+                <span class="rpt-chart__tick" style="--rpt-y:@Css(tick.Percent)%"><span class="rpt-chart__tick-label"><bdi>@tick.Label</bdi></span></span>
+            }
+        </div>
+        <div class="rpt-chart__bars" role="group" aria-label="@Model.AccessibleName">
+            @for (var i = 0; i <= last; i++)
+            {
+                var column = Model.Columns[i];
+                <div class="rpt-col" data-rpt-col tabindex="@(i == last ? "0" : "-1")" role="img" aria-label="@column.AccessibleLabel"
+                     data-title="@column.TipTitle" data-rows="@JsonSerializer.Serialize(column.TipRows.Select(r => new[] { r.Label, r.Value }))">
+                    <div class="rpt-col__stack">
+                        @foreach (var segment in column.Segments.Where(s => s.HeightPercent > 0))
+                        {
+                            <span class="rpt-seg rpt-seg--@segment.Series" style="height:@Css(segment.HeightPercent)%"></span>
+                        }
+                        @if (column.IsZero && Model.ShowZeroLabels)
+                        {
+                            <span class="rpt-col__zero" aria-hidden="true">0</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="rpt-chart__axis" aria-hidden="true">
+        @foreach (var column in Model.Columns)
+        {
+            <span class="rpt-chart__axis-cell @(column.AxisLabelIsToday ? "is-today" : "")">@column.AxisLabel</span>
+        }
+    </div>
+</div>

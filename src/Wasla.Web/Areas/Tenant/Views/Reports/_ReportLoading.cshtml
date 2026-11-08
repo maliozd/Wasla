@@ -1,0 +1,12 @@
+<div class="rpt-loading" aria-hidden="true">
+    <div class="rpt-panel rpt-loading__summary">
+        <div><span class="rpt-sk" style="width:30%"></span><span class="rpt-sk rpt-sk--tall" style="width:42%"></span><span class="rpt-sk" style="width:100%"></span></div>
+        <div><span class="rpt-sk" style="width:40%"></span><span class="rpt-sk rpt-sk--tall" style="width:55%"></span><span class="rpt-sk" style="width:90%"></span></div>
+    </div>
+    <div class="rpt-panel rpt-loading__chart">
+        @for (var i = 0; i < 18; i++)
+        {
+            <span class="rpt-sk rpt-sk--bar" style="height:@(35 + (i * 37 % 60))%"></span>
+        }
+    </div>
+</div>

@@ -1,0 +1,520 @@
+// Report page: applies filters in place, keeps them in the URL, and drives the charts.
+// The server renders every figure and state; nothing here calculates a report value.
+(function (global) {
+  "use strict";
+
+  const DEFAULT_PRESET = "last30days";
+  const DEFAULT_SECTION = "overview";
+  const REQUEST_TIMEOUT_MS = 30000;
+  const SKELETON_DELAY_MS = 120;
+  const SHEET_QUERY = "(max-width: 767.98px)";
+  const STORAGE_KEY = "Wasla.reports.query";
+
+  /** The page state from a query string, with the page's defaults (ReportPageQuery on the server). */
+  function readState(search) {
+    const params = new URLSearchParams(search);
+    const startDate = params.get("startDate") || "";
+    const endDate = params.get("endDate") || "";
+    return {
+      preset: params.get("preset") || (startDate || endDate ? "custom" : DEFAULT_PRESET),
+      startDate,
+      endDate,
+      platform: params.get("platform") || "",
+      compare: params.get("compare") === "1",
+      section: params.get("section") || DEFAULT_SECTION
+    };
+  }
+
+  /** The query string of a state, defaults left out, in the order the server writes it. */
+  function toQuery(state) {
+    const params = new URLSearchParams();
+    if (state.preset !== DEFAULT_PRESET) params.set("preset", state.preset);
+    if (state.preset === "custom") {
+      params.set("startDate", state.startDate || "");
+      params.set("endDate", state.endDate || "");
+    }
+    if (state.platform) params.set("platform", state.platform);
+    if (state.compare) params.set("compare", "1");
+    if (state.section !== DEFAULT_SECTION) params.set("section", state.section);
+    const query = params.toString();
+    return query ? "?" + query : "";
+  }
+
+  function isDefaultFilter(state) {
+    return state.preset === DEFAULT_PRESET && !state.platform && !state.compare;
+  }
+
+  /**
+   * Loads one result at a time. A newer load aborts the older one, and an answer that arrives anyway is dropped, so a
+   * slow response can never replace a newer selection.
+   */
+  function createLoader(options) {
+    const fetchImpl = options.fetch;
+    const timeoutMs = options.timeoutMs || REQUEST_TIMEOUT_MS;
+    let sequence = 0;
+    let controller = null;
+
+    async function load(url) {
+      const id = ++sequence;
+      if (controller) controller.abort();
+      const own = new AbortController();
+      controller = own;
+      let timedOut = false;
+      const timer = setTimeout(function () {
+        timedOut = true;
+        own.abort();
+      }, timeoutMs);
+      options.onStart(id);
+      try {
+        const response = await fetchImpl(url, {
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          signal: own.signal
+        });
+        if (id !== sequence) return "stale";
+        if (response.redirected || response.status === 401 || response.status === 403) {
+          options.onSignedOut();
+          return "signed-out";
+        }
+        if (response.ok || response.status === 400) {
+          const html = await response.text();
+          if (id !== sequence) return "stale";
+          options.onResult(html, response.status);
+          return response.status === 400 ? "invalid" : "ok";
+        }
+        options.onFailure();
+        return "failed";
+      } catch (error) {
+        if (id !== sequence || (own.signal.aborted && !timedOut)) return "stale";
+        options.onFailure();
+        return "failed";
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    return { load };
+  }
+
+  /** The column to move to from a key press, or null. Arrow keys follow the screen, so right-to-left swaps them. */
+  function nextColumnIndex(key, index, count, isRtl) {
+    const forward = isRtl ? "ArrowLeft" : "ArrowRight";
+    const backward = isRtl ? "ArrowRight" : "ArrowLeft";
+    if (key === forward) return Math.min(index + 1, count - 1);
+    if (key === backward) return Math.max(index - 1, 0);
+    if (key === "Home") return 0;
+    if (key === "End") return count - 1;
+    return null;
+  }
+
+  function init(document) {
+    const root = document.getElementById("rptRoot");
+    if (!root) return;
+
+    const result = document.getElementById("rptResult");
+    const period = document.getElementById("rptPeriod");
+    const status = document.getElementById("rptStatus");
+    const sheetElement = document.getElementById("rptFilterSheet");
+    const customForm = document.getElementById("rptCustomForm");
+    const customToggle = document.getElementById("rptCustomToggle");
+    const startInput = document.getElementById("rptStartDate");
+    const endInput = document.getElementById("rptEndDate");
+    const startError = document.getElementById("rptStartError");
+    const endError = document.getElementById("rptEndError");
+    const platformSelect = document.getElementById("rptPlatform");
+    const compareInput = document.getElementById("rptCompare");
+    const compareWrap = document.getElementById("rptCompareWrap");
+    const resetLink = document.getElementById("rptReset");
+    const pageUrl = root.dataset.pageUrl;
+    const contentUrl = root.dataset.contentUrl;
+    const viewModes = new Map();
+
+    let applied = readState(global.location.search);
+    let draft = null;
+    let skeletonTimer = null;
+
+    const sheetQuery = global.matchMedia(SHEET_QUERY);
+    function isSheetMode() {
+      return sheetQuery.matches;
+    }
+
+    function sheet() {
+      return global.bootstrap && global.bootstrap.Offcanvas ? global.bootstrap.Offcanvas.getOrCreateInstance(sheetElement) : null;
+    }
+
+    function remember() {
+      try {
+        global.sessionStorage.setItem(STORAGE_KEY, global.location.search);
+      } catch (_) {
+        /* storage may be unavailable; the URL still holds the filter */
+      }
+    }
+
+    function remembered() {
+      try {
+        return global.sessionStorage.getItem(STORAGE_KEY) || "";
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function setCustomOpen(open) {
+      customForm.hidden = !open;
+      customToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function setFieldError(input, slot, message) {
+      slot.textContent = message || "";
+      if (message) input.setAttribute("aria-invalid", "true");
+      else input.removeAttribute("aria-invalid");
+    }
+
+    /** Puts every persistent control in the given state; they are not re-rendered, so focus and open menus survive. */
+    function syncControls(state) {
+      root.querySelectorAll("[data-rpt-preset]").forEach(function (link) {
+        const selected = state.preset === link.dataset.rptPreset;
+        link.classList.toggle("is-selected", selected);
+        if (selected) link.setAttribute("aria-current", "true");
+        else link.removeAttribute("aria-current");
+        link.href = pageUrl + toQuery(Object.assign({}, state, { preset: link.dataset.rptPreset, startDate: "", endDate: "" }));
+      });
+      customToggle.classList.toggle("is-selected", state.preset === "custom");
+      if (state.preset === "custom") {
+        startInput.value = state.startDate;
+        endInput.value = state.endDate;
+      }
+
+      platformSelect.value = state.platform;
+      compareInput.checked = state.compare;
+      compareWrap.hidden = state.section !== DEFAULT_SECTION;
+
+      resetLink.hidden = isDefaultFilter(state);
+      resetLink.href = pageUrl + toQuery(Object.assign({}, state, { preset: DEFAULT_PRESET, startDate: "", endDate: "", platform: "", compare: false }));
+
+      root.querySelectorAll("[data-rpt-section]").forEach(function (link) {
+        const current = state.section === link.dataset.rptSection;
+        link.classList.toggle("is-current", current);
+        if (current) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+        link.href = pageUrl + toQuery(Object.assign({}, state, { section: link.dataset.rptSection }));
+      });
+    }
+
+    function applyViewModes(scope) {
+      scope.querySelectorAll("[data-rpt-panel]").forEach(function (panel) {
+        setPanelView(panel, viewModes.get(panel.dataset.rptPanel) || "chart");
+      });
+    }
+
+    function setPanelView(panel, view) {
+      panel.querySelector("[data-rpt-panel-chart]").hidden = view !== "chart";
+      panel.querySelector("[data-rpt-panel-table]").hidden = view !== "table";
+      panel.querySelectorAll("[data-rpt-view]").forEach(function (button) {
+        button.setAttribute("aria-pressed", button.dataset.rptView === view ? "true" : "false");
+      });
+    }
+
+    function replaceResult(content) {
+      const hadFocus = result.contains(document.activeElement) && document.activeElement !== result;
+      result.replaceChildren(content);
+      if (hadFocus) result.focus({ preventScroll: true });
+    }
+
+    function clearSkeletonTimer() {
+      if (skeletonTimer !== null) {
+        clearTimeout(skeletonTimer);
+        skeletonTimer = null;
+      }
+    }
+
+    const loader = createLoader({
+      fetch: function (url, init) {
+        return global.fetch(url, init);
+      },
+      onStart: function () {
+        clearSkeletonTimer();
+        result.setAttribute("aria-busy", "true");
+        status.textContent = root.dataset.loadingText;
+        skeletonTimer = setTimeout(function () {
+          skeletonTimer = null;
+          replaceResult(document.getElementById("rptLoadingTemplate").content.cloneNode(true));
+        }, SKELETON_DELAY_MS);
+      },
+      onResult: function (html, statusCode) {
+        clearSkeletonTimer();
+        const holder = document.createElement("template");
+        holder.innerHTML = html;
+        const periodSource = holder.content.querySelector("[data-rpt-period-source]");
+        const answer = holder.content.querySelector("[data-rpt-result-root]");
+        period.replaceChildren(periodSource.content.cloneNode(true));
+        periodSource.remove();
+
+        setFieldError(startInput, startError, answer.dataset.startError);
+        setFieldError(endInput, endError, answer.dataset.endError);
+        if (answer.dataset.startError || answer.dataset.endError) setCustomOpen(true);
+
+        compareInput.checked = answer.dataset.compareActive === "true";
+        replaceResult(holder.content);
+        applyViewModes(result);
+        result.setAttribute("aria-busy", "false");
+        status.textContent = answer.dataset.summary || "";
+        if (statusCode !== 400) remember();
+      },
+      onFailure: function () {
+        clearSkeletonTimer();
+        replaceResult(document.getElementById("rptFailureTemplate").content.cloneNode(true));
+        result.setAttribute("aria-busy", "false");
+        status.textContent = "";
+      },
+      onSignedOut: function () {
+        global.location.reload();
+      }
+    });
+
+    function urlFor(state) {
+      return contentUrl + toQuery(state);
+    }
+
+    function fetchApplied() {
+      return loader.load(urlFor(applied));
+    }
+
+    function navigate(state, options) {
+      applied = state;
+      draft = null;
+      syncControls(state);
+      if (!options || !options.fromHistory) {
+        const target = pageUrl + toQuery(state);
+        global.history.pushState(null, "", target);
+      }
+      return fetchApplied();
+    }
+
+    /** A filter choice: applied at once in the card, held until Apply in the bottom sheet. */
+    function choose(next) {
+      if (isSheetMode()) {
+        draft = next;
+        syncControls(next);
+        return;
+      }
+      navigate(next);
+    }
+
+    function current() {
+      return draft || applied;
+    }
+
+    function withCustomRange(state) {
+      return Object.assign({}, state, { preset: "custom", startDate: startInput.value, endDate: endInput.value });
+    }
+
+    function applyDraft() {
+      let next = current();
+      if (!customForm.hidden) next = withCustomRange(next);
+      navigate(next).then(function (outcome) {
+        if (outcome !== "invalid") {
+          const offcanvas = sheet();
+          if (offcanvas) offcanvas.hide();
+        }
+      });
+    }
+
+    root.addEventListener("click", function (event) {
+      const link = event.target.closest("a[data-rpt-link], a[data-rpt-section]");
+      if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        event.preventDefault();
+        navigate(readState(new URL(link.href).search));
+        return;
+      }
+
+      const presetLink = event.target.closest("a[data-rpt-preset]");
+      if (presetLink && !event.metaKey && !event.ctrlKey && !event.shiftKey) {
+        event.preventDefault();
+        setCustomOpen(false);
+        choose(Object.assign({}, current(), { preset: presetLink.dataset.rptPreset, startDate: "", endDate: "" }));
+        return;
+      }
+
+      if (event.target.closest("[data-rpt-retry]")) {
+        fetchApplied();
+        return;
+      }
+
+      const viewButton = event.target.closest("[data-rpt-view]");
+      if (viewButton) {
+        const panel = viewButton.closest("[data-rpt-panel]");
+        viewModes.set(panel.dataset.rptPanel, viewButton.dataset.rptView);
+        setPanelView(panel, viewButton.dataset.rptView);
+      }
+    });
+
+    resetLink.addEventListener("click", function (event) {
+      event.preventDefault();
+      setCustomOpen(false);
+      navigate(readState(new URL(resetLink.href).search));
+    });
+
+    customToggle.addEventListener("click", function () {
+      setCustomOpen(customForm.hidden);
+      if (!customForm.hidden) startInput.focus();
+    });
+
+    document.getElementById("rptCustomCancel").addEventListener("click", function () {
+      setCustomOpen(false);
+      startInput.value = applied.preset === "custom" ? applied.startDate : "";
+      endInput.value = applied.preset === "custom" ? applied.endDate : "";
+      setFieldError(startInput, startError, "");
+      setFieldError(endInput, endError, "");
+      customToggle.focus();
+    });
+
+    customForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (isSheetMode()) {
+        applyDraft();
+        return;
+      }
+      navigate(withCustomRange(applied)).then(function (outcome) {
+        if (outcome !== "invalid") setCustomOpen(false);
+      });
+    });
+
+    document.getElementById("rptFilterForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+    });
+
+    platformSelect.addEventListener("change", function () {
+      choose(Object.assign({}, current(), { platform: platformSelect.value }));
+    });
+
+    compareInput.addEventListener("change", function () {
+      choose(Object.assign({}, current(), { compare: compareInput.checked }));
+    });
+
+    document.getElementById("rptSheetApply").addEventListener("click", applyDraft);
+
+    document.getElementById("rptSheetReset").addEventListener("click", function () {
+      setCustomOpen(false);
+      navigate(Object.assign({}, applied, { preset: DEFAULT_PRESET, startDate: "", endDate: "", platform: "", compare: false })).then(function () {
+        const offcanvas = sheet();
+        if (offcanvas) offcanvas.hide();
+      });
+    });
+
+    sheetElement.addEventListener("hidden.bs.offcanvas", function () {
+      if (draft) {
+        draft = null;
+        syncControls(applied);
+      }
+    });
+
+    global.addEventListener("popstate", function () {
+      navigate(readState(global.location.search), { fromHistory: true });
+    });
+
+    initCharts(root, document);
+
+    syncControls(applied);
+    if (!global.location.search && remembered()) {
+      // Back from another page through the sidebar: bring the last filter back.
+      global.history.replaceState(null, "", pageUrl + remembered());
+      navigate(readState(global.location.search), { fromHistory: true });
+    } else {
+      remember();
+    }
+  }
+
+  function initCharts(root, document) {
+    let tip = null;
+
+    function hideTip() {
+      if (tip) {
+        tip.remove();
+        tip = null;
+      }
+    }
+
+    function showTip(column) {
+      hideTip();
+      const chart = column.closest("[data-rpt-chart]");
+      const plot = chart.querySelector(".rpt-chart__plot");
+      const element = document.createElement("div");
+      element.className = "rpt-tip";
+      element.setAttribute("aria-hidden", "true");
+
+      const title = document.createElement("p");
+      title.className = "rpt-tip__title";
+      title.textContent = column.dataset.title;
+      element.appendChild(title);
+      JSON.parse(column.dataset.rows).forEach(function (row) {
+        const line = document.createElement("p");
+        line.className = "rpt-tip__row";
+        const label = document.createElement("span");
+        label.textContent = row[0];
+        const value = document.createElement("strong");
+        value.textContent = row[1];
+        line.append(label, value);
+        element.appendChild(line);
+      });
+      plot.appendChild(element);
+      tip = element;
+
+      const plotBox = plot.getBoundingClientRect();
+      const columnBox = column.getBoundingClientRect();
+      const left = Math.max(0, Math.min(columnBox.left - plotBox.left + columnBox.width / 2 - element.offsetWidth / 2, plotBox.width - element.offsetWidth));
+      element.style.left = left + "px";
+      element.style.top = "0";
+    }
+
+    root.addEventListener("pointerover", function (event) {
+      const column = event.target.closest("[data-rpt-col]");
+      if (column) showTip(column);
+    });
+
+    root.addEventListener("pointerout", function (event) {
+      const chart = event.target.closest("[data-rpt-chart]");
+      if (chart && !chart.contains(event.relatedTarget) && !chart.contains(document.activeElement)) hideTip();
+    });
+
+    root.addEventListener("focusin", function (event) {
+      const column = event.target.closest("[data-rpt-col]");
+      if (column) showTip(column);
+    });
+
+    root.addEventListener("focusout", function (event) {
+      if (event.target.closest("[data-rpt-col]")) hideTip();
+    });
+
+    root.addEventListener("click", function (event) {
+      const column = event.target.closest("[data-rpt-col]");
+      if (column) showTip(column);
+    });
+
+    root.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        hideTip();
+        return;
+      }
+      const column = event.target.closest("[data-rpt-col]");
+      if (!column) return;
+      const columns = Array.from(column.parentElement.querySelectorAll("[data-rpt-col]"));
+      const isRtl = global.getComputedStyle(column.parentElement).direction === "rtl";
+      const index = nextColumnIndex(event.key, columns.indexOf(column), columns.length, isRtl);
+      if (index === null) return;
+      event.preventDefault();
+      columns.forEach(function (item, i) {
+        item.tabIndex = i === index ? 0 : -1;
+      });
+      columns[index].focus();
+      showTip(columns[index]);
+    });
+  }
+
+  if (typeof module === "object" && module.exports) {
+    module.exports = { readState, toQuery, isDefaultFilter, createLoader, nextColumnIndex };
+  } else {
+    global.document.addEventListener("DOMContentLoaded", function () {
+      init(global.document);
+    });
+  }
+})(typeof window !== "undefined" ? window : globalThis);

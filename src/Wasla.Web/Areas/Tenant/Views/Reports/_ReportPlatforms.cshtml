@@ -1,0 +1,147 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Application.Abstractions.Reports
+@using Wasla.Web.Models.Reports
+@{
+    var report = Model.Report!;
+    var total = report.Summary;
+    var presenter = new ReportPresenter(L);
+    var filtered = report.Filter.Platform;
+    var reports = filtered is null ? Model.PlatformReports : new[] { report };
+    var axis = ReportPresenter.SharedAxis(reports);
+    var isOneDay = report.Days.Count == 1;
+
+    string Label(string key) => L[key].Value;
+}
+
+@if (filtered is { } one)
+{
+    <div class="rpt-notice rpt-notice--info">
+        <p class="rpt-notice__text"><i class="bi bi-info-circle" aria-hidden="true"></i>@L["Reports.ShowingOnePlatform", L[ReportFormat.PlatformKey(one)].Value]</p>
+        <div class="rpt-notice__actions">
+            <a class="rpt-link" href="@((Model.Query with { Platform = null }).Url())" data-rpt-link>@L["Reports.ShowAllPlatforms"]</a>
+        </div>
+    </div>
+}
+else if (report.Platforms.Count > 1)
+{
+    <section class="rpt-panel" aria-labelledby="rptPlatformShareTitle">
+        <h2 class="rpt-panel__title" id="rptPlatformShareTitle">@L["Reports.PlatformComparison"]</h2>
+        <p class="rpt-muted">@L["Reports.PlatformComparisonHint"]</p>
+        @foreach (var (titleKey, strip) in new[] { ("Reports.OrderShare", presenter.OrderShareStrip(report)), ("Reports.ValueShare", presenter.ValueShareStrip(report)) })
+        {
+            if (strip.Count == 0)
+            {
+                continue;
+            }
+
+            <div class="rpt-sharebar">
+                <h3 class="rpt-chart-title">@L[titleKey]</h3>
+                <ul class="rpt-legend rpt-legend--values">
+                    @foreach (var segment in strip)
+                    {
+                        <li>
+                            <span class="rpt-swatch rpt-fill--@ReportPresenter.PlatformSeries(segment.Platform)"></span>
+                            @L[ReportFormat.PlatformKey(segment.Platform)]
+                            <strong><bdi>@ReportFormat.Percent(segment.Share)</bdi></strong>
+                        </li>
+                    }
+                </ul>
+                <div class="rpt-strip" role="img" aria-label="@string.Join(", ", strip.Select(s => $"{L[ReportFormat.PlatformKey(s.Platform)]} {ReportFormat.Percent(s.Share)}"))">
+                    @foreach (var segment in strip)
+                    {
+                        <span class="rpt-strip__seg rpt-fill--@ReportPresenter.PlatformSeries(segment.Platform)" style="flex-grow:@segment.Weight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"></span>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+}
+
+<section class="rpt-panel" aria-label="@L["Reports.PlatformTableCaption"]">
+    <div class="wasla-table-wrap">
+        <table class="wasla-table wasla-table--stack rpt-table">
+            <caption class="visually-hidden">@L["Reports.PlatformTableCaption"]</caption>
+            <thead>
+                <tr>
+                    <th scope="col">@L["Reports.Platform"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.OrderShare"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Delivered"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.CompletedValue"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.ValueShare"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.AverageCompletedValue"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Cancelled"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.CancellationRate"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in report.Platforms)
+                {
+                    var f = row.Figures;
+                    <tr>
+                        <th scope="row">
+                            <span class="wasla-table__cell-label" aria-hidden="true">@Label("Reports.Platform")</span>
+                            @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)row.Platform, DisplayName: (string?)null))
+                        </th>
+                        @await Html.PartialAsync("_ReportPlatformCells", (Figures: f, Total: total))
+                    </tr>
+                }
+                <tr class="rpt-table__total">
+                    <th scope="row">@L["Reports.Total"]</th>
+                    @await Html.PartialAsync("_ReportPlatformCells", (Figures: total, Total: total))
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if (!isOneDay && reports.Count > 0)
+{
+    <section class="rpt-panel" data-rpt-panel="platform-daily" aria-labelledby="rptPlatformDailyTitle">
+        <div class="rpt-panel__head">
+            <div>
+                <h2 class="rpt-panel__title" id="rptPlatformDailyTitle">@L["Reports.PlatformDailyTitle"]</h2>
+                <p class="rpt-muted mb-0">@L["Reports.DailyTrendHint"]</p>
+            </div>
+            @await Html.PartialAsync("_ReportViewToggle")
+        </div>
+        <div class="rpt-multiples" data-rpt-panel-chart>
+            @foreach (var platformReport in reports)
+            {
+                var platform = platformReport.Filter.Platform!.Value;
+                <div class="rpt-multiple">
+                    @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)platform, DisplayName: (string?)null))
+                    @await Html.PartialAsync("_ReportBarChart", presenter.PlatformChart(platformReport, platform, axis))
+                </div>
+            }
+        </div>
+        <div data-rpt-panel-table hidden>
+            <div class="wasla-table-wrap">
+                <table class="wasla-table rpt-table">
+                    <caption class="visually-hidden">@L["Reports.PlatformDailyTitle"]</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">@L["Reports.Day"]</th>
+                            @foreach (var platformReport in reports)
+                            {
+                                <th scope="col" class="wasla-table__num">@L[ReportFormat.PlatformKey(platformReport.Filter.Platform!.Value)]</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = report.Days.Count - 1; i >= 0; i--)
+                        {
+                            <tr>
+                                <th scope="row">@ReportFormat.DayWithWeekday(report.Days[i].Date)</th>
+                                @foreach (var platformReport in reports)
+                                {
+                                    <td class="wasla-table__num"><bdi>@ReportFormat.Count(platformReport.Days[i].Figures.OrderCount)</bdi></td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+}

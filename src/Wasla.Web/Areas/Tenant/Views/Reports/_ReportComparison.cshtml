@@ -1,0 +1,133 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using System.Globalization
+@using Wasla.Web.Models.Reports
+@{
+    var current = Model.Report!;
+    var previous = Model.Previous!;
+    var presenter = new ReportPresenter(L);
+    var rows = presenter.ComparisonRows(current.Summary, previous.Summary);
+    var line = presenter.ComparisonChart(current, previous);
+    static string Css(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+    var dayCount = current.Filter.Period.DayCount;
+}
+
+<section class="rpt-panel" aria-labelledby="rptCompareTitle">
+    <h2 class="rpt-panel__title" id="rptCompareTitle">@L["Reports.ComparisonTitle"]</h2>
+    <p class="rpt-muted">@L["Reports.ComparisonHint"]</p>
+    <div class="rpt-periods">
+        @foreach (var (key, report, css) in new[] { ("Reports.ThisPeriod", current, "current"), ("Reports.PreviousPeriod", previous, "previous") })
+        {
+            <div class="rpt-periods__item">
+                <p class="rpt-label mb-0"><span class="rpt-line-key rpt-line-key--@css"></span>@L[key]</p>
+                <p class="rpt-figure rpt-figure--s mb-0"><bdi>@ReportFormat.Range(report.Filter.Period.StartDate, report.Filter.Period.EndDate)</bdi></p>
+                <p class="rpt-muted mb-0">@L["Reports.CompletedPeriodDays", ReportFormat.Count(dayCount)]</p>
+            </div>
+        }
+    </div>
+    <div class="wasla-table-wrap">
+        <table class="wasla-table wasla-table--stack rpt-table">
+            <caption class="visually-hidden">@L["Reports.ComparisonTitle"]</caption>
+            <thead>
+                <tr>
+                    <th scope="col">@L["Reports.Metric"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.ThisPeriod"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.PreviousPeriod"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.Difference"]</th>
+                    <th scope="col" class="wasla-table__num">@L["Reports.Change"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        <th scope="row">@L[row.LabelKey]</th>
+                        <td class="wasla-table__num"><span class="wasla-table__cell-label" aria-hidden="true">@L["Reports.ThisPeriod"]</span><bdi>@row.Current</bdi></td>
+                        <td class="wasla-table__num"><span class="wasla-table__cell-label" aria-hidden="true">@L["Reports.PreviousPeriod"]</span><bdi>@row.Previous</bdi></td>
+                        <td class="wasla-table__num"><span class="wasla-table__cell-label" aria-hidden="true">@L["Reports.Difference"]</span><bdi>@(row.Difference ?? ReportFormat.NoValue)</bdi></td>
+                        <td class="wasla-table__num">
+                            <span class="wasla-table__cell-label" aria-hidden="true">@L["Reports.Change"]</span>
+                            @if (row.Change is { } change)
+                            {
+                                <span class="rpt-change">
+                                    @if (change != 0m)
+                                    {
+                                        <i class="bi @(change > 0m ? "bi-arrow-up" : "bi-arrow-down")" aria-hidden="true"></i>
+                                    }
+                                    <bdi>@ReportFormat.SignedPercent(change)</bdi>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="rpt-muted">@L["Reports.NotComparable"]</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="rpt-panel" data-rpt-panel="compare-daily" aria-labelledby="rptCompareChartTitle">
+    <div class="rpt-panel__head">
+        <div>
+            <h2 class="rpt-panel__title" id="rptCompareChartTitle">@L["Reports.OrderCount"]</h2>
+            <p class="rpt-muted mb-0">@L["Reports.ComparisonChartHint"]</p>
+        </div>
+        @await Html.PartialAsync("_ReportViewToggle")
+    </div>
+    <div data-rpt-panel-chart>
+        <ul class="rpt-legend">
+            <li><span class="rpt-line-key rpt-line-key--current"></span>@L["Reports.ThisPeriod"]</li>
+            <li><span class="rpt-line-key rpt-line-key--previous"></span>@L["Reports.PreviousPeriod"]</li>
+        </ul>
+        <div class="rpt-line" role="img" aria-label="@L["Reports.ComparisonChartHint"]">
+            <div class="rpt-chart__plot">
+                <div class="rpt-chart__ticks" aria-hidden="true">
+                    @foreach (var tick in line.Ticks)
+                    {
+                        <span class="rpt-chart__tick" style="--rpt-y:@Css(tick.Percent)%"><span class="rpt-chart__tick-label"><bdi>@tick.Label</bdi></span></span>
+                    }
+                </div>
+                <svg class="rpt-line__svg" viewBox="0 0 1000 200" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+                    <path class="rpt-line__path rpt-line__path--previous" d="@line.PreviousPath"></path>
+                    <path class="rpt-line__path rpt-line__path--current" d="@line.CurrentPath"></path>
+                </svg>
+            </div>
+            <div class="rpt-line__axis" aria-hidden="true">
+                @foreach (var (label, percent) in line.AxisLabels)
+                {
+                    <span style="inset-inline-start:@Css(percent)%">@label</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div data-rpt-panel-table hidden>
+        <div class="wasla-table-wrap">
+            <table class="wasla-table rpt-table">
+                <caption class="visually-hidden">@L["Reports.ComparisonChartHint"]</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">@L["Reports.Day"]</th>
+                        <th scope="col">@L["Reports.ThisPeriod"]</th>
+                        <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
+                        <th scope="col">@L["Reports.PreviousPeriod"]</th>
+                        <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < current.Days.Count; i++)
+                    {
+                        <tr>
+                            <th scope="row">@L["Reports.DayIndex", ReportFormat.Count(i + 1)]</th>
+                            <td>@ReportFormat.DayWithWeekday(current.Days[i].Date)</td>
+                            <td class="wasla-table__num"><bdi>@ReportFormat.Count(current.Days[i].Figures.OrderCount)</bdi></td>
+                            <td>@ReportFormat.DayWithWeekday(previous.Days[i].Date)</td>
+                            <td class="wasla-table__num"><bdi>@ReportFormat.Count(previous.Days[i].Figures.OrderCount)</bdi></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

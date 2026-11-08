@@ -154,6 +154,19 @@
                     </li>
                     }
 
+                    @if (navPermissions.CanViewReports)
+                    {
+                    <li class="nav-item">
+
+                        <a class="nav-link @Active("/reports")" asp-area="Tenant" asp-controller="Reports" asp-action="Index">
+
+                            <i class="bi bi-bar-chart-line me-2" aria-hidden="true"></i><span class="nav-text">@L["Layout.Reports"]</span>
+
+                        </a>
+
+                    </li>
+                    }
+
                     @if (navPermissions.CanViewAnyPrintBridgeLink)
                     {
                     <li class="nav-item wasla-sidebar-nav-group @(printBridgeSection ? "wasla-sidebar-nav-group--open" : "")">

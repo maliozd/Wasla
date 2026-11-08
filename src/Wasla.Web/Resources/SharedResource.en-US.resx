@@ -4490,4 +4490,118 @@
   <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>Development: view the test codes sent</value></data>
   <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>If you change the mobile phone, you need to verify the new number by SMS again.</value></data>
   <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>For questions about your subscription or to cancel it, write to {0}.</value></data>
+  <data name="Layout.Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="Reports.Title" xml:space="preserve"><value>Reports</value></data>
+  <data name="Reports.Subtitle" xml:space="preserve"><value>A summary of your orders for the selected period</value></data>
+  <data name="Reports.FiltersLabel" xml:space="preserve"><value>Report filters</value></data>
+  <data name="Reports.PeriodLabel" xml:space="preserve"><value>Period</value></data>
+  <data name="Reports.Preset.Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Reports.Preset.Yesterday" xml:space="preserve"><value>Yesterday</value></data>
+  <data name="Reports.Preset.Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="Reports.Preset.Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="Reports.Preset.Custom" xml:space="preserve"><value>Custom range</value></data>
+  <data name="Reports.AllPlatforms" xml:space="preserve"><value>All platforms</value></data>
+  <data name="Reports.PlatformLabel" xml:space="preserve"><value>Platform</value></data>
+  <data name="Reports.CompareLabel" xml:space="preserve"><value>Compare with the previous period</value></data>
+  <data name="Reports.ResetFilters" xml:space="preserve"><value>Reset filters</value></data>
+  <data name="Reports.Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Reports.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Reports.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Reports.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Reports.StartDate" xml:space="preserve"><value>Start</value></data>
+  <data name="Reports.EndDate" xml:space="preserve"><value>End</value></data>
+  <data name="Reports.SectionsLabel" xml:space="preserve"><value>Report sections</value></data>
+  <data name="Reports.Section.Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Reports.Section.Platforms" xml:space="preserve"><value>Platforms</value></data>
+  <data name="Reports.Section.Cancellations" xml:space="preserve"><value>Cancellations</value></data>
+  <data name="Reports.DayCount" xml:space="preserve"><value>{0} days</value></data>
+  <data name="Reports.PartialPeriod" xml:space="preserve"><value>Includes today, the day is not over</value></data>
+  <data name="Reports.CompletePeriod" xml:space="preserve"><value>Complete period</value></data>
+  <data name="Reports.AsOf" xml:space="preserve"><value>As of {0}</value></data>
+  <data name="Reports.TotalOrders" xml:space="preserve"><value>Total orders</value></data>
+  <data name="Reports.Outcome.Delivered" xml:space="preserve"><value>Delivered</value></data>
+  <data name="Reports.Outcome.InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="Reports.Outcome.Cancelled" xml:space="preserve"><value>Cancelled or rejected</value></data>
+  <data name="Reports.Outcome.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Reports.Outcome.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Reports.CompletedValue" xml:space="preserve"><value>Completed order value</value></data>
+  <data name="Reports.DeliveredOrdersCount" xml:space="preserve"><value>{0} delivered orders</value></data>
+  <data name="Reports.NoDeliveredOrders" xml:space="preserve"><value>No orders were delivered in this period</value></data>
+  <data name="Reports.AverageCompletedValue" xml:space="preserve"><value>Average completed order</value></data>
+  <data name="Reports.AverageNoDelivered" xml:space="preserve"><value>Not calculated, no orders were delivered</value></data>
+  <data name="Reports.AllOrderValue" xml:space="preserve"><value>All order value</value></data>
+  <data name="Reports.AllOrderValueHint" xml:space="preserve"><value>Includes cancelled, failed and unfinished orders</value></data>
+  <data name="Reports.ValueDisclaimer" xml:space="preserve"><value>Amounts are the order values the platforms report. They are not profit, payouts or net income.</value></data>
+  <data name="Reports.DailyTrend" xml:space="preserve"><value>Daily trend</value></data>
+  <data name="Reports.DailyTrendHint" xml:space="preserve"><value>By the day orders were placed, with their current status</value></data>
+  <data name="Reports.ViewLabel" xml:space="preserve"><value>View</value></data>
+  <data name="Reports.ViewChart" xml:space="preserve"><value>Chart</value></data>
+  <data name="Reports.ViewTable" xml:space="preserve"><value>Table</value></data>
+  <data name="Reports.OtherStatuses" xml:space="preserve"><value>Other statuses</value></data>
+  <data name="Reports.TodayNotFinished" xml:space="preserve"><value>Today, the day is not over</value></data>
+  <data name="Reports.OrdersPerDay" xml:space="preserve"><value>Orders per day</value></data>
+  <data name="Reports.CompletedValuePerDay" xml:space="preserve"><value>Completed order value per day</value></data>
+  <data name="Reports.CancellationsPerDay" xml:space="preserve"><value>Cancelled or rejected orders per day</value></data>
+  <data name="Reports.SingleDayNotice" xml:space="preserve"><value>One day is selected. The daily trend appears for periods of two days or more.</value></data>
+  <data name="Reports.NoOrderDayNote" xml:space="preserve"><value>{0}: no orders</value></data>
+  <data name="Reports.NoOrderDaysNote" xml:space="preserve"><value>No orders on {0} days</value></data>
+  <data name="Reports.Day" xml:space="preserve"><value>Day</value></data>
+  <data name="Reports.OrderCount" xml:space="preserve"><value>Orders</value></data>
+  <data name="Reports.PlatformShare" xml:space="preserve"><value>Platform share</value></data>
+  <data name="Reports.PlatformShareHint" xml:space="preserve"><value>By number of orders</value></data>
+  <data name="Reports.PlatformReportLink" xml:space="preserve"><value>Platform report</value></data>
+  <data name="Reports.Highlights" xml:space="preserve"><value>Period highlights</value></data>
+  <data name="Reports.BusiestDay" xml:space="preserve"><value>Busiest day</value></data>
+  <data name="Reports.OrdersCountValue" xml:space="preserve"><value>{0} orders</value></data>
+  <data name="Reports.TopValueDay" xml:space="preserve"><value>Highest completed value</value></data>
+  <data name="Reports.ZeroOrderDays" xml:space="preserve"><value>Days without orders</value></data>
+  <data name="Reports.PlatformComparison" xml:space="preserve"><value>Platform comparison</value></data>
+  <data name="Reports.PlatformComparisonHint" xml:space="preserve"><value>Same period and same status definitions</value></data>
+  <data name="Reports.OrderShare" xml:space="preserve"><value>Order share</value></data>
+  <data name="Reports.ValueShare" xml:space="preserve"><value>Completed value share</value></data>
+  <data name="Reports.PlatformTableCaption" xml:space="preserve"><value>Figures by platform</value></data>
+  <data name="Reports.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Reports.CancellationRate" xml:space="preserve"><value>Cancellation or rejection rate</value></data>
+  <data name="Reports.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="Reports.PlatformDailyTitle" xml:space="preserve"><value>Daily orders by platform</value></data>
+  <data name="Reports.ShowingOnePlatform" xml:space="preserve"><value>Showing {0} only.</value></data>
+  <data name="Reports.ShowAllPlatforms" xml:space="preserve"><value>Show all platforms</value></data>
+  <data name="Reports.CancellationRateSentence" xml:space="preserve"><value>{0} of all orders ({1} / {2})</value></data>
+  <data name="Reports.CancellationsCombinedNote" xml:space="preserve"><value>Cancelled and rejected orders are counted together.</value></data>
+  <data name="Reports.CancellationRateDefinition" xml:space="preserve"><value>The rate is divided by all orders in the period, orders in progress included.</value></data>
+  <data name="Reports.RateByPlatform" xml:space="preserve"><value>Rate by platform</value></data>
+  <data name="Reports.DailyCancellations" xml:space="preserve"><value>Daily cancellations and rejections</value></data>
+  <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>By the day orders were placed</value></data>
+  <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Two complete periods of equal length</value></data>
+  <data name="Reports.ComparisonHint" xml:space="preserve"><value>By the day orders were placed, with their current status</value></data>
+  <data name="Reports.ThisPeriod" xml:space="preserve"><value>This period</value></data>
+  <data name="Reports.PreviousPeriod" xml:space="preserve"><value>Previous period</value></data>
+  <data name="Reports.CompletedPeriodDays" xml:space="preserve"><value>{0} days, complete</value></data>
+  <data name="Reports.Metric" xml:space="preserve"><value>Measure</value></data>
+  <data name="Reports.Difference" xml:space="preserve"><value>Difference</value></data>
+  <data name="Reports.Change" xml:space="preserve"><value>Change</value></data>
+  <data name="Reports.NotComparable" xml:space="preserve"><value>Not comparable</value></data>
+  <data name="Reports.ComparisonChartHint" xml:space="preserve"><value>Both periods are aligned by day number</value></data>
+  <data name="Reports.DayIndex" xml:space="preserve"><value>Day {0}</value></data>
+  <data name="Reports.ComparisonNeedsComplete" xml:space="preserve"><value>This period cannot be compared because today is not over. Comparisons use complete periods of equal length only.</value></data>
+  <data name="Reports.PickCompleteDays" xml:space="preserve"><value>Use the last {0} complete days</value></data>
+  <data name="Reports.ComparisonUnavailable" xml:space="preserve"><value>The previous period is outside the available dates, so no comparison can be made.</value></data>
+  <data name="Reports.NoOrdersTitle" xml:space="preserve"><value>No orders in this period</value></data>
+  <data name="Reports.NoOrdersHint" xml:space="preserve"><value>No orders are stored for the selected period and platform. Try another period or all platforms.</value></data>
+  <data name="Reports.InvalidTitle" xml:space="preserve"><value>This selection cannot produce a report</value></data>
+  <data name="Reports.FailureTitle" xml:space="preserve"><value>The report could not be loaded</value></data>
+  <data name="Reports.FailureHint" xml:space="preserve"><value>The server could not be reached. Your period and platform are kept. This does not mean you have no orders.</value></data>
+  <data name="Reports.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Reports.Loading" xml:space="preserve"><value>Loading the report</value></data>
+  <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Report updated: {0}, {1} orders</value></data>
+  <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>The selected period is not recognised.</value></data>
+  <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Enter a valid start date.</value></data>
+  <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Enter a valid end date.</value></data>
+  <data name="Reports.FilterError.DatesRequireCustomPreset" xml:space="preserve"><value>Dates can be used with a custom range only.</value></data>
+  <data name="Reports.FilterError.CustomRangeIncomplete" xml:space="preserve"><value>Enter both a start and an end date.</value></data>
+  <data name="Reports.FilterError.RangeInverted" xml:space="preserve"><value>The end date cannot be before the start date.</value></data>
+  <data name="Reports.FilterError.RangeTooLong" xml:space="preserve"><value>You can select at most {0} days.</value></data>
+  <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>A day after today cannot be selected.</value></data>
+  <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>The selected platform is not recognised.</value></data>
+  <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>The link contains the same filter more than once.</value></data>
 </root>
