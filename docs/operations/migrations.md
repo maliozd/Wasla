@@ -91,6 +91,18 @@ Requires `ENCRYPTION_MASTER_KEY` for most CLI invocation paths used after help (
 - In deployed environments every tenant migration must succeed before the new Web or Worker starts. Use the release gate in [deployment.md](deployment.md#release-order-migrate-every-database-first), not the informational `migration-status` exit code alone. `migrate-all-tenants --dry-run` is also informational and must not be used as a release gate.
 - Do not reset or squash migrations unless explicitly requested as a dedicated task.
 
+## Rollback guards
+
+Some CentralDb migrations refuse their own `Down` while rolling back would delete evidence. The refusal is a SQL error with its own number, raised before anything changes:
+
+| Migration | Error | Refuses while |
+|-----------|-------|---------------|
+| `AddBillingSubscriptions` | 50147 | Any plan price, subscription or payment exists ([../architecture/billing.md](../architecture/billing.md#migration-and-rollback)) |
+| `AddBillingPlanPriceCorrections` | 50064 | Any plan price correction is recorded |
+| `AddRegistrationDrafts` | 50192 | Any registration holds an owner phone verification time (`PendingRegistrations.OwnerPhoneVerifiedAtUtc`); drafts, verification rows and send records are dropped ([../architecture/signup-registration.md](../architecture/signup-registration.md#persistence)) |
+
+An operator who really means to roll back exports and clears that data first; once real data matters, roll forward instead. Each guard is tested on SQL Server ([testing.md](testing.md#sql-server-concurrency-tests)).
+
 ## Related docs
 
 - [cli.md](cli.md)

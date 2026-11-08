@@ -1,0 +1,2 @@
+# DRAFT wording, pending approval of the verification message in WAS-193. Lines starting with # are template comments and are never sent.
+رمز التحقق الخاص بك في Wasla هو {{Code}}. الرمز صالح لمدة {{Minutes}} دقائق. لا تشارك هذا الرمز مع أي شخص.

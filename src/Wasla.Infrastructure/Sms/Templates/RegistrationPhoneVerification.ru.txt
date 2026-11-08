@@ -1,0 +1,2 @@
+# DRAFT wording, pending approval of the verification message in WAS-193. Lines starting with # are template comments and are never sent.
+Ваш код подтверждения Wasla: {{Code}}. Код действителен {{Minutes}} минут. Никому не сообщайте этот код.

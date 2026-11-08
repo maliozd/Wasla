@@ -1,0 +1,11 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* A step's error summary (Figma V1): filled by signup-flow.js when a step has several invalid fields, each item a link
+   to its field, and focused; one invalid field is focused directly instead. Inline errors stay at the fields. *@
+<div class="su-notice su-notice--danger su-error-summary" data-su-error-summary tabindex="-1" hidden>
+    <i class="bi bi-x-circle" aria-hidden="true"></i>
+    <div>
+        <strong class="su-notice__title">@L["Signup.Flow.ErrorSummaryTitle"]</strong>
+        <ul></ul>
+    </div>
+</div>

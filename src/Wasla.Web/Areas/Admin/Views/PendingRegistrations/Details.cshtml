@@ -1,6 +1,7 @@
 @model Wasla.Web.Areas.Admin.Models.AdminPendingRegistrationDetailViewModel
 @using Microsoft.Extensions.Localization
 @using Wasla.Domain.Enums
+@using Wasla.Web.Formatting
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     ViewData["Title"] = L["Admin.PendingReg.DetailsTitle"].Value;
@@ -124,7 +125,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
             {
                 <dt class="col-sm-3 text-muted">@L["Admin.PendingReg.OwnerPhone"]</dt>
-                <dd class="col-sm-9">@Model.OwnerPhone</dd>
+                <dd class="col-sm-9">@TurkishPhoneDisplayFormatter.FormatStored(Model.OwnerPhone)</dd>
             }
         </dl>
     </div>
