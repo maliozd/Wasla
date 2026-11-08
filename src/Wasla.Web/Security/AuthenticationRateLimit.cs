@@ -36,7 +36,12 @@ public sealed class WebAuthenticationRateLimiter : IDisposable
             [AuthenticationRateLimitPolicies.CentralAdminLogin] = Create(AuthenticationRateLimitPolicies.CentralAdminLogin),
             [AuthenticationRateLimitPolicies.SignupSubmission] = Create(AuthenticationRateLimitPolicies.SignupSubmission),
             [AuthenticationRateLimitPolicies.SignupCheckout] = Create(AuthenticationRateLimitPolicies.SignupCheckout),
-            [AuthenticationRateLimitPolicies.ContactSubmission] = Create(AuthenticationRateLimitPolicies.ContactSubmission)
+            [AuthenticationRateLimitPolicies.ContactSubmission] = Create(AuthenticationRateLimitPolicies.ContactSubmission),
+            [AuthenticationRateLimitPolicies.SignupDraftSave] = Create(AuthenticationRateLimitPolicies.SignupDraftSave),
+            [AuthenticationRateLimitPolicies.SignupDraftCreation] = Create(AuthenticationRateLimitPolicies.SignupDraftCreation),
+            [AuthenticationRateLimitPolicies.SignupPhoneSend] = Create(AuthenticationRateLimitPolicies.SignupPhoneSend),
+            [AuthenticationRateLimitPolicies.SignupPhoneVerify] = Create(AuthenticationRateLimitPolicies.SignupPhoneVerify),
+            [AuthenticationRateLimitPolicies.SignupAddressAvailability] = Create(AuthenticationRateLimitPolicies.SignupAddressAvailability)
         };
     }
 

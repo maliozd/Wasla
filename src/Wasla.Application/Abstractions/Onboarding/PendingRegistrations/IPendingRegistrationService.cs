@@ -6,7 +6,8 @@ public interface IPendingRegistrationService
 {
     Task<bool> IsSlugAvailableAsync(string slug, CancellationToken ct);
 
-    Task<PendingRegistrationResult> SubmitAsync(PendingRegistrationRequest request, CancellationToken ct);
+    // A registration is created only by the verified registration draft submit (WAS-192,
+    // IRegistrationDraftService.SubmitAsync); this interface offers no way to create one.
 
     Task<PendingRegistrationSummary?> GetSummaryAsync(Guid registrationId, CancellationToken ct);
 

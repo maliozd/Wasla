@@ -1,0 +1,2 @@
+# DRAFT wording, pending approval of the verification message in WAS-193. Lines starting with # are template comments and are never sent.
+Your Wasla verification code is {{Code}}. It is valid for {{Minutes}} minutes. Do not share this code with anyone.

@@ -45,6 +45,10 @@ public sealed class WaslaAuthCookieInventoryTests
             new Dictionary<string, object?> { [nameof(CentralAdminAuthCookieNames.Active)] = ".Wasla.CentralAdminAuth" },
             PublicStaticValues(typeof(CentralAdminAuthCookieNames)));
         Assert.Equal(".Wasla.SignupRegistration", SignupRegistrationOwnership.CookieName);
+        // The registration draft cookie (WAS-192): __Host- wherever it is Secure, unprefixed in Development over HTTP.
+        Assert.Equal("__Host-Wasla.SignupDraft", SignupDraftCookie.SecureCookieName);
+        Assert.Equal(".Wasla.SignupDraft", SignupDraftCookie.DevelopmentHttpCookieName);
+        Assert.Equal("/", SignupDraftCookie.CookiePath);
     }
 
     [Theory]

@@ -95,6 +95,30 @@ public sealed partial class AdminPendingRegistrationsWebTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Detail_ShowsAVerifiedOwnerPhoneInTheTurkishFormat_AndAnOlderValueAsStored()
+    {
+        // A verified owner phone is stored in E.164 (WAS-192); a registration from before keeps what was typed.
+        var verified = _central.AddRegistration("verified-kebap", PendingRegistrationStatus.AwaitingPayment).Id;
+        var older = _central.AddRegistration("older-kebap", PendingRegistrationStatus.AwaitingPayment).Id;
+        using (var db = _central.CreateContext())
+        {
+            var verifiedRow = db.PendingRegistrations.Single(r => r.Id == verified);
+            verifiedRow.OwnerPhone = "+905321234567";
+            verifiedRow.OwnerPhoneVerifiedAtUtc = DateTime.UtcNow;
+            db.PendingRegistrations.Single(r => r.Id == older).OwnerPhone = "0532 765 43 21";
+            db.SaveChanges();
+        }
+
+        using var browser = await _host.SignedInAdminAsync("en-US");
+        var verifiedPage = WebUtility.HtmlDecode((await browser.GetAsync($"/admin/pending-registrations/{verified}")).Body);
+        var olderPage = WebUtility.HtmlDecode((await browser.GetAsync($"/admin/pending-registrations/{older}")).Body);
+
+        Assert.Contains("+90 532 123 45 67", verifiedPage, StringComparison.Ordinal);
+        Assert.DoesNotContain("+905321234567", verifiedPage, StringComparison.Ordinal);
+        Assert.Contains("0532 765 43 21", olderPage, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Provision_OfAnEligibleRegistration_StillCallsProvisioning_WithTheTenantLoginUrl()
     {
         using var browser = await _host.SignedInAdminAsync("en-US");

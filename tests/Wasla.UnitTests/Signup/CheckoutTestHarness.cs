@@ -20,6 +20,7 @@ using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Plans;
 using Wasla.Infrastructure.Services;
+using Wasla.Infrastructure.Sms;
 using Wasla.Web.Controllers;
 using Wasla.Web.Security;
 
@@ -108,16 +109,37 @@ internal sealed class CheckoutTestHarness : IDisposable
         context.Request.Scheme = https ? "https" : "http";
         context.Request.IsHttps = https;
 
+        // Registration drafts without an SMS sender: these tests read the status pages, not the draft flow.
+        var signupOptions = Options.Create(new SignupOptions());
+        var sms = new DisabledSmsSender();
         return new SignupController(
             CreateService(),
+            new RegistrationDraftService(
+                Db,
+                new WaslaPlanCatalog(),
+                new SignupReferenceDataService(Db),
+                CreateService(),
+                sms,
+                signupOptions,
+                TimeProvider.System,
+                NullLogger<RegistrationDraftService>.Instance),
+            new RegistrationPhoneVerificationService(
+                Db,
+                sms,
+                new SmsMessageTemplates(),
+                _dataProtection,
+                signupOptions,
+                TimeProvider.System,
+                NullLogger<RegistrationPhoneVerificationService>.Instance),
             new SignupReferenceDataService(Db),
             new WaslaPlanCatalog(),
             new BillingPlanPriceReader(Db, TimeProvider.System),
-            new InlineValidator<PendingRegistrationRequest>(),
             _options,
+            signupOptions,
             new KeyEchoLocalizer(),
             new TestWebHostEnvironment(environmentName),
-            _dataProtection)
+            _dataProtection,
+            TimeProvider.System)
         {
             ControllerContext = new ControllerContext { HttpContext = context }
         };

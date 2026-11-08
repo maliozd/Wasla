@@ -243,7 +243,19 @@ Every endpoint that accepts a password is limited:
 | Web `POST /admin/login` | `auth-central-admin-login` | Client network (on any host) | 5 attempts per 5 minutes |
 | Api `POST /api/auth/validate` | `auth-api-credential-validation` | Resolved tenant + client network | 10 attempts per 5 minutes |
 
-The same mechanism and configuration section also limit anonymous signup: `signup-submission` (`POST /signup`, 10 per hour per client network) and `signup-checkout` (the checkout POSTs that change a registration, 20 per 10 minutes). See [tenancy.md](tenancy.md#signup-abuse-limits). The public contact form uses it too: `contact-submission` (`POST /contact`, 5 per hour per client network, `AuthenticationRateLimiting:ContactSubmission`); over the limit the form is shown again with status 429 and `Contact.TooManyAttempts`, and nothing is stored or sent. Outside these policies: the forgot-password POST keeps its own earlier policy (`tenant-forgot-password`, 5 per 10 minutes per host and address); the reset-password POST (which needs a one-time emailed token) and Print Bridge device-token requests have no limit from this section.
+The same mechanism and configuration section also limit anonymous signup, per client network ([tenancy.md](tenancy.md#signup-abuse-limits), [signup-registration.md](signup-registration.md#limits)):
+
+| Endpoint | Policy (`AuthenticationRateLimiting:` key) | Default limit |
+|----------|--------------------------------------------|---------------|
+| Web `PUT /signup/draft/plan`, `/restaurant`, `/owner` and `PUT /signup/draft/phone` | `signup-draft-save` (`SignupDraftSave`) | 60 per 10 minutes |
+| A draft write without a draft cookie, which creates a draft | `signup-draft-creation` (`SignupDraftCreation`), on top of the above | 20 per hour |
+| Web `POST /signup/draft/phone/send` | `signup-phone-send` (`SignupPhoneSend`) | 10 per hour |
+| Web `POST /signup/draft/phone/verify` | `signup-phone-verify` (`SignupPhoneVerify`) | 30 per 10 minutes |
+| Web `GET /signup/address-availability` | `signup-address-availability` (`SignupAddressAvailability`) | 60 per 5 minutes |
+| Web `POST /signup/draft/submit` | `signup-submission` (`SignupSubmission`) | 10 per hour |
+| The checkout POSTs that change a registration | `signup-checkout` (`SignupCheckout`) | 20 per 10 minutes |
+
+Over a draft API limit the answer is `429` with `Retry-After` and the JSON error `Signup.TooManyAttempts`; nothing is read or written. The phone verification limits per draft, per number and for the global SMS volume are counted in CentralDb instead ([signup-registration.md](signup-registration.md#limits)). The public contact form uses it too: `contact-submission` (`POST /contact`, 5 per hour per client network, `AuthenticationRateLimiting:ContactSubmission`); over the limit the form is shown again with status 429 and `Contact.TooManyAttempts`, and nothing is stored or sent. Outside these policies: the forgot-password POST keeps its own earlier policy (`tenant-forgot-password`, 5 per 10 minutes per host and address); the reset-password POST (which needs a one-time emailed token) and Print Bridge device-token requests have no limit from this section.
 
 **How it counts.** Each policy is a fixed window per partition with no queue. Every attempt counts: a success, a wrong password, an unknown email and an invalid form alike. When the window ends the partition starts again from zero; there is no account lockout and nothing is stored.
 

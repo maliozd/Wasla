@@ -47,6 +47,9 @@
     <EmbeddedResource Include="Email/Templates/*.txt">
       <WithCulture>false</WithCulture>
     </EmbeddedResource>
+    <EmbeddedResource Include="Sms/Templates/*.txt">
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

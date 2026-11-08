@@ -54,6 +54,7 @@ public sealed partial class WaslaConfigurationKeyTests
         "Wasla:Contact:RecipientEmail",
         "Wasla:PrintBridgeDownload:PackageFileName",
         "Wasla:PrintBridgeDownload:PackagePath",
+        "Wasla:Sms:Mode",
         "Wasla:TenantOnboarding:ApplicationBaseDomain",
         "Wasla:TenantOnboarding:MarketingBaseDomain",
         "Wasla:TenantOnboarding:SqlAuth",
@@ -118,6 +119,9 @@ public sealed partial class WaslaConfigurationKeyTests
         var development = Load("Wasla.Web", "appsettings.json", "appsettings.Development.json");
         Assert.Equal("wasla.local", development["Wasla:TenantOnboarding:MarketingBaseDomain"]);
         Assert.Equal("app.wasla.local", development["Wasla:TenantOnboarding:ApplicationBaseDomain"]);
+        // The fake SMS sender is a Development tool (WAS-192); the base file names no sender, so verification fails closed.
+        Assert.Null(web["Wasla:Sms:Mode"]);
+        Assert.Equal("Fake", development["Wasla:Sms:Mode"]);
         Assert.Equal("trusted", web["Wasla:TenantOnboarding:SqlAuth"]);
         Assert.Equal("14", web["Wasla:TenantOnboarding:TrialDays"]);
         Assert.Equal(PrintBridgePackagePaths.DefaultPackageFileName, web["Wasla:PrintBridgeDownload:PackageFileName"]);
@@ -331,6 +335,13 @@ public sealed partial class WaslaConfigurationKeyTests
         };
         approved.UnionWith(typeof(TenantOnboardingOptions).GetProperties().Select(p => $"{TenantOnboardingOptions.SectionName}:{p.Name}"));
         approved.UnionWith(typeof(MarketingSiteOptions).GetProperties().Select(p => $"{MarketingSiteOptions.SectionName}:{p.Name}"));
+        // Registration drafts and owner phone verification (WAS-192).
+        approved.Add($"{SmsOptions.SectionName}:{nameof(SmsOptions.Mode)}");
+        approved.Add($"{SignupOptions.SectionName}:{nameof(SignupOptions.SupportEmail)}");
+        approved.UnionWith(typeof(RegistrationDraftLifetimeOptions).GetProperties()
+            .Select(p => $"{SignupOptions.SectionName}:{nameof(SignupOptions.Draft)}:{p.Name}"));
+        approved.UnionWith(typeof(PhoneVerificationOptions).GetProperties()
+            .Select(p => $"{SignupOptions.SectionName}:{nameof(SignupOptions.PhoneVerification)}:{p.Name}"));
 
         return approved.Contains(key) || approved.Any(a => a.StartsWith(key + ":", StringComparison.Ordinal));
     }

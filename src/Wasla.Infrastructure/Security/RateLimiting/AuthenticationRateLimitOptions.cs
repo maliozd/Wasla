@@ -17,7 +17,10 @@ public static class AuthenticationRateLimitPolicies
     /// <summary>Api credential check, <c>POST /api/auth/validate</c>. Partitioned by resolved tenant and client network.</summary>
     public const string ApiCredentialValidation = "auth-api-credential-validation";
 
-    /// <summary>Anonymous signup, <c>POST /signup</c>, which creates a pending registration. Partitioned by client network.</summary>
+    /// <summary>
+    /// The registration draft submit, <c>POST /signup/draft/submit</c>, which creates a pending registration (WAS-192).
+    /// Partitioned by client network.
+    /// </summary>
     public const string SignupSubmission = "signup-submission";
 
     /// <summary>
@@ -31,6 +34,27 @@ public static class AuthenticationRateLimitPolicies
     /// by client network.
     /// </summary>
     public const string ContactSubmission = "contact-submission";
+
+    /// <summary>
+    /// Registration draft writes (WAS-192): the section saves under <c>/signup/draft</c> and the owner phone change.
+    /// Partitioned by client network.
+    /// </summary>
+    public const string SignupDraftSave = "signup-draft-save";
+
+    /// <summary>
+    /// A draft write that creates a new registration draft (the request has no live draft cookie), counted on top of
+    /// <see cref="SignupDraftSave"/>. Partitioned by client network.
+    /// </summary>
+    public const string SignupDraftCreation = "signup-draft-creation";
+
+    /// <summary>Owner phone verification code sends and resends, <c>POST /signup/draft/phone/send</c>. Partitioned by client network.</summary>
+    public const string SignupPhoneSend = "signup-phone-send";
+
+    /// <summary>Owner phone verification code checks, <c>POST /signup/draft/phone/verify</c>. Partitioned by client network.</summary>
+    public const string SignupPhoneVerify = "signup-phone-verify";
+
+    /// <summary>The advisory panel-address check, <c>GET /signup/address-availability</c>. Partitioned by client network.</summary>
+    public const string SignupAddressAvailability = "signup-address-availability";
 
     /// <summary>Whether the policy's partitions are per tenant (the tenant resolved from the host, never from the request body).</summary>
     public static bool IsTenantScoped(string policy) =>
@@ -58,6 +82,16 @@ public sealed class AuthenticationRateLimitOptions
 
     public AuthenticationRateLimitRule ContactSubmission { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromHours(1) };
 
+    public AuthenticationRateLimitRule SignupDraftSave { get; set; } = new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(10) };
+
+    public AuthenticationRateLimitRule SignupDraftCreation { get; set; } = new() { PermitLimit = 20, Window = TimeSpan.FromHours(1) };
+
+    public AuthenticationRateLimitRule SignupPhoneSend { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromHours(1) };
+
+    public AuthenticationRateLimitRule SignupPhoneVerify { get; set; } = new() { PermitLimit = 30, Window = TimeSpan.FromMinutes(10) };
+
+    public AuthenticationRateLimitRule SignupAddressAvailability { get; set; } = new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(5) };
+
     public AuthenticationRateLimitRule For(string policy) => policy switch
     {
         AuthenticationRateLimitPolicies.TenantLogin => TenantLogin,
@@ -66,6 +100,11 @@ public sealed class AuthenticationRateLimitOptions
         AuthenticationRateLimitPolicies.SignupSubmission => SignupSubmission,
         AuthenticationRateLimitPolicies.SignupCheckout => SignupCheckout,
         AuthenticationRateLimitPolicies.ContactSubmission => ContactSubmission,
+        AuthenticationRateLimitPolicies.SignupDraftSave => SignupDraftSave,
+        AuthenticationRateLimitPolicies.SignupDraftCreation => SignupDraftCreation,
+        AuthenticationRateLimitPolicies.SignupPhoneSend => SignupPhoneSend,
+        AuthenticationRateLimitPolicies.SignupPhoneVerify => SignupPhoneVerify,
+        AuthenticationRateLimitPolicies.SignupAddressAvailability => SignupAddressAvailability,
         _ => throw new ArgumentOutOfRangeException(nameof(policy), policy, "Unknown authentication rate-limit policy.")
     };
 }
@@ -98,6 +137,11 @@ public sealed class AuthenticationRateLimitOptionsValidator : IValidateOptions<A
         Check(options.SignupSubmission, nameof(AuthenticationRateLimitOptions.SignupSubmission), failures);
         Check(options.SignupCheckout, nameof(AuthenticationRateLimitOptions.SignupCheckout), failures);
         Check(options.ContactSubmission, nameof(AuthenticationRateLimitOptions.ContactSubmission), failures);
+        Check(options.SignupDraftSave, nameof(AuthenticationRateLimitOptions.SignupDraftSave), failures);
+        Check(options.SignupDraftCreation, nameof(AuthenticationRateLimitOptions.SignupDraftCreation), failures);
+        Check(options.SignupPhoneSend, nameof(AuthenticationRateLimitOptions.SignupPhoneSend), failures);
+        Check(options.SignupPhoneVerify, nameof(AuthenticationRateLimitOptions.SignupPhoneVerify), failures);
+        Check(options.SignupAddressAvailability, nameof(AuthenticationRateLimitOptions.SignupAddressAvailability), failures);
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
     }

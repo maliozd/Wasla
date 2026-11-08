@@ -1,0 +1,2 @@
+# DRAFT wording, pending approval of the verification message in WAS-193. Lines starting with # are template comments and are never sent.
+Wasla doğrulama kodunuz: {{Code}}. Kod {{Minutes}} dakika geçerlidir. Bu kodu kimseyle paylaşmayın.

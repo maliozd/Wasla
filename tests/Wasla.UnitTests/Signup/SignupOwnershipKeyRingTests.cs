@@ -116,35 +116,20 @@ public sealed class SignupOwnershipKeyRingTests : IAsyncLifetime
         Assert.Contains("PersistKeysToFileSystem(", program);
     }
 
-    private async Task<string> SignUpAndGetProofAsync(SignupWebHost host)
+    private static async Task<string> SignUpAndGetProofAsync(SignupWebHost host)
     {
-        using var browser = host.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup");
-        var slug = $"s{SentinelApplicant.NewToken()}";
-        var submitted = await browser.PostFormAsync("/signup",
-        [
-            new("__RequestVerificationToken", token),
-            new("PlanCode", "Starter"),
-            new("BillingPeriod", "Monthly"),
-            new("BusinessName", "Key Ring Test"),
-            new("SelectedBusinessTypeCodes", "burger"),
-            new("BusinessPhoneType", "Mobile"),
-            new("BusinessPhone", SentinelApplicant.NewPhone()),
-            new("Slug", slug),
-            new("Country", "Germany"),
-            new("CityId", "1"),
-            new("DistrictId", "1"),
-            new("City", "Berlin"),
-            new("District", "Mitte"),
-            new("StreetAddress", "Main Street 1"),
-            new("OwnerFullName", $"Keyringowner{slug}"),
-            new("OwnerEmail", $"{slug}@sentinel.test"),
-            new("Password", "Sentinel-pass-1"),
-            new("ConfirmPassword", "Sentinel-pass-1")
-        ]);
+        // The registration draft flow (WAS-192): the proof is issued by the verified draft submit.
+        using var client = new SignupDraftClient(host);
+        await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync());
+        var owner = client.Owner();
+        owner["fullName"] = $"Keyringowner{SentinelApplicant.NewToken()}";
+        await SignupDraftClient.AssertOkAsync(client.SaveOwnerAsync(owner));
+        await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
+        await SignupDraftClient.AssertOkAsync(client.VerifyAsync(client.LatestCode()));
+        await SignupDraftClient.AssertOkAsync(client.SubmitAsync());
 
-        Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
-        var proof = browser.GetCookie(SignupWebHost.CentralHost, SignupRegistrationOwnership.CookieName);
+        var proof = client.Browser.GetCookie(SignupWebHost.CentralHost, SignupRegistrationOwnership.CookieName);
         Assert.False(string.IsNullOrEmpty(proof));
         return proof!;
     }
