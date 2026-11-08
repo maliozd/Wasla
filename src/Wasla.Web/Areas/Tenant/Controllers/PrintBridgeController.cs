@@ -449,6 +449,11 @@ public sealed class PrintBridgeController : BaseController
                 message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
             });
         }
+        catch (InvalidOperationException)
+        {
+            // The tenant's quota lock was not granted in time (WAS-190); nothing was changed.
+            return BadRequest(new { success = false, message = _localizer["PrintBridge.DeviceUpdateFailed"].Value });
+        }
     }
 
     [HttpGet("print-jobs")]

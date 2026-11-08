@@ -69,7 +69,7 @@ internal sealed class PrintBridgeTransferBackend : IDisposable
         new(db, Devices(db), NoLocks.Instance, new Checker(this), NullLogger<PrintBridgeSetupSessionService>.Instance);
 
     public PrintBridgeDeviceManagementService Devices(CentralDbContext db) =>
-        new(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, new Checker(this));
+        new(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, new Checker(this), NoLocks.Instance);
 
     public PrintBridgeAuthService Auth(CentralDbContext db) => new(db, NullLogger<PrintBridgeAuthService>.Instance);
 
