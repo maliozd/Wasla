@@ -57,6 +57,8 @@ Every figure comes from one SQL statement that groups the cohort by platform, st
 | `startDate`, `endDate` | Local days, invariant Gregorian `yyyy-MM-dd` from 2000-01-01, as the Orders date filter. Required together for `custom`; refused with any other preset |
 | `platform` | A defined platform name (`Yemeksepeti`, `GetirYemek`, `TrendyolYemek`, case-insensitive) or its number (1–3). Missing or empty means every platform |
 
+"Empty" means no characters (`platform=`). A value of only spaces or tabs (`platform=%20`, `startDate=+`) is not empty and is refused with that parameter's error code; the Api binds these parameters as submitted (`FromQueryAsSubmittedAttribute`), because MVC's default string binding would turn such a value into a missing one.
+
 | Preset | Local days |
 | --- | --- |
 | `today` | today |

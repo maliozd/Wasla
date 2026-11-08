@@ -110,12 +110,17 @@ public sealed class DashboardController : ControllerBase
     /// last7days, last30days, custom), <c>startDate</c> and <c>endDate</c> (yyyy-MM-dd, custom only), <c>platform</c>.
     /// An invalid filter answers 400 with an error code per parameter; nothing is widened.
     /// </summary>
+    /// <remarks>
+    /// The filter values are bound as submitted (<see cref="FromQueryAsSubmittedAttribute"/>): MVC's own binding turns a
+    /// whitespace-only value into null, which would make <c>platform=%20</c> "every platform" or <c>startDate=%20</c> a
+    /// missing date instead of a refused one.
+    /// </remarks>
     [HttpGet("report")]
     public async Task<ActionResult<OrderReportDto>> Report(
-        [FromQuery] string? preset,
-        [FromQuery] string? startDate,
-        [FromQuery] string? endDate,
-        [FromQuery] string? platform,
+        [FromQueryAsSubmitted] string? preset,
+        [FromQueryAsSubmitted] string? startDate,
+        [FromQueryAsSubmitted] string? endDate,
+        [FromQueryAsSubmitted] string? platform,
         CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
