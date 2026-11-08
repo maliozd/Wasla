@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Wasla.Infrastructure.Persistence.Central;
@@ -82,7 +83,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
         Func<CentralDbContext, Task<T>> first,
         Func<CentralDbContext, Task<T>> second)
     {
-        var hold = new HoldBeforeDeviceWrite();
+        var hold = new HoldBeforeCommand(IsDeviceWrite);
         await using var firstDb = database.Open("Holder", hold);
         await using var secondDb = database.Open("Waiter");
         var firstSession = await SessionIdAsync(firstDb);
@@ -96,7 +97,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
         string? notWaiting;
         try
         {
-            notWaiting = await WaitForApplicationLockAsync(secondSession, firstSession, secondTask);
+            notWaiting = await WaitForLockAsync(secondSession, firstSession, secondTask, " on APPLICATION", "the first writer's tenant lock");
         }
         finally
         {
@@ -111,10 +112,57 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
     }
 
     /// <summary>
-    /// Null once SQL Server reports <paramref name="waiter"/> waiting for an application lock held by
-    /// <paramref name="holder"/>; otherwise what was seen instead.
+    /// Overlaps <paramref name="read"/> with a writer that changes one device row in two steps, in the lock order of a real
+    /// update of an indexed column: the row first, then the index key (WAS-203). The writer locks the row, the read runs
+    /// until SQL Server reports it waiting for that row, and only then does the writer change the indexed column and
+    /// commit. A read that kept a lock on the index key meanwhile deadlocks with the writer here, every time: the writer's
+    /// deadlock priority makes the read the victim, as it was in the captured deadlocks, and <paramref name="read"/>
+    /// throws. <paramref name="readFrom"/> starts the writer at that command of the read instead of before the read.
     /// </summary>
-    private async Task<string?> WaitForApplicationLockAsync(int waiter, int holder, Task writer)
+    public async Task<T> ReadDuringTwoStepDeviceWriteAsync<T>(
+        Guid deviceId,
+        Func<CentralDbContext, Task> changeIndexedColumn,
+        Func<DbCommand, bool>? readFrom,
+        Func<CentralDbContext, Task<T>> read)
+    {
+        var hold = readFrom is null ? null : new HoldBeforeCommand(readFrom);
+        await using var readerDb = hold is null ? database.Open("Reader") : database.Open("Reader", hold);
+        await using var writerDb = database.Open("RowWriter");
+        var readerSession = await SessionIdAsync(readerDb);
+        var writerSession = await SessionIdAsync(writerDb);
+        await writerDb.Database.ExecuteSqlRawAsync("SET DEADLOCK_PRIORITY HIGH", Ct);
+
+        var reader = hold is null ? null : Task.Run(() => read(readerDb), Ct);
+        if (hold is not null && await Task.WhenAny(hold.Reached, reader!).WaitAsync(Deadline, Ct) != hold.Reached)
+            Assert.Fail($"The read ended before the command it was held at: {await reader!}.");
+
+        string? notWaiting;
+        await using (var transaction = await writerDb.Database.BeginTransactionAsync(Ct))
+        {
+            await writerDb.Database.ExecuteSqlAsync(
+                $"UPDATE [PrintBridgeDevices] SET [UpdatedAt] = SYSUTCDATETIME() WHERE [Id] = {deviceId}",
+                Ct);
+            hold?.Release();
+            reader ??= Task.Run(() => read(readerDb), Ct);
+            notWaiting = await WaitForLockAsync(readerSession, writerSession, reader, " on KEY", "the writer's device row");
+            await changeIndexedColumn(writerDb);
+            await transaction.CommitAsync(Ct);
+        }
+
+        var result = await reader.WaitAsync(Deadline, Ct);
+        Assert.True(notWaiting is null, $"{notWaiting} The read answered: {result}.");
+        return result;
+    }
+
+    /// <summary>A Print Bridge device read that locks its rows and selects them by <paramref name="column"/>.</summary>
+    public static bool IsLockingDeviceReadBy(DbCommand command, string column) =>
+        Regex.IsMatch(command.CommandText, $@"READCOMMITTEDLOCK.*?\)\s+WHERE \[{column}\] =");
+
+    /// <summary>
+    /// Null once SQL Server reports <paramref name="waiter"/> waiting, on a resource named by
+    /// <paramref name="resource"/>, for <paramref name="holder"/>; otherwise what was seen instead.
+    /// </summary>
+    private async Task<string?> WaitForLockAsync(int waiter, int holder, Task writer, string resource, string description)
     {
         await using var inspector = database.Open("LockInspector");
         var until = DateTime.UtcNow + Deadline;
@@ -122,7 +170,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
         while (DateTime.UtcNow < until)
         {
             if (writer.IsCompleted)
-                return $"The second writer finished instead of waiting for the first writer's tenant lock (last seen: {seen}).";
+                return $"The caller finished instead of waiting for {description} (last seen: {seen}).";
 
             var waits = await inspector.Database
                 .SqlQuery<string>($"""
@@ -130,14 +178,14 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
                     WHERE session_id = {waiter} AND blocking_session_id = {holder}
                     """)
                 .ToListAsync(Ct);
-            if (waits.Any(w => w.Contains(" on APPLICATION", StringComparison.Ordinal)))
+            if (waits.Any(w => w.Contains(resource, StringComparison.Ordinal)))
                 return null;
             if (waits.Count > 0)
                 seen = string.Join(", ", waits);
             await Task.Delay(10, Ct);
         }
 
-        return $"The second writer never waited for the first writer's tenant lock (last seen: {seen}).";
+        return $"The caller never waited for {description} (last seen: {seen}).";
     }
 
     private static async Task<int> SessionIdAsync(CentralDbContext db)
@@ -151,8 +199,8 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
         command.CommandText.Contains("INSERT INTO [PrintBridgeDevices]", StringComparison.Ordinal)
         || command.CommandText.Contains("UPDATE [PrintBridgeDevices]", StringComparison.Ordinal);
 
-    /// <summary>Holds its context once, right before its first device write, until released.</summary>
-    private sealed class HoldBeforeDeviceWrite : DbCommandInterceptor
+    /// <summary>Holds its context once, right before the first command that matches, until released.</summary>
+    private sealed class HoldBeforeCommand(Func<DbCommand, bool> match) : DbCommandInterceptor
     {
         private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _released = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -178,7 +226,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
 
         private async Task HoldAsync(DbCommand command, CancellationToken cancellationToken)
         {
-            if (IsDeviceWrite(command) && Interlocked.Exchange(ref _held, 1) == 0)
+            if (match(command) && Interlocked.Exchange(ref _held, 1) == 0)
             {
                 _reached.TrySetResult();
                 await _released.Task.WaitAsync(Deadline, cancellationToken).ConfigureAwait(false);
