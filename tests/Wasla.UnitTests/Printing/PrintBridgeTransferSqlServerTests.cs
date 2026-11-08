@@ -15,9 +15,11 @@ namespace Wasla.UnitTests.Printing;
 /// <summary>
 /// WAS-91 on a real SQL Server (a throwaway CentralDb, see <see cref="SqlServerCentralDatabase"/>): moves of one Print
 /// Bridge installation racing each other and the ordinary exchange. Every caller has its own DbContext and connection
-/// pool, as separate requests or Web instances would, and all are released at one barrier. The installation and tenant
-/// application locks (<c>sp_getapplock</c>) and the serializable transaction must leave exactly one registration, one
-/// retired source and one used code. SQLite runs no application locks, so these races are only meaningful here.
+/// pool, as separate requests or Web instances would, and opens its connection before one start gate releases them all
+/// (<see cref="PrintBridgeSqlServerRace"/>). The installation and tenant application locks (<c>sp_getapplock</c>) and the
+/// serializable transaction must leave exactly one registration, one retired source and one used code. Two moves for a
+/// restaurant's last device place are held so that one waits for the other's tenant lock. SQLite runs no application
+/// locks, so these races are only meaningful here.
 /// </summary>
 public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
 {
@@ -28,6 +30,9 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     /// <summary>Unexpected failures logged by the services, shown in an assertion's message.</summary>
     private static readonly ErrorLog Errors = new();
     private readonly SqlServerCentralDatabase _database = new();
+    private readonly PrintBridgeSqlServerRace _race;
+
+    public PrintBridgeTransferSqlServerTests() => _race = new PrintBridgeSqlServerRace(_database);
 
     public ValueTask InitializeAsync() => _database.InitializeAsync();
 
@@ -49,8 +54,12 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
                 db => Service(db).TransferAsync(Request(sourceToken, installation, codeB, "https://bahce.app.wasla.tr/"), CancellationToken.None),
                 db => Service(db).TransferAsync(Request(sourceToken, installation, codeC, "https://cinar.app.wasla.tr/"), CancellationToken.None));
 
+            // The loser is refused either way. Under the locks its source is gone (SourceRejected); in its check before the
+            // locks it can read the source just before the winner commits and the winner's new registration just after
+            // (InstallationConflict). A deadlock or any other failure is not a refusal and fails the test.
             Assert.True(
-                results.Count(r => r.Outcome == PrintBridgeTransferOutcome.Ready) == 1 && results.Count(r => r.Outcome == PrintBridgeTransferOutcome.SourceRejected) == 1,
+                results.Count(r => r.Outcome == PrintBridgeTransferOutcome.Ready) == 1
+                    && results.Count(r => r.Outcome is PrintBridgeTransferOutcome.SourceRejected or PrintBridgeTransferOutcome.InstallationConflict) == 1,
                 $"Round {round}: {string.Join(", ", results.Select(r => r.Outcome))}; errors: {Errors.Text()}");
 
             await using var db = _database.Open("Inspector");
@@ -126,7 +135,7 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task MovesIntoARestaurantWithOnePlaceLeft_AtOnce_FillItOnce()
+    public async Task TwoMovesIntoARestaurantWithOnePlaceLeft_OneWaitingForTheOther_FillItOnce()
     {
         var (tenantA, _, tenantC) = await TenantsAsync();
         var full = Seed(_database.Open("Seed"), "dolu", "Dolu Lokanta", save: true);
@@ -140,13 +149,15 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
         var firstCode = await CreateSessionAsync(full, "https://dolu.app.wasla.tr/");
         var secondCode = await CreateSessionAsync(full, "https://dolu.app.wasla.tr/");
 
-        var results = await RaceAsync(
+        // The first move is held right before its device write, holding the restaurant's tenant lock and having counted
+        // one place left; it goes on only once the second is seen waiting for that lock.
+        var (held, waited) = await _race.ContendAsync(
             db => Service(db).TransferAsync(Request(firstToken, first, firstCode, "https://dolu.app.wasla.tr/"), CancellationToken.None),
             db => Service(db).TransferAsync(Request(secondToken, second, secondCode, "https://dolu.app.wasla.tr/"), CancellationToken.None));
 
         Assert.True(
-            results.Count(r => r.Outcome == PrintBridgeTransferOutcome.Ready) == 1 && results.Count(r => r.Outcome == PrintBridgeTransferOutcome.DeviceLimitReached) == 1,
-            $"{string.Join(", ", results.Select(r => r.Outcome))}; errors: {Errors.Text()}");
+            (held.Outcome, waited.Outcome) == (PrintBridgeTransferOutcome.Ready, PrintBridgeTransferOutcome.DeviceLimitReached),
+            $"{held.Outcome}, {waited.Outcome}; errors: {Errors.Text()}");
         await using var db = _database.Open("Inspector");
         Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, await db.PrintBridgeDevices.CountAsync(d => d.TenantId == full && d.IsActive && d.RemovedAtUtc == null, Ct));
     }
@@ -215,21 +226,9 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
         return [.. columns];
     }
 
-    /// <summary>Runs each call on its own context and connection pool, all released together.</summary>
-    private async Task<T[]> RaceAsync<T>(params Func<CentralDbContext, Task<T>>[] calls)
-    {
-        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var tasks = calls.Select((call, index) => Task.Run(async () =>
-        {
-            await using var db = _database.Open($"Racer{index}");
-            await db.Database.OpenConnectionAsync();
-            await start.Task;
-            return await call(db);
-        })).ToArray();
-
-        start.SetResult();
-        return await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(60));
-    }
+    /// <summary>Runs each call on its own context and connection pool, released together once all are connected.</summary>
+    private Task<T[]> RaceAsync<T>(params Func<CentralDbContext, Task<T>>[] calls) =>
+        _race.RaceAsync(meetAtDeviceWrite: false, calls);
 
     private async Task<(Guid A, Guid B, Guid C)> TenantsAsync()
     {
@@ -243,7 +242,7 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     private static PrintBridgeSetupSessionService Service(CentralDbContext db) =>
         new(
             db,
-            new PrintBridgeDeviceManagementService(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, NoPrinting.Instance),
+            new PrintBridgeDeviceManagementService(db, NullLogger<PrintBridgeDeviceManagementService>.Instance, NoPrinting.Instance, new SqlServerPrintBridgeSetupTenantLock(db)),
             new SqlServerPrintBridgeSetupTenantLock(db),
             NoPrinting.Instance,
             Errors);
