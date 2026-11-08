@@ -8,6 +8,10 @@ using Wasla.Web.Validation;
 
 namespace Wasla.Web.Models.Signup;
 
+/// <summary>
+/// The signup page. The form fields below remain for labels and the old form; from WAS-192 the page saves its steps
+/// through the JSON draft API (<see cref="SignupDraftEndpoints"/>) and no longer posts this model.
+/// </summary>
 public sealed class SignupViewModel
 {
     [Display(Name = "Signup.Plan")]
@@ -138,4 +142,36 @@ public sealed class SignupViewModel
     /// </summary>
     [BindNever]
     public IReadOnlyList<BillingPriceQuote> PlanPrices { get; set; } = Array.Empty<BillingPriceQuote>();
+
+    // --- Registration draft page (WAS-192). Set by the server for every render; never bound from a request. ----------
+
+    /// <summary>
+    /// The browser's draft as <c>GET /signup/draft</c> returns it, so a reload restores the steps. <c>Exists</c> is false
+    /// without a live draft. Embed it with <c>Json.Serialize</c> (camelCase, HTML-safe escaping).
+    /// </summary>
+    [BindNever]
+    public SignupDraftStateResponse InitialDraft { get; set; } = new();
+
+    /// <summary>The draft API URLs the page script calls.</summary>
+    [BindNever]
+    public SignupDraftEndpoints? Endpoints { get; set; }
+
+    /// <summary>
+    /// The plan the <c>?plan=</c> query asked for, normalized, when it names a known plan; otherwise null. A saved plan is
+    /// in <see cref="InitialDraft"/>.
+    /// </summary>
+    [BindNever]
+    public string? RequestedPlanCode { get; set; }
+
+    /// <summary>False when this environment has no SMS sender: phone verification, and so the signup, cannot complete.</summary>
+    [BindNever]
+    public bool IsPhoneVerificationAvailable { get; set; }
+
+    /// <summary>The digits of a verification code (approved: 6).</summary>
+    [BindNever]
+    public int PhoneCodeLength { get; set; } = 6;
+
+    /// <summary>The support address the page shows (<c>Wasla:Signup:SupportEmail</c>, default <c>destek@wasla.tr</c>).</summary>
+    [BindNever]
+    public string SupportEmail { get; set; } = string.Empty;
 }

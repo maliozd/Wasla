@@ -3,6 +3,9 @@
     if (typeof module !== "undefined" && module.exports) {
         module.exports = api;
     }
+    if (typeof window !== "undefined") {
+        window.WaslaSignupBusinessTypes = api;
+    }
     if (typeof document !== "undefined") {
         api.bind(document);
     }
@@ -82,36 +85,88 @@
         applyPanelState(root);
 
         form.addEventListener("submit", function (event) {
-            var error = doc.getElementById("signupBusinessTypeClientError");
-            var configEl = doc.getElementById("signupFormConfig");
-            var config = {};
-            try {
-                config = configEl ? JSON.parse(configEl.textContent || "{}") : {};
-            } catch (e) {
-                config = {};
+            if (!check(doc).ok) {
+                event.preventDefault();
             }
+        });
+    }
 
-            var result = validate(readCategories(root));
-            if (result.ok) {
-                if (error) {
-                    error.textContent = "";
-                    error.classList.add("d-none");
-                }
-                return;
-            }
+    // Validates the selection and shows or clears the field's error (WAS-194: the restaurant step runs it before it
+    // lets the visitor continue). Returns the result with the message shown and the control to focus.
+    function check(doc) {
+        var root = doc.getElementById("signupBusinessTypes");
+        var error = doc.getElementById("signupBusinessTypeClientError");
+        if (!root) {
+            return { ok: true, message: "", focusTarget: null };
+        }
 
-            event.preventDefault();
-            if (!error) return;
-            error.textContent = result.categoryMissingSubtype
+        var configEl = doc.getElementById("signupFormConfig");
+        var config = {};
+        try {
+            config = configEl ? JSON.parse(configEl.textContent || "{}") : {};
+        } catch (e) {
+            config = {};
+        }
+
+        var result = validate(readCategories(root));
+        var message = result.ok
+            ? ""
+            : (result.categoryMissingSubtype
                 ? (config.businessCategorySubtypeRequiredText || "")
-                : (config.businessSubtypeRequiredText || "");
-            error.classList.remove("d-none");
+                : (config.businessSubtypeRequiredText || ""));
+
+        if (error) {
+            error.textContent = message;
+            error.hidden = !message;
+            error.classList.toggle("d-none", !message);
+        }
+
+        var focusTarget = null;
+        if (!result.ok) {
+            focusTarget = root.querySelector("[data-category-toggle]:checked") || root.querySelector("[data-category-toggle]");
+            Array.prototype.some.call(root.querySelectorAll("[data-category-toggle]:checked"), function (toggle) {
+                var code = toggle.getAttribute("data-category-toggle");
+                var anySubtype = root.querySelector('input[type="checkbox"][data-category="' + code + '"]:checked');
+                if (!anySubtype) {
+                    focusTarget = root.querySelector('input[type="checkbox"][data-category="' + code + '"]') || toggle;
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        return { ok: result.ok, message: message, focusTarget: focusTarget };
+    }
+
+    // The chosen subtypes per category, with their visible labels, for the review step.
+    function selectedLabels(doc) {
+        var root = doc.getElementById("signupBusinessTypes");
+        if (!root) {
+            return [];
+        }
+
+        function labelOf(input) {
+            var label = input.id ? root.querySelector('label[for="' + input.id + '"]') : null;
+            return label ? label.textContent.trim() : "";
+        }
+
+        return Array.prototype.map.call(root.querySelectorAll("[data-category-toggle]"), function (toggle) {
+            var code = toggle.getAttribute("data-category-toggle");
+            return {
+                label: labelOf(toggle),
+                subtypes: Array.prototype.filter.call(
+                    root.querySelectorAll('input[type="checkbox"][data-category="' + code + '"]'),
+                    function (input) { return input.checked; }).map(labelOf)
+            };
         });
     }
 
     return {
         syncCategory: syncCategory,
         validate: validate,
+        readCategories: readCategories,
+        check: check,
+        selectedLabels: selectedLabels,
         bind: bind
     };
 });

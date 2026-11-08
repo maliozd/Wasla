@@ -17,6 +17,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [architecture/authentication.md](architecture/authentication.md) | Cookie schemes and Web/API session limits |
 | [architecture/realtime.md](architecture/realtime.md) | Live tenant notifications (SignalR hub, internal channel, browser fallback) |
 | [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md) | Decision: one Web instance for live notifications; multi-instance topology and its triggers |
+| [architecture/signup-registration.md](architecture/signup-registration.md) | Registration drafts, the draft cookie and lifetimes, mandatory owner phone (SMS) verification, SMS sender modes, the signup draft JSON API, the submit boundary to `PendingRegistration` (WAS-192) |
 | [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb plan prices, subscription and payment records, states, invariants, iyzico mapping intent, open price decision |
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
@@ -60,7 +61,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md), [integrations/provider-webhooks.md](integrations/provider-webhooks.md) |
 | Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
 | Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections), [operations/observability.md](operations/observability.md#live-notification-metrics) |
-| Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [operations/cli.md](operations/cli.md) |
+| Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [architecture/signup-registration.md](architecture/signup-registration.md), [operations/cli.md](operations/cli.md) |
 | Billing, subscriptions, payment provider | [architecture/billing.md](architecture/billing.md), [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |
 | CLI | [operations/cli.md](operations/cli.md), [architecture/tenancy.md](architecture/tenancy.md) |
 | Migrations | [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |

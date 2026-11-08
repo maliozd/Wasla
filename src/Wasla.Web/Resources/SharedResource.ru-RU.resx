@@ -3001,28 +3001,19 @@
     <value>Подключите свой ресторан к платформам онлайн-заказов и управляйте всем в одном месте.</value>
   </data>
   <data name="Signup.StepPlan" xml:space="preserve">
-    <value>Выбрать план</value>
-  </data>
-  <data name="Signup.SelectedPlanTitle" xml:space="preserve">
-    <value>Ваш выбор</value>
+    <value>План</value>
   </data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve">
     <value>Пакет {0}</value>
-  </data>
-  <data name="Signup.SelectedPlanIncludes" xml:space="preserve">
-    <value>С этим пакетом:</value>
   </data>
   <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
     <value>Индивидуальное предложение</value>
   </data>
   <data name="Signup.StepBusiness" xml:space="preserve">
-    <value>Детали бизнеса</value>
+    <value>Ресторан</value>
   </data>
   <data name="Signup.StepOwner" xml:space="preserve">
     <value>Аккаунт владельца</value>
-  </data>
-  <data name="Signup.StepCreate" xml:space="preserve">
-    <value>Зарегистрироваться</value>
   </data>
   <data name="Signup.Plan" xml:space="preserve">
     <value>План</value>
@@ -3064,7 +3055,7 @@
     <value>Выберите район</value>
   </data>
   <data name="Signup.StepContact" xml:space="preserve">
-    <value>Контактная информация</value>
+    <value>Контакты</value>
   </data>
   <data name="Signup.BusinessPhoneType" xml:space="preserve">
     <value>Тип телефона</value>
@@ -3145,7 +3136,7 @@
     <value>Почтовый индекс</value>
   </data>
   <data name="Signup.StepAddress" xml:space="preserve">
-    <value>Детали адреса</value>
+    <value>Адрес</value>
   </data>
   <data name="Signup.Slug" xml:space="preserve">
     <value>Субдомен</value>
@@ -4850,4 +4841,141 @@
   <data name="Orders.LiveScreen.LoadFailedDescription" xml:space="preserve"><value>Экран продолжает попытки автоматически. Проверьте подключение к интернету или повторите попытку сейчас.</value></data>
   <data name="Orders.LiveScreen.ReloadPage" xml:space="preserve"><value>Обновить страницу</value></data>
   <data name="Orders.NotificationSettingsLoadTimedOut" xml:space="preserve"><value>Настройки уведомлений не загрузились вовремя, поэтому звук новых заказов и уведомления браузера пока отключены. Обновите страницу, чтобы повторить попытку.</value></data>
+  <data name="Signup.StepReview" xml:space="preserve"><value>Сводка</value></data>
+  <data name="Signup.Flow.StepCounter" xml:space="preserve"><value>Шаг {0} из {1}</value></data>
+  <data name="Signup.Flow.BackTo" xml:space="preserve"><value>Назад: {0}</value></data>
+  <data name="Signup.Flow.PlanTitle" xml:space="preserve"><value>С какого плана вы начнёте?</value></data>
+  <data name="Signup.Flow.PlanLead" xml:space="preserve"><value>Выберите план и период оплаты. Выбор можно изменить до завершения регистрации.</value></data>
+  <data name="Signup.Flow.PlanPriceMeta" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Flow.EnterpriseQuestion" xml:space="preserve"><value>Нужно несколько точек или индивидуальная интеграция?</value></data>
+  <data name="Signup.Flow.EnterpriseLink" xml:space="preserve"><value>Запросить предложение Enterprise</value></data>
+  <data name="Signup.Flow.ToRestaurant" xml:space="preserve"><value>Перейти к данным заведения</value></data>
+  <data name="Signup.Flow.RestaurantTitle" xml:space="preserve"><value>Ваш ресторан</value></data>
+  <data name="Signup.Flow.RestaurantLead" xml:space="preserve"><value>Создадим адрес вашей панели и узнаем, как связаться с заведением. Подключение платформ вы настроите в панели после оплаты.</value></data>
+  <data name="Signup.Flow.SectionBusiness" xml:space="preserve"><value>Заведение</value></data>
+  <data name="Signup.Flow.SubtypesFor" xml:space="preserve"><value>Подтипы: {0}</value></data>
+  <data name="Signup.Flow.SectionPanelAddress" xml:space="preserve"><value>Адрес панели</value></data>
+  <data name="Signup.Flow.PanelAddressHint" xml:space="preserve"><value>По этому адресу вы будете входить в панель ресторана.</value></data>
+  <data name="Signup.Flow.SlugRules" xml:space="preserve"><value>Можно использовать строчные буквы (a-z), цифры, дефис (-) и подчёркивание (_).</value></data>
+  <data name="Signup.Flow.AddressHint" xml:space="preserve"><value>Пока зарегистрироваться могут только заведения в Турции.</value></data>
+  <data name="Signup.Flow.AddressMore" xml:space="preserve"><value>Добавить примечание к адресу и ссылку на карту</value></data>
+  <data name="Signup.Flow.ToOwner" xml:space="preserve"><value>Перейти к аккаунту владельца</value></data>
+  <data name="Signup.Flow.OwnerLead" xml:space="preserve"><value>Вы первым войдёте в панель ресторана. На следующем шаге мы подтвердим ваш мобильный телефон по SMS; сотрудников можно добавить в панели после настройки.</value></data>
+  <data name="Signup.Flow.SectionPerson" xml:space="preserve"><value>Ваши данные</value></data>
+  <data name="Signup.Flow.OwnerEmailHelp" xml:space="preserve"><value>С этим адресом вы будете входить в панель. На него же придёт уведомление, когда панель будет готова.</value></data>
+  <data name="Signup.Flow.OwnerMobile" xml:space="preserve"><value>Мобильный телефон</value></data>
+  <data name="Signup.Flow.PasswordRuleLength" xml:space="preserve"><value>Не менее 8 символов</value></data>
+  <data name="Signup.Flow.PasswordRuleMatch" xml:space="preserve"><value>Пароли совпадают</value></data>
+  <data name="Signup.Flow.RuleMet" xml:space="preserve"><value>выполнено</value></data>
+  <data name="Signup.Flow.RuleUnmet" xml:space="preserve"><value>не выполнено</value></data>
+  <data name="Signup.Flow.ToReview" xml:space="preserve"><value>Перейти к сводке</value></data>
+  <data name="Signup.Flow.ReviewTitle" xml:space="preserve"><value>Проверьте данные</value></data>
+  <data name="Signup.Flow.ReviewLead" xml:space="preserve"><value>Чтобы изменить раздел, нажмите «Редактировать»; введённые данные сохранятся.</value></data>
+  <data name="Signup.Flow.ErrorSummaryTitle" xml:space="preserve"><value>Исправьте эти поля, чтобы продолжить</value></data>
+  <data name="Signup.Receipt.Title" xml:space="preserve"><value>Ваша регистрация</value></data>
+  <data name="Signup.Receipt.Now" xml:space="preserve"><value>Сейчас</value></data>
+  <data name="Signup.Receipt.StateDone" xml:space="preserve"><value>выполнен</value></data>
+  <data name="Signup.Receipt.StateCurrent" xml:space="preserve"><value>текущий шаг</value></data>
+  <data name="Signup.Receipt.StateUpcoming" xml:space="preserve"><value>ещё не начат</value></data>
+  <data name="Signup.Receipt.HintPlan" xml:space="preserve"><value>План и период оплаты</value></data>
+  <data name="Signup.Receipt.HintRestaurant" xml:space="preserve"><value>Заведение, адрес панели и адрес</value></data>
+  <data name="Signup.Receipt.HintOwner" xml:space="preserve"><value>Имя, эл. почта и пароль</value></data>
+  <data name="Signup.Receipt.HintReview" xml:space="preserve"><value>Проверьте данные и завершите регистрацию</value></data>
+  <data name="Signup.Receipt.DueToday" xml:space="preserve"><value>К оплате сегодня</value></data>
+  <data name="Signup.Receipt.PlanLine" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Signup.Receipt.PriceLine" xml:space="preserve"><value>{0}, {1}</value></data>
+  <data name="Signup.Receipt.StripDetail" xml:space="preserve"><value>{0}, {1}, {2}</value></data>
+  <data name="Signup.Receipt.PeriodMonthly" xml:space="preserve"><value>ежемесячно</value></data>
+  <data name="Signup.Receipt.PeriodYearly" xml:space="preserve"><value>ежегодно</value></data>
+  <data name="Signup.Receipt.PeriodNoteMonthly" xml:space="preserve"><value>План {0}, период 1 месяц. Продлевается автоматически каждый месяц.</value></data>
+  <data name="Signup.Receipt.PeriodNoteYearly" xml:space="preserve"><value>План {0}, период 12 месяцев. Продлевается автоматически каждые 12 месяцев.</value></data>
+  <data name="Signup.Receipt.ChoosePlan" xml:space="preserve"><value>Выберите план</value></data>
+  <data name="Signup.Strip.Continue" xml:space="preserve"><value>Продолжить</value></data>
+  <data name="Signup.Strip.OpenSummary" xml:space="preserve"><value>Показать данные регистрации</value></data>
+  <data name="Signup.Pay.Title" xml:space="preserve"><value>Сводка подписки</value></data>
+  <data name="Signup.Pay.PlanRow" xml:space="preserve"><value>План {0}, {1}</value></data>
+  <data name="Signup.Pay.Vat" xml:space="preserve"><value>НДС</value></data>
+  <data name="Signup.Pay.VatIncluded" xml:space="preserve"><value>Включён</value></data>
+  <data name="Signup.Pay.VatExcluded" xml:space="preserve"><value>Не включён</value></data>
+  <data name="Signup.Pay.Period" xml:space="preserve"><value>Период</value></data>
+  <data name="Signup.Pay.PeriodMonthly" xml:space="preserve"><value>1 месяц</value></data>
+  <data name="Signup.Pay.PeriodYearly" xml:space="preserve"><value>12 месяцев</value></data>
+  <data name="Signup.Pay.AutoRenew" xml:space="preserve"><value>Автопродление</value></data>
+  <data name="Signup.Pay.RenewMonthly" xml:space="preserve"><value>Каждый месяц</value></data>
+  <data name="Signup.Pay.RenewYearly" xml:space="preserve"><value>Каждые 12 месяцев</value></data>
+  <data name="Signup.Review.Amount" xml:space="preserve"><value>Сумма</value></data>
+  <data name="Signup.Review.NotProvidedOptional" xml:space="preserve"><value>Не указано (необязательно)</value></data>
+  <data name="Signup.Review.PasswordSet" xml:space="preserve"><value>Задан</value></data>
+  <data name="Signup.Review.BusinessTypeLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Signup.Review.AddressBuilding" xml:space="preserve"><value>д. {0}</value></data>
+  <data name="Signup.Review.AddressFloor" xml:space="preserve"><value>эт. {0}</value></data>
+  <data name="Signup.Review.AddressDoor" xml:space="preserve"><value>кв. {0}</value></data>
+  <data name="Signup.Phone.CodeLabel" xml:space="preserve"><value>Код подтверждения</value></data>
+  <data name="Signup.Phone.CodePlaceholder" xml:space="preserve"><value>Введите код</value></data>
+  <data name="Validation.PlanRequired" xml:space="preserve"><value>Выберите план, чтобы продолжить.</value></data>
+  <data name="Signup.Draft.Missing" xml:space="preserve"><value>Сеанс регистрации истёк. В целях безопасности введённые данные удалены; начните заново.</value></data>
+  <data name="Signup.Draft.Submitted" xml:space="preserve"><value>Эта регистрация уже отправлена.</value></data>
+  <data name="Signup.Draft.ValidationFailed" xml:space="preserve"><value>Исправьте отмеченные поля.</value></data>
+  <data name="Signup.Draft.Incomplete" xml:space="preserve"><value>Прежде чем продолжить, пройдите все шаги.</value></data>
+  <data name="Signup.Draft.InvalidRequest" xml:space="preserve"><value>Не удалось обработать запрос. Обновите страницу и попробуйте снова.</value></data>
+  <data name="Signup.Phone.OwnerIncomplete" xml:space="preserve"><value>Сохраните данные владельца учётной записи, прежде чем запрашивать код подтверждения.</value></data>
+  <data name="Signup.Phone.AlreadyVerified" xml:space="preserve"><value>Этот номер телефона уже подтверждён.</value></data>
+  <data name="Signup.Phone.NotVerified" xml:space="preserve"><value>Чтобы продолжить, подтвердите номер мобильного телефона.</value></data>
+  <data name="Signup.Phone.CodeIncorrect" xml:space="preserve"><value>Неверный код. Попробуйте ещё раз.</value></data>
+  <data name="Signup.Phone.CodeExpired" xml:space="preserve"><value>Срок действия кода истёк. Запросите новый код.</value></data>
+  <data name="Signup.Phone.CodeFormatInvalid" xml:space="preserve"><value>Введите 6-значный код.</value></data>
+  <data name="Signup.Phone.NoActiveCode" xml:space="preserve"><value>Действующего кода нет. Запросите новый код.</value></data>
+  <data name="Signup.Phone.ResendNotAvailable" xml:space="preserve"><value>Подождите немного, прежде чем запрашивать новый код.</value></data>
+  <data name="Signup.Phone.Locked" xml:space="preserve"><value>Слишком много неверных попыток. Подождите и запросите новый код.</value></data>
+  <data name="Signup.Phone.SendLimitReached" xml:space="preserve"><value>Отправлено слишком много кодов. Попробуйте позже.</value></data>
+  <data name="Signup.Phone.DeliveryFailed" xml:space="preserve"><value>Не удалось отправить код. Проверьте номер и попробуйте снова.</value></data>
+  <data name="Signup.Phone.Unavailable" xml:space="preserve"><value>Подтверждение телефона сейчас недоступно. Обратитесь в поддержку.</value></data>
+  <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Подтверждение телефона временно недоступно. Попробуйте через несколько минут.</value></data>
+  <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Укажите номер мобильного телефона.</value></data>
+  <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Введите действующий мобильный номер Турции, например 532 123 45 67.</value></data>
+  <data name="Signup.StepPhone" xml:space="preserve"><value>Подтверждение телефона</value></data>
+  <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Подтверждение по SMS</value></data>
+  <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Подтверждён</value></data>
+  <data name="Signup.Receipt.PlanPrice" xml:space="preserve"><value>Цена плана</value></data>
+  <data name="Signup.Receipt.PeriodLineMonthly" xml:space="preserve"><value>План {0}, помесячная оплата.</value></data>
+  <data name="Signup.Receipt.PeriodLineYearly" xml:space="preserve"><value>План {0}, оплата за год.</value></data>
+  <data name="Signup.Flow.ToPhone" xml:space="preserve"><value>Отправить код подтверждения</value></data>
+  <data name="Signup.Flow.OwnerPhoneHelp" xml:space="preserve"><value>Мы отправим на этот номер код подтверждения по SMS. Он может отличаться от телефона заведения.</value></data>
+  <data name="Signup.Flow.PasswordKept" xml:space="preserve"><value>Пароль сохранён. Оставьте поля пустыми, чтобы не менять его.</value></data>
+  <data name="Signup.Flow.SlugChecking" xml:space="preserve"><value>Проверяем…</value></data>
+  <data name="Signup.Flow.SlugAvailable" xml:space="preserve"><value>{0} сейчас свободен. Адрес проверим ещё раз при отправке регистрации.</value></data>
+  <data name="Signup.Flow.SlugCheckFailed" xml:space="preserve"><value>Сейчас не удалось проверить адрес. Его проверят при отправке регистрации.</value></data>
+  <data name="Signup.Flow.AddressTakenTitle" xml:space="preserve"><value>Адрес панели больше недоступен</value></data>
+  <data name="Signup.Flow.AddressTakenBody" xml:space="preserve"><value>Пока вы проверяли данные, адрес {0} заняла другая регистрация. Выберите новый адрес; остальные данные и подтверждение телефона сохранятся.</value></data>
+  <data name="Signup.Flow.NetworkError" xml:space="preserve"><value>Не удалось подключиться. Проверьте подключение к интернету и попробуйте снова.</value></data>
+  <data name="Signup.Flow.ServerError" xml:space="preserve"><value>Что-то пошло не так. Попробуйте ещё раз чуть позже.</value></data>
+  <data name="Signup.Flow.Reload" xml:space="preserve"><value>Обновить страницу</value></data>
+  <data name="Signup.Flow.StartAgain" xml:space="preserve"><value>Начать заново</value></data>
+  <data name="Signup.Flow.OpenRegistration" xml:space="preserve"><value>Посмотреть статус регистрации</value></data>
+  <data name="Signup.Flow.NoScript" xml:space="preserve"><value>Для шагов регистрации нужен JavaScript. Включите его в браузере и обновите страницу.</value></data>
+  <data name="Signup.Flow.PhoneUnavailableTitle" xml:space="preserve"><value>Сейчас нельзя завершить регистрацию</value></data>
+  <data name="Signup.Phone.Title" xml:space="preserve"><value>Подтвердите телефон</value></data>
+  <data name="Signup.Phone.TitleVerified" xml:space="preserve"><value>Телефон подтверждён</value></data>
+  <data name="Signup.Phone.LeadSent" xml:space="preserve"><value>Мы отправили код подтверждения на ваш мобильный телефон по SMS. Перейти к сводке можно после подтверждения кода.</value></data>
+  <data name="Signup.Phone.LeadNotSent" xml:space="preserve"><value>Мы отправим код подтверждения на ваш мобильный телефон по SMS.</value></data>
+  <data name="Signup.Phone.LeadVerified" xml:space="preserve"><value>Мобильный телефон подтверждён. Теперь можно проверить данные.</value></data>
+  <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>Код будет отправлен на номер</value></data>
+  <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>Код отправлен на номер</value></data>
+  <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Подтверждённый номер</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Изменить номер</value></data>
+  <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Введите номер мобильного телефона, на который нужно отправить код.</value></data>
+  <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>Мы отправим код на новый номер. Подтверждение прежнего номера перестанет действовать.</value></data>
+  <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Отправить код на этот номер</value></data>
+  <data name="Signup.Phone.Send" xml:space="preserve"><value>Отправить код</value></data>
+  <data name="Signup.Phone.Resend" xml:space="preserve"><value>Отправить новый код</value></data>
+  <data name="Signup.Phone.Verify" xml:space="preserve"><value>Подтвердить и перейти к сводке</value></data>
+  <data name="Signup.Phone.Sending" xml:space="preserve"><value>Отправляем код…</value></data>
+  <data name="Signup.Phone.Sent" xml:space="preserve"><value>Код отправлен в {0}.</value></data>
+  <data name="Signup.Phone.ResendIn" xml:space="preserve"><value>Новый код можно запросить через {0}.</value></data>
+  <data name="Signup.Phone.DeliveryFailedTitle" xml:space="preserve"><value>Не удалось отправить SMS</value></data>
+  <data name="Signup.Phone.SupportLine" xml:space="preserve"><value>Если проблема не исчезнет, напишите на {0}.</value></data>
+  <data name="Signup.Phone.ShareWarning" xml:space="preserve"><value>Никому не сообщайте код из SMS. Wasla никогда не запрашивает его по телефону или электронной почте.</value></data>
+  <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>Среда разработки: посмотреть отправленные тестовые коды</value></data>
+  <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>Если вы измените номер мобильного телефона, новый номер нужно будет снова подтвердить по SMS.</value></data>
+  <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>По вопросам подписки или для её отмены пишите на {0}.</value></data>
 </root>

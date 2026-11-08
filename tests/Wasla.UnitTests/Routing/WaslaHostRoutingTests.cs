@@ -286,22 +286,23 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
     [Fact]
     public async Task Signup_BuildsTheNestedTenantAddress_AndTheTenantHostLeadsToItsStatusUntilProvisioned()
     {
-        using var browser = _host.Web.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup", Marketing);
+        using var client = new SignupDraftClient(_host.Web, Marketing);
+        var browser = client.Browser;
         var slug = $"pide{SentinelApplicant.NewToken()}".ToLowerInvariant();
 
-        var submitted = await browser.PostFormAsync("/signup", SignupForm(token, slug), Marketing);
+        var submitted = await client.CompleteAsync(slug);
 
-        Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
-        Assert.StartsWith("/signup/pending/", submitted.Location);
-        var registrationId = Guid.Parse(submitted.Location!["/signup/pending/".Length..]);
+        Assert.Equal(HttpStatusCode.OK, submitted.Status);
+        var statusPage = submitted.Json.GetProperty("redirectUrl").GetString()!;
+        Assert.StartsWith("/signup/pending/", statusPage);
+        var registrationId = submitted.Json.GetProperty("registrationId").GetGuid();
         await using (var db = NewDb())
         {
             var stored = await db.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Id == registrationId, TestContext.Current.CancellationToken);
             Assert.Equal($"{slug}.app.wasla.tr", stored.PrimaryDomain);
         }
 
-        var pending = await browser.GetAsync(submitted.Location!, Marketing);
+        var pending = await browser.GetAsync(statusPage, Marketing);
         Assert.Equal(HttpStatusCode.OK, pending.Status);
         Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", pending.Body);
         Assert.Contains("href=\"http://wasla.tr/\"", pending.Body);
@@ -309,7 +310,7 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         // The tenant host of a registration that is not provisioned shows its status page.
         var tenantHost = await browser.GetAsync("/", $"{slug}.app.wasla.tr");
         Assert.Equal(HttpStatusCode.Redirect, tenantHost.Status);
-        Assert.Equal(submitted.Location, tenantHost.Location);
+        Assert.Equal(statusPage, tenantHost.Location);
         var statusOnTenantHost = await browser.GetAsync(tenantHost.Location!, $"{slug}.app.wasla.tr");
         Assert.Equal(HttpStatusCode.OK, statusOnTenantHost.Status);
         Assert.Contains("href=\"http://wasla.tr/\"", statusOnTenantHost.Body);
@@ -324,7 +325,7 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var provisioned = await browser.GetAsync(submitted.Location!, Marketing);
+        var provisioned = await browser.GetAsync(statusPage, Marketing);
         Assert.Contains($"href=\"http://{slug}.app.wasla.tr/auth/login\"", provisioned.Body);
     }
 
@@ -335,14 +336,15 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
     [InlineData("{own}")]
     public async Task StatusPageUrls_ComeFromTheRegistrationAndConfiguration_NeverFromTheHostHeader(string host)
     {
-        using var browser = _host.Web.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup", Marketing);
+        using var client = new SignupDraftClient(_host.Web, Marketing);
+        var browser = client.Browser;
         var slug = $"kebap{SentinelApplicant.NewToken()}".ToLowerInvariant();
-        var submitted = await browser.PostFormAsync("/signup", SignupForm(token, slug), Marketing);
-        Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
+        var submitted = await client.CompleteAsync(slug);
+        Assert.Equal(HttpStatusCode.OK, submitted.Status);
+        var statusPage = submitted.Json.GetProperty("redirectUrl").GetString()!;
 
         var page = await browser.SendWithHeadersAsync(
-            submitted.Location!,
+            statusPage,
             host.Replace("{own}", $"{slug}.APP.wasla.tr", StringComparison.Ordinal),
             ("X-Forwarded-Host", "attacker.example"));
 
@@ -356,7 +358,7 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
         // Any other host does not serve it at all.
         foreach (var other in new[] { "evil.example", "app.wasla.tr", "known.app.wasla.tr.evil.example" })
         {
-            var refused = await browser.GetAsync(submitted.Location!, other);
+            var refused = await browser.GetAsync(statusPage, other);
             Assert.Equal(HttpStatusCode.Redirect, refused.Status);
             Assert.DoesNotContain(slug, refused.Location!, StringComparison.Ordinal);
         }
@@ -370,13 +372,15 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
     [InlineData("docs")]
     public async Task Signup_RefusesReservedNames_AsUnavailableAddresses(string slug)
     {
-        using var browser = _host.Web.NewBrowser();
-        var token = await browser.GetAntiforgeryTokenAsync("/signup", Marketing);
+        using var client = new SignupDraftClient(_host.Web, Marketing);
 
-        var refused = await browser.PostFormAsync("/signup", SignupForm(token, slug), Marketing);
+        var refused = await client.SaveRestaurantAsync(SignupDraftClient.Restaurant(slug));
+        var available = await client.Browser.GetAsync($"/signup/address-availability?slug={slug}", Marketing);
 
-        Assert.Equal(HttpStatusCode.OK, refused.Status);
-        Assert.Null(refused.Location);
+        Assert.Equal(HttpStatusCode.BadRequest, refused.Status);
+        Assert.Contains(refused.Json.GetProperty("fieldErrors").EnumerateArray(), e =>
+            e.GetProperty("field").GetString() == "slug" && e.GetProperty("code").GetString() == "Signup.SlugUnavailable");
+        Assert.Equal("taken", available.Json.GetProperty("status").GetString());
         await using var db = NewDb();
         Assert.False(await db.PendingRegistrations.AnyAsync(r => r.Slug == slug, TestContext.Current.CancellationToken));
     }
@@ -440,32 +444,6 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
 
     private CentralDbContext NewDb() =>
         new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_host.Connection).Options);
-
-    private static List<KeyValuePair<string, string>> SignupForm(string antiforgeryToken, string slug)
-    {
-        var token = SentinelApplicant.NewToken();
-        return
-        [
-            new("__RequestVerificationToken", antiforgeryToken),
-            new("PlanCode", WaslaPlanCodes.Starter),
-            new("BillingPeriod", "Monthly"),
-            new("BusinessName", $"Bizname{token}"),
-            new("SelectedBusinessTypeCodes", "burger"),
-            new("BusinessPhoneType", "Mobile"),
-            new("BusinessPhone", SentinelApplicant.NewPhone()),
-            new("Slug", slug),
-            new("Country", "Germany"),
-            new("CityId", "1"),
-            new("DistrictId", "1"),
-            new("City", "Berlin"),
-            new("District", "Mitte"),
-            new("StreetAddress", $"Streetq{token}"),
-            new("OwnerFullName", $"Ownerq{token}"),
-            new("OwnerEmail", $"owner.{token}@sentinel.test"),
-            new("Password", $"Secret-pass-{token}"),
-            new("ConfirmPassword", $"Secret-pass-{token}")
-        ];
-    }
 
     private static List<string> Links(string html) =>
         LinkHref().Matches(html).Select(m => WebUtility.HtmlDecode(m.Groups["href"].Value)).ToList();

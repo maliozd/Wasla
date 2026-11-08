@@ -13,80 +13,14 @@ namespace Wasla.UnitTests.Signup;
 /// <summary>
 /// The registration ID is discoverable through the pending-tenant redirect, so it must never be enough
 /// to read the applicant's personal details. Only the browser that submitted the signup, holding the
-/// ownership proof issued by that submission, sees the private pages.
+/// ownership proof issued by that submission, sees the private pages. The proof is issued by the registration draft
+/// submit (WAS-192), covered over HTTP in <see cref="SignupDraftApiTests"/>.
 /// </summary>
 public sealed class SignupRegistrationOwnershipTests : IDisposable
 {
     private readonly CheckoutTestHarness _harness = new();
 
     public void Dispose() => _harness.Dispose();
-
-    [Fact]
-    public async Task SuccessfulSignup_IssuesAHostOnlySecureHttpOnlyStrictProofCookie_OutsideTheUrl()
-    {
-        var controller = _harness.CreateSignupController(Environments.Production, https: true);
-
-        var result = await controller.Index(SignupForm("fresh-signup"), TestContext.Current.CancellationToken);
-
-        var redirect = Assert.IsType<RedirectToActionResult>(result);
-        Assert.Equal(nameof(SignupController.Pending), redirect.ActionName);
-        var registrationId = Assert.IsType<Guid>(redirect.RouteValues!["id"]);
-        Assert.Single(redirect.RouteValues!);
-
-        var cookie = Assert.Single(IssuedProofCookies(controller.HttpContext));
-        Assert.True(cookie.HttpOnly);
-        Assert.True(cookie.Secure);
-        Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Strict, cookie.SameSite);
-        Assert.Equal("/", cookie.Path.Value);
-        Assert.True(string.IsNullOrEmpty(cookie.Domain.Value), "The proof must not be shared with tenant subdomains.");
-        Assert.NotNull(cookie.Expires);
-        Assert.InRange(cookie.Expires!.Value, DateTimeOffset.UtcNow.AddDays(6), DateTimeOffset.UtcNow.AddDays(8));
-        Assert.DoesNotContain(cookie.Value.Value!, registrationId.ToString("N"), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task SuccessfulSignup_InDevelopmentOverHttp_StillIssuesAnHttpOnlyStrictProof()
-    {
-        var controller = _harness.CreateSignupController(Environments.Development);
-
-        await controller.Index(SignupForm("local-signup"), TestContext.Current.CancellationToken);
-
-        var cookie = Assert.Single(IssuedProofCookies(controller.HttpContext));
-        Assert.True(cookie.HttpOnly);
-        Assert.Equal(Microsoft.Net.Http.Headers.SameSiteMode.Strict, cookie.SameSite);
-    }
-
-    [Fact]
-    public async Task ProofIssuedBySignup_ShowsTheApplicantTheirPrivateDetails_AndAnotherBrowserOnlyTheStatus()
-    {
-        var signup = _harness.CreateSignupController(Environments.Production, https: true);
-        var redirect = Assert.IsType<RedirectToActionResult>(
-            await signup.Index(SignupForm("two-browsers"), TestContext.Current.CancellationToken));
-        var registrationId = (Guid)redirect.RouteValues!["id"]!;
-        var proof = Assert.Single(IssuedProofCookies(signup.HttpContext)).Value.Value;
-
-        var applicant = await PendingModelAsync(_harness.CreateSignupController(Environments.Production, proof), registrationId);
-        var stranger = await PendingModelAsync(_harness.CreateSignupController(Environments.Production), registrationId);
-
-        Assert.True(applicant.ShowPrivateDetails);
-        Assert.Equal("Owner Name", applicant.OwnerFullName);
-        Assert.Equal("owner@example.com", applicant.OwnerEmail);
-        Assert.True(applicant.ShowCheckoutAction);
-        AssertNoPrivateDetails(stranger);
-        Assert.Equal(PendingRegistrationStatus.AwaitingPayment, stranger.Status);
-    }
-
-    [Fact]
-    public async Task RejectedSignup_DoesNotIssueAProof()
-    {
-        await _harness.SeedAsync(slug: "taken");
-        var controller = _harness.CreateSignupController(Environments.Production, https: true);
-
-        var result = await controller.Index(SignupForm("taken"), TestContext.Current.CancellationToken);
-
-        Assert.IsType<ViewResult>(result);
-        Assert.Empty(IssuedProofCookies(controller.HttpContext));
-    }
 
     [Fact]
     public async Task PendingPage_NeverIssuesAProof()
@@ -252,23 +186,4 @@ public sealed class SignupRegistrationOwnershipTests : IDisposable
         SetCookieHeaderValue.ParseList(context.Response.Headers.SetCookie.OfType<string>().ToList())
             .Where(cookie => cookie.Name.Value == SignupRegistrationOwnership.CookieName)
             .ToList();
-
-    private static SignupViewModel SignupForm(string slug) => new()
-    {
-        PlanCode = "Starter",
-        BillingPeriod = "Monthly",
-        BusinessName = "Burger House",
-        SelectedBusinessTypeCodes = ["burger"],
-        BusinessPhoneType = "Mobile",
-        BusinessPhone = "5551112233",
-        Slug = slug,
-        Country = "Germany",
-        City = "Berlin",
-        District = "Mitte",
-        StreetAddress = "Main Street 1",
-        OwnerFullName = "Owner Name",
-        OwnerEmail = "owner@example.com",
-        Password = "password1",
-        ConfirmPassword = "password1"
-    };
 }

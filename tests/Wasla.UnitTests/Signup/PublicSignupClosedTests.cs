@@ -18,8 +18,8 @@ namespace Wasla.UnitTests.Signup;
 
 /// <summary>
 /// <c>Wasla:TenantOnboarding:PublicSignupEnabled</c> (WAS-76). Without a payment provider a public signup cannot be
-/// completed, so a deployment closes it: <c>/signup</c> explains that online registration is not open yet, a submission
-/// creates nothing, and the form's address lookups answer 404, while existing registrations keep their status and
+/// completed, so a deployment closes it: <c>/signup</c> explains that online registration is not open yet, the draft API
+/// (WAS-192) and the form's address lookups answer 404 and create nothing, while existing registrations keep their status and
 /// checkout pages. Open (the default, and Development) everything stays as before. Every test serves the real signup and
 /// checkout controllers, views and rate-limit registration (<see cref="SignupWebHost"/>) over its own in-memory CentralDb;
 /// all data is fake.
@@ -75,57 +75,77 @@ public sealed class PublicSignupClosedTests : IAsyncLifetime
         }
     }
 
-    [Theory]
-    [InlineData("Production")]
-    [InlineData("Staging")]
-    public async Task SignupSubmission_WhenClosed_CreatesNoRegistration_AndShowsTheSamePageWith404(string environment)
+    public static TheoryData<string, string, bool> DraftApiRoutes => new()
     {
-        var host = await StartAsync(environment, publicSignupEnabled: false);
-        var existing = await SeedAsync(PendingRegistrationStatus.AwaitingPayment);
-        // The signup page has no form now, so the token comes from the payment summary of an existing registration.
-        using var browser = OwnerBrowser(host, existing);
-        var token = await browser.GetAntiforgeryTokenAsync($"/checkout/review/{existing.Id}");
-        var form = SignupForm(token);
+        { "GET", "/signup/draft", false },
+        { "PUT", "/signup/draft/plan", true },
+        { "PUT", "/signup/draft/restaurant", true },
+        { "PUT", "/signup/draft/owner", true },
+        { "GET", "/signup/draft/phone", false },
+        { "POST", "/signup/draft/phone/send", true },
+        { "POST", "/signup/draft/phone/verify", true },
+        { "PUT", "/signup/draft/phone", true },
+        { "POST", "/signup/draft/submit", true },
+        { "GET", "/signup/address-availability?slug=free-name", false }
+    };
 
-        var response = await browser.PostFormAsync("/signup", form);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.Status);
-        Assert.Null(response.Location);
-        AssertUnavailablePage(response, "tr-TR");
-        Assert.DoesNotContain(response.SetCookies, c => c.Name.Value == SignupRegistrationOwnership.CookieName);
-        Assert.Equal(1, await RegistrationCountAsync());
-        Assert.Equal(0, await RegistrationCountAsync(Value(form, "OwnerEmail")));
-    }
-
-    [Fact]
-    public async Task SignupSubmission_WhenClosed_WithoutAnAntiforgeryToken_IsStillRejectedByTheAntiforgeryCheck()
+    // WAS-192: the draft API serves only the signup page, so it is closed with it: 404 without a body, nothing created.
+    [Theory]
+    [MemberData(nameof(DraftApiRoutes))]
+    public async Task DraftApi_WhenClosed_IsNotFound_AndCreatesNothing(string method, string path, bool write)
     {
         var host = await StartAsync(Environments.Production, publicSignupEnabled: false);
         using var browser = host.NewBrowser();
-        var form = SignupForm("not-a-valid-token");
+        var token = host.IssueAntiforgeryToken(browser);
+        var body = new Dictionary<string, object?> { ["planCode"] = WaslaPlanCodes.Starter, ["billingPeriod"] = "Monthly", ["code"] = "123456" };
 
-        var response = await browser.PostFormAsync("/signup", form);
+        var response = await browser.SendJsonAsync(new HttpMethod(method), path, write ? body : null, token);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.Status);
+        Assert.Equal(string.Empty, response.Body);
+        Assert.DoesNotContain(response.SetCookies, c => c.Name.Value is SignupDraftCookie.SecureCookieName or SignupRegistrationOwnership.CookieName);
+        await using var db = NewDb();
+        Assert.Equal(0, await db.RegistrationDrafts.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await RegistrationCountAsync());
+    }
+
+    [Fact]
+    public async Task DraftWrites_WhenClosed_WithoutAnAntiforgeryToken_AreStillRejectedByTheAntiforgeryCheck()
+    {
+        var host = await StartAsync(Environments.Production, publicSignupEnabled: false);
+        using var browser = host.NewBrowser();
+
+        var response = await browser.SendJsonAsync(HttpMethod.Post, "/signup/draft/submit", null, antiforgeryToken: null);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.Status);
         Assert.Equal(0, await RegistrationCountAsync());
     }
 
-    // The gate runs before the signup rate limit, so repeated closed submissions never get the 429 signup form back.
+    // The gate runs before the rate limits, so repeated closed submissions never get a 429.
     [Fact]
-    public async Task SignupSubmission_WhenClosed_NeverReachesTheRateLimitResponse_ThatRendersTheForm()
+    public async Task DraftSubmit_WhenClosed_NeverReachesTheRateLimit()
     {
         var host = await StartAsync(Environments.Production, publicSignupEnabled: false, signupLimit: 1);
-        var existing = await SeedAsync(PendingRegistrationStatus.AwaitingPayment);
-        using var browser = OwnerBrowser(host, existing);
-        var token = await browser.GetAntiforgeryTokenAsync($"/checkout/review/{existing.Id}");
+        using var browser = host.NewBrowser();
+        var token = host.IssueAntiforgeryToken(browser);
 
         for (var i = 0; i < 3; i++)
-        {
-            var response = await browser.PostFormAsync("/signup", SignupForm(token));
-            Assert.Equal(HttpStatusCode.NotFound, response.Status);
-            AssertUnavailablePage(response, "tr-TR");
-        }
+            Assert.Equal(HttpStatusCode.NotFound, (await browser.SendJsonAsync(HttpMethod.Post, "/signup/draft/submit", null, token)).Status);
 
+        Assert.Equal(0, await RegistrationCountAsync());
+    }
+
+    [Fact]
+    public async Task TheRetiredFormPost_WhenClosed_CreatesNothing()
+    {
+        var host = await StartAsync(Environments.Production, publicSignupEnabled: false);
+        var existing = await SeedAsync(PendingRegistrationStatus.AwaitingPayment);
+        using var browser = OwnerBrowser(host, existing);
+
+        var response = await browser.PostFormAsync("/signup", [new("__RequestVerificationToken", host.IssueAntiforgeryToken(browser))]);
+
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.Status);
+        Assert.DoesNotContain(response.SetCookies, c => c.Name.Value == SignupRegistrationOwnership.CookieName);
         Assert.Equal(1, await RegistrationCountAsync());
     }
 
@@ -177,28 +197,26 @@ public sealed class PublicSignupClosedTests : IAsyncLifetime
     [InlineData("Production", true)]
     [InlineData("Production", null)]
     [InlineData("Development", null)]
-    public async Task Signup_WhenOpen_KeepsTheForm_TheLookups_AndCreatesTheRegistration(string environment, bool? publicSignupEnabled)
+    public async Task Signup_WhenOpen_ServesThePage_TheLookups_AndTheDraftFlowCreatesTheRegistration(string environment, bool? publicSignupEnabled)
     {
         var host = await StartAsync(environment, publicSignupEnabled);
-        using var browser = host.NewBrowser();
+        using var client = new SignupDraftClient(host);
 
-        var page = await browser.GetAsync("/signup");
-        var districts = await browser.GetAsync("/signup/districts?cityId=1");
-        var form = SignupForm(TestBrowser.AntiforgeryTokenIn(page.Body));
-        var submitted = await browser.PostFormAsync("/signup", form);
+        var page = await client.Browser.GetAsync("/signup");
+        var districts = await client.Browser.GetAsync("/signup/districts?cityId=1");
+        var email = $"owner.{SentinelApplicant.NewToken()}@sentinel.test";
+        var submitted = await client.CompleteAsync(email: email);
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
-        Assert.Contains("id=\"signupForm\"", page.Body);
-        Assert.Contains("type=\"password\"", page.Body);
         Assert.DoesNotContain("data-signup-unavailable", page.Body);
         Assert.DoesNotContain(Text("Signup.UnavailableTitle", "tr-TR"), page.Body);
         Assert.Equal(HttpStatusCode.OK, districts.Status);
         Assert.Equal("application/json", districts.ContentType);
         Assert.Contains("Mitte", districts.Body);
-        Assert.Equal(HttpStatusCode.Redirect, submitted.Status);
-        Assert.StartsWith("/signup/pending/", submitted.Location);
+        Assert.Equal(HttpStatusCode.OK, submitted.Status);
+        Assert.StartsWith("/signup/pending/", submitted.Json.GetProperty("redirectUrl").GetString());
         Assert.Contains(submitted.SetCookies, c => c.Name.Value == SignupRegistrationOwnership.CookieName);
-        Assert.Equal(1, await RegistrationCountAsync(Value(form, "OwnerEmail")));
+        Assert.Equal(1, await RegistrationCountAsync(email));
     }
 
     // --- Helpers ---------------------------------------------------------------------------------
@@ -272,32 +290,4 @@ public sealed class PublicSignupClosedTests : IAsyncLifetime
     private static string Text(string key, string culture) =>
         HtmlEncoder.Default.Encode(WebResources.GetString(key, CultureInfo.GetCultureInfo(culture))
             ?? throw new InvalidOperationException($"Missing resource {key}"));
-
-    private static string Value(IEnumerable<KeyValuePair<string, string>> form, string key) => form.Single(f => f.Key == key).Value;
-
-    private static List<KeyValuePair<string, string>> SignupForm(string antiforgeryToken)
-    {
-        var token = SentinelApplicant.NewToken();
-        return
-        [
-            new("__RequestVerificationToken", antiforgeryToken),
-            new("PlanCode", WaslaPlanCodes.Starter),
-            new("BillingPeriod", "Monthly"),
-            new("BusinessName", $"Bizname{token}"),
-            new("SelectedBusinessTypeCodes", "burger"),
-            new("BusinessPhoneType", "Mobile"),
-            new("BusinessPhone", SentinelApplicant.NewPhone()),
-            new("Slug", $"s{token}"),
-            new("Country", "Germany"),
-            new("CityId", "1"),
-            new("DistrictId", "1"),
-            new("City", "Berlin"),
-            new("District", "Mitte"),
-            new("StreetAddress", $"Streetq{token}"),
-            new("OwnerFullName", $"Ownerq{token}"),
-            new("OwnerEmail", $"owner.{token}@sentinel.test"),
-            new("Password", $"Secret-pass-{token}"),
-            new("ConfirmPassword", $"Secret-pass-{token}")
-        ];
-    }
 }
