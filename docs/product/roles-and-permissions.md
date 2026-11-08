@@ -122,7 +122,7 @@ Wasla.Api uses the same policies as Web, registered from the same table, after t
 |----------|--------|:-----:|:-------:|:-------:|:-------:|:------:|----------------|
 | `GET /api/auth/me` | `AuthenticatedTenantUser` | ✓ | ✓ | ✓ | ✓ | ✓ | (own identity) |
 | `GET /api/orders`, `GET /api/orders/{id}` | `CanViewOrders` | ✓ | ✓ | ✓ | ✓ | ✓ | `OrdersController` |
-| `GET /api/dashboard/summary`, `GET /api/dashboard/today` | `CanViewReports` | ✓ | ✓ | | | ✓ | `DashboardController` |
+| `GET /api/dashboard/summary`, `GET /api/dashboard/today`, `GET /api/dashboard/report` | `CanViewReports` | ✓ | ✓ | | | ✓ | `DashboardController` |
 | `GET /api/branches`, `POST /api/branches` | `CanManageTenantSettings` | ✓ | | | | | `BranchesController` |
 | `GET /api/platform-connections`, `POST /api/platform-connections`, `PATCH /api/platform-connections/{id}/active` | `CanManageTenantSettings` | ✓ | | | | | `PlatformConnectionsController` |
 | `POST /api/auth/validate` | Anonymous: credential check for API clients, issues no session; rate limited per tenant and client network ([authentication.md](../architecture/authentication.md#credential-rate-limiting)) | | | | | | |

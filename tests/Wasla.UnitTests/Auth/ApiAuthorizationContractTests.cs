@@ -33,6 +33,7 @@ public sealed class ApiAuthorizationContractTests : IAsyncLifetime
         ["POST api/branches"] = Expected.Policy(TenantPolicies.CanManageTenantSettings),
         ["GET api/dashboard/summary"] = Expected.Policy(TenantPolicies.CanViewReports),
         ["GET api/dashboard/today"] = Expected.Policy(TenantPolicies.CanViewReports),
+        ["GET api/dashboard/report"] = Expected.Policy(TenantPolicies.CanViewReports),
         ["GET api/orders"] = Expected.Policy(TenantPolicies.CanViewOrders),
         ["GET api/orders/{id:guid}"] = Expected.Policy(TenantPolicies.CanViewOrders),
         ["GET api/platform-connections"] = Expected.Policy(TenantPolicies.CanManageTenantSettings),

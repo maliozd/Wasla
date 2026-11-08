@@ -327,8 +327,8 @@
   <data name="Dashboard.TodayOrders" xml:space="preserve">
     <value>Today's Orders</value>
   </data>
-  <data name="Dashboard.TodayRevenue" xml:space="preserve">
-    <value>Today's Revenue</value>
+  <data name="Dashboard.TodayOrderValue" xml:space="preserve">
+    <value>Today's Order Value</value>
   </data>
   <data name="Dashboard.ActiveConnections" xml:space="preserve">
     <value>Active Connections</value>
@@ -369,8 +369,8 @@
   <data name="Dashboard.OrdersReceivedToday" xml:space="preserve">
     <value>Orders received today</value>
   </data>
-  <data name="Dashboard.TotalOrderAmountToday" xml:space="preserve">
-    <value>Total order amount today</value>
+  <data name="Dashboard.TodayOrderValueHint" xml:space="preserve">
+    <value>All of today's orders, cancellations included</value>
   </data>
   <data name="Dashboard.CurrentlyActiveOrders" xml:space="preserve">
     <value>Currently active orders</value>

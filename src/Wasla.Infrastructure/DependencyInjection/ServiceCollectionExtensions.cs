@@ -16,6 +16,7 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Abstractions.Reports;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Onboarding;
 using Wasla.Application.Abstractions.Onboarding.PendingRegistrations;
@@ -133,6 +134,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
         services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
         services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
+        services.AddScoped<IOrderReportService, OrderReportService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITenantSetupStatusService, TenantSetupStatusService>();
         services.AddScoped<IUserProductTourService, UserProductTourService>();

@@ -5,7 +5,8 @@ namespace Wasla.Web.Models.Dashboard;
 public sealed class DashboardViewModel
 {
     public int TodayOrderCount { get; set; }
-    public decimal TodayRevenue { get; set; }
+    /// <summary>The value of every order placed today, in any status, cancellations included (WAS-182). Not revenue.</summary>
+    public decimal TodayOrderValue { get; set; }
     public int ActiveOrderCount { get; set; }
     public int CancelledOrderCount { get; set; }
 
@@ -36,7 +37,7 @@ public sealed class DashboardViewModel
     {
         public FoodPlatform Platform { get; set; }
         public int Count { get; set; }
-        public decimal Revenue { get; set; }
+        public decimal OrderValue { get; set; }
     }
 }
 
