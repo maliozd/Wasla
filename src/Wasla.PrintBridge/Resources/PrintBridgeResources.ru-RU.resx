@@ -62,6 +62,9 @@
   <data name="Connection.RequestFailed" xml:space="preserve">
     <value>Запрос моста печати не выполнен (HTTP {0}).</value>
   </data>
+  <data name="Connection.RedirectNotFollowed" xml:space="preserve">
+    <value>Сервер перенаправил запрос на другой адрес, а Print Bridge не следует перенаправлениям. Введите адрес веб-панели Wasla точно так, как он указан на странице настройки Wasla Web Print Bridge.</value>
+  </data>
   <data name="Connection.ServerUnavailable" xml:space="preserve">
     <value>Сервер Wasla недоступен. Повторите попытку позже.</value>
   </data>
