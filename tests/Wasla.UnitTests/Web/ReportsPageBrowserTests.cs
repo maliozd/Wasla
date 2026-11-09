@@ -39,6 +39,13 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
     private static Task<bool> SettledAsync(HeadlessChromium browser, CancellationToken ct) =>
         browser.WaitForAsync($"!!{Result} && document.getElementById('rptResult').getAttribute('aria-busy') !== 'true'", TimeSpan.FromSeconds(15), ct);
 
+    /// <summary>
+    /// Waits until the page has answered <paramref name="query"/> and stored it for restore. History changes the URL before
+    /// the answer arrives, so the URL alone does not show that leaving the page now would restore this filter.
+    /// </summary>
+    private static Task<bool> RememberedAsync(HeadlessChromium browser, string query, CancellationToken ct) =>
+        browser.WaitForAsync($"sessionStorage.getItem('Wasla.reports.query') === {JsonSerializer.Serialize(query)} && document.getElementById('rptResult').getAttribute('aria-busy') !== 'true'", TimeSpan.FromSeconds(15), ct);
+
     private static async Task ClickPresetAsync(HeadlessChromium browser, string preset, CancellationToken ct) =>
         await browser.EvaluateAsync<bool>($"(document.querySelector('a[data-rpt-preset={preset}]').click(), true)", ct);
 
@@ -116,9 +123,11 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
         Assert.True(await browser.WaitForAsync($"{Range} === {range} && document.getElementById('rptStartDate').value === '{start}' && document.getElementById('rptEndDate').value === '{end}'", TimeSpan.FromSeconds(15), ct));
 
         await browser.EvaluateAsync<bool>("(history.back(), true)", ct);
-        Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}' && {Range} === {range} && document.getElementById('rptResult').getAttribute('aria-busy') !== 'true'", TimeSpan.FromSeconds(15), ct), "Back lost the custom range.");
+        Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}' && {Range} === {range}", TimeSpan.FromSeconds(15), ct), "Back lost the custom range.");
+        Assert.True(await RememberedAsync(browser, $"?preset=custom&{dates}", ct), "The page did not answer Back.");
         await browser.EvaluateAsync<bool>("(history.forward(), true)", ct);
         Assert.True(await browser.WaitForAsync($"location.search === '?preset=custom&{dates}&section=platforms' && {Range} === {range}", TimeSpan.FromSeconds(15), ct), "Forward lost the custom range.");
+        Assert.True(await RememberedAsync(browser, $"?preset=custom&{dates}&section=platforms", ct), "The page did not answer Forward.");
 
         await browser.NavigateAsync(new Uri(_host.BaseAddress, "/orders"), ct);
         await LeaveAsync(browser, "location.href = '/reports';", ct);
@@ -150,13 +159,16 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
 
         await browser.EvaluateAsync<bool>("(history.back(), true)", ct);
         Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "Back lost the platform.");
+        Assert.True(await RememberedAsync(browser, $"?preset=yesterday&platform={option}", ct), "The page did not answer Back.");
         await browser.EvaluateAsync<bool>("(history.forward(), true)", ct);
         Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}&section=cancellations' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "Forward lost the platform.");
+        Assert.True(await RememberedAsync(browser, $"?preset=yesterday&platform={option}&section=cancellations", ct), "The page did not answer Forward.");
 
         await browser.NavigateAsync(new Uri(_host.BaseAddress, "/orders"), ct);
         await LeaveAsync(browser, "location.href = '/reports';", ct);
         Assert.True(await browser.WaitForAsync($"location.search === '?preset=yesterday&platform={option}&section=cancellations' && {Select} === '{option}'", TimeSpan.FromSeconds(15), ct), "The platform was not restored.");
     }
+
 
     [Theory]
     [InlineData("platform=1&platform=2")]
@@ -298,6 +310,22 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
         Assert.True(await browser.WaitForAsync($"document.activeElement.dataset.title !== {JsonSerializer.Serialize(last)}", TimeSpan.FromSeconds(5), ct), "The arrow key did not move to the earlier day.");
         Assert.True(await browser.EvaluateAsync<bool>("[...document.activeElement.parentElement.children].indexOf(document.activeElement) === document.activeElement.parentElement.children.length - 2", ct));
         Assert.Equal(await browser.EvaluateAsync<string>("document.activeElement.dataset.title", ct), await browser.EvaluateAsync<string>("document.querySelector('.rpt-tip__title').textContent", ct));
+
+        // Browsers repeat pointer events when the page changes under a resting pointer. Only a pointer that moved may take over.
+        var titles = await browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const tipTitle = () => document.querySelector('.rpt-tip__title').textContent;
+              const under = document.activeElement.parentElement.lastElementChild;
+              const at = x => ({ bubbles: true, clientX: x, clientY: 7 });
+              under.dispatchEvent(new PointerEvent('pointermove', at(7)));
+              under.dispatchEvent(new PointerEvent('pointerover', at(7)));
+              const rested = tipTitle();
+              under.dispatchEvent(new PointerEvent('pointerover', at(9)));
+              return { selected: document.activeElement.dataset.title, rested, moved: tipTitle(), under: under.dataset.title };
+            })()
+            """, ct);
+        Assert.Equal(titles.GetProperty("selected").GetString(), titles.GetProperty("rested").GetString());
+        Assert.Equal(titles.GetProperty("under").GetString(), titles.GetProperty("moved").GetString());
     }
 
     [Fact]

@@ -478,6 +478,7 @@
 
   function initCharts(root, document) {
     let tip = null;
+    let pointerAt = "";
 
     function hideTip() {
       if (tip) {
@@ -518,9 +519,20 @@
       element.style.top = "0";
     }
 
+    function pointerPosition(event) {
+      return event.clientX + "," + event.clientY;
+    }
+
+    root.addEventListener("pointermove", function (event) {
+      pointerAt = pointerPosition(event);
+    });
+
+    // Browsers repeat pointerover when the page changes under a resting pointer; that must not take the values from the day chosen by keyboard.
     root.addEventListener("pointerover", function (event) {
+      const moved = pointerPosition(event) !== pointerAt;
+      pointerAt = pointerPosition(event);
       const column = event.target.closest("[data-rpt-col]");
-      if (column) showTip(column);
+      if (column && moved) showTip(column);
     });
 
     root.addEventListener("pointerout", function (event) {
