@@ -215,6 +215,15 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("CancellationOrigin")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CancellationReasonCode")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CancellationReasonPlatform")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 
@@ -332,7 +341,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Orders_Platform_ExternalOrderId");
 
-                    b.ToTable("Orders", (string)null);
+                    b.ToTable("Orders", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Orders_CancellationMetadata", "(CancellationOrigin IS NULL OR InternalStatus = 6) AND ((CancellationReasonCode IS NULL AND CancellationReasonPlatform IS NULL) OR (CancellationOrigin IS NOT NULL AND CancellationReasonCode IS NOT NULL AND CancellationReasonPlatform IS NOT NULL AND CancellationReasonPlatform = Platform))");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItem", b =>

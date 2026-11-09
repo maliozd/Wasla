@@ -4,7 +4,7 @@
 
 This page is a map of the running Wasla processes and where to read details.
 
-It does not replace the topic documents. Source code is authoritative when a document and the code disagree. Some behaviors described in the topic docs are present in the working tree and not yet committed; those docs say so.
+It does not replace the topic documents. Source code is authoritative when a document and the code disagree.
 
 ## Processes
 

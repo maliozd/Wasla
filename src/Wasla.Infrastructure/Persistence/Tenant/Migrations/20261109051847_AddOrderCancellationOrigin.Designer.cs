@@ -12,8 +12,8 @@ using Wasla.Infrastructure.Persistence.Tenant;
 namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
 {
     [DbContext(typeof(TenantDbContext))]
-    [Migration("20261109113343_AddUserOrderActionPreferences")]
-    partial class AddUserOrderActionPreferences
+    [Migration("20261109051847_AddOrderCancellationOrigin")]
+    partial class AddOrderCancellationOrigin
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -218,6 +218,15 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("CancellationOrigin")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CancellationReasonCode")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CancellationReasonPlatform")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("datetime2");
 
@@ -335,7 +344,10 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Orders_Platform_ExternalOrderId");
 
-                    b.ToTable("Orders", (string)null);
+                    b.ToTable("Orders", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Orders_CancellationMetadata", "(CancellationOrigin IS NULL OR InternalStatus = 6) AND ((CancellationReasonCode IS NULL AND CancellationReasonPlatform IS NULL) OR (CancellationOrigin IS NOT NULL AND CancellationReasonCode IS NOT NULL AND CancellationReasonPlatform IS NOT NULL AND CancellationReasonPlatform = Platform))");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.OrderItem", b =>
@@ -944,33 +956,6 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserNotificationSettings", (string)null);
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("ConfirmRoutineActions")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_UserOrderActionPreferences_UserId");
-
-                    b.ToTable("UserOrderActionPreferences", (string)null);
-                });
-
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1087,17 +1072,6 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
-                });
-
-            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
-                {
-                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>

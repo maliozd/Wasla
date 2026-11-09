@@ -12,8 +12,8 @@ namespace Wasla.UnitTests.Orders;
 /// </summary>
 public sealed class UserOrderActionPreferenceMigrationSqlServerTests(SqlServerTenantDatabase database) : IClassFixture<SqlServerTenantDatabase>
 {
-    private const string PreviousMigration = "20261103201038_AddTenantSessions";
-    private const string Migration = "20261109113343_AddUserOrderActionPreferences";
+    private const string PreviousMigration = "20261109051847_AddOrderCancellationOrigin";
+    private const string Migration = "20261109191122_AddUserOrderActionPreferences";
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -37,6 +37,7 @@ public sealed class UserOrderActionPreferenceMigrationSqlServerTests(SqlServerTe
         await migrator.MigrateAsync(PreviousMigration, Ct);
         Assert.Empty(await StringsAsync(db, "SELECT name FROM sys.tables WHERE name = 'UserOrderActionPreferences'"));
         Assert.Equal(["AppUsers"], await StringsAsync(db, "SELECT name FROM sys.tables WHERE name = 'AppUsers'"));
+        Assert.Equal(["CancellationOrigin"], await StringsAsync(db, "SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Orders') AND name = 'CancellationOrigin'"));
 
         await migrator.MigrateAsync(cancellationToken: Ct);
         Assert.Contains(Migration, await db.Database.GetAppliedMigrationsAsync(Ct));

@@ -2,7 +2,7 @@
 
 Status: retained at the user's request on 2026-09-21. Do not remove yet.
 
-`src/Wasla.PrintBridge/Services/PrintBridgeRuntime.cs` contains a marked
+`src/Wasla.PrintBridge.Core/Services/PrintBridgeRuntime.cs` contains a marked
 `TEMPORARY` block in the `DryRun` path. It saves the formatted receipt as UTF-8
 text before the job is marked printed. Normal physical printing is unaffected.
 

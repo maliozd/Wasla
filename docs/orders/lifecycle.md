@@ -83,6 +83,81 @@ Every time is stored as a UTC instant and converted only for display.
 - **Rows stored before this rule** keep the times they have. Orders a recovery poll imported already Delivered, Accepted or Cancelled carry the import time there (for example the three Pilavcı Rahim orders imported on 17 October 2026 at 02:19/02:21). They cannot be told apart from live-observed times, so no data is changed.
 - Yemeksepeti and the mock clients ignore the planned window. For them the same rule uses the window computed from the checkpoint, which is accurate in normal polling.
 
+### How an order ended (WAS-200)
+
+These are stored separately and must not be read as one:
+
+| Concept | Field | Meaning |
+| --- | --- | --- |
+| **Outcome** | `InternalStatus = Cancelled` | The order ended without delivery. The existing status: rejections are stored as `Cancelled`, and no status was added |
+| **Who initiated it** | `CancellationOrigin` (nullable) | As far as Wasla knows. Null is **unknown** |
+| **Why** | `CancellationReasonPlatform` + `CancellationReasonCode` (nullable, both or neither) | The platform's own numeric reason code and the platform whose list it belongs to. With origin `OperatorRejected` it is the reason the operator chose; with any other origin it is the reason the provider reported. Null is **no reason known** |
+| What Wasla merely observed | `PlatformStatus` | The provider's raw status text. It is overwritten by the latest report and says nothing durable about who ended the order |
+
+`OrderCancellationOrigin` (`src/Wasla.Domain/Enums/OrderCancellationOrigin.cs`):
+
+| Value | Written when | What it does and does not claim |
+| --- | --- | --- |
+| null | Anything else | Unknown. Every order that ended before the migration, and every provider status whose meaning is not verified: Yemeksepeti, Getir, Trendyol GO `Returned`, the mock labels |
+| `OperatorRejected` (1) | `OrderActionService` rejected a New order and the provider accepted | An operator acted through Wasla. Carries the validated reason where the platform has a list |
+| `OperatorCancelled` (2) | Nothing yet | Wasla has no operator action that cancels an accepted order. The value is reserved for one |
+| `RestaurantOnPlatform` (3) | Sync saw Trendyol GO `UnSupplied` on an order not already Cancelled | Trendyol GO documents the status as cancelled by the restaurant, so the restaurant origin is known. Who did it, and whether it was a rejection or a cancellation, are **not**: it may be the provider's panel, or a Wasla rejection whose local save was lost. A report must not count it as a known cancellation |
+| `ProviderOrCustomer` (4) | Sync saw Trendyol GO `Cancelled` on an order not already Cancelled | Trendyol GO documents the status as not originating from the restaurant. That can be the order customer, the courier or the provider. It **never** claims the customer |
+
+Rules (source: `OrderActionService`, `OrderCancellationOrigins`, `ProviderCancellationReasons`, `OrderIngestion.ApplyProviderCancellation`):
+
+- **Written with the status.** An operator rejection stores its origin and reason in the same conditional `UPDATE` that sets `Cancelled`, after the provider accepted and with no transaction open during the provider call. A sync-observed origin is part of sync's update of the status, under its row lock. A database check (`CK_Orders_CancellationMetadata`) refuses an origin on an order that is not Cancelled, and a reason without an origin or for another platform than the order's.
+- **A refused action leaves nothing.** A missing or unsupported reason, a provider refusal or a failed provider call stores neither status nor metadata. Only reasons `OrderRejectReasons` accepted for the stored order's platform are stored.
+- **Only the write that makes the order Cancelled records anything.** Later reports never change it: a provider echo, a repeated or stale poll, or a different later status keep what is stored, and `PlatformStatus` still follows the provider. An order that ended unknown stays unknown even if a later poll reports `UnSupplied`, because that poll cannot show the order was not ended earlier by something else.
+- **Provider reasons are stored only with a known origin.** The write that records a Trendyol GO `Cancelled` or `UnSupplied` also stores `cancelInfo.reasonCode`, with its platform, when the code is on the documented Meal list. A missing, null or malformed value, or a code the list does not have, stores no reason and leaves the origin and the status as they are. A code the list does not have is logged, as a number, so a change in the provider's list can be noticed. `reason` and any other provider text are never read into these fields.
+- **A cause is not a person.** A reason code can name a cause, such as the customer asking, a courier problem, an accident or a technical failure. It does not say who pressed cancel, and it does not change the origin.
+- **Provider reasons are not operator reasons.** `ProviderCancellationReasons` lists what Wasla may record from Trendyol GO. `OrderRejectReasons` lists what an operator may send, and it stays 621, 622, 623 and 627. No provider code becomes selectable.
+- **Echo during the action.** If sync stores the provider's `UnSupplied` while the operator's reject call is still in flight, the action loses the status write as before and still answers `Orders.InvalidStatusForAction`; it then replaces that origin and any reason the provider reported with the operator's rejection and reason, because the provider accepted this action's own seller cancellation. It replaces nothing else: an unknown origin, or `ProviderOrCustomer`, stands, because replacing them would be a guess.
+
+#### Trendyol GO Meal provider reasons: what is documented and what is not
+
+Checked on 2026-11-09 in the official Meal documentation at developers.tgoapps.com. Every fixture in the tests has this documented shape with synthetic values.
+
+| Source | What it establishes |
+| --- | --- |
+| Meal "Paket Modelleri" | `Cancelled` is a cancellation not originating from the restaurant; `UnSupplied` is one by the restaurant. "Restaurant Kaynaklı İptal Nedenleri" lists 621, 622, 623, 624, 626, 627. "Diğer İptal Nedenleri" lists the reasons the platform may return |
+| Meal webhook "Event Types and Event Payloads" | `cancelled` and `unsupplied` carry `cancelInfo` with a numeric `reasonCode` and a text `reason` (samples: 601 and 621) |
+| Meal "Sipariş Paketlerini Çekme" | The package has a `cancelInfo` field, shown as `null` in both samples. The populated object is not shown there, so reading it the same way as the webhook payload is an inference |
+| **Not Meal:** announcement "Sipariş Paketlerini Dönme Servisindeki Yeni Alanlar" (14.07.2023) | It is under the Hızlı Market tab and links the Grocery packages service. Its `reasonType` and sample code 664 are Grocery contract, so Wasla reads no `reasonType` and 664 is not on the Meal list |
+
+No real Meal cancellation has been inspected for `cancelInfo`. Everything above is documented support, not live verification: a real package may leave it null, and then the order keeps its origin with no reason.
+
+| Path | What it receives | What is recorded when it makes the order Cancelled |
+| --- | --- | --- |
+| Polling (`TrendyolGoFoodPlatformClient`) | The package, with `cancelInfo` | Origin from `packageStatus`; reason from `cancelInfo.reasonCode` |
+| Webhook `cancelled` / `unsupplied` for a stored order (stage pilot) | `status` and `cancelInfo` | Origin from `status`; reason from `cancelInfo.reasonCode`. Without one, still a supported status-only observation |
+| Webhook for an order not stored, or with an unexpected `status` | Reconciled from the packages call | As for polling; the event's own `cancelInfo` is not used |
+| Yemeksepeti, Getir, mock clients | No verified reason | Nothing beyond what their status proves |
+
+The list's meanings, grouped by Wasla for reading (the provider publishes no such categories, and no category is stored):
+
+| Reading | Codes |
+| --- | --- |
+| Restaurant reasons | 621 supply problem, 622 store closed, 623 store cannot prepare, 624 high demand or no courier and 626 outside the area (own-courier sellers only), 627 order confusion |
+| Customer | 604 customer asked to cancel, 605 late and no longer wanted, 606 customer asked and the seller agreed |
+| Address and order details | 601, 602, 607 address; 608 cash on delivery balance; 609, 610 items and notes; 611 long delivery estimate |
+| Fraud | 69, 603, 681, 682 |
+| Not accepted | 625 |
+| Courier, road and goods | 641 accident, 642 high demand or no courier, 643 road closed, 644, 645, 648 courier, 647 goods damaged |
+| Technical | 661 admin down, 662 courier app down, 663 seller panel down |
+
+What this cannot promise, because the remote action and the local write are not one transaction:
+
+- Provider accepted, local write failed: the order stays New, and the operator's reason is lost. A later poll records `RestaurantOnPlatform`, with a documented code if the provider reports one.
+- A provider call that timed out but took effect: Wasla reports the reject as failed and stores nothing; the later poll records the same.
+- Both are recorded honestly as what the provider reported, never as an operator rejection.
+
+A reason is recorded only with the status write. If the first observation of a cancellation has no usable code, a later report does not add one.
+
+How reports group these fields, their denominators and what the page shows are in [reporting.md](./reporting.md#how-cancelled-orders-ended-was-200). There, `OperatorRejected` is a known rejection, `OperatorCancelled` and `ProviderOrCustomer` are known cancellations, and a null origin and `RestaurantOnPlatform` are unknown: the latter has a known origin but no known outcome.
+
+**Rollout boundary.** Reliable data starts for each tenant when the tenant migration `AddOrderCancellationOrigin` is applied and a release containing this code runs against it. No backfill runs: every order that ended before that moment keeps null, and a report must show those as unknown. The implementation date is not that moment; the production date is recorded when the release is deployed. Reverting the migration drops the three columns and what they hold.
+
 ### Idempotency and parent row
 
 - Idempotency key = SHA-256 Base64 of `"{Platform}:{ExternalOrderId}"`, stored as `Order.IdempotencyKey`.
@@ -96,7 +171,7 @@ HTTP surface: `Wasla.Web` `OrdersController` under `/orders/{id}/…` (approve, 
 | Current status required | Action | Next status | Provider call |
 | --- | --- | --- | --- |
 | `New` | Approve | `Preparing` (sets `AcceptedAt`) | `AcceptOrderAsync` |
-| `New` | Reject | `Cancelled` | `RejectOrderAsync` |
+| `New` | Reject | `Cancelled` (sets `CancelledAt`, and [how the order ended](#how-an-order-ended-was-200)) | `RejectOrderAsync` |
 | `Preparing` | Mark ready | `ReadyForPickup` | `MarkInvoicedAsync` (shared name; means ready for all platforms) |
 | `ReadyForPickup` | — (no restaurant action) | `OnTheWay` via provider sync | — |
 | `OnTheWay` | — (no restaurant action) | `Delivered` via provider sync | — |
@@ -200,6 +275,7 @@ Sync iterates each tenant's platform connections. Each tenant may have at most o
 | Concern | Location |
 | --- | --- |
 | Status enum | `src/Wasla.Domain/Enums/OrderStatus.cs` |
+| How an order ended | `src/Wasla.Domain/Enums/OrderCancellationOrigin.cs`, `src/Wasla.Application/Orders/OrderCancellationOrigins.cs`, `src/Wasla.Application/Orders/ProviderCancellationReasons.cs` |
 | Order / notes | `src/Wasla.Domain/Entities/TenantDb/Order.cs`, `OrderItem.cs` |
 | Operator actions | `src/Wasla.Infrastructure/Services/OrderActionService.cs` |
 | HTTP actions | `src/Wasla.Web/Areas/Tenant/Controllers/OrdersController.cs` |

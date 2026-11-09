@@ -263,9 +263,9 @@ Trendyol GO package requests share one process-wide limit of 40 requests per rol
 
 ## Webhooks
 
-No webhook is implemented for any platform yet; polling is the only ingestion path. The WAS-17 decision record, [provider-webhooks.md](provider-webhooks.md), holds the evidence:
+Polling is the ingestion path for every connection. Wasla has no general or production webhook ingestion for any platform; the only receiver is the stage pilot below, off by default and limited to one configured connection. The WAS-17 decision record, [provider-webhooks.md](provider-webhooks.md), holds the evidence:
 
-- Trendyol GO documents a Meal webhook. Wasla will use it provider-specifically, in front of the checkpointed polling, never instead of it. The endpoint and its tenant routing are blocked until Trendyol GO confirms how an event identifies its seller ([Tenant routing](provider-webhooks.md#tenant-routing)).
+- Trendyol GO documents a Meal webhook. Wasla will use it provider-specifically, in front of the checkpointed polling, never instead of it. A general endpoint for every seller and its tenant routing are blocked until Trendyol GO confirms how an event identifies its seller ([Tenant routing](provider-webhooks.md#tenant-routing)).
 - Yemeksepeti's restaurant webhook contract is not currently confirmable; implementation is blocked by WAS-70.
 - A pilot receives Trendyol GO Meal webhooks from the provider's stage API on the existing Wasla deployment, for exactly one configured seller and connection, without tenant routing; it is off by default, and only its connection uses the stage API while every other connection keeps the deployment's API ([trendyol-go-meal-webhook-stage-pilot.md](trendyol-go-meal-webhook-stage-pilot.md)).
 

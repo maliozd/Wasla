@@ -48,7 +48,7 @@ Primary sources:
 
 ## Webhooks and polling
 
-The WAS-17 decision for Trendyol GO is webhook first, with polling as the safety net that reconciles what webhooks miss. Webhooks are **not implemented**: polling is the only ingestion path today, for every platform. Yemeksepeti stays polling-only until its restaurant contract is confirmed.
+The WAS-17 decision for Trendyol GO is webhook first, with polling as the safety net that reconciles what webhooks miss. That webhook path is **not delivered**: there is no general or production webhook ingestion for any platform, and polling is the ingestion path for every connection. The only receiver is the stage pilot described below, off by default and limited to one configured connection. Yemeksepeti stays polling-only until its restaurant contract is confirmed.
 
 The evidence and the open provider questions are in [../integrations/provider-webhooks.md](../integrations/provider-webhooks.md). It explains why the Trendyol GO webhook (3 retries, no events for `Picking` or `Invoiced`, no documented ordering) does not allow polling to be removed.
 
@@ -62,7 +62,7 @@ For Trendyol GO this is described in [Checkpoint and outage recovery](#checkpoin
 
 The Trendyol GO Meal webhook stage pilot ([../integrations/trendyol-go-meal-webhook-stage-pilot.md](../integrations/trendyol-go-meal-webhook-stage-pilot.md)) adds a **targeted reconciliation** (`OrderSyncService.ReconcileConnectionAsync`): one connection's window from just before an event to now, at most one fetch window, ingested through the shared path. It never moves the checkpoint, the last attempt or the failure counters, and it does not replace the polling pass.
 
-Polling already writes through the path a future webhook adapter would use ([Shared ingestion](#shared-ingestion-was-18)). No endpoint receives provider events, and routing a previously unseen event to a tenant stays blocked on WAS-175.
+Polling already writes through the path a future webhook adapter would use ([Shared ingestion](#shared-ingestion-was-18)). Only the pilot's endpoint receives provider events, and routing a previously unseen event to a tenant stays blocked on WAS-175.
 
 ## Worker cycle
 
@@ -317,9 +317,9 @@ Two kinds of observation:
 | Observation | Entry point | Unknown order | Stored order |
 | --- | --- | --- | --- |
 | Full package (polling today; a vetted `created` adapter later) | `IngestPackageAsync` | Inserted | Every field, items and options compared, then updated through the locked re-read and the status merge |
-| Status only (no production caller yet) | `ApplyStatusObservationAsync` | **Not created**; polling imports the full order | Only the status moves, through the same lock, merge, milestones, change version, notification and receipt rule. Items, customer, money and time fields are never touched; the provider status text is stored only when the merge moves the order on |
+| Status only (the stage pilot is its only caller) | `ApplyStatusObservationAsync` | **Not created**; polling imports the full order | Only the status moves, through the same lock, merge, milestones, change version, notification and receipt rule. Items, customer, money and time fields are never touched; the provider status text is stored only when the merge moves the order on |
 
-The status-only path takes a Wasla `OrderStatus` that a provider adapter derives from a verified provider contract. It does not interpret webhook event names, and no Trendyol GO event is mapped yet.
+The status-only path takes a Wasla `OrderStatus` that a provider adapter derives from a verified provider contract. It does not interpret webhook event names. The stage pilot applies only a `cancelled` or `unsupplied` event's own documented `status` (`Cancelled`, `UnSupplied`), for an order Wasla has stored; no other Trendyol GO event is mapped.
 
 ### Ownership of fetched orders
 
@@ -349,6 +349,7 @@ Rules:
 - New orders are inserted; then auto-approve / receipt hooks may run for eligible new rows (never while the tenant is in Setup; see [Operational mode: Setup](#operational-mode-setup)).
 - Real updates replace child `OrderItems` / `OrderItemOptions` via `ExecuteDeleteAsync` then reinsert, update scalars, set `UpdatedAt`, and rewrite `RawPayloadJson`.
 - Milestones (`AcceptedAt`, `DeliveredAt`, `CancelledAt`) get the sync time only from a live window (a current-pass window from the checkpoint, at most `MilestoneObservationLimit` long); recovery leaves them null ([lifecycle.md](lifecycle.md#milestone-times)).
+- How an order ended (WAS-200, see [lifecycle.md](lifecycle.md#how-an-order-ended-was-200)): only the write that makes an order `Cancelled` records an origin, and only from a provider status with a documented meaning (Trendyol GO `UnSupplied`, `Cancelled`). Otherwise it stays unknown. That write also stores a documented Trendyol GO Meal `cancelInfo.reasonCode`, from the package or from the webhook payload. A missing or unusable code stores no reason and changes nothing else. An order already `Cancelled` keeps what it has.
 - Order times (WAS-125, see [lifecycle.md](lifecycle.md#order-times-was-125)): `ReceivedAt` is set on insert only. The provider's creation and modification times are stored only when plausible; a payload without them keeps the stored values, and a changed modification time alone is an update.
 - Insert and update write each item's and option's zero-based position in the provider's list as `Sequence` (WAS-44). The mappers keep the provider's order: Trendyol GO `lines`, Yemeksepeti `basket`; neither payload has an explicit position field. Screens and receipts order by it (see [../frontend/design-system.md](../frontend/design-system.md#tables-and-sorting)). The short circuit below compares items, and each item's options, in order. A payload that only reorders the same lines, or one line's options, is therefore an update: the new positions are stored, the order's `ChangeVersion` moves on once and one live notification is sent, like any other visible change. Item ids and payload noise alone are still unchanged. Rows stored before `Sequence` existed are compared in their fallback order (stored time, then Id). On the first poll after the migration, an order the provider still returns is rewritten once if that fallback differs from the provider's order.
 - Provider internal status is **merged** with local progress so stale provider statuses cannot undo operator progress (see `MergeInternalStatusForSync`). The merge starts from the status read inside the update transaction after the order row is locked, so a status an operator action or another Worker committed after sync's first read is kept (WAS-123, see [lifecycle.md](./lifecycle.md#child-replace-on-real-updates)).
@@ -356,7 +357,7 @@ Rules:
 
 ### Concurrent first observations
 
-Two callers can both read that a package has no order and both insert it: two Worker passes today, a webhook processor next to polling later.
+Two callers can both read that a package has no order and both insert it: two Worker passes, or the stage pilot's webhook processor next to a polling pass.
 
 - The insert is `SaveChanges` in its own transaction, never one the caller opened. SQL Server holds the second insert on the first one's key lock until that transaction ends and reports the duplicate key only if the first one committed, so a refused insert means the winner's order is committed and readable.
 - Only a duplicate key on the order identity indexes (`IX_Orders_IdempotencyKey`, `IX_Orders_Platform_ExternalOrderId`; SQL Server 2601/2627) counts. EF Core has rolled its own transaction back; the refused graph is detached, and the context is checked to have no open transaction.
@@ -426,7 +427,7 @@ See also [../operations/observability.md](../operations/observability.md#order-s
 
 - Yemeksepeti partner endpoint path still carries a TODO to confirm against official Partner API docs.
 - Getir has no real fetch client yet.
-- Webhooks are not implemented for any platform; polling is the only ingestion path (see [Webhooks and polling](#webhooks-and-polling)).
+- No general or production webhook ingestion exists for any platform; polling is the ingestion path for every connection. The only receiver is the stage pilot, off by default and limited to one configured connection (see [Webhooks and polling](#webhooks-and-polling)).
 - New-order side effects (auto-approve, the provider-accepted receipt) are not replayed if the process stops between the insert's commit and those effects (WAS-178).
 - Yemeksepeti polling is not checkpointed and still uses a fixed one-hour lookback.
 - Trendyol GO's maximum date range, retention, bound inclusivity, sort order and the scope of its 50-requests-per-10-seconds limit are undocumented and not yet verified against the Stage API. The scope needs written confirmation from Trendyol GO.

@@ -117,7 +117,7 @@ Typical local ports (launchSettings):
 | Web | `http://0.0.0.0:5200`, `https://0.0.0.0:7200` |
 | API | `http://localhost:59451`, `https://localhost:59450` |
 
-Health (Web and API; currently uncommitted diagnostics wiring in working tree):
+Health (Web and API):
 
 - `/health/live`
 - `/health/ready` (includes CentralDb check)

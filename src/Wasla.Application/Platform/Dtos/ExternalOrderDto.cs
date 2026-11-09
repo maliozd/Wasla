@@ -39,5 +39,11 @@ public sealed record ExternalOrderDto(
     /// has one. Compared like <see cref="ProviderSupplierId"/>.
     /// </summary>
     public string? ProviderStoreId { get; init; }
+
+    /// <summary>
+    /// The numeric cancellation reason the payload reports, as sent and not yet checked, when it has one (WAS-200).
+    /// Ingestion decides whether it can be recorded.
+    /// </summary>
+    public int? ProviderCancellationReasonCode { get; init; }
 }
 

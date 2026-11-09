@@ -4559,6 +4559,58 @@
   <data name="Reports.RateByPlatform" xml:space="preserve"><value>المعدل حسب المنصة</value></data>
   <data name="Reports.DailyCancellations" xml:space="preserve"><value>الإلغاءات والرفض يوميًا</value></data>
   <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>حسب يوم تقديم الطلبات</value></data>
+  <data name="Reports.NoCancellationsTitle" xml:space="preserve"><value>لا توجد طلبات ملغاة أو مرفوضة في هذه الفترة</value></data>
+  <data name="Reports.NoCancellationsText" xml:space="preserve"><value>لا يوجد ما يمكن تصنيفه لهذا الاختيار.</value></data>
+  <data name="Reports.MissingDataNote" xml:space="preserve"><value>قد لا تتضمن السجلات الأقدم، والطلبات التي أبلغت عنها المنصة دون هذه التفاصيل، تصنيفًا أو سببًا. وغياب المعلومة لا يعني أن ذلك لم يحدث.</value></data>
+  <data name="Reports.Ending.Title" xml:space="preserve"><value>كيف انتهت هذه الطلبات</value></data>
+  <data name="Reports.Ending.Hint" xml:space="preserve"><value>يُحتسب كل طلب ملغى أو مرفوض في مجموعة واحدة فقط.</value></data>
+  <data name="Reports.Ending.KnownRejected" xml:space="preserve"><value>رفض معروف</value></data>
+  <data name="Reports.Ending.KnownRejectedHint" xml:space="preserve"><value>رُفض الطلب عبر Wasla.</value></data>
+  <data name="Reports.Ending.KnownCancelled" xml:space="preserve"><value>إلغاء معروف</value></data>
+  <data name="Reports.Ending.KnownCancelledHint" xml:space="preserve"><value>أُلغي عبر Wasla، أو أبلغت المنصة أن الإلغاء لم يكن من المطعم.</value></data>
+  <data name="Reports.Ending.Unknown" xml:space="preserve"><value>غير معروف إن كان رفضًا أم إلغاءً</value></data>
+  <data name="Reports.Ending.UnknownHint" xml:space="preserve"><value>لا يستطيع Wasla تحديد أيٍّ منهما حدث لهذه الطلبات.</value></data>
+  <data name="Reports.Ending.RestaurantOrigin" xml:space="preserve"><value>أنهاه المطعم على المنصة</value></data>
+  <data name="Reports.Ending.NoOrigin" xml:space="preserve"><value>لم يُسجَّل المصدر</value></data>
+  <data name="Reports.Ending.OriginNote" xml:space="preserve"><value>معرفة مصدر الإنهاء لا تعني دائمًا معرفة الإجراء: فالطلب الذي أنهاه المطعم على المنصة قد يكون رُفض أو أُلغي.</value></data>
+  <data name="Reports.Ending.ShareNote" xml:space="preserve"><value>النسب من جميع الطلبات الملغاة أو المرفوضة في هذا الاختيار.</value></data>
+  <data name="Reports.Ending.ByPlatform" xml:space="preserve"><value>حسب المنصة</value></data>
+  <data name="Reports.Reasons.Title" xml:space="preserve"><value>توزيع الأسباب</value></data>
+  <data name="Reports.Reasons.Coverage" xml:space="preserve"><value>الطلبات الملغاة أو المرفوضة التي سُجّل سببها: {0} / {1} ({2})</value></data>
+  <data name="Reports.Reasons.Missing" xml:space="preserve"><value>لم يُسجَّل سبب</value></data>
+  <data name="Reports.Reasons.Code" xml:space="preserve"><value>الرمز {0}</value></data>
+  <data name="Reports.Reasons.NoneRecorded" xml:space="preserve"><value>لم تُسجَّل أسباب للطلبات في هذا الاختيار.</value></data>
+  <data name="Reports.Reasons.NoList" xml:space="preserve"><value>لا يسجل Wasla رموز الأسباب لهذه المنصة بعد.</value></data>
+  <data name="Reports.Reasons.Denominator" xml:space="preserve"><value>النسب من الطلبات الملغاة أو المرفوضة لكل منصة، بما فيها الطلبات بلا سبب.</value></data>
+  <data name="Reports.Reasons.CauseNote" xml:space="preserve"><value>يصف السبب لماذا انتهى الطلب، ولا يحدد من ألغاه.</value></data>
+  <data name="Reports.CancellationReason.Unlabelled" xml:space="preserve"><value>رمز السبب {0}</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.69" xml:space="preserve"><value>احتيال رصده النظام</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.601" xml:space="preserve"><value>العنوان خاطئ</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.602" xml:space="preserve"><value>غير موجود في العنوان</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.603" xml:space="preserve"><value>احتيال</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.604" xml:space="preserve"><value>طلب العميل الإلغاء</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.605" xml:space="preserve"><value>تأخر الطلب ولم يعد العميل يريده</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.606" xml:space="preserve"><value>طلب العميل الإلغاء / وافق البائع</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.607" xml:space="preserve"><value>عدم تطابق العنوان مع الموقع</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.608" xml:space="preserve"><value>الدفع عند الاستلام، الرصيد غير كافٍ</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.609" xml:space="preserve"><value>إضافة منتج خاطئ أو ناقص</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.610" xml:space="preserve"><value>نسيان إضافة ملاحظة</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.611" xml:space="preserve"><value>طول وقت التسليم المتوقع</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.624" xml:space="preserve"><value>ضغط مرتفع / لا يوجد مندوب توصيل</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.625" xml:space="preserve"><value>لم يُقبل</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.626" xml:space="preserve"><value>خارج منطقة التوصيل</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.641" xml:space="preserve"><value>حادث</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.642" xml:space="preserve"><value>بسبب الضغط المرتفع / لا يوجد مندوب توصيل</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.643" xml:space="preserve"><value>الطريق مغلق / لا يوجد طريق بديل</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.644" xml:space="preserve"><value>بسبب المندوب</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.645" xml:space="preserve"><value>بسبب المندوب</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.647" xml:space="preserve"><value>تضررت المنتجات</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.648" xml:space="preserve"><value>بسبب المندوب - مشكلة هوية عند مدخل الموقع</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.661" xml:space="preserve"><value>نظام الإدارة متوقف</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.662" xml:space="preserve"><value>تطبيق المندوب متوقف</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.663" xml:space="preserve"><value>لوحة البائع متوقفة</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.681" xml:space="preserve"><value>رقم هاتف احتيالي</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.682" xml:space="preserve"><value>عنوان توصيل احتيالي</value></data>
   <data name="Reports.ComparisonTitle" xml:space="preserve"><value>فترتان مكتملتان متساويتان في الطول</value></data>
   <data name="Reports.ComparisonHint" xml:space="preserve"><value>حسب يوم تقديم الطلبات، وبحالتها الحالية</value></data>
   <data name="Reports.ThisPeriod" xml:space="preserve"><value>هذه الفترة</value></data>

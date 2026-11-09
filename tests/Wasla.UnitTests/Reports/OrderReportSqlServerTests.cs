@@ -64,13 +64,20 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
     /// <summary>Yemeksepeti's three days in the known dataset (<see cref="SeedKnownDatasetAsync"/>).</summary>
     private static readonly OrderReportFigures[] YemeksepetiDays =
     [
-        new(1, 3.33m, 0, 0m, 0, 0, 1, 0),
-        new(1, 30.03m, 0, 0m, 0, 0, 1, 0),
-        new(2, 50.10m, 1, 0.10m, 1, 0, 0, 0)
+        F(1, 3.33m, 0, 0m, inProgress: 1),
+        F(1, 30.03m, 0, 0m, inProgress: 1),
+        F(2, 50.10m, 1, 0.10m, cancelled: 1)
     ];
 
-    private static OrderReportFigures F(int count, decimal value, int completed, decimal completedValue, int cancelled = 0, int failed = 0, int inProgress = 0, int other = 0) =>
-        new(count, value, completed, completedValue, cancelled, failed, inProgress, other);
+    /// <summary>
+    /// Expected figures. Cancelled orders are unknown and without a reason unless the test says otherwise, so every older
+    /// test also asserts that an order with no stored origin is reported as unknown.
+    /// </summary>
+    private static OrderReportFigures F(
+        int count, decimal value, int completed, decimal completedValue, int cancelled = 0, int failed = 0, int inProgress = 0, int other = 0,
+        int rejected = 0, int knownCancelled = 0, int restaurant = 0, int? missing = null) =>
+        new(count, value, completed, completedValue, cancelled, failed, inProgress, other,
+            rejected, knownCancelled, cancelled - rejected - knownCancelled, restaurant, missing ?? cancelled);
 
     /// <summary>
     /// Every stored status, three platforms, decimal amounts, a missing provider time, two delayed imports and orders
@@ -450,7 +457,8 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
             dto.Period);
         Assert.Equal(FoodPlatformDto.TrendyolYemek, dto.Platform);
         Assert.Equal("TRY", dto.Currency);
-        Assert.Equal(new OrderReportFiguresDto(5, 235.03m, 2, 200.00m, 100.00m, 0, 0, 2, 1), dto.Summary);
+        Assert.Equal(new OrderReportFiguresDto(5, 235.03m, 2, 200.00m, 100.00m, 0, 0, 2, 1, 0, 0, 0, 0, 0), dto.Summary);
+        Assert.Empty(dto.CancellationReasons);
         Assert.Equal([FoodPlatformDto.TrendyolYemek], dto.Platforms.Select(p => p.Platform));
         Assert.Equal([2, 1, 2], dto.Days.Select(d => d.Figures.OrderCount));
         Assert.Equal([new DateOnly(2026, 11, 5), new DateOnly(2026, 11, 6), new DateOnly(2026, 11, 7)], dto.Days.Select(d => d.Date));
@@ -499,11 +507,318 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
         AssertReconciles(later);
     }
 
+    /// <summary>
+    /// WAS-200: every origin, known and missing reasons, three platforms, history, and orders on both sides of the period.
+    /// Period: local 5–7 November 2026. Every cancelled order is 10.00.
+    /// </summary>
+    private async Task SeedEndingDatasetAsync()
+    {
+        await ResetAsync();
+        await SeedAsync(
+            // 5 November
+            Ended("E1", FoodPlatform.TrendyolYemek, Utc(11, 5, 9), OrderCancellationOrigin.OperatorRejected, 621),
+            Ended("E2", FoodPlatform.TrendyolYemek, Utc(11, 5, 10), OrderCancellationOrigin.OperatorRejected, 621),
+            // An order from before the columns existed.
+            Ended("E9", FoodPlatform.TrendyolYemek, Utc(11, 5, 11), origin: null),
+            // Nothing writes OperatorCancelled yet, but its meaning is fixed.
+            Ended("E8", FoodPlatform.GetirYemek, Utc(11, 5, 12), OrderCancellationOrigin.OperatorCancelled),
+            // The same number on another platform is another reason.
+            Ended("E14", FoodPlatform.Yemeksepeti, Utc(11, 5, 13), OrderCancellationOrigin.OperatorRejected, 621),
+            O("E12", FoodPlatform.GetirYemek, OrderStatus.Delivered, 50m, placed: Utc(11, 5, 14)),
+            // 6 November; E4 is the last tick of the day.
+            Ended("E4", FoodPlatform.TrendyolYemek, Utc(11, 6, 21).AddTicks(-1), OrderCancellationOrigin.ProviderOrCustomer, 604),
+            Ended("E5", FoodPlatform.TrendyolYemek, Utc(11, 6, 9), OrderCancellationOrigin.ProviderOrCustomer),
+            Ended("E10", FoodPlatform.Yemeksepeti, Utc(11, 6, 10), OrderCancellationOrigin.OperatorRejected),
+            // 7 November; E6 is the first instant of the day.
+            Ended("E6", FoodPlatform.TrendyolYemek, Utc(11, 6, 21), OrderCancellationOrigin.RestaurantOnPlatform, 621),
+            Ended("E7", FoodPlatform.TrendyolYemek, Utc(11, 7, 9), OrderCancellationOrigin.RestaurantOnPlatform),
+            Ended("E11", FoodPlatform.Yemeksepeti, Utc(11, 7, 10), origin: null),
+            O("E13", FoodPlatform.GetirYemek, OrderStatus.New, 30m, placed: Utc(11, 7, 11)),
+            // Outside: the last tick of the 4th and the first instant of the 8th.
+            Ended("OUT-1", FoodPlatform.TrendyolYemek, Utc(11, 4, 21).AddTicks(-1), OrderCancellationOrigin.OperatorRejected, 622),
+            Ended("OUT-2", FoodPlatform.TrendyolYemek, Utc(11, 7, 21), OrderCancellationOrigin.ProviderOrCustomer, 605));
+    }
+
+    private static Order Ended(string code, FoodPlatform platform, DateTime placed, OrderCancellationOrigin? origin, int? reason = null)
+    {
+        var order = O(code, platform, OrderStatus.Cancelled, 10m, placed);
+        order.CancellationOrigin = origin;
+        order.CancellationReasonCode = reason;
+        order.CancellationReasonPlatform = reason is null ? null : platform;
+        return order;
+    }
+
+    private static readonly OrderReportFigures EndingTrendyol = F(7, 70m, 0, 0m, cancelled: 7, rejected: 2, knownCancelled: 2, restaurant: 2, missing: 3);
+    private static readonly OrderReportFigures EndingYemeksepeti = F(3, 30m, 0, 0m, cancelled: 3, rejected: 2, missing: 2);
+    private static readonly OrderReportFigures EndingGetir = F(3, 90m, 1, 50m, cancelled: 1, inProgress: 1, knownCancelled: 1, missing: 1);
+
+    [Fact]
+    public async Task EveryOrigin_LandsInItsGroup_InEverySummaryPlatformAndDay_AndReconciles()
+    {
+        await SeedEndingDatasetAsync();
+
+        var report = await Service().GetAsync(_tenantId, Filter("custom", "2026-11-05", "2026-11-07"), Ct);
+
+        Assert.Equal(F(13, 190m, 1, 50m, cancelled: 11, inProgress: 1, rejected: 4, knownCancelled: 3, restaurant: 2, missing: 6), report.Summary);
+        Assert.Equal(4, report.Summary.UnknownOutcomeOrderCount);
+        Assert.Equal(5, report.Summary.CancellationReasonRecordedOrderCount);
+        Assert.Equal(5m / 11m, report.Summary.CancellationReasonCoverage);
+        Assert.Equal(
+            [
+                new OrderReportPlatformRow(FoodPlatform.TrendyolYemek, EndingTrendyol),
+                new OrderReportPlatformRow(FoodPlatform.Yemeksepeti, EndingYemeksepeti),
+                new OrderReportPlatformRow(FoodPlatform.GetirYemek, EndingGetir)
+            ],
+            report.Platforms);
+        Assert.Equal(
+            [
+                F(6, 100m, 1, 50m, cancelled: 5, rejected: 3, knownCancelled: 1, missing: 2),
+                F(3, 30m, 0, 0m, cancelled: 3, rejected: 1, knownCancelled: 2, missing: 2),
+                F(4, 60m, 0, 0m, cancelled: 3, inProgress: 1, restaurant: 2, missing: 2)
+            ],
+            report.Days.Select(d => d.Figures));
+        Assert.Equal(
+            [
+                new OrderReportCancellationReasonRow(FoodPlatform.TrendyolYemek, 621, 3),
+                new OrderReportCancellationReasonRow(FoodPlatform.Yemeksepeti, 621, 1),
+                new OrderReportCancellationReasonRow(FoodPlatform.TrendyolYemek, 604, 1)
+            ],
+            report.CancellationReasons);
+
+        AssertReconciles(report);
+    }
+
+    [Theory]
+    [InlineData("TrendyolYemek")]
+    [InlineData("Yemeksepeti")]
+    [InlineData("GetirYemek")]
+    public async Task PlatformFilter_KeepsOnlyThatPlatformsSplitAndReasons(string name)
+    {
+        await SeedEndingDatasetAsync();
+        var platform = Enum.Parse<FoodPlatform>(name);
+
+        var report = await Service().GetAsync(_tenantId, Filter("custom", "2026-11-05", "2026-11-07", name), Ct);
+
+        Assert.Equal(platform switch
+        {
+            FoodPlatform.TrendyolYemek => EndingTrendyol,
+            FoodPlatform.Yemeksepeti => EndingYemeksepeti,
+            _ => EndingGetir
+        }, report.Summary);
+        Assert.Equal(platform switch
+        {
+            FoodPlatform.TrendyolYemek => [new(platform, 621, 3), new(platform, 604, 1)],
+            FoodPlatform.Yemeksepeti => [new(platform, 621, 1)],
+            _ => Array.Empty<OrderReportCancellationReasonRow>()
+        }, report.CancellationReasons);
+        AssertReconciles(report);
+    }
+
+    [Theory]
+    [InlineData("2026-11-05", 5, 3, 1, 0, 2)]
+    [InlineData("2026-11-06", 3, 1, 2, 0, 2)]
+    [InlineData("2026-11-07", 3, 0, 0, 2, 2)]
+    [InlineData("2026-11-04", 1, 1, 0, 0, 0)]
+    [InlineData("2026-11-03", 0, 0, 0, 0, 0)]
+    public async Task ALocalDay_HoldsExactlyTheOrdersPlacedOnIt(string day, int cancelled, int rejected, int knownCancelled, int restaurant, int missing)
+    {
+        await SeedEndingDatasetAsync();
+
+        var report = await Service(now: Utc(11, 8, 10)).GetAsync(_tenantId, Filter("custom", day, day, now: Utc(11, 8, 10)), Ct);
+
+        Assert.Equal(cancelled, report.Summary.CancelledOrderCount);
+        Assert.Equal(rejected, report.Summary.KnownRejectedOrderCount);
+        Assert.Equal(knownCancelled, report.Summary.KnownCancelledOrderCount);
+        Assert.Equal(restaurant, report.Summary.RestaurantOriginUnknownOutcomeOrderCount);
+        Assert.Equal(missing, report.Summary.CancellationReasonMissingOrderCount);
+        AssertReconciles(report);
+    }
+
+    [Fact]
+    public async Task HistoricalCancelledOrders_AreUnknownWithNoReason_AndNoCoverageIsInvented()
+    {
+        await ResetAsync();
+        await SeedAsync(
+            Ended("OLD-1", FoodPlatform.TrendyolYemek, Utc(11, 7, 8), origin: null),
+            Ended("OLD-2", FoodPlatform.Yemeksepeti, Utc(11, 7, 9), origin: null));
+
+        var report = await Service().GetAsync(_tenantId, Filter("today"), Ct);
+
+        Assert.Equal(F(2, 20m, 0, 0m, cancelled: 2), report.Summary);
+        Assert.Equal(0, report.Summary.CancellationReasonRecordedOrderCount);
+        Assert.Equal(0m, report.Summary.CancellationReasonCoverage);
+        Assert.Empty(report.CancellationReasons);
+        AssertReconciles(report);
+    }
+
+    [Fact]
+    public async Task NoCancelledOrders_HaveNoCoverage_AndAnEmptyPeriodNoReasons()
+    {
+        await ResetAsync();
+        await SeedAsync(O("D-1", FoodPlatform.TrendyolYemek, OrderStatus.Delivered, 5m, placed: Utc(11, 7, 8)));
+
+        var delivered = await Service().GetAsync(_tenantId, Filter("today"), Ct);
+        var empty = await Service().GetAsync(_tenantId, Filter("custom", "2026-10-01", "2026-10-02"), Ct);
+
+        Assert.Equal(F(1, 5m, 1, 5m), delivered.Summary);
+        Assert.Null(delivered.Summary.CancellationReasonCoverage);
+        Assert.Empty(delivered.CancellationReasons);
+        Assert.Equal(OrderReportFigures.Empty, empty.Summary);
+        Assert.Null(empty.Summary.CancellationReasonCoverage);
+        Assert.Empty(empty.CancellationReasons);
+    }
+
+    /// <summary>The split and the reasons come from the single statement of the report and read no order customer field or payload.</summary>
+    [Fact]
+    public async Task SplitAndReasons_AreOneBoundedStatement_ThatReadsNoCustomerDataOrPayload()
+    {
+        await SeedEndingDatasetAsync();
+        var commands = new CommandRecorder();
+        var factory = new RecordingFactory(_database.ConnectionString("statement"), commands);
+
+        var report = await Service(factory).GetAsync(_tenantId, Filter("custom", "2026-11-05", "2026-11-07"), Ct);
+
+        Assert.Equal(11, report.Summary.CancelledOrderCount);
+        var sql = Assert.Single(commands.Texts);
+        Assert.Contains("GROUP BY", sql, StringComparison.OrdinalIgnoreCase);
+        foreach (var column in new[] { "CancellationOrigin", "CancellationReasonPlatform", "CancellationReasonCode" })
+            Assert.Contains(column, sql, StringComparison.Ordinal);
+        foreach (var column in new[] { "CustomerName", "CustomerPhone", "CustomerAddress", "CustomerNote", "RawPayloadJson" })
+            Assert.DoesNotContain(column, sql, StringComparison.Ordinal);
+    }
+
+    /// <summary>The extra grouping changes no figure and no row the Dashboard shows.</summary>
+    [Fact]
+    public async Task Dashboard_StillSeesOneRowPerPlatform_WithTheCombinedCancelledCount()
+    {
+        await SeedEndingDatasetAsync();
+        var time = new FixedTime(Now);
+        var factory = _database.Instance("dashboard");
+        var dashboard = new DashboardService(factory, new OrderReportService(factory, time), time);
+
+        var today = await dashboard.GetTodayAsync(_tenantId, Ct);
+
+        Assert.Equal(4, today.TodayOrderCount);
+        Assert.Equal(60m, today.TodayOrderValue);
+        Assert.Equal(1, today.ActiveOrderCount);
+        Assert.Equal(3, today.CancelledOrderCount);
+        Assert.Equal(
+            [
+                new Wasla.Application.Abstractions.Dashboard.DashboardResult.PlatformSummaryRow(FoodPlatform.TrendyolYemek, 2, 20m),
+                new Wasla.Application.Abstractions.Dashboard.DashboardResult.PlatformSummaryRow(FoodPlatform.GetirYemek, 1, 30m),
+                new Wasla.Application.Abstractions.Dashboard.DashboardResult.PlatformSummaryRow(FoodPlatform.Yemeksepeti, 1, 10m)
+            ],
+            today.PlatformSummary.OrderBy(p => p.Count == 2 ? 0 : 1).ThenBy(p => p.Platform == FoodPlatform.GetirYemek ? 0 : 1));
+    }
+
+    [Fact]
+    public async Task ApiReport_AddsTheSplitAndReasons_ForEveryBreakdown()
+    {
+        await SeedEndingDatasetAsync();
+        var time = new FixedTime(Now);
+        var factory = _database.Instance("api");
+        var reports = new OrderReportService(factory, time);
+        var controller = new ApiDashboardController(new FixedTenant(_tenantId), new DashboardService(factory, reports, time), reports, time)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        controller.HttpContext.Request.QueryString = new QueryString("?preset=custom&startDate=2026-11-05&endDate=2026-11-07");
+
+        var result = await controller.Report("custom", "2026-11-05", "2026-11-07", null, Ct);
+
+        var dto = Assert.IsType<OrderReportDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(new OrderReportFiguresDto(13, 190m, 1, 50m, 50m, 11, 0, 1, 0, 4, 3, 4, 2, 6), dto.Summary);
+        Assert.Equal([2, 2, 0], dto.Platforms.Select(p => p.Figures.KnownRejectedOrderCount));
+        Assert.Equal([3, 2, 1], dto.Platforms.Select(p => p.Figures.CancellationReasonMissingOrderCount));
+        Assert.All(dto.Platforms, p => Assert.Equal(p.Figures.CancelledOrderCount, p.Figures.KnownRejectedOrderCount + p.Figures.KnownCancelledOrderCount + p.Figures.UnknownOutcomeOrderCount));
+        Assert.All(dto.Days, d => Assert.Equal(d.Figures.CancelledOrderCount, d.Figures.KnownRejectedOrderCount + d.Figures.KnownCancelledOrderCount + d.Figures.UnknownOutcomeOrderCount));
+        Assert.Equal(
+            [
+                new OrderReportCancellationReasonDto(FoodPlatformDto.TrendyolYemek, 621, 3),
+                new OrderReportCancellationReasonDto(FoodPlatformDto.Yemeksepeti, 621, 1),
+                new OrderReportCancellationReasonDto(FoodPlatformDto.TrendyolYemek, 604, 1)
+            ],
+            dto.CancellationReasons);
+    }
+
+    [Fact]
+    public async Task EachTenant_SeesOnlyItsOwnSplitAndReasons()
+    {
+        await SeedEndingDatasetAsync();
+        await using var other = new SqlServerTenantDatabase();
+        await other.InitializeAsync();
+        var otherTenant = Guid.NewGuid();
+        await using (var db = other.Open())
+        {
+            db.Orders.Add(Ended("OTHER-1", FoodPlatform.TrendyolYemek, Utc(11, 7, 8), OrderCancellationOrigin.ProviderOrCustomer, 641));
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var factory = new TenantFactory(new Dictionary<Guid, string>
+        {
+            [_tenantId] = _database.ConnectionString("tenant-a"),
+            [otherTenant] = other.ConnectionString("tenant-b")
+        });
+        var service = Service(factory);
+
+        var mine = await service.GetAsync(_tenantId, Filter("custom", "2026-11-05", "2026-11-07"), Ct);
+        var theirs = await service.GetAsync(otherTenant, Filter("custom", "2026-11-05", "2026-11-07"), Ct);
+
+        Assert.DoesNotContain(mine.CancellationReasons, r => r.ReasonCode == 641);
+        Assert.Equal([new OrderReportCancellationReasonRow(FoodPlatform.TrendyolYemek, 641, 1)], theirs.CancellationReasons);
+        Assert.Equal(F(1, 10m, 0, 0m, cancelled: 1, knownCancelled: 1, missing: 0), theirs.Summary);
+    }
+
+    /// <summary>Another connection records cancellations with origins and reasons while reports run: each report still adds up.</summary>
+    [Fact]
+    public async Task ConcurrentCancellationsWithReasons_NeverBreakTheSplit()
+    {
+        await SeedEndingDatasetAsync();
+        var filter = Filter("custom", "2026-11-05", "2026-11-07");
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+
+        var writer = Task.Run(async () =>
+        {
+            var i = 0;
+            await using var db = _database.Open("writer");
+            while (!stop.IsCancellationRequested)
+            {
+                db.Orders.Add(Ended($"W-{i}", FoodPlatform.TrendyolYemek, Utc(11, 5 + i % 3, 12), i % 2 == 0 ? OrderCancellationOrigin.RestaurantOnPlatform : OrderCancellationOrigin.ProviderOrCustomer, i % 3 == 0 ? null : 641));
+                await db.SaveChangesAsync(CancellationToken.None);
+                db.ChangeTracker.Clear();
+                i++;
+            }
+
+            return i;
+        }, CancellationToken.None);
+
+        var service = Service(_database.Instance("reader"));
+        var reports = new List<OrderReport>();
+        for (var r = 0; r < 25; r++)
+            reports.Add(await service.GetAsync(_tenantId, filter, Ct));
+
+        await stop.CancelAsync();
+        Assert.True(await writer > 0, "The writer made no change while the reports ran.");
+        Assert.All(reports, AssertReconciles);
+    }
+
     private static void AssertReconciles(OrderReport report)
     {
-        static void Consistent(OrderReportFigures f) => Assert.Equal(
-            f.OrderCount,
-            f.CompletedOrderCount + f.CancelledOrderCount + f.FailedOrderCount + f.InProgressOrderCount + f.OtherStatusOrderCount);
+        static void Consistent(OrderReportFigures f)
+        {
+            Assert.Equal(
+                f.OrderCount,
+                f.CompletedOrderCount + f.CancelledOrderCount + f.FailedOrderCount + f.InProgressOrderCount + f.OtherStatusOrderCount);
+            Assert.Equal(f.CancelledOrderCount, f.KnownRejectedOrderCount + f.KnownCancelledOrderCount + f.UnknownOutcomeOrderCount);
+            Assert.InRange(f.RestaurantOriginUnknownOutcomeOrderCount, 0, f.UnknownOutcomeOrderCount);
+            Assert.InRange(f.CancellationReasonMissingOrderCount, 0, f.CancelledOrderCount);
+        }
+
+        Assert.Equal(report.Summary.CancelledOrderCount, report.CancellationReasons.Sum(r => r.OrderCount) + report.Summary.CancellationReasonMissingOrderCount);
+        Assert.All(report.Platforms, p => Assert.Equal(
+            p.Figures.CancelledOrderCount,
+            report.CancellationReasons.Where(r => r.Platform == p.Platform).Sum(r => r.OrderCount) + p.Figures.CancellationReasonMissingOrderCount));
+        Assert.Equal(report.CancellationReasons.Count, report.CancellationReasons.Select(r => (r.Platform, r.ReasonCode)).Distinct().Count());
 
         Consistent(report.Summary);
         Assert.All(report.Platforms, p => Consistent(p.Figures));
@@ -663,6 +978,28 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
             return Task.FromResult(new TenantDbContext(
                 new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connections[tenantId]).Options));
         }
+    }
+
+    private sealed class CommandRecorder : Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor
+    {
+        public List<string> Texts { get; } = [];
+
+        public override ValueTask<Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<System.Data.Common.DbDataReader>> ReaderExecutingAsync(
+            System.Data.Common.DbCommand command,
+            Microsoft.EntityFrameworkCore.Diagnostics.CommandEventData eventData,
+            Microsoft.EntityFrameworkCore.Diagnostics.InterceptionResult<System.Data.Common.DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            Texts.Add(command.CommandText);
+            return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+        }
+    }
+
+    private sealed class RecordingFactory(string connectionString, CommandRecorder commands) : ITenantDbContextFactory
+    {
+        public Task<TenantDbContext> CreateAsync(Guid tenantId, CancellationToken ct) =>
+            Task.FromResult(new TenantDbContext(
+                new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(connectionString).AddInterceptors(commands).Options));
     }
 
     private sealed class FakeProvider(ExternalOrderDto payload) : IFoodPlatformClient

@@ -170,6 +170,97 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         Assert.Equal(OrderStatus.New, (await SingleOrderAsync("pkg-odd")).InternalStatus);
     }
 
+    // WAS-200. Payloads have the documented shape of "Event Types and Event Payloads"; values are synthetic.
+
+    [Theory]
+    [InlineData("cancelled", "Cancelled", 601, OrderCancellationOrigin.ProviderOrCustomer)]
+    [InlineData("unsupplied", "UnSupplied", 621, OrderCancellationOrigin.RestaurantOnPlatform)]
+    public async Task CancellationEventForAStoredOrder_StoresTheCodeItCarries_AndNoFreeText(
+        string eventType, string status, int code, OrderCancellationOrigin origin)
+    {
+        await StoreNewOrderAsync("pkg-event-reason");
+
+        await AcceptAsync(eventType, Cancellation("pkg-event-reason", eventType, status));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        Assert.Equal("StatusApplied", Assert.Single(await EventsAsync()).Outcome);
+        var after = await SingleOrderAsync("pkg-event-reason");
+        Assert.Equal(OrderStatus.Cancelled, after.InternalStatus);
+        Assert.Equal(origin, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(code, after.CancellationReasonCode);
+        Assert.DoesNotContain("Synthetic reason", after.RawPayloadJson, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(""" "cancelInfo": null, """)]
+    [InlineData(""" "cancelInfo": { "reason": "Synthetic reason" }, """)]
+    [InlineData(""" "cancelInfo": { "reasonCode": "604" }, """)]
+    [InlineData(""" "cancelInfo": { "reasonCode": 664 }, """)]
+    [InlineData(""" "cancelInfo": "Synthetic reason", """)]
+    public async Task CancellationEvent_WithoutAUsableCode_StillAppliesTheStatusAndOrigin(string cancelInfoMember)
+    {
+        await StoreNewOrderAsync("pkg-event-no-reason");
+
+        await AcceptAsync("cancelled", CancellationWith("pkg-event-no-reason", "Cancelled", cancelInfoMember));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        Assert.Equal("StatusApplied", Assert.Single(await EventsAsync()).Outcome);
+        var after = await SingleOrderAsync("pkg-event-no-reason");
+        Assert.Equal(OrderStatus.Cancelled, after.InternalStatus);
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Null(after.CancellationReasonPlatform);
+        Assert.Null(after.CancellationReasonCode);
+    }
+
+    [Fact]
+    public async Task CancellationEvent_AfterPollingRecordedTheCancellation_ChangesNothing()
+    {
+        _client.Set(Package("pkg-polled-reason", "Cancelled") with { ProviderCancellationReasonCode = 604 });
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        var polled = await SingleOrderAsync("pkg-polled-reason");
+        Assert.Equal(604, polled.CancellationReasonCode);
+
+        await AcceptAsync("cancelled", CancellationWith("pkg-polled-reason", "Cancelled", """ "cancelInfo": { "reasonCode": 644 }, """));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        Assert.Equal("StatusUnchanged", Assert.Single(await EventsAsync()).Outcome);
+        var after = await SingleOrderAsync("pkg-polled-reason");
+        Assert.Equal(604, after.CancellationReasonCode);
+        Assert.Equal(polled.ChangeVersion, after.ChangeVersion);
+    }
+
+    [Fact]
+    public async Task CancellationEventForAnOrderNotStored_IsReconciled_AndUsesThePackagesCode()
+    {
+        _client.Set(Package("pkg-unknown-reason", "Cancelled") with { ProviderCancellationReasonCode = 605 });
+
+        await AcceptAsync("cancelled", Cancellation("pkg-unknown-reason", "cancelled", "Cancelled"));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        Assert.Equal("Reconciled", Assert.Single(await EventsAsync()).Outcome);
+        var after = await SingleOrderAsync("pkg-unknown-reason");
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Equal(605, after.CancellationReasonCode);
+    }
+
+    [Fact]
+    public async Task CancellationEventForAnOrderThatEndedUnknown_DoesNotBackfillIt()
+    {
+        await StoreNewOrderAsync("pkg-history-event");
+        _tenants.Execute(_tenantId, $"UPDATE Orders SET InternalStatus = {(int)OrderStatus.Cancelled} WHERE ExternalOrderId = 'pkg-history-event';");
+
+        await AcceptAsync("cancelled", Cancellation("pkg-history-event", "cancelled", "Cancelled"));
+        await Processor().ProcessDueAsync(10, Ct);
+
+        Assert.Equal("StatusUnchanged", Assert.Single(await EventsAsync()).Outcome);
+        var after = await SingleOrderAsync("pkg-history-event");
+        Assert.Null(after.CancellationOrigin);
+        Assert.Null(after.CancellationReasonPlatform);
+        Assert.Null(after.CancellationReasonCode);
+    }
+
     [Theory]
     [InlineData("Shipped", OrderStatus.OnTheWay)]
     [InlineData("Picking", OrderStatus.Preparing)]
@@ -548,6 +639,20 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
           "lines": [ { "items": [ { "packageItemId": "1", "lineItemId": 1000004632264 } ] } ],
           "cancelInfo": { "reasonCode": {{(eventType == "unsupplied" ? 621 : 601)}}, "reason": "Synthetic reason" } }
         """;
+
+    private string CancellationWith(string packageId, string status, string cancelInfoMember) =>
+        $$"""
+        { "id": "{{packageId}}", "orderNumber": "946511491", "orderCode": "047", "status": "{{status}}",
+          {{cancelInfoMember}}
+          "timestamp": {{_clock.GetUtcNow().ToUnixTimeMilliseconds()}} }
+        """;
+
+    private async Task StoreNewOrderAsync(string packageId)
+    {
+        _client.Set(Package(packageId, "Created"));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        _client.Windows.Clear();
+    }
 
     private static ExternalOrderDto Package(string packageId, string providerStatus) =>
         new(

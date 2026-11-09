@@ -2215,6 +2215,58 @@
   <data name="Reports.RateByPlatform" xml:space="preserve"><value>Platforma göre oran</value></data>
   <data name="Reports.DailyCancellations" xml:space="preserve"><value>Günlük iptal veya ret</value></data>
   <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>Sipariş verilme gününe göre</value></data>
+  <data name="Reports.NoCancellationsTitle" xml:space="preserve"><value>Bu dönemde iptal veya ret yok</value></data>
+  <data name="Reports.NoCancellationsText" xml:space="preserve"><value>Bu seçim için sınıflandırılacak sipariş yok.</value></data>
+  <data name="Reports.MissingDataNote" xml:space="preserve"><value>Eski kayıtlarda ve platformun bu bilgiler olmadan bildirdiği siparişlerde sınıflandırma veya neden bulunmayabilir. Bilginin olmaması, böyle bir durumun yaşanmadığı anlamına gelmez.</value></data>
+  <data name="Reports.Ending.Title" xml:space="preserve"><value>Nasıl sonuçlandı</value></data>
+  <data name="Reports.Ending.Hint" xml:space="preserve"><value>Her iptal veya ret tek bir grupta sayılır.</value></data>
+  <data name="Reports.Ending.KnownRejected" xml:space="preserve"><value>Bilinen ret</value></data>
+  <data name="Reports.Ending.KnownRejectedHint" xml:space="preserve"><value>Wasla üzerinden reddedildi.</value></data>
+  <data name="Reports.Ending.KnownCancelled" xml:space="preserve"><value>Bilinen iptal</value></data>
+  <data name="Reports.Ending.KnownCancelledHint" xml:space="preserve"><value>Wasla üzerinden iptal edildi ya da platform iptalin restorandan kaynaklanmadığını bildirdi.</value></data>
+  <data name="Reports.Ending.Unknown" xml:space="preserve"><value>Ret mi iptal mi bilinmiyor</value></data>
+  <data name="Reports.Ending.UnknownHint" xml:space="preserve"><value>Bu siparişlerin reddedildiği mi iptal edildiği mi bilinmiyor.</value></data>
+  <data name="Reports.Ending.RestaurantOrigin" xml:space="preserve"><value>Restoran platformda sonlandırdı</value></data>
+  <data name="Reports.Ending.NoOrigin" xml:space="preserve"><value>Kaynak bilgisi yok</value></data>
+  <data name="Reports.Ending.OriginNote" xml:space="preserve"><value>Kaynağın bilinmesi işlemin de bilindiği anlamına gelmez: Restoranın platformda sonlandırdığı bir sipariş reddedilmiş de iptal edilmiş de olabilir.</value></data>
+  <data name="Reports.Ending.ShareNote" xml:space="preserve"><value>Yüzdeler bu seçimdeki tüm iptal veya ret siparişlerine göredir.</value></data>
+  <data name="Reports.Ending.ByPlatform" xml:space="preserve"><value>Platforma göre</value></data>
+  <data name="Reports.Reasons.Title" xml:space="preserve"><value>Neden dağılımı</value></data>
+  <data name="Reports.Reasons.Coverage" xml:space="preserve"><value>Neden bilgisi olan iptal veya ret: {0} / {1} ({2})</value></data>
+  <data name="Reports.Reasons.Missing" xml:space="preserve"><value>Neden bilgisi yok</value></data>
+  <data name="Reports.Reasons.Code" xml:space="preserve"><value>Kod {0}</value></data>
+  <data name="Reports.Reasons.NoneRecorded" xml:space="preserve"><value>Bu seçimdeki siparişler için neden bilgisi kaydedilmedi.</value></data>
+  <data name="Reports.Reasons.NoList" xml:space="preserve"><value>Wasla bu platform için henüz neden kodu kaydetmiyor.</value></data>
+  <data name="Reports.Reasons.Denominator" xml:space="preserve"><value>Yüzdeler her platformun, neden bilgisi olmayanlar dahil tüm iptal veya ret siparişlerine göredir.</value></data>
+  <data name="Reports.Reasons.CauseNote" xml:space="preserve"><value>Neden, siparişin neden sonlandığını anlatır; iptali kimin yaptığını göstermez.</value></data>
+  <data name="Reports.CancellationReason.Unlabelled" xml:space="preserve"><value>Neden kodu {0}</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.69" xml:space="preserve"><value>Sistem kaynaklı sahtecilik</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.601" xml:space="preserve"><value>Adres yanlış</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.602" xml:space="preserve"><value>Adreste değil</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.603" xml:space="preserve"><value>Sahtecilik</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.604" xml:space="preserve"><value>Müşteri iptal talep etti</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.605" xml:space="preserve"><value>Sipariş gecikti - Müşteri istemiyor</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.606" xml:space="preserve"><value>Müşteri iptal talep etti / Satıcı kabul etti</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.607" xml:space="preserve"><value>Adres konum uyuşmaması</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.608" xml:space="preserve"><value>Kapıda ödeme, bakiye yetersiz</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.609" xml:space="preserve"><value>Yanlış/eksik ürün ekleme</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.610" xml:space="preserve"><value>Not eklemeyi unutma</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.611" xml:space="preserve"><value>ETA uzunluğu</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.624" xml:space="preserve"><value>Yüksek yoğunluk / Kurye yok</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.625" xml:space="preserve"><value>Kabul edilmedi</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.626" xml:space="preserve"><value>Alan dışı</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.641" xml:space="preserve"><value>Kaza</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.642" xml:space="preserve"><value>Yüksek yoğunluk sebepli / Kurye yok</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.643" xml:space="preserve"><value>Yol kapalı / Alternatif yol yok</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.644" xml:space="preserve"><value>Kurye kaynaklı</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.645" xml:space="preserve"><value>Kurye kaynaklı</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.647" xml:space="preserve"><value>Ürünler zarar gördü</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.648" xml:space="preserve"><value>Kurye kaynaklı - Site girişi kimlik sorunu</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.661" xml:space="preserve"><value>Yönetim sistemi çalışmıyor</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.662" xml:space="preserve"><value>Kurye uygulaması çalışmıyor</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.663" xml:space="preserve"><value>Satıcı paneli çalışmıyor</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.681" xml:space="preserve"><value>Sahte telefon numarası</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.682" xml:space="preserve"><value>Sahte teslimat adresi</value></data>
   <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Eşit uzunlukta iki tamamlanmış dönem</value></data>
   <data name="Reports.ComparisonHint" xml:space="preserve"><value>Sipariş verilme gününe göre ve siparişlerin güncel durumuyla</value></data>
   <data name="Reports.ThisPeriod" xml:space="preserve"><value>Bu dönem</value></data>
