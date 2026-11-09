@@ -52,6 +52,8 @@
     var busy = false;
     var submitting = false;
     var phone = null;
+    // Set while the saved address is being put back after a load; its lookups answer one after another.
+    var addressRestore = null;
     var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
     var api = Api.create({
         endpoints: readJson("signupEndpoints") || {},
@@ -177,14 +179,18 @@
             }
         }
         if (window.WaslaSignupForm && restaurant.cityId != null) {
-            window.WaslaSignupForm.restoreAddress({
+            var addressRestored = function () {
+                addressRestore = null;
+                renderReceipt();
+            };
+            addressRestore = window.WaslaSignupForm.restoreAddress({
                 cityId: restaurant.cityId,
                 districtId: restaurant.districtId,
                 neighborhoodId: restaurant.neighborhoodId,
                 neighborhood: restaurant.neighborhood,
                 streetId: restaurant.streetId,
                 streetAddress: restaurant.streetAddress
-            }).then(renderReceipt);
+            }).then(addressRestored, addressRestored);
         } else {
             setValue("signupNeighborhood", restaurant.neighborhood);
             setValue("signupStreetAddress", restaurant.streetAddress);
@@ -733,8 +739,9 @@
 
     function setBusy(on) {
         busy = on;
-        var panel = panels[state.current];
-        var buttons = [stripAction].concat(panel ? Array.prototype.slice.call(panel.querySelectorAll("[data-su-next]")) : []);
+        // Cleared on every step: the visitor may have gone back while the move was waiting.
+        var scope = on ? panels[state.current] : shell;
+        var buttons = [stripAction].concat(scope ? Array.prototype.slice.call(scope.querySelectorAll("[data-su-next]")) : []);
         buttons.forEach(function (button) {
             if (!button) {
                 return;
@@ -773,6 +780,16 @@
             }
             var heading = show(target, { history: "push" });
             return enterStep(state.current, options).then(function (focus) { return focus || heading; });
+        }
+
+        // Until the saved address is back its fields are empty, not missing: the move goes on from there, so the first
+        // click counts and nothing the draft already holds is reported as left out.
+        if (from === "restaurant" && addressRestore) {
+            setBusy(true);
+            return addressRestore.then(function () {
+                setBusy(false);
+                return state.current === from ? navigate(target, options) : null;
+            });
         }
 
         var errors = validateStep(from);

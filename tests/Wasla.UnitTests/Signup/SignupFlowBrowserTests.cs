@@ -156,6 +156,81 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await WaitForAsync(browser, "location.pathname.startsWith('/signup/pending/')", ct);
     }
 
+    // On a page rendered from a saved restaurant section, the neighbourhood lookup that puts the saved street back waits
+    // until the test releases it; the restaurant saves are counted. The district is restored by then, as in a reload.
+    private const string HoldAddressRestore = """
+        (() => {
+          const original = window.fetch.bind(window);
+          let release;
+          const held = new Promise(resolve => release = resolve);
+          window.__suAddress = { release, saves: 0 };
+          const restoring = () => JSON.parse(document.getElementById('signupDraftState').textContent).restaurant.complete === true;
+          window.fetch = (url, init) => {
+            const path = new URL(String(url), location.href).pathname;
+            if (path === '/signup/draft/restaurant') window.__suAddress.saves++;
+            return path === '/signup/neighborhoods' && restoring() ? held.then(() => original(url, init)) : original(url, init);
+          };
+        })();
+        """;
+
+    [Fact]
+    public async Task AContinueWhileTheSavedAddressIsRestored_WaitsForIt_InsteadOfReportingTheStreetAsMissing()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: HoldAddressRestore);
+        await using var _ = browser;
+        var applicant = Applicant.New();
+        await ReachPhoneStepAsync(browser, applicant, ct);
+
+        await OpenAsync(browser, "/signup?step=restaurant", ct);
+        await WaitForAsync(browser, $"__su.current() === 'restaurant' && document.getElementById('signupDistrictId').value === '{DistrictId}'", ct);
+        Assert.Equal("", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress').value", ct));
+
+        // Two clicks while the street is on its way: nothing is reported as missing, and the click is kept.
+        const string next = "document.querySelector('#signupStep-restaurant [data-su-next]')";
+        await Js(browser, $"{next}.click(); {next}.click()", ct);
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.NotEqual("signupStreetAddress", await ActiveIdAsync(browser, ct));
+        Assert.Equal("", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress-error').textContent.trim()", ct));
+        Assert.Null(await browser.EvaluateAsync<string?>("document.getElementById('signupStreetAddress').getAttribute('aria-invalid')", ct));
+        Assert.Equal("true", await browser.EvaluateAsync<string>($"{next}.getAttribute('aria-busy')", ct));
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
+
+        await Js(browser, "window.__suAddress.release()", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
+        Assert.False(await browser.EvaluateAsync<bool>($"{next}.hasAttribute('aria-busy')", ct));
+        Assert.Equal("Moda Cad.", await browser.EvaluateAsync<string>("fetch('/signup/draft', { cache: 'no-store' }).then(r => r.json()).then(d => d.restaurant.streetAddress)", ct));
+    }
+
+    [Fact]
+    public async Task GoingBackWhileAContinueWaitsForTheSavedAddress_StaysOnTheStepItWentBackTo()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: HoldAddressRestore);
+        await using var _ = browser;
+        var applicant = Applicant.New();
+        await ReachPhoneStepAsync(browser, applicant, ct);
+
+        await OpenAsync(browser, "/signup?step=plan", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+        const string next = "document.querySelector('#signupStep-restaurant [data-su-next]')";
+        await Js(browser, $"{next}.click()", ct);
+        await WaitForAsync(browser, $"{next}.getAttribute('aria-busy') === 'true'", ct);
+
+        await Js(browser, "history.back()", ct);
+        await WaitForAsync(browser, "__su.current() === 'plan'", ct);
+
+        await Js(browser, "window.__suAddress.release()", ct);
+        await WaitForAsync(browser, $"document.getElementById('signupStreetAddress').value === 'Moda Cad.' && !{next}.hasAttribute('aria-busy')", ct);
+        // One task later, a move that went on would already have changed the step and sent its save.
+        await browser.EvaluateAsync<bool>("new Promise(resolve => setTimeout(() => resolve(true), 0))", ct);
+
+        Assert.Equal("plan", await CurrentAsync(browser, ct));
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
+    }
+
     [Fact]
     public async Task TheReview_StaysClosedUntilThePhoneIsVerified_AndAWrongCodeKeepsFocusInTheField()
     {
@@ -558,7 +633,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         if (await browser.WaitForAsync(expression, Wait, ct))
             return;
         var state = await browser.EvaluateAsync<string>(
-            "JSON.stringify({ step: window.__su && __su.current(), path: location.pathname + location.search, alert: (document.querySelector('[data-su-page-alert-text]') || {}).textContent, phone: (document.querySelector('[data-su-phone-alert-text]') || {}).textContent, active: document.activeElement && (document.activeElement.id || document.activeElement.tagName) })", ct);
+            "JSON.stringify({ step: window.__su && __su.current(), path: location.pathname + location.search, alert: (document.querySelector('[data-su-page-alert-text]') || {}).textContent, phone: (document.querySelector('[data-su-phone-alert-text]') || {}).textContent, active: document.activeElement && (document.activeElement.id || document.activeElement.tagName), street: (document.getElementById('signupStreetAddress') || {}).value, streetError: (document.getElementById('signupStreetAddress-error') || {}).textContent })", ct);
         Assert.Fail($"Timed out waiting for {expression}; page: {state}");
     }
 
