@@ -4,7 +4,7 @@
 
 This document describes what Wasla currently logs and exposes for operations diagnosis: trace ids, tenant context, request completion logging, health endpoints, Worker cycle noise, and provider failure log shape.
 
-Much of the HTTP diagnostics / health wiring is **currently uncommitted in the working tree** (`src/Wasla.Infrastructure/Diagnostics/`, Web `ErrorController` / exception handling, API/Worker `Program.cs` adjustments). Documented behavior matches that source.
+Much of the HTTP diagnostics / health wiring is in `src/Wasla.Infrastructure/Diagnostics/`, Web `ErrorController` / exception handling and the API/Worker `Program.cs` files. Documented behavior matches that source.
 
 It does **not** describe a full APM product.
 
@@ -49,7 +49,7 @@ Shared console/file template includes `TraceId` and `TenantId` placeholders (`Wa
 
 ### Health endpoints (Web and API)
 
-Mapped by `WaslaHealthCheckExtensions` (currently uncommitted Diagnostics):
+Mapped by `WaslaHealthCheckExtensions`:
 
 | Path | Meaning |
 |------|---------|
@@ -60,7 +60,7 @@ Registered ready check: **`central-db`** (`CentralDatabaseHealthCheck`).
 
 ### Worker cycle logging
 
-Quieter non-Development behavior (currently uncommitted Worker changes):
+Quieter non-Development behavior:
 
 - Cycle start → Debug
 - Cycle completion → Debug, or Warning if any connection failed
