@@ -20,7 +20,8 @@ namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 /// <c>timestamp</c> in place of <c>packageCreationDate</c>, <c>lines[].quantity</c>) are not yet verified against
 /// stage. No event name is mapped to a status.</item>
 /// <item><c>cancelled</c>, <c>unsupplied</c>: their own <c>status</c> field is a documented package status. For an
-/// order Wasla has stored it is applied as a status-only observation; otherwise the event is reconciled.</item>
+/// order Wasla has stored it is applied as a status-only observation, with the numeric <c>cancelInfo.reasonCode</c> when
+/// the event has one; otherwise the event is reconciled.</item>
 /// </list>
 /// The shared ingestion path keeps every effect single: one order per package, auto-approve and receipts once, one live
 /// notification per change. A failed attempt is retried with backoff; after the last one the event is
@@ -194,7 +195,8 @@ public sealed class TrendyolGoMealWebhookProcessor
             return new Decision(ProviderWebhookEventStatus.Processed, "OrderSyncDisabled", null);
 
         var expectedStatus = TrendyolGoMealWebhookEvents.DocumentedCancellationStatus(stored.EventType);
-        if (expectedStatus is not null && ReadStatus(stored.PayloadJson) == expectedStatus)
+        var (reportedStatus, reasonCode) = ReadCancellation(stored.PayloadJson);
+        if (expectedStatus is not null && reportedStatus == expectedStatus)
         {
             var orderId = await _sync.FindOrderIdAsync(_options.TenantId, FoodPlatform.TrendyolYemek, stored.ExternalOrderId, ct).ConfigureAwait(false);
             if (orderId is not null)
@@ -203,7 +205,8 @@ public sealed class TrendyolGoMealWebhookProcessor
                     FoodPlatform.TrendyolYemek,
                     stored.ExternalOrderId,
                     _statusMapper.MapToInternalStatus(FoodPlatform.TrendyolYemek, expectedStatus),
-                    expectedStatus);
+                    expectedStatus,
+                    reasonCode);
                 var result = await _sync.ApplyStatusObservationAsync(
                         _options.TenantId,
                         _options.PlatformConnectionId,
@@ -321,18 +324,24 @@ public sealed class TrendyolGoMealWebhookProcessor
             message);
     }
 
-    private static string? ReadStatus(string payloadJson)
+    /// <summary>The payload's <c>status</c> and its <c>cancelInfo.reasonCode</c>; either is null when absent or not of its documented shape.</summary>
+    private static (string? Status, int? ReasonCode) ReadCancellation(string payloadJson)
     {
         try
         {
             using var document = JsonDocument.Parse(payloadJson);
-            return document.RootElement.TryGetProperty("status", out var status) && status.ValueKind == JsonValueKind.String
-                ? status.GetString()
+            var root = document.RootElement;
+            var status = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("status", out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
                 : null;
+            var reasonCode = root.ValueKind == JsonValueKind.Object && root.TryGetProperty("cancelInfo", out var cancelInfo)
+                ? TrendyolGoCancelInfo.ReasonCode(cancelInfo)
+                : null;
+            return (status, reasonCode);
         }
         catch (JsonException)
         {
-            return null;
+            return (null, null);
         }
     }
 

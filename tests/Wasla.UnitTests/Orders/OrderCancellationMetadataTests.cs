@@ -19,10 +19,11 @@ namespace Wasla.UnitTests.Orders;
 
 /// <summary>
 /// WAS-200: how a cancelled order ended. An operator's rejection and its validated reason are stored with the status and
-/// only after the provider accepted it; a provider's report stores only what its documented status proves; and nothing
-/// that is already known, or already ended unknown, is changed later. SQLite over the real tenant model, so the check
-/// constraint applies too; races and the migration run on SQL Server in <see cref="OrderCancellationMetadataSqlServerTests"/>
-/// and <see cref="OrderCancellationMigrationSqlServerTests"/>.
+/// only after the provider accepted it; a provider's report stores only what its documented status and reason code say;
+/// and nothing that is already known, or already ended unknown, is changed later. Fixtures are official-shaped and
+/// synthetic: they prove Wasla's handling of the documented contract, not what the provider sends in practice. SQLite
+/// over the real tenant model, so the check constraint applies too; races and the migration run on SQL Server in
+/// <see cref="OrderCancellationMetadataSqlServerTests"/> and <see cref="OrderCancellationMigrationSqlServerTests"/>.
 /// </summary>
 public sealed class OrderCancellationMetadataTests : IDisposable
 {
@@ -232,22 +233,222 @@ public sealed class OrderCancellationMetadataTests : IDisposable
     }
 
     [Fact]
-    public async Task AProviderReasonInTheRawPayload_IsNotStored()
+    public async Task ARawPayloadIsNotAReason_OnlyTheAdaptersParsedCodeIs()
     {
         var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-cancel-info");
-        const string payload = """{"status":"Cancelled","cancelInfo":{"reasonCode":604,"reason":"Customer Requested Cancellation"}}""";
+        const string payload = """{"status":"Cancelled","cancelInfo":{"reasonCode":604,"reason":"Synthetic free text"}}""";
         _trendyol.Set(Package(FoodPlatform.TrendyolYemek, "pkg-cancel-info", "Cancelled") with { RawPayloadJson = payload });
 
         await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
 
         var after = await ReadAsync(_tenantId, orderId);
-        // Even a code that reads like the customer's stays unknown until the field is verified on real orders.
         Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
         Assert.Null(after.CancellationReasonPlatform);
         Assert.Null(after.CancellationReasonCode);
     }
 
+    // ---- Provider reasons (Trendyol GO Meal "Paket Modelleri"; official-shaped, not observed on real orders) ----
+
+    [Theory]
+    [InlineData("Cancelled", 601)] // Address wrong: the Meal webhook sample.
+    [InlineData("Cancelled", 604)] // Customer asked to cancel.
+    [InlineData("Cancelled", 605)] // Late, the customer no longer wants it.
+    [InlineData("Cancelled", 641)] // Accident.
+    [InlineData("Cancelled", 644)] // Courier.
+    [InlineData("Cancelled", 662)] // Technical: courier app down.
+    public async Task PolledCancellationNotFromTheRestaurant_StoresTheDocumentedCause_AndClaimsNoOneWhoPressedCancel(string status, int code)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-reason");
+        _trendyol.Set(Reasoned("pkg-reason", status, code));
+
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(OrderStatus.Cancelled, after.InternalStatus);
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(code, after.CancellationReasonCode);
+    }
+
+    [Theory]
+    [InlineData(621)] // The Meal webhook sample.
+    [InlineData(626)] // Documented, but only for sellers with their own couriers: reported, never selectable here.
+    public async Task PolledUnSupplied_KeepsItsRestaurantOrigin_WithTheReportedCode(int code)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-unsupplied-reason");
+        _trendyol.Set(Reasoned("pkg-unsupplied-reason", "UnSupplied", code));
+
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(OrderCancellationOrigin.RestaurantOnPlatform, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(code, after.CancellationReasonCode);
+    }
+
+    [Fact]
+    public async Task AnOrderFirstSeenAlreadyCancelled_StoresTheReportedReasonOnInsert()
+    {
+        await SeedConnectionAsync(_tenantId, FoodPlatform.TrendyolYemek);
+        await using var db = await _tenants.CreateAsync(_tenantId, Ct);
+        var connection = await db.PlatformConnections.SingleAsync(Ct);
+
+        var result = await Ingestion().IngestPackageAsync(
+            _tenantId, db, connection, Reasoned("pkg-first-seen-reason", "Cancelled", 604), milestonesObservedLive: false, Ct);
+
+        Assert.True(result.Inserted);
+        var after = await ReadByExternalIdAsync(_tenantId, "pkg-first-seen-reason");
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(604, after.CancellationReasonCode);
+    }
+
+    [Theory]
+    [InlineData("UnSupplied", 621, OrderCancellationOrigin.RestaurantOnPlatform)]
+    [InlineData("Cancelled", 601, OrderCancellationOrigin.ProviderOrCustomer)]
+    public async Task StatusOnlyObservation_StoresTheReasonItCarries(string status, int code, OrderCancellationOrigin expected)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-thin-reason");
+
+        await ApplyObservationAsync("pkg-thin-reason", status, code);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(expected, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(code, after.CancellationReasonCode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-604)]
+    [InlineData(664)] // The Hızlı Market announcement's sample: a Grocery code, not in the Meal list.
+    [InlineData(999)]
+    [InlineData(int.MaxValue)]
+    public async Task AMissingOrUndocumentedCode_KeepsTheOriginAndStoresNoReason(int? code)
+    {
+        var polledId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-no-reason");
+        var observedId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-no-reason-thin");
+        _trendyol.Set(Reasoned("pkg-no-reason", "Cancelled", code));
+
+        Assert.Equal(0, (await Sync().SyncTenantWithResultAsync(_tenantId, Ct)).FailedConnections);
+        await ApplyObservationAsync("pkg-no-reason-thin", "UnSupplied", code);
+
+        foreach (var (id, origin) in new[]
+                 {
+                     (polledId, OrderCancellationOrigin.ProviderOrCustomer),
+                     (observedId, OrderCancellationOrigin.RestaurantOnPlatform)
+                 })
+        {
+            var after = await ReadAsync(_tenantId, id);
+            Assert.Equal(OrderStatus.Cancelled, after.InternalStatus);
+            Assert.Equal(origin, after.CancellationOrigin);
+            Assert.Null(after.CancellationReasonPlatform);
+            Assert.Null(after.CancellationReasonCode);
+        }
+    }
+
+    [Theory]
+    [InlineData(FoodPlatform.TrendyolYemek, "Returned")]
+    [InlineData(FoodPlatform.Yemeksepeti, "CANCELLED")]
+    [InlineData(FoodPlatform.GetirYemek, "CANCELLED")]
+    public async Task ACodeWithoutAProvenOrigin_IsNotStored(FoodPlatform platform, string providerStatus)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, platform, "order-reason-no-origin");
+        Client(platform).Set(Package(platform, "order-reason-no-origin", providerStatus) with { ProviderCancellationReasonCode = 604 });
+
+        Assert.Equal(0, (await Sync().SyncTenantWithResultAsync(_tenantId, Ct)).FailedConnections);
+
+        await AssertUntouchedAsync(_tenantId, orderId, OrderStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task ACodeOnAReportThatIsNotACancellation_StoresNothing()
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-reason-picking");
+        _trendyol.Set(Reasoned("pkg-reason-picking", "Picking", 604));
+
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        await AssertUntouchedAsync(_tenantId, orderId, OrderStatus.Preparing);
+    }
+
+    [Theory]
+    [InlineData(604)]
+    [InlineData(644)]
+    [InlineData(662)]
+    [InlineData(624)]
+    [InlineData(626)]
+    public void ProviderReportedCodes_DoNotBecomeSelectableRejectReasons(int code)
+    {
+        Assert.True(ProviderCancellationReasons.IsDocumented(FoodPlatform.TrendyolYemek, code));
+        Assert.Equal(OrderRejectReasons.ReasonNotSupportedKey, OrderRejectReasons.Refusal(FoodPlatform.TrendyolYemek, code));
+        Assert.Equal([621, 622, 623, 627], OrderRejectReasons.For(FoodPlatform.TrendyolYemek));
+    }
+
+    [Theory]
+    [InlineData(FoodPlatform.Yemeksepeti)]
+    [InlineData(FoodPlatform.GetirYemek)]
+    public void PlatformsWithoutAVerifiedList_DocumentNoCodes(FoodPlatform platform) =>
+        Assert.False(ProviderCancellationReasons.IsDocumented(platform, 604));
+
     // ---- Echoes, repeats and stale polls ----
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(621)]
+    [InlineData(604)]
+    [InlineData(999)]
+    public async Task OperatorReason_SurvivesAnEchoWithAMissingOrDifferentReason(int? echoedCode)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-reason-echo");
+        Assert.True((await Actions().TryRejectAsync(_tenantId, orderId, 627, Ct)).Succeeded);
+
+        _trendyol.Set(Reasoned("pkg-reason-echo", "UnSupplied", echoedCode));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        await ApplyObservationAsync("pkg-reason-echo", "UnSupplied", echoedCode);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(OrderCancellationOrigin.OperatorRejected, after.CancellationOrigin);
+        Assert.Equal(FoodPlatform.TrendyolYemek, after.CancellationReasonPlatform);
+        Assert.Equal(627, after.CancellationReasonCode);
+    }
+
+    [Theory]
+    [InlineData("Cancelled", 644)]
+    [InlineData("Cancelled", null)]
+    [InlineData("UnSupplied", 621)]
+    public async Task TheFirstObservedReason_IsNotReplacedByALaterReport(string laterStatus, int? laterCode)
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-first-reason");
+        _trendyol.Set(Reasoned("pkg-first-reason", "Cancelled", 604));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        _trendyol.Set(Reasoned("pkg-first-reason", laterStatus, laterCode));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        await ApplyObservationAsync("pkg-first-reason", laterStatus, laterCode);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Equal(604, after.CancellationReasonCode);
+    }
+
+    [Fact]
+    public async Task ACancellationRecordedWithoutAReason_IsNotGivenOneLater()
+    {
+        var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-late-reason");
+        _trendyol.Set(Reasoned("pkg-late-reason", "Cancelled", null));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        _trendyol.Set(Reasoned("pkg-late-reason", "Cancelled", 604));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+        await ApplyObservationAsync("pkg-late-reason", "Cancelled", 604);
+
+        var after = await ReadAsync(_tenantId, orderId);
+        Assert.Equal(OrderCancellationOrigin.ProviderOrCustomer, after.CancellationOrigin);
+        Assert.Null(after.CancellationReasonPlatform);
+        Assert.Null(after.CancellationReasonCode);
+    }
 
     [Theory]
     [InlineData("UnSupplied")]
@@ -298,9 +499,9 @@ public sealed class OrderCancellationMetadataTests : IDisposable
         // An order cancelled before WAS-200 shipped: Cancelled, with no origin and no reason.
         var orderId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-history", OrderStatus.Cancelled);
 
-        _trendyol.Set(Package(FoodPlatform.TrendyolYemek, "pkg-history", providerStatus));
+        _trendyol.Set(Reasoned("pkg-history", providerStatus, 604));
         await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
-        await ApplyObservationAsync("pkg-history", providerStatus);
+        await ApplyObservationAsync("pkg-history", providerStatus, 604);
 
         var after = await ReadAsync(_tenantId, orderId);
         Assert.Equal(providerStatus, after.PlatformStatus);
@@ -345,6 +546,24 @@ public sealed class OrderCancellationMetadataTests : IDisposable
         Assert.Equal(622, rejected.CancellationReasonCode);
     }
 
+    [Fact]
+    public async Task AProviderReason_IsStoredOnlyInTheTenantThatObservedIt()
+    {
+        var firstId = await SeedOrderAsync(_tenantId, FoodPlatform.TrendyolYemek, "pkg-reason-tenants");
+        var otherId = await SeedOrderAsync(_otherTenantId, FoodPlatform.TrendyolYemek, "pkg-reason-tenants");
+
+        _trendyol.Set(Reasoned("pkg-reason-tenants", "Cancelled", 604));
+        await Sync().SyncTenantWithResultAsync(_tenantId, Ct);
+
+        await AssertUntouchedAsync(_otherTenantId, otherId, OrderStatus.New);
+
+        _trendyol.Set(Reasoned("pkg-reason-tenants", "Cancelled", 644));
+        await Sync().SyncTenantWithResultAsync(_otherTenantId, Ct);
+
+        Assert.Equal(604, (await ReadAsync(_tenantId, firstId)).CancellationReasonCode);
+        Assert.Equal(644, (await ReadAsync(_otherTenantId, otherId)).CancellationReasonCode);
+    }
+
     // ---- Helpers ----
 
     private FakeClient Client(FoodPlatform platform) => platform switch
@@ -375,7 +594,7 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             new NoNotifier(),
             NullLogger<OrderCancellationMetadataTests>.Instance);
 
-    private async Task<OrderUpsertResult> ApplyObservationAsync(string externalOrderId, string? providerStatus)
+    private async Task<OrderUpsertResult> ApplyObservationAsync(string externalOrderId, string? providerStatus, int? reasonCode = null)
     {
         await using var db = await _tenants.CreateAsync(_tenantId, Ct);
         var connection = await db.PlatformConnections.SingleAsync(c => c.Platform == FoodPlatform.TrendyolYemek, Ct);
@@ -383,7 +602,7 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             _tenantId,
             db,
             connection,
-            new OrderStatusObservation(FoodPlatform.TrendyolYemek, externalOrderId, OrderStatus.Cancelled, providerStatus),
+            new OrderStatusObservation(FoodPlatform.TrendyolYemek, externalOrderId, OrderStatus.Cancelled, providerStatus, reasonCode),
             milestonesObservedLive: true,
             Ct);
     }
@@ -470,6 +689,9 @@ public sealed class OrderCancellationMetadataTests : IDisposable
         Assert.Null(order.CancellationReasonPlatform);
         Assert.Null(order.CancellationReasonCode);
     }
+
+    private static ExternalOrderDto Reasoned(string externalOrderId, string providerStatus, int? reasonCode) =>
+        Package(FoodPlatform.TrendyolYemek, externalOrderId, providerStatus) with { ProviderCancellationReasonCode = reasonCode };
 
     private static ExternalOrderDto Package(FoodPlatform platform, string externalOrderId, string providerStatus) =>
         new(

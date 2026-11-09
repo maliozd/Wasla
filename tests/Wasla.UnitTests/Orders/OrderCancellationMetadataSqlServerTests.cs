@@ -132,10 +132,11 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
         await _provider.FirstCallEntered.WaitAsync(Deadline, Ct);
 
         // Trendyol GO has applied the rejection and a sync pass stores it before the response reaches the action.
-        _provider.Set(PackageOf(await ReadAsync(orderId), "UnSupplied"));
+        _provider.Set(PackageOf(await ReadAsync(orderId), "UnSupplied") with { ProviderCancellationReasonCode = 621 });
         Assert.Equal(1, (await Sync("worker").SyncTenantWithResultAsync(_tenantId, Ct)).UpdatedCount);
         var bySync = await ReadAsync(orderId);
         Assert.Equal(OrderCancellationOrigin.RestaurantOnPlatform, bySync.CancellationOrigin);
+        Assert.Equal(621, bySync.CancellationReasonCode);
 
         _provider.ReleaseHeldCall();
 

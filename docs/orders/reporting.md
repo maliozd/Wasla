@@ -110,16 +110,18 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 - **Refused filters** answer 400 and show the state without running a report. A duplicate parameter is refused as on the API. A refused filter is never tidied: its values stay as submitted, repeated ones included, in the URL and in every link that keeps the filter, and it is not remembered for the next visit.
 - **Platforms** takes the platform rows and the daily chart per platform from the same report as the summary (`PlatformDays`), so they cannot disagree. One platform filter shows that platform and a link to all.
 - **Chart axes** only scale the bars and label the gridlines. They are calculated in decimal, so any stored amount fits, and every figure and tooltip keeps its exact value. An axis widens when its labels need it, up to 45% of the chart.
-- **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected". No reason or rejection split exists until those are stored (WAS-200).
+- **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected". It shows no reason or rejection split: orders store how they ended (WAS-200), but the page does not read that yet.
 - **Comparison** is on Overview only. It reads the report of `PrecedingPeriod` and shows both periods with their dates, the difference and the percentage change. A change against a previous value of 0, or where either average does not exist, is shown as not comparable. A period that includes today is not compared: the page offers the same number of complete days ending yesterday.
 
 Busy hours (WAS-197), products (WAS-198), durations (WAS-202) and CSV (WAS-184) are not on the page.
 
 ## Known limits
 
-- Rejections are not yet counted apart from cancellations. Orders now store how they ended ([lifecycle.md](./lifecycle.md#how-an-order-ended-was-200), WAS-200), but no report figure reads it: that slice waits for the WAS-183 report page.
+- Rejections are not yet counted apart from cancellations. Orders now store how they ended ([lifecycle.md](./lifecycle.md#how-an-order-ended-was-200), WAS-200), but no report figure reads it. That split is the remaining WAS-200 work.
   - **Data boundary.** Origins and reasons exist only for orders that ended after the tenant migration `AddOrderCancellationOrigin` was applied and a release with it was running. Earlier cancelled orders stay unknown; nothing is inferred or backfilled. A report period that crosses that moment is partly unknown, and the production date is recorded when the release is deployed.
   - **For that slice.** Any split must keep `known rejected + known cancelled + unknown = CancelledOrderCount` in every summary, platform row and day row, and must count a null origin as unknown.
+  - **Restaurant origin is not a known cancellation.** Trendyol GO `UnSupplied` (`RestaurantOnPlatform`) proves the restaurant ended the order but not whether it was a rejection or a cancellation. In that split it belongs to neither known figure: it counts on the unknown side of rejection-versus-cancellation, and its restaurant origin can still be shown.
+  - **Reasons.** A reason is the provider's or the operator's code with its platform, read together with the origin. Codes of different platforms stay apart, and a cause such as a customer request does not say who pressed cancel. Provider codes are documented for Trendyol GO Meal but not yet seen on real orders, so reason-missing coverage must be shown.
 - Figures follow the current status, so a past day's figures can change when a later sync changes an order's status.
 - No per-tenant time zone and no currency other than TRY.
 - `DeliveryFee`, `ServiceFee`, payment method and payment status are not reported.

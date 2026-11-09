@@ -64,6 +64,8 @@ public sealed class OrderCustomerTerminologyTests
         "Wasla.Domain.Entities.TenantDb.Order.CustomerName",
         "Wasla.Domain.Entities.TenantDb.Order.CustomerNote",
         "Wasla.Domain.Entities.TenantDb.Order.CustomerPhone",
+        // WAS-200: a cancellation not from the restaurant may be the order's customer, the courier or the provider.
+        "Wasla.Domain.Enums.OrderCancellationOrigin.ProviderOrCustomer",
         "Wasla.Infrastructure.Persistence.Tenant.Migrations.AddOrderCustomerNote",
         "Wasla.Web.Models.Dashboard.DashboardViewModel+RecentOrderRow.CustomerName",
         "Wasla.Web.Models.Orders.OrderDetailViewModel.CustomerAddress",

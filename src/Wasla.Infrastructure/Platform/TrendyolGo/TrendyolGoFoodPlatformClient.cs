@@ -511,7 +511,8 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ModifiedAtUtc: modifiedAtUtc)
         {
             ProviderSupplierId = package.SupplierId,
-            ProviderStoreId = package.StoreId
+            ProviderStoreId = package.StoreId,
+            ProviderCancellationReasonCode = package.CancellationReasonCode
         };
     }
 
@@ -685,6 +686,32 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         public List<TrendyolGoLine>? Lines { get; set; }
         public TrendyolGoPayment? Payment { get; set; }
         public string? CustomerNote { get; set; }
+
+        /// <summary>
+        /// <c>cancelInfo.reasonCode</c>, the only part of that object read. The Meal packages documentation has the field
+        /// and shows it as <c>null</c>; the object's contents are documented on the Meal webhook payloads. Only this code
+        /// is written back to the stored raw payload.
+        /// </summary>
+        [JsonPropertyName("cancelInfo")]
+        [JsonConverter(typeof(CancelInfoReasonCodeConverter))]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public int? CancellationReasonCode { get; set; }
+    }
+
+    private sealed class CancelInfoReasonCodeConverter : JsonConverter<int?>
+    {
+        public override int? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            using var document = JsonDocument.ParseValue(ref reader);
+            return TrendyolGoCancelInfo.ReasonCode(document.RootElement);
+        }
+
+        public override void Write(Utf8JsonWriter writer, int? value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("reasonCode", value.GetValueOrDefault());
+            writer.WriteEndObject();
+        }
     }
 
     /// <summary>

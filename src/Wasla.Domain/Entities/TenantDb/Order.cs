@@ -113,8 +113,9 @@ public class Order : BaseEntity
     public FoodPlatform? CancellationReasonPlatform { get; set; }
 
     /// <summary>
-    /// The platform's own reason code, for example Trendyol GO 621. A number on purpose: free-text reasons and customer
-    /// data have no place here. Null when no reason is known.
+    /// The platform's own reason code, for example Trendyol GO 621. With <see cref="OrderCancellationOrigin.OperatorRejected"/>
+    /// it is the reason the operator chose; with any other origin it is the reason the provider reported. A number on
+    /// purpose: free-text reasons and customer data have no place here. Null when no reason is known.
     /// </summary>
     public int? CancellationReasonCode { get; set; }
 

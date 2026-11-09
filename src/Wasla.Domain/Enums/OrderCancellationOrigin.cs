@@ -17,13 +17,14 @@ public enum OrderCancellationOrigin
     /// <summary>
     /// The provider reported a cancellation it documents as made by the restaurant, and no Wasla action recorded it:
     /// made on the provider's own panel, or a Wasla rejection whose local save did not happen. Wasla does not know who
-    /// made it or whether it was a rejection or a cancellation.
+    /// made it or whether it was a rejection or a cancellation, so a report must not count it as a known cancellation.
     /// </summary>
     RestaurantOnPlatform = 3,
 
     /// <summary>
     /// The provider reported a cancellation it documents as not coming from the restaurant. That may be the order
-    /// customer, the courier or the provider itself; this value never claims the customer.
+    /// customer, the courier or the provider itself; this value never claims the customer. A reason code can name a more
+    /// specific cause, but a cause does not say who pressed cancel either.
     /// </summary>
     ProviderOrCustomer = 4
 }
