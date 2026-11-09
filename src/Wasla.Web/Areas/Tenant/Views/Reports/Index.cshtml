@@ -1,0 +1,138 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Application.Reports
+@using Wasla.Domain.Enums
+@using Wasla.Web.Models.Reports
+@{
+    ViewData["Title"] = L["Reports.Title"];
+    var q = Model.Query;
+    var presets = new[]
+    {
+        (Value: "today", Key: "Reports.Preset.Today"),
+        (Value: "yesterday", Key: "Reports.Preset.Yesterday"),
+        (Value: "last7days", Key: "Reports.Preset.Last7Days"),
+        (Value: "last30days", Key: "Reports.Preset.Last30Days")
+    };
+    var sections = new[]
+    {
+        (Value: ReportSections.Overview, Key: "Reports.Section.Overview"),
+        (Value: ReportSections.Platforms, Key: "Reports.Section.Platforms"),
+        (Value: ReportSections.Cancellations, Key: "Reports.Section.Cancellations")
+    };
+    var selectedPlatform = OrderReportFilters.ParsePlatform(q.Platform, out _)?.ToString() ?? "";
+    var customOpen = Model.StartDateError is not null || Model.EndDateError is not null;
+    var today = Wasla.Application.Orders.OrdersReceivedAtQueryRange.FormatWebDate(Model.Today);
+}
+
+<link rel="stylesheet" href="~/css/wasla-reports.css" asp-append-version="true" />
+
+<div class="wasla-reports" id="rptRoot"
+     data-content-url="/reports/content"
+     data-page-url="@ReportPageQuery.PagePath"
+     data-loading-text="@L["Reports.Loading"]">
+
+    <header class="wasla-tenant-page-header mb-3">
+        <div class="wasla-tenant-page-header__main">
+            <h1 class="wasla-tenant-page-header__title h4 mb-1">@L["Reports.Title"]</h1>
+            <p class="wasla-tenant-page-header__subtitle text-muted small mb-0">@L["Reports.Subtitle"]</p>
+        </div>
+    </header>
+
+    <section class="rpt-filters" aria-label="@L["Reports.FiltersLabel"]">
+        @* From 768 px these controls sit in the card and apply at once; below it the same controls are a bottom sheet that applies with its button. *@
+        <div class="offcanvas-md offcanvas-bottom rpt-sheet" tabindex="-1" id="rptFilterSheet" aria-labelledby="rptFilterSheetTitle">
+            <div class="offcanvas-header d-md-none">
+                <h2 class="offcanvas-title h6 mb-0" id="rptFilterSheetTitle">@L["Reports.Filter"]</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#rptFilterSheet" aria-label="@L["Reports.Close"]"></button>
+            </div>
+            <div class="offcanvas-body rpt-controls">
+                <div class="rpt-presets" role="group" aria-label="@L["Reports.PeriodLabel"]">
+                    @foreach (var preset in presets)
+                    {
+                        var selected = string.Equals(q.Preset, preset.Value, StringComparison.OrdinalIgnoreCase);
+                        <a class="wasla-btn rpt-chip @(selected ? "is-selected" : "")" href="@q.UrlForPreset(preset.Value)"
+                           data-rpt-preset="@preset.Value" aria-current="@(selected ? "true" : null)">@L[preset.Key]</a>
+                    }
+                    <button type="button" class="rpt-chip @(q.IsCustom ? "is-selected" : "")" id="rptCustomToggle"
+                            aria-expanded="@(customOpen ? "true" : "false")" aria-controls="rptCustomForm">@L["Reports.Preset.Custom"]</button>
+                </div>
+
+                <form class="rpt-custom" id="rptCustomForm" method="get" action="@ReportPageQuery.PagePath" novalidate hidden="@(!customOpen)">
+                    <input type="hidden" name="preset" value="custom" />
+                    <div class="rpt-field">
+                        <label class="rpt-field__label" for="rptStartDate">@L["Reports.StartDate"]</label>
+                        <input class="form-control form-control-sm" type="date" id="rptStartDate" name="startDate" dir="ltr" min="2000-01-01" max="@today"
+                               value="@(q.IsCustom ? q.StartDate : null)" aria-describedby="rptStartError" aria-invalid="@(Model.StartDateError is null ? null : "true")" />
+                        <p class="rpt-field__error" id="rptStartError">@(Model.StartDateError is { } startKey ? L[startKey, OrderReportFilters.MaxRangeDays].Value : "")</p>
+                    </div>
+                    <div class="rpt-field">
+                        <label class="rpt-field__label" for="rptEndDate">@L["Reports.EndDate"]</label>
+                        <input class="form-control form-control-sm" type="date" id="rptEndDate" name="endDate" dir="ltr" min="2000-01-01" max="@today"
+                               value="@(q.IsCustom ? q.EndDate : null)" aria-describedby="rptEndError" aria-invalid="@(Model.EndDateError is null ? null : "true")" />
+                        <p class="rpt-field__error" id="rptEndError">@(Model.EndDateError is { } endKey ? L[endKey, OrderReportFilters.MaxRangeDays].Value : "")</p>
+                    </div>
+                    <div class="rpt-custom__actions d-none d-md-flex">
+                        <button type="submit" class="rpt-btn rpt-btn--primary">@L["Reports.Apply"]</button>
+                        <button type="button" class="rpt-btn" id="rptCustomCancel">@L["Reports.Cancel"]</button>
+                    </div>
+                </form>
+
+                <form class="rpt-selects" id="rptFilterForm" method="get" action="@ReportPageQuery.PagePath">
+                    <div class="rpt-field rpt-field--inline">
+                        <label class="rpt-field__label rpt-field__label--sheet" for="rptPlatform">@L["Reports.PlatformLabel"]</label>
+                        <select class="form-select form-select-sm rpt-platform" id="rptPlatform" name="platform" aria-label="@L["Reports.PlatformLabel"]">
+                            <option value="">@L["Reports.AllPlatforms"]</option>
+                            @foreach (var platform in Enum.GetValues<FoodPlatform>())
+                            {
+                                <option value="@platform" selected="@(selectedPlatform == platform.ToString())">@L[ReportFormat.PlatformKey(platform)]</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check form-switch rpt-compare" id="rptCompareWrap" hidden="@(q.Section != ReportSections.Overview)">
+                        <input class="form-check-input" type="checkbox" role="switch" id="rptCompare" name="compare" value="1"
+                               checked="@(Model.Comparison == ReportComparisonState.Active)" />
+                        <label class="form-check-label" for="rptCompare">@L["Reports.CompareLabel"]</label>
+                    </div>
+                    <noscript><button type="submit" class="rpt-btn">@L["Reports.Apply"]</button></noscript>
+                </form>
+
+                <a class="rpt-reset d-none d-md-inline-flex" id="rptReset" href="@q.ResetUrl()" hidden="@(!q.HasNonDefaultFilter)">@L["Reports.ResetFilters"]</a>
+
+                <div class="rpt-sheet__actions d-md-none">
+                    <button type="button" class="rpt-btn" id="rptSheetReset">@L["Reports.ResetFilters"]</button>
+                    <button type="button" class="rpt-btn rpt-btn--primary" id="rptSheetApply">@L["Reports.Apply"]</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="rpt-period-row">
+            <div class="rpt-period" id="rptPeriod">
+                @await Html.PartialAsync("_ReportPeriod", Model)
+            </div>
+            <button type="button" class="rpt-btn d-md-none" data-bs-toggle="offcanvas" data-bs-target="#rptFilterSheet" aria-controls="rptFilterSheet">
+                <i class="bi bi-sliders" aria-hidden="true"></i><span>@L["Reports.Filter"]</span>
+            </button>
+        </div>
+    </section>
+
+    <nav class="rpt-tabs" aria-label="@L["Reports.SectionsLabel"]">
+        @foreach (var tab in sections)
+        {
+            var current = q.Section == tab.Value;
+            <a class="wasla-btn rpt-tab @(current ? "is-current" : "")" href="@q.UrlForSection(tab.Value)"
+               data-rpt-section="@tab.Value" aria-current="@(current ? "page" : null)">@L[tab.Key]</a>
+        }
+    </nav>
+
+    <p class="visually-hidden" id="rptStatus" role="status" aria-live="polite"></p>
+
+    <div class="rpt-result" id="rptResult" tabindex="-1">
+        @await Html.PartialAsync("_ReportResult", Model)
+    </div>
+
+    <template id="rptLoadingTemplate">@await Html.PartialAsync("_ReportLoading")</template>
+    <template id="rptFailureTemplate">@await Html.PartialAsync("_ReportFailure")</template>
+</div>
+
+@section Scripts {
+    <script src="~/js/reports/reports-page.js" asp-append-version="true"></script>
+}

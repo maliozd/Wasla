@@ -126,6 +126,9 @@ public sealed class TenantDarkModeBrowserTests : IAsyncLifetime
     private static readonly string[] ShellPages =
     [
         "/dashboard",
+        "/reports",
+        "/reports?section=platforms",
+        "/reports?section=cancellations",
         "/orders",
         $"/orders/details/{TenantVisualWebHost.DetailOrderId}",
         "/platform-connections",
