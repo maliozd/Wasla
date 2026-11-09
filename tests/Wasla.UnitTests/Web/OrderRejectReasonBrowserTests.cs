@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -494,6 +495,15 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
         var post = Assert.Single(posts.EnumerateArray());
         Assert.EndsWith($"/orders/{orderId}/reject", post.GetProperty("url").GetString(), StringComparison.Ordinal);
         Assert.Equal(expectedBody, post.GetProperty("body").ValueKind == JsonValueKind.Null ? null : post.GetProperty("body").GetString());
+
+        // The status and these fields are written together, so the wait above covers them too.
+        await using var db = await _host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(TenantVisualWebHost.TenantId, ct);
+        var order = await db.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId, ct);
+        int? reasonCode = expectedBody is null ? null : int.Parse(expectedBody["reasonId=".Length..], CultureInfo.InvariantCulture);
+        FoodPlatform? reasonPlatform = reasonCode is null ? null : order.Platform;
+        Assert.Equal(OrderCancellationOrigin.OperatorRejected, order.CancellationOrigin);
+        Assert.Equal(reasonCode, order.CancellationReasonCode);
+        Assert.Equal(reasonPlatform, order.CancellationReasonPlatform);
     }
 
     private async Task<OrderStatus> StatusAsync(Guid orderId, CancellationToken ct)
