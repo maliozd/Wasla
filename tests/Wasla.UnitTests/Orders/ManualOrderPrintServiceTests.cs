@@ -111,13 +111,13 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
     [Theory]
     [InlineData(PrintJobStatus.Printed)]
     [InlineData(PrintJobStatus.Failed)]
-    public async Task ManualPrint_AfterCompletedJob_GoesThroughTheReprintPath(PrintJobStatus completedStatus)
+    public async Task ConfirmedReprint_AfterCompletedJob_GoesThroughTheReprintPath(PrintJobStatus completedStatus)
     {
         var orderId = await SeedOrderAsync(_tenantId);
         var sourceJobId = await AddPrintJobAsync(_tenantId, orderId, completedStatus);
         var service = CreateService();
 
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.True(result.Success);
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
@@ -130,6 +130,40 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         Assert.Equal(sourceJobId, jobs[0].Id);
         Assert.Equal(PrintJobStatus.Pending, jobs[1].Status);
         Assert.Equal(result.PrintJobId, jobs[1].Id);
+    }
+
+    [Theory]
+    [InlineData(PrintJobStatus.Printed)]
+    [InlineData(PrintJobStatus.Failed)]
+    public async Task FirstPrintRequest_AfterAReceiptFinished_CreatesNoCopy(PrintJobStatus completedStatus)
+    {
+        var orderId = await SeedOrderAsync(_tenantId);
+        await AddPrintJobAsync(_tenantId, orderId, completedStatus);
+        var service = CreateService();
+
+        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+
+        Assert.False(result.Success);
+        Assert.Equal(ManualOrderPrintOutcome.ReprintConfirmationRequired, result.Outcome);
+        Assert.Equal(ManualOrderPrintMessageKeys.ReprintConfirmationRequired, result.MessageKey);
+        Assert.Null(result.PrintJobId);
+        await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
+        Assert.Equal(1, await db.PrintJobs.CountAsync(Ct));
+    }
+
+    [Fact]
+    public async Task ConfirmedReprint_WhileAJobIsActive_CreatesNothing()
+    {
+        var orderId = await SeedOrderAsync(_tenantId);
+        await AddPrintJobAsync(_tenantId, orderId, PrintJobStatus.Printed, createdOffsetMinutes: -10);
+        await AddPrintJobAsync(_tenantId, orderId, PrintJobStatus.Pending);
+        var service = CreateService();
+
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
+
+        Assert.Equal(ManualOrderPrintOutcome.AlreadyQueued, result.Outcome);
+        await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
+        Assert.Equal(2, await db.PrintJobs.CountAsync(Ct));
     }
 
     [Fact]
@@ -154,7 +188,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         await AddPrintJobAsync(_tenantId, orderId, PrintJobStatus.Cancelled, createdOffsetMinutes: -1);
         var service = CreateService();
 
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
         await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
@@ -175,7 +209,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         await AddPrintJobAsync(_tenantId, orderId, PrintJobStatus.Cancelled);
         var service = CreateService();
 
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
         await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
@@ -193,7 +227,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         await AddPrintJobAsync(_tenantId, orderId, PrintJobStatus.Printed, createdOffsetMinutes: -1, copyCount: 2);
         var service = CreateService();
 
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
         await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
@@ -212,7 +246,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
         var expectedCopyCount = secondId.CompareTo(firstId) > 0 ? 3 : 1;
         var service = CreateService();
 
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
         await using var db = await _dbFactory.CreateAsync(_tenantId, Ct);
@@ -379,7 +413,7 @@ public sealed class ManualOrderPrintServiceTests : IDisposable
 
         // A different tenant's settings must not influence the rebuilt receipt.
         await SeedOrderAsync(_otherTenantId);
-        var result = await service.QueueReceiptPrintAsync(_tenantId, orderId, "Test Tenant", Ct);
+        var result = await service.QueueConfirmedReprintAsync(_tenantId, orderId, "Test Tenant", Ct);
 
         Assert.Equal(ManualOrderPrintOutcome.Requeued, result.Outcome);
         await using var verification = await _dbFactory.CreateAsync(_tenantId, Ct);

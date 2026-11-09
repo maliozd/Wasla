@@ -67,7 +67,7 @@ must not drop the notice of committed work) and catches every exception.
 | Change | Service | Called from |
 |--------|---------|-------------|
 | New receipt job (Pending) | `ReceiptPrintJobService.TryCreateReceiptJobAsync`, after its serializable transaction commits | Web manual print and Approve (in process); Worker auto-approve during sync (internal channel) |
-| Reprint job (Pending) | `PrintJobHistoryService.CreateReprintAsync`, after its serializable transaction commits | Web manual print of a printed or failed receipt, the print history reprint, and the Bridge's reprint request (Web or Api) |
+| Reprint job (Pending) | `PrintJobHistoryService.CreateReprintAsync`, after its serializable transaction commits | Web reprint of a printed or failed receipt, confirmed by the operator, the print history reprint, and the Bridge's reprint request (Web or Api) |
 | Pending → Printing, Printing → Printed / Failed | `PrintBridgeJobService.TryMarkPrinting/Printed/FailedAsync`, when the conditional update changed a row | `PrintBridgeApiController` on Web (in process) or `PrintBridgeController` on Api (internal channel) |
 
 `Cancelled` is not written by any code today, so it is never announced. The CLI's development `seed-print-job` sets a
@@ -375,7 +375,8 @@ endpoint.
   configuration, so a port or secret that differs from Web's is not caught at startup; it shows as sender warnings
   and refused requests (failure table above).
 - **Concurrency evidence.** Version and single-announcement behavior are tested with SQLite, which serializes writers.
-  SQL Server locking of the serializable creation path is the existing behavior and was not re-tested.
+  On SQL Server, locking of the serializable creation path is tested for a manual first print only
+  (`Orders/ManualOrderPrintRaceSqlServerTests.cs`).
 - The Print Bridge devices page, the print history page, the Orders management page and practice orders do not use
   the channel.
 

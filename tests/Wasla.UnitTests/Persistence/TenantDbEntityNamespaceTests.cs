@@ -36,6 +36,7 @@ public sealed class TenantDbEntityNamespaceTests
         [typeof(TenantSession)] = "TenantSessions",
         [typeof(UserGuidedSetupState)] = "UserGuidedSetupStates",
         [typeof(UserNotificationSettings)] = "UserNotificationSettings",
+        [typeof(UserOrderActionPreference)] = "UserOrderActionPreferences",
         [typeof(UserProductTourCompletion)] = "UserProductTourCompletions",
     };
 

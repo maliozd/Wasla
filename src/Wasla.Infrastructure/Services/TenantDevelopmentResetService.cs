@@ -125,6 +125,7 @@ public sealed class TenantDevelopmentResetService : ITenantDevelopmentResetServi
 
         // Back to post-provisioning defaults: no notification rows, and the new-tenant settings row (Setup).
         await db.UserNotificationSettings.ExecuteDeleteAsync(ct).ConfigureAwait(false);
+        await db.UserOrderActionPreferences.ExecuteDeleteAsync(ct).ConfigureAwait(false);
         await db.TenantOperationalSettings.ExecuteDeleteAsync(ct).ConfigureAwait(false);
         db.TenantOperationalSettings.Add(TenantOperationalModes.NewTenantSettings(now));
         await db.SaveChangesAsync(ct).ConfigureAwait(false);

@@ -101,6 +101,8 @@
                             OrderId = o.Id,
                             Status = o.Status,
                             Platform = o.Platform,
+                            OrderCode = o.ExternalOrderCode,
+                            OrderTotal = OrderUiHelper.FormatMoney(o.TotalAmount),
                             CanManageOrders = canManageOrders,
                             ButtonSizeClass = "btn-sm"
                         })

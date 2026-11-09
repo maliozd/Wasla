@@ -885,7 +885,6 @@
   <data name="PrintBridge.Manual.Verified" xml:space="preserve"><value>Wasla, Print Bridge bağlantısını doğruladı. Bu sayfanın üstündeki rehberli kurulum panelinden devam edebilirsiniz.</value></data>
   <data name="PrintBridge.Manual.StillWaiting" xml:space="preserve"><value>Wasla bağlantıyı henüz doğrulamadı. Print Bridge'de "Bağlantıyı test et" düğmesine tıklayın, ardından yeniden kontrol etmek için bu sayfayı yenileyin.</value></data>
   <data name="PrintBridge.Manual.ManageDevice" xml:space="preserve"><value>Bu cihazı yönetin: tokenını yenileyin veya cihazı kaldırın</value></data>
-  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve"><value>{0} için token yenilensin mi? Eski token geçersiz olur.</value></data>
   <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve"><value>Eski token geçersizdir. Yeni tokenı Print Bridge yapılandırmasına kaydedin.</value></data>
   <data name="PrintBridge.Auto.SetupModeTitle" xml:space="preserve"><value>Kurulum türü</value></data>
   <data name="PrintBridge.Auto.NewDeviceModeTitle" xml:space="preserve"><value>Yeni cihaz kur</value></data>
@@ -896,7 +895,7 @@
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Cihaz seçin</value></data>
   <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Makine:</value></data>
   <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>Bu işlem seçili cihaz için yeni bağlantı oluşturur. Eski bağlantı artık kullanılamaz.</value></data>
-  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Seçilen cihaz için yeni bağlantı oluşturulsun mu? Eski bağlantı artık çalışmaz.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Print Bridge uygulamasında bağlantı tamamlanınca bu cihazın eski bağlantısı çalışmaz. Tamamlanmazsa eski bağlantı çalışmaya devam eder.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Yeniden bağlama seçilen cihaz için yeni token oluşturur ve o cihazın eski token'ını geçersiz kılar.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Devam etmek için yeniden bağlanacak cihazı seçin.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Mevcut cihazı yeniden bağlamak için cihaz seçimi zorunludur.</value></data>
@@ -928,7 +927,6 @@
   <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Cihaz kaldırılsın mı?</value></data>
   <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>“{0}” cihazının token’ı geçersiz olacak ve Print Bridge bağlantısı duracaktır. Yazdırma geçmişi silinmeyecektir.</value></data>
   <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Cihazı kaldır</value></data>
-  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Vazgeç</value></data>
   <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Devre dışı bırakma geçici ve geri alınabilir. Kaldırma cihazı emekliye ayırır, token'ını iptal eder, kurulum/yönetim akışlarından gizler ve geçmişi korur.</value></data>
   <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Cihaz kaldırıldı. Yazdırma geçmişi korunur.</value></data>
   <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>Cihaz zaten kaldırılmış.</value></data>
@@ -1071,7 +1069,7 @@
   <data name="Orders.Print.Queued" xml:space="preserve"><value>Fiş yazdırma kuyruğuna gönderildi.</value></data>
   <data name="Orders.Print.ReprintQueued" xml:space="preserve"><value>Fiş yazdırma kuyruğuna yeniden gönderildi.</value></data>
   <data name="Orders.Print.AlreadyQueued" xml:space="preserve"><value>Bu sipariş için bir fiş zaten kuyrukta veya yazdırılıyor.</value></data>
-  <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Bu fiş yazıcıya yeniden gönderilsin mi?</value></data>
+  <data name="Orders.Print.ConfirmReprint" xml:space="preserve"><value>Fiş tekrar yazdırılsın mı?</value></data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve"><value>Sipariş bulunamadı.</value></data>
   <data name="Orders.Print.Failed" xml:space="preserve"><value>Fiş yazdırma kuyruğuna eklenemedi.</value></data>
   <data name="Orders.Print.Printing" xml:space="preserve"><value>Yazdırılıyor…</value></data>
@@ -2301,4 +2299,41 @@
   <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>Bugünden sonraki bir gün seçilemez.</value></data>
   <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>Seçilen platform tanınmadı.</value></data>
   <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>Bağlantıda aynı filtre birden fazla kez var.</value></data>
+  <data name="Confirm.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="Confirm.Unavailable" xml:space="preserve"><value>Onay penceresi açılamadı. Sayfayı yenileyip tekrar deneyin.</value></data>
+  <data name="Confirm.ResultUnknownTitle" xml:space="preserve"><value>Sonuç doğrulanamadı</value></data>
+  <data name="Orders.ApproveConfirmAction" xml:space="preserve"><value>Siparişi onayla</value></data>
+  <data name="Orders.MarkReadyConfirmAction" xml:space="preserve"><value>Hazır olarak işaretle</value></data>
+  <data name="Orders.RejectConfirmAction" xml:space="preserve"><value>Siparişi reddet</value></data>
+  <data name="Orders.RejectPlainConfirmMessage" xml:space="preserve"><value>Sipariş platformda iptal edilir ve Wasla’da “İptal” olarak işaretlenir. Bu işlem geri alınamaz.</value></data>
+  <data name="Orders.ConfirmHint" xml:space="preserve"><value>Bu onayı Canlı Ekran ayarlarından kapatabilirsiniz.</value></data>
+  <data name="Orders.Approving" xml:space="preserve"><value>Onaylanıyor…</value></data>
+  <data name="Orders.MarkingReady" xml:space="preserve"><value>Hazır işaretleniyor…</value></data>
+  <data name="Orders.Rejecting" xml:space="preserve"><value>Reddediliyor…</value></data>
+  <data name="Orders.ActionChecking" xml:space="preserve"><value>Sonuç doğrulanamadı. Sipariş durumu kontrol ediliyor…</value></data>
+  <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>Sonuç doğrulanamadı. Sipariş hâlâ işlem bekliyor; tekrar denemeden önce platform panelini kontrol edin.</value></data>
+  <data name="Orders.ActionUnverified" xml:space="preserve"><value>Sonuç doğrulanamadı. Sipariş durumunu kontrol edin.</value></data>
+  <data name="Orders.Print.Unverified" xml:space="preserve"><value>Yazdırma isteği doğrulanamadı. Tekrar denemeden önce fiş durumunu kontrol edin.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>Bu siparişin fiş durumu değişti; yeni fiş oluşturulmadı. Başka bir kopya için Tekrar yazdır'ı kullanın.</value></data>
+  <data name="Orders.ConfirmStale" xml:space="preserve"><value>Sipariş başka bir işlemle güncellendi ve artık {0}. Bu işlem yapılamaz.</value></data>
+  <data name="Orders.ConfirmGone" xml:space="preserve"><value>Sipariş artık listede değil. Bu işlem yapılamaz.</value></data>
+  <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Sipariş işlemleri</value></data>
+  <data name="Orders.ActionPreference.Label" xml:space="preserve"><value>Onayla ve Hazır için önce sor</value></data>
+  <data name="Orders.ActionPreference.Help" xml:space="preserve"><value>Kapalıyken bu iki işlem hemen gönderilir. Reddetme ve tekrar yazdırma her zaman sorulur.</value></data>
+  <data name="Orders.ActionPreference.Saving" xml:space="preserve"><value>Kaydediliyor…</value></data>
+  <data name="Orders.ActionPreference.Saved" xml:space="preserve"><value>Kaydedildi</value></data>
+  <data name="Orders.ActionPreference.SaveFailed" xml:space="preserve"><value>Kaydedilemedi. Ayar değişmedi.</value></data>
+  <data name="Orders.ActionPreference.Retry" xml:space="preserve"><value>Tekrar dene</value></data>
+  <data name="Orders.Print.ConfirmReprintMessage" xml:space="preserve"><value>Bu sipariş için yeni bir yazdırma isteği oluşturulur ve Print Bridge kuyruğuna gönderilir.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmTitle" xml:space="preserve"><value>Token yenilensin mi?</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmMessage" xml:space="preserve"><value>Eski token hemen geçersiz olur. Print Bridge yeni token ile güncellenene kadar bu cihaz yazdıramaz.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmAction" xml:space="preserve"><value>Token’ı yenile</value></data>
+  <data name="PrintBridge.TokenRegenerating" xml:space="preserve"><value>Token yenileniyor…</value></data>
+  <data name="PrintBridge.TokenUncertainMessage" xml:space="preserve"><value>Token değişmiş olabilir ve yeni token gösterilemedi. Cihazın bağlantısını kontrol edin; gerekiyorsa token’ı yeniden yenileyin.</value></data>
+  <data name="PrintBridge.DeviceRemoving" xml:space="preserve"><value>Cihaz kaldırılıyor…</value></data>
+  <data name="PrintBridge.DeviceRemoveUncertainMessage" xml:space="preserve"><value>Cihazın kaldırılıp kaldırılmadığı doğrulanamadı. Tekrar denemeden önce sayfayı yenileyin.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>Cihaz kaldırılamadı</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Yeni bağlantı oluşturulsun mu?</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Bağlantıyı başlat</value></data>
+  <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve"><value>Sipariş platformda hazır olarak işaretlenir.</value></data>
 </root>

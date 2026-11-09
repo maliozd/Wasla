@@ -49,7 +49,8 @@ Other pages may use other option bags; Orders/Live Screen are the densest exampl
 | `orders-core.js` | Namespace, options, messaging |
 | `orders-page.js` | Orders Index filters only (no live poll/sound) |
 | `orders-table.js` | Table/card partial refresh helpers; optional `initPolling` (not started by Live coordinator) |
-| `orders-actions.js` | Lifecycle POST + confirm + antiforgery |
+| `orders-actions.js` | Lifecycle POST, confirmation and antiforgery |
+| `orders-action-preference.js` | The employee's confirmation preference: read on load and when the tab becomes visible, saved from the Live Screen menu |
 | `orders-print.js` | Shared print / reprint action UI |
 | `orders-audio.js` | Sound unlock, playback, browser notifications |
 | `orders-notification-settings.js` | Modal load/save for notification preferences |
@@ -72,7 +73,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 
 ### Modals and events
 
-- Bootstrap modals for detail and notification settings.
+- Bootstrap modals for detail and notification settings. Confirmations use the one dialog of `wasla-confirm.js` (`WaslaConfirm.ask` closes on confirm, `WaslaConfirm.run` stays open while its action runs); do not call the browser's `confirm()` on tenant pages.
 - Document-level **event delegation** for actions and Live view controls (DOM nodes are replaced on poll).
 - Custom event `wasla:order-action-completed` coordinates detail refresh without duplicating lifecycle rules.
 
@@ -98,6 +99,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 | Concern | Storage |
 | --- | --- |
 | Notification sound enabled, sound name, volume, browser notification flag, highlight prefs | Server (notification settings endpoints) |
+| Confirm before Approve and Mark ready | Server (`/order-action-preference`, per employee and tenant) |
 | Live view mode | `localStorage` (`Wasla.liveScreen.viewMode`) |
 | Tenant app light/dark choice | `localStorage` (`Wasla.tenant.theme`); see [Theme](#theme) |
 | Central Admin light/dark choice | `localStorage` (`Wasla.theme`); see [Theme](#theme) |
@@ -109,7 +111,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 
 `wwwroot/js/theme-preference.js` is the only code that resolves, applies and stores the light/dark theme. Each layout loads it synchronously in `<head>`, before the stylesheets, and names its app on `<html data-wasla-theme-scope>`: `tenant` for `_TenantLayout` and `_OrdersDisplayLayout` (Live Screen), `admin` for `_AdminLayout`. It sets `data-bs-theme` on `<html>`, and on `<body>` as soon as the parser inserts it, so the first frame is painted in the resolved theme. `theme-mode.js` only drives the toggle buttons (`.wasla-theme-toggle`).
 
-**Scope: browser, per app.** The choice is stored in the browser, not on the user or the tenant. That matches the architecture: there is no per-user preference store in CentralDb or TenantDb, the theme must be known before the first frame (a server or user setting would need a request or a database read on every page), operational devices such as a kitchen Live Screen are often shared by several users, and each tenant host is its own origin, so one tenant's choice never reaches another tenant's pages. Central Admin is served under `/admin` on the marketing, application and tenant hosts (not on unknown host names, WAS-66), so it can share an origin with the tenant app; the two apps use separate keys and never read or write each other's.
+**Scope: browser, per app.** The choice is stored in the browser, not on the user or the tenant. That matches the architecture: the theme has no per-user row in CentralDb or TenantDb, the theme must be known before the first frame (a server or user setting would need a request or a database read on every page), operational devices such as a kitchen Live Screen are often shared by several users, and each tenant host is its own origin, so one tenant's choice never reaches another tenant's pages. Central Admin is served under `/admin` on the marketing, application and tenant hosts (not on unknown host names, WAS-66), so it can share an origin with the tenant app; the two apps use separate keys and never read or write each other's.
 
 **Tenant app precedence:**
 

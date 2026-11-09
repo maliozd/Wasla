@@ -42,6 +42,9 @@
                 data-label-queued="@L["Orders.Print.InQueue"].Value"
                 data-label-printing="@L["Orders.Print.Printing"].Value"
                 data-confirm-reprint="@L["Orders.Print.ConfirmReprint"].Value"
+                data-confirm-reprint-message="@L["Orders.Print.ConfirmReprintMessage"].Value"
+                data-order-code="@Model.OrderCode"
+                data-order-total="@Model.OrderTotal"
                 disabled="@(Model.InProgress ? "disabled" : null)"
                 title="@L["Orders.Print.Hint"]">
             <i class="bi bi-printer me-1" aria-hidden="true"></i><span data-print-label aria-live="polite">@label</span>

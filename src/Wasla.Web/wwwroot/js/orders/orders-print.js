@@ -10,6 +10,8 @@
 
   const inFlight = {};
   const settled = {};
+  // Orders whose reprint confirmation is open: a second activation does not ask twice.
+  const confirming = {};
 
   function localize(key) {
     return (typeof O.getMessage === "function" ? O.getMessage(key) : null) || key;
@@ -66,13 +68,40 @@
         : (btn.getAttribute("data-label-print") || localize("orderPrintAction")));
   }
 
+  /** A reprint requests another physical copy, so it always asks. A first print does not. */
+  async function confirmReprint(btn, orderId) {
+    if (!global.WaslaConfirm || confirming[orderId]) return false;
+    confirming[orderId] = true;
+    try {
+      const scope = btn.closest("[data-order-id]");
+      return await global.WaslaConfirm.ask({
+        title: btn.getAttribute("data-confirm-reprint") || localize("orderPrintConfirmReprint"),
+        body: btn.getAttribute("data-confirm-reprint-message") || "",
+        identity: {
+          platform: scope ? scope.querySelector(".platform-badge") : null,
+          primary: btn.getAttribute("data-order-code") || "",
+          detail: btn.getAttribute("data-order-total") || ""
+        },
+        confirmLabel: btn.getAttribute("data-label-reprint") || localize("orderPrintReprint"),
+        confirmClass: "btn-primary",
+        initialFocus: "cancel",
+        trigger: btn,
+        focusFallback: function () {
+          return document.querySelector("[data-order-detail=\"" + orderId + "\"]") || document.getElementById("ordersLiveScreenHost");
+        },
+        closeFirst: btn.closest(".modal")
+      });
+    } finally {
+      delete confirming[orderId];
+    }
+  }
+
   async function submit(btn, orderId) {
     const previousMode = btn.getAttribute("data-print-mode") || "print";
 
-    if (previousMode === "reprint") {
-      const question = btn.getAttribute("data-confirm-reprint") || localize("orderPrintConfirmReprint");
-      if (!global.confirm(question)) return;
-    }
+    const reprint = previousMode === "reprint";
+
+    if (reprint && !await confirmReprint(btn, orderId)) return;
 
     inFlight[orderId] = true;
     btn.disabled = true;
@@ -81,8 +110,14 @@
       const token = getCsrfToken();
       const headers = { "X-Requested-With": "XMLHttpRequest" };
       if (token) headers["RequestVerificationToken"] = token;
+      // Says the operator confirmed another copy. Without it the server never creates one.
+      if (reprint) headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-      const resp = await fetch(buildUrl(orderId), { method: "POST", headers: headers });
+      const resp = await fetch(buildUrl(orderId), {
+        method: "POST",
+        headers: headers,
+        body: reprint ? "reprintConfirmed=true" : undefined
+      });
 
       let payload = null;
       try {
@@ -91,7 +126,8 @@
 
       const message = (payload && payload.message) ? String(payload.message) : null;
 
-      if (resp.ok) {
+      // A redirect is the sign-in page answering for an ended session, not this endpoint.
+      if (resp.ok && !resp.redirected) {
         toast(message || localize("orderPrintQueued"), "success");
         applyQueuedState(btn);
         return;
@@ -104,10 +140,20 @@
         return;
       }
 
-      toast(message || localize("orderPrintFailed"), "error");
+      // 412: this button still offered a first print, but a receipt has finished since. Nothing was created; the read
+      // below shows Reprint, which asks.
+      if (resp.status === 412) {
+        toast(message || localize("orderPrintFailed"), "warning");
+        restore(btn, "reprint");
+        return;
+      }
+
+      // A timeout or server error is not proof of failure: the job may be queued. The read below shows what the server has.
+      if (resp.redirected || resp.status >= 500 || resp.status === 408) toast(localize("orderPrintUnverified"), "warning");
+      else toast(message || localize("orderPrintFailed"), "error");
       restore(btn, previousMode);
     } catch (error) {
-      toast(localize("orderPrintFailed"), "error");
+      toast(localize("orderPrintUnverified"), "warning");
       restore(btn, previousMode);
       if (O.isDebugEnabled()) O.debugWarn("manual order print failed", error);
     } finally {
@@ -131,7 +177,7 @@
 
       ev.preventDefault();
 
-      if (btn.disabled || inFlight[orderId]) return;
+      if (btn.disabled || inFlight[orderId] || confirming[orderId]) return;
       submit(btn, orderId);
     });
   }

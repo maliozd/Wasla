@@ -32,6 +32,8 @@
             @await Html.PartialAsync("_OrderStatusBadge", new OrderStatusBadgeModel(Model.Status))
             @await Html.PartialAsync("_OrderPrintAction", new Wasla.Web.Models.Orders.OrderPrintActionModel
             {
+                OrderCode = Model.ExternalOrderCode,
+                OrderTotal = OrderUiHelper.FormatMoney(Model.TotalAmount),
                 OrderId = Model.Id,
                 InProgress = Model.ReceiptPrintInProgress,
                 CanReprint = Model.ReceiptCanReprint,
@@ -268,7 +270,8 @@
                 ["orderPrintQueued"] = L["Orders.Print.Queued"].Value,
                 ["orderPrintAlreadyQueued"] = L["Orders.Print.AlreadyQueued"].Value,
                 ["orderPrintConfirmReprint"] = L["Orders.Print.ConfirmReprint"].Value,
-                ["orderPrintFailed"] = L["Orders.Print.Failed"].Value
+                ["orderPrintFailed"] = L["Orders.Print.Failed"].Value,
+                ["orderPrintUnverified"] = L["Orders.Print.Unverified"].Value
             }))
         };
     </script>

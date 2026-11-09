@@ -19,9 +19,11 @@ function inlineScript() {
   const script = view.slice(start, end);
   assert.ok(script.includes("@Html.Raw(deviceDetailsConfigJson)"), "the script's only Razor expression changed");
   return script.replace("@Html.Raw(deviceDetailsConfigJson)", JSON.stringify({
+    device: { name: "Kitchen", machine: "KITCHEN-PC" },
     endpoints: { regenerate: "/print-bridge/devices/dev-1/regenerate-token", setActive: "/print-bridge/devices/dev-1/set-active", nextIsActive: false },
     messages: {
-      confirmRegenerateToken: "Regenerate?", tokenRegenerateWarning: "The old token stops.", tokenRegenerateFailed: "Failed",
+      tokenRegenerateTitle: "Regenerate?", tokenRegenerateMessage: "The old token stops.", tokenRegenerateAction: "Regenerate", tokenRegenerating: "Working",
+      resultUnknownTitle: "Unknown", tokenUncertain: "Maybe changed", tokenRegenerateFailed: "Failed",
       tokenMasked: "Masked", tokenCopied: "Token copied", tokenCopyFailed: "Copy failed", copied: "Copied",
       showToken: "Show token", hideToken: "Hide token", deviceUpdateFailed: "Update failed"
     }
@@ -70,7 +72,12 @@ function page({ responses }) {
       getElementById: (id) => els[id] || null,
       addEventListener: (type, handler) => { (documentListeners[type] = documentListeners[type] || []).push(handler); }
     },
-    window: { confirm: () => true, location: { reload() {} } },
+    window: {
+      location: { reload() {} },
+      addEventListener() {},
+      // Confirms at once; the real dialog is covered by OrderActionConfirmBrowserTests.
+      WaslaConfirm: { run: (options) => Promise.resolve().then(() => options.action()), ask: () => Promise.resolve(true) }
+    },
     navigator: { clipboard: { writeText: (text) => { clipboard.push(text); return Promise.resolve(); } } },
     fetch: (url) => { posts.push(url); const body = queue.shift(); return Promise.resolve({ ok: true, json: () => Promise.resolve(body) }); },
     URLSearchParams, setTimeout: (fn) => fn(), Promise

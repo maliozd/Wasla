@@ -19,6 +19,7 @@ public class TenantDbContext : DbContext
     public DbSet<TenantSession> TenantSessions => Set<TenantSession>();
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
     public DbSet<UserProductTourCompletion> UserProductTourCompletions => Set<UserProductTourCompletion>();
+    public DbSet<UserOrderActionPreference> UserOrderActionPreferences => Set<UserOrderActionPreference>();
     public DbSet<GuidedDemoSession> GuidedDemoSessions => Set<GuidedDemoSession>();
     public DbSet<UserGuidedSetupState> UserGuidedSetupStates => Set<UserGuidedSetupState>();
     public DbSet<TenantOperationalSettings> TenantOperationalSettings => Set<TenantOperationalSettings>();
@@ -40,6 +41,7 @@ public class TenantDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TenantSessionConfiguration());
         modelBuilder.ApplyConfiguration(new UserNotificationSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new UserProductTourCompletionConfiguration());
+        modelBuilder.ApplyConfiguration(new UserOrderActionPreferenceConfiguration());
         modelBuilder.ApplyConfiguration(new GuidedDemoSessionConfiguration());
         modelBuilder.ApplyConfiguration(new UserGuidedSetupStateConfiguration());
         modelBuilder.ApplyConfiguration(new TenantOperationalSettingsConfiguration());

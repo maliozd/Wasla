@@ -953,6 +953,33 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserNotificationSettings", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ConfirmRoutineActions")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserOrderActionPreferences_UserId");
+
+                    b.ToTable("UserOrderActionPreferences", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1069,6 +1096,17 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>

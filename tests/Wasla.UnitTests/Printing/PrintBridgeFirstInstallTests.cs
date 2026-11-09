@@ -241,7 +241,7 @@ public sealed partial class PrintBridgeFirstInstallTests
     public void SetupScript_CreatesTheSessionAndOpensTheApp_OnlyFromOpenAndConnect()
     {
         var script = Read("src", "Wasla.Web", "wwwroot", "js", "print-bridge", "print-bridge-setup.js");
-        var automatic = Section(script, "function startAutomaticSetup()", "function stopSpinnerReset()");
+        var automatic = Section(script, "function startAutomaticSetup(ev)", "function stopSpinnerReset()");
         var firstInstall = Section(script, "// --- Guided first install", "function bindManualSectionLinks()");
         var onLoad = Section(script, "document.addEventListener(\"DOMContentLoaded\"", "})();");
 

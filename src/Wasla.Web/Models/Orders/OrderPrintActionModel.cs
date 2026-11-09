@@ -22,6 +22,11 @@ public sealed class OrderPrintActionModel
 
     public string ButtonSizeClass { get; set; } = "btn-sm";
 
+    /// <summary>Order code and formatted total, shown in the reprint confirmation.</summary>
+    public string OrderCode { get; set; } = string.Empty;
+
+    public string OrderTotal { get; set; } = string.Empty;
+
     /// <summary>The action's state: <c>print</c>, <c>reprint</c>, <c>queued</c> (Pending) or <c>printing</c>.</summary>
     public string Mode => InProgress
         ? (LatestStatus == PrintJobStatus.Printing ? "printing" : "queued")

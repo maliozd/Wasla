@@ -637,7 +637,7 @@
     <value>A receipt for this order is already queued or printing.</value>
   </data>
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
-    <value>Send this receipt to the printer again?</value>
+    <value>Reprint this receipt?</value>
   </data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve">
     <value>Order not found.</value>
@@ -1378,7 +1378,7 @@
     <value>Mark this order as ready?</value>
   </data>
   <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
-    <value>This marks the order as ready for pickup or packaging.</value>
+    <value>The order is marked as ready on the platform.</value>
   </data>
   <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
     <value>Hand this order to the courier?</value>
@@ -2190,17 +2190,11 @@
   <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
     <value>Could not copy token</value>
   </data>
-  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
-    <value>The old token will stop working. Update your Print Bridge configuration with the new token.</value>
-  </data>
   <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
     <value>The old token is no longer valid. Save the new token in your Print Bridge configuration.</value>
   </data>
   <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
     <value>Token is not visible. Regenerate the token to see a new one.</value>
-  </data>
-  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
-    <value>Regenerate token for {0}?</value>
   </data>
   <data name="PrintBridge.Token" xml:space="preserve">
     <value>Token</value>
@@ -2255,9 +2249,6 @@
   </data>
   <data name="PrintBridge.CopyFailed" xml:space="preserve">
     <value>Copy failed</value>
-  </data>
-  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
-    <value>Regenerate token for {0}? The old token will stop working.</value>
   </data>
   <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
     <value>Could not regenerate token.</value>
@@ -2730,9 +2721,6 @@
   <data name="PrintBridge.PrintDevice" xml:space="preserve">
     <value>Print Bridge</value>
   </data>
-  <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
-    <value>Reprint receipt for {0}?</value>
-  </data>
   <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
     <value>Updates to this table are paused while you select text or use a control in it.</value>
   </data>
@@ -3165,7 +3153,7 @@
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Select a device</value></data>
   <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Machine:</value></data>
   <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>This creates a new connection for the selected device. The old connection will no longer work.</value></data>
-  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Create a new connection for the selected device? The old connection will no longer work.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>When the connection is completed in Print Bridge, this device's old connection stops working. If it is not completed, the old connection keeps working.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Reconnect creates a new token for the selected device and invalidates that device's previous token.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Select the device to reconnect before continuing.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Selecting a device is required to reconnect an existing device.</value></data>
@@ -3196,7 +3184,6 @@
   <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Remove this device?</value></data>
   <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>The token for “{0}” will be revoked and its Print Bridge connection will stop. Print history will not be deleted.</value></data>
   <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Remove device</value></data>
-  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Disable is temporary and reversible. Remove retires the device, revokes its token, hides it from setup/management flows, and preserves history.</value></data>
   <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Device removed. Print history is preserved.</value></data>
   <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>This device has already been removed.</value></data>
@@ -4656,4 +4643,40 @@
   <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>A day after today cannot be selected.</value></data>
   <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>The selected platform is not recognised.</value></data>
   <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>The link contains the same filter more than once.</value></data>
+  <data name="Confirm.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Confirm.Unavailable" xml:space="preserve"><value>The confirmation could not be opened. Reload the page and try again.</value></data>
+  <data name="Confirm.ResultUnknownTitle" xml:space="preserve"><value>The result could not be confirmed</value></data>
+  <data name="Orders.ApproveConfirmAction" xml:space="preserve"><value>Approve order</value></data>
+  <data name="Orders.MarkReadyConfirmAction" xml:space="preserve"><value>Mark ready</value></data>
+  <data name="Orders.RejectConfirmAction" xml:space="preserve"><value>Reject order</value></data>
+  <data name="Orders.RejectPlainConfirmMessage" xml:space="preserve"><value>The order is cancelled on the platform and marked Cancelled in Wasla. This cannot be undone.</value></data>
+  <data name="Orders.ConfirmHint" xml:space="preserve"><value>You can turn this confirmation off in the Live Screen settings.</value></data>
+  <data name="Orders.Approving" xml:space="preserve"><value>Approving…</value></data>
+  <data name="Orders.MarkingReady" xml:space="preserve"><value>Marking ready…</value></data>
+  <data name="Orders.Rejecting" xml:space="preserve"><value>Rejecting…</value></data>
+  <data name="Orders.ActionChecking" xml:space="preserve"><value>The result could not be confirmed. Checking the order…</value></data>
+  <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>The result could not be confirmed. The order is still waiting; check the platform panel before trying again.</value></data>
+  <data name="Orders.ActionUnverified" xml:space="preserve"><value>The result could not be confirmed. Check the order's status.</value></data>
+  <data name="Orders.Print.Unverified" xml:space="preserve"><value>We could not confirm the print request. Check the receipt status before trying again.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>This order's receipt status has changed, so no new receipt was created. Use Reprint to request another copy.</value></data>
+  <data name="Orders.ConfirmStale" xml:space="preserve"><value>This order was updated by another action and is now {0}. This action can no longer be done.</value></data>
+  <data name="Orders.ConfirmGone" xml:space="preserve"><value>This order is no longer on the screen. This action can no longer be done.</value></data>
+  <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Order actions</value></data>
+  <data name="Orders.ActionPreference.Label" xml:space="preserve"><value>Ask before Approve and Mark ready</value></data>
+  <data name="Orders.ActionPreference.Help" xml:space="preserve"><value>When off, these two actions are sent right away. Reject and reprint always ask.</value></data>
+  <data name="Orders.ActionPreference.Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Orders.ActionPreference.Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Orders.ActionPreference.SaveFailed" xml:space="preserve"><value>Could not be saved. The setting did not change.</value></data>
+  <data name="Orders.ActionPreference.Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Orders.Print.ConfirmReprintMessage" xml:space="preserve"><value>A new print request is created for this order and sent to the Print Bridge queue.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmTitle" xml:space="preserve"><value>Regenerate this device's token?</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmMessage" xml:space="preserve"><value>The old token stops working immediately. This device cannot print until Print Bridge is updated with the new token.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmAction" xml:space="preserve"><value>Regenerate token</value></data>
+  <data name="PrintBridge.TokenRegenerating" xml:space="preserve"><value>Regenerating token…</value></data>
+  <data name="PrintBridge.TokenUncertainMessage" xml:space="preserve"><value>The token may have changed and the new token could not be shown. Check the device's connection and regenerate the token again if needed.</value></data>
+  <data name="PrintBridge.DeviceRemoving" xml:space="preserve"><value>Removing device…</value></data>
+  <data name="PrintBridge.DeviceRemoveUncertainMessage" xml:space="preserve"><value>We could not confirm whether the device was removed. Reload the page before trying again.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>The device could not be removed</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Create a new connection?</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Start connection</value></data>
 </root>
