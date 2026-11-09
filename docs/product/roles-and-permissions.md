@@ -64,6 +64,7 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 |------------|--------|------------------------------|
 | View orders / history | `CanViewOrders` | `OrdersController` class-level |
 | Mutate order lifecycle | `CanManageOrders` | Order action endpoints on `OrdersController` |
+| Confirm before Approve and Mark ready (own choice) | `CanManageOrders` | `OrderActionPreferenceController` |
 | Live Screen view / poll, including the read-only effective automation states and the restaurant logo image | `CanViewLiveScreen` | `/orders/live-display`, `/orders/live-screen`, `/orders/live-data`, `GET /restaurant-logo` |
 | Manual print / reprint | `CanManualPrint` | Orders print actions; some Print Bridge job actions |
 | Live receipt print status | `CanManualPrint` | `GET /orders/{id}/print-state`; the hub's `print-status` group ([../architecture/realtime.md](../architecture/realtime.md#the-hub)) |

@@ -19,16 +19,29 @@
     var setActiveIcon = Model.IsActive ? "bi-pause-circle" : "bi-play-circle";
     var deviceDetailsConfigJson = JsonSerializer.Serialize(new
     {
+        device = new { name = Model.Name, machine = Model.MachineName?.Trim() ?? "" },
         endpoints = new
         {
             regenerate = $"/print-bridge/devices/{Model.Id}/regenerate-token",
+            remove = $"/print-bridge/devices/{Model.Id}/remove",
             setActive = $"/print-bridge/devices/{Model.Id}/set-active",
             nextIsActive = !Model.IsActive
         },
         messages = new
         {
-            confirmRegenerateToken = L["PrintBridge.ConfirmRegenerateToken", Model.Name].Value,
-            tokenRegenerateWarning = L["PrintBridge.TokenRegenerateWarning"].Value,
+            tokenRegenerateTitle = L["PrintBridge.TokenRegenerateConfirmTitle"].Value,
+            tokenRegenerateMessage = L["PrintBridge.TokenRegenerateConfirmMessage"].Value,
+            tokenRegenerateAction = L["PrintBridge.TokenRegenerateConfirmAction"].Value,
+            tokenRegenerating = L["PrintBridge.TokenRegenerating"].Value,
+            resultUnknownTitle = L["Confirm.ResultUnknownTitle"].Value,
+            tokenUncertain = L["PrintBridge.TokenUncertainMessage"].Value,
+            removeUncertain = L["PrintBridge.DeviceRemoveUncertainMessage"].Value,
+            removeTitle = L["PrintBridge.DeviceRemoveDangerTitle"].Value,
+            removeMessage = L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name].Value,
+            removeHint = L["PrintBridge.DeviceDisableRemoveExplanation"].Value,
+            removeAction = L["PrintBridge.DeviceRemoveConfirm"].Value,
+            removing = L["PrintBridge.DeviceRemoving"].Value,
+            removeFailedTitle = L["PrintBridge.DeviceRemoveFailedTitle"].Value,
             tokenRegenerateFailed = L["PrintBridge.TokenRegenerateFailed"].Value,
             tokenMasked = L["PrintBridge.TokenMasked"].Value,
             tokenCopied = L["PrintBridge.TokenCopied"].Value,
@@ -204,31 +217,9 @@
                 <p class="small mb-2">@L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name]</p>
                 <p class="text-muted small mb-0">@L["PrintBridge.DeviceDisableRemoveExplanation"]</p>
             </div>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#printBridgeRemoveDeviceModal">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="printBridgeDetailRemoveBtn">
                 <i class="bi bi-trash3 me-1"></i>@L["PrintBridge.RemoveDevice"]
             </button>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="printBridgeRemoveDeviceModal" tabindex="-1" aria-labelledby="printBridgeRemoveDeviceModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title h6" id="printBridgeRemoveDeviceModalTitle">@L["PrintBridge.DeviceRemoveDangerTitle"]</h2>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Common.Cancel"]"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-2">@L["PrintBridge.DeviceRemoveConfirmMessage", Model.Name]</p>
-                <p class="text-muted small mb-0">@L["PrintBridge.DeviceDisableRemoveExplanation"]</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">@L["PrintBridge.DeviceRemoveCancel"]</button>
-                <form asp-action="RemoveDevice" asp-route-id="@Model.Id" method="post" class="m-0">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-danger btn-sm">@L["PrintBridge.DeviceRemoveConfirm"]</button>
-                </form>
-            </div>
         </div>
     </div>
 </div>
@@ -276,11 +267,19 @@
                 }).then(function (resp) {
                     if (!resp.ok) {
                         return resp.json().catch(function () { return {}; }).then(function (err) {
-                            throw new Error((err && err.message) || messages.deviceUpdateFailed);
+                            var failure = new Error((err && err.message) || messages.deviceUpdateFailed);
+                            failure.status = resp.status;
+                            throw failure;
                         });
                     }
                     return resp.json();
                 });
+            }
+
+            // No answer, a timeout, a server error or a page that is not the expected answer is not proof of failure: the
+            // server may already have acted.
+            function isUncertain(err) {
+                return err instanceof TypeError || err instanceof SyntaxError || err.status >= 500 || err.status === 408;
             }
 
             // Masks or reveals the token field. Only the field's type changes: its value is the token's single copy on
@@ -325,6 +324,10 @@
                 box.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
 
+            function deviceIdentity() {
+                return { primary: config.device.name, detail: config.device.machine };
+            }
+
             function copyCurrentToken(btn) {
                 if (!currentToken) {
                     showMessage(messages.tokenMasked, "danger");
@@ -345,16 +348,57 @@
                 var regenerateBtn = document.getElementById("printBridgeDetailRegenerateTokenBtn");
                 if (regenerateBtn) {
                     regenerateBtn.addEventListener("click", function () {
-                        var confirmText = messages.confirmRegenerateToken + "\n\n" + messages.tokenRegenerateWarning;
-                        if (!window.confirm(confirmText)) return;
-                        regenerateBtn.disabled = true;
-                        post(endpoints.regenerate, {})
-                            .then(function (data) {
-                                showToken(data);
-                                if (data.message) showMessage(data.message, "success");
-                            })
-                            .catch(function () { showMessage(messages.tokenRegenerateFailed, "danger"); })
-                            .finally(function () { regenerateBtn.disabled = false; });
+                        if (!window.WaslaConfirm) return;
+                        // The dialog stays open until the server answers; the new token is shown once on this page.
+                        window.WaslaConfirm.run({
+                            title: messages.tokenRegenerateTitle,
+                            body: messages.tokenRegenerateMessage,
+                            identity: deviceIdentity(),
+                            confirmLabel: messages.tokenRegenerateAction,
+                            pendingLabel: messages.tokenRegenerating,
+                            confirmClass: "btn-danger",
+                            initialFocus: "cancel",
+                            trigger: regenerateBtn,
+                            action: function () {
+                                return post(endpoints.regenerate, {}).then(function (data) {
+                                    showToken(data);
+                                    if (data.message) showMessage(data.message, "success");
+                                    return { close: true };
+                                }).catch(function (err) {
+                                    // No answer: the old token may already be gone, and the new one was not received.
+                                    if (isUncertain(err)) return { title: messages.resultUnknownTitle, notice: messages.tokenUncertain, tone: "warning", hideBody: true };
+                                    return { notice: messages.tokenRegenerateFailed, tone: "danger" };
+                                });
+                            }
+                        });
+                    });
+                }
+
+                var removeBtn = document.getElementById("printBridgeDetailRemoveBtn");
+                if (removeBtn) {
+                    removeBtn.addEventListener("click", function () {
+                        if (!window.WaslaConfirm) return;
+                        window.WaslaConfirm.run({
+                            title: messages.removeTitle,
+                            body: messages.removeMessage,
+                            hint: messages.removeHint,
+                            identity: deviceIdentity(),
+                            confirmLabel: messages.removeAction,
+                            pendingLabel: messages.removing,
+                            confirmClass: "btn-danger",
+                            initialFocus: "cancel",
+                            trigger: removeBtn,
+                            action: function () {
+                                return post(endpoints.remove, {}).then(function (data) {
+                                    window.location.assign(data.redirectUrl);
+                                    // The page is leaving; the dialog stays as it is until it does.
+                                    return new Promise(function () {});
+                                }).catch(function (err) {
+                                    if (isUncertain(err)) return { title: messages.resultUnknownTitle, notice: messages.removeUncertain, tone: "warning", hideBody: true };
+                                    return { title: messages.removeFailedTitle, notice: (err && err.message) || messages.deviceUpdateFailed, tone: "danger", hideBody: true };
+                                });
+                            }
+                        });
                     });
                 }
 
@@ -380,6 +424,11 @@
 
                 var dismissBtn = document.getElementById("printBridgeDetailDismissTokenBtn");
                 if (dismissBtn) dismissBtn.addEventListener("click", hideToken);
+            });
+
+            // Back can restore this page exactly as it was left, including a removal dialog waiting for the navigation.
+            window.addEventListener("pageshow", function (event) {
+                if (event.persisted) window.location.reload();
             });
         })();
     </script>

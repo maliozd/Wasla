@@ -342,6 +342,7 @@
     return u;
   }
 
+  /** Resolves to false when the Orders list could not be read and shown. */
   async function refreshOrdersTable() {
     if (isLiveDisplayPage()) {
       if (O.liveStore && typeof O.liveStore.requestRefresh === "function") {
@@ -367,7 +368,7 @@
       if (!resp.ok) {
         O.showOrdersWarning("orders-table-failed", O.getMessage("tableRefreshFailed"));
         O.debugWarn("table refresh failed", resp.status);
-        return;
+        return false;
       }
 
       const html = await resp.text();
@@ -377,7 +378,7 @@
         if (O.isDebugEnabled()) {
           O.debugWarn("table returned full document");
         }
-        return;
+        return false;
       }
 
       const parsed = extractOrderIdsFromHtml(html);
@@ -407,7 +408,7 @@
       if (!container) {
         O.showOrdersWarning("orders-table-target-missing", O.getMessage("tableRefreshException"));
         O.debugWarn("table refresh target missing");
-        return;
+        return false;
       }
 
       container.innerHTML = html;
@@ -422,11 +423,13 @@
           liveDisplay: false
         });
       }
+      return true;
     } catch (error) {
       O.showOrdersWarning("orders-table-exception", O.getMessage("tableRefreshException"));
       if (O.isDebugEnabled()) {
         O.debugWarn("refreshOrdersTable", error);
       }
+      return false;
     }
   }
 

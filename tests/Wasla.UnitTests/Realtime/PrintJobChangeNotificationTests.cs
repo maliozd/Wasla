@@ -99,8 +99,8 @@ public sealed class PrintJobChangeNotificationTests : IDisposable
         await _print.Bridge.TryMarkPrintingAsync(_tenant, first, "Kitchen", null, Ct);
         await _print.Bridge.TryMarkFailedAsync(_tenant, first, "Printer offline", Ct);
 
-        // The operator's manual print of a failed receipt goes through the reprint path.
-        var requeued = await _print.Manual.QueueReceiptPrintAsync(_tenant, orderId, "Test", Ct);
+        // The operator's confirmed reprint of a failed receipt goes through the reprint path.
+        var requeued = await _print.Manual.QueueConfirmedReprintAsync(_tenant, orderId, "Test", Ct);
         Assert.Equal(ManualOrderPrintOutcome.Requeued, requeued.Outcome);
         var second = requeued.PrintJobId!.Value;
         await _print.Bridge.TryMarkPrintingAsync(_tenant, second, "Kitchen", null, Ct);
@@ -176,7 +176,7 @@ public sealed class PrintJobChangeNotificationTests : IDisposable
         var jobId = Assert.Single(await _print.ReadJobsAsync(_tenant, orderId)).Id;
         Assert.Equal(PrintJobClaimResult.Claimed, (await _print.Bridge.TryMarkPrintingAsync(_tenant, jobId, "Kitchen", null, Ct)).Result);
         Assert.Equal(PrintJobClaimResult.Claimed, (await _print.Bridge.TryMarkPrintedAsync(_tenant, jobId, Ct)).Result);
-        var reprint = await _print.Manual.QueueReceiptPrintAsync(_tenant, orderId, "Test", Ct);
+        var reprint = await _print.Manual.QueueConfirmedReprintAsync(_tenant, orderId, "Test", Ct);
 
         Assert.True(reprint.Success);
         Assert.Equal(4, _notifier.Sent.Count);

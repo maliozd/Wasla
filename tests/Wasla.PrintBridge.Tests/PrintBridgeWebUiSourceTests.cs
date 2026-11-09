@@ -306,12 +306,14 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.Contains("printBridgeDetailRegenerateTokenBtn", detailsView);
         Assert.Contains("printBridgeDetailSetActiveBtn", detailsView);
         Assert.Contains("PrintBridge.DeviceRemoveDangerTitle", detailsView);
-        Assert.Contains("asp-action=\"RemoveDevice\"", detailsView);
-        Assert.Contains("printBridgeRemoveDeviceModal", detailsView);
+        Assert.Contains("printBridgeDetailRemoveBtn", detailsView);
+        Assert.Contains("/remove\"", detailsView);
+        Assert.Contains("WaslaConfirm.run", detailsView);
+        Assert.DoesNotContain("printBridgeRemoveDeviceModal", detailsView);
     }
 
     [Fact]
-    public void DevicesPage_ReprintClickUsesDefinedLocalFormatterAndDelegatedPost()
+    public void DevicesPage_ReprintClickAsksInTheSharedDialogAndUsesDelegatedPost()
     {
         var root = LocateRepositoryRoot();
         var devicesView = File.ReadAllText(Path.Combine(
@@ -344,8 +346,9 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.Contains("function bindPrintJobReprintDelegation()", devicesScript);
         Assert.Contains("panel.addEventListener(\"click\"", devicesScript);
         Assert.Contains(".pb-reprint-job-btn", devicesScript);
-        Assert.Contains("function formatMessage(template, value)", devicesScript);
-        Assert.Contains("formatMessage(messages.confirmReprint", devicesScript);
+        Assert.Contains("window.WaslaConfirm.ask", devicesScript);
+        Assert.Contains("messages.confirmReprintMessage", devicesScript);
+        Assert.DoesNotContain("formatMessage(", devicesScript);
         Assert.DoesNotContain("formatMsg(", devicesScript);
         Assert.DoesNotContain("window.formatMsg", devicesScript);
         Assert.DoesNotContain("window.formatMessage", devicesScript);
@@ -366,7 +369,6 @@ public sealed class PrintBridgeWebUiSourceTests
         Assert.DoesNotContain("querySelectorAll(\".pb-reprint-job-btn\").forEach", devicesScript);
         Assert.DoesNotContain("pb-reprint-job-btn\").addEventListener", devicesScript);
         Assert.Equal(1, CountOccurrences(devicesScript, "function bindPrintJobReprintDelegation()"));
-        Assert.Equal(1, CountOccurrences(devicesScript, "function formatMessage"));
         Assert.Equal(1, CountOccurrences(devicesScript, "setAttribute(\"data-reprint-bound\""));
     }
 

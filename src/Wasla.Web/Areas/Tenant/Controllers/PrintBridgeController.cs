@@ -136,14 +136,23 @@ public sealed class PrintBridgeController : BaseController
         if (result.Outcome == RemovePrintBridgeDeviceOutcome.NotFound)
             return NotFound();
 
+        // The confirmation dialog posts with fetch and stays open to show a refusal; a plain form post keeps the redirects.
+        var fromDialog = string.Equals(Request.Headers["X-Requested-With"], "fetch", StringComparison.Ordinal);
+
         if (!result.Success)
         {
-            TempData["PrintBridgeDeviceError"] = _localizer[result.MessageKey].Value;
+            var error = _localizer[result.MessageKey].Value;
+            if (fromDialog)
+                return BadRequest(new { message = error });
+
+            TempData["PrintBridgeDeviceError"] = error;
             return RedirectToAction(nameof(DeviceDetails), new { id });
         }
 
         TempData["PrintBridgeDeviceMessage"] = _localizer[result.MessageKey].Value;
-        return RedirectToAction(nameof(Devices));
+        return fromDialog
+            ? Json(new { redirectUrl = Url.Action(nameof(Devices)) })
+            : RedirectToAction(nameof(Devices));
     }
 
     [HttpGet("setup")]

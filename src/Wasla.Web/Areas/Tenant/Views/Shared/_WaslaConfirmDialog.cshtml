@@ -1,0 +1,32 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* The one confirmation dialog of a tenant page (WAS-119), filled and opened by wasla-confirm.js. The announcer sits
+   outside the modal so progress can be announced while the modal is closed. Every text is set by the caller from its
+   localized configuration; nothing is rendered as HTML. *@
+<div class="modal fade wasla-confirm-dialog" id="waslaConfirmDialog" tabindex="-1"
+     aria-labelledby="waslaConfirmDialogTitle" aria-describedby="waslaConfirmDialogBody" aria-hidden="true"
+     data-wasla-confirm-dialog
+     data-unavailable-message="@L["Confirm.Unavailable"]">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="waslaConfirmDialogTitle" data-wasla-confirm-title></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Confirm.Cancel"]" data-wasla-confirm-close></button>
+            </div>
+            <div class="modal-body">
+                <div class="wasla-confirm-identity" data-wasla-confirm-identity hidden></div>
+                <p class="mb-2" id="waslaConfirmDialogBody" data-wasla-confirm-body></p>
+                <p class="form-text mb-0" data-wasla-confirm-hint hidden></p>
+                <div class="alert small mb-0 py-2" role="status" data-wasla-confirm-notice hidden></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                        data-wasla-confirm-cancel
+                        data-label-cancel="@L["Confirm.Cancel"]"
+                        data-label-close="@L["Common.Close"]">@L["Confirm.Cancel"]</button>
+                <button type="button" class="btn" data-wasla-confirm-accept></button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="visually-hidden" role="status" aria-live="polite" data-wasla-confirm-announcer></div>

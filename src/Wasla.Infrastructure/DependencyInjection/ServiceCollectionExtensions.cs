@@ -154,6 +154,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPlatformConnectionService, PlatformConnectionService>();
         services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IUserNotificationSettingsService, UserNotificationSettingsService>();
+        services.AddScoped<IUserOrderActionPreferenceService, UserOrderActionPreferenceService>();
         services.AddScoped<IPrintBridgeAuthService, PrintBridgeAuthService>();
         services.AddScoped<IPrintBridgeJobService, PrintBridgeJobService>();
         services.AddScoped<IPrintBridgeActivePrintJobChecker, PrintBridgeActivePrintJobChecker>();

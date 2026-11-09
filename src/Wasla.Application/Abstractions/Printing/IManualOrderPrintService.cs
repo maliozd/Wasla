@@ -14,7 +14,10 @@ public enum ManualOrderPrintOutcome
     AlreadyQueued = 3,
 
     OrderNotFound = 4,
-    Failed = 5
+    Failed = 5,
+
+    /// <summary>A first-print request found a finished receipt. Another copy needs a confirmed reprint; nothing was created.</summary>
+    ReprintConfirmationRequired = 6
 }
 
 /// <summary>
@@ -56,7 +59,18 @@ public interface IManualOrderPrintService
         Guid orderId,
         CancellationToken ct);
 
+    /// <summary>
+    /// A first print. It never creates another copy of a finished receipt: that returns
+    /// <see cref="ManualOrderPrintOutcome.ReprintConfirmationRequired"/> and creates nothing.
+    /// </summary>
     Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
+        Guid tenantId,
+        Guid orderId,
+        string? tenantDisplayName,
+        CancellationToken ct);
+
+    /// <summary>A print the operator confirmed as another copy. Goes through the reprint path when a finished receipt exists.</summary>
+    Task<ManualOrderPrintResult> QueueConfirmedReprintAsync(
         Guid tenantId,
         Guid orderId,
         string? tenantDisplayName,
@@ -70,4 +84,5 @@ public static class ManualOrderPrintMessageKeys
     public const string AlreadyQueued = "Orders.Print.AlreadyQueued";
     public const string OrderNotFound = "Orders.Print.OrderNotFound";
     public const string Failed = "Orders.Print.Failed";
+    public const string ReprintConfirmationRequired = "Orders.Print.ReprintConfirmationRequired";
 }

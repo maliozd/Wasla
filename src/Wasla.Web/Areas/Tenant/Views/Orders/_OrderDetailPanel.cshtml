@@ -185,6 +185,8 @@
             OrderId = Model.Id,
             Status = Model.Status,
             Platform = Model.Platform,
+            OrderCode = Model.ExternalOrderCode,
+            OrderTotal = OrderUiHelper.FormatMoney(Model.TotalAmount),
             CanManageOrders = canManageOrders,
             ButtonSizeClass = "btn-sm"
         })
@@ -195,6 +197,8 @@
             CanReprint = Model.ReceiptCanReprint,
             LatestStatus = Model.ReceiptLatestStatus,
             Version = Model.ReceiptPrintVersion,
+            OrderCode = Model.ExternalOrderCode,
+            OrderTotal = OrderUiHelper.FormatMoney(Model.TotalAmount),
             ButtonSizeClass = "btn-sm"
         })
         <a class="btn btn-sm wasla-live-detail__open" href="/orders/details/@Model.Id" target="_blank" rel="noopener noreferrer">

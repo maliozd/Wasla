@@ -114,7 +114,7 @@ The modal follows the approved Figma section "Wasla Orders · Order Detail Modal
 
 ### Lifecycle actions on Live Screen
 
-Same `orders-actions.js` POST + antiforgery path as Orders. On Live Screen, `liveStore.beginMutation` pauses/invalidates polling until the action completes, then refreshes. Event `wasla:order-action-completed` refreshes open detail UIs.
+Same `orders-actions.js` POST + antiforgery path as Orders. On Live Screen, `liveStore.beginMutation` pauses/invalidates polling until the action completes, then refreshes. Event `wasla:order-action-completed` refreshes open detail UIs. Confirmations and the employee's preference are described in [lifecycle.md](lifecycle.md#confirmations-was-119). The preference is the “Sipariş işlemleri” group of the settings menu, shown to roles with `CanManageOrders`; it saves as it is toggled and shows only stored values.
 
 ### Order training (guided setup)
 

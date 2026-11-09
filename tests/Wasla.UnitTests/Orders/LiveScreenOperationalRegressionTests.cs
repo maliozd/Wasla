@@ -631,6 +631,14 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             CallCount++;
             throw new InvalidOperationException("print pipeline unavailable");
         }
+
+        public Task<bool> TryCreateFirstReceiptJobAsync(
+            Guid tenantId,
+            Guid orderId,
+            int copyCount,
+            string? tenantDisplayName,
+            CancellationToken ct) =>
+            TryCreateReceiptJobAsync(tenantId, orderId, copyCount, tenantDisplayName, ct);
     }
 
     private sealed class FixedReceiptTemplateSettings : IReceiptTemplateSettingsService

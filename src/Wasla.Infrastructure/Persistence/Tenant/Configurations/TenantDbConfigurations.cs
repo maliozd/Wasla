@@ -145,6 +145,33 @@ public class UserProductTourCompletionConfiguration : IEntityTypeConfiguration<U
     }
 }
 
+public static class UserOrderActionPreferenceIndexes
+{
+    public const string User = "IX_UserOrderActionPreferences_UserId";
+}
+
+public class UserOrderActionPreferenceConfiguration : IEntityTypeConfiguration<UserOrderActionPreference>
+{
+    public void Configure(EntityTypeBuilder<UserOrderActionPreference> builder)
+    {
+        builder.ToTable("UserOrderActionPreferences");
+        builder.HasKey(preference => preference.Id);
+        builder.Property(preference => preference.UserId).IsRequired();
+        builder.Property(preference => preference.ConfirmRoutineActions).IsRequired();
+
+        builder.HasOne(preference => preference.User)
+            .WithMany()
+            .HasForeignKey(preference => preference.UserId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+
+        // One row per employee; a missing row means the default (confirm).
+        builder.HasIndex(preference => preference.UserId)
+            .IsUnique()
+            .HasDatabaseName(UserOrderActionPreferenceIndexes.User);
+    }
+}
+
 public static class UserGuidedSetupStateIndexes
 {
     public const string User = "IX_UserGuidedSetupStates_UserId";
