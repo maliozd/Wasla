@@ -101,3 +101,20 @@ public sealed record ReportStripSegment(FoodPlatform Platform, double Weight, de
 public sealed record ReportLineChart(string CurrentPath, string PreviousPath, IReadOnlyList<ReportChartTick> Ticks, IReadOnlyList<(string Label, double Percent)> AxisLabels);
 
 public sealed record ReportComparisonRow(string LabelKey, string Current, string Previous, string? Difference, decimal? Change);
+
+/// <summary>One group of how orders ended, with its share of the cancelled or rejected orders.</summary>
+public sealed record ReportEndingRow(string Series, string LabelKey, string HintKey, int Count, decimal? Share);
+
+/// <summary>One platform's reasons. Shares are of the platform's cancelled or rejected orders, those without a reason included.</summary>
+public sealed record ReportReasonGroup(
+    FoodPlatform Platform,
+    int CancelledCount,
+    int RecordedCount,
+    decimal? Coverage,
+    int MissingCount,
+    decimal? MissingShare,
+    double MissingBarPercent,
+    bool HasReasonList,
+    IReadOnlyList<ReportReasonRow> Reasons);
+
+public sealed record ReportReasonRow(string Label, int Code, int Count, decimal? Share, double BarPercent);

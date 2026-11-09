@@ -223,6 +223,106 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
         Assert.Contains("orders in progress included", html, StringComparison.Ordinal);
     }
 
+    private static string Figure(string html, string marker, int index = 0)
+    {
+        var at = html.IndexOf(marker, StringComparison.Ordinal);
+        Assert.True(at >= 0, $"{marker} is not on the page.");
+        var next = html.IndexOf("</li>", at, StringComparison.Ordinal);
+        var row = html[at..(next < 0 ? html.Length : next)];
+        return Regex.Matches(row, "<bdi>([^<]*)</bdi>")[index].Groups[1].Value;
+    }
+
+    [Fact]
+    public async Task Cancellations_MixedCoverage_ShowTheSplitAndTheReasons_ThroughTheSharedReport()
+    {
+        Reset(ReportMode.MixedEndings);
+        var html = await PageAsync("/reports?preset=last7days&section=cancellations");
+
+        Assert.Single(hosts.Reports.Calls);
+
+        // The combined figure stays, and the three groups add up to it.
+        Assert.Contains("10 of all orders".Replace("10", "76.9%"), html, StringComparison.Ordinal);
+        Assert.Contains("Cancelled and rejected orders are counted together.", html, StringComparison.Ordinal);
+        Assert.Equal("3", Figure(html, "data-rpt-ending=\"known-rejected\""));
+        Assert.Equal("30.0%", Figure(html, "data-rpt-ending=\"known-rejected\"", 1));
+        Assert.Equal("2", Figure(html, "data-rpt-ending=\"known-cancelled\""));
+        Assert.Equal("5", Figure(html, "data-rpt-ending=\"unknown\""));
+        Assert.Equal("50.0%", Figure(html, "data-rpt-ending=\"unknown\"", 1));
+        Assert.Equal("2", Figure(html, "data-rpt-unknown=\"restaurant\""));
+        Assert.Equal("3", Figure(html, "data-rpt-unknown=\"none\""));
+
+        // A known origin is not presented as a known action, and a cause is not presented as a person.
+        Assert.Contains("A known origin is not always a known action", html, StringComparison.Ordinal);
+        Assert.Contains("It does not say who cancelled it.", html, StringComparison.Ordinal);
+        Assert.Contains("Older records, and orders a platform reported without these details, may have no classification or reason.", html, StringComparison.Ordinal);
+
+        // Reasons are kept per platform, with their documented labels, and shares include the orders with no reason.
+        Assert.Contains("Cancelled or rejected with a reason: 5 / 10 (50.0%)", html, StringComparison.Ordinal);
+        var trendyol = html[html.IndexOf("data-rpt-reason-group=\"TrendyolYemek\"", StringComparison.Ordinal)..html.IndexOf("data-rpt-reason-group=\"Yemeksepeti\"", StringComparison.Ordinal)];
+        Assert.Contains("Cancelled or rejected with a reason: 5 / 8 (62.5%)", trendyol, StringComparison.Ordinal);
+        Assert.Contains("Supply problem", trendyol, StringComparison.Ordinal);
+        Assert.Contains("Code 621", trendyol, StringComparison.Ordinal);
+        Assert.Contains("Customer asked to cancel", trendyol, StringComparison.Ordinal);
+        Assert.Equal("3", Figure(trendyol, "data-rpt-reason=\"621\""));
+        Assert.Equal("37.5%", Figure(trendyol, "data-rpt-reason=\"621\"", 1));
+        Assert.Equal("3", Figure(trendyol, "data-rpt-reason-missing"));
+        Assert.Equal("37.5%", Figure(trendyol, "data-rpt-reason-missing", 1));
+
+        var yemeksepeti = html[html.IndexOf("data-rpt-reason-group=\"Yemeksepeti\"", StringComparison.Ordinal)..];
+        Assert.Equal("2", Figure(yemeksepeti, "data-rpt-reason-missing"));
+        Assert.Contains("data-rpt-no-reason-list", yemeksepeti, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-rpt-reason=", yemeksepeti, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-rpt-no-reasons", html, StringComparison.Ordinal);
+
+        Assert.Contains("data-rpt-ending-platform=\"TrendyolYemek\"", html, StringComparison.Ordinal);
+        Assert.Contains("Known rejections</th>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Cancellations_AllReasonsUnknown_ShowMissingData_NotZeroOccurrences()
+    {
+        Reset(ReportMode.AllUnknown);
+        var html = await PageAsync("/reports?preset=yesterday&section=cancellations");
+
+        Assert.Equal("4", Figure(html, "data-rpt-ending=\"unknown\""));
+        Assert.Equal("100.0%", Figure(html, "data-rpt-ending=\"unknown\"", 1));
+        Assert.Equal("0", Figure(html, "data-rpt-ending=\"known-rejected\""));
+        Assert.Contains("data-rpt-no-reasons", html, StringComparison.Ordinal);
+        Assert.Contains("No reasons have been recorded", html, StringComparison.Ordinal);
+        Assert.Contains("Cancelled or rejected with a reason: 0 / 4 (0.0%)", html, StringComparison.Ordinal);
+        Assert.Contains("data-rpt-missing-data-note", html, StringComparison.Ordinal);
+        Assert.Equal("4", Figure(html, "data-rpt-reason-missing"));
+        Assert.DoesNotContain("data-rpt-reason=", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Cancellations_None_IsItsOwnState_WithNoSplitOrReasons()
+    {
+        Reset(ReportMode.NoneCompleted);
+        var html = await PageAsync("/reports?preset=yesterday&section=cancellations");
+
+        Assert.Contains("data-rpt-no-cancellations", html, StringComparison.Ordinal);
+        Assert.Contains("No cancelled or rejected orders in this period", html, StringComparison.Ordinal);
+        foreach (var absent in new[] { "data-rpt-breakdown=\"ending\"", "data-rpt-breakdown=\"reasons\"", "data-rpt-missing-data-note", "data-rpt-reason-missing" })
+            Assert.DoesNotContain(absent, html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Cancellations_DailyTable_CarriesTheSplit_ForEveryDay()
+    {
+        Reset(ReportMode.MixedEndings);
+        var html = await PageAsync("/reports?preset=custom&startDate=2026-10-06&endDate=2026-10-07&section=cancellations");
+
+        var daily = html[html.IndexOf("data-rpt-panel=\"cancel-daily\"", StringComparison.Ordinal)..];
+        var rows = Regex.Matches(daily, "<tr>\\s*<th scope=\"row\">.*?</tr>", RegexOptions.Singleline);
+        Assert.Equal(2, rows.Count);
+        int[] Cells(int row) => Regex.Matches(rows[row].Value, "<bdi>([\\d,]+)</bdi>").Select(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).ToArray();
+
+        // Newest first: cancelled, known rejected, known cancelled, unknown, reason missing, orders.
+        Assert.Equal([0, 0, 0, 0, 0, 0], Cells(0));
+        Assert.Equal([10, 3, 2, 5, 5, 13], Cells(1));
+    }
+
     [Fact]
     public async Task NoOrders_IsItsOwnState_WithNoRateOrFigures()
     {
@@ -341,7 +441,7 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
     public async Task OnlyReportRoles_ReachThePageAndItsData(string role, HttpStatusCode expected)
     {
         Reset();
-        foreach (var path in new[] { "/reports?preset=yesterday", "/reports/content?preset=yesterday" })
+        foreach (var path in new[] { "/reports?preset=yesterday", "/reports/content?preset=yesterday", "/reports/content?preset=yesterday&section=cancellations" })
         {
             using var response = await hosts.Client(role).GetAsync(path);
             Assert.Equal(expected, response.StatusCode);
@@ -349,7 +449,7 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
                 Assert.Contains("access-denied", response.Headers.Location!.ToString(), StringComparison.OrdinalIgnoreCase);
         }
 
-        Assert.Equal(expected == HttpStatusCode.OK ? 2 : 0, hosts.Reports.Calls.Count);
+        Assert.Equal(expected == HttpStatusCode.OK ? 3 : 0, hosts.Reports.Calls.Count);
     }
 
     [Fact]
@@ -368,8 +468,8 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
     public async Task EachTenant_ReadsOnlyItsOwnReport_AndASessionDoesNotCrossHosts()
     {
         Reset();
-        await PageAsync("/reports/content?preset=yesterday");
-        await PageAsync("/reports/content?preset=yesterday", role: "beta");
+        await PageAsync("/reports/content?preset=yesterday&section=cancellations");
+        await PageAsync("/reports/content?preset=yesterday&section=cancellations", role: "beta");
         Assert.Equal(new[] { hosts.AlphaId, hosts.BetaId }, hosts.Reports.Calls.Select(c => c.TenantId));
 
         Reset();
@@ -398,7 +498,9 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
         PreviousEmpty,
         ChangesAfterEveryRead,
         Large,
-        Fail
+        Fail,
+        MixedEndings,
+        AllUnknown
     }
 
     public sealed class Hosts : IAsyncLifetime
@@ -476,6 +578,21 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
                 groups.Add(new(FoodPlatform.GetirYemek, OrderStatus.Failed, day, 1, 77m));
             }
 
+            else if (Mode == ReportMode.AllUnknown)
+            {
+                groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Cancelled, day, 3, 30m));
+                groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Cancelled, day, 1, 10m, OrderCancellationOrigin.RestaurantOnPlatform));
+            }
+            else if (Mode == ReportMode.MixedEndings)
+            {
+                const FoodPlatform Trendyol = FoodPlatform.TrendyolYemek;
+                groups.Add(new(Trendyol, OrderStatus.Cancelled, day, 3, 30m, OrderCancellationOrigin.OperatorRejected, Trendyol, 621));
+                groups.Add(new(Trendyol, OrderStatus.Cancelled, day, 2, 20m, OrderCancellationOrigin.ProviderOrCustomer, Trendyol, 604));
+                groups.Add(new(Trendyol, OrderStatus.Cancelled, day, 2, 20m, OrderCancellationOrigin.RestaurantOnPlatform));
+                groups.Add(new(Trendyol, OrderStatus.Cancelled, day, 1, 10m));
+                groups.Add(new(FoodPlatform.Yemeksepeti, OrderStatus.Cancelled, day, 2, 20m));
+                groups.Add(new(FoodPlatform.GetirYemek, OrderStatus.Delivered, day, 3, 90m));
+            }
             else if (Mode == ReportMode.Large)
             {
                 groups.Add(new(FoodPlatform.TrendyolYemek, OrderStatus.Delivered, day, 2, 2_147_483_648.57m));

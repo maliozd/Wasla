@@ -13,7 +13,14 @@ public record OrderReportDto(
     DateTime GeneratedAtUtc,
     OrderReportFiguresDto Summary,
     IReadOnlyList<OrderReportPlatformDto> Platforms,
-    IReadOnlyList<OrderReportDayDto> Days);
+    IReadOnlyList<OrderReportDayDto> Days,
+    IReadOnlyList<OrderReportCancellationReasonDto> CancellationReasons);
+
+/// <summary>
+/// A reason code on <see cref="Platform"/>'s own list and how many cancelled or rejected orders carry it (WAS-200). A
+/// platform's rows plus its <see cref="OrderReportFiguresDto.CancellationReasonMissingOrderCount"/> equal its cancelled count.
+/// </summary>
+public record OrderReportCancellationReasonDto(FoodPlatformDto Platform, int ReasonCode, int OrderCount);
 
 /// <summary>
 /// The local days covered (inclusive) and their UTC bounds (<c>[UtcStartInclusive, UtcEndExclusive)</c>).
@@ -31,7 +38,9 @@ public record OrderReportPeriodDto(
 
 /// <summary>
 /// Figures of one cohort. <see cref="OrderCount"/> equals the sum of the five status counts;
-/// <see cref="AverageCompletedOrderValue"/> is null when no order was completed.
+/// <see cref="AverageCompletedOrderValue"/> is null when no order was completed. <see cref="CancelledOrderCount"/> equals
+/// <see cref="KnownRejectedOrderCount"/> + <see cref="KnownCancelledOrderCount"/> + <see cref="UnknownOutcomeOrderCount"/>;
+/// <see cref="RestaurantOriginUnknownOutcomeOrderCount"/> is part of the unknown count.
 /// </summary>
 public record OrderReportFiguresDto(
     int OrderCount,
@@ -42,7 +51,12 @@ public record OrderReportFiguresDto(
     int CancelledOrderCount,
     int FailedOrderCount,
     int InProgressOrderCount,
-    int OtherStatusOrderCount);
+    int OtherStatusOrderCount,
+    int KnownRejectedOrderCount,
+    int KnownCancelledOrderCount,
+    int UnknownOutcomeOrderCount,
+    int RestaurantOriginUnknownOutcomeOrderCount,
+    int CancellationReasonMissingOrderCount);
 
 public record OrderReportPlatformDto(FoodPlatformDto Platform, OrderReportFiguresDto Figures);
 

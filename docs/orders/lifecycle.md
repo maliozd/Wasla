@@ -154,6 +154,8 @@ What this cannot promise, because the remote action and the local write are not 
 
 A reason is recorded only with the status write. If the first observation of a cancellation has no usable code, a later report does not add one.
 
+How reports group these fields, their denominators and what the page shows are in [reporting.md](./reporting.md#how-cancelled-orders-ended-was-200). There, `OperatorRejected` is a known rejection, `OperatorCancelled` and `ProviderOrCustomer` are known cancellations, and a null origin and `RestaurantOnPlatform` are unknown: the latter has a known origin but no known outcome.
+
 **Rollout boundary.** Reliable data starts for each tenant when the tenant migration `AddOrderCancellationOrigin` is applied and a release containing this code runs against it. No backfill runs: every order that ended before that moment keeps null, and a report must show those as unknown. The implementation date is not that moment; the production date is recorded when the release is deployed. Reverting the migration drops the three columns and what they hold.
 
 ### Idempotency and parent row

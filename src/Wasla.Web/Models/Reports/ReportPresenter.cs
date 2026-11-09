@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.Extensions.Localization;
 using Wasla.Application.Abstractions.Reports;
+using Wasla.Application.Orders;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Web.Models.Reports;
@@ -19,6 +20,9 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
     public const string SeriesPartial = "partial";
     public const string SeriesCompletedValue = "value";
     public const string SeriesCancelled = "cancelled";
+    public const string SeriesKnownRejected = "known-rejected";
+    public const string SeriesKnownCancelled = "known-cancelled";
+    public const string SeriesUnknownEnding = "unknown";
 
     public static string PlatformSeries(FoodPlatform platform) => platform switch
     {
@@ -93,6 +97,50 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
         .Where(p => p.Figures.CompletedOrderValue > 0m)
         .Select(p => new ReportStripSegment(p.Platform, (double)p.Figures.CompletedOrderValue, Share(p.Figures.CompletedOrderValue, report.Summary.CompletedOrderValue) ?? 0m, ReportFormat.Money(p.Figures.CompletedOrderValue)))
         .ToList();
+
+    /// <summary>
+    /// The three groups every cancelled or rejected order falls into, as shares of <see cref="OrderReportFigures.CancelledOrderCount"/>.
+    /// Which origin belongs to which group is decided by <see cref="OrderReportStatuses.ClassifyCancellation"/>.
+    /// </summary>
+    public static IReadOnlyList<ReportEndingRow> EndingRows(OrderReportFigures f) =>
+    [
+        new(SeriesKnownRejected, "Reports.Ending.KnownRejected", "Reports.Ending.KnownRejectedHint", f.KnownRejectedOrderCount, Share(f.KnownRejectedOrderCount, f.CancelledOrderCount)),
+        new(SeriesKnownCancelled, "Reports.Ending.KnownCancelled", "Reports.Ending.KnownCancelledHint", f.KnownCancelledOrderCount, Share(f.KnownCancelledOrderCount, f.CancelledOrderCount)),
+        new(SeriesUnknownEnding, "Reports.Ending.Unknown", "Reports.Ending.UnknownHint", f.UnknownOutcomeOrderCount, Share(f.UnknownOutcomeOrderCount, f.CancelledOrderCount))
+    ];
+
+    /// <summary>
+    /// Each platform with cancelled or rejected orders, in report order, with its own reasons. Every share is of that
+    /// platform's cancelled or rejected orders, so the orders without a reason are part of the denominator and the
+    /// platform's rows add up to all of them. Bars are scaled to the group's largest row.
+    /// </summary>
+    public IReadOnlyList<ReportReasonGroup> ReasonGroups(OrderReport report) => report.Platforms
+        .Where(p => p.Figures.CancelledOrderCount > 0)
+        .Select(p =>
+        {
+            var f = p.Figures;
+            var rows = report.CancellationReasons.Where(r => r.Platform == p.Platform).ToList();
+            var largest = rows.Select(r => r.OrderCount).Append(f.CancellationReasonMissingOrderCount).Max();
+            return new ReportReasonGroup(
+                p.Platform,
+                f.CancelledOrderCount,
+                f.CancellationReasonRecordedOrderCount,
+                f.CancellationReasonCoverage,
+                f.CancellationReasonMissingOrderCount,
+                Share(f.CancellationReasonMissingOrderCount, f.CancelledOrderCount),
+                Height(f.CancellationReasonMissingOrderCount, largest),
+                ProviderCancellationReasons.For(p.Platform).Count > 0 || OrderRejectReasons.For(p.Platform).Count > 0,
+                rows.Select(r => new ReportReasonRow(ReasonLabel(r.Platform, r.ReasonCode), r.ReasonCode, r.OrderCount, Share(r.OrderCount, f.CancelledOrderCount), Height(r.OrderCount, largest))).ToList());
+        })
+        .ToList();
+
+    private string ReasonLabel(FoodPlatform platform, int code)
+    {
+        var label = localizer[ProviderCancellationReasons.LabelKey(platform, code)];
+        return label.ResourceNotFound
+            ? string.Format(CultureInfo.CurrentCulture, L("Reports.CancellationReason.Unlabelled"), ReportFormat.Code(code))
+            : label.Value;
+    }
 
     public static bool IsPartialDay(OrderReport report, OrderReportDayRow day) =>
         !report.Filter.Period.IsComplete && day.Date == report.Filter.Period.EndDate;
@@ -228,6 +276,9 @@ public sealed class ReportPresenter(IStringLocalizer localizer)
     private IReadOnlyList<ReportChartTipRow> CancellationTip(OrderReport report, OrderReportDayRow day) =>
     [
         new(L("Reports.Outcome.Cancelled"), ReportFormat.Count(day.Figures.CancelledOrderCount)),
+        new(L("Reports.Ending.KnownRejected"), ReportFormat.Count(day.Figures.KnownRejectedOrderCount)),
+        new(L("Reports.Ending.KnownCancelled"), ReportFormat.Count(day.Figures.KnownCancelledOrderCount)),
+        new(L("Reports.Ending.Unknown"), ReportFormat.Count(day.Figures.UnknownOutcomeOrderCount)),
         new(L("Reports.OrderCount"), ReportFormat.Count(day.Figures.OrderCount)),
         new(L("Reports.CancellationRate"), ReportFormat.Percent(day.Figures.CancellationRate))
     ];

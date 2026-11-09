@@ -4572,6 +4572,58 @@
   <data name="Reports.RateByPlatform" xml:space="preserve"><value>Rate by platform</value></data>
   <data name="Reports.DailyCancellations" xml:space="preserve"><value>Daily cancellations and rejections</value></data>
   <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>By the day orders were placed</value></data>
+  <data name="Reports.NoCancellationsTitle" xml:space="preserve"><value>No cancelled or rejected orders in this period</value></data>
+  <data name="Reports.NoCancellationsText" xml:space="preserve"><value>There is nothing to classify for this selection.</value></data>
+  <data name="Reports.MissingDataNote" xml:space="preserve"><value>Older records, and orders a platform reported without these details, may have no classification or reason. Missing information does not mean it did not happen.</value></data>
+  <data name="Reports.Ending.Title" xml:space="preserve"><value>How these orders ended</value></data>
+  <data name="Reports.Ending.Hint" xml:space="preserve"><value>Every cancelled or rejected order is counted in exactly one group.</value></data>
+  <data name="Reports.Ending.KnownRejected" xml:space="preserve"><value>Known rejections</value></data>
+  <data name="Reports.Ending.KnownRejectedHint" xml:space="preserve"><value>Rejected through Wasla.</value></data>
+  <data name="Reports.Ending.KnownCancelled" xml:space="preserve"><value>Known cancellations</value></data>
+  <data name="Reports.Ending.KnownCancelledHint" xml:space="preserve"><value>Cancelled through Wasla, or reported by the platform as not coming from the restaurant.</value></data>
+  <data name="Reports.Ending.Unknown" xml:space="preserve"><value>Rejection or cancellation not known</value></data>
+  <data name="Reports.Ending.UnknownHint" xml:space="preserve"><value>Wasla cannot tell which of the two these orders were.</value></data>
+  <data name="Reports.Ending.RestaurantOrigin" xml:space="preserve"><value>Restaurant ended it on the platform</value></data>
+  <data name="Reports.Ending.NoOrigin" xml:space="preserve"><value>No origin recorded</value></data>
+  <data name="Reports.Ending.OriginNote" xml:space="preserve"><value>A known origin is not always a known action: an order the restaurant ended on the platform may have been rejected or cancelled.</value></data>
+  <data name="Reports.Ending.ShareNote" xml:space="preserve"><value>Percentages are of all cancelled or rejected orders in this selection.</value></data>
+  <data name="Reports.Ending.ByPlatform" xml:space="preserve"><value>By platform</value></data>
+  <data name="Reports.Reasons.Title" xml:space="preserve"><value>Reasons</value></data>
+  <data name="Reports.Reasons.Coverage" xml:space="preserve"><value>Cancelled or rejected with a reason: {0} / {1} ({2})</value></data>
+  <data name="Reports.Reasons.Missing" xml:space="preserve"><value>No reason recorded</value></data>
+  <data name="Reports.Reasons.Code" xml:space="preserve"><value>Code {0}</value></data>
+  <data name="Reports.Reasons.NoneRecorded" xml:space="preserve"><value>No reasons have been recorded for the orders in this selection.</value></data>
+  <data name="Reports.Reasons.NoList" xml:space="preserve"><value>Wasla records no reason codes for this platform yet.</value></data>
+  <data name="Reports.Reasons.Denominator" xml:space="preserve"><value>Percentages are of each platform's cancelled or rejected orders, including those with no reason.</value></data>
+  <data name="Reports.Reasons.CauseNote" xml:space="preserve"><value>A reason describes why an order ended. It does not say who cancelled it.</value></data>
+  <data name="Reports.CancellationReason.Unlabelled" xml:space="preserve"><value>Reason code {0}</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.69" xml:space="preserve"><value>System fraud</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.601" xml:space="preserve"><value>Wrong address</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.602" xml:space="preserve"><value>Not at the address</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.603" xml:space="preserve"><value>Fraud</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.604" xml:space="preserve"><value>Customer asked to cancel</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.605" xml:space="preserve"><value>Order late, customer no longer wants it</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.606" xml:space="preserve"><value>Customer asked to cancel / seller agreed</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.607" xml:space="preserve"><value>Address and location do not match</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.608" xml:space="preserve"><value>Cash on delivery, insufficient balance</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.609" xml:space="preserve"><value>Wrong or missing item added</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.610" xml:space="preserve"><value>Forgot to add a note</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.611" xml:space="preserve"><value>Long delivery estimate</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.624" xml:space="preserve"><value>High demand / no courier</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.625" xml:space="preserve"><value>Not accepted</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.626" xml:space="preserve"><value>Outside the delivery area</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.641" xml:space="preserve"><value>Accident</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.642" xml:space="preserve"><value>Due to high demand / no courier</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.643" xml:space="preserve"><value>Road closed / no alternative route</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.644" xml:space="preserve"><value>Courier-related</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.645" xml:space="preserve"><value>Courier-related</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.647" xml:space="preserve"><value>Items were damaged</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.648" xml:space="preserve"><value>Courier-related: ID problem at the site entrance</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.661" xml:space="preserve"><value>Admin system down</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.662" xml:space="preserve"><value>Courier app down</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.663" xml:space="preserve"><value>Seller panel down</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.681" xml:space="preserve"><value>Fraudulent phone number</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.682" xml:space="preserve"><value>Fraudulent delivery address</value></data>
   <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Two complete periods of equal length</value></data>
   <data name="Reports.ComparisonHint" xml:space="preserve"><value>By the day orders were placed, with their current status</value></data>
   <data name="Reports.ThisPeriod" xml:space="preserve"><value>This period</value></data>

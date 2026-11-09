@@ -18,7 +18,7 @@ Reporting is deterministic: the same stored orders, filter and clock give the sa
 
 ## Metric definitions
 
-Every figure comes from one SQL statement that groups the cohort by platform, stored status and local day (`OrderReportService`). Summary, platform rows, day rows and the days per platform are sums of those groups, so they always reconcile with each other.
+Every figure comes from one SQL statement that groups the cohort by platform, stored status, local day and how a cancelled order ended (origin and reason code) (`OrderReportService`). Summary, platform rows, day rows, the days per platform and the reason rows are sums of those groups, so they always reconcile with each other.
 
 | Figure | Formula | Statuses | Time | Empty cohort |
 | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ Every figure comes from one SQL statement that groups the cohort by platform, st
 | `CompletedOrderCount` | Count | `Delivered` | `OrderedAt` (not `DeliveredAt`) | 0 |
 | `CompletedOrderValue` | Sum of `TotalAmount` | `Delivered` | `OrderedAt` | 0.00 |
 | `AverageCompletedOrderValue` | `CompletedOrderValue / CompletedOrderCount`, rounded to 2 decimals, midpoint away from zero | `Delivered` | `OrderedAt` | **null** when `CompletedOrderCount` is 0 (shown as no value, never 0) |
-| `CancelledOrderCount` | Count | `Cancelled`. This includes rejections: Reject stores `Cancelled`, so the figure is "cancelled or rejected". The report does not split it yet (see [Known limits](#known-limits)) | `OrderedAt` (not `CancelledAt`) | 0 |
+| `CancelledOrderCount` | Count | `Cancelled`. This includes rejections: Reject stores `Cancelled`, so the figure is "cancelled or rejected". [How these orders ended](#how-cancelled-orders-ended-was-200) splits it as far as Wasla knows | `OrderedAt` (not `CancelledAt`) | 0 |
 | `FailedOrderCount` | Count | `Failed` | `OrderedAt` | 0 |
 | `InProgressOrderCount` | Count | `New`, `Preparing`, `ReadyForPickup`, `OnTheWay` | `OrderedAt` | 0 |
 | `OtherStatusOrderCount` | Count | Any other stored value (the retired value 1, see [lifecycle.md](./lifecycle.md#acceptance-starts-preparation-was-185)) | `OrderedAt` | 0 |
@@ -41,6 +41,40 @@ Every figure comes from one SQL statement that groups the cohort by platform, st
 - **Platform rows** list each platform with at least one order in the cohort, by `OrderCount` descending, then platform value ascending.
 - **Day rows** list every local day of the period, oldest first, including days without orders (all counts 0, values 0.00, average null). Each row carries its UTC bounds.
 - **Days per platform** (`OrderReport.PlatformDays`) repeat the day rows for each platform row, in the same order and from the same groups. A platform's days sum to its platform row, and each day summed over the platforms is that day's row. They are part of the shared result, not of `OrderReportDto`.
+
+### How cancelled orders ended (WAS-200)
+
+Each cancelled or rejected order falls into exactly one group, read from its stored origin ([lifecycle.md](./lifecycle.md#how-an-order-ended-was-200)). In every summary, platform row, day row and day per platform:
+
+`KnownRejectedOrderCount + KnownCancelledOrderCount + UnknownOutcomeOrderCount = CancelledOrderCount`
+
+| Figure | Stored origin | What it says |
+| --- | --- | --- |
+| `KnownRejectedOrderCount` | `OperatorRejected` | Rejected through Wasla |
+| `KnownCancelledOrderCount` | `OperatorCancelled`, `ProviderOrCustomer` | Cancelled through Wasla (nothing writes this yet), or reported by the provider as not coming from the restaurant. It does not say the order customer did it |
+| `UnknownOutcomeOrderCount` | none, `RestaurantOnPlatform`, or a stored number with no name | Wasla cannot tell a rejection from a cancellation |
+| `RestaurantOriginUnknownOutcomeOrderCount` | `RestaurantOnPlatform` | The part of the unknown count whose **origin** is known to be the restaurant. A known origin is not always a known outcome: the restaurant may have rejected or cancelled it |
+
+A reason describing a cause, such as a customer request or a courier problem, moves an order into no group and never says who pressed cancel.
+
+### Reasons and coverage (WAS-200)
+
+`OrderReport.CancellationReasons` (`OrderReportDto.CancellationReasons`) has one row per platform and stored code, with its order count, ordered by count descending, then platform and code. A code belongs to its platform's own list, so codes of different platforms are never added together. `OperatorRejected` rows hold the code the operator chose and other rows the code the provider reported; both count in the same row of that platform and code.
+
+`CancellationReasonMissingOrderCount` counts cancelled or rejected orders with no stored reason, in every breakdown. For a summary and for each platform:
+
+`sum of its reason rows + CancellationReasonMissingOrderCount = CancelledOrderCount`
+
+Reason rows exist for the whole report and per platform, not per day; the missing count exists per day too.
+
+| Figure | Numerator | Denominator | Empty |
+| --- | --- | --- | --- |
+| Share of a split group (page) | The group's count | `CancelledOrderCount` of the same breakdown | no value |
+| Reason share (page) | The reason's count | **That platform's** `CancelledOrderCount`, orders without a reason included. With the no-reason row, a platform's rows add up to 100% | no value |
+| No-reason share (page) | The platform's `CancellationReasonMissingOrderCount` | That platform's `CancelledOrderCount` | no value |
+| `CancellationReasonCoverage` | `CancelledOrderCount − CancellationReasonMissingOrderCount` | `CancelledOrderCount` of the same breakdown | **null** when none was cancelled or rejected |
+
+`CancellationRate` keeps its meaning: the combined count over every order. A missing reason does not mean the order had none. Coverage says what Wasla knows; it is not how often orders end with a reason.
 
 ### What is in the cohort
 
@@ -84,7 +118,7 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 
 - At most **92 local days** (`OrderReportFilters.MaxRangeDays`, one quarter) per report, for the page and the export alike. A longer range is refused with `RangeTooLong`, never shortened.
 - No day after today (`RangeInFuture`) and none before 2000-01-01 (`StartDateInvalid` / `EndDateInvalid`).
-- The query returns at most one group per platform, status and day (3 × 8 × 92 rows today), whatever the order volume; no order row, item or payload is loaded.
+- The query returns at most one group per platform, status, day, origin and reason, whatever the order volume; no order row, item or payload is loaded. Only `Cancelled` orders can have an origin or reason (`CK_Orders_CancellationMetadata`), so the other statuses keep at most one group per platform and day, and a day's cancelled groups are limited by the origins and the platform's documented codes. 60,000 synthetic orders over 92 days gave 2,322 groups against 552 without the split, with the same plan (clustered scan and hash aggregate on LocalDB), so the split needs no index. That is one measurement on a developer machine, not a capacity claim.
 
 ### Partial periods and comparisons
 
@@ -98,7 +132,7 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 | --- | --- | --- |
 | Web Dashboard (`/dashboard`, `CanViewReports`) | `today` report for its figures | Today's orders = `OrderCount`; Today's order value = `OrderValue` (all statuses, cancellations included); Active = `InProgressOrderCount`; Cancelled = `CancelledOrderCount`; platform list = platform rows. Its average tile divides `OrderValue` by `OrderCount`, as before. Setup guidance and latest orders are unchanged |
 | `GET /api/dashboard/summary`, `GET /api/dashboard/today` (`CanViewReports`) | The same `today` figures through `IDashboardService` | Response fields and meanings unchanged: `revenue` / `TodayRevenue` stay the all-order value (`OrderValue`), `pendingCount` is `InProgressOrderCount`. Platform rows are now ordered as above. Sync statistics and latest orders are unchanged |
-| `GET /api/dashboard/report` (`CanViewReports`) | The full contract: filter in the query string, `OrderReportDto` out | Invalid filters answer 400 with the error codes by parameter. The data route WAS-184 builds on |
+| `GET /api/dashboard/report` (`CanViewReports`) | The full contract: filter in the query string, `OrderReportDto` out | Invalid filters answer 400 with the error codes by parameter. The data route WAS-184 builds on. WAS-200 only added fields: the split and missing-reason counts in every figures object, and `CancellationReasons` |
 | Web report page (`/reports`, `/reports/content`, `CanViewReports`, WAS-183) | `IOrderReportService` directly, with the same filter rules | See [Report page](#report-page) |
 
 ## Report page
@@ -110,18 +144,15 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 - **Refused filters** answer 400 and show the state without running a report. A duplicate parameter is refused as on the API. A refused filter is never tidied: its values stay as submitted, repeated ones included, in the URL and in every link that keeps the filter, and it is not remembered for the next visit.
 - **Platforms** takes the platform rows and the daily chart per platform from the same report as the summary (`PlatformDays`), so they cannot disagree. One platform filter shows that platform and a link to all.
 - **Chart axes** only scale the bars and label the gridlines. They are calculated in decimal, so any stored amount fits, and every figure and tooltip keeps its exact value. An axis widens when its labels need it, up to 45% of the chart.
-- **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected". It shows no reason or rejection split: orders store how they ended (WAS-200), but the page does not read that yet.
+- **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected", then, from the same report, how those orders ended (the three groups, the restaurant-origin and no-origin parts of the unknown group, and one row per platform when more than one has any), the reasons per platform with their codes and a no-reason row, and the daily chart and table with the split. When any order lacks a classification or reason, a notice says older records may have none and that missing information does not mean it did not happen. With no cancelled or rejected order the split and reasons are replaced by one statement. Labels come from `ProviderCancellationReasons.LabelKey`: a code an operator can also choose keeps its existing label, and a stored code without a label is shown by its number.
 - **Comparison** is on Overview only. It reads the report of `PrecedingPeriod` and shows both periods with their dates, the difference and the percentage change. A change against a previous value of 0, or where either average does not exist, is shown as not comparable. A period that includes today is not compared: the page offers the same number of complete days ending yesterday.
 
 Busy hours (WAS-197), products (WAS-198), durations (WAS-202) and CSV (WAS-184) are not on the page.
 
 ## Known limits
 
-- Rejections are not yet counted apart from cancellations. Orders now store how they ended ([lifecycle.md](./lifecycle.md#how-an-order-ended-was-200), WAS-200), but no report figure reads it. That split is the remaining WAS-200 work.
-  - **Data boundary.** Origins and reasons exist only for orders that ended after the tenant migration `AddOrderCancellationOrigin` was applied and a release with it was running. Earlier cancelled orders stay unknown; nothing is inferred or backfilled. A report period that crosses that moment is partly unknown, and the production date is recorded when the release is deployed.
-  - **For that slice.** Any split must keep `known rejected + known cancelled + unknown = CancelledOrderCount` in every summary, platform row and day row, and must count a null origin as unknown.
-  - **Restaurant origin is not a known cancellation.** Trendyol GO `UnSupplied` (`RestaurantOnPlatform`) proves the restaurant ended the order but not whether it was a rejection or a cancellation. In that split it belongs to neither known figure: it counts on the unknown side of rejection-versus-cancellation, and its restaurant origin can still be shown.
-  - **Reasons.** A reason is the provider's or the operator's code with its platform, read together with the origin. Codes of different platforms stay apart, and a cause such as a customer request does not say who pressed cancel. Provider codes are documented for Trendyol GO Meal but not yet seen on real orders, so reason-missing coverage must be shown.
+- **Data boundary of the split and reasons.** Origins and reasons exist only for orders that ended after the tenant migration `AddOrderCancellationOrigin` was applied and a release with it was running. Earlier cancelled orders stay unknown; nothing is inferred or backfilled. A report period that crosses that moment is partly unknown. The production date is not known yet and is recorded here when the release is deployed.
+- **Reasons are not live-verified.** Provider codes are documented for Trendyol GO Meal but have not been seen on real orders, so a real package may leave them empty ([lifecycle.md](./lifecycle.md#trendyol-go-meal-provider-reasons-what-is-documented-and-what-is-not)). Only Trendyol GO has a list; other platforms show every order as having no reason.
 - Figures follow the current status, so a past day's figures can change when a later sync changes an order's status.
 - No per-tenant time zone and no currency other than TRY.
 - `DeliveryFee`, `ServiceFee`, payment method and payment status are not reported.

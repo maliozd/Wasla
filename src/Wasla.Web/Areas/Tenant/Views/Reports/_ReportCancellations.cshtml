@@ -6,6 +6,10 @@
     var presenter = new ReportPresenter(L);
     var isOneDay = report.Days.Count == 1;
     var largest = report.Platforms.Select(p => p.Figures.CancellationRate ?? 0m).DefaultIfEmpty(0m).Max();
+    var endings = ReportPresenter.EndingRows(f);
+    var reasonGroups = presenter.ReasonGroups(report);
+    var endingLabel = string.Join(", ", endings.Select(e => $"{L[e.LabelKey]} {ReportFormat.Count(e.Count)}"));
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
 }
 
 <div class="rpt-columns rpt-columns--cancellations">
@@ -34,6 +38,148 @@
     </section>
 </div>
 
+@if (f.CancelledOrderCount == 0)
+{
+    <section class="rpt-panel" data-rpt-no-cancellations>
+        <div class="rpt-state">
+            <span class="rpt-state__icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+            <h2 class="rpt-state__title">@L["Reports.NoCancellationsTitle"]</h2>
+            <p class="rpt-state__text">@L["Reports.NoCancellationsText"]</p>
+        </div>
+    </section>
+}
+else
+{
+    @if (f.UnknownOutcomeOrderCount > 0 || f.CancellationReasonMissingOrderCount > 0)
+    {
+        <div class="rpt-notice rpt-notice--info" data-rpt-missing-data-note>
+            <p class="rpt-notice__text"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Reports.MissingDataNote"]</span></p>
+        </div>
+    }
+
+    <section class="rpt-panel" data-rpt-breakdown="ending" aria-labelledby="rptEndingTitle">
+        <div class="rpt-panel__head">
+            <div>
+                <h2 class="rpt-panel__title" id="rptEndingTitle">@L["Reports.Ending.Title"]</h2>
+                <p class="rpt-muted mb-0">@L["Reports.Ending.Hint"]</p>
+            </div>
+        </div>
+        <div class="rpt-strip" role="img" aria-label="@endingLabel">
+            @foreach (var ending in endings.Where(e => e.Count > 0))
+            {
+                <span class="rpt-strip__seg rpt-fill--@ending.Series" style="flex-grow:@ending.Count"></span>
+            }
+        </div>
+        <ul class="rpt-endings">
+            @foreach (var ending in endings)
+            {
+                <li class="rpt-ending" data-rpt-ending="@ending.Series">
+                    <span class="rpt-ending__label"><span class="rpt-swatch rpt-fill--@ending.Series"></span><span>@L[ending.LabelKey]</span></span>
+                    <span class="rpt-ending__values">
+                        <span class="rpt-figure rpt-figure--l"><bdi>@ReportFormat.Count(ending.Count)</bdi></span>
+                        <span class="rpt-muted"><bdi>@ReportFormat.Percent(ending.Share)</bdi></span>
+                    </span>
+                    <span class="rpt-muted">@L[ending.HintKey]</span>
+                    @if (ending.Series == ReportPresenter.SeriesUnknownEnding && ending.Count > 0)
+                    {
+                        <dl class="rpt-ledger rpt-ledger--plain">
+                            <div class="rpt-ledger__row" data-rpt-unknown="restaurant">
+                                <dt>@L["Reports.Ending.RestaurantOrigin"]</dt>
+                                <dd><bdi>@ReportFormat.Count(f.RestaurantOriginUnknownOutcomeOrderCount)</bdi></dd>
+                            </div>
+                            <div class="rpt-ledger__row" data-rpt-unknown="none">
+                                <dt>@L["Reports.Ending.NoOrigin"]</dt>
+                                <dd><bdi>@ReportFormat.Count(f.UnknownOutcomeOrderCount - f.RestaurantOriginUnknownOutcomeOrderCount)</bdi></dd>
+                            </div>
+                        </dl>
+                    }
+                </li>
+            }
+        </ul>
+        <p class="rpt-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Reports.Ending.OriginNote"]</span></p>
+        <p class="rpt-note"><i class="bi bi-percent" aria-hidden="true"></i><span>@L["Reports.Ending.ShareNote"]</span></p>
+
+        @if (reasonGroups.Count > 1)
+        {
+            <h3 class="rpt-label rpt-subhead">@L["Reports.Ending.ByPlatform"]</h3>
+            <div class="wasla-table-wrap" tabindex="0" role="region" aria-label="@L["Reports.Ending.ByPlatform"]">
+                <table class="wasla-table rpt-table" data-rpt-ending-platforms>
+                    <caption class="visually-hidden">@L["Reports.Ending.ByPlatform"]</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">@L["Reports.Platform"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.KnownRejected"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.KnownCancelled"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.Unknown"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Cancelled"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in report.Platforms.Where(p => p.Figures.CancelledOrderCount > 0))
+                        {
+                            <tr data-rpt-ending-platform="@row.Platform">
+                                <th scope="row">@L[ReportFormat.PlatformKey(row.Platform)]</th>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(row.Figures.KnownRejectedOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(row.Figures.KnownCancelledOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(row.Figures.UnknownOutcomeOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(row.Figures.CancelledOrderCount)</bdi></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="rpt-panel" data-rpt-breakdown="reasons" aria-labelledby="rptReasonsTitle">
+        <div class="rpt-panel__head">
+            <div>
+                <h2 class="rpt-panel__title" id="rptReasonsTitle">@L["Reports.Reasons.Title"]</h2>
+                <p class="rpt-muted mb-0" data-rpt-reason-coverage>@L["Reports.Reasons.Coverage", ReportFormat.Count(f.CancellationReasonRecordedOrderCount), ReportFormat.Count(f.CancelledOrderCount), ReportFormat.Percent(f.CancellationReasonCoverage)]</p>
+            </div>
+        </div>
+        @if (f.CancellationReasonRecordedOrderCount == 0)
+        {
+            <p class="rpt-note" data-rpt-no-reasons><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Reports.Reasons.NoneRecorded"]</span></p>
+        }
+        @foreach (var group in reasonGroups)
+        {
+            <div class="rpt-reason-group" data-rpt-reason-group="@group.Platform">
+                <div class="rpt-reason-group__head">
+                    @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)group.Platform, DisplayName: (string?)null))
+                    <span class="rpt-muted">@L["Reports.Reasons.Coverage", ReportFormat.Count(group.RecordedCount), ReportFormat.Count(group.CancelledCount), ReportFormat.Percent(group.Coverage)]</span>
+                </div>
+                <ul class="rpt-reasons">
+                    @foreach (var reason in group.Reasons)
+                    {
+                        <li class="rpt-reason" data-rpt-reason="@ReportFormat.Code(reason.Code)">
+                            <span class="rpt-reason__label">@reason.Label <span class="rpt-reason__code">@L["Reports.Reasons.Code", ReportFormat.Code(reason.Code)]</span></span>
+                            <span class="rpt-share-row__track"><span class="rpt-share-row__bar rpt-fill--cancelled" style="width:@reason.BarPercent.ToString("0.##", inv)%"></span></span>
+                            <span class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Count(reason.Count)</bdi></span>
+                            <span class="rpt-muted rpt-reason__share"><bdi>@ReportFormat.Percent(reason.Share)</bdi></span>
+                        </li>
+                    }
+                    @if (group.MissingCount > 0)
+                    {
+                        <li class="rpt-reason rpt-reason--missing" data-rpt-reason-missing>
+                            <span class="rpt-reason__label">@L["Reports.Reasons.Missing"]</span>
+                            <span class="rpt-share-row__track"><span class="rpt-share-row__bar rpt-fill--context" style="width:@group.MissingBarPercent.ToString("0.##", inv)%"></span></span>
+                            <span class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Count(group.MissingCount)</bdi></span>
+                            <span class="rpt-muted rpt-reason__share"><bdi>@ReportFormat.Percent(group.MissingShare)</bdi></span>
+                        </li>
+                    }
+                </ul>
+                @if (!group.HasReasonList)
+                {
+                    <p class="rpt-note" data-rpt-no-reason-list><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Reports.Reasons.NoList"]</span></p>
+                }
+            </div>
+        }
+        <p class="rpt-note"><i class="bi bi-percent" aria-hidden="true"></i><span>@L["Reports.Reasons.Denominator"]</span></p>
+        <p class="rpt-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Reports.Reasons.CauseNote"]</span></p>
+    </section>
+}
+
 @if (!isOneDay)
 {
     <section class="rpt-panel" data-rpt-panel="cancel-daily" aria-labelledby="rptCancelDailyTitle">
@@ -48,13 +194,17 @@
             @await Html.PartialAsync("_ReportBarChart", presenter.CancellationsChart(report))
         </div>
         <div data-rpt-panel-table hidden>
-            <div class="wasla-table-wrap">
+            <div class="wasla-table-wrap" tabindex="0" role="region" aria-label="@L["Reports.DailyCancellations"]">
                 <table class="wasla-table rpt-table">
                     <caption class="visually-hidden">@L["Reports.DailyCancellations"]</caption>
                     <thead>
                         <tr>
                             <th scope="col">@L["Reports.Day"]</th>
                             <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Cancelled"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.KnownRejected"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.KnownCancelled"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Ending.Unknown"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Reasons.Missing"]</th>
                             <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
                             <th scope="col" class="wasla-table__num">@L["Reports.CancellationRate"]</th>
                         </tr>
@@ -65,6 +215,10 @@
                             <tr>
                                 <th scope="row">@ReportFormat.DayWithWeekday(day.Date)</th>
                                 <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.CancelledOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.KnownRejectedOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.KnownCancelledOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.UnknownOutcomeOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.CancellationReasonMissingOrderCount)</bdi></td>
                                 <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.OrderCount)</bdi></td>
                                 <td class="wasla-table__num"><bdi>@ReportFormat.Percent(day.Figures.CancellationRate)</bdi></td>
                             </tr>

@@ -83,7 +83,7 @@ public sealed class ReportPageQueryTests
     [InlineData(8, 0, 0.0)]
     public void CancellationRate_IsCancelledOverEveryOrder_NullWithoutOrders(int orders, int cancelled, double? expected)
     {
-        var figures = new OrderReportFigures(orders, 0m, 0, 0m, cancelled, 0, orders - cancelled, 0);
+        var figures = new OrderReportFigures(orders, 0m, 0, 0m, cancelled, 0, orders - cancelled, 0, 0, 0, cancelled, 0, cancelled);
         Assert.Equal(expected is null ? null : (decimal)expected.Value, figures.CancellationRate);
     }
 

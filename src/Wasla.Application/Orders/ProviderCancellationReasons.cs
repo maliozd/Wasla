@@ -26,4 +26,17 @@ public static class ProviderCancellationReasons
     /// <summary>Whether <paramref name="code"/> is one <paramref name="platform"/> documents. A platform without a verified list has none.</summary>
     public static bool IsDocumented(FoodPlatform platform, int code) =>
         platform == FoodPlatform.TrendyolYemek && TrendyolGoMeal.Contains(code);
+
+    /// <summary>The codes <paramref name="platform"/> documents; empty for a platform without a verified list.</summary>
+    public static IReadOnlyCollection<int> For(FoodPlatform platform) =>
+        platform == FoodPlatform.TrendyolYemek ? TrendyolGoMeal : [];
+
+    /// <summary>
+    /// The localization key of a stored code's label. A code an operator can also choose keeps its existing label, so one
+    /// reason has one wording; the key of a code without a label does not resolve.
+    /// </summary>
+    public static string LabelKey(FoodPlatform platform, int code) =>
+        OrderRejectReasons.For(platform).Contains(code)
+            ? OrderRejectReasons.LabelKey(platform, code)
+            : $"Reports.CancellationReason.{platform}.{code}";
 }
