@@ -541,7 +541,8 @@ public sealed class WaslaVisualFoundationTests
         Assert.Contains("wasla-orders-page", orders, StringComparison.Ordinal);
         Assert.Contains("orders-page-header", orders, StringComparison.Ordinal);
         Assert.Contains("ordersLiveDisplayEnableNotificationSound", live, StringComparison.Ordinal);
-        Assert.Contains("function formatMessage(template, value)", printJs, StringComparison.Ordinal);
+        Assert.Contains("window.WaslaConfirm.ask", printJs, StringComparison.Ordinal);
+        Assert.Contains("messages.confirmReprintMessage", printJs, StringComparison.Ordinal);
         Assert.Contains("enableNotificationSoundFromControl", audioJs, StringComparison.Ordinal);
         Assert.DoesNotContain("SignalR", foundation, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("HubConnection", printJs, StringComparison.Ordinal);
