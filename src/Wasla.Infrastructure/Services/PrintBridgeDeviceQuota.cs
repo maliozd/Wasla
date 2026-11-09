@@ -10,22 +10,16 @@ namespace Wasla.Infrastructure.Services;
 /// those writers the lock, not key-range locks, keeps the count true (WAS-190). The CLI's
 /// <c>generate-print-bridge-token</c> adds devices without the lock or the limit (a documented gap).
 /// <para>
-/// On SQL Server the count reads with <c>READCOMMITTEDLOCK</c>, also inside the setup's serializable transactions. Under
-/// <c>Serializable</c> it scanned the clustered index of every tenant's devices and kept range locks up to its end, so two
-/// new-device setups of different tenants deadlocked on their inserts. Without key-range locks that deadlock is gone; the
-/// scan can still wait for another tenant's uncommitted device row until it commits.
+/// On SQL Server the count reads through <see cref="PrintBridgeDeviceRowReads"/>. Under <c>Serializable</c> it scanned the
+/// clustered index of every tenant's devices and kept range locks up to its end, so two new-device setups of different
+/// tenants deadlocked on their inserts.
 /// </para>
 /// </summary>
 internal static class PrintBridgeDeviceQuota
 {
     public static Task<int> CountActiveDevicesAsync(CentralDbContext centralDb, Guid tenantId, CancellationToken ct)
     {
-        var devices = centralDb.Database.IsSqlServer()
-            ? centralDb.PrintBridgeDevices.FromSql(
-                $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK) WHERE [TenantId] = {tenantId}")
-            : centralDb.PrintBridgeDevices;
-
-        return devices
+        return PrintBridgeDeviceRowReads.ByTenant(centralDb, tenantId)
             .AsNoTracking()
             .CountAsync(d => d.TenantId == tenantId && d.IsActive && d.RemovedAtUtc == null, ct);
     }

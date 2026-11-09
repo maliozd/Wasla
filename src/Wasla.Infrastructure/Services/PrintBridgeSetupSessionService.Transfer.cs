@@ -213,7 +213,7 @@ public sealed partial class PrintBridgeSetupSessionService
         }
 
         var tokenHash = PrintBridgeTokenHasher.HashToken(request.SourceDeviceToken);
-        var device = await _centralDb.PrintBridgeDevices
+        var device = await PrintBridgeDeviceRowReads.ByTokenHash(_centralDb, tokenHash)
             .AsNoTracking()
             .Include(d => d.Tenant)
             .FirstOrDefaultAsync(d => d.TokenHash == tokenHash, ct)

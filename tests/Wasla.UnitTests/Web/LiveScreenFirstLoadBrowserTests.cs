@@ -351,6 +351,22 @@ public sealed class LiveScreenFirstLoadBrowserTests : IClassFixture<LiveScreenFi
         }
     }
 
+    // Records each toast and page alert when it appears. The page raises a settings failure before it reads the orders
+    // and an error toast lasts 3 s, so on a slow machine it can be gone by the time the orders are on screen.
+    private const string RecordShownMessages = """
+        (() => {
+          const seen = new Set();
+          const shown = window.__shownMessages = [];
+          new MutationObserver(() => {
+            for (const element of document.querySelectorAll('.wasla-toast__message, #ordersMessageHost .alert')) {
+              if (seen.has(element)) continue;
+              seen.add(element);
+              shown.push(element.textContent.trim());
+            }
+          }).observe(document, { childList: true, subtree: true });
+        })();
+        """;
+
     [Theory]
     [InlineData("en-US", 1280)]
     [InlineData("ar-SA", 390)]
@@ -367,9 +383,9 @@ public sealed class LiveScreenFirstLoadBrowserTests : IClassFixture<LiveScreenFi
               };
             })();
             """;
-        await using var browser = await OpenAsync(culture, width, "/orders/live-display", ct, FailSettings);
+        await using var browser = await OpenAsync(culture, width, "/orders/live-display", ct, RecordShownMessages, FailSettings);
         Assert.True(await browser.WaitForAsync(ScreenRendered, TimeSpan.FromSeconds(15), ct), $"the Live Screen did not load. {_fixture.Host.ServerErrors}");
-        var shown = await browser.EvaluateAsync<string[]>("[...document.querySelectorAll('.wasla-toast__message, #ordersMessageHost .alert')].map(e => e.textContent.trim())", ct);
+        var shown = await browser.EvaluateAsync<string[]>("window.__shownMessages", ct);
         Assert.Equal([Resource(culture, "Orders.NotificationSettingsLoadFailed")], shown);
     }
 
@@ -412,7 +428,7 @@ public sealed class LiveScreenFirstLoadBrowserTests : IClassFixture<LiveScreenFi
     public async Task NotificationSettingsNeverFinish_TheScreenStillLoadsOrders_WithSoundAndNotificationsOff(string mode, string culture, int width)
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var browser = await OpenAsync(culture, width, "/orders/live-display", ct, HangingSettingsProbe(mode));
+        await using var browser = await OpenAsync(culture, width, "/orders/live-display", ct, RecordShownMessages, HangingSettingsProbe(mode));
         var started = DateTime.UtcNow;
         // The deadline is the snapshot read's 15 s (liveDataTimeoutMs); the orders follow at once.
         Assert.True(await browser.WaitForAsync(ScreenRendered, TimeSpan.FromSeconds(30), ct),
@@ -423,7 +439,7 @@ public sealed class LiveScreenFirstLoadBrowserTests : IClassFixture<LiveScreenFi
         var page = await browser.EvaluateAsync<JsonElement>("""
             (() => ({
               settings: WaslaOrders.state.notificationSettings,
-              toasts: [...document.querySelectorAll('.wasla-toast__message, #ordersMessageHost .alert')].map(e => e.textContent.trim()),
+              toasts: window.__shownMessages,
               sound: document.getElementById('ordersLiveDisplaySoundStatus').textContent.trim(),
               calls: window.__settings.calls,
               loading: !!document.querySelector('[data-live-loading]'),

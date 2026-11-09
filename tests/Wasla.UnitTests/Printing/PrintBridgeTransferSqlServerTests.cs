@@ -25,6 +25,12 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
 {
     private const int Rounds = 5;
 
+    /// <summary>
+    /// Other restaurants' devices, enough for SQL Server to change its plans: on a nearly empty table the registration
+    /// read goes through another index, and the active-device count scans the clustered index.
+    /// </summary>
+    private const int ManyDevices = 300;
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <summary>Unexpected failures logged by the services, shown in an assertion's message.</summary>
@@ -162,6 +168,108 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
         Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, await db.PrintBridgeDevices.CountAsync(d => d.TenantId == full && d.IsActive && d.RemovedAtUtc == null, Ct));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(ManyDevices)]
+    public async Task TheRegistrationCheckOfAMove_WhileTheSourceIsRetired_WaitsInsteadOfDeadlocking(int otherDevices)
+    {
+        var move = await ArrangeMoveAsync(otherDevices);
+
+        // Another move of this computer retires the source: the row, then the RemovedAtUtc index key.
+        var result = await _race.ReadDuringTwoStepDeviceWriteAsync(
+            move.SourceId,
+            db => db.Database.ExecuteSqlAsync(
+                $"UPDATE [PrintBridgeDevices] SET [RemovedAtUtc] = SYSUTCDATETIME(), [IsActive] = 0 WHERE [Id] = {move.SourceId}",
+                Ct),
+            command => PrintBridgeSqlServerRace.IsLockingDeviceReadBy(command, "InstallationId"),
+            db => Service(db).TransferAsync(move.Request, CancellationToken.None));
+
+        Assert.True(result.Outcome == PrintBridgeTransferOutcome.SourceRejected, $"{result.Outcome}; errors: {Errors.Text()}");
+        await AssertDidNotMoveAsync(move);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(ManyDevices)]
+    public async Task TheSourceTokenCheckOfAMove_WhileTheTokenIsRevoked_WaitsInsteadOfDeadlocking(int otherDevices)
+    {
+        var move = await ArrangeMoveAsync(otherDevices);
+        var replacement = PrintBridgeTokenHasher.HashToken(PrintBridgeTokenHasher.GenerateRawToken());
+
+        // Another move of this computer revokes the source token: the row, then the TokenHash index key.
+        var result = await _race.ReadDuringTwoStepDeviceWriteAsync(
+            move.SourceId,
+            db => db.Database.ExecuteSqlAsync(
+                $"UPDATE [PrintBridgeDevices] SET [TokenHash] = {replacement} WHERE [Id] = {move.SourceId}",
+                Ct),
+            readFrom: null,
+            db => Service(db).TransferAsync(move.Request, CancellationToken.None));
+
+        Assert.True(result.Outcome == PrintBridgeTransferOutcome.SourceRejected, $"{result.Outcome}; errors: {Errors.Text()}");
+        await AssertDidNotMoveAsync(move);
+    }
+
+    [Fact]
+    public async Task TheDeviceCountOfAMove_WhileADeviceOfTheDestinationIsRemoved_WaitsInsteadOfDeadlocking()
+    {
+        var move = await ArrangeMoveAsync(ManyDevices);
+        var (leavingId, _) = await CreateDeviceAsync(move.Destination, Guid.NewGuid());
+
+        var result = await _race.ReadDuringTwoStepDeviceWriteAsync(
+            leavingId,
+            db => db.Database.ExecuteSqlAsync(
+                $"UPDATE [PrintBridgeDevices] SET [RemovedAtUtc] = SYSUTCDATETIME(), [IsActive] = 0 WHERE [Id] = {leavingId}",
+                Ct),
+            command => PrintBridgeSqlServerRace.IsLockingDeviceReadBy(command, "TenantId"),
+            db => Service(db).TransferAsync(move.Request, CancellationToken.None));
+
+        Assert.True(result.Outcome == PrintBridgeTransferOutcome.Ready, $"{result.Outcome}; errors: {Errors.Text()}");
+        await using var db = _database.Open("Inspector");
+        Assert.Equal(1, await db.PrintBridgeDevices.CountAsync(d => d.InstallationId == move.Installation && d.RemovedAtUtc == null && d.TenantId == move.Destination, Ct));
+    }
+
+    [Fact]
+    public async Task TwoMovesOfOneComputer_RepeatedAfterTheRace_KeepTheWinnerAndRefuseTheLoser()
+    {
+        // After a lost answer the app repeats its request. The winner must get the same move back, for as long as it is
+        // recoverable; the loser's source token is revoked, so it stays refused and changes nothing.
+        for (var round = 0; round < Rounds; round++)
+        {
+            var (tenantA, tenantB, tenantC) = await TenantsAsync();
+            var installation = Guid.NewGuid();
+            var (sourceId, sourceToken) = await CreateDeviceAsync(tenantA, installation);
+            var requestB = Request(sourceToken, installation, await CreateSessionAsync(tenantB, "https://bahce.app.wasla.tr/"), "https://bahce.app.wasla.tr/");
+            var requestC = Request(sourceToken, installation, await CreateSessionAsync(tenantC, "https://cinar.app.wasla.tr/"), "https://cinar.app.wasla.tr/");
+
+            var results = await RaceAsync(
+                db => Service(db).TransferAsync(requestB, CancellationToken.None),
+                db => Service(db).TransferAsync(requestC, CancellationToken.None));
+            Assert.True(results.Count(r => r.Outcome == PrintBridgeTransferOutcome.Ready) == 1, $"Round {round}: {string.Join(", ", results.Select(r => r.Outcome))}; errors: {Errors.Text()}");
+
+            var winnerIsB = results[0].Outcome == PrintBridgeTransferOutcome.Ready;
+            var (winner, winnerRequest, loserRequest, destination) = winnerIsB
+                ? (results[0], requestB, requestC, tenantB)
+                : (results[1], requestC, requestB, tenantC);
+
+            await using (var db = _database.Open("Repeater"))
+            {
+                Assert.Equal(winner, await Service(db).TransferAsync(winnerRequest, Ct));
+                Assert.Equal(PrintBridgeTransferOutcome.SourceRejected, (await Service(db).TransferAsync(loserRequest, Ct)).Outcome);
+            }
+
+            await using var check = _database.Open("Inspector");
+            var registered = await check.PrintBridgeDevices.AsNoTracking().Where(d => d.InstallationId == installation).ToListAsync(Ct);
+            Assert.Equal(2, registered.Count);
+            var active = Assert.Single(registered, d => d.RemovedAtUtc == null);
+            Assert.Equal(destination, active.TenantId);
+            Assert.True(active.IsActive);
+            Assert.Equal(PrintBridgeTokenHasher.HashToken(winnerRequest.NewDeviceToken!), active.TokenHash);
+            var source = registered.Single(d => d.Id == sourceId);
+            Assert.False(source.IsActive);
+            Assert.NotEqual(PrintBridgeTokenHasher.HashToken(sourceToken), source.TokenHash);
+        }
+    }
+
     [Fact]
     public async Task TheRestaurantAMoveLeft_CanStillBeDeleted_AndTheMovesRecordStays()
     {
@@ -224,6 +332,46 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
         while (await reader.ReadAsync())
             columns.Add((reader.GetString(0), reader.GetString(1), reader.GetBoolean(2)));
         return [.. columns];
+    }
+
+    private sealed record ArrangedMove(Guid SourceId, Guid Installation, Guid Destination, string Code, PrintBridgeTransferRequest Request);
+
+    private async Task<ArrangedMove> ArrangeMoveAsync(int otherDevices)
+    {
+        await AddOtherRestaurantsDevicesAsync(otherDevices);
+        var (tenantA, tenantB, _) = await TenantsAsync();
+        var installation = Guid.NewGuid();
+        var (sourceId, sourceToken) = await CreateDeviceAsync(tenantA, installation);
+        var code = await CreateSessionAsync(tenantB, "https://bahce.app.wasla.tr/");
+        return new ArrangedMove(sourceId, installation, tenantB, code, Request(sourceToken, installation, code, "https://bahce.app.wasla.tr/"));
+    }
+
+    private async Task AddOtherRestaurantsDevicesAsync(int count)
+    {
+        await using var db = _database.Open("Seed");
+        for (var i = 0; i < count; i++)
+        {
+            db.PrintBridgeDevices.Add(new PrintBridgeDevice
+            {
+                TenantId = Seed(db, "diger" + Guid.NewGuid().ToString("N")[..10], "Diğer Lokanta"),
+                Name = "Other device",
+                InstallationId = Guid.NewGuid(),
+                TokenHash = PrintBridgeTokenHasher.HashToken(PrintBridgeTokenHasher.GenerateRawToken()),
+                IsActive = true
+            });
+        }
+
+        await db.SaveChangesAsync(Ct);
+    }
+
+    /// <summary>The refused move stored nothing: no registration in the destination and its code still unused.</summary>
+    private async Task AssertDidNotMoveAsync(ArrangedMove move)
+    {
+        await using var db = _database.Open("Inspector");
+        Assert.False(await db.PrintBridgeDevices.AnyAsync(d => d.TenantId == move.Destination && d.InstallationId == move.Installation, Ct));
+        var session = await db.PrintBridgeSetupSessions.AsNoTracking().SingleAsync(s => s.CodeHash == PrintBridgeSetupCode.Hash(move.Code), Ct);
+        Assert.Null(session.ExchangedAtUtc);
+        Assert.Null(session.SourcePrintBridgeDeviceId);
     }
 
     /// <summary>Runs each call on its own context and connection pool, released together once all are connected.</summary>
