@@ -4978,4 +4978,118 @@
   <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>Среда разработки: посмотреть отправленные тестовые коды</value></data>
   <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>Если вы измените номер мобильного телефона, новый номер нужно будет снова подтвердить по SMS.</value></data>
   <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>По вопросам подписки или для её отмены пишите на {0}.</value></data>
+  <data name="Layout.Reports" xml:space="preserve"><value>Отчёты</value></data>
+  <data name="Reports.Title" xml:space="preserve"><value>Отчёты</value></data>
+  <data name="Reports.Subtitle" xml:space="preserve"><value>Сводка заказов за выбранный период</value></data>
+  <data name="Reports.FiltersLabel" xml:space="preserve"><value>Фильтры отчёта</value></data>
+  <data name="Reports.PeriodLabel" xml:space="preserve"><value>Период</value></data>
+  <data name="Reports.Preset.Today" xml:space="preserve"><value>Сегодня</value></data>
+  <data name="Reports.Preset.Yesterday" xml:space="preserve"><value>Вчера</value></data>
+  <data name="Reports.Preset.Last7Days" xml:space="preserve"><value>Последние 7 дней</value></data>
+  <data name="Reports.Preset.Last30Days" xml:space="preserve"><value>Последние 30 дней</value></data>
+  <data name="Reports.Preset.Custom" xml:space="preserve"><value>Свой период</value></data>
+  <data name="Reports.AllPlatforms" xml:space="preserve"><value>Все платформы</value></data>
+  <data name="Reports.PlatformLabel" xml:space="preserve"><value>Платформа</value></data>
+  <data name="Reports.CompareLabel" xml:space="preserve"><value>Сравнить с предыдущим периодом</value></data>
+  <data name="Reports.ResetFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
+  <data name="Reports.Filter" xml:space="preserve"><value>Фильтры</value></data>
+  <data name="Reports.Apply" xml:space="preserve"><value>Применить</value></data>
+  <data name="Reports.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="Reports.Close" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="Reports.StartDate" xml:space="preserve"><value>Начало</value></data>
+  <data name="Reports.EndDate" xml:space="preserve"><value>Конец</value></data>
+  <data name="Reports.SectionsLabel" xml:space="preserve"><value>Разделы отчёта</value></data>
+  <data name="Reports.Section.Overview" xml:space="preserve"><value>Обзор</value></data>
+  <data name="Reports.Section.Platforms" xml:space="preserve"><value>Платформы</value></data>
+  <data name="Reports.Section.Cancellations" xml:space="preserve"><value>Отмены</value></data>
+  <data name="Reports.DayCount" xml:space="preserve"><value>дней: {0}</value></data>
+  <data name="Reports.PartialPeriod" xml:space="preserve"><value>Включая сегодня, день ещё не закончился</value></data>
+  <data name="Reports.CompletePeriod" xml:space="preserve"><value>Завершённый период</value></data>
+  <data name="Reports.AsOf" xml:space="preserve"><value>По состоянию на {0}</value></data>
+  <data name="Reports.TotalOrders" xml:space="preserve"><value>Всего заказов</value></data>
+  <data name="Reports.Outcome.Delivered" xml:space="preserve"><value>Доставлено</value></data>
+  <data name="Reports.Outcome.InProgress" xml:space="preserve"><value>В работе</value></data>
+  <data name="Reports.Outcome.Cancelled" xml:space="preserve"><value>Отменено или отклонено</value></data>
+  <data name="Reports.Outcome.Failed" xml:space="preserve"><value>С ошибкой</value></data>
+  <data name="Reports.Outcome.Other" xml:space="preserve"><value>Другое</value></data>
+  <data name="Reports.CompletedValue" xml:space="preserve"><value>Сумма завершённых заказов</value></data>
+  <data name="Reports.DeliveredOrdersCount" xml:space="preserve"><value>Доставленных заказов: {0}</value></data>
+  <data name="Reports.NoDeliveredOrders" xml:space="preserve"><value>В этом периоде нет доставленных заказов</value></data>
+  <data name="Reports.AverageCompletedValue" xml:space="preserve"><value>Средний завершённый заказ</value></data>
+  <data name="Reports.AverageNoDelivered" xml:space="preserve"><value>Не рассчитывается: нет доставленных заказов</value></data>
+  <data name="Reports.AllOrderValue" xml:space="preserve"><value>Сумма всех заказов</value></data>
+  <data name="Reports.AllOrderValueHint" xml:space="preserve"><value>Включая отменённые, ошибочные и незавершённые</value></data>
+  <data name="Reports.ValueDisclaimer" xml:space="preserve"><value>Суммы — это стоимость заказов, переданная платформами. Это не прибыль, не выплаты и не чистый доход.</value></data>
+  <data name="Reports.DailyTrend" xml:space="preserve"><value>Динамика по дням</value></data>
+  <data name="Reports.DailyTrendHint" xml:space="preserve"><value>По дню размещения заказа, с его текущим статусом</value></data>
+  <data name="Reports.ViewLabel" xml:space="preserve"><value>Вид</value></data>
+  <data name="Reports.ViewChart" xml:space="preserve"><value>График</value></data>
+  <data name="Reports.ViewTable" xml:space="preserve"><value>Таблица</value></data>
+  <data name="Reports.OtherStatuses" xml:space="preserve"><value>Другие статусы</value></data>
+  <data name="Reports.TodayNotFinished" xml:space="preserve"><value>Сегодня, день не закончен</value></data>
+  <data name="Reports.OrdersPerDay" xml:space="preserve"><value>Заказов в день</value></data>
+  <data name="Reports.CompletedValuePerDay" xml:space="preserve"><value>Сумма завершённых заказов в день</value></data>
+  <data name="Reports.CancellationsPerDay" xml:space="preserve"><value>Отменённых или отклонённых заказов в день</value></data>
+  <data name="Reports.SingleDayNotice" xml:space="preserve"><value>Выбран один день. Динамика показывается для периодов от двух дней.</value></data>
+  <data name="Reports.NoOrderDayNote" xml:space="preserve"><value>{0}: заказов нет</value></data>
+  <data name="Reports.NoOrderDaysNote" xml:space="preserve"><value>Дней без заказов: {0}</value></data>
+  <data name="Reports.Day" xml:space="preserve"><value>День</value></data>
+  <data name="Reports.OrderCount" xml:space="preserve"><value>Заказы</value></data>
+  <data name="Reports.PlatformShare" xml:space="preserve"><value>Доля платформ</value></data>
+  <data name="Reports.PlatformShareHint" xml:space="preserve"><value>По количеству заказов</value></data>
+  <data name="Reports.PlatformReportLink" xml:space="preserve"><value>Отчёт по платформам</value></data>
+  <data name="Reports.Highlights" xml:space="preserve"><value>Главное за период</value></data>
+  <data name="Reports.BusiestDay" xml:space="preserve"><value>Самый загруженный день</value></data>
+  <data name="Reports.OrdersCountValue" xml:space="preserve"><value>Заказов: {0}</value></data>
+  <data name="Reports.TopValueDay" xml:space="preserve"><value>Наибольшая завершённая сумма</value></data>
+  <data name="Reports.ZeroOrderDays" xml:space="preserve"><value>Дней без заказов</value></data>
+  <data name="Reports.PlatformComparison" xml:space="preserve"><value>Сравнение платформ</value></data>
+  <data name="Reports.PlatformComparisonHint" xml:space="preserve"><value>Один период и одинаковые определения статусов</value></data>
+  <data name="Reports.OrderShare" xml:space="preserve"><value>Доля заказов</value></data>
+  <data name="Reports.ValueShare" xml:space="preserve"><value>Доля завершённой суммы</value></data>
+  <data name="Reports.PlatformTableCaption" xml:space="preserve"><value>Показатели по платформам</value></data>
+  <data name="Reports.Platform" xml:space="preserve"><value>Платформа</value></data>
+  <data name="Reports.CancellationRate" xml:space="preserve"><value>Доля отмен и отказов</value></data>
+  <data name="Reports.Total" xml:space="preserve"><value>Итого</value></data>
+  <data name="Reports.PlatformDailyTitle" xml:space="preserve"><value>Заказы по дням и платформам</value></data>
+  <data name="Reports.ShowingOnePlatform" xml:space="preserve"><value>Показана только платформа {0}.</value></data>
+  <data name="Reports.ShowAllPlatforms" xml:space="preserve"><value>Показать все платформы</value></data>
+  <data name="Reports.CancellationRateSentence" xml:space="preserve"><value>{0} всех заказов ({1} / {2})</value></data>
+  <data name="Reports.CancellationsCombinedNote" xml:space="preserve"><value>Отменённые и отклонённые заказы считаются вместе.</value></data>
+  <data name="Reports.CancellationRateDefinition" xml:space="preserve"><value>Доля считается от всех заказов периода, включая заказы в работе.</value></data>
+  <data name="Reports.RateByPlatform" xml:space="preserve"><value>Доля по платформам</value></data>
+  <data name="Reports.DailyCancellations" xml:space="preserve"><value>Отмены и отказы по дням</value></data>
+  <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>По дню размещения заказа</value></data>
+  <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Два завершённых периода равной длины</value></data>
+  <data name="Reports.ComparisonHint" xml:space="preserve"><value>По дню размещения заказа, с его текущим статусом</value></data>
+  <data name="Reports.ThisPeriod" xml:space="preserve"><value>Этот период</value></data>
+  <data name="Reports.PreviousPeriod" xml:space="preserve"><value>Предыдущий период</value></data>
+  <data name="Reports.CompletedPeriodDays" xml:space="preserve"><value>Дней: {0}, завершён</value></data>
+  <data name="Reports.Metric" xml:space="preserve"><value>Показатель</value></data>
+  <data name="Reports.Difference" xml:space="preserve"><value>Разница</value></data>
+  <data name="Reports.Change" xml:space="preserve"><value>Изменение</value></data>
+  <data name="Reports.NotComparable" xml:space="preserve"><value>Нельзя сравнить</value></data>
+  <data name="Reports.ComparisonChartHint" xml:space="preserve"><value>Периоды выровнены по номеру дня</value></data>
+  <data name="Reports.DayIndex" xml:space="preserve"><value>День {0}</value></data>
+  <data name="Reports.ComparisonNeedsComplete" xml:space="preserve"><value>Этот период нельзя сравнить: сегодняшний день ещё не закончился. Сравниваются только завершённые периоды равной длины.</value></data>
+  <data name="Reports.PickCompleteDays" xml:space="preserve"><value>Выбрать последние полные дни: {0}</value></data>
+  <data name="Reports.ComparisonUnavailable" xml:space="preserve"><value>Сравнение невозможно: предыдущий период выходит за доступные даты.</value></data>
+  <data name="Reports.NoOrdersTitle" xml:space="preserve"><value>В этом периоде нет заказов</value></data>
+  <data name="Reports.NoOrdersHint" xml:space="preserve"><value>Для выбранного периода и платформы заказов нет. Выберите другой период или все платформы.</value></data>
+  <data name="Reports.InvalidTitle" xml:space="preserve"><value>По этому выбору нельзя построить отчёт</value></data>
+  <data name="Reports.FailureTitle" xml:space="preserve"><value>Не удалось загрузить отчёт</value></data>
+  <data name="Reports.FailureHint" xml:space="preserve"><value>Сервер недоступен. Выбранные период и платформа сохранены. Это не значит, что заказов нет.</value></data>
+  <data name="Reports.Retry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Reports.Loading" xml:space="preserve"><value>Загрузка отчёта</value></data>
+  <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Отчёт обновлён: {0}, заказов: {1}</value></data>
+  <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>Выбранный период не распознан.</value></data>
+  <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Укажите правильную дату начала.</value></data>
+  <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Укажите правильную дату окончания.</value></data>
+  <data name="Reports.FilterError.DatesRequireCustomPreset" xml:space="preserve"><value>Даты можно указывать только для своего периода.</value></data>
+  <data name="Reports.FilterError.CustomRangeIncomplete" xml:space="preserve"><value>Укажите дату начала и дату окончания.</value></data>
+  <data name="Reports.FilterError.RangeInverted" xml:space="preserve"><value>Дата окончания не может быть раньше даты начала.</value></data>
+  <data name="Reports.FilterError.RangeTooLong" xml:space="preserve"><value>Можно выбрать не более {0} дн.</value></data>
+  <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>Нельзя выбрать день позже сегодняшнего.</value></data>
+  <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>Выбранная платформа не распознана.</value></data>
+  <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>В ссылке один и тот же фильтр указан несколько раз.</value></data>
 </root>

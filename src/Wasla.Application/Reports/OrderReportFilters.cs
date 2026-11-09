@@ -209,6 +209,29 @@ public static class OrderReportFilters
     }
 
     /// <summary>
+    /// The filter of the period of equal length that ends the day before <paramref name="filter"/> starts, for the same
+    /// platform, resolved by the normal rules as a custom range. Null when <paramref name="filter"/> is not a complete
+    /// period, or when the preceding period is outside the accepted dates.
+    /// </summary>
+    public static OrderReportFilter? PrecedingPeriod(OrderReportFilter filter, DateTime utcNow)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+        var period = filter.Period;
+        if (!period.IsComplete)
+            return null;
+
+        var end = period.StartDate.AddDays(-1);
+        var start = end.AddDays(1 - period.DayCount);
+        return Resolve(
+            PresetValue(OrderReportPreset.Custom),
+            OrdersReceivedAtQueryRange.FormatWebDate(start),
+            OrdersReceivedAtQueryRange.FormatWebDate(end),
+            filter.Platform?.ToString(),
+            utcNow,
+            period.TimeZone).Filter;
+    }
+
+    /// <summary>
     /// A platform given by its defined name (case-insensitive) or its number. Null or empty means every platform. Any
     /// other value, including undefined numbers, signs, spaces or separators, is invalid.
     /// </summary>

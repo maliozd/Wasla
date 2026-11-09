@@ -1,0 +1,77 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Web.Models.Reports
+@{
+    var report = Model.Report!;
+    var f = report.Summary;
+    var presenter = new ReportPresenter(L);
+    var isOneDay = report.Days.Count == 1;
+    var largest = report.Platforms.Select(p => p.Figures.CancellationRate ?? 0m).DefaultIfEmpty(0m).Max();
+}
+
+<div class="rpt-columns rpt-columns--cancellations">
+    <section class="rpt-panel" aria-label="@L["Reports.Outcome.Cancelled"]">
+        <p class="rpt-label">@L["Reports.Outcome.Cancelled"]</p>
+        <p class="rpt-figure rpt-figure--xl"><bdi>@ReportFormat.Count(f.CancelledOrderCount)</bdi></p>
+        <p class="mb-1">@L["Reports.CancellationRateSentence", ReportFormat.Percent(f.CancellationRate), ReportFormat.Count(f.CancelledOrderCount), ReportFormat.Count(f.OrderCount)]</p>
+        <p class="rpt-muted mb-1">@L["Reports.CancellationsCombinedNote"]</p>
+        <p class="rpt-muted mb-0">@L["Reports.CancellationRateDefinition"]</p>
+    </section>
+    <section class="rpt-panel" aria-labelledby="rptRateTitle">
+        <h2 class="rpt-panel__title" id="rptRateTitle">@L["Reports.RateByPlatform"]</h2>
+        <ul class="rpt-shares">
+            @foreach (var row in report.Platforms)
+            {
+                var rate = row.Figures.CancellationRate ?? 0m;
+                var width = largest == 0m ? 0d : (double)(rate / largest * 100m);
+                <li class="rpt-share-row">
+                    @await Html.PartialAsync("_PlatformBadge", (Platform: (object?)row.Platform, DisplayName: (string?)null))
+                    <span class="rpt-share-row__track"><span class="rpt-share-row__bar rpt-fill--cancelled" style="width:@width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span></span>
+                    <span class="rpt-figure rpt-figure--s"><bdi>@ReportFormat.Percent(row.Figures.CancellationRate)</bdi></span>
+                    <span class="rpt-muted"><bdi>@ReportFormat.Count(row.Figures.CancelledOrderCount) / @ReportFormat.Count(row.Figures.OrderCount)</bdi></span>
+                </li>
+            }
+        </ul>
+    </section>
+</div>
+
+@if (!isOneDay)
+{
+    <section class="rpt-panel" data-rpt-panel="cancel-daily" aria-labelledby="rptCancelDailyTitle">
+        <div class="rpt-panel__head">
+            <div>
+                <h2 class="rpt-panel__title" id="rptCancelDailyTitle">@L["Reports.DailyCancellations"]</h2>
+                <p class="rpt-muted mb-0">@L["Reports.DailyCancellationsHint"]</p>
+            </div>
+            @await Html.PartialAsync("_ReportViewToggle")
+        </div>
+        <div data-rpt-panel-chart>
+            @await Html.PartialAsync("_ReportBarChart", presenter.CancellationsChart(report))
+        </div>
+        <div data-rpt-panel-table hidden>
+            <div class="wasla-table-wrap">
+                <table class="wasla-table rpt-table">
+                    <caption class="visually-hidden">@L["Reports.DailyCancellations"]</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">@L["Reports.Day"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.Outcome.Cancelled"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.OrderCount"]</th>
+                            <th scope="col" class="wasla-table__num">@L["Reports.CancellationRate"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var day in report.Days.Reverse())
+                        {
+                            <tr>
+                                <th scope="row">@ReportFormat.DayWithWeekday(day.Date)</th>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.CancelledOrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Count(day.Figures.OrderCount)</bdi></td>
+                                <td class="wasla-table__num"><bdi>@ReportFormat.Percent(day.Figures.CancellationRate)</bdi></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+}

@@ -4490,4 +4490,118 @@
   <data name="Signup.Phone.FakeOutboxLink" xml:space="preserve"><value>بيئة التطوير: عرض رموز الاختبار المرسلة</value></data>
   <data name="Signup.Review.ReverifyNote" xml:space="preserve"><value>إذا غيّرت رقم الجوال، فعليك التحقق من الرقم الجديد برسالة نصية مرة أخرى.</value></data>
   <data name="Signup.Pay.SupportLine" xml:space="preserve"><value>للاستفسارات حول اشتراكك أو لإلغائه، راسلنا على {0}.</value></data>
+  <data name="Layout.Reports" xml:space="preserve"><value>التقارير</value></data>
+  <data name="Reports.Title" xml:space="preserve"><value>التقارير</value></data>
+  <data name="Reports.Subtitle" xml:space="preserve"><value>ملخص طلباتك للفترة المحددة</value></data>
+  <data name="Reports.FiltersLabel" xml:space="preserve"><value>عوامل تصفية التقرير</value></data>
+  <data name="Reports.PeriodLabel" xml:space="preserve"><value>الفترة</value></data>
+  <data name="Reports.Preset.Today" xml:space="preserve"><value>اليوم</value></data>
+  <data name="Reports.Preset.Yesterday" xml:space="preserve"><value>أمس</value></data>
+  <data name="Reports.Preset.Last7Days" xml:space="preserve"><value>آخر 7 أيام</value></data>
+  <data name="Reports.Preset.Last30Days" xml:space="preserve"><value>آخر 30 يومًا</value></data>
+  <data name="Reports.Preset.Custom" xml:space="preserve"><value>نطاق مخصص</value></data>
+  <data name="Reports.AllPlatforms" xml:space="preserve"><value>جميع المنصات</value></data>
+  <data name="Reports.PlatformLabel" xml:space="preserve"><value>المنصة</value></data>
+  <data name="Reports.CompareLabel" xml:space="preserve"><value>المقارنة بالفترة السابقة</value></data>
+  <data name="Reports.ResetFilters" xml:space="preserve"><value>إعادة ضبط عوامل التصفية</value></data>
+  <data name="Reports.Filter" xml:space="preserve"><value>تصفية</value></data>
+  <data name="Reports.Apply" xml:space="preserve"><value>تطبيق</value></data>
+  <data name="Reports.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Reports.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Reports.StartDate" xml:space="preserve"><value>البداية</value></data>
+  <data name="Reports.EndDate" xml:space="preserve"><value>النهاية</value></data>
+  <data name="Reports.SectionsLabel" xml:space="preserve"><value>أقسام التقرير</value></data>
+  <data name="Reports.Section.Overview" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Reports.Section.Platforms" xml:space="preserve"><value>المنصات</value></data>
+  <data name="Reports.Section.Cancellations" xml:space="preserve"><value>الإلغاءات</value></data>
+  <data name="Reports.DayCount" xml:space="preserve"><value>{0} يوم</value></data>
+  <data name="Reports.PartialPeriod" xml:space="preserve"><value>يشمل اليوم، ولم ينتهِ اليوم بعد</value></data>
+  <data name="Reports.CompletePeriod" xml:space="preserve"><value>فترة مكتملة</value></data>
+  <data name="Reports.AsOf" xml:space="preserve"><value>حتى {0}</value></data>
+  <data name="Reports.TotalOrders" xml:space="preserve"><value>إجمالي الطلبات</value></data>
+  <data name="Reports.Outcome.Delivered" xml:space="preserve"><value>تم التسليم</value></data>
+  <data name="Reports.Outcome.InProgress" xml:space="preserve"><value>قيد التنفيذ</value></data>
+  <data name="Reports.Outcome.Cancelled" xml:space="preserve"><value>ملغى أو مرفوض</value></data>
+  <data name="Reports.Outcome.Failed" xml:space="preserve"><value>فاشل</value></data>
+  <data name="Reports.Outcome.Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Reports.CompletedValue" xml:space="preserve"><value>قيمة الطلبات المكتملة</value></data>
+  <data name="Reports.DeliveredOrdersCount" xml:space="preserve"><value>{0} طلبات تم تسليمها</value></data>
+  <data name="Reports.NoDeliveredOrders" xml:space="preserve"><value>لم يتم تسليم أي طلب في هذه الفترة</value></data>
+  <data name="Reports.AverageCompletedValue" xml:space="preserve"><value>متوسط الطلب المكتمل</value></data>
+  <data name="Reports.AverageNoDelivered" xml:space="preserve"><value>لا يُحسب لعدم وجود طلبات مسلَّمة</value></data>
+  <data name="Reports.AllOrderValue" xml:space="preserve"><value>قيمة جميع الطلبات</value></data>
+  <data name="Reports.AllOrderValueHint" xml:space="preserve"><value>يشمل الطلبات الملغاة والفاشلة وغير المكتملة</value></data>
+  <data name="Reports.ValueDisclaimer" xml:space="preserve"><value>المبالغ هي قيم الطلبات التي تبلغ عنها المنصات، وليست ربحًا أو مدفوعات أو صافي دخل.</value></data>
+  <data name="Reports.DailyTrend" xml:space="preserve"><value>الاتجاه اليومي</value></data>
+  <data name="Reports.DailyTrendHint" xml:space="preserve"><value>حسب يوم تقديم الطلبات، وبحالتها الحالية</value></data>
+  <data name="Reports.ViewLabel" xml:space="preserve"><value>طريقة العرض</value></data>
+  <data name="Reports.ViewChart" xml:space="preserve"><value>مخطط</value></data>
+  <data name="Reports.ViewTable" xml:space="preserve"><value>جدول</value></data>
+  <data name="Reports.OtherStatuses" xml:space="preserve"><value>حالات أخرى</value></data>
+  <data name="Reports.TodayNotFinished" xml:space="preserve"><value>اليوم، لم ينتهِ بعد</value></data>
+  <data name="Reports.OrdersPerDay" xml:space="preserve"><value>الطلبات في اليوم</value></data>
+  <data name="Reports.CompletedValuePerDay" xml:space="preserve"><value>قيمة الطلبات المكتملة في اليوم</value></data>
+  <data name="Reports.CancellationsPerDay" xml:space="preserve"><value>الطلبات الملغاة أو المرفوضة في اليوم</value></data>
+  <data name="Reports.SingleDayNotice" xml:space="preserve"><value>تم تحديد يوم واحد. يظهر الاتجاه اليومي للفترات التي تضم يومين أو أكثر.</value></data>
+  <data name="Reports.NoOrderDayNote" xml:space="preserve"><value>{0}: لا توجد طلبات</value></data>
+  <data name="Reports.NoOrderDaysNote" xml:space="preserve"><value>لا توجد طلبات في {0} من الأيام</value></data>
+  <data name="Reports.Day" xml:space="preserve"><value>اليوم</value></data>
+  <data name="Reports.OrderCount" xml:space="preserve"><value>عدد الطلبات</value></data>
+  <data name="Reports.PlatformShare" xml:space="preserve"><value>حصة المنصات</value></data>
+  <data name="Reports.PlatformShareHint" xml:space="preserve"><value>حسب عدد الطلبات</value></data>
+  <data name="Reports.PlatformReportLink" xml:space="preserve"><value>تقرير المنصات</value></data>
+  <data name="Reports.Highlights" xml:space="preserve"><value>أبرز ما في الفترة</value></data>
+  <data name="Reports.BusiestDay" xml:space="preserve"><value>اليوم الأكثر طلبات</value></data>
+  <data name="Reports.OrdersCountValue" xml:space="preserve"><value>{0} طلبات</value></data>
+  <data name="Reports.TopValueDay" xml:space="preserve"><value>أعلى قيمة مكتملة</value></data>
+  <data name="Reports.ZeroOrderDays" xml:space="preserve"><value>أيام بدون طلبات</value></data>
+  <data name="Reports.PlatformComparison" xml:space="preserve"><value>مقارنة المنصات</value></data>
+  <data name="Reports.PlatformComparisonHint" xml:space="preserve"><value>بالفترة نفسها وتعريفات الحالة نفسها</value></data>
+  <data name="Reports.OrderShare" xml:space="preserve"><value>حصة الطلبات</value></data>
+  <data name="Reports.ValueShare" xml:space="preserve"><value>حصة القيمة المكتملة</value></data>
+  <data name="Reports.PlatformTableCaption" xml:space="preserve"><value>الأرقام حسب المنصة</value></data>
+  <data name="Reports.Platform" xml:space="preserve"><value>المنصة</value></data>
+  <data name="Reports.CancellationRate" xml:space="preserve"><value>معدل الإلغاء أو الرفض</value></data>
+  <data name="Reports.Total" xml:space="preserve"><value>الإجمالي</value></data>
+  <data name="Reports.PlatformDailyTitle" xml:space="preserve"><value>الطلبات اليومية حسب المنصة</value></data>
+  <data name="Reports.ShowingOnePlatform" xml:space="preserve"><value>يتم عرض {0} فقط.</value></data>
+  <data name="Reports.ShowAllPlatforms" xml:space="preserve"><value>عرض جميع المنصات</value></data>
+  <data name="Reports.CancellationRateSentence" xml:space="preserve"><value>{0} من جميع الطلبات ({1} / {2})</value></data>
+  <data name="Reports.CancellationsCombinedNote" xml:space="preserve"><value>تُحتسب الطلبات الملغاة والمرفوضة معًا.</value></data>
+  <data name="Reports.CancellationRateDefinition" xml:space="preserve"><value>يُحسب المعدل بالقسمة على جميع طلبات الفترة، بما فيها الطلبات قيد التنفيذ.</value></data>
+  <data name="Reports.RateByPlatform" xml:space="preserve"><value>المعدل حسب المنصة</value></data>
+  <data name="Reports.DailyCancellations" xml:space="preserve"><value>الإلغاءات والرفض يوميًا</value></data>
+  <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>حسب يوم تقديم الطلبات</value></data>
+  <data name="Reports.ComparisonTitle" xml:space="preserve"><value>فترتان مكتملتان متساويتان في الطول</value></data>
+  <data name="Reports.ComparisonHint" xml:space="preserve"><value>حسب يوم تقديم الطلبات، وبحالتها الحالية</value></data>
+  <data name="Reports.ThisPeriod" xml:space="preserve"><value>هذه الفترة</value></data>
+  <data name="Reports.PreviousPeriod" xml:space="preserve"><value>الفترة السابقة</value></data>
+  <data name="Reports.CompletedPeriodDays" xml:space="preserve"><value>{0} يوم، مكتملة</value></data>
+  <data name="Reports.Metric" xml:space="preserve"><value>المقياس</value></data>
+  <data name="Reports.Difference" xml:space="preserve"><value>الفرق</value></data>
+  <data name="Reports.Change" xml:space="preserve"><value>التغيّر</value></data>
+  <data name="Reports.NotComparable" xml:space="preserve"><value>غير قابل للمقارنة</value></data>
+  <data name="Reports.ComparisonChartHint" xml:space="preserve"><value>الفترتان محاذيتان حسب رقم اليوم</value></data>
+  <data name="Reports.DayIndex" xml:space="preserve"><value>اليوم {0}</value></data>
+  <data name="Reports.ComparisonNeedsComplete" xml:space="preserve"><value>لا يمكن مقارنة هذه الفترة لأن اليوم لم ينتهِ بعد. تتم المقارنة بين فترات مكتملة ومتساوية الطول فقط.</value></data>
+  <data name="Reports.PickCompleteDays" xml:space="preserve"><value>استخدام آخر {0} من الأيام المكتملة</value></data>
+  <data name="Reports.ComparisonUnavailable" xml:space="preserve"><value>لا يمكن إجراء المقارنة لأن الفترة السابقة خارج التواريخ المتاحة.</value></data>
+  <data name="Reports.NoOrdersTitle" xml:space="preserve"><value>لا توجد طلبات في هذه الفترة</value></data>
+  <data name="Reports.NoOrdersHint" xml:space="preserve"><value>لا توجد طلبات مخزنة للفترة والمنصة المحددتين. جرّب فترة أخرى أو جميع المنصات.</value></data>
+  <data name="Reports.InvalidTitle" xml:space="preserve"><value>تعذر إنشاء تقرير بهذا التحديد</value></data>
+  <data name="Reports.FailureTitle" xml:space="preserve"><value>تعذر تحميل التقرير</value></data>
+  <data name="Reports.FailureHint" xml:space="preserve"><value>تعذر الوصول إلى الخادم. تم الاحتفاظ بالفترة والمنصة المحددتين. هذا لا يعني عدم وجود طلبات لديك.</value></data>
+  <data name="Reports.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
+  <data name="Reports.Loading" xml:space="preserve"><value>جارٍ تحميل التقرير</value></data>
+  <data name="Reports.UpdatedSummary" xml:space="preserve"><value>تم تحديث التقرير: {0}، {1} طلبات</value></data>
+  <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>لم يتم التعرف على الفترة المحددة.</value></data>
+  <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>أدخل تاريخ بداية صالحًا.</value></data>
+  <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>أدخل تاريخ نهاية صالحًا.</value></data>
+  <data name="Reports.FilterError.DatesRequireCustomPreset" xml:space="preserve"><value>لا يمكن استخدام التواريخ إلا مع نطاق مخصص.</value></data>
+  <data name="Reports.FilterError.CustomRangeIncomplete" xml:space="preserve"><value>أدخل تاريخي البداية والنهاية معًا.</value></data>
+  <data name="Reports.FilterError.RangeInverted" xml:space="preserve"><value>لا يمكن أن يكون تاريخ النهاية قبل تاريخ البداية.</value></data>
+  <data name="Reports.FilterError.RangeTooLong" xml:space="preserve"><value>يمكنك تحديد {0} يومًا كحد أقصى.</value></data>
+  <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>لا يمكن تحديد يوم بعد اليوم.</value></data>
+  <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>لم يتم التعرف على المنصة المحددة.</value></data>
+  <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>يحتوي الرابط على عامل التصفية نفسه أكثر من مرة.</value></data>
 </root>

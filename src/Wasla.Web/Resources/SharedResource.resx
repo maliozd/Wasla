@@ -2135,4 +2135,118 @@
   <data name="Validation.Required" xml:space="preserve"><value>Bu alan zorunludur.</value></data>
   <data name="Validation.SlugRequired" xml:space="preserve"><value>Alt alan adı gereklidir.</value></data>
   <data name="Validation.TooLong" xml:space="preserve"><value>Bu alan çok uzun.</value></data>
+  <data name="Layout.Reports" xml:space="preserve"><value>Raporlar</value></data>
+  <data name="Reports.Title" xml:space="preserve"><value>Raporlar</value></data>
+  <data name="Reports.Subtitle" xml:space="preserve"><value>Siparişlerinizin seçili döneme göre özeti</value></data>
+  <data name="Reports.FiltersLabel" xml:space="preserve"><value>Rapor filtreleri</value></data>
+  <data name="Reports.PeriodLabel" xml:space="preserve"><value>Dönem</value></data>
+  <data name="Reports.Preset.Today" xml:space="preserve"><value>Bugün</value></data>
+  <data name="Reports.Preset.Yesterday" xml:space="preserve"><value>Dün</value></data>
+  <data name="Reports.Preset.Last7Days" xml:space="preserve"><value>Son 7 gün</value></data>
+  <data name="Reports.Preset.Last30Days" xml:space="preserve"><value>Son 30 gün</value></data>
+  <data name="Reports.Preset.Custom" xml:space="preserve"><value>Özel aralık</value></data>
+  <data name="Reports.AllPlatforms" xml:space="preserve"><value>Tüm platformlar</value></data>
+  <data name="Reports.PlatformLabel" xml:space="preserve"><value>Platform</value></data>
+  <data name="Reports.CompareLabel" xml:space="preserve"><value>Önceki dönemle karşılaştır</value></data>
+  <data name="Reports.ResetFilters" xml:space="preserve"><value>Filtreleri sıfırla</value></data>
+  <data name="Reports.Filter" xml:space="preserve"><value>Filtrele</value></data>
+  <data name="Reports.Apply" xml:space="preserve"><value>Uygula</value></data>
+  <data name="Reports.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="Reports.Close" xml:space="preserve"><value>Kapat</value></data>
+  <data name="Reports.StartDate" xml:space="preserve"><value>Başlangıç</value></data>
+  <data name="Reports.EndDate" xml:space="preserve"><value>Bitiş</value></data>
+  <data name="Reports.SectionsLabel" xml:space="preserve"><value>Rapor bölümleri</value></data>
+  <data name="Reports.Section.Overview" xml:space="preserve"><value>Özet</value></data>
+  <data name="Reports.Section.Platforms" xml:space="preserve"><value>Platformlar</value></data>
+  <data name="Reports.Section.Cancellations" xml:space="preserve"><value>İptaller</value></data>
+  <data name="Reports.DayCount" xml:space="preserve"><value>{0} gün</value></data>
+  <data name="Reports.PartialPeriod" xml:space="preserve"><value>Bugün dahil, gün henüz bitmedi</value></data>
+  <data name="Reports.CompletePeriod" xml:space="preserve"><value>Tamamlanmış dönem</value></data>
+  <data name="Reports.AsOf" xml:space="preserve"><value>{0} itibarıyla</value></data>
+  <data name="Reports.TotalOrders" xml:space="preserve"><value>Toplam sipariş</value></data>
+  <data name="Reports.Outcome.Delivered" xml:space="preserve"><value>Teslim edildi</value></data>
+  <data name="Reports.Outcome.InProgress" xml:space="preserve"><value>Devam ediyor</value></data>
+  <data name="Reports.Outcome.Cancelled" xml:space="preserve"><value>İptal veya ret</value></data>
+  <data name="Reports.Outcome.Failed" xml:space="preserve"><value>Hatalı</value></data>
+  <data name="Reports.Outcome.Other" xml:space="preserve"><value>Diğer</value></data>
+  <data name="Reports.CompletedValue" xml:space="preserve"><value>Tamamlanan sipariş tutarı</value></data>
+  <data name="Reports.DeliveredOrdersCount" xml:space="preserve"><value>Teslim edilen {0} sipariş</value></data>
+  <data name="Reports.NoDeliveredOrders" xml:space="preserve"><value>Bu dönemde teslim edilen sipariş yok</value></data>
+  <data name="Reports.AverageCompletedValue" xml:space="preserve"><value>Tamamlanan sipariş ortalaması</value></data>
+  <data name="Reports.AverageNoDelivered" xml:space="preserve"><value>Teslim edilen sipariş olmadığı için hesaplanmaz</value></data>
+  <data name="Reports.AllOrderValue" xml:space="preserve"><value>Tüm sipariş tutarı</value></data>
+  <data name="Reports.AllOrderValueHint" xml:space="preserve"><value>İptal, hatalı ve devam edenler dahil</value></data>
+  <data name="Reports.ValueDisclaimer" xml:space="preserve"><value>Tutarlar platformların bildirdiği sipariş tutarlarıdır. Kâr, ödeme veya net gelir değildir.</value></data>
+  <data name="Reports.DailyTrend" xml:space="preserve"><value>Günlük seyir</value></data>
+  <data name="Reports.DailyTrendHint" xml:space="preserve"><value>Sipariş verilme gününe göre, siparişlerin güncel durumuyla</value></data>
+  <data name="Reports.ViewLabel" xml:space="preserve"><value>Görünüm</value></data>
+  <data name="Reports.ViewChart" xml:space="preserve"><value>Grafik</value></data>
+  <data name="Reports.ViewTable" xml:space="preserve"><value>Tablo</value></data>
+  <data name="Reports.OtherStatuses" xml:space="preserve"><value>Diğer durumlar</value></data>
+  <data name="Reports.TodayNotFinished" xml:space="preserve"><value>Bugün, gün bitmedi</value></data>
+  <data name="Reports.OrdersPerDay" xml:space="preserve"><value>Günlük sipariş sayısı</value></data>
+  <data name="Reports.CompletedValuePerDay" xml:space="preserve"><value>Günlük tamamlanan sipariş tutarı</value></data>
+  <data name="Reports.CancellationsPerDay" xml:space="preserve"><value>Günlük iptal veya ret sayısı</value></data>
+  <data name="Reports.SingleDayNotice" xml:space="preserve"><value>Tek gün seçildi. Günlük seyir en az iki gün içeren dönemlerde gösterilir.</value></data>
+  <data name="Reports.NoOrderDayNote" xml:space="preserve"><value>{0}: sipariş yok</value></data>
+  <data name="Reports.NoOrderDaysNote" xml:space="preserve"><value>{0} gün sipariş yok</value></data>
+  <data name="Reports.Day" xml:space="preserve"><value>Gün</value></data>
+  <data name="Reports.OrderCount" xml:space="preserve"><value>Sipariş sayısı</value></data>
+  <data name="Reports.PlatformShare" xml:space="preserve"><value>Platform payı</value></data>
+  <data name="Reports.PlatformShareHint" xml:space="preserve"><value>Sipariş sayısına göre</value></data>
+  <data name="Reports.PlatformReportLink" xml:space="preserve"><value>Platform raporu</value></data>
+  <data name="Reports.Highlights" xml:space="preserve"><value>Dönemin öne çıkanları</value></data>
+  <data name="Reports.BusiestDay" xml:space="preserve"><value>En çok sipariş alınan gün</value></data>
+  <data name="Reports.OrdersCountValue" xml:space="preserve"><value>{0} sipariş</value></data>
+  <data name="Reports.TopValueDay" xml:space="preserve"><value>En yüksek tamamlanan tutar</value></data>
+  <data name="Reports.ZeroOrderDays" xml:space="preserve"><value>Siparişsiz gün</value></data>
+  <data name="Reports.PlatformComparison" xml:space="preserve"><value>Platform karşılaştırması</value></data>
+  <data name="Reports.PlatformComparisonHint" xml:space="preserve"><value>Aynı dönem ve aynı durum tanımlarıyla</value></data>
+  <data name="Reports.OrderShare" xml:space="preserve"><value>Sipariş payı</value></data>
+  <data name="Reports.ValueShare" xml:space="preserve"><value>Tamamlanan tutar payı</value></data>
+  <data name="Reports.PlatformTableCaption" xml:space="preserve"><value>Platformlara göre rakamlar</value></data>
+  <data name="Reports.Platform" xml:space="preserve"><value>Platform</value></data>
+  <data name="Reports.CancellationRate" xml:space="preserve"><value>İptal veya ret oranı</value></data>
+  <data name="Reports.Total" xml:space="preserve"><value>Toplam</value></data>
+  <data name="Reports.PlatformDailyTitle" xml:space="preserve"><value>Günlük sipariş, platforma göre</value></data>
+  <data name="Reports.ShowingOnePlatform" xml:space="preserve"><value>Yalnızca {0} gösteriliyor.</value></data>
+  <data name="Reports.ShowAllPlatforms" xml:space="preserve"><value>Tüm platformları göster</value></data>
+  <data name="Reports.CancellationRateSentence" xml:space="preserve"><value>Tüm siparişlerin {0} kadarı ({1} / {2})</value></data>
+  <data name="Reports.CancellationsCombinedNote" xml:space="preserve"><value>İptal edilen ve reddedilen siparişler birlikte sayılır.</value></data>
+  <data name="Reports.CancellationRateDefinition" xml:space="preserve"><value>Oran, seçili dönemdeki tüm siparişlere (devam edenler dahil) bölünerek hesaplanır.</value></data>
+  <data name="Reports.RateByPlatform" xml:space="preserve"><value>Platforma göre oran</value></data>
+  <data name="Reports.DailyCancellations" xml:space="preserve"><value>Günlük iptal veya ret</value></data>
+  <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>Sipariş verilme gününe göre</value></data>
+  <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Eşit uzunlukta iki tamamlanmış dönem</value></data>
+  <data name="Reports.ComparisonHint" xml:space="preserve"><value>Sipariş verilme gününe göre ve siparişlerin güncel durumuyla</value></data>
+  <data name="Reports.ThisPeriod" xml:space="preserve"><value>Bu dönem</value></data>
+  <data name="Reports.PreviousPeriod" xml:space="preserve"><value>Önceki dönem</value></data>
+  <data name="Reports.CompletedPeriodDays" xml:space="preserve"><value>{0} gün, tamamlanmış</value></data>
+  <data name="Reports.Metric" xml:space="preserve"><value>Ölçüm</value></data>
+  <data name="Reports.Difference" xml:space="preserve"><value>Fark</value></data>
+  <data name="Reports.Change" xml:space="preserve"><value>Değişim</value></data>
+  <data name="Reports.NotComparable" xml:space="preserve"><value>Karşılaştırılamaz</value></data>
+  <data name="Reports.ComparisonChartHint" xml:space="preserve"><value>Her iki dönem de gün sırasına göre hizalıdır</value></data>
+  <data name="Reports.DayIndex" xml:space="preserve"><value>{0}. gün</value></data>
+  <data name="Reports.ComparisonNeedsComplete" xml:space="preserve"><value>Bugün henüz bitmediği için bu dönem karşılaştırılamaz. Karşılaştırma yalnızca tamamlanmış ve eşit uzunlukta dönemlerle yapılır.</value></data>
+  <data name="Reports.PickCompleteDays" xml:space="preserve"><value>Son {0} tam günü seç</value></data>
+  <data name="Reports.ComparisonUnavailable" xml:space="preserve"><value>Önceki dönem kullanılabilir tarihlerin dışında kaldığı için karşılaştırma yapılamıyor.</value></data>
+  <data name="Reports.NoOrdersTitle" xml:space="preserve"><value>Bu dönemde sipariş yok</value></data>
+  <data name="Reports.NoOrdersHint" xml:space="preserve"><value>Seçili dönem ve platform için kayıtlı sipariş bulunamadı. Başka bir dönem veya tüm platformları seçebilirsiniz.</value></data>
+  <data name="Reports.InvalidTitle" xml:space="preserve"><value>Bu seçimle rapor oluşturulamadı</value></data>
+  <data name="Reports.FailureTitle" xml:space="preserve"><value>Rapor yüklenemedi</value></data>
+  <data name="Reports.FailureHint" xml:space="preserve"><value>Sunucuya ulaşılamadı. Seçtiğiniz dönem ve platform korunuyor. Bu, siparişiniz olmadığı anlamına gelmez.</value></data>
+  <data name="Reports.Retry" xml:space="preserve"><value>Tekrar dene</value></data>
+  <data name="Reports.Loading" xml:space="preserve"><value>Rapor yükleniyor</value></data>
+  <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Rapor güncellendi: {0}, {1} sipariş</value></data>
+  <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>Seçilen dönem tanınmadı.</value></data>
+  <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Geçerli bir başlangıç tarihi girin.</value></data>
+  <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Geçerli bir bitiş tarihi girin.</value></data>
+  <data name="Reports.FilterError.DatesRequireCustomPreset" xml:space="preserve"><value>Tarihler yalnızca özel aralıkla kullanılabilir.</value></data>
+  <data name="Reports.FilterError.CustomRangeIncomplete" xml:space="preserve"><value>Başlangıç ve bitiş tarihini birlikte girin.</value></data>
+  <data name="Reports.FilterError.RangeInverted" xml:space="preserve"><value>Bitiş tarihi başlangıçtan önce olamaz.</value></data>
+  <data name="Reports.FilterError.RangeTooLong" xml:space="preserve"><value>En fazla {0} gün seçebilirsiniz.</value></data>
+  <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>Bugünden sonraki bir gün seçilemez.</value></data>
+  <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>Seçilen platform tanınmadı.</value></data>
+  <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>Bağlantıda aynı filtre birden fazla kez var.</value></data>
 </root>

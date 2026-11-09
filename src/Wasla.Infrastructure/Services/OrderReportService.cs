@@ -11,8 +11,8 @@ namespace Wasla.Infrastructure.Services;
 
 /// <summary>
 /// The order report (WAS-182, docs/orders/reporting.md). One SQL statement groups the cohort by platform, stored
-/// status and local day and returns at most one row per group; summary, platform rows and day rows are summed from
-/// those rows, so they reconcile and come from one consistent read. No order, item or payload is loaded.
+/// status and local day and returns at most one row per group; summary, platform rows, day rows and days per platform are
+/// summed from those rows, so they reconcile and come from one consistent read. No order, item or payload is loaded.
 /// </summary>
 public sealed class OrderReportService : IOrderReportService
 {
@@ -60,9 +60,9 @@ public sealed class OrderReportService : IOrderReportService
     internal static OrderReport Build(OrderReportFilter filter, IReadOnlyList<Group> groups, DateTime generatedAtUtc)
     {
         var period = filter.Period;
-        var days = new OrderReportFigures[period.DayCount];
-        Array.Fill(days, OrderReportFigures.Empty);
+        var days = EmptyDays(period);
         var platforms = new Dictionary<FoodPlatform, OrderReportFigures>();
+        var platformDays = new Dictionary<FoodPlatform, OrderReportFigures[]>();
         var summary = OrderReportFigures.Empty;
 
         foreach (var group in groups)
@@ -76,6 +76,9 @@ public sealed class OrderReportService : IOrderReportService
             summary += figures;
             days[index] += figures;
             platforms[group.Platform] = platforms.TryGetValue(group.Platform, out var sum) ? sum + figures : figures;
+            if (!platformDays.TryGetValue(group.Platform, out var ofPlatform))
+                platformDays[group.Platform] = ofPlatform = EmptyDays(period);
+            ofPlatform[index] += figures;
         }
 
         var platformRows = platforms
@@ -83,13 +86,24 @@ public sealed class OrderReportService : IOrderReportService
             .ThenBy(p => (int)p.Key)
             .Select(p => new OrderReportPlatformRow(p.Key, p.Value))
             .ToList();
-        var dayRows = days
-            .Select((figures, i) => new OrderReportDayRow(
-                period.StartDate.AddDays(i), period.DayStartsUtc[i], period.DayStartsUtc[i + 1], figures))
+        var platformDayRows = platformRows
+            .Select(p => new OrderReportPlatformDays(p.Platform, DayRows(period, platformDays[p.Platform])))
             .ToList();
 
-        return new OrderReport(filter, OrderCurrency.Code, generatedAtUtc, summary, platformRows, dayRows);
+        return new OrderReport(filter, OrderCurrency.Code, generatedAtUtc, summary, platformRows, DayRows(period, days), platformDayRows);
     }
+
+    private static OrderReportFigures[] EmptyDays(OrderReportPeriod period)
+    {
+        var days = new OrderReportFigures[period.DayCount];
+        Array.Fill(days, OrderReportFigures.Empty);
+        return days;
+    }
+
+    private static List<OrderReportDayRow> DayRows(OrderReportPeriod period, OrderReportFigures[] days) => days
+        .Select((figures, i) => new OrderReportDayRow(
+            period.StartDate.AddDays(i), period.DayStartsUtc[i], period.DayStartsUtc[i + 1], figures))
+        .ToList();
 
     /// <summary>
     /// The local day of <c>Order.OrderedAt</c> as SQL, for orders inside the period. A stretch of 24-hour days with one

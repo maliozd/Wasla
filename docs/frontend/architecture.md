@@ -103,6 +103,7 @@ Pass strings from Razor into a config object (`messages: { … }`). JS never emb
 | Central Admin light/dark choice | `localStorage` (`Wasla.theme`); see [Theme](#theme) |
 | Sound unlock flag write | `localStorage` (`Wasla.soundUnlocked`) — written; not restored on load today |
 | Orders debug badge | `localStorage` (`Wasla.ordersDebug`) |
+| Report page filter, to restore it when the page is reopened without a query string | `sessionStorage` (`Wasla.reports.query`); the URL holds the filter itself |
 
 ### Theme
 
@@ -141,4 +142,5 @@ Not themed: every page that does not use one of the three layouts above has no t
 | RTL | `wwwroot/css/rtl.css` |
 | Public marketing header, footer and menus | `Views/Shared/_PublicLayout.cshtml`, `wwwroot/js/wasla-marketing.js`; see [design-system.md](design-system.md#public-marketing-site) |
 | Signup page (steps over the registration draft API) | `Views/Signup/Index.cshtml`, `Views/Shared/_Signup*.cshtml`, `wwwroot/js/signup/*.js` (`signup-flow.js` drives the steps, `signup-api.js` calls the API, `signup-draft.js` reads the draft, `signup-phone-step.js` the phone step); see [design-system.md](design-system.md#signup-page) and [../architecture/signup-registration.md](../architecture/signup-registration.md) |
+| Report page | `Areas/Tenant/Views/Reports/*`, `wwwroot/js/reports/reports-page.js`, `wwwroot/css/wasla-reports.css`; see [design-system.md](design-system.md#report-page) |
 | Localization | `Wasla.Web/Resources/SharedResource*.resx` |

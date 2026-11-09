@@ -140,6 +140,21 @@ The preference (keys, precedence, early application, cross-tab sync, tenant/Admi
 
 ---
 
+## Report page
+
+**Owns:** the look of `/reports` (WAS-183), from the Figma page "Orders — Reports" in *Wasla — Web & App*. What each figure means is in [../orders/reporting.md](../orders/reporting.md#report-page).
+
+- **Styles.** `wwwroot/css/wasla-reports.css`, every rule scoped to `.wasla-reports` (prefix `rpt-`), linked from the view. Surfaces, borders, text and radii are the foundation tokens; chart, outcome and status tokens are defined there for both themes.
+- **Primary report actions.** `#C84B0F` with white text (4.7:1). White on the brand orange is about 3.0:1 at this text size. This is local to the report page and is not an app-wide colour change.
+- **Platform colours** in the report's shares and daily charts are an exception to "platform colours stay on platform badges": they identify series, always with a badge or a label, and were checked for colour-blind separation.
+- **Charts** are server-rendered markup with no chart library. Hover, tap and keyboard focus show the same values; arrow keys follow the screen in both directions; each chart has a table with the same rows. There is no entrance animation.
+- **Filters.** Presets are links that apply at once from 768 px. Below 768 px the same controls are a bottom sheet (`offcanvas-md`) and apply with its button.
+- **Refreshing.** Only the result region is replaced, so filter controls keep focus and stay usable. A newer request aborts the older one and a late answer is dropped.
+
+Tests: `Reports/ReportsPageWebTests`, `Reports/ReportPageQueryTests`, `Web/ReportsPageBrowserTests`, `Web/reports-page.test.js`, and the report sections in `TenantDarkModeBrowserTests`.
+
+---
+
 ## Logo
 
 The approved Wasla logo is the orange (`#E87342`) lowercase "wasla" wordmark. It has no separate symbol.
@@ -241,4 +256,5 @@ Tests: `Signup/SignupFlowBrowserTests` (the page in a real browser over the real
 | Logo (canonical asset, partial) | `src/Wasla.Web/wwwroot/images/brand/wasla-logo.svg`, `Views/Shared/_WaslaLogo.cshtml` |
 | Logo master | `docs/brand/wasla-logo-source.svg` |
 | Signup page | `src/Wasla.Web/wwwroot/css/wasla-signup.css`, `wwwroot/js/signup/*.js`, `Views/Signup/Index.cshtml`, `Views/Shared/_Signup*.cshtml` |
+| Report page | `src/Wasla.Web/wwwroot/css/wasla-reports.css`, `wwwroot/js/reports/reports-page.js`, `Areas/Tenant/Views/Reports/*` |
 | Public marketing site | `src/Wasla.Web/wwwroot/css/wasla-marketing.css`, `wwwroot/js/wasla-marketing.js`, `wwwroot/fonts/`, `wwwroot/images/marketing/`, `Views/Home/Index.cshtml`, `Views/Home/ComingSoon.cshtml`, `Views/Marketing/Pos.cshtml`, `Views/Marketing/PrivacyNotice.cshtml`, `Views/Contact/Index.cshtml`, `Views/Shared/_Public*.cshtml`, `Views/Shared/_Marketing*.cshtml` |

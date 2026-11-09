@@ -1,0 +1,19 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Web.Models.Reports
+@if (Model.Filter is { } filter)
+{
+    var period = filter.Period;
+    <i class="bi bi-calendar3 rpt-period__icon" aria-hidden="true"></i>
+    <strong class="rpt-period__range"><bdi>@ReportFormat.Range(period.StartDate, period.EndDate)</bdi></strong>
+    <span class="rpt-period__days">@L["Reports.DayCount", ReportFormat.Count(period.DayCount)]</span>
+    <span class="rpt-period__platform d-md-none">@(filter.Platform is { } platform ? L[ReportFormat.PlatformKey(platform)] : L["Reports.AllPlatforms"])</span>
+    @if (period.IsComplete)
+    {
+        <span class="rpt-pill rpt-pill--success"><i class="bi bi-check2" aria-hidden="true"></i>@L["Reports.CompletePeriod"]</span>
+    }
+    else
+    {
+        <span class="rpt-pill rpt-pill--info"><i class="bi bi-clock-history" aria-hidden="true"></i>@L["Reports.PartialPeriod"]</span>
+    }
+    <span class="rpt-period__asof">@L["Reports.AsOf", ReportFormat.Time(Model.GeneratedAtLocal)]</span>
+}

@@ -21,7 +21,9 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Orders;
+using Wasla.Web.Models.Reports;
 using ApiDashboardController = Wasla.Api.Controllers.DashboardController;
+using TenantReportsController = Wasla.Web.Areas.Tenant.Controllers.ReportsController;
 
 namespace Wasla.UnitTests.Reports;
 
@@ -58,6 +60,14 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
 
     private OrderReportService Service(ITenantDbContextFactory? factory = null, DateTime? now = null) =>
         new(factory ?? _database.Instance("report"), new FixedTime(now ?? Now));
+
+    /// <summary>Yemeksepeti's three days in the known dataset (<see cref="SeedKnownDatasetAsync"/>).</summary>
+    private static readonly OrderReportFigures[] YemeksepetiDays =
+    [
+        new(1, 3.33m, 0, 0m, 0, 0, 1, 0),
+        new(1, 30.03m, 0, 0m, 0, 0, 1, 0),
+        new(2, 50.10m, 1, 0.10m, 1, 0, 0, 0)
+    ];
 
     private static OrderReportFigures F(int count, decimal value, int completed, decimal completedValue, int cancelled = 0, int failed = 0, int inProgress = 0, int other = 0) =>
         new(count, value, completed, completedValue, cancelled, failed, inProgress, other);
@@ -124,6 +134,15 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
             report.Days);
         Assert.Equal(111.72m, report.Days[0].Figures.AverageCompletedOrderValue);
 
+        Assert.Equal([FoodPlatform.TrendyolYemek, FoodPlatform.Yemeksepeti, FoodPlatform.GetirYemek], report.PlatformDays.Select(p => p.Platform));
+        Assert.Equal(
+            [F(2, 128.45m, 1, 123.45m, other: 1), F(1, 76.55m, 1, 76.55m), F(2, 30.03m, 0, 0m, inProgress: 2)],
+            report.PlatformDays[0].Days.Select(d => d.Figures));
+        Assert.Equal(YemeksepetiDays, report.PlatformDays[1].Days.Select(d => d.Figures));
+        Assert.Equal(
+            [F(2, 119.98m, 1, 99.99m, failed: 1), F(1, 40.04m, 0, 0m, inProgress: 1), OrderReportFigures.Empty],
+            report.PlatformDays[2].Days.Select(d => d.Figures));
+
         AssertReconciles(report);
     }
 
@@ -137,9 +156,10 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
         Assert.Equal(FoodPlatform.Yemeksepeti, report.Filter.Platform);
         Assert.Equal(F(4, 83.46m, 1, 0.10m, cancelled: 1, inProgress: 2), report.Summary);
         Assert.Equal([new OrderReportPlatformRow(FoodPlatform.Yemeksepeti, report.Summary)], report.Platforms);
-        Assert.Equal(
-            [F(1, 3.33m, 0, 0m, inProgress: 1), F(1, 30.03m, 0, 0m, inProgress: 1), F(2, 50.10m, 1, 0.10m, cancelled: 1)],
-            report.Days.Select(d => d.Figures));
+        Assert.Equal(YemeksepetiDays, report.Days.Select(d => d.Figures));
+        var only = Assert.Single(report.PlatformDays);
+        Assert.Equal(FoodPlatform.Yemeksepeti, only.Platform);
+        Assert.Equal(YemeksepetiDays, only.Days.Select(d => d.Figures));
         AssertReconciles(report);
     }
 
@@ -182,6 +202,7 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
         Assert.Equal(OrderReportFigures.Empty, report.Summary);
         Assert.Null(report.Summary.AverageCompletedOrderValue);
         Assert.Empty(report.Platforms);
+        Assert.Empty(report.PlatformDays);
         Assert.Equal(
             [new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 2), new DateOnly(2026, 10, 3)],
             report.Days.Select(d => d.Date));
@@ -216,6 +237,8 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
 
         Assert.Equal(10_000_000_000_000_000.02m, report.Summary.CompletedOrderValue);
         Assert.Equal(3_333_333_333_333_333.34m, report.Summary.AverageCompletedOrderValue);
+        Assert.Equal(10_000_000_000_000_000.02m, Assert.Single(report.PlatformDays).Days.Sum(d => d.Figures.CompletedOrderValue));
+        AssertReconciles(report);
     }
 
     [Fact]
@@ -435,6 +458,47 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
         Assert.Null(dto.Days[2].Figures.AverageCompletedOrderValue);
     }
 
+    /// <summary>
+    /// The Platforms section is built from one read: orders stored after that read reach neither its totals nor its days,
+    /// and the controller makes no further read for them.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Yemeksepeti")]
+    public async Task PlatformsSection_IsOneRead_WhileOrdersChange(string? platform)
+    {
+        await SeedKnownDatasetAsync();
+        var reads = 0;
+        var reports = new ChangesAfterEachRead(Service(), async () =>
+        {
+            reads++;
+            await SeedAsync(
+                O($"LATE-T-{reads}", FoodPlatform.TrendyolYemek, OrderStatus.Delivered, 7.77m, placed: Utc(11, 6, 12)),
+                O($"LATE-Y-{reads}", FoodPlatform.Yemeksepeti, OrderStatus.Delivered, 8.88m, placed: Utc(11, 7, 8)));
+        });
+        var controller = new TenantReportsController(new FixedTenant(_tenantId), reports, new FixedTime(Now), NullLogger<TenantReportsController>.Instance)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+        var onePlatform = platform is null ? "" : $"&platform={platform}";
+        controller.HttpContext.Request.QueryString = new QueryString($"?preset=custom&startDate=2026-11-05&endDate=2026-11-07{onePlatform}&section=platforms");
+
+        var view = Assert.IsType<ViewResult>(await controller.Index(Ct));
+        var report = Assert.IsType<ReportPageViewModel>(view.Model).Report!;
+
+        Assert.Equal(1, reads);
+        AssertReconciles(report);
+        var yemeksepeti = Assert.Single(report.PlatformDays, p => p.Platform == FoodPlatform.Yemeksepeti);
+        Assert.Equal(YemeksepetiDays, yemeksepeti.Days.Select(d => d.Figures));
+        Assert.Equal(
+            platform is null ? F(12, 478.51m, 4, 300.09m, cancelled: 1, failed: 1, inProgress: 5, other: 1) : F(4, 83.46m, 1, 0.10m, cancelled: 1, inProgress: 2),
+            report.Summary);
+
+        var later = await Service().GetAsync(_tenantId, report.Filter, Ct);
+        Assert.NotEqual(report.Summary, later.Summary);
+        AssertReconciles(later);
+    }
+
     private static void AssertReconciles(OrderReport report)
     {
         static void Consistent(OrderReportFigures f) => Assert.Equal(
@@ -447,6 +511,20 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
         Assert.Equal(report.Summary, report.Platforms.Aggregate(OrderReportFigures.Empty, (sum, p) => sum + p.Figures));
         Assert.Equal(report.Summary, report.Days.Aggregate(OrderReportFigures.Empty, (sum, d) => sum + d.Figures));
         Assert.Equal(report.Filter.Period.DayCount, report.Days.Count);
+
+        Assert.Equal(report.Platforms.Select(p => p.Platform), report.PlatformDays.Select(p => p.Platform));
+        foreach (var (row, platform) in report.Platforms.Zip(report.PlatformDays))
+        {
+            Assert.Equal(report.Days.Select(d => d.Date), platform.Days.Select(d => d.Date));
+            Assert.All(platform.Days, d => Consistent(d.Figures));
+            Assert.Equal(row.Figures, platform.Days.Aggregate(OrderReportFigures.Empty, (sum, d) => sum + d.Figures));
+        }
+
+        for (var day = 0; day < report.Days.Count; day++)
+        {
+            var index = day;
+            Assert.Equal(report.Days[index].Figures, report.PlatformDays.Aggregate(OrderReportFigures.Empty, (sum, p) => sum + p.Days[index].Figures));
+        }
     }
 
     private async Task ResetAsync()
@@ -553,6 +631,17 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-item", "Lahmacun", 1, total, total, null, [])],
             null);
+
+    /// <summary>The real report, with orders changing right after every read.</summary>
+    private sealed class ChangesAfterEachRead(IOrderReportService inner, Func<Task> change) : IOrderReportService
+    {
+        public async Task<OrderReport> GetAsync(Guid tenantId, OrderReportFilter filter, CancellationToken ct)
+        {
+            var report = await inner.GetAsync(tenantId, filter, ct);
+            await change();
+            return report;
+        }
+    }
 
     private sealed class FixedTime(DateTime utcNow) : TimeProvider
     {
