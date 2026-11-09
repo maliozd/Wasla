@@ -859,6 +859,8 @@ function attachBrowser(O, global, api) {
       button.className = spec.className;
       button.setAttribute("data-order-action", spec.action);
       button.setAttribute("data-order-id", String(order.id));
+      button.setAttribute("data-order-code", String(order.displayNumber || ""));
+      button.setAttribute("data-order-total", formatMoney(order.totalAmount));
       if (order.isDemo) button.setAttribute("data-wasla-demo", "true");
       // Reject opens the reason dialog of the order's platform when it has one (orders-actions.js).
       if (spec.action === "reject") button.setAttribute("data-order-platform", String(order.platform || ""));
@@ -1569,6 +1571,11 @@ function attachBrowser(O, global, api) {
     if (statusChanged) {
       const actions = card.querySelector("[data-order-actions]");
       if (actions) fillActions(actions, order);
+    } else {
+      // The confirmation dialog reads the order's total from its buttons.
+      card.querySelectorAll("[data-order-total]").forEach(function (button) {
+        button.setAttribute("data-order-total", formatMoney(order.totalAmount));
+      });
     }
     card.setAttribute("data-live-signature", signature);
     cardTimes.set(card, timeKey(order, serverTimeUtc));

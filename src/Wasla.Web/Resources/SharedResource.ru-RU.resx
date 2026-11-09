@@ -637,7 +637,7 @@
     <value>Чек для этого заказа уже в очереди или печатается.</value>
   </data>
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
-    <value>Отправить этот чек на печать повторно?</value>
+    <value>Распечатать чек повторно?</value>
   </data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve">
     <value>Заказ не найден.</value>
@@ -1378,7 +1378,7 @@
     <value>Отметить этот заказ как готовый?</value>
   </data>
   <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
-    <value>Это означает, что заказ готов к выдаче или упаковке.</value>
+    <value>Заказ будет отмечен на платформе как готовый.</value>
   </data>
   <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
     <value>Передать этот заказ курьеру?</value>
@@ -2190,17 +2190,11 @@
   <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
     <value>Не удалось скопировать токен</value>
   </data>
-  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
-    <value>Старый токен перестанет работать. Обновите конфигурацию Print Bridge с помощью нового токена.</value>
-  </data>
   <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
     <value>Старый токен больше не действителен. Сохраните новый токен в конфигурации Print Bridge.</value>
   </data>
   <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
     <value>Токен не виден. Восстановите токен, чтобы увидеть новый.</value>
-  </data>
-  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
-    <value>Восстановить токен для {0}?</value>
   </data>
   <data name="PrintBridge.Token" xml:space="preserve">
     <value>Токен</value>
@@ -2255,9 +2249,6 @@
   </data>
   <data name="PrintBridge.CopyFailed" xml:space="preserve">
     <value>Не удалось скопировать</value>
-  </data>
-  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
-    <value>Восстановить токен для {0}? Старый токен перестанет работать.</value>
   </data>
   <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
     <value>Не удалось восстановить токен.</value>
@@ -2729,9 +2720,6 @@
   </data>
   <data name="PrintBridge.PrintDevice" xml:space="preserve">
     <value>Печать моста</value>
-  </data>
-  <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
-    <value>Перепечатать квитанцию ​​для {0}?</value>
   </data>
   <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
     <value>Обновления этой таблицы приостановлены, пока вы выделяете в ней текст или пользуетесь её элементом управления.</value>
@@ -3653,7 +3641,7 @@
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>Выберите устройство</value></data>
   <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>Компьютер:</value></data>
   <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>Создаёт новое подключение для выбранного устройства. Старое подключение больше не будет работать.</value></data>
-  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>Создать новое подключение для выбранного устройства? Старое подключение больше не будет работать.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>После завершения подключения в Print Bridge старое подключение этого устройства перестанет работать. Если подключение не будет завершено, старое продолжит работать.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>Повторное подключение создает новый токен для выбранного устройства и делает предыдущий токен этого устройства недействительным.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>Выберите устройство для повторного подключения, чтобы продолжить.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>Для повторного подключения существующего устройства необходимо выбрать устройство.</value></data>
@@ -3684,7 +3672,6 @@
   <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>Удалить это устройство?</value></data>
   <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>Токен устройства “{0}” будет отозван, и подключение Print Bridge остановится. История печати не будет удалена.</value></data>
   <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>Удалить устройство</value></data>
-  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>Отмена</value></data>
   <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>Отключение временное и обратимое. Удаление переводит устройство в архив, отзывает токен, скрывает его из настройки и управления, сохраняя историю.</value></data>
   <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>Устройство удалено. История печати сохранена.</value></data>
   <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>Это устройство уже удалено.</value></data>
@@ -5092,4 +5079,39 @@
   <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>Нельзя выбрать день позже сегодняшнего.</value></data>
   <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>Выбранная платформа не распознана.</value></data>
   <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>В ссылке один и тот же фильтр указан несколько раз.</value></data>
+  <data name="Confirm.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="Confirm.Unavailable" xml:space="preserve"><value>Не удалось открыть окно подтверждения. Обновите страницу и повторите попытку.</value></data>
+  <data name="Confirm.ResultUnknownTitle" xml:space="preserve"><value>Не удалось подтвердить результат</value></data>
+  <data name="Orders.ApproveConfirmAction" xml:space="preserve"><value>Утвердить заказ</value></data>
+  <data name="Orders.MarkReadyConfirmAction" xml:space="preserve"><value>Отметить готовность</value></data>
+  <data name="Orders.RejectConfirmAction" xml:space="preserve"><value>Отклонить заказ</value></data>
+  <data name="Orders.RejectPlainConfirmMessage" xml:space="preserve"><value>Заказ будет отменён на платформе и отмечен как «Отменён» в Wasla. Это действие нельзя отменить.</value></data>
+  <data name="Orders.ConfirmHint" xml:space="preserve"><value>Это подтверждение можно отключить в настройках живого экрана.</value></data>
+  <data name="Orders.Approving" xml:space="preserve"><value>Утверждение…</value></data>
+  <data name="Orders.MarkingReady" xml:space="preserve"><value>Отмечается готовность…</value></data>
+  <data name="Orders.Rejecting" xml:space="preserve"><value>Отклонение…</value></data>
+  <data name="Orders.ActionChecking" xml:space="preserve"><value>Не удалось подтвердить результат. Проверяем заказ…</value></data>
+  <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>Не удалось подтвердить результат. Заказ всё ещё ожидает; перед повторной попыткой проверьте панель платформы.</value></data>
+  <data name="Orders.ActionUnverified" xml:space="preserve"><value>Не удалось подтвердить результат. Проверьте статус заказа.</value></data>
+  <data name="Orders.Print.Unverified" xml:space="preserve"><value>Не удалось подтвердить запрос на печать. Проверьте статус чека, прежде чем повторить попытку.</value></data>
+  <data name="Orders.ConfirmStale" xml:space="preserve"><value>Заказ обновлён другим действием и теперь имеет статус «{0}». Это действие больше недоступно.</value></data>
+  <data name="Orders.ConfirmGone" xml:space="preserve"><value>Этого заказа больше нет на экране. Это действие больше недоступно.</value></data>
+  <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Действия с заказом</value></data>
+  <data name="Orders.ActionPreference.Label" xml:space="preserve"><value>Спрашивать перед «Утвердить» и «Отметить готовность»</value></data>
+  <data name="Orders.ActionPreference.Help" xml:space="preserve"><value>Если выключено, эти два действия отправляются сразу. Отклонение и повторная печать всегда запрашивают подтверждение.</value></data>
+  <data name="Orders.ActionPreference.Saving" xml:space="preserve"><value>Сохранение…</value></data>
+  <data name="Orders.ActionPreference.Saved" xml:space="preserve"><value>Сохранено</value></data>
+  <data name="Orders.ActionPreference.SaveFailed" xml:space="preserve"><value>Не удалось сохранить. Настройка не изменилась.</value></data>
+  <data name="Orders.ActionPreference.Retry" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Orders.Print.ConfirmReprintMessage" xml:space="preserve"><value>Для этого заказа будет создан новый запрос печати и отправлен в очередь Print Bridge.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmTitle" xml:space="preserve"><value>Восстановить токен этого устройства?</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmMessage" xml:space="preserve"><value>Старый токен сразу перестанет работать. Это устройство не сможет печатать, пока Print Bridge не получит новый токен.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmAction" xml:space="preserve"><value>Восстановить токен</value></data>
+  <data name="PrintBridge.TokenRegenerating" xml:space="preserve"><value>Восстановление токена…</value></data>
+  <data name="PrintBridge.TokenUncertainMessage" xml:space="preserve"><value>Токен мог измениться, а новый токен не удалось показать. Проверьте подключение устройства и при необходимости восстановите токен ещё раз.</value></data>
+  <data name="PrintBridge.DeviceRemoving" xml:space="preserve"><value>Удаление устройства…</value></data>
+  <data name="PrintBridge.DeviceRemoveUncertainMessage" xml:space="preserve"><value>Не удалось подтвердить удаление устройства. Обновите страницу, прежде чем повторить попытку.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>Не удалось удалить устройство</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Создать новое подключение?</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Начать подключение</value></data>
 </root>

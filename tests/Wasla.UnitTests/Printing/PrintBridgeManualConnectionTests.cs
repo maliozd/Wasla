@@ -314,7 +314,9 @@ public sealed partial class PrintBridgeManualConnectionTests
         Assert.DoesNotContain("data-guided-setup-state", script, StringComparison.Ordinal);
         Assert.DoesNotContain("/guided-setup/", script, StringComparison.Ordinal);
         // Replacing an existing device's token is always confirmed for the device the user picked.
-        Assert.Matches(new Regex(@"if \(!window\.confirm\(formatMessage\(messages\.regenerateConfirm, .*?\)\)\) return;\s*url = String\(cfg\.regenerateTokenUrlTemplate"), script);
+        Assert.Contains("window.WaslaConfirm.run({", script, StringComparison.Ordinal);
+        Assert.Contains("title: messages.tokenRegenerateTitle", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("window.confirm", script, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -356,7 +358,7 @@ public sealed partial class PrintBridgeManualConnectionTests
         foreach (var culture in Cultures)
         {
             var resources = Load(culture);
-            foreach (var key in manualKeys.Concat(["PrintBridge.RegenerateConfirm", "PrintBridge.OldTokenInvalidAfterRegenerate", "PrintBridge.Auto.ManualTokenFailed"]))
+            foreach (var key in manualKeys.Concat(["PrintBridge.TokenRegenerateConfirmTitle", "PrintBridge.TokenRegenerateConfirmMessage", "PrintBridge.TokenRegenerateConfirmAction", "PrintBridge.OldTokenInvalidAfterRegenerate", "PrintBridge.Auto.ManualTokenFailed"]))
             {
                 Assert.False(string.IsNullOrWhiteSpace(resources.GetValueOrDefault(key)), $"{key} is missing in '{culture}'.");
                 Assert.Equal(Placeholders(english[key]), Placeholders(resources[key]));

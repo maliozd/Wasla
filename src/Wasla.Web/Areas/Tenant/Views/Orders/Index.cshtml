@@ -165,6 +165,7 @@
     <script>
         window.waslaOrdersOptions = {
             tableUrl: "/orders/table",
+            orderActionPreferenceUrl: @Html.Raw(navPermissions.CanManageOrders ? "\"/order-action-preference\"" : "null"),
             todayYmd: "@OrdersReceivedAtQueryRange.FormatWebDate(today)",
             messages: @Html.Raw(JsonSerializer.Serialize(new Dictionary<string, string>
             {
@@ -190,12 +191,33 @@
                 ["ordersOrderActionFailed"] = L["Orders.OrderActionFailed"].Value,
                 ["ordersMarkReadyConfirmTitle"] = L["Orders.MarkReadyConfirmTitle"].Value,
                 ["ordersMarkReadyConfirmMessage"] = L["Orders.MarkReadyConfirmMessage"].Value,
+                ["ordersApproveConfirmAction"] = L["Orders.ApproveConfirmAction"].Value,
+                ["ordersMarkReadyConfirmAction"] = L["Orders.MarkReadyConfirmAction"].Value,
+                ["ordersRejectConfirmAction"] = L["Orders.RejectConfirmAction"].Value,
+                ["ordersRejectPlainConfirmMessage"] = L["Orders.RejectPlainConfirmMessage"].Value,
+                ["ordersConfirmHint"] = L["Orders.ConfirmHint"].Value,
+                ["ordersApproving"] = L["Orders.Approving"].Value,
+                ["ordersMarkingReady"] = L["Orders.MarkingReady"].Value,
+                ["ordersRejecting"] = L["Orders.Rejecting"].Value,
+                ["ordersActionChecking"] = L["Orders.ActionChecking"].Value,
+                ["ordersActionStillWaiting"] = L["Orders.ActionStillWaiting"].Value,
+                ["ordersActionUnverified"] = L["Orders.ActionUnverified"].Value,
+                ["ordersConfirmStale"] = L["Orders.ConfirmStale"].Value,
+                ["ordersConfirmGone"] = L["Orders.ConfirmGone"].Value,
+                ["statusNew"] = L["OrderStatus.New"].Value,
+                ["statusPreparing"] = L["OrderStatus.Preparing"].Value,
+                ["statusReadyForPickup"] = L["OrderStatus.ReadyForPickup"].Value,
+                ["statusOnTheWay"] = L["OrderStatus.OnTheWay"].Value,
+                ["statusDelivered"] = L["OrderStatus.Delivered"].Value,
+                ["statusCancelled"] = L["OrderStatus.Cancelled"].Value,
+                ["statusFailed"] = L["OrderStatus.Failed"].Value,
                 ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value
             }))
         };
     </script>
     <script src="~/js/orders/orders-core.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-action-preference.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-page.js" asp-append-version="true"></script>
 }

@@ -20,10 +20,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  function formatMessage(template, value) {
-    return String(template || "").replace(/\{0\}/g, value == null ? "" : String(value));
-  }
-
   function getAntiForgeryToken() {
     var form = document.getElementById("printBridgeAntiForgery");
     if (!form) return null;
@@ -57,8 +53,9 @@
     return fetch(url, { method: "POST", headers: headers, body: body }).then(function (resp) {
       if (!resp.ok) {
         return resp.json().catch(function () { return {}; }).then(function (err) {
-          var message = (err && err.message) || messages.reprintFailed || "request failed";
-          throw new Error(message);
+          var failure = new Error((err && err.message) || messages.reprintFailed || "request failed");
+          failure.status = resp.status;
+          throw failure;
         });
       }
       return resp.json();
@@ -705,26 +702,46 @@
       var orderDisplay = btn.getAttribute("data-order-display") || "";
       if (!jobId || reprintInFlight[jobId]) return;
 
-      var confirmText = formatMessage(messages.confirmReprint || "Reprint receipt for {0}?", orderDisplay);
-      if (!window.confirm(confirmText)) return;
+      if (!window.WaslaConfirm) return;
 
+      // Held from here so the job's button cannot ask twice while the dialog is open.
       reprintInFlight[jobId] = true;
-      btn.disabled = true;
-
-      var url = (cfg.reprintUrlTemplate || "").replace("{id}", jobId);
-      postForm(url, {})
-        .then(function (data) {
-          showMessage(data.message || messages.reprintCreated, "success");
-          return refreshPrintJobsPartial();
-        })
-        .catch(function (e) {
-          var text = (e && e.message) || messages.reprintFailed || "Reprint failed";
-          showMessage(text, "danger");
-        })
-        .finally(function () {
+      window.WaslaConfirm.ask({
+        title: messages.confirmReprintTitle,
+        body: messages.confirmReprintMessage,
+        identity: { primary: orderDisplay },
+        confirmLabel: messages.reprint,
+        confirmClass: "btn-primary",
+        initialFocus: "cancel",
+        trigger: btn,
+        focusFallback: function () { return panel.querySelector(".pb-reprint-job-btn[data-job-id=\"" + jobId + "\"]"); }
+      }).then(function (confirmed) {
+        if (!confirmed) {
           delete reprintInFlight[jobId];
-          btn.disabled = false;
-        });
+          return;
+        }
+
+        btn.disabled = true;
+        var url = (cfg.reprintUrlTemplate || "").replace("{id}", jobId);
+        postForm(url, {})
+          .then(function (data) {
+            showMessage(data.message || messages.reprintCreated, "success");
+            return refreshPrintJobsPartial();
+          })
+          .catch(function (e) {
+            // No answer, a timeout or a server error is not proof of failure: the job may be queued.
+            if (e instanceof TypeError || e.status >= 500 || e.status === 408) {
+              showMessage(messages.reprintUnverified, "warning");
+              return;
+            }
+            var text = (e && e.message) || messages.reprintFailed || "Reprint failed";
+            showMessage(text, "danger");
+          })
+          .finally(function () {
+            delete reprintInFlight[jobId];
+            btn.disabled = false;
+          });
+      });
     });
   }
 

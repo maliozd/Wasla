@@ -820,6 +820,28 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("TenantOperationalSettings", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_TenantSessions_UserId");
+
+                    b.ToTable("TenantSessions", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserGuidedSetupState", b =>
                 {
                     b.Property<Guid>("Id")
@@ -919,6 +941,33 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.ToTable("UserNotificationSettings", (string)null);
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ConfirmRoutineActions")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserOrderActionPreferences_UserId");
+
+                    b.ToTable("UserOrderActionPreferences", (string)null);
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -949,28 +998,6 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                         .HasDatabaseName("IX_UserProductTourCompletions_UserId_TourKey");
 
                     b.ToTable("UserProductTourCompletions", (string)null);
-                });
-
-            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("RevokedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("IX_TenantSessions_UserId");
-
-                    b.ToTable("TenantSessions", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.GuidedDemoSession", b =>
@@ -1028,6 +1055,15 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
+                {
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserGuidedSetupState", b =>
                 {
                     b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
@@ -1050,7 +1086,7 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("AppUser");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserOrderActionPreference", b =>
                 {
                     b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
@@ -1061,13 +1097,15 @@ namespace Wasla.Infrastructure.Persistence.Tenant.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.TenantSession", b =>
+            modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.UserProductTourCompletion", b =>
                 {
-                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", null)
+                    b.HasOne("Wasla.Domain.Entities.TenantDb.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.TenantDb.Order", b =>

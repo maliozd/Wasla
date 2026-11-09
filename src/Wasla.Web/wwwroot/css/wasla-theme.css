@@ -3044,6 +3044,42 @@ body.wasla-orders-live-display:fullscreen .wasla-orders-live-display-root {
   text-align: end;
 }
 
+.wasla-live-screen-page .wasla-live-settings-menu__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-height: 2rem;
+  margin: 0;
+  padding-block: .2rem;
+  padding-inline: .75rem;
+}
+
+/* The switch follows the label at the far end, so it mirrors with the row. */
+.wasla-live-screen-page .wasla-live-settings-menu__switch .form-check-input {
+  flex: 0 0 auto;
+  float: none;
+  margin: 0;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__switch .form-check-input:checked {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__switch .form-check-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.wasla-live-screen-page [data-order-action-preference].is-saving .form-check-input {
+  opacity: .55;
+}
+
+.wasla-live-screen-page .wasla-live-settings-menu__hint.wasla-live-settings-menu__hint--error {
+  color: var(--bs-danger-text-emphasis);
+}
+
 .wasla-live-screen-page .wasla-live-settings-menu__hint {
   margin: 0;
   padding-block: .1rem .3rem;
@@ -6572,5 +6608,41 @@ body.wasla-orders-live-display .wasla-live-groups .btn.wasla-live-screen-card__d
 @media (max-width: 575.98px) {
   .wasla-demo-countdown {
     font-size: 0.75rem;
+  }
+}
+
+/* Confirmation dialogs (WAS-119): what the dialog is about. Every other surface comes from Bootstrap's modal. */
+.wasla-confirm-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .75rem;
+  padding: .625rem .75rem;
+  border-radius: .5rem;
+  background: var(--wasla-surface-muted, var(--bs-tertiary-bg));
+}
+
+.wasla-confirm-identity__lead {
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
+  min-width: 0;
+}
+
+.wasla-confirm-identity__primary {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.wasla-confirm-identity__detail {
+  flex: 0 0 auto;
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-border.wasla-action-spinner {
+    animation: none;
   }
 }

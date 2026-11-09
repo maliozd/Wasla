@@ -64,7 +64,9 @@ public sealed class TenantSessionMigrationSqlServerTests(SqlServerTenantDatabase
         Assert.Empty(await StringsAsync(db, "SELECT name FROM sys.tables WHERE name = 'TenantSessions'"));
         Assert.Equal(["AppUsers"], await StringsAsync(db, "SELECT name FROM sys.tables WHERE name = 'AppUsers'"));
 
-        await migrator.MigrateAsync(SessionsMigration, Ct);
+        // Applies this migration again and every later one, so the database ends current.
+        await migrator.MigrateAsync(cancellationToken: Ct);
+        Assert.Contains(SessionsMigration, await db.Database.GetAppliedMigrationsAsync(Ct));
         Assert.Equal(["TenantSessions"], await StringsAsync(db, "SELECT name FROM sys.tables WHERE name = 'TenantSessions'"));
         Assert.Empty(await db.Database.GetPendingMigrationsAsync(Ct));
     }

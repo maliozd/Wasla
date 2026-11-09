@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -208,13 +209,18 @@ public sealed class OrderDetailModalBrowserTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Approve_InTheModal_SubmitsOnceAndShowsTheNextAction()
+    public async Task Approve_InTheModal_WithConfirmationOff_SubmitsOnceAndShowsTheNextAction()
     {
         var ct = TestContext.Current.CancellationToken;
+        // With confirmation on, the dialog replaces this modal (OrderActionConfirmBrowserTests); off, the action runs here.
+        await using (var db = await _host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(TenantVisualWebHost.TenantId, ct))
+        {
+            db.UserOrderActionPreferences.Add(new UserOrderActionPreference { UserId = TenantVisualWebHost.OwnerId, ConfirmRoutineActions = false });
+            await db.SaveChangesAsync(ct);
+        }
+
         await using var browser = await BrowserAsync("tr-TR", 1440, 900, "light", ct);
-        // The real confirmation stays in place; the test answers it and counts the lifecycle requests.
         await browser.AddScriptBeforePageScriptsAsync("""
-            window.confirm = () => true;
             window.__orderActionPosts = 0;
             const realFetch = window.fetch.bind(window);
             window.fetch = (url, options) => {
@@ -223,6 +229,8 @@ public sealed class OrderDetailModalBrowserTests : IAsyncLifetime
             };
             """, ct);
         await OpenAsync(browser, OrderDetailModalSeed.SecondNewOrderId, ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaOrders.actionPreference.confirmsRoutineActions() === false", TimeSpan.FromSeconds(10), ct),
+            "The page did not read the stored preference.");
 
         Assert.True(await browser.EvaluateAsync<bool>("""
             (() => {

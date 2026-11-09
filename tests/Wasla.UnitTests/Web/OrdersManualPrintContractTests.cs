@@ -260,6 +260,7 @@ public sealed class OrdersManualPrintContractTests
             "Orders.Print.ReprintQueued",
             "Orders.Print.AlreadyQueued",
             "Orders.Print.ConfirmReprint",
+            "Orders.Print.ConfirmReprintMessage",
             "Orders.Print.OrderNotFound",
             "Orders.Print.Failed",
             "Orders.Details.OpenFullOrder",

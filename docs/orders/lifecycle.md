@@ -108,13 +108,34 @@ Rules observed in source:
 - Wrong current status → fail (`Orders.InvalidStatusForAction`).
 - Provider failure → local status is **not** advanced.
 - Reject cancels the whole order on the provider, with the operator's reason where the platform has reasons (`OrderRejectReasons`, `src/Wasla.Application/Orders/OrderRejectReasons.cs`). Only Trendyol GO has a list (621, 622, 623, 627); every other platform takes no reason and keeps its reject unchanged.
-  - **Choosing.** Every Reject button (Orders table, Live Screen board and List, Live Screen detail modal) carries the order's platform and goes through `orders-actions.js`. For a platform with reasons it opens the one reject dialog of the page (`_OrderRejectDialog.cshtml`): only that platform's reasons, none preselected, then Reject. Confirming without a reason shows a localized message and posts nothing; Cancel and Escape post nothing. A Reject inside the Live Screen detail modal closes that modal first, because Bootstrap does not stack modals; focus then returns to the order's details button. Bootstrap ignores `hide()` while a modal is still fading in or out, so the flow follows each modal's own events: a detail modal still opening finishes opening and is then closed, and only then does the reject dialog open. Reject, Cancel or Escape on the reject dialog settles the outcome once: clicked while it is still opening, it closes as soon as it has opened, and later clicks while it fades change nothing, so one confirmation posts once. Platforms without reasons keep the browser confirmation and post no body.
+  - **Choosing.** Every Reject button (Orders table, Live Screen board and List, Live Screen detail modal) carries the order's platform and goes through `orders-actions.js`. For a platform with reasons it opens the one reject dialog of the page (`_OrderRejectDialog.cshtml`): only that platform's reasons, none preselected, then Reject. Confirming without a reason shows a localized message and posts nothing; Cancel and Escape post nothing. A Reject inside the Live Screen detail modal closes that modal first, because Bootstrap does not stack modals; focus then returns to the order's details button. Bootstrap ignores `hide()` while a modal is still fading in or out, so the flow follows each modal's own events: a detail modal still opening finishes opening and is then closed, and only then does the reject dialog open. Reject, Cancel or Escape on the reject dialog settles the outcome once: clicked while it is still opening, it closes as soon as it has opened, and later clicks while it fades change nothing, so one confirmation posts once. Platforms without reasons use the shared confirmation dialog (see [Confirmations](#confirmations-was-119)) and post no body.
   - **Checking.** `POST /orders/{id}/reject` takes `reasonId` as a form field (antiforgery and `CanManageOrders` as before). `OrderActionService` reads the order from the signed-in tenant's database, checks the status, then checks the reason against the stored order's platform, before choosing a connection or calling the provider. A missing reason fails with `Orders.RejectReasonRequired`, a reason the platform does not offer (or any reason for a platform without reasons, or a value that is not a number) with `Orders.RejectReasonNotSupported`; nothing changes and no provider is called.
   - **Provider.** `RejectOrderAsync(connection, order, reasonId)` gets the stored order and the checked reason. Trendyol GO sends the package's item ids and the reason ([Trendyol GO reject](../integrations/food-platforms.md#trendyol-go-reject)) and refuses, before any request, a stored package without a complete item id list. A refused or failed provider request fails with `Orders.RejectFailed` and the order stays `New`. Concurrent and repeated rejects follow the order action claim and the conditional status write below: one provider call, later requests get `Orders.InvalidStatusForAction`.
 - Connection selection: first active `PlatformConnection` for the order’s platform (order does not store connection id yet).
 - Legacy `TryUpdateStatusAsync` only allows changes while status is still `New` and does **not** call the provider (older path; approve/reject/lifecycle methods are the operational API).
 
 There is no free-form transition graph in code beyond the rows above.
+
+### Confirmations (WAS-119)
+
+The browser's native `confirm()` is gone from tenant pages. `WaslaConfirm` (`wwwroot/js/wasla-confirm.js`, `Shared/_WaslaConfirmDialog.cshtml`, on both tenant layouts) is one accessible Bootstrap dialog. Opening or dismissing it (Cancel, Escape, the close button, the backdrop) sends nothing.
+
+| Action | Asks |
+| --- | --- |
+| Approve, Mark ready | Only when the employee's preference is on (the default) |
+| Reject | Always. A platform with reasons uses the reason dialog above; its final Reject is the confirmation |
+| Reprint | Always, because it requests another physical copy. A first print does not ask |
+| Token regeneration, device removal, reconnect | Always, on the Print Bridge pages |
+| Device disable and enable | No (reversible) |
+| Practice orders | No, and the preference does not apply |
+
+The preference is one row per employee in the tenant's own database (`UserOrderActionPreferences`), read and saved through `GET`/`POST /order-action-preference` for roles with `CanManageOrders`. No row means confirmations are on. It lives in the Live Screen settings menu, and pages read it on load and when the tab becomes visible again. It changes no lifecycle rule, permission or automation.
+
+A routine action's dialog closes when confirmed and the button that started it shows progress; security actions keep the dialog open until the server answers, and it cannot be dismissed meanwhile, because closing a screen cannot cancel a request already sent. Inside the Live Screen detail modal the modal closes first, since Bootstrap does not stack modals; focus returns to the action's button, or to the order's details button when that is gone.
+
+On the Live Screen a refresh never changes what an open dialog is about: when the action stops being possible, the dialog says so and only Close remains. A dialog open or a request out for an order blocks every other entry point for that order.
+
+The answer to an order action is reported as it is. A refusal (`Orders.InvalidStatusForAction`) or a provider failure says so. No answer, a timeout or a server error is not proof of either outcome: nothing is sent again, the current state is read, and the page reports what it found: done only when the order has that action's result status, still waiting, another status, or unconfirmed when the order cannot be read or is not in what was read. Print requests, Print Bridge token regeneration and device removal follow the same rule: a lost answer is never shown as a failure.
 
 ### Concurrent actions (WAS-104)
 

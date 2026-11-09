@@ -179,6 +179,28 @@
                                 <span>@L["Notification.SoundActive"]</span>
                             </div>
                         </div>
+                        @if (navPermissions.CanManageOrders)
+                        {
+                            @* One employee's own choice (WAS-119), stored per user and tenant. Viewers cannot act on orders, so they do not get it. *@
+                            <div class="wasla-live-settings-menu__group" role="group" aria-labelledby="ordersLiveSettingsOrderActionsHeading" data-order-action-preference>
+                                <p class="wasla-live-settings-menu__heading" id="ordersLiveSettingsOrderActionsHeading">@L["Orders.ActionPreference.Heading"]</p>
+                                <div class="form-check form-switch wasla-live-settings-menu__switch">
+                                    <label class="form-check-label wasla-live-settings-menu__label" for="ordersActionPreferenceSwitch">@L["Orders.ActionPreference.Label"]</label>
+                                    <input class="form-check-input" type="checkbox" role="switch" id="ordersActionPreferenceSwitch" checked
+                                           aria-describedby="ordersActionPreferenceHelp"
+                                           data-order-action-preference-input />
+                                </div>
+                                <p class="wasla-live-settings-menu__hint" id="ordersActionPreferenceHelp">@L["Orders.ActionPreference.Help"]</p>
+                                <p class="wasla-live-settings-menu__hint" role="status" hidden
+                                   data-order-action-preference-status
+                                   data-label-saving="@L["Orders.ActionPreference.Saving"]"
+                                   data-label-saved="@L["Orders.ActionPreference.Saved"]"></p>
+                                <p class="wasla-live-settings-menu__hint wasla-live-settings-menu__hint--error" role="alert" hidden data-order-action-preference-error>
+                                    <span>@L["Orders.ActionPreference.SaveFailed"]</span>
+                                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-order-action-preference-retry>@L["Orders.ActionPreference.Retry"]</button>
+                                </p>
+                            </div>
+                        }
                     </div>
                     @* The way back to the app: Kitchen and Cashier land here after sign-in and the screen has no other navigation.
                        It lives in this menu so the header stays clear in fullscreen; orders-live-display-page.js binds it by id. *@
@@ -283,6 +305,7 @@
             tableUrl: "/orders/table",
             liveDataUrl: "/orders/live-data",
             canManageOrders: @(navPermissions.CanManageOrders ? "true" : "false"),
+            orderActionPreferenceUrl: @Html.Raw(navPermissions.CanManageOrders ? "\"/order-action-preference\"" : "null"),
             displayCulture: "@System.Globalization.CultureInfo.CurrentUICulture.Name",
             timeZoneId: "@timeZoneId",
             notificationSettingsUrl: "/notification-settings",
@@ -358,6 +381,7 @@
                 ["orderPrintAlreadyQueued"] = L["Orders.Print.AlreadyQueued"].Value,
                 ["orderPrintConfirmReprint"] = L["Orders.Print.ConfirmReprint"].Value,
                 ["orderPrintFailed"] = L["Orders.Print.Failed"].Value,
+                ["orderPrintUnverified"] = L["Orders.Print.Unverified"].Value,
                 ["tableRefreshFailed"] = L["Orders.TableRefreshFailed"].Value,
                 ["tableReturnedFullPage"] = L["Orders.TableReturnedFullPage"].Value,
                 ["tableRefreshException"] = L["Orders.TableRefreshException"].Value,
@@ -376,6 +400,19 @@
                 ["ordersOrderActionFailed"] = L["Orders.OrderActionFailed"].Value,
                 ["ordersMarkReadyConfirmTitle"] = L["Orders.MarkReadyConfirmTitle"].Value,
                 ["ordersMarkReadyConfirmMessage"] = L["Orders.MarkReadyConfirmMessage"].Value,
+                ["ordersApproveConfirmAction"] = L["Orders.ApproveConfirmAction"].Value,
+                ["ordersMarkReadyConfirmAction"] = L["Orders.MarkReadyConfirmAction"].Value,
+                ["ordersRejectConfirmAction"] = L["Orders.RejectConfirmAction"].Value,
+                ["ordersRejectPlainConfirmMessage"] = L["Orders.RejectPlainConfirmMessage"].Value,
+                ["ordersConfirmHint"] = L["Orders.ConfirmHint"].Value,
+                ["ordersApproving"] = L["Orders.Approving"].Value,
+                ["ordersMarkingReady"] = L["Orders.MarkingReady"].Value,
+                ["ordersRejecting"] = L["Orders.Rejecting"].Value,
+                ["ordersActionChecking"] = L["Orders.ActionChecking"].Value,
+                ["ordersActionStillWaiting"] = L["Orders.ActionStillWaiting"].Value,
+                ["ordersActionUnverified"] = L["Orders.ActionUnverified"].Value,
+                ["ordersConfirmStale"] = L["Orders.ConfirmStale"].Value,
+                ["ordersConfirmGone"] = L["Orders.ConfirmGone"].Value,
                 ["ordersMarkReadySuccess"] = L["Orders.MarkReadySuccess"].Value,
                 ["noLiveOrders"] = L["Orders.NoLiveOrders"].Value,
                 ["demoBadge"] = L["Demo.Badge"].Value,
@@ -445,6 +482,7 @@
     <script src="~/js/orders/orders-platform-sync-status.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-demo-countdown.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-table.js" asp-append-version="true"></script>
+    <script src="~/js/orders/orders-action-preference.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-actions.js" asp-append-version="true"></script>
     <script src="~/js/orders/orders-print.js" asp-append-version="true"></script>
     <partial name="_LiveConnectionScripts" />

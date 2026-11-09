@@ -12,8 +12,8 @@ namespace Wasla.UnitTests.Web;
 /// <summary>
 /// Rejecting a Trendyol GO order asks for one of its restaurant reasons in a real headless browser, on every screen that
 /// offers Reject: the Live Screen board, the Live Screen detail modal and the Orders page. Nothing is preselected, a
-/// confirmation without a reason posts nothing, and the chosen reason is the one posted. A Yemeksepeti order keeps its
-/// plain confirmation and posts no reason. Served by <see cref="TenantVisualWebHost"/> in Mock provider mode with
+/// confirmation without a reason posts nothing, and the chosen reason is the one posted. A Yemeksepeti order uses the
+/// shared confirmation and posts no reason. Served by <see cref="TenantVisualWebHost"/> in Mock provider mode with
 /// fictional orders; same browser and CDN prerequisites as the other headless-browser tests.
 /// </summary>
 [Trait("Category", "Browser")]
@@ -67,6 +67,63 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
 
         await AssertRejectedAsync(browser, TrendyolOrderId, "reasonId=622", ct);
         Assert.Equal(0, await browser.EvaluateAsync<int>("window.__confirms", ct));
+    }
+
+    [Fact]
+    public async Task EvenWithThePreferenceOff_ItAsksForAReason_AndAddsNoSecondConfirmation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using (var db = await _host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(TenantVisualWebHost.TenantId, ct))
+        {
+            db.UserOrderActionPreferences.Add(new UserOrderActionPreference { UserId = TenantVisualWebHost.OwnerId, ConfirmRoutineActions = false });
+            await db.SaveChangesAsync(ct);
+        }
+
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
+        Assert.True(await browser.WaitForAsync("window.WaslaOrders.actionPreference.confirmsRoutineActions() === false", TimeSpan.FromSeconds(10), ct),
+            "The page did not read the stored preference.");
+
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await DialogAsync(browser, ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+
+        await ChooseAsync(browser, 622, ct);
+        await ConfirmAsync(browser, ct);
+        await AssertRejectedAsync(browser, TrendyolOrderId, "reasonId=622", ct);
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('#waslaConfirmDialog.show')", ct), "A second confirmation opened after the reason.");
+    }
+
+    [Fact]
+    public async Task ARefresh_ThatChangesTheOrder_TakesAwayTheReject_AndTheNextOpeningIsClean()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await DialogAsync(browser, ct);
+        await ChooseAsync(browser, 622, ct);
+
+        await browser.EvaluateAsync<bool>($$"""
+            (() => { document.dispatchEvent(new CustomEvent('wasla:live-rendered', { detail: { orders: [{ id: '{{TrendyolOrderId}}', status: 'Preparing' }] } })); return true; })()
+            """, ct);
+        Assert.True(await browser.WaitForAsync(
+            "document.querySelector('[data-order-reject-confirm]').hidden && !document.querySelector('[data-order-reject-stale]').hidden", TimeSpan.FromSeconds(5), ct),
+            "The dialog kept Reject for an order that changed.");
+        Assert.Contains("Hazırlanıyor", await browser.EvaluateAsync<string>("document.querySelector('[data-order-reject-stale]').textContent", ct), StringComparison.Ordinal);
+        Assert.True(await browser.EvaluateAsync<bool>("document.activeElement === document.querySelector('#ordersRejectDialog .modal-footer [data-bs-dismiss=\"modal\"]')", ct), "Focus did not move to Cancel.");
+
+        await browser.EvaluateAsync<bool>("(() => { document.querySelector('#ordersRejectDialog .modal-footer [data-bs-dismiss=\"modal\"]').click(); return true; })()", ct);
+        Assert.True(await browser.WaitForAsync("!document.querySelector('.modal.show, .modal-backdrop')", TimeSpan.FromSeconds(5), ct), "The dialog did not close.");
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
+
+        await ClickRejectAsync(browser, "#ordersLiveScreenHost", TrendyolOrderId, ct);
+        await DialogAsync(browser, ct);
+        Assert.True(await browser.EvaluateAsync<bool>("!document.querySelector('[data-order-reject-confirm]').hidden && document.querySelector('[data-order-reject-stale]').hidden", ct),
+            "The next opening still showed the old notice.");
+        await ChooseAsync(browser, 622, ct);
+        await ConfirmAsync(browser, ct);
+        await AssertRejectedAsync(browser, TrendyolOrderId, "reasonId=622", ct);
     }
 
     [Fact]
@@ -217,18 +274,21 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
         Assert.Equal(0, await browser.EvaluateAsync<int>("window.__rejectPosts.length", ct));
     }
 
-    /// <summary>Yemeksepeti has no verified reason list: its Reject keeps the plain confirmation and posts no reason.</summary>
+    /// <summary>Yemeksepeti has no verified reason list: its Reject uses the shared confirmation and posts no reason.</summary>
     [Fact]
-    public async Task LiveScreen_Yemeksepeti_KeepsThePlainConfirmation()
+    public async Task LiveScreen_Yemeksepeti_UsesTheSharedConfirmation()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
         await LoadAsync(browser, "/orders/live-display", "#ordersLiveScreenHost", ct);
 
         await ClickRejectAsync(browser, "#ordersLiveScreenHost", TenantVisualWebHost.DetailOrderId, ct);
+        Assert.True(await browser.WaitForAsync("!!document.querySelector('#waslaConfirmDialog.show') && document.activeElement === document.querySelector('[data-wasla-confirm-cancel]')", TimeSpan.FromSeconds(5), ct),
+            "The confirmation dialog did not open with focus on its cancel button.");
+        Assert.True(await browser.WaitForAsync("(() => { const a = document.querySelector('[data-wasla-confirm-accept]'); a.click(); return !document.querySelector('#waslaConfirmDialog.show') || window.__rejectPosts.length > 0; })()", TimeSpan.FromSeconds(5), ct));
 
         await AssertRejectedAsync(browser, TenantVisualWebHost.DetailOrderId, expectedBody: null, ct);
-        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__confirms", ct));
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__confirms", ct));
         Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('#ordersRejectDialog.show')", ct), "The reason dialog opened for Yemeksepeti.");
     }
 

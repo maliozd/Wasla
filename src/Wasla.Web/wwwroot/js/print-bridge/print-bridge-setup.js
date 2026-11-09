@@ -33,6 +33,11 @@
             '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button></div>';
     }
 
+    // No answer, a timeout or a server error is not proof of failure: the server may already have acted.
+    function isUncertain(err) {
+        return err instanceof TypeError || err.status >= 500 || err.status === 408;
+    }
+
     function postForm(url, fields) {
         var token = antiForgeryToken();
         var headers = { "X-Requested-With": "fetch" };
@@ -224,15 +229,30 @@
         return false;
     }
 
-    function shouldConfirmAutomaticTokenReplacement() {
-        if (getSelectedSetupMode() !== "reconnect") return true;
-        return window.confirm(messages.reconnectConfirm || messages.reconnectTokenWarning || messages.autoReplaceTokenConfirm || "Continue with reconnect?");
+    /** A new connection replaces the device's token only once the desktop app completes it, and the dialog says so. */
+    function confirmAutomaticTokenReplacement(trigger) {
+        if (getSelectedSetupMode() !== "reconnect") return Promise.resolve(true);
+        if (!window.WaslaConfirm) return Promise.resolve(false);
+        var device = getDeviceById(getSelectedReconnectDeviceId());
+        return window.WaslaConfirm.ask({
+            title: messages.reconnectConfirmTitle,
+            body: messages.reconnectConfirm,
+            identity: device ? { primary: getReconnectDisplayName(device), detail: normalizeReconnectText(device.machineName) } : null,
+            confirmLabel: messages.reconnectConfirmAction,
+            confirmClass: "btn-primary",
+            initialFocus: "cancel",
+            trigger: trigger
+        });
     }
 
-    function startAutomaticSetup() {
+    function startAutomaticSetup(ev) {
         if (!validateReconnectSelection()) return;
-        if (!shouldConfirmAutomaticTokenReplacement()) return;
+        confirmAutomaticTokenReplacement(ev.currentTarget).then(function (confirmed) {
+            if (confirmed) createAutomaticSetupSession();
+        });
+    }
 
+    function createAutomaticSetupSession() {
         clearTimers();
         stopSpinnerReset();
         setStatus(messages.starting || "Opening…");
@@ -591,6 +611,15 @@
         document.dispatchEvent(new CustomEvent("wasla:print-bridge-manual-setup-started"));
     }
 
+    /** Asks for the token once and shows it in its read-only field. */
+    function issueManualToken(url, mode) {
+        return postForm(url, {}).then(function (data) {
+            if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
+            manualTokenIssued = true;
+            showManualToken(data, mode);
+        });
+    }
+
     function bindManualToken() {
         var actionBtn = document.getElementById("pbManualTokenActionBtn");
         if (!actionBtn) return;
@@ -599,24 +628,41 @@
             if (manualTokenIssued || actionBtn.disabled) return;
 
             var mode = getSelectedSetupMode();
-            var url = cfg.manualDeviceCreateUrl;
             if (mode === "reconnect") {
                 if (!validateReconnectSelection()) return;
                 var deviceId = getSelectedReconnectDeviceId();
                 var device = getDeviceById(deviceId);
-                // Replacing a device's token stops the old one at once, so the user confirms it for that device.
-                if (!window.confirm(formatMessage(messages.regenerateConfirm, device ? getReconnectDisplayName(device) : ""))) return;
-                url = String(cfg.regenerateTokenUrlTemplate || "").replace("{id}", encodeURIComponent(deviceId));
+                if (!window.WaslaConfirm) return;
+                // Replacing a device's token stops the old one at once, so the user confirms it for that device. The
+                // dialog stays open until the server answers; the token is shown once on this page afterwards.
+                var reconnectUrl = String(cfg.regenerateTokenUrlTemplate || "").replace("{id}", encodeURIComponent(deviceId));
+                window.WaslaConfirm.run({
+                    title: messages.tokenRegenerateTitle,
+                    body: messages.tokenRegenerateMessage,
+                    identity: device ? { primary: getReconnectDisplayName(device), detail: normalizeReconnectText(device.machineName) } : null,
+                    confirmLabel: messages.tokenRegenerateAction,
+                    pendingLabel: messages.tokenRegenerating,
+                    confirmClass: "btn-danger",
+                    initialFocus: "cancel",
+                    trigger: actionBtn,
+                    action: function () {
+                        return issueManualToken(reconnectUrl, mode).then(function () {
+                            return { close: true };
+                        }).catch(function (err) {
+                            // No answer: the old token may already be gone, and the new one was not received.
+                            if (isUncertain(err)) return { title: messages.resultUnknownTitle, notice: messages.tokenUncertain, tone: "warning", hideBody: true };
+                            return { notice: (err && err.message) || messages.manualTokenFailed, tone: "danger" };
+                        });
+                    }
+                });
+                return;
             }
+
+            var url = cfg.manualDeviceCreateUrl;
             if (!url) return;
 
             actionBtn.disabled = true;
-            postForm(url, {})
-                .then(function (data) {
-                    if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
-                    manualTokenIssued = true;
-                    showManualToken(data, mode);
-                })
+            issueManualToken(url, mode)
                 .catch(function (err) {
                     showMessage((err && err.message) || messages.manualTokenFailed, "danger");
                 })

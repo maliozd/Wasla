@@ -165,7 +165,7 @@ test("reconnecting manually replaces the selected device's token only after the 
   // Declined: nothing is sent.
   await p.chooseReconnect("dev-2");
   await p.issueToken();
-  assert.deepEqual(p.confirms, ["Regenerate token for Bar PC? The old token will stop working."]);
+  assert.deepEqual(p.confirms, ["Regenerate this device's token? | Bar PC"]);
   assert.equal(p.requests.length, 0);
 
   // Confirmed: the existing regenerate action for exactly that device.

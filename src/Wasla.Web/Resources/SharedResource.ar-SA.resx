@@ -637,7 +637,7 @@
     <value>يوجد إيصال لهذا الطلب في قائمة الطباعة أو قيد الطباعة بالفعل.</value>
   </data>
   <data name="Orders.Print.ConfirmReprint" xml:space="preserve">
-    <value>هل تريد إرسال هذا الإيصال إلى الطابعة مرة أخرى؟</value>
+    <value>إعادة طباعة الإيصال؟</value>
   </data>
   <data name="Orders.Print.OrderNotFound" xml:space="preserve">
     <value>لم يتم العثور على الطلب.</value>
@@ -1378,7 +1378,7 @@
     <value>هل تريد وضع الطلب كجاهز؟</value>
   </data>
   <data name="Orders.MarkReadyConfirmMessage" xml:space="preserve">
-    <value>سيتم وضع الطلب كجاهز للاستلام أو التعبئة.</value>
+    <value>سيُعلَّم الطلب كجاهز على المنصة.</value>
   </data>
   <data name="Orders.HandToCourierConfirmTitle" xml:space="preserve">
     <value>هل تريد تسليم الطلب للساعي؟</value>
@@ -2190,17 +2190,11 @@
   <data name="PrintBridge.TokenCopyFailed" xml:space="preserve">
     <value>تعذر نسخ الرمز</value>
   </data>
-  <data name="PrintBridge.TokenRegenerateWarning" xml:space="preserve">
-    <value>سيتوقف الرمز القديم عن العمل. حدّث إعدادات Print Bridge بالرمز الجديد.</value>
-  </data>
   <data name="PrintBridge.OldTokenInvalidAfterRegenerate" xml:space="preserve">
     <value>الرمز القديم لم يعد صالحاً. احفظ الرمز الجديد في إعدادات Print Bridge.</value>
   </data>
   <data name="PrintBridge.TokenNotAvailableRegenerate" xml:space="preserve">
     <value>الرمز غير مرئي. أعد توليد الرمز لرؤية رمز جديد.</value>
-  </data>
-  <data name="PrintBridge.ConfirmRegenerateToken" xml:space="preserve">
-    <value>إعادة توليد الرمز لـ {0}؟</value>
   </data>
   <data name="PrintBridge.Token" xml:space="preserve">
     <value>الرمز</value>
@@ -2255,9 +2249,6 @@
   </data>
   <data name="PrintBridge.CopyFailed" xml:space="preserve">
     <value>فشل النسخ</value>
-  </data>
-  <data name="PrintBridge.RegenerateConfirm" xml:space="preserve">
-    <value>إعادة توليد الرمز لـ {0}؟ سيتوقف الرمز القديم عن العمل.</value>
   </data>
   <data name="PrintBridge.TokenRegenerateFailed" xml:space="preserve">
     <value>تعذرت إعادة توليد الرمز.</value>
@@ -2730,9 +2721,6 @@
   <data name="PrintBridge.PrintDevice" xml:space="preserve">
     <value>Print Bridge</value>
   </data>
-  <data name="PrintBridge.ConfirmReprint" xml:space="preserve">
-    <value>إعادة طباعة الإيصال للطلب {0}؟</value>
-  </data>
   <data name="PrintBridge.UpdatesPaused" xml:space="preserve">
     <value>تحديثات هذا الجدول متوقفة مؤقتًا أثناء تحديد نص فيه أو استخدام أحد عناصر التحكم فيه.</value>
   </data>
@@ -3165,7 +3153,7 @@
   <data name="PrintBridge.Auto.ReconnectDevicePlaceholder" xml:space="preserve"><value>اختر جهازًا</value></data>
   <data name="PrintBridge.Auto.ReconnectMachineLabel" xml:space="preserve"><value>الجهاز:</value></data>
   <data name="PrintBridge.Auto.ReconnectConnectionNotice" xml:space="preserve"><value>ينشئ هذا اتصالًا جديدًا للجهاز المحدد. لن يعمل الاتصال القديم بعد الآن.</value></data>
-  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد للجهاز المحدد؟ لن يعمل الاتصال القديم بعد الآن.</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirm" xml:space="preserve"><value>عند إكمال الاتصال في Print Bridge يتوقف الاتصال القديم لهذا الجهاز. إذا لم يكتمل يستمر الاتصال القديم في العمل.</value></data>
   <data name="PrintBridge.Auto.ReconnectTokenWarning" xml:space="preserve"><value>إعادة التوصيل تنشئ رمزًا جديدًا للجهاز المحدد وتلغي الرمز السابق لذلك الجهاز.</value></data>
   <data name="PrintBridge.Auto.SelectReconnectDevice" xml:space="preserve"><value>اختر الجهاز لإعادة التوصيل قبل المتابعة.</value></data>
   <data name="PrintBridge.Auto.DeviceSelectionRequired" xml:space="preserve"><value>اختيار الجهاز مطلوب لإعادة توصيل جهاز موجود.</value></data>
@@ -3196,7 +3184,6 @@
   <data name="PrintBridge.DeviceRemoveDangerTitle" xml:space="preserve"><value>هل تريد إزالة هذا الجهاز؟</value></data>
   <data name="PrintBridge.DeviceRemoveConfirmMessage" xml:space="preserve"><value>سيتم إبطال رمز الجهاز “{0}” وسيتوقف اتصال Print Bridge. لن يتم حذف سجل الطباعة.</value></data>
   <data name="PrintBridge.DeviceRemoveConfirm" xml:space="preserve"><value>إزالة الجهاز</value></data>
-  <data name="PrintBridge.DeviceRemoveCancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="PrintBridge.DeviceDisableRemoveExplanation" xml:space="preserve"><value>التعطيل مؤقت ويمكن التراجع عنه. الإزالة تُحيل الجهاز للتقاعد، وتبطل رمزه، وتخفيه من مسارات الإعداد والإدارة، مع الحفاظ على السجل.</value></data>
   <data name="PrintBridge.DeviceRemoveSucceeded" xml:space="preserve"><value>تمت إزالة الجهاز. تم الحفاظ على سجل الطباعة.</value></data>
   <data name="PrintBridge.DeviceAlreadyRemoved" xml:space="preserve"><value>تمت إزالة هذا الجهاز مسبقًا.</value></data>
@@ -4604,4 +4591,39 @@
   <data name="Reports.FilterError.RangeInFuture" xml:space="preserve"><value>لا يمكن تحديد يوم بعد اليوم.</value></data>
   <data name="Reports.FilterError.PlatformInvalid" xml:space="preserve"><value>لم يتم التعرف على المنصة المحددة.</value></data>
   <data name="Reports.FilterError.DuplicateParameter" xml:space="preserve"><value>يحتوي الرابط على عامل التصفية نفسه أكثر من مرة.</value></data>
+  <data name="Confirm.Cancel" xml:space="preserve"><value>تراجع</value></data>
+  <data name="Confirm.Unavailable" xml:space="preserve"><value>تعذر فتح نافذة التأكيد. أعد تحميل الصفحة وحاول مرة أخرى.</value></data>
+  <data name="Confirm.ResultUnknownTitle" xml:space="preserve"><value>تعذر تأكيد النتيجة</value></data>
+  <data name="Orders.ApproveConfirmAction" xml:space="preserve"><value>قبول الطلب</value></data>
+  <data name="Orders.MarkReadyConfirmAction" xml:space="preserve"><value>وضع كجاهز</value></data>
+  <data name="Orders.RejectConfirmAction" xml:space="preserve"><value>رفض الطلب</value></data>
+  <data name="Orders.RejectPlainConfirmMessage" xml:space="preserve"><value>سيُلغى الطلب على المنصة ويُعلَّم “ملغى” في Wasla. لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Orders.ConfirmHint" xml:space="preserve"><value>يمكنك إيقاف هذا التأكيد من إعدادات الشاشة المباشرة.</value></data>
+  <data name="Orders.Approving" xml:space="preserve"><value>جارٍ القبول…</value></data>
+  <data name="Orders.MarkingReady" xml:space="preserve"><value>جارٍ وضعه كجاهز…</value></data>
+  <data name="Orders.Rejecting" xml:space="preserve"><value>جارٍ الرفض…</value></data>
+  <data name="Orders.ActionChecking" xml:space="preserve"><value>تعذر تأكيد النتيجة. يجري التحقق من الطلب…</value></data>
+  <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>تعذر تأكيد النتيجة. لا يزال الطلب بانتظار الإجراء؛ تحقق من لوحة المنصة قبل المحاولة مرة أخرى.</value></data>
+  <data name="Orders.ActionUnverified" xml:space="preserve"><value>تعذر تأكيد النتيجة. تحقق من حالة الطلب.</value></data>
+  <data name="Orders.Print.Unverified" xml:space="preserve"><value>تعذّر التأكد من طلب الطباعة. تحقق من حالة الإيصال قبل المحاولة مرة أخرى.</value></data>
+  <data name="Orders.ConfirmStale" xml:space="preserve"><value>تم تحديث هذا الطلب بإجراء آخر وهو الآن {0}. لم يعد هذا الإجراء متاحًا.</value></data>
+  <data name="Orders.ConfirmGone" xml:space="preserve"><value>لم يعد هذا الطلب معروضًا. لم يعد هذا الإجراء متاحًا.</value></data>
+  <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>إجراءات الطلب</value></data>
+  <data name="Orders.ActionPreference.Label" xml:space="preserve"><value>اسأل قبل القبول وقبل وضع الطلب كجاهز</value></data>
+  <data name="Orders.ActionPreference.Help" xml:space="preserve"><value>عند الإيقاف يُرسل هذان الإجراءان فورًا. الرفض وإعادة الطباعة يطلبان تأكيدًا دائمًا.</value></data>
+  <data name="Orders.ActionPreference.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Orders.ActionPreference.Saved" xml:space="preserve"><value>تم الحفظ</value></data>
+  <data name="Orders.ActionPreference.SaveFailed" xml:space="preserve"><value>تعذر الحفظ. لم يتغير الإعداد.</value></data>
+  <data name="Orders.ActionPreference.Retry" xml:space="preserve"><value>حاول مرة أخرى</value></data>
+  <data name="Orders.Print.ConfirmReprintMessage" xml:space="preserve"><value>سيتم إنشاء طلب طباعة جديد لهذا الطلب وإرساله إلى قائمة Print Bridge.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmTitle" xml:space="preserve"><value>هل تريد إعادة توليد الرمز؟</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmMessage" xml:space="preserve"><value>يصبح الرمز القديم غير صالح فورًا. لن يطبع هذا الجهاز حتى يتم تحديث Print Bridge بالرمز الجديد.</value></data>
+  <data name="PrintBridge.TokenRegenerateConfirmAction" xml:space="preserve"><value>إعادة توليد الرمز</value></data>
+  <data name="PrintBridge.TokenRegenerating" xml:space="preserve"><value>جارٍ إعادة توليد الرمز…</value></data>
+  <data name="PrintBridge.TokenUncertainMessage" xml:space="preserve"><value>ربما تغيّر الرمز وتعذر عرض الرمز الجديد. تحقق من اتصال الجهاز وأعد توليد الرمز إذا لزم الأمر.</value></data>
+  <data name="PrintBridge.DeviceRemoving" xml:space="preserve"><value>جارٍ إزالة الجهاز…</value></data>
+  <data name="PrintBridge.DeviceRemoveUncertainMessage" xml:space="preserve"><value>تعذّر التأكد من إزالة الجهاز. أعد تحميل الصفحة قبل المحاولة مرة أخرى.</value></data>
+  <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>تعذر إزالة الجهاز</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد؟</value></data>
+  <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>بدء الاتصال</value></data>
 </root>

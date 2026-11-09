@@ -23,7 +23,14 @@ const MESSAGES = {
   copied: "Copied",
   copyFailed: "Copy failed",
   manualTokenFailed: "The token action could not be completed.",
-  regenerateConfirm: "Regenerate token for {0}? The old token will stop working.",
+  tokenRegenerateTitle: "Regenerate this device's token?",
+  tokenRegenerateMessage: "The old token stops working immediately.",
+  tokenRegenerateAction: "Regenerate token",
+  tokenRegenerating: "Regenerating",
+  resultUnknownTitle: "Unknown",
+  tokenUncertain: "The token may have changed.",
+  reconnectConfirmTitle: "Create a new connection?",
+  reconnectConfirmAction: "Start connection",
   createNewDeviceToken: "Create a device token",
   createReconnectToken: "Create a new token for the selected device",
   tokenCreatedFor: "Device token created for {0}.",
@@ -228,9 +235,19 @@ function page({
   const pageTimers = [];
   const clipboard = [];
   const confirms = [];
+  const asked = (options) => options.identity && options.identity.primary ? options.title + " | " + options.identity.primary : options.title;
   const win = {
     location: { hash, href: "" },
-    confirm: (text) => { confirms.push(text); return confirm(text); },
+    // Stands in for the shared dialog: records what was asked and answers with the test's choice. The real dialog is
+    // covered by OrderActionConfirmBrowserTests.
+    WaslaConfirm: {
+      ask: (options) => { confirms.push(asked(options)); return Promise.resolve(confirm()); },
+      run: (options) => {
+        confirms.push(asked(options));
+        if (!confirm()) return Promise.resolve(false);
+        return Promise.resolve().then(() => options.action()).then(() => true);
+      }
+    },
     fetch,
     navigator,
     CustomEvent: FakeEvent,
