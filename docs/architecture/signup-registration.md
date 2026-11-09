@@ -215,7 +215,7 @@ Error:
 | `PhoneCodeLength` | 6 |
 | `SupportEmail` | `Wasla:Signup:SupportEmail`, default `destek@wasla.tr` |
 
-The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. There is no form `POST /signup` any more (it answers 405 and creates nothing); the page submits only through `POST /signup/draft/submit`. The page that does so is WAS-194's, shipped together with this change.
+The address lookups `/signup/districts`, `/neighborhoods` and `/streets` stay as they are. After a load the page puts the draft's saved address back through them, for at most 15 seconds. A Continue on the restaurant step waits for that instead of reporting a field that is still empty. If the time runs out, the lookups are cancelled, the page says so, and Continue tries again without replacing a street typed meanwhile; choosing another city, district or neighbourhood drops the saved address instead. There is no form `POST /signup` any more (it answers 405 and creates nothing); the page submits only through `POST /signup/draft/submit`. The page that does so is WAS-194's, shipped together with this change.
 
 ## Submit boundary
 

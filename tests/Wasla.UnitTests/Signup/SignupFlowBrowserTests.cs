@@ -5,10 +5,12 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Billing;
+using Wasla.Application.Abstractions.Signup;
 using Wasla.Application.Abstractions.Sms;
 using Wasla.Domain.Billing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
+using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sms;
 using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Auth;
@@ -34,6 +36,8 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     private const string ApplicationDomain = "app.wasla.localhost";
     private const int CityId = 934;
     private const int DistrictId = 9451;
+    private const int NeighborhoodId = 94511;
+    private const string NeighborhoodName = "Caferağa";
     private static readonly ResourceManager Resources = new("Wasla.Web.Resources.SharedResource", typeof(Wasla.Web.SharedResource).Assembly);
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(15);
 
@@ -53,6 +57,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         };
         """;
 
+    private readonly LookupHold _lookups = new();
     private TenantSessionWebHost _host = null!;
 
     private static int Port { get; set; }
@@ -66,21 +71,26 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
                 ["Wasla:TenantOnboarding:ApplicationBaseDomain"] = ApplicationDomain
             },
             configureServices: services =>
-            services.AddSingleton<IBillingPlanPriceReader>(new FixedPlanPrices
             {
-                Quotes =
-                [
-                    new(Guid.NewGuid(), "Starter", "Monthly", new BillingPrice(450m, "TRY"), true),
-                    new(Guid.NewGuid(), "Pro", "Monthly", new BillingPrice(820m, "TRY"), true),
-                    new(Guid.NewGuid(), "Pro", "Yearly", new BillingPrice(8200m, "TRY"), true)
-                ]
-            }));
+                services.AddSingleton<IBillingPlanPriceReader>(new FixedPlanPrices
+                {
+                    Quotes =
+                    [
+                        new(Guid.NewGuid(), "Starter", "Monthly", new BillingPrice(450m, "TRY"), true),
+                        new(Guid.NewGuid(), "Pro", "Monthly", new BillingPrice(820m, "TRY"), true),
+                        new(Guid.NewGuid(), "Pro", "Yearly", new BillingPrice(8200m, "TRY"), true)
+                    ]
+                });
+                services.AddScoped<ISignupReferenceDataService>(provider =>
+                    new HeldReferenceData(ActivatorUtilities.CreateInstance<SignupReferenceDataService>(provider), _lookups));
+            });
 
         // One Turkish city and district for the address selects (the page offers Türkiye only).
         using var scope = _host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
         db.Cities.Add(new City { Id = CityId, CountryCode = "TR", Name = "İstanbul", PhoneAreaCode = "216", IsActive = true });
         db.Districts.Add(new District { Id = DistrictId, CityId = CityId, Name = "Kadıköy", IsActive = true });
+        db.Neighborhoods.Add(new Neighborhood { Id = NeighborhoodId, DistrictId = DistrictId, Name = NeighborhoodName, IsActive = true });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
@@ -156,79 +166,235 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await WaitForAsync(browser, "location.pathname.startsWith('/signup/pending/')", ct);
     }
 
-    // On a page rendered from a saved restaurant section, the neighbourhood lookup that puts the saved street back waits
-    // until the test releases it; the restaurant saves are counted. The district is restored by then, as in a reload.
-    private const string HoldAddressRestore = """
+    private const string NextButton = "document.querySelector('#signupStep-restaurant [data-su-next]')";
+    private const string AddressAlert = "document.querySelector('[data-su-page-alert]')";
+
+    // Counts the restaurant saves the page sends.
+    private const string CountRestaurantSaves = """
         (() => {
           const original = window.fetch.bind(window);
-          let release;
-          const held = new Promise(resolve => release = resolve);
-          window.__suAddress = { release, saves: 0 };
-          const restoring = () => JSON.parse(document.getElementById('signupDraftState').textContent).restaurant.complete === true;
+          window.__suAddress = { saves: 0, expire: null };
           window.fetch = (url, init) => {
-            const path = new URL(String(url), location.href).pathname;
-            if (path === '/signup/draft/restaurant') window.__suAddress.saves++;
-            return path === '/signup/neighborhoods' && restoring() ? held.then(() => original(url, init)) : original(url, init);
+            if (new URL(String(url), location.href).pathname === '/signup/draft/restaurant') window.__suAddress.saves++;
+            return original(url, init);
           };
         })();
         """;
+
+    // The page's limit on restoring the address, fired by the test instead of by the clock. A changed limit is not
+    // caught here, so expire stays null and the test fails.
+    private const string ControlAddressLimit = """
+        (() => {
+          const setTimer = window.setTimeout.bind(window);
+          window.setTimeout = (callback, ms, ...args) => {
+            if (ms !== 15000) return setTimer(callback, ms, ...args);
+            window.__suAddress.expire = callback;
+            return 0;
+          };
+        })();
+        """;
+
+    private async Task<HeadlessChromium> ReachRestaurantWithHeldLookupAsync(string lookup, string extraScript, CancellationToken ct, bool withNeighborhood = false)
+    {
+        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript);
+        return await browser.SetUpAsync(async started =>
+        {
+            await ReachPhoneStepAsync(started, Applicant.New(), ct, withNeighborhood: withNeighborhood);
+            _lookups.Hold(lookup);
+            await OpenAsync(started, "/signup?step=restaurant", ct);
+            await WaitForAsync(started, "__su.current() === 'restaurant'", ct);
+        });
+    }
+
+    private static Task<JsonElement> SavedRestaurantAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<JsonElement>("fetch('/signup/draft', { cache: 'no-store' }).then(r => r.json()).then(d => d.restaurant)", ct);
+
+    private static Task<int> RestaurantSavesAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<int>("window.__suAddress.saves", ct);
+
+    private async Task AssertAddressAlertAsync(HeadlessChromium browser, CancellationToken ct, TimeSpan? timeout = null)
+    {
+        await WaitForAsync(browser, $"!{AddressAlert}.hidden && !{NextButton}.hasAttribute('aria-busy')", ct, timeout);
+        Assert.Equal(Text("Signup.Flow.NetworkError", "tr-TR"), await browser.EvaluateAsync<string>("document.querySelector('[data-su-page-alert-text]').textContent.trim()", ct));
+        Assert.True(await browser.EvaluateAsync<bool>($"document.activeElement === {AddressAlert}", ct));
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.Equal("", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress-error').textContent.trim()", ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
+    }
+
+    private static async Task UntilAsync(Func<int> count, int expected, CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        while (count() < expected && DateTime.UtcNow < deadline)
+            await Task.Delay(50, ct);
+        Assert.Equal(expected, count());
+    }
+
+    // Fires the limit once the server has the lookup it cuts off: a request cancelled before it arrives is never seen there.
+    private async Task ExpireAddressLimitAsync(HeadlessChromium browser, int lookupsStarted, CancellationToken ct)
+    {
+        await UntilAsync(() => _lookups.Started, lookupsStarted, ct);
+        await WaitForAsync(browser, "!!window.__suAddress.expire", ct);
+        await Js(browser, "window.__suAddress.expire()", ct);
+    }
 
     [Fact]
     public async Task AContinueWhileTheSavedAddressIsRestored_WaitsForIt_InsteadOfReportingTheStreetAsMissing()
     {
         var ct = TestContext.Current.CancellationToken;
-        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: HoldAddressRestore);
+        var browser = await ReachRestaurantWithHeldLookupAsync("neighborhoods", CountRestaurantSaves, ct);
         await using var _ = browser;
-        var applicant = Applicant.New();
-        await ReachPhoneStepAsync(browser, applicant, ct);
-
-        await OpenAsync(browser, "/signup?step=restaurant", ct);
-        await WaitForAsync(browser, $"__su.current() === 'restaurant' && document.getElementById('signupDistrictId').value === '{DistrictId}'", ct);
+        await WaitForAsync(browser, $"document.getElementById('signupDistrictId').value === '{DistrictId}'", ct);
         Assert.Equal("", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress').value", ct));
 
         // Two clicks while the street is on its way: nothing is reported as missing, and the click is kept.
-        const string next = "document.querySelector('#signupStep-restaurant [data-su-next]')";
-        await Js(browser, $"{next}.click(); {next}.click()", ct);
+        await Js(browser, $"{NextButton}.click(); {NextButton}.click()", ct);
         Assert.Equal("restaurant", await CurrentAsync(browser, ct));
         Assert.NotEqual("signupStreetAddress", await ActiveIdAsync(browser, ct));
         Assert.Equal("", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress-error').textContent.trim()", ct));
         Assert.Null(await browser.EvaluateAsync<string?>("document.getElementById('signupStreetAddress').getAttribute('aria-invalid')", ct));
-        Assert.Equal("true", await browser.EvaluateAsync<string>($"{next}.getAttribute('aria-busy')", ct));
-        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
+        Assert.Equal("true", await browser.EvaluateAsync<string>($"{NextButton}.getAttribute('aria-busy')", ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
 
-        await Js(browser, "window.__suAddress.release()", ct);
+        // A page brought back from the back/forward cache forgets the waiting move, so a new click is one move, not two.
+        await Js(browser, "window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))", ct);
+        Assert.False(await browser.EvaluateAsync<bool>($"{NextButton}.hasAttribute('aria-busy')", ct));
+        await Js(browser, $"{NextButton}.click()", ct);
+
+        _lookups.Release();
         await WaitForAsync(browser, "__su.current() === 'owner'", ct);
 
-        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
-        Assert.False(await browser.EvaluateAsync<bool>($"{next}.hasAttribute('aria-busy')", ct));
-        Assert.Equal("Moda Cad.", await browser.EvaluateAsync<string>("fetch('/signup/draft', { cache: 'no-store' }).then(r => r.json()).then(d => d.restaurant.streetAddress)", ct));
+        Assert.Equal(1, await RestaurantSavesAsync(browser, ct));
+        Assert.False(await browser.EvaluateAsync<bool>($"{NextButton}.hasAttribute('aria-busy')", ct));
+        Assert.Equal("Moda Cad.", (await SavedRestaurantAsync(browser, ct)).GetProperty("streetAddress").GetString());
     }
 
     [Fact]
-    public async Task GoingBackWhileAContinueWaitsForTheSavedAddress_StaysOnTheStepItWentBackTo()
+    public async Task GoingBackWhileAContinueWaitsForTheSavedAddress_FreesTheStepItWentBackTo_AndTheAnswerMovesNothing()
     {
         var ct = TestContext.Current.CancellationToken;
-        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: HoldAddressRestore);
+        var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: CountRestaurantSaves);
         await using var _ = browser;
-        var applicant = Applicant.New();
-        await ReachPhoneStepAsync(browser, applicant, ct);
+        await ReachPhoneStepAsync(browser, Applicant.New(), ct);
 
+        _lookups.Hold("neighborhoods");
         await OpenAsync(browser, "/signup?step=plan", ct);
         await ContinueAsync(browser, "restaurant", ct);
-        const string next = "document.querySelector('#signupStep-restaurant [data-su-next]')";
-        await Js(browser, $"{next}.click()", ct);
-        await WaitForAsync(browser, $"{next}.getAttribute('aria-busy') === 'true'", ct);
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, $"{NextButton}.getAttribute('aria-busy') === 'true'", ct);
 
         await Js(browser, "history.back()", ct);
-        await WaitForAsync(browser, "__su.current() === 'plan'", ct);
+        await WaitForAsync(browser, $"__su.current() === 'plan' && !{NextButton}.hasAttribute('aria-busy')", ct);
 
-        await Js(browser, "window.__suAddress.release()", ct);
-        await WaitForAsync(browser, $"document.getElementById('signupStreetAddress').value === 'Moda Cad.' && !{next}.hasAttribute('aria-busy')", ct);
+        // The plan step works while the address is still on its way.
+        await ContinueAsync(browser, "restaurant", ct);
+
+        _lookups.Release();
+        await WaitForAsync(browser, "document.getElementById('signupStreetAddress').value === 'Moda Cad.'", ct);
         // One task later, a move that went on would already have changed the step and sent its save.
         await browser.EvaluateAsync<bool>("new Promise(resolve => setTimeout(() => resolve(true), 0))", ct);
 
-        Assert.Equal("plan", await CurrentAsync(browser, ct));
-        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__suAddress.saves", ct));
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
+    }
+
+    // On the page's own clock: a lookup whose answer stays open ends the wait, and Enter tries again.
+    [Theory]
+    [InlineData("neighborhoods")]
+    [InlineData("districts")]
+    public async Task ASavedAddressThatNeverArrives_EndsTheWaitWithAMessage_AndALaterTryContinues(string lookup)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await ReachRestaurantWithHeldLookupAsync(lookup, CountRestaurantSaves, ct);
+        await using var _ = browser;
+
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, $"{NextButton}.getAttribute('aria-busy') === 'true'", ct);
+
+        await AssertAddressAlertAsync(browser, ct, TimeSpan.FromSeconds(25));
+        await UntilAsync(() => _lookups.Cancelled, 1, ct);
+
+        // The answer the page gave up on changes nothing.
+        _lookups.Release();
+        await browser.EvaluateAsync<bool>("new Promise(resolve => setTimeout(() => resolve(true), 300))", ct);
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
+
+        await Js(browser, "document.getElementById('signupBusinessName').focus()", ct);
+        await browser.PressKeyAsync("Enter", shift: false, ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        Assert.Equal(1, await RestaurantSavesAsync(browser, ct));
+        Assert.True(await browser.EvaluateAsync<bool>($"{AddressAlert}.hidden", ct));
+        Assert.Equal("Moda Cad.", (await SavedRestaurantAsync(browser, ct)).GetProperty("streetAddress").GetString());
+    }
+
+    [Fact]
+    public async Task AStreetTypedAfterTheLimit_SurvivesTheLateAnswerAndARetry_WhichStillBringsTheSavedNeighbourhoodBack()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await ReachRestaurantWithHeldLookupAsync("neighborhoods", CountRestaurantSaves + ControlAddressLimit, ct, withNeighborhood: true);
+        await using var _ = browser;
+
+        await Js(browser, $"{NextButton}.click()", ct);
+        await ExpireAddressLimitAsync(browser, lookupsStarted: 1, ct);
+        await AssertAddressAlertAsync(browser, ct);
+
+        // A retry that also runs out ends the same way.
+        await Js(browser, "window.__suAddress.expire = null", ct);
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, $"{AddressAlert}.hidden", ct);
+        await ExpireAddressLimitAsync(browser, lookupsStarted: 2, ct);
+        await AssertAddressAlertAsync(browser, ct);
+        await UntilAsync(() => _lookups.Cancelled, 2, ct);
+
+        await Js(browser, "__su.set('signupStreetAddress', 'Yeni Sokak 1')", ct);
+        _lookups.Release();
+        await browser.EvaluateAsync<bool>("new Promise(resolve => setTimeout(() => resolve(true), 300))", ct);
+        Assert.Equal("Yeni Sokak 1", await browser.EvaluateAsync<string>("document.getElementById('signupStreetAddress').value", ct));
+
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        var saved = await SavedRestaurantAsync(browser, ct);
+        Assert.Equal("Yeni Sokak 1", saved.GetProperty("streetAddress").GetString());
+        Assert.Equal(NeighborhoodName, saved.GetProperty("neighborhood").GetString());
+        Assert.Equal(NeighborhoodId, saved.GetProperty("neighborhoodId").GetInt32());
+        Assert.Equal(1, await RestaurantSavesAsync(browser, ct));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ChoosingTheDistrictAgain_DropsTheSavedAddress_AndTheNewEntryIsSaved(bool beforeTheLimit)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await ReachRestaurantWithHeldLookupAsync("neighborhoods", CountRestaurantSaves + ControlAddressLimit, ct, withNeighborhood: true);
+        await using var _ = browser;
+
+        await Js(browser, $"{NextButton}.click()", ct);
+        await UntilAsync(() => _lookups.Started, 1, ct);
+        if (beforeTheLimit)
+            await Js(browser, $"__su.set('signupDistrictId', '{DistrictId}')", ct);
+        await WaitForAsync(browser, "!!window.__suAddress.expire", ct);
+        await Js(browser, "window.__suAddress.expire()", ct);
+        await AssertAddressAlertAsync(browser, ct);
+
+        if (!beforeTheLimit)
+        {
+            await Js(browser, $"__su.set('signupDistrictId', '{DistrictId}')", ct);
+            Assert.True(await browser.EvaluateAsync<bool>($"{AddressAlert}.hidden", ct));
+        }
+        _lookups.Release();
+        await WaitForAsync(browser, $"!!document.querySelector('#signupNeighborhoodList option[value=\"{NeighborhoodName}\"]')", ct);
+        await Js(browser, "__su.set('signupStreetAddress', 'Yeni Sokak 1')", ct);
+
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        var saved = await SavedRestaurantAsync(browser, ct);
+        Assert.Equal("Yeni Sokak 1", saved.GetProperty("streetAddress").GetString());
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("neighborhood").ValueKind);
     }
 
     [Fact]
@@ -470,6 +636,94 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
 
     // ---------------------------------------------------------------------------------------------------------------
 
+    // Keeps the server's answer to one kind of address lookup open until Release: the browser really waits, and a request
+    // it gives up on is seen here as cancelled.
+    private sealed class LookupHold
+    {
+        private readonly object _gate = new();
+        private TaskCompletionSource? _open;
+        private string? _name;
+        private int _started;
+        private int _cancelled;
+
+        public int Started => Volatile.Read(ref _started);
+
+        public int Cancelled => Volatile.Read(ref _cancelled);
+
+        public void Hold(string name)
+        {
+            lock (_gate)
+            {
+                _name = name;
+                _open = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                Volatile.Write(ref _started, 0);
+                Volatile.Write(ref _cancelled, 0);
+            }
+        }
+
+        public void Release()
+        {
+            lock (_gate)
+            {
+                _name = null;
+                _open?.TrySetResult();
+            }
+        }
+
+        public async Task PassAsync(string name, CancellationToken ct)
+        {
+            Task open;
+            lock (_gate)
+            {
+                if (_name != name || _open is null)
+                    return;
+                open = _open.Task;
+                Interlocked.Increment(ref _started);
+            }
+
+            try
+            {
+                await open.WaitAsync(ct);
+            }
+            catch (OperationCanceledException)
+            {
+                Interlocked.Increment(ref _cancelled);
+                throw;
+            }
+        }
+    }
+
+    private sealed class HeldReferenceData(ISignupReferenceDataService inner, LookupHold hold) : ISignupReferenceDataService
+    {
+        public Task<IReadOnlyList<SignupBusinessTypeOption>> GetActiveBusinessTypesAsync(CancellationToken ct) => inner.GetActiveBusinessTypesAsync(ct);
+
+        public Task<IReadOnlyList<SignupCityOption>> GetActiveCitiesAsync(string countryCode, CancellationToken ct) => inner.GetActiveCitiesAsync(countryCode, ct);
+
+        public async Task<IReadOnlyList<SignupDistrictOption>> GetDistrictsByCityIdAsync(int cityId, CancellationToken ct)
+        {
+            await hold.PassAsync("districts", ct);
+            return await inner.GetDistrictsByCityIdAsync(cityId, ct);
+        }
+
+        public async Task<IReadOnlyList<SignupNeighborhoodOption>> GetNeighborhoodsByDistrictIdAsync(int districtId, CancellationToken ct)
+        {
+            await hold.PassAsync("neighborhoods", ct);
+            return await inner.GetNeighborhoodsByDistrictIdAsync(districtId, ct);
+        }
+
+        public Task<IReadOnlyList<SignupStreetOption>> GetStreetsByNeighborhoodIdAsync(int neighborhoodId, CancellationToken ct) => inner.GetStreetsByNeighborhoodIdAsync(neighborhoodId, ct);
+
+        public Task<SignupCityOption?> GetCityByIdAsync(int cityId, CancellationToken ct) => inner.GetCityByIdAsync(cityId, ct);
+
+        public Task<IReadOnlyList<SignupBusinessTypeOption>> ResolveBusinessTypesByCodesAsync(IReadOnlyList<string> codes, CancellationToken ct) => inner.ResolveBusinessTypesByCodesAsync(codes, ct);
+
+        public Task<SignupCityDistrictNames?> ResolveCityDistrictAsync(int cityId, int districtId, string countryCode, CancellationToken ct) => inner.ResolveCityDistrictAsync(cityId, districtId, countryCode, ct);
+
+        public Task<SignupNeighborhoodNames?> ResolveNeighborhoodAsync(int districtId, int neighborhoodId, CancellationToken ct) => inner.ResolveNeighborhoodAsync(districtId, neighborhoodId, ct);
+
+        public Task<SignupStreetNames?> ResolveStreetAsync(int neighborhoodId, int streetId, CancellationToken ct) => inner.ResolveStreetAsync(neighborhoodId, streetId, ct);
+    }
+
     private sealed record Applicant(string BusinessName, string Slug, string Digits, string Email)
     {
         public string E164 => "+90" + Digits;
@@ -519,11 +773,18 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
             })()
             """, ct);
 
-    private async Task ReachPhoneStepAsync(HeadlessChromium browser, Applicant applicant, CancellationToken ct, bool expectCode = true)
+    private async Task ReachPhoneStepAsync(HeadlessChromium browser, Applicant applicant, CancellationToken ct, bool expectCode = true, bool withNeighborhood = false)
     {
         await OpenAsync(browser, "/signup?plan=Pro", ct);
         await ContinueAsync(browser, "restaurant", ct);
         await FillRestaurantAsync(browser, applicant, ct);
+        if (withNeighborhood)
+        {
+            await WaitForAsync(browser, $"!!document.querySelector('#signupNeighborhoodList option[value=\"{NeighborhoodName}\"]')", ct);
+            await Js(browser, $"__su.set('signupNeighborhood', '{NeighborhoodName}')", ct);
+            await WaitForAsync(browser, $"document.getElementById('signupNeighborhoodId').value === '{NeighborhoodId}'", ct);
+            await Js(browser, "__su.set('signupStreetAddress', 'Moda Cad.')", ct);
+        }
         await ContinueAsync(browser, "owner", ct);
         await FillOwnerAsync(browser, applicant, ct);
         await ContinueAsync(browser, "phone", ct);
@@ -628,9 +889,9 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await WaitForAsync(browser, "!!window.__su && !!document.querySelector('[data-su-root]') && document.querySelector('[data-su-step]:not([hidden])') !== null", ct);
     }
 
-    private static async Task WaitForAsync(HeadlessChromium browser, string expression, CancellationToken ct)
+    private static async Task WaitForAsync(HeadlessChromium browser, string expression, CancellationToken ct, TimeSpan? timeout = null)
     {
-        if (await browser.WaitForAsync(expression, Wait, ct))
+        if (await browser.WaitForAsync(expression, timeout ?? Wait, ct))
             return;
         var state = await browser.EvaluateAsync<string>(
             "JSON.stringify({ step: window.__su && __su.current(), path: location.pathname + location.search, alert: (document.querySelector('[data-su-page-alert-text]') || {}).textContent, phone: (document.querySelector('[data-su-phone-alert-text]') || {}).textContent, active: document.activeElement && (document.activeElement.id || document.activeElement.tagName), street: (document.getElementById('signupStreetAddress') || {}).value, streetError: (document.getElementById('signupStreetAddress-error') || {}).textContent })", ct);

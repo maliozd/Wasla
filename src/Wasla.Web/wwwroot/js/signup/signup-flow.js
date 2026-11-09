@@ -43,6 +43,7 @@
     }
 
     var SECTIONS = ["plan", "restaurant", "owner"];
+    var ADDRESS_RESTORE_TIMEOUT_MS = 15000;
     var state = Steps.create(order, Draft.currentStep(draft), Draft.completedSteps(draft));
     var baseTitle = document.title;
     var strip = shell.querySelector("[data-su-strip]");
@@ -52,8 +53,11 @@
     var busy = false;
     var submitting = false;
     var phone = null;
-    // Set while the saved address is being put back after a load; its lookups answer one after another.
+    // The saved address being put back after a load, one lookup after another. It stays set when its attempt ran out of
+    // time (running is null then), so the next Continue can try again.
     var addressRestore = null;
+    // The one Continue waiting for it; going back or a page brought back from the cache forgets it.
+    var addressWait = null;
     var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
     var api = Api.create({
         endpoints: readJson("signupEndpoints") || {},
@@ -125,6 +129,50 @@
 
     // ---------------------------------------------------------------- Draft → form
 
+    function startAddressRestore(values, retry) {
+        var controller = new AbortController();
+        var attempt = { values: values, controller: controller, retry: retry, timedOut: false, running: null };
+        var timer = setTimeout(function () {
+            attempt.timedOut = true;
+            controller.abort();
+        }, ADDRESS_RESTORE_TIMEOUT_MS);
+        var settled = function () {
+            clearTimeout(timer);
+            attempt.running = null;
+            if (addressRestore === attempt && (!attempt.timedOut || attempt.placeChosen)) {
+                addressRestore = null;
+            }
+            renderReceipt();
+        };
+        addressRestore = attempt;
+        attempt.running = window.WaslaSignupForm.restoreAddress(values, { signal: controller.signal, keepEntered: retry })
+            .then(settled, settled);
+        return attempt;
+    }
+
+    // The visitor chose another place: once the first attempt is over the saved address no longer applies, and no retry
+    // may put it back over the new choice.
+    function abandonAddressRestore() {
+        var attempt = addressRestore;
+        if (!attempt) {
+            return;
+        }
+        if (attempt.running && !attempt.retry) {
+            attempt.placeChosen = true;
+            return;
+        }
+        addressRestore = null;
+        attempt.controller.abort();
+        hidePageAlert();
+    }
+
+    function forgetAddressWait() {
+        if (addressWait) {
+            addressWait = null;
+            setBusy(false);
+        }
+    }
+
     function restoreForm(source) {
         var values = Draft.formValues(source);
         var plan = Draft.initialPlan(source, config.requestedPlanCode, config.selfServicePlans);
@@ -179,18 +227,14 @@
             }
         }
         if (window.WaslaSignupForm && restaurant.cityId != null) {
-            var addressRestored = function () {
-                addressRestore = null;
-                renderReceipt();
-            };
-            addressRestore = window.WaslaSignupForm.restoreAddress({
+            startAddressRestore({
                 cityId: restaurant.cityId,
                 districtId: restaurant.districtId,
                 neighborhoodId: restaurant.neighborhoodId,
                 neighborhood: restaurant.neighborhood,
                 streetId: restaurant.streetId,
                 streetAddress: restaurant.streetAddress
-            }).then(addressRestored, addressRestored);
+            }, false);
         } else {
             setValue("signupNeighborhood", restaurant.neighborhood);
             setValue("signupStreetAddress", restaurant.streetAddress);
@@ -783,12 +827,23 @@
         }
 
         // Until the saved address is back its fields are empty, not missing: the move goes on from there, so the first
-        // click counts and nothing the draft already holds is reported as left out.
+        // click counts and nothing the draft already holds is reported as left out. The wait is limited; after it the
+        // visitor is told, a late answer moves nothing, and Continue tries again.
         if (from === "restaurant" && addressRestore) {
+            var attempt = addressRestore.running ? addressRestore : startAddressRestore(addressRestore.values, true);
+            hidePageAlert();
+            var wait = addressWait = {};
             setBusy(true);
-            return addressRestore.then(function () {
+            return attempt.running.then(function () {
+                if (addressWait !== wait) {
+                    return null;
+                }
+                addressWait = null;
                 setBusy(false);
-                return state.current === from ? navigate(target, options) : null;
+                if (attempt.timedOut) {
+                    return showPageAlert(messages.networkError, null);
+                }
+                return attempt.controller.signal.aborted ? null : navigate(target, options);
             });
         }
 
@@ -1138,6 +1193,9 @@
         if (name === "Password" || name === "ConfirmPassword") {
             updatePasswordRules();
         }
+        if (name === "CityId" || name === "DistrictId" || name === "Neighborhood") {
+            abandonAddressRestore();
+        }
         var key = target && target.getAttribute && target.getAttribute("data-su-field");
         if (key && form.querySelector('[data-su-error-for="' + key + '"][data-su-server-error]')) {
             setFieldError(key, "");
@@ -1178,6 +1236,7 @@
     window.addEventListener("pageshow", function (event) {
         if (event.persisted) {
             submitting = false;
+            addressWait = null;
             setBusy(false);
             setSubmitBusy(false);
         }
@@ -1188,6 +1247,7 @@
         if (!requested || !panels[requested]) {
             return;
         }
+        forgetAddressWait();
         if (sheet && sheet.isOpen && sheet.isOpen()) {
             sheet.close();
         }
