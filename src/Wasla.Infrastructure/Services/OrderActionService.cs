@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
@@ -126,12 +126,55 @@ public sealed class OrderActionService : IOrderActionService
             return new OrderActionResult(false, target == OrderStatus.Preparing ? "Orders.ApproveFailed" : "Orders.RejectFailed");
         }
 
-        if (await CommitTransitionAsync(db, orderId, OrderStatus.New, target, CancellationToken.None) is not { } version)
+        // Only now is the rejection known to have happened: a refused provider call returned above with nothing recorded.
+        // The reason passed OrderRejectReasons above, so it is one this order's platform offers.
+        RecordedCancellation? rejection = target == OrderStatus.Cancelled
+            ? new RecordedCancellation(OrderCancellationOrigin.OperatorRejected, rejectReasonId is null ? null : order.Platform, rejectReasonId)
+            : null;
+
+        if (await CommitTransitionAsync(db, orderId, OrderStatus.New, target, CancellationToken.None, rejection) is not { } version)
+        {
+            if (rejection is { } lostRace)
+                await RecordRejectionOverItsEchoAsync(tenantId, db, orderId, lostRace);
             return StatusChangedAfterProviderCall(orderId, order.Platform, OrderStatus.New, target);
+        }
 
         await PublishChangedAsync(tenantId, orderId, version);
         return new OrderActionResult(true, target == OrderStatus.Preparing ? "Orders.ApproveSuccess" : "Orders.RejectSuccess");
     }
+
+    /// <summary>
+    /// The provider accepted this rejection, but sync stored the provider's own report of it first (WAS-200). Only a
+    /// status the provider documents as the restaurant's own cancellation is this action's echo, so only that is
+    /// replaced by what the operator chose. An unknown origin or a cancellation not from the restaurant stands: replacing
+    /// it would be a guess. The status is untouched, and the action still answers as a lost race.
+    /// </summary>
+    private async Task RecordRejectionOverItsEchoAsync(Guid tenantId, TenantDbContext db, Guid orderId, RecordedCancellation rejection)
+    {
+        var nowUtc = DateTime.UtcNow;
+        await using var tx = await db.Database.BeginTransactionAsync(CancellationToken.None);
+        var rows = await db.Orders
+            .Where(o => o.Id == orderId
+                        && o.InternalStatus == OrderStatus.Cancelled
+                        && o.CancellationOrigin == OrderCancellationOrigin.RestaurantOnPlatform)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.CancellationOrigin, rejection.Origin)
+                .SetProperty(o => o.CancellationReasonPlatform, rejection.ReasonPlatform)
+                .SetProperty(o => o.CancellationReasonCode, rejection.ReasonCode)
+                .SetProperty(o => o.UpdatedAt, o => o.UpdatedAt > nowUtc ? o.UpdatedAt : nowUtc), CancellationToken.None);
+        if (rows <= 0)
+        {
+            await tx.RollbackAsync(CancellationToken.None);
+            return;
+        }
+
+        var version = await OrderChangeVersions.NextAsync(db, orderId, CancellationToken.None);
+        await tx.CommitAsync(CancellationToken.None);
+        await PublishChangedAsync(tenantId, orderId, version);
+    }
+
+    /// <summary>What an action knows about a cancellation it makes; written with the status (WAS-200).</summary>
+    private readonly record struct RecordedCancellation(OrderCancellationOrigin Origin, FoodPlatform? ReasonPlatform, int? ReasonCode);
 
     // EN: Shared interface still uses Trendyol-shaped names; MarkInvoicedAsync here means ReadyForPickup for all implementing platforms (rename deferred).
     // TR: Ortak interface hâlâ Trendyol etkili isimler taşır; burada MarkInvoicedAsync tüm platformlarda ReadyForPickup anlamına gelir (isim değişikliği ertelendi).
@@ -255,16 +298,21 @@ public sealed class OrderActionService : IOrderActionService
     /// The update only applies while the order is still in <paramref name="requiredCurrent"/>, so of simultaneous
     /// writers exactly one changes it, and a status Worker sync applied meanwhile is never overwritten. Null when the
     /// order was no longer in that status; then nothing is committed. The transition's timestamp is set only if empty;
-    /// entering Preparing is the acceptance and sets <c>AcceptedAt</c>.
+    /// entering Preparing is the acceptance and sets <c>AcceptedAt</c>. <paramref name="cancellation"/> is written by the
+    /// same statement as a Cancelled status, so the two cannot differ; without it the origin stays unknown.
     /// </summary>
     private static async Task<long?> CommitTransitionAsync(
         TenantDbContext db,
         Guid orderId,
         OrderStatus requiredCurrent,
         OrderStatus nextStatus,
-        CancellationToken ct)
+        CancellationToken ct,
+        RecordedCancellation? cancellation = null)
     {
         var nowUtc = DateTime.UtcNow;
+        OrderCancellationOrigin? origin = cancellation?.Origin;
+        FoodPlatform? reasonPlatform = cancellation?.ReasonPlatform;
+        int? reasonCode = cancellation?.ReasonCode;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var claimed = db.Orders.Where(o => o.Id == orderId && o.InternalStatus == requiredCurrent);
         var rows = nextStatus switch
@@ -276,6 +324,9 @@ public sealed class OrderActionService : IOrderActionService
             OrderStatus.Cancelled => await claimed.ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.InternalStatus, nextStatus)
                 .SetProperty(o => o.CancelledAt, o => o.CancelledAt ?? nowUtc)
+                .SetProperty(o => o.CancellationOrigin, origin)
+                .SetProperty(o => o.CancellationReasonPlatform, reasonPlatform)
+                .SetProperty(o => o.CancellationReasonCode, reasonCode)
                 .SetProperty(o => o.UpdatedAt, nowUtc), ct),
             OrderStatus.Delivered => await claimed.ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.InternalStatus, nextStatus)

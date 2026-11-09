@@ -8,6 +8,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -219,6 +220,7 @@ internal sealed class OrderIngestion
             mergedStatus,
             nowUtc,
             milestonesObservedLive);
+        ApplyProviderCancellation(existing, oldStatus, mergedStatus, external.ExternalStatus, external.ProviderCancellationReasonCode);
 
         await db.OrderItemOptions
             .Where(o => db.OrderItems
@@ -363,6 +365,7 @@ internal sealed class OrderIngestion
             existing.PlatformStatus = observation.PlatformStatus;
         existing.UpdatedAt = nowUtc;
         ApplyStatusTransitionTimestamps(existing, oldStatus, mergedStatus, nowUtc, milestonesObservedLive);
+        ApplyProviderCancellation(existing, oldStatus, mergedStatus, observation.PlatformStatus, observation.CancellationReasonCode);
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
@@ -596,7 +599,7 @@ internal sealed class OrderIngestion
         return external with { OrderedAtUtc = orderedAt, ModifiedAtUtc = modifiedAt };
     }
 
-    private static Order MapToOrderEntity(
+    private Order MapToOrderEntity(
         ExternalOrderDto external,
         string idempotencyKey,
         DateTime receivedAtUtc,
@@ -629,6 +632,7 @@ internal sealed class OrderIngestion
 
         // An order first seen already accepted (Preparing), Delivered or Cancelled gets those times only from a live window.
         ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc, milestonesObservedLive);
+        ApplyProviderCancellation(order, OrderStatus.New, internalStatus, external.ExternalStatus, external.ProviderCancellationReasonCode);
 
         // Sequence keeps the order in which the provider listed the lines and their options; the mapped
         // ExternalOrderDto lists them in that order. Readers order by it (OrderItemOrdering).
@@ -721,6 +725,35 @@ internal sealed class OrderIngestion
                 order.CancelledAt = nowUtc;
                 break;
         }
+    }
+
+    /// <summary>
+    /// Records what a provider report proves about how the order ended, only on the write that makes it Cancelled
+    /// (WAS-200): the origin its status documents and, with a known origin, a reason code the provider documents. An order
+    /// already Cancelled keeps what it has: an operator's rejection and reason survive any echo, the first observation
+    /// stands, and an order that ended unknown is never filled in later. A code Wasla cannot place stores no reason.
+    /// </summary>
+    private void ApplyProviderCancellation(Order order, OrderStatus oldStatus, OrderStatus newStatus, string? providerStatus, int? providerReasonCode)
+    {
+        if (newStatus != OrderStatus.Cancelled || oldStatus == OrderStatus.Cancelled)
+            return;
+
+        order.CancellationOrigin = OrderCancellationOrigins.FromProviderStatus(order.Platform, providerStatus);
+        if (order.CancellationOrigin is null || providerReasonCode is not { } code)
+            return;
+
+        if (!ProviderCancellationReasons.IsDocumented(order.Platform, code))
+        {
+            _logger.LogWarning(
+                "Provider cancellation reason ignored: the provider does not document this code. Platform={Platform}, ExternalOrderId={ExternalOrderId}, ReasonCode={ReasonCode}",
+                order.Platform,
+                order.ExternalOrderId,
+                code);
+            return;
+        }
+
+        order.CancellationReasonPlatform = order.Platform;
+        order.CancellationReasonCode = code;
     }
 
     /// <summary>
@@ -984,8 +1017,10 @@ internal sealed class OrderIngestion
 /// fields. <paramref name="Status"/> is the Wasla status the provider adapter derived from a verified provider contract.
 /// </summary>
 /// <param name="PlatformStatus">The provider's status text to show, or null to keep the stored one.</param>
+/// <param name="CancellationReasonCode">The numeric reason the provider reported with a cancellation, or null: a status-only report needs none.</param>
 internal sealed record OrderStatusObservation(
     FoodPlatform Platform,
     string ExternalOrderId,
     OrderStatus Status,
-    string? PlatformStatus);
+    string? PlatformStatus,
+    int? CancellationReasonCode = null);

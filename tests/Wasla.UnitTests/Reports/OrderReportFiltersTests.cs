@@ -204,7 +204,7 @@ public sealed class OrderReportFiltersTests
                       + OrderReportFigures.ForStatus(OrderStatus.Cancelled, 1, 50.25m)
                       + OrderReportFigures.ForStatus((OrderStatus)1, 1, 7m);
 
-        Assert.Equal(new OrderReportFigures(5, 157.25m, 3, 100.00m, 1, 0, 0, 1), figures);
+        Assert.Equal(new OrderReportFigures(5, 157.25m, 3, 100.00m, 1, 0, 0, 1, 0, 0, 1, 0, 1), figures);
         // 100 / 3 = 33.333…, rounded to 2 decimals; a midpoint rounds away from zero.
         Assert.Equal(33.33m, figures.AverageCompletedOrderValue);
         Assert.Equal(0.13m, OrderReportFigures.ForStatus(OrderStatus.Delivered, 4, 0.50m).AverageCompletedOrderValue);

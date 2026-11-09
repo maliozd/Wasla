@@ -167,7 +167,8 @@ public sealed class DashboardController : ControllerBase
             report.GeneratedAtUtc,
             ToDto(report.Summary),
             report.Platforms.Select(p => new OrderReportPlatformDto((FoodPlatformDto)(int)p.Platform, ToDto(p.Figures))).ToList(),
-            report.Days.Select(d => new OrderReportDayDto(d.Date, d.UtcStartInclusive, d.UtcEndExclusive, ToDto(d.Figures))).ToList());
+            report.Days.Select(d => new OrderReportDayDto(d.Date, d.UtcStartInclusive, d.UtcEndExclusive, ToDto(d.Figures))).ToList(),
+            report.CancellationReasons.Select(r => new OrderReportCancellationReasonDto((FoodPlatformDto)(int)r.Platform, r.ReasonCode, r.OrderCount)).ToList());
     }
 
     private static OrderReportFiguresDto ToDto(OrderReportFigures f) => new(
@@ -179,5 +180,10 @@ public sealed class DashboardController : ControllerBase
         f.CancelledOrderCount,
         f.FailedOrderCount,
         f.InProgressOrderCount,
-        f.OtherStatusOrderCount);
+        f.OtherStatusOrderCount,
+        f.KnownRejectedOrderCount,
+        f.KnownCancelledOrderCount,
+        f.UnknownOutcomeOrderCount,
+        f.RestaurantOriginUnknownOutcomeOrderCount,
+        f.CancellationReasonMissingOrderCount);
 }

@@ -5060,6 +5060,58 @@
   <data name="Reports.RateByPlatform" xml:space="preserve"><value>Доля по платформам</value></data>
   <data name="Reports.DailyCancellations" xml:space="preserve"><value>Отмены и отказы по дням</value></data>
   <data name="Reports.DailyCancellationsHint" xml:space="preserve"><value>По дню размещения заказа</value></data>
+  <data name="Reports.NoCancellationsTitle" xml:space="preserve"><value>В этом периоде нет отменённых или отклонённых заказов</value></data>
+  <data name="Reports.NoCancellationsText" xml:space="preserve"><value>Для этого выбора нечего классифицировать.</value></data>
+  <data name="Reports.MissingDataNote" xml:space="preserve"><value>В старых записях и в заказах, о которых платформа сообщила без этих сведений, может не быть классификации или причины. Отсутствие сведений не означает, что этого не было.</value></data>
+  <data name="Reports.Ending.Title" xml:space="preserve"><value>Как завершились эти заказы</value></data>
+  <data name="Reports.Ending.Hint" xml:space="preserve"><value>Каждый отменённый или отклонённый заказ считается только в одной группе.</value></data>
+  <data name="Reports.Ending.KnownRejected" xml:space="preserve"><value>Подтверждённые отказы</value></data>
+  <data name="Reports.Ending.KnownRejectedHint" xml:space="preserve"><value>Отклонено через Wasla.</value></data>
+  <data name="Reports.Ending.KnownCancelled" xml:space="preserve"><value>Подтверждённые отмены</value></data>
+  <data name="Reports.Ending.KnownCancelledHint" xml:space="preserve"><value>Отменено через Wasla, либо платформа сообщила, что отмена не исходила от заведения.</value></data>
+  <data name="Reports.Ending.Unknown" xml:space="preserve"><value>Отказ или отмена — неизвестно</value></data>
+  <data name="Reports.Ending.UnknownHint" xml:space="preserve"><value>Wasla не может определить, что именно произошло с этими заказами.</value></data>
+  <data name="Reports.Ending.RestaurantOrigin" xml:space="preserve"><value>Заведение завершило на платформе</value></data>
+  <data name="Reports.Ending.NoOrigin" xml:space="preserve"><value>Источник не записан</value></data>
+  <data name="Reports.Ending.OriginNote" xml:space="preserve"><value>Известный источник не всегда означает известное действие: заказ, завершённый заведением на платформе, мог быть как отклонён, так и отменён.</value></data>
+  <data name="Reports.Ending.ShareNote" xml:space="preserve"><value>Проценты считаются от всех отменённых и отклонённых заказов в этой выборке.</value></data>
+  <data name="Reports.Ending.ByPlatform" xml:space="preserve"><value>По платформам</value></data>
+  <data name="Reports.Reasons.Title" xml:space="preserve"><value>Причины</value></data>
+  <data name="Reports.Reasons.Coverage" xml:space="preserve"><value>Отменено или отклонено с указанной причиной: {0} / {1} ({2})</value></data>
+  <data name="Reports.Reasons.Missing" xml:space="preserve"><value>Причина не записана</value></data>
+  <data name="Reports.Reasons.Code" xml:space="preserve"><value>Код {0}</value></data>
+  <data name="Reports.Reasons.NoneRecorded" xml:space="preserve"><value>Для заказов этой выборки причины не записаны.</value></data>
+  <data name="Reports.Reasons.NoList" xml:space="preserve"><value>Wasla пока не записывает коды причин для этой платформы.</value></data>
+  <data name="Reports.Reasons.Denominator" xml:space="preserve"><value>Проценты считаются от отменённых и отклонённых заказов каждой платформы, включая заказы без причины.</value></data>
+  <data name="Reports.Reasons.CauseNote" xml:space="preserve"><value>Причина описывает, почему заказ завершился, но не говорит, кто его отменил.</value></data>
+  <data name="Reports.CancellationReason.Unlabelled" xml:space="preserve"><value>Код причины {0}</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.69" xml:space="preserve"><value>Мошенничество (система)</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.601" xml:space="preserve"><value>Неверный адрес</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.602" xml:space="preserve"><value>Нет по адресу</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.603" xml:space="preserve"><value>Мошенничество</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.604" xml:space="preserve"><value>Клиент запросил отмену</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.605" xml:space="preserve"><value>Заказ задержался, клиент от него отказался</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.606" xml:space="preserve"><value>Клиент запросил отмену / продавец согласился</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.607" xml:space="preserve"><value>Адрес не совпадает с местоположением</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.608" xml:space="preserve"><value>Оплата при получении, недостаточно средств</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.609" xml:space="preserve"><value>Добавлен неверный или неполный товар</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.610" xml:space="preserve"><value>Забыли добавить примечание</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.611" xml:space="preserve"><value>Долгое расчётное время доставки</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.624" xml:space="preserve"><value>Высокая загрузка / нет курьера</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.625" xml:space="preserve"><value>Не принят</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.626" xml:space="preserve"><value>Вне зоны доставки</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.641" xml:space="preserve"><value>Авария</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.642" xml:space="preserve"><value>Из-за высокой загрузки / нет курьера</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.643" xml:space="preserve"><value>Дорога закрыта / нет объезда</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.644" xml:space="preserve"><value>По вине курьера</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.645" xml:space="preserve"><value>По вине курьера</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.647" xml:space="preserve"><value>Товары повреждены</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.648" xml:space="preserve"><value>По вине курьера: проблема с удостоверением на входе</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.661" xml:space="preserve"><value>Система администратора не работает</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.662" xml:space="preserve"><value>Приложение курьера не работает</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.663" xml:space="preserve"><value>Панель продавца не работает</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.681" xml:space="preserve"><value>Мошеннический номер телефона</value></data>
+  <data name="Reports.CancellationReason.TrendyolYemek.682" xml:space="preserve"><value>Мошеннический адрес доставки</value></data>
   <data name="Reports.ComparisonTitle" xml:space="preserve"><value>Два завершённых периода равной длины</value></data>
   <data name="Reports.ComparisonHint" xml:space="preserve"><value>По дню размещения заказа, с его текущим статусом</value></data>
   <data name="Reports.ThisPeriod" xml:space="preserve"><value>Этот период</value></data>

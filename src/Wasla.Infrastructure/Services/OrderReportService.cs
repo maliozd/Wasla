@@ -11,8 +11,9 @@ namespace Wasla.Infrastructure.Services;
 
 /// <summary>
 /// The order report (WAS-182, docs/orders/reporting.md). One SQL statement groups the cohort by platform, stored
-/// status and local day and returns at most one row per group; summary, platform rows, day rows and days per platform are
-/// summed from those rows, so they reconcile and come from one consistent read. No order, item or payload is loaded.
+/// status, local day and how a cancelled order ended (origin and reason code) and returns at most one row per group;
+/// summary, platform rows, day rows, days per platform and reason counts are summed from those rows, so they reconcile and
+/// come from one consistent read. No order, item or payload is loaded.
 /// </summary>
 public sealed class OrderReportService : IOrderReportService
 {
@@ -36,7 +37,15 @@ public sealed class OrderReportService : IOrderReportService
         return Build(filter, groups, _time.GetUtcNow().UtcDateTime);
     }
 
-    internal sealed record Group(FoodPlatform Platform, OrderStatus Status, DateOnly Day, int Count, decimal Value);
+    internal sealed record Group(
+        FoodPlatform Platform,
+        OrderStatus Status,
+        DateOnly Day,
+        int Count,
+        decimal Value,
+        OrderCancellationOrigin? Origin = null,
+        FoodPlatform? ReasonPlatform = null,
+        int? ReasonCode = null);
 
     internal static async Task<IReadOnlyList<Group>> QueryGroupsAsync(TenantDbContext db, OrderReportFilter filter, CancellationToken ct)
     {
@@ -48,13 +57,29 @@ public sealed class OrderReportService : IOrderReportService
         if (filter.Platform is { } platform)
             orders = orders.Where(o => o.Platform == platform);
 
-        var key = WithLocalDay((o, day) => new { o.Platform, o.InternalStatus, Day = day }, LocalDayExpression(period));
+        var key = WithLocalDay(
+            (o, day) => new { o.Platform, o.InternalStatus, Day = day, o.CancellationOrigin, o.CancellationReasonPlatform, o.CancellationReasonCode },
+            LocalDayExpression(period));
         var rows = await orders
             .GroupBy(key)
-            .Select(g => new { g.Key.Platform, g.Key.InternalStatus, g.Key.Day, Count = g.Count(), Value = g.Sum(o => o.TotalAmount) })
+            .Select(g => new
+            {
+                g.Key.Platform,
+                g.Key.InternalStatus,
+                g.Key.Day,
+                g.Key.CancellationOrigin,
+                g.Key.CancellationReasonPlatform,
+                g.Key.CancellationReasonCode,
+                Count = g.Count(),
+                Value = g.Sum(o => o.TotalAmount)
+            })
             .ToListAsync(ct);
 
-        return rows.Select(r => new Group(r.Platform, r.InternalStatus, DateOnly.FromDateTime(r.Day), r.Count, r.Value)).ToList();
+        return rows
+            .Select(r => new Group(
+                r.Platform, r.InternalStatus, DateOnly.FromDateTime(r.Day), r.Count, r.Value,
+                r.CancellationOrigin, r.CancellationReasonPlatform, r.CancellationReasonCode))
+            .ToList();
     }
 
     internal static OrderReport Build(OrderReportFilter filter, IReadOnlyList<Group> groups, DateTime generatedAtUtc)
@@ -63,6 +88,7 @@ public sealed class OrderReportService : IOrderReportService
         var days = EmptyDays(period);
         var platforms = new Dictionary<FoodPlatform, OrderReportFigures>();
         var platformDays = new Dictionary<FoodPlatform, OrderReportFigures[]>();
+        var reasons = new Dictionary<(FoodPlatform Platform, int Code), int>();
         var summary = OrderReportFigures.Empty;
 
         foreach (var group in groups)
@@ -72,7 +98,13 @@ public sealed class OrderReportService : IOrderReportService
                 throw new InvalidOperationException(
                     $"An order group was dated {group.Day:yyyy-MM-dd}, outside the report period {period.StartDate:yyyy-MM-dd}..{period.EndDate:yyyy-MM-dd}.");
 
-            var figures = OrderReportFigures.ForStatus(group.Status, group.Count, group.Value);
+            var reason = group.ReasonPlatform is { } reasonPlatform && group.ReasonCode is { } reasonCode
+                ? (reasonPlatform, reasonCode)
+                : ((FoodPlatform, int)?)null;
+            var figures = OrderReportFigures.ForStatus(group.Status, group.Count, group.Value, group.Origin, reason is not null);
+            if (reason is { } recorded && group.Status == OrderStatus.Cancelled)
+                reasons[recorded] = reasons.GetValueOrDefault(recorded) + group.Count;
+
             summary += figures;
             days[index] += figures;
             platforms[group.Platform] = platforms.TryGetValue(group.Platform, out var sum) ? sum + figures : figures;
@@ -89,8 +121,14 @@ public sealed class OrderReportService : IOrderReportService
         var platformDayRows = platformRows
             .Select(p => new OrderReportPlatformDays(p.Platform, DayRows(period, platformDays[p.Platform])))
             .ToList();
+        var reasonRows = reasons
+            .OrderByDescending(r => r.Value)
+            .ThenBy(r => (int)r.Key.Platform)
+            .ThenBy(r => r.Key.Code)
+            .Select(r => new OrderReportCancellationReasonRow(r.Key.Platform, r.Key.Code, r.Value))
+            .ToList();
 
-        return new OrderReport(filter, OrderCurrency.Code, generatedAtUtc, summary, platformRows, DayRows(period, days), platformDayRows);
+        return new OrderReport(filter, OrderCurrency.Code, generatedAtUtc, summary, platformRows, DayRows(period, days), platformDayRows, reasonRows);
     }
 
     private static OrderReportFigures[] EmptyDays(OrderReportPeriod period)

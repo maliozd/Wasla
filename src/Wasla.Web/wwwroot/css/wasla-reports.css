@@ -361,6 +361,9 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports :focus-visible {
 .rpt-fill--ty { background: var(--rpt-ty); }
 .rpt-fill--ys { background: var(--rpt-ys); }
 .rpt-fill--gy { background: var(--rpt-gy); }
+.rpt-fill--known-rejected { background: var(--rpt-cancelled); }
+.rpt-fill--known-cancelled { background: var(--rpt-other); }
+.rpt-fill--unknown { background: var(--rpt-context); }
 .rpt-ink--delivered { color: var(--rpt-delivered); }
 .rpt-ink--progress { color: var(--wasla-text-secondary); }
 .rpt-ink--cancelled { color: var(--rpt-cancelled); }
@@ -486,6 +489,27 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports .rpt-col:focus-vis
 .rpt-sharebar { margin-block-start: 0.5rem; }
 .rpt-legend--values strong { font-variant-numeric: tabular-nums; }
 
+/* How orders ended and their reasons (WAS-200) */
+.rpt-note { display: flex; align-items: flex-start; gap: 0.4rem; margin: 0.6rem 0 0; color: var(--wasla-text-secondary); font-size: 0.78rem; }
+.rpt-subhead { margin-block: 1rem 0.35rem; }
+.rpt-endings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 1.5rem; list-style: none; margin: 0.9rem 0 0.2rem; padding: 0; }
+.rpt-ending { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.rpt-ending__label { display: flex; align-items: baseline; gap: 0.35rem; font-size: 0.82rem; font-weight: 600; overflow-wrap: anywhere; }
+.rpt-ending__label .rpt-swatch { flex: 0 0 auto; }
+.rpt-ending__values { display: flex; align-items: baseline; gap: 0.5rem; }
+.rpt-ending .rpt-ledger dt { font-size: 0.78rem; font-weight: 400; min-width: 0; overflow-wrap: anywhere; }
+.rpt-ending .rpt-ledger__row { padding-block: 0.1rem; }
+
+.rpt-reason-group { padding-block: 0.8rem; border-block-start: 1px solid var(--wasla-border); }
+.rpt-reason-group__head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-block-end: 0.6rem; }
+.rpt-reasons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.rpt-reason { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr) 3.5rem 3.8rem; align-items: center; gap: 0.75rem; }
+.rpt-reason__label { font-size: 0.86rem; min-width: 0; overflow-wrap: anywhere; }
+.rpt-reason__code { color: var(--wasla-text-secondary); font-size: 0.74rem; white-space: nowrap; }
+.rpt-reason .rpt-figure { text-align: end; }
+.rpt-reason__share { text-align: end; white-space: nowrap; }
+.rpt-reason--missing .rpt-reason__label { color: var(--wasla-text-secondary); }
+
 .rpt-multiples { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem 1.5rem; }
 .rpt-multiple { min-width: 0; }
 .rpt-multiple .rpt-chart { margin-block-start: 0.5rem; --rpt-axis-gutter: 2rem; }
@@ -586,6 +610,12 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports .rpt-col:focus-vis
   .rpt-share-row .rpt-muted { grid-row: 2; }
   .rpt-share-row__track { grid-row: 1 / span 2; grid-column: 2; }
   .rpt-share-row .platform-badge { grid-row: 1 / span 2; }
+  .rpt-endings { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; }
+  .rpt-reason { grid-template-columns: minmax(0, 1fr) auto 3.8rem; gap: 0.2rem 0.6rem; }
+  .rpt-reason__label { grid-column: 1 / -1; grid-row: 1; }
+  .rpt-reason .rpt-share-row__track { grid-column: 1; grid-row: 2; }
+  .rpt-reason .rpt-figure { grid-column: 2; grid-row: 2; }
+  .rpt-reason__share { grid-column: 3; grid-row: 2; }
   .rpt-loading__summary { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
   .rpt-notice__actions { width: 100%; }
 }

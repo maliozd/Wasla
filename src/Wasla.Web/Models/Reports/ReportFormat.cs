@@ -21,6 +21,9 @@ public static class ReportFormat
 
     public static string Count(int value) => value.ToString("N0", CultureInfo.CurrentCulture);
 
+    /// <summary>A platform's reason code: an identifier, so never grouped.</summary>
+    public static string Code(int value) => value.ToString(CultureInfo.InvariantCulture);
+
     /// <summary>A count axis label, which can be above the largest count.</summary>
     public static string Count(decimal value) => value.ToString("N0", CultureInfo.CurrentCulture);
 

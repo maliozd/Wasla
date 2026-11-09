@@ -255,6 +255,47 @@ public sealed class TrendyolGoPackageContractTests
         }
     }
 
+    // WAS-200. The Meal packages documentation shows cancelInfo only as null; the populated object below has the shape of
+    // the Meal webhook payloads. Documented shape only: no real cancelled package has been inspected.
+    [Theory]
+    [InlineData("""{ "reasonCode": 604, "reason": "Sentetik serbest metin" }""", 604)]
+    [InlineData("""{ "reason": "Sentetik serbest metin" }""", null)]
+    [InlineData("""{ "reasonCode": null, "reason": "Sentetik serbest metin" }""", null)]
+    [InlineData("""{ "reasonCode": "604" }""", null)]
+    [InlineData("""{ "reasonCode": 604.5 }""", null)]
+    [InlineData("""{ "reasonCode": 99999999999 }""", null)]
+    [InlineData("""{ "reasonCode": { "value": 604 } }""", null)]
+    [InlineData("""{ "reasonCode": [604] }""", null)]
+    [InlineData("null", null)]
+    [InlineData("604", null)]
+    [InlineData("\"Sentetik serbest metin\"", null)]
+    [InlineData("[]", null)]
+    [InlineData("true", null)]
+    public async Task CancelInfo_YieldsOnlyAWellFormedCode_AndNeverFailsThePage(string cancelInfo, int? expected)
+    {
+        var page = Page.Replace("\"cancelInfo\": null", $"\"cancelInfo\": {cancelInfo}", StringComparison.Ordinal);
+        Assert.Contains($"\"cancelInfo\": {cancelInfo}", page, StringComparison.Ordinal);
+
+        var order = Assert.Single(await FetchAsync(page));
+
+        Assert.Equal(expected, order.ProviderCancellationReasonCode);
+        Assert.DoesNotContain("Sentetik", order.RawPayloadJson, StringComparison.Ordinal);
+        if (expected is { } code)
+            Assert.Contains($"\"cancelInfo\":{{\"reasonCode\":{code}}}", order.RawPayloadJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CancelInfo_Absent_ReadsAsNoCode()
+    {
+        var page = Page.Replace("\"cancelInfo\": null,", string.Empty, StringComparison.Ordinal);
+        Assert.DoesNotContain("cancelInfo", page, StringComparison.Ordinal);
+
+        var order = Assert.Single(await FetchAsync(page));
+
+        Assert.Null(order.ProviderCancellationReasonCode);
+        Assert.DoesNotContain("cancelInfo", order.RawPayloadJson, StringComparison.Ordinal);
+    }
+
     private async Task<IReadOnlyCollection<ExternalOrderDto>> FetchAsync(string? page = null)
     {
         var handler = new DelegateHandler(request =>
