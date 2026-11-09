@@ -12,7 +12,7 @@ It owns:
 
 It does not own the current polling implementation ([../orders/synchronization.md](../orders/synchronization.md)), provider configuration and HTTP clients ([food-platforms.md](food-platforms.md)) or order lifecycle rules ([../orders/lifecycle.md](../orders/lifecycle.md)).
 
-No webhook is implemented. Nothing in this record describes existing Wasla behavior unless it says so and names the source file.
+This is the WAS-17 decision record. [Comparison with Wasla at commit b27505e](#comparison-with-wasla-at-commit-b27505e-2026-10-18) describes the code at the research date, when no webhook existed; the Trendyol GO Meal webhook pilot was built afterwards ([Stage pilot](#stage-pilot)). Nothing in this record describes existing Wasla behavior unless it says so and names the source file.
 
 Research date: 2026-10-19. It re-verifies and supersedes the WAS-17 research comment of 2026-10-06 (see [Changes since the 2026-10-06 research](#changes-since-the-2026-10-06-research)).
 
@@ -78,7 +78,7 @@ Confidence: low. The archived source is 15 months old, and the live portal is un
 The archived model matters even before it is confirmed. If it is current:
 
 - New restaurant orders reach an integrator only by webhook. The report service returns only accepted and cancelled orders [Y8], so polling cannot take in new orders.
-- Wasla's current Yemeksepeti client follows the Local Shops Partner API (OAuth client credentials and a vendor orders GET; see [Comparison with Wasla today](#comparison-with-wasla-today)). It would then be the wrong product for restaurants.
+- Wasla's current Yemeksepeti client follows the Local Shops Partner API (OAuth client credentials and a vendor orders GET; see [Comparison with Wasla at commit b27505e](#comparison-with-wasla-at-commit-b27505e-2026-10-18)). It would then be the wrong product for restaurants.
 
 Conclusion: the Yemeksepeti restaurant webhook contract cannot be confirmed at present. Implementation is blocked by WAS-70, the separate provider-confirmation task. Build nothing for Yemeksepeti webhooks until WAS-70 obtains the current restaurant contract.
 
@@ -221,13 +221,13 @@ The site itself says it is not for restaurants [Y1]. For restaurant orders it is
 | Reconciliation read | Order packages by status and modification window, or one package by id, per supplier [T15] | Accepted/cancelled order ids, ≤ 24 h [Y8] |
 | Polling can take in new orders | Yes | No [Y8] |
 
-## Comparison with Wasla today
+## Comparison with Wasla at commit b27505e (2026-10-18)
 
 Verified against `dev` at b27505e. None of the cited files changed up to 198b49b. Static review only; nothing was run.
 
 ### Ingestion and recovery
 
-- **Polling only.** Neither real client has a webhook. `Wasla.Api` has controllers for auth, branches, dashboard, orders, platform connections and Print Bridge only, and no webhook, callback, inbox or signature code exists in `src`.
+- **Polling only at the research date.** Neither real client had a webhook then. `Wasla.Api` had controllers for auth, branches, dashboard, orders, platform connections and Print Bridge only, and no webhook, callback, inbox or signature code existed in `src`. The [stage pilot](#stage-pilot) has since added a Trendyol GO Meal receiver, off by default, for exactly one configured seller, store, tenant and connection; every other connection still has polling as its only ingestion path.
 - **Trendyol GO polling** meets the reconciliation prerequisites since WAS-69. It requests every documented status, including the terminal ones, and resumes from the `LastSuccessfulSync` checkpoint with a 5-minute overlap and bounded history windows. See [Checkpoint and outage recovery](../orders/synchronization.md#checkpoint-and-outage-recovery). It is therefore able to cover what the webhook misses: `Picking`, `Invoiced` (including Uber's automatic `Invoiced` [T16]), events lost after 3 retries, and the period of a disabled integration beyond one day [T1, T6].
 - **Yemeksepeti polling** calls `GET /v2/chains/{chainId}/vendors/{vendorId}/orders` on `yemeksepeti.partner.deliveryhero.io` with OAuth client credentials (`YemeksepetiFoodPlatformClient`, `appsettings.json` of Api and Worker). That matches the Local Shops Partner API [Y2], not the archived restaurant model [Y5, Y8]. The code marks the endpoint as unconfirmed (TODO), uses a fixed one-hour lookback, and throws `NotSupportedException` for every lifecycle action. If the archived model is current, this client cannot receive restaurant orders at all. This is a finding for WAS-70, not a change made here.
 

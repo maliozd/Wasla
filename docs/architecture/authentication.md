@@ -10,7 +10,7 @@ Wasla does **not** use JWT for this auth contract.
 
 ## Canonical contract names
 
-**Source (currently uncommitted):** `src/Wasla.Application/Security/WaslaAuthContracts.cs`
+**Source:** `src/Wasla.Application/Security/WaslaAuthContracts.cs`
 
 | Constant | Value |
 |----------|--------|
@@ -30,7 +30,7 @@ Web wrappers alias the same values:
 
 Each of these exposes only the active Wasla names; see [Cookie inventory](#cookie-inventory).
 
-**Working-tree note:** `WaslaAuthContracts.cs` is untracked; Web cookie-name/scheme files and API auth setup currently reference it. Treat the contract above as the intended source of truth once committed; verify against the working tree when auditing.
+`WaslaAuthContracts.cs` is the only place these scheme and cookie names are defined; the Web cookie-name and scheme files and the API auth setup reference it.
 
 ## Scheme isolation
 

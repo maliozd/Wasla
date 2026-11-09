@@ -239,8 +239,6 @@ Ready checks include CentralDb (`central-db` tag). Live checks are process-only.
 
 Production Web unexpected errors go to `/error` (exception handler). Details: [observability.md](observability.md).
 
-Observability pieces (trace header, TenantId context, API Serilog request logging) are **currently uncommitted in the working tree** in Diagnostics / Program files — verify they are present in the build you deploy.
-
 ## Environment variable cheat sheet (no secrets)
 
 ```text
