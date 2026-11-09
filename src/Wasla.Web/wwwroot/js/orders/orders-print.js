@@ -126,7 +126,8 @@
 
       const message = (payload && payload.message) ? String(payload.message) : null;
 
-      if (resp.ok) {
+      // A redirect is the sign-in page answering for an ended session, not this endpoint.
+      if (resp.ok && !resp.redirected) {
         toast(message || localize("orderPrintQueued"), "success");
         applyQueuedState(btn);
         return;
@@ -148,7 +149,7 @@
       }
 
       // A timeout or server error is not proof of failure: the job may be queued. The read below shows what the server has.
-      if (resp.status >= 500 || resp.status === 408) toast(localize("orderPrintUnverified"), "warning");
+      if (resp.redirected || resp.status >= 500 || resp.status === 408) toast(localize("orderPrintUnverified"), "warning");
       else toast(message || localize("orderPrintFailed"), "error");
       restore(btn, previousMode);
     } catch (error) {

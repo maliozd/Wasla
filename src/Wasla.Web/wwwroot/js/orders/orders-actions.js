@@ -361,8 +361,9 @@
 
   // No answer, a timeout or a server error is not proof of failure: the provider may have acted. Nothing is resent; the
   // current state is read and reported.
+  // A redirect counts too: with an ended session the sign-in page answers 200 once fetch has followed it.
   function isUncertainResponse(resp) {
-    return resp.status >= 500 || resp.status === 408;
+    return resp.redirected || resp.status >= 500 || resp.status === 408;
   }
 
   function nextSnapshot(startRead) {
@@ -434,7 +435,7 @@
         + encodeURIComponent(orderId) + "/" + encodeURIComponent(action);
       const result = await postAction(url, demo, reasonId);
 
-      if (!result.resp.ok) {
+      if (!result.resp.ok || result.resp.redirected) {
         if (!demo && isUncertainResponse(result.resp)) {
           uncertain = true;
         } else {

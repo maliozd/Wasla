@@ -729,8 +729,9 @@
             return refreshPrintJobsPartial();
           })
           .catch(function (e) {
-            // No answer, a timeout or a server error is not proof of failure: the job may be queued.
-            if (e instanceof TypeError || e.status >= 500 || e.status === 408) {
+            // No answer, a timeout, a server error or a page that is not the expected answer is not proof of failure: the
+            // job may be queued.
+            if (e instanceof TypeError || e instanceof SyntaxError || e.status >= 500 || e.status === 408) {
               showMessage(messages.reprintUnverified, "warning");
               return;
             }

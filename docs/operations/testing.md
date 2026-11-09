@@ -51,7 +51,7 @@ Any other event or base branch also gets the full scope. Both scopes run the ter
 
 The fast scope defers two groups, each named by a trait:
 
-- `Category=Browser` (`Wasla.UnitTests`): the test classes that start a real headless browser through `HeadlessChromium` (33 classes, 168 test methods). The trait is on the class, so a class's few tests that do not open a browser are deferred with it.
+- `Category=Browser` (`Wasla.UnitTests`): the test classes that start a real headless browser through `HeadlessChromium` (33 classes, 169 test methods). The trait is on the class, so a class's few tests that do not open a browser are deferred with it.
 - `Category=WebView2Runtime` (`Wasla.PrintBridge.Tests`): the tests that host the real WebView2 Runtime (22 test methods).
 
 A test without one of these traits runs in both scopes, so a new test is in the fast scope until its author tags it. Give a new class that starts a real browser `[Trait("Category", "Browser")]`, and a new test that needs the real WebView2 Runtime `[Trait("Category", "WebView2Runtime")]`. Do not use either trait to move a test that needs neither out of pull requests; that is a change to this policy. To check that the two selections still cover the discovered suite, list both against the build output and compare them with the whole list (PowerShell, after a Release build):

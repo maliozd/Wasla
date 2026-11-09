@@ -45,6 +45,12 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
             if (window.__dropAnswer) { window.__dropAnswer = false; return realFetch(url, options).then(() => { throw new TypeError('answer lost'); }); }
             if (window.__holdThenFail) { window.__holdThenFail = false; return new Promise((_, reject) => { window.__releaseHeld = () => reject(new TypeError('answer lost')); }); }
             if (window.__failNextPost) { window.__failNextPost = false; return Promise.reject(new TypeError('network')); }
+            if (window.__answerFromSignIn) {
+              window.__answerFromSignIn = false;
+              const signIn = new Response('<html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } });
+              Object.defineProperty(signIn, 'redirected', { value: true });
+              return Promise.resolve(signIn);
+            }
             if (window.__answerWith) {
               const status = window.__answerWith; window.__answerWith = 0;
               return Promise.resolve(new Response('{}', { status: status, headers: { 'Content-Type': 'application/json' } }));
@@ -260,21 +266,25 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
             "[...document.querySelectorAll('.wasla-toast--success')].length > 0", ct), "A refused action also reported success.");
     }
 
-    [Fact]
-    public async Task ALostAnswer_IsNotAFailureAndIsNotRetried()
+    [Theory]
+    [InlineData("/orders/live-display", "#ordersLiveScreenHost", "__failNextPost")]
+    [InlineData("/orders/live-display", "#ordersLiveScreenHost", "__answerFromSignIn")]
+    [InlineData("/orders", "#ordersTableHost", "__answerFromSignIn")]
+    public async Task ALostAnswer_IsNotAFailureAndIsNotRetried(string path, string host, string answer)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
-        await LoadLiveAsync(browser, ct);
-        await browser.EvaluateAsync<bool>("(() => { window.__failNextPost = true; return true; })()", ct);
-
-        await ClickActionAsync(browser, "approve", NewOrderId, ct);
+        await LoadAsync(browser, path, host, "approve", NewOrderId, ct);
+        await browser.EvaluateAsync<bool>($$"""
+            (() => { window.{{answer}} = true; document.querySelector('{{host}} [data-order-action="approve"][data-order-id="{{NewOrderId}}"]').click(); return true; })()
+            """, ct);
         await DialogAsync(browser, ct);
         await AcceptAsync(browser, ct);
 
         Assert.True(await browser.WaitForAsync(
             "[...document.querySelectorAll('.wasla-toast__message')].some(t => t.textContent.includes('platform panelini'))", TimeSpan.FromSeconds(15), ct),
             "The page did not report that the result could not be confirmed.");
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('.wasla-toast--success')", ct), "An unconfirmed action was reported as done.");
         await AssertPostsAsync(browser, 1, ct);
         Assert.Equal(OrderStatus.New, await StatusAsync(NewOrderId, ct));
     }
@@ -380,8 +390,10 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
         Assert.Equal(2, await ReceiptJobCountAsync(UnprintedOrderId, ct));
     }
 
-    [Fact]
-    public async Task Reprint_ALostAnswer_SaysUnverified_NotFailed()
+    [Theory]
+    [InlineData("__failNextPost")]
+    [InlineData("__answerFromSignIn")]
+    public async Task Reprint_ALostAnswer_SaysUnverified_NotFailed(string answer)
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
@@ -389,14 +401,14 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
         Assert.True(await browser.WaitForAsync("document.querySelector('[data-order-print]')?.getAttribute('data-print-mode') === 'reprint'", TimeSpan.FromSeconds(15), ct),
             (_host.ServerErrors ?? "") + " The printed order did not offer Reprint.");
 
-        await browser.EvaluateAsync<bool>("(() => { window.__failNextPost = true; document.querySelector('[data-order-print]').click(); return true; })()", ct);
+        await browser.EvaluateAsync<bool>($"(() => {{ window.{answer} = true; document.querySelector('[data-order-print]').click(); return true; }})()", ct);
         await DialogAsync(browser, ct);
         await AcceptAsync(browser, ct);
 
         Assert.True(await browser.WaitForAsync(
             "[...document.querySelectorAll('.wasla-toast--warning .wasla-toast__message')].some(t => t.textContent.includes('doğrulanamadı'))", TimeSpan.FromSeconds(10), ct),
             "A lost reprint answer was not reported as unverified.");
-        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('.wasla-toast--error')", ct), "A lost reprint answer was reported as a failure.");
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('.wasla-toast--error, .wasla-toast--success')", ct), "A lost reprint answer was reported as failed or queued.");
         await AssertPostsAsync(browser, 1, ct);
     }
 
@@ -484,6 +496,27 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
             "A lost answer did not stay in the dialog.");
         Assert.Equal("Sonuç doğrulanamadı", await browser.EvaluateAsync<string>("document.querySelector('[data-wasla-confirm-title]').textContent", ct));
         Assert.DoesNotContain("fetch", await browser.EvaluateAsync<string>("document.querySelector('[data-wasla-confirm-notice]').textContent", ct), StringComparison.OrdinalIgnoreCase);
+        await AssertPostsAsync(browser, 1, ct);
+    }
+
+    [Fact]
+    public async Task PrintBridge_Reprint_AsksFirst_AndAnAnswerThatIsNotJson_StaysUnverified()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await browser.NavigateAsync(new Uri(_host.BaseAddress, "/print-bridge/devices"), ct);
+        Assert.True(await browser.WaitForAsync("!!document.querySelector('#printBridgeJobsPanel .pb-reprint-job-btn')", TimeSpan.FromSeconds(15), ct),
+            (_host.ServerErrors ?? "") + " The printed receipt did not offer Reprint.");
+
+        await browser.EvaluateAsync<bool>("(() => { window.__answerFromSignIn = true; document.querySelector('#printBridgeJobsPanel .pb-reprint-job-btn').click(); return true; })()", ct);
+        await DialogAsync(browser, ct);
+        await AssertPostsAsync(browser, 0, ct);
+        await AcceptAsync(browser, ct);
+
+        Assert.True(await browser.WaitForAsync(
+            "document.querySelector('#printBridgeMessageHost .alert-info')?.textContent.includes('doğrulanamadı') === true", TimeSpan.FromSeconds(10), ct),
+            "An answer that is not JSON was not reported as unverified.");
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('#printBridgeMessageHost .alert-danger')", ct), "An unverified reprint was reported as a failure.");
         await AssertPostsAsync(browser, 1, ct);
     }
 

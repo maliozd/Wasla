@@ -235,6 +235,7 @@ function page({
   const pageTimers = [];
   const clipboard = [];
   const confirms = [];
+  const runResults = [];
   const asked = (options) => options.identity && options.identity.primary ? options.title + " | " + options.identity.primary : options.title;
   const win = {
     location: { hash, href: "" },
@@ -245,7 +246,7 @@ function page({
       run: (options) => {
         confirms.push(asked(options));
         if (!confirm()) return Promise.resolve(false);
-        return Promise.resolve().then(() => options.action()).then(() => true);
+        return Promise.resolve().then(() => options.action()).then((result) => { runResults.push(result); return true; });
       }
     },
     fetch,
@@ -269,7 +270,7 @@ function page({
 
   const settle = async () => { for (let i = 0; i < 4; i++) await new Promise((resolve) => setImmediate(resolve)); };
   return {
-    els, panel, manualHeader, requests, events, win, clipboard, confirms, focused, radios,
+    els, panel, manualHeader, requests, events, win, clipboard, confirms, runResults, focused, radios,
     async issueToken() { els.pbManualTokenActionBtn.click(); await settle(); },
     /** Runs every pending guided-panel timer (one readiness read each). */
     async tick() { const fns = [...timers.values()]; timers.clear(); for (const fn of fns) fn(); await settle(); },

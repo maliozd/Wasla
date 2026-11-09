@@ -180,6 +180,20 @@ test("reconnecting manually replaces the selected device's token only after the 
   assert.equal(p.panelState(), "not-ready");
 });
 
+test("a token replacement whose answer cannot be read is reported as unknown, not as a refusal", async () => {
+  const devices = [{ id: "dev-2", name: "Bar PC", machineName: "BAR-PC", isActive: true, status: "Offline", lastSeenAtUtc: null }];
+  const p = page({ devices, issue: () => ({ ok: true, body: {} }) });
+
+  await p.chooseReconnect("dev-2");
+  await p.issueToken();
+
+  assert.equal(p.requests.filter((r) => r.method === "POST").length, 1);
+  assert.equal(p.runResults.length, 1);
+  assert.equal(p.runResults[0].tone, "warning");
+  assert.equal(p.runResults[0].hideBody, true);
+  assert.equal(p.els.pbManualTokenValue.value, "");
+});
+
 /** Every place outside the token field's value where the raw token must never appear. */
 function assertTokenOnlyInTheField(p) {
   for (const el of Object.values(p.els)) {

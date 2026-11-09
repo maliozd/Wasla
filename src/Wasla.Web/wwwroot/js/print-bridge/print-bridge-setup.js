@@ -614,7 +614,8 @@
     /** Asks for the token once and shows it in its read-only field. */
     function issueManualToken(url, mode) {
         return postForm(url, {}).then(function (data) {
-            if (!data || !data.success || !data.token) throw new Error(messages.manualTokenFailed);
+            // Refusals come with an error status, so a 200 without a token is an answer that could not be read.
+            if (!data || !data.success || !data.token) throw new TypeError(messages.manualTokenFailed);
             manualTokenIssued = true;
             showManualToken(data, mode);
         });
