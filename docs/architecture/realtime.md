@@ -375,7 +375,8 @@ endpoint.
   configuration, so a port or secret that differs from Web's is not caught at startup; it shows as sender warnings
   and refused requests (failure table above).
 - **Concurrency evidence.** Version and single-announcement behavior are tested with SQLite, which serializes writers.
-  SQL Server locking of the serializable creation path is the existing behavior and was not re-tested.
+  On SQL Server, locking of the serializable creation path is tested for a manual first print only
+  (`Orders/ManualOrderPrintRaceSqlServerTests.cs`).
 - The Print Bridge devices page, the print history page, the Orders management page and practice orders do not use
   the channel.
 

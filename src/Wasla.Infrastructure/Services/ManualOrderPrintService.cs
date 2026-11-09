@@ -111,13 +111,7 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
             // The screen still offered a first print, but a receipt has finished since. Another physical copy needs the
             // operator's confirmation, so nothing is created and the screen reads the current state.
             if (reprintSource is not null && !reprintConfirmed)
-            {
-                return new ManualOrderPrintResult(
-                    false,
-                    ManualOrderPrintOutcome.ReprintConfirmationRequired,
-                    ManualOrderPrintMessageKeys.ReprintConfirmationRequired,
-                    null);
-            }
+                return ReprintConfirmationRequired();
 
             var settings = await db.TenantOperationalSettings
                 .AsNoTracking()
@@ -165,19 +159,24 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
                 null);
         }
 
-        var created = await _receiptJobs
-            .TryCreateReceiptJobAsync(tenantId, orderId, copyCount, tenantDisplayName, ct)
+        // Only a print the operator confirmed may follow a receipt that finished since the read above.
+        var created = await (reprintConfirmed
+                ? _receiptJobs.TryCreateReceiptJobAsync(tenantId, orderId, copyCount, tenantDisplayName, ct)
+                : _receiptJobs.TryCreateFirstReceiptJobAsync(tenantId, orderId, copyCount, tenantDisplayName, ct))
             .ConfigureAwait(false);
 
         if (!created)
         {
-            // TryCreateReceiptJobAsync only declines when an active job already exists (including the
-            // serializable-transaction duplicate race), so re-read to report the real state.
+            // Creation declines when an active job already exists (including the serializable-transaction duplicate
+            // race) or, for a first print, when a receipt has finished, so re-read to report the real state.
             await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
             var jobs = await LoadReceiptJobsAsync(db, orderId, ct).ConfigureAwait(false);
 
             if (jobs.Any(IsActive))
                 return AlreadyQueued();
+
+            if (!reprintConfirmed && jobs.Any(j => j.Status is PrintJobStatus.Printed or PrintJobStatus.Failed))
+                return ReprintConfirmationRequired();
 
             _logger.LogWarning(
                 "Manual receipt print could not be queued. TenantId={TenantId}, OrderId={OrderId}",
@@ -205,6 +204,9 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
 
     private static ManualOrderPrintResult AlreadyQueued() =>
         new(false, ManualOrderPrintOutcome.AlreadyQueued, ManualOrderPrintMessageKeys.AlreadyQueued, null);
+
+    private static ManualOrderPrintResult ReprintConfirmationRequired() =>
+        new(false, ManualOrderPrintOutcome.ReprintConfirmationRequired, ManualOrderPrintMessageKeys.ReprintConfirmationRequired, null);
 
     private static bool IsActive(ReceiptJobRow job) =>
         job.Status is PrintJobStatus.Pending or PrintJobStatus.Printing;

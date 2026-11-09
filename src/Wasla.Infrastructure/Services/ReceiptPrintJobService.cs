@@ -13,7 +13,19 @@ namespace Wasla.Infrastructure.Services;
 
 public interface IReceiptPrintJobService
 {
+    /// <summary>Creates a receipt unless one is active: automatic printing, and a print the operator confirmed as another copy.</summary>
     Task<bool> TryCreateReceiptJobAsync(
+        Guid tenantId,
+        Guid orderId,
+        int copyCount,
+        string? tenantDisplayName,
+        CancellationToken ct);
+
+    /// <summary>
+    /// A first print: creates a receipt only while the order has none active and none finished, decided inside the
+    /// transaction that inserts it. Declining means nothing was created.
+    /// </summary>
+    Task<bool> TryCreateFirstReceiptJobAsync(
         Guid tenantId,
         Guid orderId,
         int copyCount,
@@ -40,11 +52,28 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
         _logger = logger;
     }
 
-    public async Task<bool> TryCreateReceiptJobAsync(
+    public Task<bool> TryCreateReceiptJobAsync(
         Guid tenantId,
         Guid orderId,
         int copyCount,
         string? tenantDisplayName,
+        CancellationToken ct) =>
+        CreateAsync(tenantId, orderId, copyCount, tenantDisplayName, firstReceiptOnly: false, ct);
+
+    public Task<bool> TryCreateFirstReceiptJobAsync(
+        Guid tenantId,
+        Guid orderId,
+        int copyCount,
+        string? tenantDisplayName,
+        CancellationToken ct) =>
+        CreateAsync(tenantId, orderId, copyCount, tenantDisplayName, firstReceiptOnly: true, ct);
+
+    private async Task<bool> CreateAsync(
+        Guid tenantId,
+        Guid orderId,
+        int copyCount,
+        string? tenantDisplayName,
+        bool firstReceiptOnly,
         CancellationToken ct)
     {
         // Read template settings on a separate connection before taking the serializable lock.
@@ -74,6 +103,27 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
             _logger.LogInformation(
                 "Receipt PrintJob skipped because an active job already exists. TenantId={TenantId}, OrderId={OrderId}",
+                tenantId,
+                orderId);
+            return false;
+        }
+
+        // Another physical copy needs the operator's confirmation. Decided under the same lock as the insert: a receipt
+        // that finished after the caller's own read is seen here, and one written from now on waits for this transaction.
+        if (firstReceiptOnly
+            && await db.PrintJobs
+                .AsNoTracking()
+                .AnyAsync(
+                    p => p.OrderId == orderId
+                         && p.Type == PrintJobType.Receipt
+                         && (p.Status == PrintJobStatus.Printed || p.Status == PrintJobStatus.Failed),
+                    ct)
+                .ConfigureAwait(false))
+        {
+            await tx.RollbackAsync(ct).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "First receipt PrintJob skipped because a receipt has already finished. TenantId={TenantId}, OrderId={OrderId}",
                 tenantId,
                 orderId);
             return false;

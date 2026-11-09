@@ -199,7 +199,7 @@ The browser's native `confirm()` is gone from tenant pages. `WaslaConfirm` (`www
 | --- | --- |
 | Approve, Mark ready | Only when the employee's preference is on (the default) |
 | Reject | Always. A platform with reasons uses the reason dialog above; its final Reject is the confirmation |
-| Reprint | Always, because it requests another physical copy. A first print does not ask and can never create another copy: when a receipt finished after the button was drawn, the server creates nothing (`412`) and the button shows Reprint |
+| Reprint | Always, because it requests another physical copy. A first print does not ask and can never create another copy: when a receipt finished after the button was drawn, the server creates nothing (`412`) and the button shows Reprint. The server decides this in the same serializable transaction that would insert the job, so a receipt finished by another request while the first one is on its way is seen too |
 | Token regeneration, device removal, reconnect | Always, on the Print Bridge pages |
 | Device disable and enable | No (reversible) |
 | Practice orders | No, and the preference does not apply |
