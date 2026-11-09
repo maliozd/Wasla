@@ -8,8 +8,12 @@
   --rpt-action-text: #ffffff;
   --rpt-accent-text: #b94f2a;
   --rpt-focus: #b94f2a;
+  --rpt-control-border: #8f867b;
+  --rpt-selected-border: #c84b0f;
+  --rpt-tab-current: #c84b0f;
+  --rpt-track-text: #6b645d;
   --rpt-bar: #e67140;
-  --rpt-context: #cfc6b8;
+  --rpt-context: #8f867b;
   --rpt-partial: #f6cdb6;
   --rpt-partial-border: #c84b0f;
   --rpt-grid: #ede8df;
@@ -22,7 +26,7 @@
   --rpt-ty: #c4700f;
   --rpt-ys: #b3123f;
   --rpt-gy: #5d3ebc;
-  --rpt-info: #3b6ea5;
+  --rpt-info: #356599;
   --rpt-info-soft: #e7edf4;
   --rpt-warning: #8a5a12;
   --rpt-warning-soft: #f6ecdc;
@@ -43,6 +47,10 @@
   --rpt-action-hover: #b44209;
   --rpt-accent-text: #f26b3a;
   --rpt-focus: #f26b3a;
+  --rpt-control-border: var(--wasla-border);
+  --rpt-selected-border: var(--wasla-border);
+  --rpt-tab-current: #f26b3a;
+  --rpt-track-text: var(--wasla-text-secondary);
   --rpt-bar: #f26b3a;
   --rpt-context: #4a4e58;
   --rpt-partial: #5a3526;
@@ -71,7 +79,7 @@
   --rpt-tip-muted: #aeb4c0;
 }
 
-.wasla-reports :is(a, button, input, select, [tabindex="0"]):focus-visible {
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports :focus-visible {
   outline: 2px solid var(--rpt-focus);
   outline-offset: 2px;
   box-shadow: none;
@@ -113,7 +121,7 @@
   border: 1px solid transparent;
   border-radius: var(--wasla-radius-sm);
   background: transparent;
-  color: var(--wasla-text-secondary);
+  color: var(--rpt-track-text);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
@@ -124,7 +132,7 @@
 
 .rpt-chip.is-selected {
   background: var(--wasla-surface);
-  border-color: var(--wasla-border);
+  border-color: var(--rpt-selected-border);
   color: var(--rpt-accent-text);
 }
 
@@ -136,6 +144,15 @@
 }
 
 .rpt-platform { min-width: 11.5rem; }
+
+/* Form fields need a boundary of 3:1 against the card. */
+.wasla-reports .form-select,
+.wasla-reports .form-control,
+.wasla-reports .form-check-input:not(:checked) { border-color: var(--rpt-control-border); }
+
+:root:not([data-bs-theme="dark"]) .rpt-compare .form-check-input:not(:checked) {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23746d66'/%3e%3c/svg%3e");
+}
 
 .rpt-compare {
   margin: 0;
@@ -249,7 +266,7 @@
 }
 
 .rpt-tab:hover { color: var(--wasla-text); }
-.rpt-tab.is-current { color: var(--wasla-text); border-block-end-color: var(--rpt-bar); }
+.rpt-tab.is-current { color: var(--wasla-text); border-block-end-color: var(--rpt-tab-current); }
 
 /* Panels and type */
 .rpt-panel {
@@ -395,6 +412,8 @@
 
 .rpt-col { position: relative; display: flex; justify-content: center; align-items: flex-end; border-radius: 2px; cursor: default; }
 .rpt-col:hover { background: var(--wasla-surface-muted); }
+/* The ring can cross a neighbouring bar, so a band of the card colour keeps it visible there. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports .rpt-col:focus-visible { z-index: 1; box-shadow: 0 0 0 2px var(--wasla-surface); }
 .rpt-col__stack { position: relative; display: flex; flex-direction: column-reverse; align-items: stretch; gap: 1px; width: min(70%, 1.6rem); height: 100%; }
 .rpt-seg { display: block; min-height: 2px; flex: 0 0 auto; }
 .rpt-col__stack .rpt-seg:last-child,
@@ -439,8 +458,8 @@
 .rpt-zero-note { display: flex; align-items: center; gap: 0.3rem; margin-block-start: 0.6rem; }
 
 .rpt-segmented { display: inline-flex; gap: 0.15rem; padding: 0.15rem; background: var(--wasla-surface-muted); border-radius: var(--wasla-radius-sm); }
-.rpt-segmented__btn { border: 1px solid transparent; background: transparent; color: var(--wasla-text-secondary); font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: var(--wasla-radius-sm); }
-.rpt-segmented__btn[aria-pressed="true"] { background: var(--wasla-surface); border-color: var(--wasla-border); color: var(--rpt-accent-text); }
+.rpt-segmented__btn { border: 1px solid transparent; background: transparent; color: var(--rpt-track-text); font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: var(--wasla-radius-sm); }
+.rpt-segmented__btn[aria-pressed="true"] { background: var(--wasla-surface); border-color: var(--rpt-selected-border); color: var(--rpt-accent-text); }
 
 .rpt-table thead th { white-space: normal; vertical-align: bottom; }
 .wasla-reports .rpt-table tbody th[scope="row"] {
