@@ -49,7 +49,9 @@ public sealed class OrderTimeMigrationSqlServerTests(SqlServerTenantDatabase dat
                 'Delivered', 'Test', '', '', 100, 0, 0, 0, 0, {epoch}, {Imported}, {payload}, {Imported}, {Imported}, 1);
             """, ct);
 
-        await migrator.MigrateAsync(OrderTimeMigration, ct);
+        // Through the latest migration: the reads below use the current order model.
+        await migrator.MigrateAsync(cancellationToken: ct);
+        Assert.Contains(OrderTimeMigration, await db.Database.GetAppliedMigrationsAsync(ct));
 
         db.ChangeTracker.Clear();
         var epochRow = await db.Orders.AsNoTracking().SingleAsync(o => o.Id == epochId, ct);

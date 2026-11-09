@@ -101,6 +101,23 @@ public class Order : BaseEntity
     public DateTime? DeliveredAt { get; set; }
     public DateTime? CancelledAt { get; set; }
 
+    // --- How a cancelled order ended (WAS-200). All null means unknown; never inferred or backfilled. ---
+
+    /// <summary>
+    /// Who initiated the cancellation, as far as Wasla knows. Written once, in the write that makes the order
+    /// <see cref="OrderStatus.Cancelled"/>. Null means unknown. <see cref="InternalStatus"/> remains the outcome.
+    /// </summary>
+    public OrderCancellationOrigin? CancellationOrigin { get; set; }
+
+    /// <summary>The platform whose list <see cref="CancellationReasonCode"/> belongs to; set exactly when the code is.</summary>
+    public FoodPlatform? CancellationReasonPlatform { get; set; }
+
+    /// <summary>
+    /// The platform's own reason code, for example Trendyol GO 621. A number on purpose: free-text reasons and customer
+    /// data have no place here. Null when no reason is known.
+    /// </summary>
+    public int? CancellationReasonCode { get; set; }
+
     /// <summary>
     /// Raw JSON payload from the platform. Priceless when debugging weird cases
     /// or when a platform silently changes their API.

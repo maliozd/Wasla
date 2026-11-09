@@ -8,6 +8,7 @@ using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -219,6 +220,7 @@ internal sealed class OrderIngestion
             mergedStatus,
             nowUtc,
             milestonesObservedLive);
+        ApplyProviderCancellationOrigin(existing, oldStatus, mergedStatus, external.ExternalStatus);
 
         await db.OrderItemOptions
             .Where(o => db.OrderItems
@@ -363,6 +365,7 @@ internal sealed class OrderIngestion
             existing.PlatformStatus = observation.PlatformStatus;
         existing.UpdatedAt = nowUtc;
         ApplyStatusTransitionTimestamps(existing, oldStatus, mergedStatus, nowUtc, milestonesObservedLive);
+        ApplyProviderCancellationOrigin(existing, oldStatus, mergedStatus, observation.PlatformStatus);
 
         await db.SaveChangesAsync(ct).ConfigureAwait(false);
         var changeVersion = await OrderChangeVersions.NextAsync(db, existing.Id, ct).ConfigureAwait(false);
@@ -629,6 +632,7 @@ internal sealed class OrderIngestion
 
         // An order first seen already accepted (Preparing), Delivered or Cancelled gets those times only from a live window.
         ApplyStatusTransitionTimestamps(order, OrderStatus.New, internalStatus, nowUtc, milestonesObservedLive);
+        ApplyProviderCancellationOrigin(order, OrderStatus.New, internalStatus, external.ExternalStatus);
 
         // Sequence keeps the order in which the provider listed the lines and their options; the mapped
         // ExternalOrderDto lists them in that order. Readers order by it (OrderItemOrdering).
@@ -721,6 +725,18 @@ internal sealed class OrderIngestion
                 order.CancelledAt = nowUtc;
                 break;
         }
+    }
+
+    /// <summary>
+    /// Records what a provider status proves about who ended the order, only on the write that makes it Cancelled
+    /// (WAS-200). An order already Cancelled keeps what it has: an operator's rejection survives the provider's echo, and
+    /// an order that ended with an unknown origin is never filled in later. No provider reason is stored: Trendyol GO's
+    /// <c>cancelInfo</c> appears only in documentation samples and has not been verified on a real order.
+    /// </summary>
+    private static void ApplyProviderCancellationOrigin(Order order, OrderStatus oldStatus, OrderStatus newStatus, string? providerStatus)
+    {
+        if (newStatus == OrderStatus.Cancelled && oldStatus != OrderStatus.Cancelled)
+            order.CancellationOrigin = OrderCancellationOrigins.FromProviderStatus(order.Platform, providerStatus);
     }
 
     /// <summary>

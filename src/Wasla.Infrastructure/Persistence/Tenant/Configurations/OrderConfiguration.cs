@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Wasla.Domain.Entities.TenantDb;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Persistence.Tenant.Configurations;
 
@@ -12,9 +13,22 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
     /// </summary>
     internal const string OrderedAtSql = "COALESCE(CreatedAtPlatform, ReceivedAt)";
 
+    internal const string CancellationMetadataCheckName = "CK_Orders_CancellationMetadata";
+
+    /// <summary>
+    /// WAS-200: an origin exists only on a Cancelled order, and a reason code always has an origin and its own order's
+    /// platform. The explicit IS NOT NULL matters: a CHECK passes on UNKNOWN. Unquoted names keep it valid on SQL Server
+    /// and SQLite.
+    /// </summary>
+    internal static readonly string CancellationMetadataCheckSql =
+        $"(CancellationOrigin IS NULL OR InternalStatus = {(int)OrderStatus.Cancelled}) AND (" +
+        "(CancellationReasonCode IS NULL AND CancellationReasonPlatform IS NULL) OR " +
+        "(CancellationOrigin IS NOT NULL AND CancellationReasonCode IS NOT NULL " +
+        "AND CancellationReasonPlatform IS NOT NULL AND CancellationReasonPlatform = Platform))";
+
     public void Configure(EntityTypeBuilder<Order> builder)
     {
-        builder.ToTable("Orders");
+        builder.ToTable("Orders", t => t.HasCheckConstraint(CancellationMetadataCheckName, CancellationMetadataCheckSql));
         builder.HasKey(o => o.Id);
 
         builder.Property(o => o.ExternalOrderId).IsRequired().HasMaxLength(128);

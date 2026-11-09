@@ -27,7 +27,7 @@ Every figure comes from one SQL statement that groups the cohort by platform, st
 | `CompletedOrderCount` | Count | `Delivered` | `OrderedAt` (not `DeliveredAt`) | 0 |
 | `CompletedOrderValue` | Sum of `TotalAmount` | `Delivered` | `OrderedAt` | 0.00 |
 | `AverageCompletedOrderValue` | `CompletedOrderValue / CompletedOrderCount`, rounded to 2 decimals, midpoint away from zero | `Delivered` | `OrderedAt` | **null** when `CompletedOrderCount` is 0 (shown as no value, never 0) |
-| `CancelledOrderCount` | Count | `Cancelled`. This includes rejections: Reject stores `Cancelled`, and no stored field tells a rejection from a cancellation, so the figure is "cancelled or rejected" | `OrderedAt` (not `CancelledAt`) | 0 |
+| `CancelledOrderCount` | Count | `Cancelled`. This includes rejections: Reject stores `Cancelled`, so the figure is "cancelled or rejected". The report does not split it yet (see [Known limits](#known-limits)) | `OrderedAt` (not `CancelledAt`) | 0 |
 | `FailedOrderCount` | Count | `Failed` | `OrderedAt` | 0 |
 | `InProgressOrderCount` | Count | `New`, `Preparing`, `ReadyForPickup`, `OnTheWay` | `OrderedAt` | 0 |
 | `OtherStatusOrderCount` | Count | Any other stored value (the retired value 1, see [lifecycle.md](./lifecycle.md#acceptance-starts-preparation-was-185)) | `OrderedAt` | 0 |
@@ -98,7 +98,9 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 
 ## Known limits
 
-- Rejections cannot be counted apart from cancellations without a stored rejection marker (a schema change, not part of WAS-182).
+- Rejections are not yet counted apart from cancellations. Orders now store how they ended ([lifecycle.md](./lifecycle.md#how-an-order-ended-was-200), WAS-200), but no report figure reads it: that slice waits for the WAS-183 report page.
+  - **Data boundary.** Origins and reasons exist only for orders that ended after the tenant migration `AddOrderCancellationOrigin` was applied and a release with it was running. Earlier cancelled orders stay unknown; nothing is inferred or backfilled. A report period that crosses that moment is partly unknown, and the production date is recorded when the release is deployed.
+  - **For that slice.** Any split must keep `known rejected + known cancelled + unknown = CancelledOrderCount` in every summary, platform row and day row, and must count a null origin as unknown.
 - Figures follow the current status, so a past day's figures can change when a later sync changes an order's status.
 - No per-tenant time zone and no currency other than TRY.
 - `DeliveryFee`, `ServiceFee`, payment method and payment status are not reported.
