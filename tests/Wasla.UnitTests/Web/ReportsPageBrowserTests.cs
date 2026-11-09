@@ -329,6 +329,41 @@ public sealed class ReportsPageBrowserTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LightTheme_KeepsFocusControlsStatesAndChartMarksReadable()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("en-US", 1280, false, ct);
+        await browser.SetSystemColorSchemeAsync("light", ct);
+        await OpenAsync(browser, "/reports", ct);
+        Assert.Equal("light", await browser.EvaluateAsync<string>("document.documentElement.getAttribute('data-bs-theme')", ct));
+
+        await browser.EvaluateAsync<bool>("(document.getElementById('rptCompare').focus(), true)", ct);
+        await browser.PressKeyAsync("Tab", shift: true, ct);
+        var measured = await browser.EvaluateAsync<JsonElement>($$"""
+            (() => {
+              {{TenantDarkModeBrowserTests.Library}}
+              const q = s => document.querySelector(s), card = behind(q('.rpt-filters')), track = behind(q('.rpt-chip').parentElement);
+              const select = q('#rptPlatform'), chip = q('.rpt-chip.is-selected'), plain = q('.rpt-chip:not(.is-selected)');
+              const tab = q('.rpt-tab.is-current'), other = q('.rpt-fill--context');
+              return {
+                focused: document.activeElement === select && select.matches(':focus-visible'),
+                ring: ratio(parse(getComputedStyle(select).outlineColor), card),
+                field: ratio(parse(getComputedStyle(select).borderTopColor), card),
+                selected: ratio(parse(getComputedStyle(chip).borderTopColor), track),
+                tab: ratio(parse(getComputedStyle(tab).borderBottomColor), behind(tab.parentElement)),
+                series: ratio(parse(getComputedStyle(other).backgroundColor), behind(other.parentElement)),
+                chipText: ratio(parse(getComputedStyle(plain).color), track)
+              };
+            })()
+            """, ct);
+
+        Assert.True(measured.GetProperty("focused").GetBoolean(), "The platform field did not take keyboard focus.");
+        foreach (var part in new[] { "ring", "field", "selected", "tab", "series" })
+            Assert.True(measured.GetProperty(part).GetDouble() >= 3, $"{part}: {measured.GetProperty(part).GetDouble():0.00}:1 is below 3:1.");
+        Assert.True(measured.GetProperty("chipText").GetDouble() >= 4.5, $"Filter text: {measured.GetProperty("chipText").GetDouble():0.00}:1 is below 4.5:1.");
+    }
+
+    [Fact]
     public async Task ChartAndTable_ShowTheSameDays()
     {
         var ct = TestContext.Current.CancellationToken;
