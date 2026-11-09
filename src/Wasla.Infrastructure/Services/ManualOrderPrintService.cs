@@ -60,10 +60,25 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
             : null;
     }
 
-    public async Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
+    public Task<ManualOrderPrintResult> QueueReceiptPrintAsync(
         Guid tenantId,
         Guid orderId,
         string? tenantDisplayName,
+        CancellationToken ct) =>
+        QueueAsync(tenantId, orderId, tenantDisplayName, reprintConfirmed: false, ct);
+
+    public Task<ManualOrderPrintResult> QueueConfirmedReprintAsync(
+        Guid tenantId,
+        Guid orderId,
+        string? tenantDisplayName,
+        CancellationToken ct) =>
+        QueueAsync(tenantId, orderId, tenantDisplayName, reprintConfirmed: true, ct);
+
+    private async Task<ManualOrderPrintResult> QueueAsync(
+        Guid tenantId,
+        Guid orderId,
+        string? tenantDisplayName,
+        bool reprintConfirmed,
         CancellationToken ct)
     {
         int copyCount;
@@ -92,6 +107,17 @@ public sealed class ManualOrderPrintService : IManualOrderPrintService
                 return AlreadyQueued();
 
             reprintSource = jobs.FirstOrDefault(j => j.Status is PrintJobStatus.Printed or PrintJobStatus.Failed);
+
+            // The screen still offered a first print, but a receipt has finished since. Another physical copy needs the
+            // operator's confirmation, so nothing is created and the screen reads the current state.
+            if (reprintSource is not null && !reprintConfirmed)
+            {
+                return new ManualOrderPrintResult(
+                    false,
+                    ManualOrderPrintOutcome.ReprintConfirmationRequired,
+                    ManualOrderPrintMessageKeys.ReprintConfirmationRequired,
+                    null);
+            }
 
             var settings = await db.TenantOperationalSettings
                 .AsNoTracking()

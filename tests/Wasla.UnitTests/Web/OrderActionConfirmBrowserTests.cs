@@ -34,12 +34,14 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
         window.fetch = (url, options) => {
           const text = String((url && url.url) || url);
           if (window.__failTableReads && text.includes('/orders/table')) return Promise.reject(new TypeError('network'));
+          if (window.__blockPrintState && text.includes('/print-state')) return Promise.reject(new TypeError('network'));
           if (window.__holdPreferenceRead && text.includes('/order-action-preference/current')) {
             window.__holdPreferenceRead = false;
             return realFetch(url, options).then(r => new Promise(resolve => { window.__releaseRead = () => resolve(r); }));
           }
           if (options && options.method === 'POST' && !text.includes('/hubs/')) {
             window.__posts.push(text);
+            window.__blockPrintState = false;
             if (window.__dropAnswer) { window.__dropAnswer = false; return realFetch(url, options).then(() => { throw new TypeError('answer lost'); }); }
             if (window.__holdThenFail) { window.__holdThenFail = false; return new Promise((_, reject) => { window.__releaseHeld = () => reject(new TypeError('answer lost')); }); }
             if (window.__failNextPost) { window.__failNextPost = false; return Promise.reject(new TypeError('network')); }
@@ -337,6 +339,45 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
             "[...document.querySelectorAll('.wasla-toast__message')].some(t => t.textContent.includes('Sipariş durumunu kontrol edin'))", TimeSpan.FromSeconds(15), ct),
             "The page claimed to know the order's state after reading nothing.");
         await AssertPostsAsync(browser, 1, ct);
+    }
+
+    [Theory]
+    [InlineData(PrintJobStatus.Printed)]
+    [InlineData(PrintJobStatus.Failed)]
+    public async Task AStaleFirstPrintButton_CreatesNoExtraCopy_AndReprintStillAsks(PrintJobStatus finished)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, ct);
+        await browser.NavigateAsync(new Uri(_host.BaseAddress, $"/orders/details/{UnprintedOrderId}"), ct);
+        Assert.True(await browser.WaitForAsync("document.querySelector('[data-order-print]')?.getAttribute('data-print-mode') === 'print'", TimeSpan.FromSeconds(15), ct),
+            (_host.ServerErrors ?? "") + " The unprinted order did not offer a first print.");
+
+        // Another operator's receipt, or the automatic one, finishes while this page still offers a first print.
+        await browser.EvaluateAsync<bool>("(() => { window.__blockPrintState = true; return true; })()", ct);
+        await AddFinishedReceiptAsync(UnprintedOrderId, finished, ct);
+
+        await browser.EvaluateAsync<bool>("(() => { document.querySelector('[data-order-print]').click(); return true; })()", ct);
+        Assert.True(await browser.WaitForAsync("window.__posts.length === 1", TimeSpan.FromSeconds(10), ct), "The print request was not sent.");
+        Assert.True(await browser.WaitForAsync("document.querySelector('[data-order-print]').getAttribute('data-print-mode') !== 'print'", TimeSpan.FromSeconds(10), ct), "The button did not leave its stale state.");
+
+        Assert.Equal(1, await ReceiptJobCountAsync(UnprintedOrderId, ct));
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('#waslaConfirmDialog.show')", ct), "A first print asked for confirmation.");
+        Assert.True(await browser.WaitForAsync(
+            "[...document.querySelectorAll('.wasla-toast--warning .wasla-toast__message')].some(t => t.textContent.includes('yeni fiş oluşturulmadı'))", TimeSpan.FromSeconds(5), ct),
+            "The page did not say that nothing was created.");
+        Assert.False(await browser.EvaluateAsync<bool>("!!document.querySelector('.wasla-toast--success')", ct), "A refused first print was reported as queued.");
+
+        Assert.True(await browser.WaitForAsync("(() => { const b = document.querySelector('[data-order-print]'); return b.getAttribute('data-print-mode') === 'reprint' && !b.disabled; })()", TimeSpan.FromSeconds(10), ct),
+            "The button did not end on Reprint.");
+        await browser.EvaluateAsync<bool>("(() => { document.querySelector('[data-order-print]').click(); return true; })()", ct);
+        await DialogAsync(browser, ct);
+        await AssertPostsAsync(browser, 1, ct);
+        await AcceptAsync(browser, ct);
+        Assert.True(await browser.WaitForAsync("window.__posts.length === 2", TimeSpan.FromSeconds(10), ct), "The confirmed reprint was not sent.");
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (await ReceiptJobCountAsync(UnprintedOrderId, ct) < 2 && DateTime.UtcNow < deadline)
+            await Task.Delay(100, ct);
+        Assert.Equal(2, await ReceiptJobCountAsync(UnprintedOrderId, ct));
     }
 
     [Fact]
@@ -739,6 +780,19 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
 
     private Task<TenantDbContext> TenantDbAsync(CancellationToken ct) =>
         _host.Services.GetRequiredService<ITenantDbContextFactory>().CreateAsync(TenantVisualWebHost.TenantId, ct);
+
+    private async Task AddFinishedReceiptAsync(Guid orderId, PrintJobStatus status, CancellationToken ct)
+    {
+        await using var db = await TenantDbAsync(ct);
+        db.PrintJobs.Add(new PrintJob { OrderId = orderId, Type = PrintJobType.Receipt, Status = status, CopyCount = 1, PayloadJson = "{}", AttemptCount = 1 });
+        await db.SaveChangesAsync(ct);
+    }
+
+    private async Task<int> ReceiptJobCountAsync(Guid orderId, CancellationToken ct)
+    {
+        await using var db = await TenantDbAsync(ct);
+        return await db.PrintJobs.AsNoTracking().CountAsync(j => j.OrderId == orderId && j.Type == PrintJobType.Receipt, ct);
+    }
 
     private async Task<OrderStatus> StatusAsync(Guid orderId, CancellationToken ct)
     {

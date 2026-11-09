@@ -4606,6 +4606,7 @@
   <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>تعذر تأكيد النتيجة. لا يزال الطلب بانتظار الإجراء؛ تحقق من لوحة المنصة قبل المحاولة مرة أخرى.</value></data>
   <data name="Orders.ActionUnverified" xml:space="preserve"><value>تعذر تأكيد النتيجة. تحقق من حالة الطلب.</value></data>
   <data name="Orders.Print.Unverified" xml:space="preserve"><value>تعذّر التأكد من طلب الطباعة. تحقق من حالة الإيصال قبل المحاولة مرة أخرى.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>تغيّرت حالة إيصال هذا الطلب، ولم يُنشأ إيصال جديد. استخدم «إعادة الطباعة» لطلب نسخة أخرى.</value></data>
   <data name="Orders.ConfirmStale" xml:space="preserve"><value>تم تحديث هذا الطلب بإجراء آخر وهو الآن {0}. لم يعد هذا الإجراء متاحًا.</value></data>
   <data name="Orders.ConfirmGone" xml:space="preserve"><value>لم يعد هذا الطلب معروضًا. لم يعد هذا الإجراء متاحًا.</value></data>
   <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>إجراءات الطلب</value></data>

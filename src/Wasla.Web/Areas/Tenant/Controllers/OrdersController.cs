@@ -631,12 +631,15 @@ public sealed class OrdersController : BaseController
     [HttpPost("{id:guid}/print")]
     [ValidateAntiForgeryToken]
     [Authorize(Policy = TenantPolicies.CanManualPrint)]
-    public async Task<IActionResult> Print(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Print(Guid id, [FromForm] bool reprintConfirmed, CancellationToken ct)
     {
         var tenant = _currentTenant.CurrentTenant;
         if (tenant is null) return NotFound();
 
-        var result = await _manualPrint.QueueReceiptPrintAsync(tenant.Id, id, tenant.Name, ct);
+        // Only a reprint the operator confirmed in the dialog may create another copy.
+        var result = reprintConfirmed
+            ? await _manualPrint.QueueConfirmedReprintAsync(tenant.Id, id, tenant.Name, ct)
+            : await _manualPrint.QueueReceiptPrintAsync(tenant.Id, id, tenant.Name, ct);
 
         var body = new
         {
@@ -648,6 +651,7 @@ public sealed class OrdersController : BaseController
         {
             ManualOrderPrintOutcome.OrderNotFound => NotFound(body),
             ManualOrderPrintOutcome.AlreadyQueued => Conflict(body),
+            ManualOrderPrintOutcome.ReprintConfirmationRequired => StatusCode(StatusCodes.Status412PreconditionFailed, body),
             _ when !result.Success => BadRequest(body),
             _ => Ok(body)
         };

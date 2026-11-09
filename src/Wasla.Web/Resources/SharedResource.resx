@@ -2262,6 +2262,7 @@
   <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>Sonuç doğrulanamadı. Sipariş hâlâ işlem bekliyor; tekrar denemeden önce platform panelini kontrol edin.</value></data>
   <data name="Orders.ActionUnverified" xml:space="preserve"><value>Sonuç doğrulanamadı. Sipariş durumunu kontrol edin.</value></data>
   <data name="Orders.Print.Unverified" xml:space="preserve"><value>Yazdırma isteği doğrulanamadı. Tekrar denemeden önce fiş durumunu kontrol edin.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>Bu siparişin fiş durumu değişti; yeni fiş oluşturulmadı. Başka bir kopya için Tekrar yazdır'ı kullanın.</value></data>
   <data name="Orders.ConfirmStale" xml:space="preserve"><value>Sipariş başka bir işlemle güncellendi ve artık {0}. Bu işlem yapılamaz.</value></data>
   <data name="Orders.ConfirmGone" xml:space="preserve"><value>Sipariş artık listede değil. Bu işlem yapılamaz.</value></data>
   <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Sipariş işlemleri</value></data>

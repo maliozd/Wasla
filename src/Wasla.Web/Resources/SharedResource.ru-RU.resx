@@ -5094,6 +5094,7 @@
   <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>Не удалось подтвердить результат. Заказ всё ещё ожидает; перед повторной попыткой проверьте панель платформы.</value></data>
   <data name="Orders.ActionUnverified" xml:space="preserve"><value>Не удалось подтвердить результат. Проверьте статус заказа.</value></data>
   <data name="Orders.Print.Unverified" xml:space="preserve"><value>Не удалось подтвердить запрос на печать. Проверьте статус чека, прежде чем повторить попытку.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>Статус чека этого заказа изменился, новый чек не создан. Чтобы запросить ещё одну копию, используйте «Перепечатка».</value></data>
   <data name="Orders.ConfirmStale" xml:space="preserve"><value>Заказ обновлён другим действием и теперь имеет статус «{0}». Это действие больше недоступно.</value></data>
   <data name="Orders.ConfirmGone" xml:space="preserve"><value>Этого заказа больше нет на экране. Это действие больше недоступно.</value></data>
   <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Действия с заказом</value></data>

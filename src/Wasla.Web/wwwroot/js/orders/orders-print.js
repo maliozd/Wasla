@@ -99,7 +99,9 @@
   async function submit(btn, orderId) {
     const previousMode = btn.getAttribute("data-print-mode") || "print";
 
-    if (previousMode === "reprint" && !await confirmReprint(btn, orderId)) return;
+    const reprint = previousMode === "reprint";
+
+    if (reprint && !await confirmReprint(btn, orderId)) return;
 
     inFlight[orderId] = true;
     btn.disabled = true;
@@ -108,8 +110,14 @@
       const token = getCsrfToken();
       const headers = { "X-Requested-With": "XMLHttpRequest" };
       if (token) headers["RequestVerificationToken"] = token;
+      // Says the operator confirmed another copy. Without it the server never creates one.
+      if (reprint) headers["Content-Type"] = "application/x-www-form-urlencoded";
 
-      const resp = await fetch(buildUrl(orderId), { method: "POST", headers: headers });
+      const resp = await fetch(buildUrl(orderId), {
+        method: "POST",
+        headers: headers,
+        body: reprint ? "reprintConfirmed=true" : undefined
+      });
 
       let payload = null;
       try {
@@ -128,6 +136,14 @@
       if (resp.status === 409) {
         toast(message || localize("orderPrintAlreadyQueued"), "warning");
         applyQueuedState(btn);
+        return;
+      }
+
+      // 412: this button still offered a first print, but a receipt has finished since. Nothing was created; the read
+      // below shows Reprint, which asks.
+      if (resp.status === 412) {
+        toast(message || localize("orderPrintFailed"), "warning");
+        restore(btn, "reprint");
         return;
       }
 

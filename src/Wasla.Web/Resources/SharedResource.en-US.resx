@@ -4606,6 +4606,7 @@
   <data name="Orders.ActionStillWaiting" xml:space="preserve"><value>The result could not be confirmed. The order is still waiting; check the platform panel before trying again.</value></data>
   <data name="Orders.ActionUnverified" xml:space="preserve"><value>The result could not be confirmed. Check the order's status.</value></data>
   <data name="Orders.Print.Unverified" xml:space="preserve"><value>We could not confirm the print request. Check the receipt status before trying again.</value></data>
+  <data name="Orders.Print.ReprintConfirmationRequired" xml:space="preserve"><value>This order's receipt status has changed, so no new receipt was created. Use Reprint to request another copy.</value></data>
   <data name="Orders.ConfirmStale" xml:space="preserve"><value>This order was updated by another action and is now {0}. This action can no longer be done.</value></data>
   <data name="Orders.ConfirmGone" xml:space="preserve"><value>This order is no longer on the screen. This action can no longer be done.</value></data>
   <data name="Orders.ActionPreference.Heading" xml:space="preserve"><value>Order actions</value></data>
