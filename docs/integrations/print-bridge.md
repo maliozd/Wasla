@@ -97,6 +97,23 @@ The WebView2 shell keeps its browser profile (cache only, never settings or toke
 
 **Isolated development instance.** Debug builds only: set `WASLA_PRINTBRIDGE_DATA_ROOT` to an absolute folder to run with its own settings, token, history and logs instead of ProgramData. Such an instance does not register the `wasla-printbridge://` handler and does not listen on the setup pipe, so it cannot take over the installed client. Release builds ignore the variable. Never point a development instance at a real printer or a real device token.
 
+## Single instance and setup links between launches (WAS-92)
+
+One engine runs per computer. A second launch hands its setup link only to the instance of its own Windows user in its own session.
+
+- **Two locks** (`SingleInstanceGuard`, taken in this order):
+  1. The instance lock of this Windows user in this session: `Local\WaslaPrintBridge.Instance.{user SID}` (`PrintBridgeInstanceScope`).
+  2. The machine-wide engine lock `Global\WaslaPrintBridge`. Settings, the device token and print history are in one ProgramData folder, so one engine polls and prints whichever user starts Print Bridge.
+
+  A lock counts as taken only when this launch created it. A lock that already exists, cannot be opened (another account's access rules) or names another kind of object is never read as free, so an unclear answer never starts a second engine.
+- **What a launch does.** Both locks taken: it starts the engine and listens for setup links. This user's instance lock exists: it forwards its setup link (below); if the link is not delivered, or there is none, it shows "already running" and exits. Only the engine lock is held elsewhere (another Windows user or session): it forwards nothing and shows `Message.RunningInAnotherSession`, which asks to exit Print Bridge there first.
+- **Setup pipe** `WaslaPrintBridge.Setup.v1.{user SID}.{session id}` (`SetupInstanceChannel`). Pipe names are machine-wide and not secret, so neither end trusts the name:
+  - The listener creates the pipe with `PipeOptions.FirstPipeInstance` and access for this user only. If the name already exists, it never joins that pipe: it logs once, retries every 2 seconds and logs again when it listens.
+  - The forwarding launch connects with `PipeOptions.CurrentUserOnly` and allows identification only, never impersonation. After connecting, .NET compares the pipe's owner with this user's token owner and refuses a pipe that another account created before anything is written. A refused pipe, no pipe within 3 seconds, or a broken connection ends the launch with "already running"; the link is not kept. The write has the same 3-second limit, so a pipe that accepts and never reads cannot keep the launch alive.
+  - The message contract is unchanged: one UTF-8 setup link, ended by closing the pipe. The listener drops a message over 8 KiB, invalid UTF-8, anything that does not start with `wasla-printbridge://`, and a client that has not finished within 5 seconds, and never logs the content.
+- **Elevation.** `CurrentUserOnly` compares token owners, and an elevated administrator owns new objects as the Administrators group. A link is therefore not forwarded between an elevated and a non-elevated Print Bridge of the same user; the second launch shows "already running".
+- **Not prevented.** Anyone who can sign in to the computer can create the engine lock or this user's pipe name first. That keeps Print Bridge from starting, or setup links from reaching it, but never hands a link to that process. A stronger guarantee belongs to the Windows Service engine (WAS-61).
+
 ## Authentication
 
 Header: **`X-PrintBridge-Token`**
@@ -377,6 +394,7 @@ See [../operations/cli.md](../operations/cli.md):
 - The WebView2 app has not yet been verified with a physical receipt printer, and the runtime notice not on a physical installation without the WebView2 Runtime; WAS-54, WAS-57 and WAS-65 verification used test mode, a fake API, a simulated missing runtime and a recording or missing printer.
 - Without the WebView2 Runtime a device can be connected only through a setup link; manual setup needs the app window.
 - Engine and client log lines include the server URL, the Windows machine name and printer names (for example the startup "Effective config" line and request warnings). Tokens are never logged.
+- WAS-92 isolation between Windows accounts is tested only on CI runners, with a temporary local account whose network-logon token the test thread impersonates (`SetupInstanceCrossAccountTests`), not with a second interactive session or fast user switching. A setup link opened in the first seconds after Print Bridge starts may find no listener yet (the pipe opens after the app is built); after 3 seconds that launch shows "already running" and the link has to be opened again.
 - A setup link opened while a print job is being completed is refused, not queued (WAS-58, see Job flow). The user has to open it again after printing has finished. Hand edits to `appsettings.json` while Print Bridge runs are not guarded.
 - WAS-91 moves were verified against the real setup and device services in-process and on LocalDB with fake data, not against a deployed server or a physical installation. The confirmation was checked on one machine at 96 DPI.
 - WAS-191 (device requests never follow a redirect) was verified with the production client over loopback HTTP against fake servers, not against a deployed HTTPS server or a physical installation. A device whose saved `ServerUrl` only worked through a redirect stops connecting and shows "Connection.RedirectNotFollowed" until it is reconnected with the address the Web panel shows.
