@@ -42,6 +42,8 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     private const string StreetName = "Moda Caddesi"; // name "Moda", type "Caddesi", as the page lists it and the server stores it
     private const int OtherDistrictId = 9452;
     private const string OtherNeighborhoodName = "Salacak";
+    private const int TypedNeighborhoodId = 94512; // a second neighbourhood of the saved district, with no streets
+    private const string TypedNeighborhoodName = "Rasimpaşa";
     private static readonly ResourceManager Resources = new("Wasla.Web.Resources.SharedResource", typeof(Wasla.Web.SharedResource).Assembly);
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(15);
 
@@ -95,6 +97,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         db.Cities.Add(new City { Id = CityId, CountryCode = "TR", Name = "İstanbul", PhoneAreaCode = "216", IsActive = true });
         db.Districts.Add(new District { Id = DistrictId, CityId = CityId, Name = "Kadıköy", IsActive = true });
         db.Neighborhoods.Add(new Neighborhood { Id = NeighborhoodId, DistrictId = DistrictId, Name = NeighborhoodName, IsActive = true });
+        db.Neighborhoods.Add(new Neighborhood { Id = TypedNeighborhoodId, DistrictId = DistrictId, Name = TypedNeighborhoodName, IsActive = true });
         db.Streets.Add(new Street { Id = StreetId, NeighborhoodId = NeighborhoodId, Name = "Moda", StreetType = "Caddesi", IsActive = true });
         db.Districts.Add(new District { Id = OtherDistrictId, CityId = CityId, Name = "Üsküdar", IsActive = true });
         db.Neighborhoods.Add(new Neighborhood { Id = 94521, DistrictId = OtherDistrictId, Name = OtherNeighborhoodName, IsActive = true });
@@ -239,6 +242,16 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     // read, so the page's own handlers of that answer have run.
     private static Task AnswerHandledAsync(HeadlessChromium browser, string pathAndQuery, CancellationToken ct) =>
         WaitForAsync(browser, $"window.__suAnswers.includes('{pathAndQuery}')", ct);
+
+    // Waits until the page has handled the answer to this lookup or the server saw one more lookup cancelled than
+    // cancelledBefore, so a test can assert what either outcome left in the form.
+    private async Task AnswerHandledOrCancelledAsync(HeadlessChromium browser, string pathAndQuery, CancellationToken ct, int cancelledBefore = 0)
+    {
+        var deadline = DateTime.UtcNow + Wait;
+        while (_lookups.Cancelled == cancelledBefore && DateTime.UtcNow < deadline
+               && !await browser.EvaluateAsync<bool>($"window.__suAnswers.includes('{pathAndQuery}')", ct))
+            await Task.Delay(50, ct);
+    }
 
     private static Task<JsonElement> SavedRestaurantAsync(HeadlessChromium browser, CancellationToken ct) =>
         browser.EvaluateAsync<JsonElement>("fetch('/signup/draft', { cache: 'no-store' }).then(r => r.json()).then(d => d.restaurant)", ct);
@@ -520,10 +533,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await AnswerHandledAsync(browser, $"/signup/neighborhoods?districtId={OtherDistrictId}", ct);
         _lookups.Release(NeighborhoodsOf(DistrictId));
         // The saved district's lookup is over once the page cancelled it or handled its late answer.
-        var deadline = DateTime.UtcNow + Wait;
-        while (_lookups.Cancelled == 0 && DateTime.UtcNow < deadline
-               && !await browser.EvaluateAsync<bool>($"window.__suAnswers.includes('/signup/neighborhoods?districtId={DistrictId}')", ct))
-            await Task.Delay(50, ct);
+        await AnswerHandledOrCancelledAsync(browser, $"/signup/neighborhoods?districtId={DistrictId}", ct);
 
         Assert.Equal(OtherDistrictId.ToString(CultureInfo.InvariantCulture), await ValueAsync(browser, "signupDistrictId", ct));
         Assert.True(await browser.EvaluateAsync<bool>($"!!document.querySelector('#signupNeighborhoodList option[value=\"{OtherNeighborhoodName}\"]') && !document.querySelector('#signupNeighborhoodList option[value=\"{NeighborhoodName}\"]')", ct));
@@ -568,6 +578,107 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
 
         Assert.True(await browser.EvaluateAsync<bool>($"!!document.querySelector('#signupNeighborhoodList option[value=\"{OtherNeighborhoodName}\"]') && !document.querySelector('#signupNeighborhoodList option[value=\"{NeighborhoodName}\"]')", ct));
         Assert.Equal(OtherDistrictId.ToString(CultureInfo.InvariantCulture), await ValueAsync(browser, "signupDistrictId", ct));
+    }
+
+    // WAS-212: a neighbourhood typed while the saved district (still disabled) or its neighbourhoods are on their way is
+    // the visitor's. The city and district they did not touch still come back, the typed neighbourhood gets the id of
+    // the district's neighbourhood with that name, and the saved street, which belongs to the old neighbourhood, is
+    // not put under it. After the limit, the retry does the same.
+    [Theory]
+    [InlineData("districts", false)]
+    [InlineData("neighborhoods", false)]
+    [InlineData("districts", true)]
+    public async Task ANeighbourhoodTypedWhileTheSavedAddressIsRestored_IsKeptWithItsOwnId_AndTheSavedDistrictStillComesBack(string held, bool afterTheLimit)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var key = held == "districts" ? DistrictsOf(CityId) : NeighborhoodsOf(DistrictId);
+        var browser = await ReachRestaurantAfterReloadAsync(
+            lookups => lookups.Hold(key), CountRestaurantSaves + ControlAddressLimit + TrackAnswers, ct, withStreet: true);
+        await using var _ = browser;
+
+        await UntilAsync(() => _lookups.Started, 1, ct);
+        Assert.Equal(held == "districts", await browser.EvaluateAsync<bool>("document.getElementById('signupDistrictId').disabled", ct));
+        await Js(browser, $"__su.set('signupNeighborhood', '{TypedNeighborhoodName}')", ct);
+
+        var cancelledBefore = 0;
+        if (afterTheLimit)
+        {
+            await Js(browser, $"{NextButton}.click()", ct);
+            await ExpireAddressLimitAsync(browser, lookupsStarted: 1, ct);
+            await AssertAddressAlertAsync(browser, ct);
+            await UntilAsync(() => _lookups.Cancelled, 1, ct);
+            cancelledBefore = 1;
+            _lookups.Release();
+            await Js(browser, $"{NextButton}.click()", ct);
+        }
+        else
+        {
+            _lookups.Release();
+        }
+        await AnswerHandledOrCancelledAsync(browser, $"/signup/streets?neighborhoodId={TypedNeighborhoodId}", ct, cancelledBefore);
+
+        Assert.Equal(CityId.ToString(CultureInfo.InvariantCulture), await ValueAsync(browser, "signupCityId", ct));
+        Assert.Equal(DistrictId.ToString(CultureInfo.InvariantCulture), await ValueAsync(browser, "signupDistrictId", ct));
+        Assert.False(await browser.EvaluateAsync<bool>("document.getElementById('signupDistrictId').disabled", ct));
+        Assert.Equal(TypedNeighborhoodName, await ValueAsync(browser, "signupNeighborhood", ct));
+        Assert.Equal(TypedNeighborhoodId.ToString(CultureInfo.InvariantCulture), await ValueAsync(browser, "signupNeighborhoodId", ct));
+        Assert.Equal("", await ValueAsync(browser, "signupStreetAddress", ct));
+        Assert.Equal("", await ValueAsync(browser, "signupStreetId", ct));
+        Assert.Equal(cancelledBefore, _lookups.Cancelled);
+
+        // Continue asks for the street of the typed neighbourhood; the retry after the limit already did.
+        if (!afterTheLimit)
+            await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, "document.activeElement && document.activeElement.id === 'signupStreetAddress'", ct);
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
+
+        await Js(browser, "__su.set('signupStreetAddress', 'Yeni Sokak 1')", ct);
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        var saved = await SavedRestaurantAsync(browser, ct);
+        Assert.Equal(DistrictId, saved.GetProperty("districtId").GetInt32());
+        Assert.Equal(TypedNeighborhoodName, saved.GetProperty("neighborhood").GetString());
+        Assert.Equal(TypedNeighborhoodId, saved.GetProperty("neighborhoodId").GetInt32());
+        Assert.Equal("Yeni Sokak 1", saved.GetProperty("streetAddress").GetString());
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("streetId").ValueKind);
+        Assert.Equal(1, await RestaurantSavesAsync(browser, ct));
+    }
+
+    // WAS-212: a neighbourhood typed while the saved neighbourhood's streets are on their way makes their answer stale,
+    // so none of those streets is offered, or given its id, under the new neighbourhood.
+    [Fact]
+    public async Task ANeighbourhoodTypedWhileTheSavedStreetsAreOnTheirWay_GetsNoneOfThem()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var browser = await ReachRestaurantAfterReloadAsync(
+            lookups => lookups.Hold(StreetsOf(NeighborhoodId)), CountRestaurantSaves + TrackAnswers, ct, withStreet: true);
+        await using var _ = browser;
+
+        await UntilAsync(() => _lookups.Started, 1, ct);
+        Assert.Equal(NeighborhoodName, await ValueAsync(browser, "signupNeighborhood", ct));
+        await Js(browser, "__su.set('signupNeighborhood', 'Yeni Mahalle')", ct);
+        _lookups.Release();
+        await AnswerHandledOrCancelledAsync(browser, $"/signup/streets?neighborhoodId={NeighborhoodId}", ct);
+
+        Assert.Equal("Yeni Mahalle", await ValueAsync(browser, "signupNeighborhood", ct));
+        Assert.Equal("", await ValueAsync(browser, "signupNeighborhoodId", ct));
+        Assert.Equal(0, await browser.EvaluateAsync<int>("document.querySelectorAll('#signupStreetList option').length", ct));
+        Assert.Equal("", await ValueAsync(browser, "signupStreetAddress", ct));
+
+        await Js(browser, $"__su.set('signupStreetAddress', '{StreetName}')", ct);
+        Assert.Equal("", await ValueAsync(browser, "signupStreetId", ct));
+        await Js(browser, $"{NextButton}.click()", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+
+        var saved = await SavedRestaurantAsync(browser, ct);
+        Assert.Equal(DistrictId, saved.GetProperty("districtId").GetInt32());
+        Assert.Equal("Yeni Mahalle", saved.GetProperty("neighborhood").GetString());
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("neighborhoodId").ValueKind);
+        Assert.Equal(StreetName, saved.GetProperty("streetAddress").GetString());
+        Assert.Equal(JsonValueKind.Null, saved.GetProperty("streetId").ValueKind);
+        Assert.Equal(1, await RestaurantSavesAsync(browser, ct));
     }
 
     [Fact]
