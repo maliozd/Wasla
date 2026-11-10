@@ -62,10 +62,12 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
         new(new DbContextOptionsBuilder<TenantDbContext>().UseSqlServer(ConnectionString(instance)).Options);
 
     /// <summary>
-    /// Command timeout for creating and migrating the throwaway database. Several SQL Server test classes set up their
-    /// databases at the same time on one LocalDB, and on a busy CI runner that outlasted the 30-second default.
+    /// Command timeout for creating and migrating a throwaway database, in every SQL Server test fixture (tenant and
+    /// CentralDb). On a busy CI runner LocalDB has taken longer than the 30-second default for <c>CREATE DATABASE</c>:
+    /// with several classes setting up at once (run 40398423581, WAS-18) and in run 42705726306 with no other SQL Server
+    /// test class running. The tests' own commands keep their timeouts.
     /// </summary>
-    private static readonly TimeSpan SetupCommandTimeout = TimeSpan.FromMinutes(3);
+    internal static readonly TimeSpan SetupCommandTimeout = TimeSpan.FromMinutes(3);
 
     public async ValueTask InitializeAsync()
     {
