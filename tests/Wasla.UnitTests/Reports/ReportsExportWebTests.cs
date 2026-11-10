@@ -26,6 +26,9 @@ public sealed class ReportsExportWebTests(ReportsExportWebTests.Hosts hosts) : I
         hosts.Reports.Inner.Calls.Clear();
         hosts.Reports.Inner.Mode = mode;
         hosts.Reports.Hold = null;
+        while (hosts.Reports.Entered.Wait(0))
+        {
+        }
     }
 
     private async Task<HttpResponseMessage> ExportAsync(string query, string role = "owner") =>

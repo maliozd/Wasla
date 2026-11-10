@@ -299,7 +299,8 @@
     /** Points the export at the applied filter and offers it only for a loaded report. */
     function syncExport() {
       const available = EXPORTABLE_STATES.indexOf(exportState) >= 0;
-      exportToggle.disabled = !available;
+      // While a file is being made the button keeps focus (it is marked disabled, not disabled); onEnd syncs again.
+      exportToggle.disabled = !available && !exporter.isRunning();
       if (available) exportToggle.removeAttribute("title");
       else exportToggle.title = exportRoot.dataset.unavailableText;
       exportRoot.querySelectorAll("[data-rpt-export]").forEach(function (link) {

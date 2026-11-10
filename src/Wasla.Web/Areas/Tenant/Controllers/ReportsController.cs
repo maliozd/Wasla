@@ -196,7 +196,10 @@ public sealed class ReportsController : BaseController
         }
     }
 
-    /// <summary>The longest an export may take, its report read included; the period is at most 92 days.</summary>
+    /// <summary>
+    /// The longest the export's report read may take. Writing the file cannot be interrupted; its size is bounded by the
+    /// 92-day period limit.
+    /// </summary>
     internal static readonly TimeSpan ExportTimeout = TimeSpan.FromSeconds(60);
 
     private static ContentResult Refuse(int status, string message) => new()

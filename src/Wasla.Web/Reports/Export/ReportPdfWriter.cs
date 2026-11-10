@@ -76,8 +76,10 @@ public static partial class ReportPdfWriter
     private static bool Configure()
     {
         QuestPDF.Settings.License = LicenseType.Community;
-        // Only the registered fonts, so a server without fonts renders the same file.
+        // Only the registered fonts, so a server without fonts renders the same file; the application directory is not
+        // searched for font files either (the bundled Lato is loaded by the library itself).
         QuestPDF.Settings.UseSystemFonts = false;
+        QuestPDF.Settings.FontDiscoveryPath = null;
         // A restaurant name can hold characters no bundled font has (an emoji, for example). Such a glyph is drawn as a
         // placeholder instead of failing the whole export; ReportPdfWriterTests checks that every label and figure has glyphs.
         QuestPDF.Settings.ThrowOnMissingTextGlyphs = false;
@@ -409,16 +411,22 @@ public static partial class ReportPdfWriter
             container.Background(SeriesColor(series));
     }
 
-    private static Color SeriesColor(string series) => series switch
+    private static Color SeriesColor(string series)
     {
-        ReportPresenter.SeriesDelivered or ReportPresenter.SeriesCompletedValue => Color.FromHex("#E67140"),
-        ReportPresenter.SeriesOther => Color.FromHex("#8F867B"),
-        ReportPresenter.SeriesPartial => Color.FromHex("#F6CDB6"),
-        "ty" => Color.FromHex("#C4700F"),
-        "ys" => Color.FromHex("#B3123F"),
-        "gy" => Color.FromHex("#5D3EBC"),
-        _ => Muted
-    };
+        if (series == ReportPresenter.PlatformSeries(Domain.Enums.FoodPlatform.TrendyolYemek))
+            return Color.FromHex("#C4700F");
+        if (series == ReportPresenter.PlatformSeries(Domain.Enums.FoodPlatform.Yemeksepeti))
+            return Color.FromHex("#B3123F");
+        if (series == ReportPresenter.PlatformSeries(Domain.Enums.FoodPlatform.GetirYemek))
+            return Color.FromHex("#5D3EBC");
+        return series switch
+        {
+            ReportPresenter.SeriesDelivered or ReportPresenter.SeriesCompletedValue => Color.FromHex("#E67140"),
+            ReportPresenter.SeriesOther => Color.FromHex("#8F867B"),
+            ReportPresenter.SeriesPartial => Color.FromHex("#F6CDB6"),
+            _ => Muted
+        };
+    }
 
     private static void Shares(IContainer container, ReportExportPrintContent print) =>
         container.Column(column =>
