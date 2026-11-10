@@ -177,6 +177,9 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>لم يتم إنشاء مجلد السجلات بعد.</value>
   </data>
+  <data name="Message.RunningInAnotherSession" xml:space="preserve">
+    <value>Wasla Print Bridge يعمل بالفعل لمستخدم Windows آخر أو في جلسة أخرى على هذا الكمبيوتر.{0}{0}لا يمكن تشغيل أكثر من نسخة واحدة من Print Bridge على الكمبيوتر. اخرج منه في تلك الجلسة أولاً، ثم افتح Print Bridge أو رابط الإعداد مرة أخرى.</value>
+  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>يتطلب Wasla Print Bridge نظام Windows.</value>
   </data>

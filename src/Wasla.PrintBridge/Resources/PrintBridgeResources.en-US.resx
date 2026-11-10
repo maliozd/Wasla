@@ -183,6 +183,9 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Logs folder has not been created yet.</value>
   </data>
+  <data name="Message.RunningInAnotherSession" xml:space="preserve">
+    <value>Wasla Print Bridge is already running for another Windows user or session on this computer.{0}{0}Only one Print Bridge can run on a computer. Exit it in that session first, then open Print Bridge or the setup link again.</value>
+  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge requires Windows.</value>
   </data>
