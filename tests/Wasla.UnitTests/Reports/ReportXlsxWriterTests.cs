@@ -67,7 +67,7 @@ public sealed class ReportXlsxWriterTests
     {
         using var workbook = Open(Document(Known()));
 
-        var errors = new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package).ToList();
+        var errors = new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package, TestContext.Current.CancellationToken).ToList();
         Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors.Select(e => $"{e.Path?.XPath}: {e.Description}")));
 
         Assert.Equal(["Summary", "Platforms", "Daily"], workbook.Sheets.Select(s => s.Name!.Value));
@@ -156,7 +156,7 @@ public sealed class ReportXlsxWriterTests
         for (var i = 0; i < 3; i++)
             Assert.Equal(rtl, workbook.Sheet(i).Descendants<SheetView>().Single().RightToLeft?.Value ?? false);
         Assert.Contains(Rows(workbook.Sheet(0)), r => r.Count == 2 && Text(r[1]) == "Şükrü — مطعم — Ёлка");
-        var errors = new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package).ToList();
+        var errors = new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package, TestContext.Current.CancellationToken).ToList();
         Assert.Empty(errors);
     }
 
@@ -182,7 +182,7 @@ public sealed class ReportXlsxWriterTests
         Assert.Single(Rows(workbook.Sheet(1)));
         Assert.Equal("A1:K1", workbook.Sheet(1).GetFirstChild<AutoFilter>()!.Reference!.Value);
         Assert.Equal(4, Rows(workbook.Sheet(2)).Count);
-        Assert.Empty(new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package));
+        Assert.Empty(new OpenXmlValidator(FileFormatVersions.Office2016).Validate(workbook.Package, TestContext.Current.CancellationToken));
     }
 
     [Theory]

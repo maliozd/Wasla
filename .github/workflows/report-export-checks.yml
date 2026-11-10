@@ -1,0 +1,205 @@
+name: Report export checks
+
+# Focused checks of the report export (WAS-184) that the fast pull-request scope of ci.yml does not cover:
+# - the exporter from the published linux-x64 Wasla.Web output, on Ubuntu 22.04 (a minimal ASP.NET Core runtime container
+#   and the runner), with the PDFs read back by poppler;
+# - the report pages' headless-browser tests, the export menu included (Category=Browser, deferred by the fast scope).
+# Synthetic data only: no database, provider, server or network service of Wasla is used. See docs/operations/testing.md.
+on:
+  pull_request:
+    branches:
+      - dev
+      - master
+    paths:
+      - 'src/Wasla.Web/Reports/Export/**'
+      - 'src/Wasla.Web/Areas/Tenant/Controllers/ReportsController.cs'
+      - 'src/Wasla.Web/Areas/Tenant/Views/Reports/**'
+      - 'src/Wasla.Web/wwwroot/js/reports/**'
+      - 'src/Wasla.Web/wwwroot/css/wasla-reports.css'
+      - 'src/Wasla.Web/Wasla.Web.csproj'
+      - 'tests/Wasla.ReportExport.LinuxSmoke/**'
+      - 'tests/Wasla.UnitTests/Web/ReportsExportBrowserTests.cs'
+      - '.github/workflows/report-export-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: report-export-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  linux-pdf:
+    name: Export from the published linux-x64 output (Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      IMAGE: mcr.microsoft.com/dotnet/aspnet:8.0-jammy
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # The same command deploy/linux/publish-release.ps1 runs for the web release.
+      - name: Publish Wasla.Web for linux-x64 as the release does
+        run: >
+          dotnet publish src/Wasla.Web/Wasla.Web.csproj --configuration Release --runtime linux-x64 --self-contained false
+          --output out/web -p:DebugType=None -p:DebugSymbols=false
+
+      # Only the harness assembly is added to a copy of the release; everything else resolves through Wasla.Web.deps.json.
+      - name: Build the export smoke harness and stage it in a copy of the release
+        run: |
+          dotnet build tests/Wasla.ReportExport.LinuxSmoke/Wasla.ReportExport.LinuxSmoke.csproj --configuration Release --output out/smoke
+          cp -r out/web out/run
+          cp out/smoke/Wasla.ReportExport.LinuxSmoke.dll out/run/
+          mkdir -p evidence
+          ls -la out/web/*.so | tee evidence/native-files.txt
+
+      - name: Native library dependencies (runner and container)
+        run: |
+          ldd out/web/libQuestPdfSkia.so | tee evidence/ldd-runner.txt
+          docker pull --quiet "$IMAGE"
+          docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE" | tee evidence/container-image.txt
+          docker run --rm -v "$PWD/out:/out" "$IMAGE" bash -c 'cat /etc/os-release; echo; ldd /out/run/libQuestPdfSkia.so' | tee evidence/ldd-container.txt
+          if grep -q 'not found' evidence/ldd-runner.txt evidence/ldd-container.txt; then
+            echo '::error::libQuestPdfSkia.so has unresolved dependencies.'
+            exit 1
+          fi
+
+      - name: Export in a minimal Ubuntu 22.04 container (ASP.NET Core runtime only)
+        run: >
+          docker run --rm -v "$PWD/out:/out" -w /out/run "$IMAGE"
+          dotnet exec --depsfile Wasla.Web.deps.json --runtimeconfig Wasla.Web.runtimeconfig.json
+          Wasla.ReportExport.LinuxSmoke.dll /out/samples-container
+
+      - name: Export on the Ubuntu 22.04 runner
+        working-directory: out/run
+        run: >
+          dotnet exec --depsfile Wasla.Web.deps.json --runtimeconfig Wasla.Web.runtimeconfig.json
+          Wasla.ReportExport.LinuxSmoke.dll ../samples-runner
+
+      - name: Read the container's PDFs back with poppler
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils > /dev/null
+          samples=out/samples-container
+          for pdf in "$samples"/*.pdf; do
+            name=$(basename "$pdf" .pdf)
+            pdfinfo "$pdf" > "evidence/$name.pdfinfo.txt"
+            pdffonts "$pdf" > "evidence/$name.pdffonts.txt"
+            pdftotext -layout "$pdf" "evidence/$name.txt"
+          done
+          expect() { grep -qF -- "$2" "evidence/$1" || { echo "::error::$1 lacks: $2"; exit 1; }; }
+          pages() { awk '/^Pages:/ {print $2}' "evidence/$1.pdfinfo.txt"; }
+          for text in 'Orders report' 'Corner Grill' '2,645.05' '2,907.55' '377.86' 'Page 1 of 3' 'Europe/Istanbul'; do
+            expect known-3-days_en-US.txt "$text"
+          done
+          for text in 'Europe/Istanbul' 'TRY' '2026'; do
+            expect known-3-days_ar-SA.txt "$text"
+          done
+          test "$(pages known-3-days_en-US)" -eq 3
+          for name in 92-days-partial_en-US 92-days-partial_ar-SA; do
+            test "$(pages "$name")" -ge 5 || { echo "::error::$name has fewer than 5 pages"; exit 1; }
+          done
+          last=$(pages 92-days-partial_en-US)
+          expect 92-days-partial_en-US.txt "Page $last of $last"
+          headers=$(grep -c 'All order value (TRY)' evidence/92-days-partial_en-US.txt)
+          test "$headers" -ge 3 || { echo "::error::The daily table header is not repeated ($headers)"; exit 1; }
+          for name in known-3-days_en-US known-3-days_ar-SA 92-days-partial_ar-SA; do
+            # Every font is embedded with a Unicode map; Arabic text uses the bundled Noto Sans Arabic. Columns from the end:
+            # object generation, object number, uni, sub, emb.
+            awk 'NR > 2 && ($(NF-4) != "yes" || $(NF-2) != "yes") { bad = 1 } END { exit bad }' "evidence/$name.pdffonts.txt" \
+              || { echo "::error::$name has a font that is not embedded or has no Unicode map"; exit 1; }
+          done
+          grep -q 'NotoSansArabic' evidence/known-3-days_ar-SA.pdffonts.txt
+          grep -q 'Lato' evidence/known-3-days_en-US.pdffonts.txt
+          cat out/samples-container/manifest.txt
+
+      - name: Upload Linux export evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: report-export-linux
+          path: |
+            evidence/
+            out/samples-container/
+            out/samples-runner/
+          if-no-files-found: warn
+          retention-days: 14
+
+  browser:
+    name: Report page and export menu in a headless browser (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 40
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Locate the headless browser
+        shell: pwsh
+        run: |
+          $edge = @(
+            (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+            (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+          ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $edge) { Write-Host '::error::Microsoft Edge is not installed on the runner.'; exit 1 }
+          Write-Host "Headless browser: $edge ($((Get-Item -LiteralPath $edge).VersionInfo.ProductVersion))"
+          "WASLA_TEST_BROWSER=$edge" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build the unit test project
+        run: dotnet build tests/Wasla.UnitTests/Wasla.UnitTests.csproj --configuration Release
+
+      # The export menu's tests, the report page's own browser tests and the dark-mode audit of every tenant page, which
+      # all render the changed page header. Nothing else.
+      - name: Run the report browser tests
+        shell: pwsh
+        run: |
+          $filter = @(
+            'FullyQualifiedName~Wasla.UnitTests.Web.ReportsExportBrowserTests',
+            'FullyQualifiedName~Wasla.UnitTests.Web.ReportsPageBrowserTests',
+            'FullyQualifiedName~Wasla.UnitTests.Web.ReportsCancellationBreakdownBrowserTests',
+            'FullyQualifiedName~Wasla.UnitTests.Web.TenantDarkModeBrowserTests.EveryTenantPage_IsDarkAndReadable_InDarkMode'
+          ) -join '|'
+          dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj `
+            --configuration Release `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=Wasla.UnitTests.trx" `
+            --results-directory artifacts/report-export-browser `
+            --blame-hang-timeout 10m `
+            --blame-hang-dump-type none `
+            --filter $filter
+
+      - name: Require every selected test to run and pass
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./scripts/ci/assert-test-results.ps1 -Path artifacts/report-export-browser/Wasla.UnitTests.trx
+
+      - name: Upload browser test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: report-export-browser
+          path: artifacts/report-export-browser/
+          if-no-files-found: warn
+          retention-days: 14
