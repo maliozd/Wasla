@@ -139,6 +139,20 @@
     return (query ? query + "&" : "?") + "format=" + encodeURIComponent(format);
   }
 
+  /**
+   * Closes the export menu through Bootstrap's dropdown API, then marks its toggle busy. The order matters: Bootstrap 5.3
+   * leaves a dropdown open when its toggle has the `disabled` class, both in `hide()` and in the document click handler
+   * that closes menus after an item is chosen (that handler runs after this page's own click handler). Without Bootstrap
+   * (its CDN did not load) there is no open menu to close.
+   */
+  function closeMenuThenMarkBusy(toggle, bootstrap) {
+    const dropdown = bootstrap && bootstrap.Dropdown ? bootstrap.Dropdown.getInstance(toggle) : null;
+    if (dropdown) dropdown.hide();
+    toggle.classList.add("disabled");
+    toggle.setAttribute("aria-disabled", "true");
+    toggle.setAttribute("aria-busy", "true");
+  }
+
   /** The file name the server chose (ASCII, ReportExportFormats.FileName), or a plain one when it is anything else. */
   function exportFileName(disposition, format) {
     const match = /filename="?([^";]*)"?/.exec(disposition || "");
@@ -259,12 +273,11 @@
         return global.fetch(url, init);
       },
       onStart: function (format) {
-        // The menu cannot open again until this file is done; focus stays on the button.
-        exportToggle.classList.add("disabled");
-        exportToggle.setAttribute("aria-disabled", "true");
-        exportToggle.setAttribute("aria-busy", "true");
+        // The menu closes and cannot open again until this file is done; focus moves from the chosen item to the button.
+        const hadFocus = exportRoot.contains(document.activeElement);
+        closeMenuThenMarkBusy(exportToggle, global.bootstrap);
         exportSpinner.hidden = false;
-        if (exportRoot.contains(document.activeElement)) exportToggle.focus({ preventScroll: true });
+        if (hadFocus) exportToggle.focus({ preventScroll: true });
         setExportMessage(exportRoot.dataset.preparingText.replace("{0}", exportLabel(format)), "");
       },
       onFile: function (blob, name, format) {
@@ -725,7 +738,7 @@
   }
 
   if (typeof module === "object" && module.exports) {
-    module.exports = { readState, toQuery, isDefaultFilter, withChanges, createLoader, nextColumnIndex, exportQuery, exportFileName, createExporter };
+    module.exports = { readState, toQuery, isDefaultFilter, withChanges, createLoader, nextColumnIndex, exportQuery, exportFileName, createExporter, closeMenuThenMarkBusy };
   } else {
     global.document.addEventListener("DOMContentLoaded", function () {
       init(global.document);

@@ -267,3 +267,49 @@ test("an expired session reloads the page instead of saving a sign-in page as th
     assert.deepEqual(events, ["start:pdf", "signed-out", "end:pdf"]);
   }
 });
+
+/** A toggle element and a dropdown that, like Bootstrap 5.3.3's hide(), does nothing while the toggle is disabled. */
+function fakeDropdown() {
+  const classes = new Set(["show"]);
+  const attributes = new Map();
+  const toggle = {
+    classList: { add: (name) => classes.add(name), contains: (name) => classes.has(name) },
+    setAttribute: (name, value) => attributes.set(name, value),
+    getAttribute: (name) => (attributes.has(name) ? attributes.get(name) : null)
+  };
+  const instance = {
+    open: true,
+    hide() {
+      if (classes.has("disabled") || !this.open) return;
+      this.open = false;
+      classes.delete("show");
+    }
+  };
+  const bootstrap = { Dropdown: { getInstance: (element) => (element === toggle ? instance : null) } };
+  return { toggle, instance, bootstrap };
+}
+
+test("starting an export closes the menu before the toggle is marked busy, which Bootstrap would refuse to close", () => {
+  const { toggle, instance, bootstrap } = fakeDropdown();
+  reports.closeMenuThenMarkBusy(toggle, bootstrap);
+  assert.equal(instance.open, false);
+  assert.equal(toggle.classList.contains("show"), false);
+  assert.equal(toggle.classList.contains("disabled"), true);
+  assert.equal(toggle.getAttribute("aria-disabled"), "true");
+  assert.equal(toggle.getAttribute("aria-busy"), "true");
+
+  // The order is what matters: marked busy first, the same dropdown cannot be closed any more.
+  const late = fakeDropdown();
+  late.toggle.classList.add("disabled");
+  late.instance.hide();
+  assert.equal(late.instance.open, true);
+});
+
+test("without Bootstrap, or a menu that was never opened, the toggle is still marked busy", () => {
+  for (const bootstrap of [undefined, {}, { Dropdown: { getInstance: () => null } }]) {
+    const { toggle } = fakeDropdown();
+    reports.closeMenuThenMarkBusy(toggle, bootstrap);
+    assert.equal(toggle.classList.contains("disabled"), true);
+    assert.equal(toggle.getAttribute("aria-busy"), "true");
+  }
+});

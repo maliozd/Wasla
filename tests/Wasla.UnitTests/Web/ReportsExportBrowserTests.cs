@@ -25,6 +25,7 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
     private const string Result = "document.querySelector('#rptResult [data-rpt-result-root]')";
     private const string Settled = $"!!{Result} && document.getElementById('rptResult').getAttribute('aria-busy') !== 'true'";
     private const string MenuOpen = "document.getElementById('rptExportMenu').classList.contains('show')";
+    private const string MenuClosed = $"!{MenuOpen} && {Toggle}.getAttribute('aria-expanded') === 'false'";
     private const string Toggle = "document.getElementById('rptExportToggle')";
     private const string Message = "document.getElementById('rptExportMessage')";
 
@@ -107,6 +108,7 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
         await ClickAsync(browser, "#rptExportToggle", ct);
         Assert.True(await browser.WaitForAsync(MenuOpen, TimeSpan.FromSeconds(5), ct), "The export menu did not open.");
         await ClickAsync(browser, $"[data-rpt-export={format}]", ct);
+        Assert.True(await browser.WaitForAsync(MenuClosed, TimeSpan.FromSeconds(5), ct), "The export menu stayed open after a format was chosen.");
     }
 
     private static Task<int> DownloadsAsync(HeadlessChromium browser, CancellationToken ct) => browser.EvaluateAsync<int>("window.__downloads.length", ct);
@@ -264,12 +266,26 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
         await browser.PressKeyAsync("Tab", shift: false, ct);
         Assert.Equal("pdf", await browser.EvaluateAsync<string>("document.activeElement.dataset.rptExport ?? ''", ct));
         await browser.PressKeyAsync("Enter", shift: false, ct);
+        Assert.True(await browser.WaitForAsync(MenuClosed, TimeSpan.FromSeconds(5), ct), "The export menu stayed open after Enter chose a format.");
 
         Assert.True(await browser.WaitForAsync($"window.__downloads.length === 1 && window.__downloads[0].head !== null && !{Toggle}.classList.contains('disabled')", TimeSpan.FromSeconds(60), ct),
             $"The keyboard did not download the PDF. {_host.ServerErrors}");
         Assert.EndsWith("_getiryemek.pdf", await browser.EvaluateAsync<string>("window.__downloads[0].name", ct), StringComparison.Ordinal);
         Assert.True(await browser.EvaluateAsync<bool>($"document.activeElement === {Toggle}", ct), "Focus did not return to the export button.");
         Assert.Equal(1, await RequestsAsync(browser, ct));
+
+        // From the button that kept focus, Enter opens the menu again and the next file follows.
+        await browser.PressKeyAsync("Enter", shift: false, ct);
+        Assert.True(await browser.WaitForAsync(MenuOpen, TimeSpan.FromSeconds(5), ct), "Enter did not open the export menu a second time.");
+        foreach (var _ in new[] { "csv", "pdf", "xlsx" })
+            await browser.PressKeyAsync("Tab", shift: false, ct);
+        Assert.Equal("xlsx", await browser.EvaluateAsync<string>("document.activeElement.dataset.rptExport ?? ''", ct));
+        await browser.PressKeyAsync("Enter", shift: false, ct);
+        Assert.True(await browser.WaitForAsync(MenuClosed, TimeSpan.FromSeconds(5), ct), "The export menu stayed open after the second choice.");
+        Assert.True(await browser.WaitForAsync("window.__downloads.length === 2 && window.__downloads[1].head !== null", TimeSpan.FromSeconds(60), ct),
+            $"The second keyboard export did not download. {_host.ServerErrors}");
+        Assert.StartsWith("504b0304", await browser.EvaluateAsync<string>("window.__downloads[1].head", ct), StringComparison.Ordinal);
+        Assert.Equal(2, await RequestsAsync(browser, ct));
     }
 
     [Fact]
