@@ -129,9 +129,18 @@
 
     // ---------------------------------------------------------------- Draft → form
 
-    function startAddressRestore(values, retry) {
+    // previous: the attempt that ran out of time, for a retry. streetEdited: the visitor changed the street since the
+    // first attempt began, so no attempt writes the saved street over it (WAS-212).
+    function startAddressRestore(values, previous) {
         var controller = new AbortController();
-        var attempt = { values: values, controller: controller, retry: retry, timedOut: false, running: null };
+        var attempt = {
+            values: values,
+            controller: controller,
+            retry: !!previous,
+            streetEdited: !!(previous && previous.streetEdited),
+            timedOut: false,
+            running: null
+        };
         var timer = setTimeout(function () {
             attempt.timedOut = true;
             controller.abort();
@@ -139,26 +148,25 @@
         var settled = function () {
             clearTimeout(timer);
             attempt.running = null;
-            if (addressRestore === attempt && (!attempt.timedOut || attempt.placeChosen)) {
+            if (addressRestore === attempt && !attempt.timedOut) {
                 addressRestore = null;
             }
             renderReceipt();
         };
         addressRestore = attempt;
-        attempt.running = window.WaslaSignupForm.restoreAddress(values, { signal: controller.signal, keepEntered: retry })
-            .then(settled, settled);
+        attempt.running = window.WaslaSignupForm.restoreAddress(values, {
+            signal: controller.signal,
+            retry: attempt.retry,
+            keepStreet: function () { return attempt.streetEdited; }
+        }).then(settled, settled);
         return attempt;
     }
 
-    // The visitor chose another place: once the first attempt is over the saved address no longer applies, and no retry
-    // may put it back over the new choice.
+    // The visitor chose another place, from the first attempt on (WAS-212): the saved address no longer applies, its
+    // lookups are cancelled, and nothing is put back over the new choice.
     function abandonAddressRestore() {
         var attempt = addressRestore;
         if (!attempt) {
-            return;
-        }
-        if (attempt.running && !attempt.retry) {
-            attempt.placeChosen = true;
             return;
         }
         addressRestore = null;
@@ -234,7 +242,7 @@
                 neighborhood: restaurant.neighborhood,
                 streetId: restaurant.streetId,
                 streetAddress: restaurant.streetAddress
-            }, false);
+            }, null);
         } else {
             setValue("signupNeighborhood", restaurant.neighborhood);
             setValue("signupStreetAddress", restaurant.streetAddress);
@@ -830,7 +838,7 @@
         // click counts and nothing the draft already holds is reported as left out. The wait is limited; after it the
         // visitor is told, a late answer moves nothing, and Continue tries again.
         if (from === "restaurant" && addressRestore) {
-            var attempt = addressRestore.running ? addressRestore : startAddressRestore(addressRestore.values, true);
+            var attempt = addressRestore.running ? addressRestore : startAddressRestore(addressRestore.values, addressRestore);
             hidePageAlert();
             var wait = addressWait = {};
             setBusy(true);
@@ -1192,6 +1200,9 @@
         var name = target && target.name;
         if (name === "Password" || name === "ConfirmPassword") {
             updatePasswordRules();
+        }
+        if (name === "StreetAddress" && addressRestore) {
+            addressRestore.streetEdited = true;
         }
         if (name === "CityId" || name === "DistrictId" || name === "Neighborhood") {
             abandonAddressRestore();
