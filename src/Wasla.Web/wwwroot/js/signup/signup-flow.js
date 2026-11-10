@@ -129,8 +129,9 @@
 
     // ---------------------------------------------------------------- Draft → form
 
-    // previous: the attempt that ran out of time, for a retry. streetEdited: the visitor changed the street since the
-    // first attempt began, so no attempt writes the saved street over it (WAS-212).
+    // previous: the attempt that ran out of time, for a retry. streetEdited / neighborhoodEdited: the visitor changed the
+    // street / the neighbourhood since the first attempt began, so no attempt writes the saved one over it; a changed
+    // neighbourhood also keeps the saved street out, while the city and district still come back (WAS-212).
     function startAddressRestore(values, previous) {
         var controller = new AbortController();
         var attempt = {
@@ -138,6 +139,7 @@
             controller: controller,
             retry: !!previous,
             streetEdited: !!(previous && previous.streetEdited),
+            neighborhoodEdited: !!(previous && previous.neighborhoodEdited),
             timedOut: false,
             running: null
         };
@@ -157,13 +159,14 @@
         attempt.running = window.WaslaSignupForm.restoreAddress(values, {
             signal: controller.signal,
             retry: attempt.retry,
-            keepStreet: function () { return attempt.streetEdited; }
+            keepStreet: function () { return attempt.streetEdited; },
+            keepNeighborhood: function () { return attempt.neighborhoodEdited; }
         }).then(settled, settled);
         return attempt;
     }
 
-    // The visitor chose another place, from the first attempt on (WAS-212): the saved address no longer applies, its
-    // lookups are cancelled, and nothing is put back over the new choice.
+    // The visitor chose another city or district, from the first attempt on (WAS-212): the saved address no longer
+    // applies, its lookups are cancelled, and nothing is put back over the new choice.
     function abandonAddressRestore() {
         var attempt = addressRestore;
         if (!attempt) {
@@ -1204,7 +1207,11 @@
         if (name === "StreetAddress" && addressRestore) {
             addressRestore.streetEdited = true;
         }
-        if (name === "CityId" || name === "DistrictId" || name === "Neighborhood") {
+        // A typed neighbourhood leaves the city and district it did not touch to the restore, which keeps going.
+        if (name === "Neighborhood" && addressRestore) {
+            addressRestore.neighborhoodEdited = true;
+        }
+        if (name === "CityId" || name === "DistrictId") {
             abandonAddressRestore();
         }
         var key = target && target.getAttribute && target.getAttribute("data-su-field");

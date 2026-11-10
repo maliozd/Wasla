@@ -140,14 +140,20 @@
     }
 
     // options, from restoreAddress only. restoring: the fields are not emptied, so nothing the visitor entered meanwhile
-    // is lost; signal: ends the restore's lookups; keepStreet(): the visitor changed the street since the restore began.
+    // is lost; signal: ends the restore's lookups; keepStreet() / keepNeighborhood(): the visitor changed the street /
+    // the neighbourhood since the restore began.
     function answerApplies(isCurrent, options) {
         return isCurrent() && !(options.signal && options.signal.aborted);
     }
 
-    // The saved street, unless the visitor changed it since the restore began; then only its id follows its text.
+    function kept(options, key) {
+        return !!(options[key] && options[key]());
+    }
+
+    // The saved street, unless the visitor changed it, or the neighbourhood it belongs to, since the restore began; then
+    // only its id follows its text.
     function restoreStreet(streetId, streetName, options) {
-        if (options.keepStreet && options.keepStreet()) {
+        if (kept(options, "keepStreet") || kept(options, "keepNeighborhood")) {
             if (streetInput) {
                 syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
             }
@@ -265,7 +271,14 @@
             clearStreetFields();
         }
 
+        // The saved neighbourhood, unless the visitor typed one since the restore began; then only its id follows its text.
         function restoreNeighborhood() {
+            if (kept(options, "keepNeighborhood")) {
+                if (neighborhoodInput) {
+                    syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+                }
+                return;
+            }
             if (selectedNeighborhoodId && neighborhoodIdInput) {
                 neighborhoodIdInput.value = String(selectedNeighborhoodId);
             }
@@ -552,24 +565,16 @@
         }
     }
 
-    if (neighborhoodInput) {
-        neighborhoodInput.addEventListener("input", function () {
-            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
-            if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                loadStreets(neighborhoodIdInput.value, null, null);
-            } else {
-                clearStreetFields();
-            }
-        });
+    // A changed neighbourhood takes its streets with it: its own when it is on the list, none otherwise. Either way a
+    // street answer still out for the neighbourhood before is stale.
+    function followNeighborhood() {
+        syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+        loadStreets(neighborhoodIdInput ? neighborhoodIdInput.value : "", null, null);
+    }
 
-        neighborhoodInput.addEventListener("change", function () {
-            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
-            if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                loadStreets(neighborhoodIdInput.value, null, null);
-            } else {
-                clearStreetFields();
-            }
-        });
+    if (neighborhoodInput) {
+        neighborhoodInput.addEventListener("input", followNeighborhood);
+        neighborhoodInput.addEventListener("change", followNeighborhood);
     }
 
     if (streetInput) {
@@ -593,12 +598,18 @@
 
     // Puts a saved address back (WAS-194: the page restores the registration draft): the city, then its districts with
     // the saved one selected, then the neighbourhood and street lists with the saved values. No field is emptied on the
-    // way, and the saved street is not written over one the visitor changed (options.keepStreet). The chain stops when a
-    // newer choice replaced its lookup or options.signal ends it. A retry (options.retry) does not load the districts
-    // again once the saved one is selected.
+    // way, and nothing the visitor changed is written over: not a street (options.keepStreet), and not a neighbourhood
+    // (options.keepNeighborhood), which also keeps the saved street out. The chain stops when a newer choice replaced its
+    // lookup or options.signal ends it. A retry (options.retry) does not load the districts again once the saved one is
+    // selected.
     function restoreAddress(values, options) {
         options = options || {};
-        var restore = { restoring: true, signal: options.signal, keepStreet: options.keepStreet };
+        var restore = {
+            restoring: true,
+            signal: options.signal,
+            keepStreet: options.keepStreet,
+            keepNeighborhood: options.keepNeighborhood
+        };
         if (!citySelect) {
             return Promise.resolve();
         }
