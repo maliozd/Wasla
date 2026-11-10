@@ -31,6 +31,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [frontend/design-system.md](frontend/design-system.md) | Tokens; `wasla-foundation.css` is the foundation |
 | [operations/local-development.md](operations/local-development.md) | Local runbook |
 | [operations/cli.md](operations/cli.md) | CLI commands and destructive guards |
+| [operations/address-reference-data.md](operations/address-reference-data.md) | Cities, districts and the pinned neighbourhood and street catalog: source, licence question, import rules, coverage, target import plan |
 | [operations/migrations.md](operations/migrations.md) | Central vs tenant EF |
 | [operations/deployment.md](operations/deployment.md) | Hosts, keys, config |
 | [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md) | Single Ubuntu server: systemd units, Nginx, paths, SQL identities, first deployment, update, rollback, backups (`deploy/linux/`) |

@@ -31,7 +31,7 @@ public sealed class CliCommandInventoryTests
         ["list-central-admins"] = [],
         ["migrate-central"] = [],
         ["seed-turkey-reference-data"] = [],
-        ["seed-address-reference-data"] = [],
+        ["seed-address-reference-data"] = ["--source", "--dry-run", "--report"],
         ["migrate-tenant"] = ["--slug", "--tenant-id"],
         ["migrate-all-tenants"] = ["--dry-run", "--only"],
         ["migration-status"] = ["--require-current"],
@@ -245,6 +245,34 @@ public sealed class CliCommandInventoryTests
 
         var parsed = result.GetValueForOption(Assert.Single(result.CommandResult.Command.Options, o => o.Aliases.Contains(option)));
         Assert.Equal(value, parsed is string[] values ? string.Join(",", values) : Convert.ToString(parsed));
+    }
+
+    /// <summary>WAS-214: a dry run or a report without a catalog source is refused before CentralDb is touched.</summary>
+    [Theory]
+    [InlineData("--dry-run")]
+    [InlineData("--report", "catalog.json")]
+    public async Task SeedAddressReferenceData_WithoutASource_RefusesADryRunOrAReport(params string[] options)
+    {
+        var root = CliCommandTree.Build(EmptyHost());
+
+        var (code, output) = await CaptureAsync(() => root.InvokeAsync(["seed-address-reference-data", .. options]));
+
+        Assert.Equal(2, code);
+        Assert.Contains("--dry-run and --report need --source", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SeedAddressReferenceData_ParsesTheCatalogOptions()
+    {
+        var root = CliCommandTree.Build(EmptyHost());
+
+        var result = root.Parse(["seed-address-reference-data", "--source", "/srv/turkey-geo-api/data/jsonl", "--dry-run", "--report", "dry-run.json"]);
+
+        Assert.Empty(result.Errors);
+        var options = result.CommandResult.Command.Options.ToDictionary(o => Assert.Single(o.Aliases), StringComparer.Ordinal);
+        Assert.Equal("/srv/turkey-geo-api/data/jsonl", result.GetValueForOption(options["--source"]));
+        Assert.Equal(true, result.GetValueForOption(options["--dry-run"]));
+        Assert.Equal("dry-run.json", result.GetValueForOption(options["--report"]));
     }
 
     [Fact]
