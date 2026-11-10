@@ -136,6 +136,18 @@ public sealed record ReportPageQuery(
     /// <summary>The page URL of this state, defaults left out.</summary>
     public string Url() => PagePath + QueryString();
 
+    public const string ExportPath = "/reports/export";
+
+    /// <summary>
+    /// The export (WAS-184) of this state's filter in <paramref name="format"/> (<c>csv</c>, <c>pdf</c> or <c>xlsx</c>).
+    /// Section and comparison do not apply to a file, so they are left out; the filter keeps the page's form and default.
+    /// </summary>
+    public string ExportUrl(string format)
+    {
+        var query = (this with { Compare = false, Section = ReportSections.Overview }).QueryString();
+        return ExportPath + (query.Length == 0 ? "?" : query + "&") + "format=" + Uri.EscapeDataString(format);
+    }
+
     public string QueryString()
     {
         var pairs = new List<KeyValuePair<string, string?>>();

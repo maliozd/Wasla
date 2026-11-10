@@ -4633,6 +4633,55 @@
   <data name="Reports.Retry" xml:space="preserve"><value>Tekrar dene</value></data>
   <data name="Reports.Loading" xml:space="preserve"><value>Rapor yükleniyor</value></data>
   <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Rapor güncellendi: {0}, {1} sipariş</value></data>
+  <data name="Reports.Export.Button" xml:space="preserve"><value>Dışa aktar</value></data>
+  <data name="Reports.Export.MenuLabel" xml:space="preserve"><value>Dışa aktarma biçimi</value></data>
+  <data name="Reports.Export.Scope" xml:space="preserve"><value>Seçili dönem ve platform: özet, platformlar ve günlük satırlar.</value></data>
+  <data name="Reports.Export.Csv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Reports.Export.CsvHint" xml:space="preserve"><value>Tablolar ve diğer araçlar için veri dosyası</value></data>
+  <data name="Reports.Export.Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Reports.Export.PdfHint" xml:space="preserve"><value>Grafik ve tablolarla yazdırılabilir rapor</value></data>
+  <data name="Reports.Export.Xlsx" xml:space="preserve"><value>Excel (.xlsx)</value></data>
+  <data name="Reports.Export.XlsxHint" xml:space="preserve"><value>Özet, platform ve günlük sayfalarıyla çalışma kitabı</value></data>
+  <data name="Reports.Export.Preparing" xml:space="preserve"><value>{0} dosyası hazırlanıyor…</value></data>
+  <data name="Reports.Export.Ready" xml:space="preserve"><value>{0} dosyası oluşturuldu.</value></data>
+  <data name="Reports.Export.Failed" xml:space="preserve"><value>Dosya oluşturulamadı. Bu sayfadaki rapor değişmedi; tekrar deneyin.</value></data>
+  <data name="Reports.Export.AlreadyRunning" xml:space="preserve"><value>Hazırlanmakta olan bir dışa aktarmanız var. Bitmesini bekleyip tekrar deneyin.</value></data>
+  <data name="Reports.Export.Busy" xml:space="preserve"><value>Şu anda çok sayıda dışa aktarma hazırlanıyor. Birazdan tekrar deneyin.</value></data>
+  <data name="Reports.Export.UnknownFormat" xml:space="preserve"><value>CSV, PDF veya Excel (.xlsx) seçin.</value></data>
+  <data name="Reports.Export.Unavailable" xml:space="preserve"><value>Dışa aktarma, rapor yüklendiğinde kullanılabilir.</value></data>
+  <data name="Reports.Export.DocumentTitle" xml:space="preserve"><value>Sipariş raporu</value></data>
+  <data name="Reports.Export.Restaurant" xml:space="preserve"><value>Restoran</value></data>
+  <data name="Reports.Export.Selection" xml:space="preserve"><value>Seçilen dönem</value></data>
+  <data name="Reports.Export.FirstDay" xml:space="preserve"><value>İlk gün</value></data>
+  <data name="Reports.Export.LastDay" xml:space="preserve"><value>Son gün</value></data>
+  <data name="Reports.Export.DayCount" xml:space="preserve"><value>Gün sayısı</value></data>
+  <data name="Reports.Export.PeriodStatus" xml:space="preserve"><value>Dönem durumu</value></data>
+  <data name="Reports.Export.Currency" xml:space="preserve"><value>Para birimi</value></data>
+  <data name="Reports.Export.TimeZone" xml:space="preserve"><value>Saat dilimi</value></data>
+  <data name="Reports.Export.GeneratedAt" xml:space="preserve"><value>Oluşturulma</value></data>
+  <data name="Reports.Export.SummarySheet" xml:space="preserve"><value>Özet</value></data>
+  <data name="Reports.Export.DailySheet" xml:space="preserve"><value>Günlük</value></data>
+  <data name="Reports.Export.Value" xml:space="preserve"><value>Değer</value></data>
+  <data name="Reports.Export.Definition" xml:space="preserve"><value>Tanım</value></data>
+  <data name="Reports.Export.Notes" xml:space="preserve"><value>Notlar</value></data>
+  <data name="Reports.Export.WithCurrency" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Reports.Export.PageNumber" xml:space="preserve"><value>Sayfa {0} / {1}</value></data>
+  <data name="Reports.Export.Definition.OrderCount" xml:space="preserve"><value>Dönemde verilen ve kayıtlı tüm siparişler, durumu ne olursa olsun. Her sipariş bir kez sayılır.</value></data>
+  <data name="Reports.Export.Definition.Delivered" xml:space="preserve"><value>Durumu Teslim edildi olan siparişler.</value></data>
+  <data name="Reports.Export.Definition.InProgress" xml:space="preserve"><value>Yeni, hazırlanıyor, teslim almaya hazır veya yolda olan siparişler.</value></data>
+  <data name="Reports.Export.Definition.Cancelled" xml:space="preserve"><value>İptal edilen siparişler. Retler iptal olarak kaydedildiği için dahildir.</value></data>
+  <data name="Reports.Export.Definition.Failed" xml:space="preserve"><value>Durumu Hatalı olan siparişler.</value></data>
+  <data name="Reports.Export.Definition.Other" xml:space="preserve"><value>Wasla'nın artık kullanmadığı bir durumdaki siparişler.</value></data>
+  <data name="Reports.Export.Definition.CancellationRate" xml:space="preserve"><value>İptal veya ret edilen siparişlerin dönemdeki tüm siparişlere oranı; devam eden siparişler dahildir.</value></data>
+  <data name="Reports.Export.Definition.CompletedValue" xml:space="preserve"><value>Teslim edilen siparişler için platformların bildirdiği sipariş tutarlarının toplamı.</value></data>
+  <data name="Reports.Export.Definition.AverageCompletedValue" xml:space="preserve"><value>Tamamlanan sipariş tutarının teslim edilen sipariş sayısına bölümü, iki ondalığa yuvarlanmış.</value></data>
+  <data name="Reports.Export.Definition.AllOrderValue" xml:space="preserve"><value>Tüm siparişler için platformların bildirdiği sipariş tutarlarının toplamı; iptal, hatalı ve devam edenler dahil.</value></data>
+  <data name="Reports.Export.Note.Partial" xml:space="preserve"><value>Dönem bugünü içeriyor ve gün henüz bitmedi: bugünün rakamları ve dönem toplamları kesin değildir.</value></data>
+  <data name="Reports.Export.Note.Values" xml:space="preserve"><value>Tutarlar, platformların bildirdiği sipariş tutarlarıdır ({0}). Tahsil edilen ödeme, kesinleşmiş gelir, kâr veya hak ediş değildir: Wasla komisyon, ücret, iade veya mutabakat bilgisi saklamaz.</value></data>
+  <data name="Reports.Export.Note.TimeBasis" xml:space="preserve"><value>Günler {0} saat dilimindeki yerel günlerdir. Her sipariş verildiği günde sayılır.</value></data>
+  <data name="Reports.Export.Note.CurrentStatus" xml:space="preserve"><value>Her sipariş, bu dosya oluşturulduğundaki durumuyla sayılır; sonraki bir durum değişikliği geçmiş günleri de değiştirir.</value></data>
+  <data name="Reports.Export.Note.NotDefined" xml:space="preserve"><value>Hesaplanamayan bir değerin (teslim edilen sipariş yokken ortalama, sipariş yokken oran) değeri yoktur; asla 0 olarak gösterilmez.</value></data>
+  <data name="Reports.Export.Note.Practice" xml:space="preserve"><value>Rehberli kurulumdaki deneme siparişleri sipariş değildir ve dahil edilmez.</value></data>
   <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>Seçilen dönem tanınmadı.</value></data>
   <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Geçerli bir başlangıç tarihi girin.</value></data>
   <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Geçerli bir bitiş tarihi girin.</value></data>

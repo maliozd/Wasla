@@ -168,3 +168,102 @@ test("arrow keys follow the screen, so right-to-left swaps them", () => {
   assert.equal(reports.nextColumnIndex("End", 5, 10, false), 9);
   assert.equal(reports.nextColumnIndex("a", 5, 10, false), null);
 });
+
+// Export (WAS-184)
+
+function fileResponse(status, body, headers) {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    redirected: false,
+    text: async () => body || "",
+    blob: async () => ({ size: (body || "").length }),
+    headers: { get: (name) => (headers || {})[name] || null }
+  };
+}
+
+function exportHarness(fetchImpl) {
+  const events = [];
+  const exporter = reports.createExporter({
+    fetch: fetchImpl,
+    onStart: (format) => events.push(`start:${format}`),
+    onFile: (blob, name, format) => events.push(`file:${format}:${name}:${blob.size}`),
+    onFailure: (format, message) => events.push(`failure:${format}:${message}`),
+    onSignedOut: () => events.push("signed-out"),
+    onEnd: (format) => events.push(`end:${format}`)
+  });
+  return { exporter, events };
+}
+
+test("the export carries the filter only, never the section or comparison", () => {
+  assert.equal(reports.exportQuery(reports.readState(""), "csv"), "?format=csv");
+  assert.equal(
+    reports.exportQuery(reports.readState("?preset=custom&startDate=2026-10-01&endDate=2026-10-05&platform=GetirYemek&compare=1&section=platforms"), "xlsx"),
+    "?preset=custom&startDate=2026-10-01&endDate=2026-10-05&platform=GetirYemek&format=xlsx"
+  );
+});
+
+test("the download keeps the server's ASCII file name, or falls back to a plain one", () => {
+  assert.equal(
+    reports.exportFileName("attachment; filename=wasla-orders-report_2026-10-06_2026-10-08.pdf; filename*=UTF-8''wasla-orders-report_2026-10-06_2026-10-08.pdf", "pdf"),
+    "wasla-orders-report_2026-10-06_2026-10-08.pdf"
+  );
+  assert.equal(reports.exportFileName('attachment; filename="a.csv"', "csv"), "a.csv");
+  assert.equal(reports.exportFileName(null, "xlsx"), "wasla-orders-report.xlsx");
+  assert.equal(reports.exportFileName("attachment; filename=../../evil.exe;", "csv"), "wasla-orders-report.csv");
+});
+
+test("a file is handed over with the server's name", async () => {
+  const { exporter, events } = exportHarness(async () => fileResponse(200, "abc", { "Content-Disposition": "attachment; filename=r.csv" }));
+  assert.equal(await exporter.run("/reports/export?format=csv", "csv"), "ok");
+  assert.deepEqual(events, ["start:csv", "file:csv:r.csv:3", "end:csv"]);
+  assert.equal(exporter.isRunning(), false);
+});
+
+test("a second export is refused while one runs, without a request", async () => {
+  const pending = deferred();
+  let requests = 0;
+  const { exporter, events } = exportHarness(() => { requests++; return pending.promise; });
+  const first = exporter.run("/a", "pdf");
+  assert.equal(exporter.isRunning(), true);
+  assert.equal(await exporter.run("/b", "csv"), "running");
+  assert.equal(requests, 1);
+  pending.resolve(fileResponse(200, "x", {}));
+  assert.equal(await first, "ok");
+  assert.deepEqual(events, ["start:pdf", "file:pdf:wasla-orders-report.pdf:1", "end:pdf"]);
+});
+
+test("refusals show the server's own text; other failures show none and are not files", async () => {
+  for (const [answer, message] of [[fileResponse(400, " You can select at most 92 days. "), "You can select at most 92 days."], [fileResponse(429, "Already running"), "Already running"], [fileResponse(500, "stack trace"), ""], [fileResponse(502, "<html>"), ""]]) {
+    const { exporter, events } = exportHarness(async () => answer);
+    assert.equal(await exporter.run("/a", "csv"), "failed");
+    assert.deepEqual(events, ["start:csv", `failure:csv:${message}`, "end:csv"]);
+  }
+
+  const { exporter, events } = exportHarness(async () => { throw new TypeError("network"); });
+  assert.equal(await exporter.run("/a", "xlsx"), "failed");
+  assert.deepEqual(events, ["start:xlsx", "failure:xlsx:", "end:xlsx"]);
+});
+
+test("an export that takes too long is abandoned as a failure", async () => {
+  const events = [];
+  const exporter = reports.createExporter({
+    fetch: (url, init) => new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(Object.assign(new Error("x"), { name: "AbortError" })))),
+    timeoutMs: 5,
+    onStart: () => {},
+    onFile: () => events.push("file"),
+    onFailure: () => events.push("failure"),
+    onSignedOut: () => {},
+    onEnd: () => events.push("end")
+  });
+  assert.equal(await exporter.run("/a", "pdf"), "failed");
+  assert.deepEqual(events, ["failure", "end"]);
+});
+
+test("an expired session reloads the page instead of saving a sign-in page as the file", async () => {
+  for (const answer of [Object.assign(fileResponse(200, "<html>"), { redirected: true }), fileResponse(401), fileResponse(403)]) {
+    const { exporter, events } = exportHarness(async () => answer);
+    assert.equal(await exporter.run("/a", "pdf"), "signed-out");
+    assert.deepEqual(events, ["start:pdf", "signed-out", "end:pdf"]);
+  }
+});

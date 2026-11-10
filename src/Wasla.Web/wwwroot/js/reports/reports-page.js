@@ -9,6 +9,8 @@
   const SKELETON_DELAY_MS = 120;
   const SHEET_QUERY = "(max-width: 767.98px)";
   const STORAGE_KEY = "Wasla.reports.query";
+  const EXPORT_TIMEOUT_MS = 90000;
+  const EXPORTABLE_STATES = ["Report", "NoOrders"];
   const FILTER_PARAMETERS = ["preset", "startDate", "endDate", "platform"];
 
   function isPreset(state, name) {
@@ -131,6 +133,69 @@
     return { load };
   }
 
+  /** The export URL's query of a state: its filter only (section and comparison do not apply to a file) and the format. */
+  function exportQuery(state, format) {
+    const query = toQuery(Object.assign({}, state, { compare: false, section: DEFAULT_SECTION }));
+    return (query ? query + "&" : "?") + "format=" + encodeURIComponent(format);
+  }
+
+  /** The file name the server chose (ASCII, ReportExportFormats.FileName), or a plain one when it is anything else. */
+  function exportFileName(disposition, format) {
+    const match = /filename="?([^";]*)"?/.exec(disposition || "");
+    const name = match ? match[1].trim() : "";
+    return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name) ? name : "wasla-orders-report." + format;
+  }
+
+  /**
+   * Creates one export file at a time. A second request while one runs is refused here, before any request is sent; the
+   * server refuses a second one per user as well. The server's own text is shown for a refused filter (400) and a refused
+   * concurrent export (429); anything else is a plain failure, and a lost session reloads the page.
+   */
+  function createExporter(options) {
+    const fetchImpl = options.fetch;
+    const timeoutMs = options.timeoutMs || EXPORT_TIMEOUT_MS;
+    let running = false;
+
+    async function run(url, format) {
+      if (running) return "running";
+      running = true;
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+      options.onStart(format);
+      try {
+        const response = await fetchImpl(url, {
+          credentials: "same-origin",
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          signal: controller.signal
+        });
+        if (response.redirected || response.status === 401 || response.status === 403) {
+          options.onSignedOut();
+          return "signed-out";
+        }
+        if (response.ok) {
+          const blob = await response.blob();
+          options.onFile(blob, exportFileName(response.headers.get("Content-Disposition"), format), format);
+          return "ok";
+        }
+        const message = response.status === 400 || response.status === 429 ? (await response.text()).trim() : "";
+        options.onFailure(format, message);
+        return "failed";
+      } catch (_) {
+        options.onFailure(format, "");
+        return "failed";
+      } finally {
+        clearTimeout(timer);
+        running = false;
+        options.onEnd(format);
+      }
+    }
+
+    return {
+      run,
+      isRunning: function () { return running; }
+    };
+  }
+
   /** The column to move to from a key press, or null. Arrow keys follow the screen, so right-to-left swaps them. */
   function nextColumnIndex(key, index, count, isRtl) {
     const forward = isRtl ? "ArrowLeft" : "ArrowRight";
@@ -170,6 +235,84 @@
     let applied = readState(firstAnswer.dataset.query);
     let draft = null;
     let skeletonTimer = null;
+
+    // Export (WAS-184): the file of the report the page shows, offered once a report has loaded for an accepted filter.
+    const exportRoot = document.getElementById("rptExport");
+    const exportToggle = document.getElementById("rptExportToggle");
+    const exportMessage = document.getElementById("rptExportMessage");
+    const exportSpinner = exportRoot.querySelector(".rpt-export__spinner");
+    let exportState = firstAnswer.dataset.state;
+
+    function exportLabel(format) {
+      const item = exportRoot.querySelector('[data-rpt-export="' + format + '"]');
+      return item ? item.dataset.formatLabel : format.toUpperCase();
+    }
+
+    function setExportMessage(text, tone) {
+      exportMessage.textContent = text || "";
+      if (tone) exportMessage.dataset.tone = tone;
+      else delete exportMessage.dataset.tone;
+    }
+
+    const exporter = createExporter({
+      fetch: function (url, init) {
+        return global.fetch(url, init);
+      },
+      onStart: function (format) {
+        // The menu cannot open again until this file is done; focus stays on the button.
+        exportToggle.classList.add("disabled");
+        exportToggle.setAttribute("aria-disabled", "true");
+        exportToggle.setAttribute("aria-busy", "true");
+        exportSpinner.hidden = false;
+        if (exportRoot.contains(document.activeElement)) exportToggle.focus({ preventScroll: true });
+        setExportMessage(exportRoot.dataset.preparingText.replace("{0}", exportLabel(format)), "");
+      },
+      onFile: function (blob, name, format) {
+        const url = global.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        link.hidden = true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        global.setTimeout(function () {
+          global.URL.revokeObjectURL(url);
+        }, 60000);
+        setExportMessage(exportRoot.dataset.readyText.replace("{0}", exportLabel(format)), "success");
+      },
+      onFailure: function (_, message) {
+        setExportMessage(message || exportRoot.dataset.failedText, "danger");
+      },
+      onSignedOut: function () {
+        global.location.reload();
+      },
+      onEnd: function () {
+        exportToggle.classList.remove("disabled");
+        exportToggle.removeAttribute("aria-disabled");
+        exportToggle.removeAttribute("aria-busy");
+        exportSpinner.hidden = true;
+        syncExport();
+      }
+    });
+
+    /** Points the export at the applied filter and offers it only for a loaded report. */
+    function syncExport() {
+      const available = EXPORTABLE_STATES.indexOf(exportState) >= 0;
+      exportToggle.disabled = !available;
+      if (available) exportToggle.removeAttribute("title");
+      else exportToggle.title = exportRoot.dataset.unavailableText;
+      exportRoot.querySelectorAll("[data-rpt-export]").forEach(function (link) {
+        link.href = exportRoot.dataset.exportUrl + exportQuery(applied, link.dataset.rptExport);
+      });
+    }
+
+    exportRoot.addEventListener("click", function (event) {
+      const link = event.target.closest("a[data-rpt-export]");
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      event.preventDefault();
+      exporter.run(link.href, link.dataset.rptExport);
+    });
 
     const sheetQuery = global.matchMedia(SHEET_QUERY);
     function isSheetMode() {
@@ -250,6 +393,8 @@
       if (global.location.search !== query) global.history.replaceState(null, "", pageUrl + query);
       syncControls(draft || applied);
       if (!draft) compareInput.checked = answer.dataset.compareActive === "true";
+      exportState = answer.dataset.state;
+      syncExport();
     }
 
     function applyViewModes(scope) {
@@ -287,6 +432,8 @@
         clearSkeletonTimer();
         result.setAttribute("aria-busy", "true");
         status.textContent = root.dataset.loadingText;
+        exportState = "Loading";
+        syncExport();
         skeletonTimer = setTimeout(function () {
           skeletonTimer = null;
           replaceResult(document.getElementById("rptLoadingTemplate").content.cloneNode(true));
@@ -317,6 +464,8 @@
         replaceResult(document.getElementById("rptFailureTemplate").content.cloneNode(true));
         result.setAttribute("aria-busy", "false");
         status.textContent = "";
+        exportState = "Failed";
+        syncExport();
       },
       onSignedOut: function () {
         global.location.reload();
@@ -575,7 +724,7 @@
   }
 
   if (typeof module === "object" && module.exports) {
-    module.exports = { readState, toQuery, isDefaultFilter, withChanges, createLoader, nextColumnIndex };
+    module.exports = { readState, toQuery, isDefaultFilter, withChanges, createLoader, nextColumnIndex, exportQuery, exportFileName, createExporter };
   } else {
     global.document.addEventListener("DOMContentLoaded", function () {
       init(global.document);

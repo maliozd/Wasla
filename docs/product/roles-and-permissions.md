@@ -74,7 +74,7 @@ These are the primary Web surfaces that apply the policies (not an exhaustive ac
 | Team / users | `CanManageTenantUsers` | `TenantUsersController` |
 | Print Bridge devices | `CanManagePrintBridgeDevices` | Device management actions on `PrintBridgeController` |
 | Print Bridge device security (tokens, etc.) | `CanManageDeviceSecurity` | Security-sensitive Print Bridge actions |
-| Dashboard / reports | `CanViewReports` | `DashboardController`, `ReportsController` |
+| Dashboard / reports and their CSV, PDF and Excel export (`GET /reports/export`, WAS-184) | `CanViewReports` | `DashboardController`, `ReportsController` |
 | Guided setup and order training (card, section panels, commands, practice order) | `TenantOwner` | `GuidedSetupController` and `GuidedDemoController` class-level; nav `CanUseGuidedSetup`. See [onboarding.md](onboarding.md) |
 
 `PrintBridgeController` is authenticated under the tenant scheme; individual actions apply device vs security vs manual-print policies as above.

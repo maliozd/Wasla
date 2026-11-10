@@ -4633,6 +4633,55 @@
   <data name="Reports.Retry" xml:space="preserve"><value>إعادة المحاولة</value></data>
   <data name="Reports.Loading" xml:space="preserve"><value>جارٍ تحميل التقرير</value></data>
   <data name="Reports.UpdatedSummary" xml:space="preserve"><value>تم تحديث التقرير: {0}، {1} طلبات</value></data>
+  <data name="Reports.Export.Button" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Reports.Export.MenuLabel" xml:space="preserve"><value>صيغة التصدير</value></data>
+  <data name="Reports.Export.Scope" xml:space="preserve"><value>الفترة والمنصة المحددتان: الملخص والمنصات والصفوف اليومية.</value></data>
+  <data name="Reports.Export.Csv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Reports.Export.CsvHint" xml:space="preserve"><value>ملف بيانات لجداول البيانات والأدوات الأخرى</value></data>
+  <data name="Reports.Export.Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Reports.Export.PdfHint" xml:space="preserve"><value>تقرير قابل للطباعة مع رسوم بيانية وجداول</value></data>
+  <data name="Reports.Export.Xlsx" xml:space="preserve"><value>Excel (.xlsx)</value></data>
+  <data name="Reports.Export.XlsxHint" xml:space="preserve"><value>مصنف يضم أوراق الملخص والمنصات والأيام</value></data>
+  <data name="Reports.Export.Preparing" xml:space="preserve"><value>جارٍ تجهيز ملف {0}…</value></data>
+  <data name="Reports.Export.Ready" xml:space="preserve"><value>تم إنشاء ملف {0}.</value></data>
+  <data name="Reports.Export.Failed" xml:space="preserve"><value>تعذّر إنشاء الملف. التقرير في هذه الصفحة لم يتغير؛ حاول مرة أخرى.</value></data>
+  <data name="Reports.Export.AlreadyRunning" xml:space="preserve"><value>يجري تجهيز عملية تصدير لك بالفعل. انتظر حتى تنتهي ثم حاول مرة أخرى.</value></data>
+  <data name="Reports.Export.Busy" xml:space="preserve"><value>يجري تجهيز عدد كبير من عمليات التصدير الآن. حاول مرة أخرى بعد قليل.</value></data>
+  <data name="Reports.Export.UnknownFormat" xml:space="preserve"><value>اختر CSV أو PDF أو Excel (.xlsx).</value></data>
+  <data name="Reports.Export.Unavailable" xml:space="preserve"><value>يتوفر التصدير بعد تحميل التقرير.</value></data>
+  <data name="Reports.Export.DocumentTitle" xml:space="preserve"><value>تقرير الطلبات</value></data>
+  <data name="Reports.Export.Restaurant" xml:space="preserve"><value>المطعم</value></data>
+  <data name="Reports.Export.Selection" xml:space="preserve"><value>الفترة المختارة</value></data>
+  <data name="Reports.Export.FirstDay" xml:space="preserve"><value>اليوم الأول</value></data>
+  <data name="Reports.Export.LastDay" xml:space="preserve"><value>اليوم الأخير</value></data>
+  <data name="Reports.Export.DayCount" xml:space="preserve"><value>عدد الأيام</value></data>
+  <data name="Reports.Export.PeriodStatus" xml:space="preserve"><value>حالة الفترة</value></data>
+  <data name="Reports.Export.Currency" xml:space="preserve"><value>العملة</value></data>
+  <data name="Reports.Export.TimeZone" xml:space="preserve"><value>المنطقة الزمنية</value></data>
+  <data name="Reports.Export.GeneratedAt" xml:space="preserve"><value>تاريخ الإنشاء</value></data>
+  <data name="Reports.Export.SummarySheet" xml:space="preserve"><value>الملخص</value></data>
+  <data name="Reports.Export.DailySheet" xml:space="preserve"><value>يومي</value></data>
+  <data name="Reports.Export.Value" xml:space="preserve"><value>القيمة</value></data>
+  <data name="Reports.Export.Definition" xml:space="preserve"><value>التعريف</value></data>
+  <data name="Reports.Export.Notes" xml:space="preserve"><value>ملاحظات</value></data>
+  <data name="Reports.Export.WithCurrency" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Reports.Export.PageNumber" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Reports.Export.Definition.OrderCount" xml:space="preserve"><value>كل الطلبات المخزنة التي قُدمت في الفترة، أيًا كانت حالتها. يُحتسب كل طلب مرة واحدة.</value></data>
+  <data name="Reports.Export.Definition.Delivered" xml:space="preserve"><value>الطلبات التي حالتها «تم التسليم».</value></data>
+  <data name="Reports.Export.Definition.InProgress" xml:space="preserve"><value>الطلبات الجديدة أو قيد التحضير أو الجاهزة للاستلام أو في الطريق.</value></data>
+  <data name="Reports.Export.Definition.Cancelled" xml:space="preserve"><value>الطلبات الملغاة. تُخزَّن حالات الرفض كإلغاء، لذا فهي مشمولة.</value></data>
+  <data name="Reports.Export.Definition.Failed" xml:space="preserve"><value>الطلبات التي حالتها «فاشل».</value></data>
+  <data name="Reports.Export.Definition.Other" xml:space="preserve"><value>الطلبات في حالة لم يعد Wasla يستخدمها.</value></data>
+  <data name="Reports.Export.Definition.CancellationRate" xml:space="preserve"><value>الطلبات الملغاة أو المرفوضة مقسومة على جميع طلبات الفترة، بما فيها الطلبات قيد التنفيذ.</value></data>
+  <data name="Reports.Export.Definition.CompletedValue" xml:space="preserve"><value>مجموع قيم الطلبات التي أبلغت عنها المنصات للطلبات المسلّمة.</value></data>
+  <data name="Reports.Export.Definition.AverageCompletedValue" xml:space="preserve"><value>قيمة الطلبات المكتملة مقسومة على عدد الطلبات المسلّمة، مقرّبة إلى منزلتين عشريتين.</value></data>
+  <data name="Reports.Export.Definition.AllOrderValue" xml:space="preserve"><value>مجموع قيم جميع الطلبات التي أبلغت عنها المنصات، بما فيها الملغاة والفاشلة وغير المكتملة.</value></data>
+  <data name="Reports.Export.Note.Partial" xml:space="preserve"><value>تشمل الفترة اليوم، ولم ينتهِ بعد: أرقام اليوم وإجماليات الفترة ليست نهائية.</value></data>
+  <data name="Reports.Export.Note.Values" xml:space="preserve"><value>المبالغ هي قيم الطلبات التي أبلغت عنها المنصات بعملة {0}. وهي ليست مدفوعات مستلمة أو إيرادات مسوّاة أو ربحًا أو مستحقات: لا يخزّن Wasla العمولات أو الرسوم أو المبالغ المستردة أو التسويات.</value></data>
+  <data name="Reports.Export.Note.TimeBasis" xml:space="preserve"><value>الأيام هي أيام محلية بتوقيت {0}. يُحتسب كل طلب في اليوم الذي قُدِّم فيه.</value></data>
+  <data name="Reports.Export.Note.CurrentStatus" xml:space="preserve"><value>يُحتسب كل طلب بالحالة التي كان عليها عند إنشاء هذا الملف؛ وأي تغيير لاحق في الحالة يغيّر الأيام السابقة أيضًا.</value></data>
+  <data name="Reports.Export.Note.NotDefined" xml:space="preserve"><value>القيمة التي لا يمكن حسابها (متوسط دون طلبات مسلّمة، أو معدل دون طلبات) تُترك بلا قيمة، ولا تُعرض أبدًا على أنها 0.</value></data>
+  <data name="Reports.Export.Note.Practice" xml:space="preserve"><value>الطلبات التجريبية في الإعداد الموجّه ليست طلبات ولا تُشمل.</value></data>
   <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>لم يتم التعرف على الفترة المحددة.</value></data>
   <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>أدخل تاريخ بداية صالحًا.</value></data>
   <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>أدخل تاريخ نهاية صالحًا.</value></data>

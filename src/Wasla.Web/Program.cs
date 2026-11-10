@@ -14,6 +14,7 @@ using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
 using Wasla.Web.Middleware;
 using Wasla.Web.Realtime;
+using Wasla.Web.Reports.Export;
 using Wasla.Web.Routing;
 using Wasla.Web.Security;
 using Wasla.Infrastructure.Diagnostics;
@@ -79,6 +80,8 @@ builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigati
 // Post-login destination: a safe ReturnUrl the user may open, otherwise the role's landing page (WAS-113).
 builder.Services.AddWaslaTenantLandingPages();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
+// Report exports (WAS-184): one export at a time per user, a few at once per process.
+builder.Services.AddWaslaReportExports();
 
 // Tenant role policies, shared with Wasla.Api (WaslaTenantPolicies.AllowedRoles).
 builder.Services.AddAuthorization(options => options.AddWaslaTenantRolePolicies());

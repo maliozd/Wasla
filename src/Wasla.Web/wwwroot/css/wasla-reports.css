@@ -320,6 +320,27 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-reports :focus-visible {
 .rpt-btn--primary { background: var(--rpt-action); border-color: var(--rpt-action); color: var(--rpt-action-text); }
 .rpt-btn--primary:hover { background: var(--rpt-action-hover); border-color: var(--rpt-action-hover); color: var(--rpt-action-text); }
 
+/* Export (WAS-184): the page header's file menu and its progress or failure line. */
+.rpt-export { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; max-width: 100%; }
+.rpt-export .dropdown-toggle::after { margin: 0; }
+.rpt-export .rpt-btn:disabled,
+.rpt-export .rpt-btn.disabled { opacity: 0.6; cursor: not-allowed; }
+.rpt-export__menu { min-width: 17rem; max-width: min(22rem, calc(100vw - 2rem)); padding: 0.35rem; }
+.rpt-export__scope { margin: 0.25rem 0.6rem 0.4rem; color: var(--wasla-text-secondary); font-size: 0.76rem; white-space: normal; }
+.rpt-export__item { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: var(--wasla-radius-sm); white-space: normal; }
+.rpt-export__item .bi { font-size: 1.15rem; line-height: 1.2; color: var(--rpt-accent-text); }
+.rpt-export__name { display: block; font-size: 0.86rem; font-weight: 600; }
+.rpt-export__hint { display: block; color: var(--wasla-text-secondary); font-size: 0.76rem; }
+.rpt-export__message { margin: 0; max-width: 22rem; color: var(--wasla-text-secondary); font-size: 0.78rem; text-align: end; }
+.rpt-export__message:empty { display: none; }
+.rpt-export__message[data-tone="success"] { color: var(--rpt-success); }
+.rpt-export__message[data-tone="danger"] { color: var(--rpt-danger); }
+
+@media (max-width: 575.98px) {
+  .rpt-export { align-items: flex-start; }
+  .rpt-export__message { text-align: start; }
+}
+
 /* Summary */
 .rpt-summary { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); padding: 0; }
 .rpt-summary__outcomes,
