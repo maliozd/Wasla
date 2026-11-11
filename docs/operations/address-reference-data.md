@@ -122,7 +122,7 @@ These are structural checks of the dataset, not proof that it matches NVİ today
 
 - **Unit tests** in `tests/Wasla.UnitTests/ReferenceData`, on invented records:
   - name rules (`AddressCatalogTextTests`), the manifest and reader (`AddressCatalogSourceTests`), and every planning outcome (`AddressCatalogPlannerTests`);
-  - the import on SQLite (`AddressCatalogImporterTests`): repeat, dry run, a stop between batches followed by a resume, and existing rows;
+  - the import on SQLite (`AddressCatalogImporterTests`): repeat, dry run, a stop between batches followed by a resume, existing rows, and a missing or changed source through the command's entry point leaving all five reference tables unchanged;
   - the same on SQL Server (`AddressCatalogImporterSqlServerTests`): Turkish text, the collation, and a registration's foreign keys to existing rows.
 - **Real source:** `.github/workflows/address-reference-import.yml` runs on a disposable LocalDB on the CI runner for pull requests that change the importer or the address tables' EF configurations, and can be started by hand. It fetches the pinned source, migrates a new CentralDb, seeds the cities and districts, and adds one hand-made neighbourhood (`Caferağa` in Kadıköy). Then it runs the dry run, kills an import part-way, resumes it, and repeats it. `scripts/ci/check-address-catalog-import.ps1` checks:
   - the dry run wrote nothing;

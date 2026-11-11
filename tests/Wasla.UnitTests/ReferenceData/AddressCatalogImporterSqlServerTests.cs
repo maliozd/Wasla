@@ -41,7 +41,9 @@ public sealed class AddressCatalogImporterSqlServerTests : IClassFixture<SqlServ
         Assert.Equal(ImportedNeighborhoods, first.Neighborhoods.Insert);
         Assert.Equal(ImportedStreets, first.Streets.Insert);
         Assert.Equal(0, second.Neighborhoods.Insert + second.Streets.Insert + second.Neighborhoods.Fill + second.Streets.Fill);
-        Assert.Equal(rows, await RowsAsync(afterSecond, cityId, Ct));
+        var repeated = await RowsAsync(afterSecond, cityId, Ct);
+        Assert.Equal(rows.Neighborhoods, repeated.Neighborhoods);
+        Assert.Equal(rows.Streets, repeated.Streets);
         Assert.Contains(rows.Neighborhoods, n => n.Name == "ŞAMBAYAT BELDESİ, FATİH MAHALLESİ");
         Assert.Contains(rows.Neighborhoods, n => n.Name == "ÇİFTEHAVUZLAR");
         Assert.Contains(rows.Streets, s => s.Name == "KARAAĞAÇ" && s.StreetType == "Köy Sokağı");

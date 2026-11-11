@@ -85,13 +85,8 @@ public sealed class AddressCatalogImporterTests : IAsyncLifetime
     {
         await using var db = Open();
         var cities = await db.Cities.CountAsync(Ct);
-        var importer = new AddressReferenceDataImporter(
-            db,
-            new TurkeyReferenceDataSeeder(db, NullLogger<TurkeyReferenceDataSeeder>.Instance),
-            Importer(db, _manifest),
-            NullLogger<AddressReferenceDataImporter>.Instance);
 
-        var result = await importer.ImportAsync(new AddressCatalogImportOptions(_source.Root, DryRun: true), Ct);
+        var result = await EntryPoint(db, _manifest).ImportAsync(new AddressCatalogImportOptions(_source.Root, DryRun: true), Ct);
 
         Assert.Equal("dry-run", result.Catalog!.Mode);
         Assert.Equal(ImportedNeighborhoods, result.Catalog.Neighborhoods.Insert);
@@ -174,10 +169,108 @@ public sealed class AddressCatalogImporterTests : IAsyncLifetime
         Assert.Equal(0, await db.Streets.CountAsync(Ct));
     }
 
+    // The command's own entry point seeds the country, cities and districts too, so a bad source must stop it first.
+    [Theory]
+    [InlineData("missing folder")]
+    [InlineData("missing file")]
+    [InlineData("changed bytes")]
+    public async Task TheEntryPoint_WithABadSource_ChangesNoTable_NotEvenTheCountryCitiesOrDistricts(string damage)
+    {
+        await SeedRowsAnImportWouldChangeAsync();
+        var directory = _source.Root;
+        var streets = Path.Combine(_source.Root, "province-34", "streets.jsonl");
+        switch (damage)
+        {
+            case "missing folder":
+                directory = _source.Root + "-missing";
+                break;
+            case "missing file":
+                File.Delete(streets);
+                break;
+            default:
+                var bytes = await File.ReadAllBytesAsync(streets, Ct); // same size, so only the SHA-256 can tell
+                bytes[^3] ^= 0x01;
+                await File.WriteAllBytesAsync(streets, bytes, Ct);
+                break;
+        }
+
+        var before = await ReferenceTablesAsync();
+
+        await using (var db = Open())
+        {
+            await Assert.ThrowsAsync<AddressCatalogSourceException>(() =>
+                EntryPoint(db, _manifest).ImportAsync(new AddressCatalogImportOptions(directory, DryRun: false), Ct));
+        }
+
+        Assert.Equal(before, await ReferenceTablesAsync());
+    }
+
+    // The same rows and entry point with a good source: the import does change them, so the test above can fail.
+    [Fact]
+    public async Task TheEntryPoint_WithAGoodSource_SeedsTheReferenceRows_ThenImportsTheCatalog()
+    {
+        await SeedRowsAnImportWouldChangeAsync();
+        using var source = new AddressCatalogTestSource()
+            .AddProvince(34, "İSTANBUL")
+            .AddDistrict(34, 1421, "KADIKÖY")
+            .AddNeighborhood(34, 1421, 40001, "CAFERAĞA")
+            .AddStreet(34, 1421, 40001, 900001, "MODA", typeCode: 3);
+        var manifest = source.Write();
+
+        await using var db = Open();
+        var result = await EntryPoint(db, manifest).ImportAsync(new AddressCatalogImportOptions(source.Root, DryRun: false), Ct);
+
+        Assert.Equal((1, 1), (result.Catalog!.Neighborhoods.Insert, result.Catalog.Streets.Insert));
+        db.ChangeTracker.Clear();
+        Assert.Equal(("Türkiye", true), await db.Countries.Where(c => c.Code == "TR").Select(c => new ValueTuple<string, bool>(c.Name, c.IsActive)).SingleAsync(Ct));
+        Assert.Equal("Adana", await db.Cities.Where(c => c.PlateCode == "01").Select(c => c.Name).SingleAsync(Ct));
+        Assert.True(await db.Districts.Where(d => d.Name == "Seyhan").Select(d => d.IsActive).SingleAsync(Ct));
+    }
+
     // ---------------------------------------------------------------------------------------------------------------
 
     private CentralDbContext Open(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options);
+
+    private static AddressReferenceDataImporter EntryPoint(CentralDbContext db, AddressCatalogSourceManifest manifest) =>
+        new(db,
+            new TurkeyReferenceDataSeeder(db, NullLogger<TurkeyReferenceDataSeeder>.Instance),
+            Importer(db, manifest),
+            NullLogger<AddressReferenceDataImporter>.Instance);
+
+    /// <summary>A country, city and district whose values the reference seed overwrites, and a catalog row without a source id.</summary>
+    private async Task SeedRowsAnImportWouldChangeAsync()
+    {
+        await using var db = Open();
+        db.Countries.Add(new Country { Code = "TR", Name = "Eski Ülke Adı", IsActive = false });
+        var adana = new City { CountryCode = "TR", Name = "Eski Adana", PlateCode = "01", PhoneAreaCode = "000", SortOrder = 99, IsActive = false };
+        var goztepe = new Neighborhood { DistrictId = _camlikId, Name = "Göztepe", SortOrder = 9, IsActive = false };
+        db.Cities.Add(adana);
+        db.Neighborhoods.Add(goztepe);
+        await db.SaveChangesAsync(Ct);
+        db.Districts.Add(new District { CityId = adana.Id, Name = "Seyhan", SortOrder = 77, IsActive = false });
+        db.Streets.Add(new Street { NeighborhoodId = goztepe.Id, Name = "1453", StreetType = "Sokak", SortOrder = 4, IsActive = false });
+        await db.SaveChangesAsync(Ct);
+    }
+
+    /// <summary>Every column of the five reference tables, in id order.</summary>
+    private async Task<IReadOnlyList<string>> ReferenceTablesAsync()
+    {
+        await using var db = Open();
+        var countries = await db.Countries.AsNoTracking().OrderBy(c => c.Id).Select(c => new { c.Id, c.Code, c.Name, c.IsActive }).ToListAsync(Ct);
+        var cities = await db.Cities.AsNoTracking().OrderBy(c => c.Id).Select(c => new { c.Id, c.CountryCode, c.Name, c.PlateCode, c.PhoneAreaCode, c.SortOrder, c.IsActive }).ToListAsync(Ct);
+        var districts = await db.Districts.AsNoTracking().OrderBy(d => d.Id).Select(d => new { d.Id, d.CityId, d.Name, d.SortOrder, d.IsActive }).ToListAsync(Ct);
+        var neighborhoods = await db.Neighborhoods.AsNoTracking().OrderBy(n => n.Id).Select(n => new { n.Id, n.DistrictId, n.Name, n.ExternalCode, n.SortOrder, n.IsActive }).ToListAsync(Ct);
+        var streets = await db.Streets.AsNoTracking().OrderBy(s => s.Id).Select(s => new { s.Id, s.NeighborhoodId, s.Name, s.StreetType, s.ExternalCode, s.SortOrder, s.IsActive }).ToListAsync(Ct);
+        return
+        [
+            .. countries.Select(r => "Country " + r),
+            .. cities.Select(r => "City " + r),
+            .. districts.Select(r => "District " + r),
+            .. neighborhoods.Select(r => "Neighborhood " + r),
+            .. streets.Select(r => "Street " + r)
+        ];
+    }
 
     private async Task<AddressCatalogReport> ImportAsync(int batchSize = 1000)
     {

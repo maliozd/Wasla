@@ -30,17 +30,19 @@ public sealed class AddressReferenceDataImporter
     }
 
     /// <param name="catalog">
-    /// The neighbourhood and street catalog to import; null imports none and says so in the result. A dry run writes
-    /// nothing at all, so the country, cities and districts are not seeded either.
+    /// The neighbourhood and street catalog to import; null imports none and says so in the result. Its source is
+    /// verified before anything is written, so a bad source leaves every table as it was. A dry run writes nothing at
+    /// all, so the country, cities and districts are not seeded either.
     /// </param>
     public async Task<AddressReferenceImportResult> ImportAsync(AddressCatalogImportOptions? catalog, CancellationToken ct)
     {
+        var source = catalog is null ? null : await _catalog.OpenSourceAsync(catalog, ct);
         if (catalog is { DryRun: true })
-            return new AddressReferenceImportResult(0, 0, 0, 0, await _catalog.RunAsync(catalog, ct));
+            return new AddressReferenceImportResult(0, 0, 0, 0, await _catalog.RunAsync(source!, catalog, ct));
 
         var countriesInserted = await ImportCountriesAsync(ct);
         var cityDistrictResult = await _turkeySeeder.SeedAsync(ct);
-        var report = catalog is null ? null : await _catalog.RunAsync(catalog, ct);
+        var report = catalog is null ? null : await _catalog.RunAsync(source!, catalog, ct);
 
         _logger.LogInformation(
             "Address reference import completed. Countries inserted={CountriesInserted}, cities inserted={CitiesInserted}, districts inserted={DistrictsInserted}, neighbourhoods inserted={NeighborhoodsInserted}, streets inserted={StreetsInserted}",

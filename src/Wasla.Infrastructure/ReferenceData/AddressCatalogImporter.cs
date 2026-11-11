@@ -33,12 +33,25 @@ public sealed class AddressCatalogImporter
         _manifest = manifest ?? AddressCatalogSourceManifest.Pinned();
     }
 
-    public async Task<AddressCatalogReport> RunAsync(AddressCatalogImportOptions options, CancellationToken ct)
+    /// <summary>
+    /// Checks the options and every source file without touching the database, so a caller with writes of its own can
+    /// refuse a bad source before making them.
+    /// </summary>
+    /// <exception cref="AddressCatalogSourceException">The folder does not hold exactly the pinned files.</exception>
+    public async Task<AddressCatalogSource> OpenSourceAsync(AddressCatalogImportOptions options, CancellationToken ct)
     {
         if (options.BatchSize < 1)
             throw new ArgumentOutOfRangeException(nameof(options), "The batch size must be at least 1.");
 
-        var source = await AddressCatalogSource.OpenAsync(options.SourceDirectory, _manifest, ct);
+        return await AddressCatalogSource.OpenAsync(options.SourceDirectory, _manifest, ct);
+    }
+
+    public async Task<AddressCatalogReport> RunAsync(AddressCatalogImportOptions options, CancellationToken ct) =>
+        await RunAsync(await OpenSourceAsync(options, ct), options, ct);
+
+    /// <param name="source">The verified source from <see cref="OpenSourceAsync"/>.</param>
+    public async Task<AddressCatalogReport> RunAsync(AddressCatalogSource source, AddressCatalogImportOptions options, CancellationToken ct)
+    {
         var report = new AddressCatalogReport
         {
             Mode = options.DryRun ? "dry-run" : "import",
