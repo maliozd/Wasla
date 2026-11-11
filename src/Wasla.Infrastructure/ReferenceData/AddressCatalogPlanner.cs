@@ -248,6 +248,20 @@ public static class AddressCatalogPlanner
                     counts.Fill++;
                     plan.NeighborhoodFills.Add((row, code));
                     parents[candidate.Source.Id] = row.Id;
+                    report.Add(new AddressCatalogFill
+                    {
+                        Level = "neighborhood",
+                        ProvinceId = province.Id,
+                        Province = candidate.Coverage.Province,
+                        SourceDistrictId = candidate.Coverage.SourceDistrictId,
+                        District = candidate.Coverage.District,
+                        WaslaDistrictId = row.DistrictId,
+                        WaslaId = row.Id,
+                        Name = row.Name,
+                        ExternalCode = code,
+                        SourceId = candidate.Source.Id,
+                        SourceName = candidate.Name
+                    });
                 }
             }
             else
@@ -381,6 +395,7 @@ public static class AddressCatalogPlanner
             .Where(s => !string.IsNullOrWhiteSpace(s.StreetType))
             .GroupBy(s => (s.NeighborhoodId, AddressCatalogText.MatchKey(AddressCatalogText.Normalize(s.Name)), AddressCatalogText.MatchKey(AddressCatalogText.Normalize(s.StreetType))))
             .ToDictionary(g => g.Key, g => g.ToList());
+        var existingNeighborhoodNames = (city?.Neighborhoods ?? []).ToDictionary(n => n.Id, n => n.Name);
 
         var streetOrders = SortOrders(streetImportable, s => s.Parent.Id, s => s.Name, s => s.StreetType, s => s.Source.Id);
         foreach (var candidate in streetImportable)
@@ -413,6 +428,24 @@ public static class AddressCatalogPlanner
                 {
                     counts.Fill++;
                     plan.StreetFills.Add((row, code));
+                    report.Add(new AddressCatalogFill
+                    {
+                        Level = "street",
+                        ProvinceId = province.Id,
+                        Province = candidate.Coverage.Province,
+                        SourceDistrictId = candidate.Coverage.SourceDistrictId,
+                        District = candidate.Coverage.District,
+                        WaslaDistrictId = candidate.Coverage.WaslaDistrictId,
+                        WaslaNeighborhoodId = row.NeighborhoodId,
+                        Neighborhood = existingNeighborhoodNames.GetValueOrDefault(row.NeighborhoodId),
+                        SourceNeighborhoodId = candidate.Parent.Id,
+                        WaslaId = row.Id,
+                        Name = row.Name,
+                        StreetType = row.StreetType,
+                        ExternalCode = code,
+                        SourceId = candidate.Source.Id,
+                        SourceName = candidate.Name
+                    });
                 }
             }
             else

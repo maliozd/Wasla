@@ -173,6 +173,38 @@ public sealed class AddressCatalogPlannerTests
         var inserted = Assert.Single(plan.StreetInserts);
         Assert.Equal((11L, (int?)500, "BAHARİYE", "Cadde"), (inserted.SourceId, inserted.NeighborhoodId, inserted.Name, inserted.StreetType));
         Assert.Equal(1, report.Streets.ParentNotImported); // street 12's neighbourhood is in conflict
+
+        // The report names each row behind a Fill, as the plan writes it.
+        Assert.Equal(report.Neighborhoods.Fill + report.Streets.Fill, report.Fills.Count);
+        var neighborhoodFill = Assert.Single(report.Fills, f => f.Level == "neighborhood");
+        Assert.Equal((500, "1", 1L, "Caferağa", "CAFERAĞA"),
+            (neighborhoodFill.WaslaId, neighborhoodFill.ExternalCode, neighborhoodFill.SourceId, neighborhoodFill.Name, neighborhoodFill.SourceName));
+        Assert.Equal((Province, "İSTANBUL", Kadikoy, "KADIKÖY", (int?)KadikoyId),
+            (neighborhoodFill.ProvinceId, neighborhoodFill.Province, neighborhoodFill.SourceDistrictId, neighborhoodFill.District, neighborhoodFill.WaslaDistrictId));
+        Assert.Null(neighborhoodFill.WaslaNeighborhoodId);
+        Assert.Null(neighborhoodFill.StreetType);
+        var streetFill = Assert.Single(report.Fills, f => f.Level == "street");
+        Assert.Equal((900, "10", 10L, "Moda", "MODA"),
+            (streetFill.WaslaId, streetFill.ExternalCode, streetFill.SourceId, streetFill.Name, streetFill.SourceName));
+        Assert.Equal(((int?)500, "Caferağa", (long?)1, "Cadde", (int?)KadikoyId, "KADIKÖY"),
+            (streetFill.WaslaNeighborhoodId, streetFill.Neighborhood, streetFill.SourceNeighborhoodId, streetFill.StreetType, streetFill.WaslaDistrictId, streetFill.District));
+        AssertEveryRecordCountedOnce(report);
+    }
+
+    [Fact]
+    public void TheFillList_IsBoundedLikeTheOtherLists_WhileTheFillCountStaysExact()
+    {
+        var rows = AddressCatalogReport.MaxListedEntries + 1;
+        var city = City(
+            neighborhoods: [new(500, KadikoyId, "CAFERAĞA", "1")],
+            streets: Enumerable.Range(1, rows).Select(i => new AddressCatalogExistingStreet(1000 + i, 500, $"{i}. SOKAK", "Sokak", null)).ToArray());
+
+        var (plan, report) = Plan([Nb(1, Kadikoy, "CAFERAĞA")], Enumerable.Range(1, rows).Select(i => St(i, Kadikoy, 1, $"{i}. SOKAK", 4)).ToArray(), city: city);
+
+        Assert.Equal(rows, plan.StreetFills.Count);
+        Assert.Equal(rows, report.Streets.Fill);
+        Assert.Equal(AddressCatalogReport.MaxListedEntries, report.Fills.Count);
+        Assert.True(report.ListsTruncated);
         AssertEveryRecordCountedOnce(report);
     }
 

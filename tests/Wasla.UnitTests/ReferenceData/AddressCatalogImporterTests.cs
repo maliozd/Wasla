@@ -158,6 +158,56 @@ public sealed class AddressCatalogImporterTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ADryRun_ListsTheRowsItWouldFill_TheImportFillsExactlyThose_AndARepeatFillsNone()
+    {
+        int neighborhoodId, streetId;
+        await using (var db = Open())
+        {
+            var goztepe = new Neighborhood { DistrictId = _camlikId, Name = "Göztepe", SortOrder = 9, IsActive = true };
+            db.Neighborhoods.Add(goztepe);
+            await db.SaveChangesAsync(Ct);
+            var existingStreet = new Street { NeighborhoodId = goztepe.Id, Name = "1453", StreetType = "Sokak", SortOrder = 4, IsActive = true };
+            db.Streets.Add(existingStreet);
+            await db.SaveChangesAsync(Ct);
+            (neighborhoodId, streetId) = (goztepe.Id, existingStreet.Id);
+        }
+
+        var before = await ReferenceTablesAsync();
+        AddressCatalogReport dryRun;
+        await using (var db = Open())
+            dryRun = (await EntryPoint(db, _manifest).ImportAsync(new AddressCatalogImportOptions(_source.Root, DryRun: true), Ct)).Catalog!;
+
+        Assert.Equal(before, await ReferenceTablesAsync());
+        Assert.Equal((1, 1, 2), (dryRun.Neighborhoods.Fill, dryRun.Streets.Fill, dryRun.Fills.Count));
+        var neighborhood = Assert.Single(dryRun.Fills, f => f.Level == "neighborhood");
+        Assert.Equal((neighborhoodId, Id(Plate, 102).ToString(), Id(Plate, 102), "Göztepe", "GÖZTEPE"),
+            (neighborhood.WaslaId, neighborhood.ExternalCode, neighborhood.SourceId, neighborhood.Name, neighborhood.SourceName));
+        Assert.Equal(((long)Plate, "DENEME 34", Id(Plate, 1), "ÇAMLIK", (int?)_camlikId),
+            (neighborhood.ProvinceId, neighborhood.Province, neighborhood.SourceDistrictId, neighborhood.District, neighborhood.WaslaDistrictId));
+        var street = Assert.Single(dryRun.Fills, f => f.Level == "street");
+        Assert.Equal((streetId, Id(Plate, 508).ToString(), Id(Plate, 508), "1453", "Sokak"),
+            (street.WaslaId, street.ExternalCode, street.SourceId, street.Name, street.StreetType));
+        Assert.Equal(((int?)neighborhoodId, "Göztepe", (long?)Id(Plate, 102), (int?)_camlikId),
+            (street.WaslaNeighborhoodId, street.Neighborhood, street.SourceNeighborhoodId, street.WaslaDistrictId));
+
+        var import = await ImportAsync();
+
+        Assert.Equal(dryRun.Fills.Select(Describe), import.Fills.Select(Describe));
+        await using (var db = Open())
+        {
+            var rows = await RowsAsync(db, _cityId, Ct);
+            Assert.Equal(Id(Plate, 102).ToString(), Assert.Single(rows.Neighborhoods, n => n.Id == neighborhoodId).ExternalCode);
+            Assert.Equal(Id(Plate, 508).ToString(), Assert.Single(rows.Streets, s => s.Id == streetId).ExternalCode);
+        }
+
+        var repeat = await ImportAsync();
+
+        Assert.Equal((0, 0), (repeat.Neighborhoods.Fill, repeat.Streets.Fill));
+        Assert.Empty(repeat.Fills);
+        Assert.Equal((ImportedNeighborhoods, ImportedStreets), (repeat.Neighborhoods.Unchanged, repeat.Streets.Unchanged));
+    }
+
+    [Fact]
     public async Task ASourceThatNoLongerMatchesItsManifest_WritesNothing()
     {
         await File.AppendAllTextAsync(Path.Combine(_source.Root, "province-34", "streets.jsonl"), "\n", Ct);
@@ -231,6 +281,10 @@ public sealed class AddressCatalogImporterTests : IAsyncLifetime
 
     private CentralDbContext Open(params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options);
+
+    private static string Describe(AddressCatalogFill f) =>
+        $"{f.Level} {f.WaslaId} -> {f.ExternalCode} ({f.SourceId}) '{f.Name}'/'{f.SourceName}' {f.StreetType} " +
+        $"under {f.WaslaNeighborhoodId}/{f.Neighborhood}/{f.SourceNeighborhoodId} in {f.ProvinceId} {f.Province} {f.SourceDistrictId} {f.District} {f.WaslaDistrictId}";
 
     private static AddressReferenceDataImporter EntryPoint(CentralDbContext db, AddressCatalogSourceManifest manifest) =>
         new(db,

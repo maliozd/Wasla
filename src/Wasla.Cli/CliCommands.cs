@@ -733,7 +733,9 @@ internal static class CliCommands
         Console.WriteLine(
             $"  Neighbourhood names: source name={report.NeighborhoodNames.Name}, official name (none in source)={report.NeighborhoodNames.OfficialNameForMissingName}, official name (shared name)={report.NeighborhoodNames.OfficialNameForSharedName}");
         Console.WriteLine(
-            $"  Collision groups={report.Collisions.Count}, rejected entries={report.Rejected.Count}, conflicts={report.Conflicts.Count}{(report.ListsTruncated ? " (lists truncated; counts are exact)" : string.Empty)}");
+            $"  Listed: fills={report.Fills.Count}, collision groups={report.Collisions.Count}, rejected entries={report.Rejected.Count}, conflicts={report.Conflicts.Count}{(report.ListsTruncated ? " (lists truncated; counts are exact)" : string.Empty)}");
+        if (report.Fills.Count > 0)
+            Console.WriteLine("  Existing rows that get a source id as ExternalCode are listed under Fills in the --report file.");
         if (!string.IsNullOrWhiteSpace(reportPath))
             Console.WriteLine($"  Report: {reportPath.Trim()}");
     }

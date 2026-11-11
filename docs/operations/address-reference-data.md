@@ -13,7 +13,15 @@ wasla-cli -- seed-address-reference-data --source <data/jsonl> --report import.j
 - Without `--source` the command seeds the country, cities and districts from the embedded `turkey-reference-data.json`, as it always did, and says that no neighbourhood or street was imported. Before WAS-214 it looked for two embedded neighbourhood and street files that never existed and reported success while importing nothing.
 - `--source` adds the neighbourhood and street catalog. Every file is first checked against the embedded manifest `src/Wasla.Infrastructure/ReferenceData/turkey-address-catalog-source.json` (byte size and SHA-256 of 245 files). Any missing or different file stops the command before anything is read or written.
 - `--dry-run` validates and plans against CentralDb as it is and writes nothing at all, not even the cities and districts. On an empty CentralDb seed the cities and districts first, or the dry run reports every district as missing.
-- `--report` writes the full JSON report: source, CentralDb collation, counts per level and per district, and every collision, rejected record, conflict and parent that was not imported (up to 5,000 entries per list; the counts are always exact).
+- `--report` writes the full JSON report: source, CentralDb collation, counts per level and per district, and lists of every fill, collision, rejected record, conflict and parent that was not imported (up to 5,000 entries per list, with `ListsTruncated` set when a list is cut; the counts are always exact).
+  - Each entry of `Fills` is an existing row that gets, or got, a source id as its `ExternalCode`. It carries:
+    - `WaslaId`: the row's id, which does not change;
+    - `ExternalCode` and `SourceId`: the source id it gets;
+    - `Name`: the row's own name, with `SourceName` for the source's;
+    - the province, the source and Wasla district ids, and the district name;
+    - for streets also `StreetType`, the Wasla neighbourhood row (`WaslaNeighborhoodId`, `Neighborhood`) and `SourceNeighborhoodId`.
+  - A dry run lists the fills it would make; an import lists the ones it made.
+  - The report is written only when the command succeeds. A run stopped by a bad source, a database error or a killed process writes none; run it again for one.
 
 ## Source and provenance
 
@@ -128,7 +136,8 @@ These are structural checks of the dataset, not proof that it matches NVİ today
   - the dry run wrote nothing;
   - the reports agree with each other and the repeat changed nothing;
   - CentralDb holds no duplicate source ids;
-  - the hand-made row kept its id and name;
+  - the hand-made row kept its id and name, and the dry run listed it under `Fills` with the source id it then got;
+  - every report lists as many fills as it counts, and the repeat lists none;
   - every Kadıköy and Akyazı record matches the source files.
 
   The reports are uploaded as the `address-catalog-reports` artifact.
@@ -145,13 +154,16 @@ Run this only when the owner has decided the licence question above and approved
    sudo wasla-cli -- seed-address-reference-data --source <path>/data/jsonl --dry-run --report /tmp/address-dry-run.json
    ```
 
-   Compare the counts with [Expected coverage](#expected-coverage-of-the-pinned-source). Any `Conflict` or `Fill` comes from rows that existed before. Read them in the report before going on.
+   Compare the counts with [Expected coverage](#expected-coverage-of-the-pinned-source). Any `Conflict` or `Fill` comes from rows that existed before.
+   - Read every `Fills` entry before going on: check that the existing row (`WaslaId`, `Name`, its district and, for a street, its neighbourhood) is the place the source record (`SourceId`, `SourceName`) names.
+   - Read every `Conflicts` entry too.
+   - If `ListsTruncated` is true, the lists are incomplete: read the remaining rows in CentralDb before importing.
 4. Import with a report:
 
    ```bash
    sudo wasla-cli -- seed-address-reference-data --source <path>/data/jsonl --report /tmp/address-import.json
    ```
 
-   If it stops (connection, timeout, a killed process), run the same command again.
-5. Run it once more. The report must show no insert and no fill.
+   If it stops (connection, timeout, a killed process), it writes no report; run the same command again. The rerun's report lists only the fills it made itself, so a fill the stopped run already made shows there as unchanged.
+5. Run it once more. The report must show no insert and no fill, and an empty `Fills` list.
 6. Open the signup page and check the suggestions for a district such as Istanbul/Kadıköy.

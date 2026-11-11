@@ -7,7 +7,8 @@ namespace Wasla.Infrastructure.ReferenceData;
 /// <summary>
 /// What a neighbourhood and street catalog run found and did, or would do in a dry run (WAS-214). Every source record
 /// is counted in exactly one outcome of its level; the lists name the records behind each outcome other than insert
-/// and unchanged, up to <see cref="MaxListedEntries"/> per list (the counts stay exact).
+/// and unchanged (fills, collisions, rejects, conflicts, parents not imported), up to <see cref="MaxListedEntries"/>
+/// per list (the counts stay exact). A run that fails produces no report.
 /// </summary>
 public sealed class AddressCatalogReport
 {
@@ -39,6 +40,10 @@ public sealed class AddressCatalogReport
     public AddressCatalogNameSources NeighborhoodNames { get; init; } = new();
 
     public List<AddressCatalogDistrict> Districts { get; init; } = [];
+
+    /// <summary>The existing rows that get, or got, a source id as their ExternalCode: the Fill outcome.</summary>
+    public List<AddressCatalogFill> Fills { get; init; } = [];
+
     public List<AddressCatalogCollision> Collisions { get; init; } = [];
     public List<AddressCatalogEntry> Rejected { get; init; } = [];
     public List<AddressCatalogEntry> Conflicts { get; init; } = [];
@@ -57,6 +62,14 @@ public sealed class AddressCatalogReport
     {
         if (Collisions.Count < MaxListedEntries)
             Collisions.Add(collision);
+        else
+            ListsTruncated = true;
+    }
+
+    public void Add(AddressCatalogFill fill)
+    {
+        if (Fills.Count < MaxListedEntries)
+            Fills.Add(fill);
         else
             ListsTruncated = true;
     }
@@ -127,6 +140,39 @@ public sealed class AddressCatalogDistrict
     public int? WaslaDistrictId { get; init; }
     public AddressCatalogCounts Neighborhoods { get; init; } = new();
     public AddressCatalogCounts Streets { get; init; } = new();
+}
+
+/// <summary>
+/// An existing CentralDb row whose name matched a source record under Turkish case rules and which had no ExternalCode:
+/// the import writes <see cref="ExternalCode"/> to it and changes nothing else. <see cref="Name"/> and
+/// <see cref="StreetType"/> are the row's own; <see cref="SourceName"/> is the name the source gives.
+/// </summary>
+public sealed class AddressCatalogFill
+{
+    /// <summary>"neighborhood" or "street".</summary>
+    public string Level { get; init; } = string.Empty;
+    public long ProvinceId { get; init; }
+    public string Province { get; init; } = string.Empty;
+    public long SourceDistrictId { get; init; }
+    public string District { get; init; } = string.Empty;
+    public int? WaslaDistrictId { get; init; }
+
+    /// <summary>Streets: the existing neighbourhood row the street is under, and its name.</summary>
+    public int? WaslaNeighborhoodId { get; init; }
+    public string? Neighborhood { get; init; }
+
+    /// <summary>Streets: the source neighbourhood the source street is under.</summary>
+    public long? SourceNeighborhoodId { get; init; }
+
+    /// <summary>The existing row's id, which does not change.</summary>
+    public int WaslaId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? StreetType { get; init; }
+
+    /// <summary>The ExternalCode the row gets: the source id.</summary>
+    public string ExternalCode { get; init; } = string.Empty;
+    public long SourceId { get; init; }
+    public string SourceName { get; init; } = string.Empty;
 }
 
 /// <summary>Records of one parent whose names a collation could treat as equal; none of them is imported.</summary>

@@ -94,6 +94,18 @@ if ($preserved.Count -ne 1 -or $preserved[0].Name -cne 'Caferağa' -or [string]:
     Fail "the neighbourhood created before the import (id $PreservedNeighborhoodId, 'Caferağa') was not kept with its name and given its source id"
 }
 
+# --- Every Fill is listed with the row it changes; the hand-made row is listed with the source id it got.
+foreach ($pair in @(@('dry run', $dry), @('resumed import', $import), @('repeat', $repeat))) {
+    $report = $pair[1]
+    $fills = $report.Neighborhoods.Fill + $report.Streets.Fill
+    if (-not $report.ListsTruncated -and @($report.Fills).Count -ne $fills) { Fail "$($pair[0]): $(@($report.Fills).Count) fills listed for $fills counted" }
+}
+$listed = @($dry.Fills | Where-Object { $_.Level -eq 'neighborhood' -and $_.WaslaId -eq $PreservedNeighborhoodId })
+if ($listed.Count -ne 1 -or $preserved.Count -ne 1 -or $listed[0].ExternalCode -ne [string]$preserved[0].ExternalCode -or $listed[0].Name -cne 'Caferağa') {
+    Fail "the dry run does not list the hand-made neighbourhood $PreservedNeighborhoodId with the source id it got"
+}
+if (@($repeat.Fills).Count -ne 0) { Fail "the repeated import lists $(@($repeat.Fills).Count) fills" }
+
 # --- Istanbul/Kadıköy and Sakarya/Akyazı against the source files, record by record.
 $labels = @{ 0 = 'Köy Sokağı'; 1 = 'Meydan'; 2 = 'Bulvar'; 3 = 'Cadde'; 4 = 'Sokak'; 5 = 'Küme Evler' }
 function Normalize([string] $value) { if ($null -eq $value) { '' } else { ($value.Normalize() -replace '\s+', ' ').Trim() } }
@@ -165,7 +177,7 @@ foreach ($pair in @(@('dry run', $dry), @('import (resumed)', $import), @('repea
     }
 }
 [void]$summary.AppendLine("")
-[void]$summary.AppendLine("Neighbourhood names: $($dry.NeighborhoodNames.Name) source names, $($dry.NeighborhoodNames.OfficialNameForMissingName) official names (no name in source), $($dry.NeighborhoodNames.OfficialNameForSharedName) official names (shared name). Collision groups: $($dry.Collisions.Count).")
+[void]$summary.AppendLine("Neighbourhood names: $($dry.NeighborhoodNames.Name) source names, $($dry.NeighborhoodNames.OfficialNameForMissingName) official names (no name in source), $($dry.NeighborhoodNames.OfficialNameForSharedName) official names (shared name). Collision groups: $($dry.Collisions.Count). Fills listed: dry run $(@($dry.Fills).Count), resumed import $(@($import.Fills).Count), repeat $(@($repeat.Fills).Count).")
 [void]$summary.AppendLine("")
 [void]$summary.AppendLine("| Sample district | Source neighbourhoods | In CentralDb | Source streets | In CentralDb | Mismatches |")
 [void]$summary.AppendLine("| --- | --- | --- | --- | --- | --- |")
