@@ -91,11 +91,24 @@ public sealed class SetupInstanceChannelTests
     {
         var pipeName = UniquePipeName();
         using var server = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-        var received = ReceiveOnceAsync(server);
+        var connected = server.WaitForConnectionAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(SetupForwardResult.Delivered, SetupInstanceChannel.TrySend(FakeLink, pipeName, ConnectTimeout));
-        Assert.Equal(FakeLink, await received);
+        // TrySend writes the link in one call and closes its end once that write completes. The pipe has no buffer, so
+        // the write completes only after the server has read all of it: while part of the link is unread, the client is
+        // still connected. The client must be inspected in that window; after it closes, RunAsClient may throw "Pipe is
+        // broken". The long limit only bounds a failure; the server holds the write open deliberately.
+        var send = Task.Run(
+            () => SetupInstanceChannel.TrySend(FakeLink, pipeName, TimeSpan.FromSeconds(30)),
+            TestContext.Current.CancellationToken);
+        await connected.WaitAsync(ConnectTimeout, TestContext.Current.CancellationToken);
 
+        var head = new byte[16];
+        await server.ReadExactlyAsync(head, TestContext.Current.CancellationToken)
+            .AsTask()
+            .WaitAsync(ConnectTimeout, TestContext.Current.CancellationToken);
+        Assert.False(send.IsCompleted, "The forwarding client finished its write before the server had read all of it.");
+
+        // Impersonation uses the security context of the data last read from the pipe, which is this client's.
         TokenImpersonationLevel level = default;
         server.RunAsClient(() =>
         {
@@ -103,6 +116,11 @@ public sealed class SetupInstanceChannelTests
             level = client.ImpersonationLevel;
         });
         Assert.Equal(TokenImpersonationLevel.Identification, level);
+
+        // Reading the rest completes the client's write. The end of the stream arrives only when TrySend closes its end.
+        var rest = await ReadToEndAsync(server);
+        Assert.Equal(SetupForwardResult.Delivered, await send.WaitAsync(ConnectTimeout, TestContext.Current.CancellationToken));
+        Assert.Equal(FakeLink, Encoding.UTF8.GetString(head) + rest);
     }
 
     [Fact]
