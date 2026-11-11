@@ -177,6 +177,9 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Папка журналов еще не создана.</value>
   </data>
+  <data name="Message.RunningInAnotherSession" xml:space="preserve">
+    <value>Wasla Print Bridge уже запущен для другого пользователя Windows или в другом сеансе на этом компьютере.{0}{0}На компьютере может работать только один Print Bridge. Сначала выйдите из него в том сеансе, затем снова откройте Print Bridge или ссылку настройки.</value>
+  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge требует Windows.</value>
   </data>
