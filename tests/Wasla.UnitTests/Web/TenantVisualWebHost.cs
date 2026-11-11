@@ -28,6 +28,7 @@ using Wasla.UnitTests.Platform;
 using Wasla.Web;
 using Wasla.Web.GuidedSetup;
 using Wasla.Web.Localization;
+using Wasla.Web.Reports.Export;
 using Wasla.Web.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Web.Security;
@@ -168,6 +169,8 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigationAuthorizationService>();
         services.AddWaslaTenantLandingPages();
         services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
+        // The report export endpoint's gate, as in Web Program.cs (WAS-184).
+        services.AddWaslaReportExports();
         services.AddAuthorization(options =>
         {
             AddTenantRolePolicy(options, TenantPolicies.TenantOwner, UserRole.Owner);

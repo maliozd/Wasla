@@ -21,6 +21,16 @@ public sealed class ReportPageQueryTests
     private static OrderReportFilter Filter(string preset, string? start = null, string? end = null, string? platform = null) =>
         OrderReportFilters.Resolve(preset, start, end, platform, Now, Zone).Filter!;
 
+    [Theory]
+    [InlineData("", "csv", "/reports/export?format=csv")]
+    [InlineData("?preset=yesterday&platform=TrendyolYemek&section=platforms", "pdf", "/reports/export?preset=yesterday&platform=TrendyolYemek&format=pdf")]
+    [InlineData("?preset=custom&startDate=2026-10-01&endDate=2026-10-05&compare=1", "xlsx", "/reports/export?preset=custom&startDate=2026-10-01&endDate=2026-10-05&format=xlsx")]
+    public void ExportUrls_CarryTheFilterOnly(string query, string format, string expected)
+    {
+        // Section and comparison do not apply to a file (WAS-184); the page's default period stays implicit.
+        Assert.Equal(expected, Parse(query).ExportUrl(format));
+    }
+
     [Fact]
     public void NoQuery_IsTheLast30DaysOfTheOverview_AndWritesABareUrl()
     {

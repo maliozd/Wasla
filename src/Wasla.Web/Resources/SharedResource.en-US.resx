@@ -4633,6 +4633,55 @@
   <data name="Reports.Retry" xml:space="preserve"><value>Try again</value></data>
   <data name="Reports.Loading" xml:space="preserve"><value>Loading the report</value></data>
   <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Report updated: {0}, {1} orders</value></data>
+  <data name="Reports.Export.Button" xml:space="preserve"><value>Export</value></data>
+  <data name="Reports.Export.MenuLabel" xml:space="preserve"><value>Export format</value></data>
+  <data name="Reports.Export.Scope" xml:space="preserve"><value>Selected period and platform: summary, platforms and daily rows.</value></data>
+  <data name="Reports.Export.Csv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Reports.Export.CsvHint" xml:space="preserve"><value>Data file for spreadsheets and other tools</value></data>
+  <data name="Reports.Export.Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Reports.Export.PdfHint" xml:space="preserve"><value>Printable report with charts and tables</value></data>
+  <data name="Reports.Export.Xlsx" xml:space="preserve"><value>Excel (.xlsx)</value></data>
+  <data name="Reports.Export.XlsxHint" xml:space="preserve"><value>Workbook with summary, platform and daily sheets</value></data>
+  <data name="Reports.Export.Preparing" xml:space="preserve"><value>Preparing the {0} file…</value></data>
+  <data name="Reports.Export.Ready" xml:space="preserve"><value>The {0} file was created.</value></data>
+  <data name="Reports.Export.Failed" xml:space="preserve"><value>The file could not be created. The report on this page is unchanged; try again.</value></data>
+  <data name="Reports.Export.AlreadyRunning" xml:space="preserve"><value>An export of yours is already being prepared. Wait for it to finish, then try again.</value></data>
+  <data name="Reports.Export.Busy" xml:space="preserve"><value>Too many exports are being prepared right now. Try again in a moment.</value></data>
+  <data name="Reports.Export.UnknownFormat" xml:space="preserve"><value>Choose CSV, PDF or Excel (.xlsx).</value></data>
+  <data name="Reports.Export.Unavailable" xml:space="preserve"><value>Export is available once the report has loaded.</value></data>
+  <data name="Reports.Export.DocumentTitle" xml:space="preserve"><value>Orders report</value></data>
+  <data name="Reports.Export.Restaurant" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Reports.Export.Selection" xml:space="preserve"><value>Period selected</value></data>
+  <data name="Reports.Export.FirstDay" xml:space="preserve"><value>First day</value></data>
+  <data name="Reports.Export.LastDay" xml:space="preserve"><value>Last day</value></data>
+  <data name="Reports.Export.DayCount" xml:space="preserve"><value>Days</value></data>
+  <data name="Reports.Export.PeriodStatus" xml:space="preserve"><value>Period status</value></data>
+  <data name="Reports.Export.Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Reports.Export.TimeZone" xml:space="preserve"><value>Time zone</value></data>
+  <data name="Reports.Export.GeneratedAt" xml:space="preserve"><value>Created</value></data>
+  <data name="Reports.Export.SummarySheet" xml:space="preserve"><value>Summary</value></data>
+  <data name="Reports.Export.DailySheet" xml:space="preserve"><value>Daily</value></data>
+  <data name="Reports.Export.Value" xml:space="preserve"><value>Value</value></data>
+  <data name="Reports.Export.Definition" xml:space="preserve"><value>Definition</value></data>
+  <data name="Reports.Export.Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Reports.Export.WithCurrency" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Reports.Export.PageNumber" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Reports.Export.Definition.OrderCount" xml:space="preserve"><value>Every stored order placed in the period, whatever its status. Each order counts once.</value></data>
+  <data name="Reports.Export.Definition.Delivered" xml:space="preserve"><value>Orders with the status Delivered.</value></data>
+  <data name="Reports.Export.Definition.InProgress" xml:space="preserve"><value>Orders that are new, being prepared, ready for pickup or on the way.</value></data>
+  <data name="Reports.Export.Definition.Cancelled" xml:space="preserve"><value>Cancelled orders. Rejections are stored as cancellations, so they are included.</value></data>
+  <data name="Reports.Export.Definition.Failed" xml:space="preserve"><value>Orders with the status Failed.</value></data>
+  <data name="Reports.Export.Definition.Other" xml:space="preserve"><value>Orders in a status Wasla no longer uses.</value></data>
+  <data name="Reports.Export.Definition.CancellationRate" xml:space="preserve"><value>Cancelled or rejected orders divided by all orders of the period, orders in progress included.</value></data>
+  <data name="Reports.Export.Definition.CompletedValue" xml:space="preserve"><value>Sum of the order totals the platforms reported for delivered orders.</value></data>
+  <data name="Reports.Export.Definition.AverageCompletedValue" xml:space="preserve"><value>Completed order value divided by delivered orders, rounded to two decimals.</value></data>
+  <data name="Reports.Export.Definition.AllOrderValue" xml:space="preserve"><value>Sum of the order totals the platforms reported for all orders, cancelled, failed and unfinished ones included.</value></data>
+  <data name="Reports.Export.Note.Partial" xml:space="preserve"><value>The period includes today, which is not over: today's figures and the period totals are not final.</value></data>
+  <data name="Reports.Export.Note.Values" xml:space="preserve"><value>Amounts are the order totals the platforms reported, in {0}. They are not payments received, settled revenue, profit or payouts: Wasla stores no commissions, fees, refunds or settlements.</value></data>
+  <data name="Reports.Export.Note.TimeBasis" xml:space="preserve"><value>Days are local days in {0}. Each order counts on the day it was placed.</value></data>
+  <data name="Reports.Export.Note.CurrentStatus" xml:space="preserve"><value>Each order counts with the status it had when this file was created; a later status change also changes past days.</value></data>
+  <data name="Reports.Export.Note.NotDefined" xml:space="preserve"><value>A figure that cannot be calculated (an average without delivered orders, a rate without orders) has no value. It is never shown as 0.</value></data>
+  <data name="Reports.Export.Note.Practice" xml:space="preserve"><value>Practice orders from guided setup are not orders and are not included.</value></data>
   <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>The selected period is not recognised.</value></data>
   <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Enter a valid start date.</value></data>
   <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Enter a valid end date.</value></data>

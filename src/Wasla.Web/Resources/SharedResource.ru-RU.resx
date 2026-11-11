@@ -5121,6 +5121,55 @@
   <data name="Reports.Retry" xml:space="preserve"><value>Повторить</value></data>
   <data name="Reports.Loading" xml:space="preserve"><value>Загрузка отчёта</value></data>
   <data name="Reports.UpdatedSummary" xml:space="preserve"><value>Отчёт обновлён: {0}, заказов: {1}</value></data>
+  <data name="Reports.Export.Button" xml:space="preserve"><value>Экспорт</value></data>
+  <data name="Reports.Export.MenuLabel" xml:space="preserve"><value>Формат экспорта</value></data>
+  <data name="Reports.Export.Scope" xml:space="preserve"><value>Выбранный период и платформа: сводка, платформы и данные по дням.</value></data>
+  <data name="Reports.Export.Csv" xml:space="preserve"><value>CSV</value></data>
+  <data name="Reports.Export.CsvHint" xml:space="preserve"><value>Файл данных для таблиц и других программ</value></data>
+  <data name="Reports.Export.Pdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="Reports.Export.PdfHint" xml:space="preserve"><value>Отчёт для печати с графиками и таблицами</value></data>
+  <data name="Reports.Export.Xlsx" xml:space="preserve"><value>Excel (.xlsx)</value></data>
+  <data name="Reports.Export.XlsxHint" xml:space="preserve"><value>Книга с листами сводки, платформ и дней</value></data>
+  <data name="Reports.Export.Preparing" xml:space="preserve"><value>Готовится файл {0}…</value></data>
+  <data name="Reports.Export.Ready" xml:space="preserve"><value>Файл {0} создан.</value></data>
+  <data name="Reports.Export.Failed" xml:space="preserve"><value>Не удалось создать файл. Отчёт на этой странице не изменился; попробуйте ещё раз.</value></data>
+  <data name="Reports.Export.AlreadyRunning" xml:space="preserve"><value>Ваш экспорт уже готовится. Дождитесь его завершения и попробуйте снова.</value></data>
+  <data name="Reports.Export.Busy" xml:space="preserve"><value>Сейчас готовится слишком много экспортов. Попробуйте чуть позже.</value></data>
+  <data name="Reports.Export.UnknownFormat" xml:space="preserve"><value>Выберите CSV, PDF или Excel (.xlsx).</value></data>
+  <data name="Reports.Export.Unavailable" xml:space="preserve"><value>Экспорт доступен после загрузки отчёта.</value></data>
+  <data name="Reports.Export.DocumentTitle" xml:space="preserve"><value>Отчёт по заказам</value></data>
+  <data name="Reports.Export.Restaurant" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Reports.Export.Selection" xml:space="preserve"><value>Выбранный период</value></data>
+  <data name="Reports.Export.FirstDay" xml:space="preserve"><value>Первый день</value></data>
+  <data name="Reports.Export.LastDay" xml:space="preserve"><value>Последний день</value></data>
+  <data name="Reports.Export.DayCount" xml:space="preserve"><value>Дней</value></data>
+  <data name="Reports.Export.PeriodStatus" xml:space="preserve"><value>Статус периода</value></data>
+  <data name="Reports.Export.Currency" xml:space="preserve"><value>Валюта</value></data>
+  <data name="Reports.Export.TimeZone" xml:space="preserve"><value>Часовой пояс</value></data>
+  <data name="Reports.Export.GeneratedAt" xml:space="preserve"><value>Создан</value></data>
+  <data name="Reports.Export.SummarySheet" xml:space="preserve"><value>Сводка</value></data>
+  <data name="Reports.Export.DailySheet" xml:space="preserve"><value>По дням</value></data>
+  <data name="Reports.Export.Value" xml:space="preserve"><value>Значение</value></data>
+  <data name="Reports.Export.Definition" xml:space="preserve"><value>Определение</value></data>
+  <data name="Reports.Export.Notes" xml:space="preserve"><value>Примечания</value></data>
+  <data name="Reports.Export.WithCurrency" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="Reports.Export.PageNumber" xml:space="preserve"><value>Страница {0} из {1}</value></data>
+  <data name="Reports.Export.Definition.OrderCount" xml:space="preserve"><value>Все сохранённые заказы, оформленные за период, в любом статусе. Каждый заказ учитывается один раз.</value></data>
+  <data name="Reports.Export.Definition.Delivered" xml:space="preserve"><value>Заказы со статусом «Доставлено».</value></data>
+  <data name="Reports.Export.Definition.InProgress" xml:space="preserve"><value>Новые заказы, а также готовящиеся, готовые к выдаче и в пути.</value></data>
+  <data name="Reports.Export.Definition.Cancelled" xml:space="preserve"><value>Отменённые заказы. Отказы сохраняются как отмены, поэтому тоже учтены.</value></data>
+  <data name="Reports.Export.Definition.Failed" xml:space="preserve"><value>Заказы со статусом «С ошибкой».</value></data>
+  <data name="Reports.Export.Definition.Other" xml:space="preserve"><value>Заказы в статусе, который Wasla больше не использует.</value></data>
+  <data name="Reports.Export.Definition.CancellationRate" xml:space="preserve"><value>Отменённые или отклонённые заказы, делённые на все заказы периода, включая заказы в работе.</value></data>
+  <data name="Reports.Export.Definition.CompletedValue" xml:space="preserve"><value>Сумма стоимостей доставленных заказов, переданных платформами.</value></data>
+  <data name="Reports.Export.Definition.AverageCompletedValue" xml:space="preserve"><value>Сумма завершённых заказов, делённая на число доставленных заказов, с округлением до двух знаков.</value></data>
+  <data name="Reports.Export.Definition.AllOrderValue" xml:space="preserve"><value>Сумма стоимостей всех заказов, переданных платформами, включая отменённые, с ошибкой и незавершённые.</value></data>
+  <data name="Reports.Export.Note.Partial" xml:space="preserve"><value>Период включает сегодняшний день, который ещё не закончился: данные за сегодня и итоги периода не окончательные.</value></data>
+  <data name="Reports.Export.Note.Values" xml:space="preserve"><value>Суммы — это стоимость заказов, переданная платформами, в {0}. Это не полученные платежи, не подтверждённая выручка, не прибыль и не выплаты: Wasla не хранит комиссии, сборы, возвраты и взаиморасчёты.</value></data>
+  <data name="Reports.Export.Note.TimeBasis" xml:space="preserve"><value>Дни — местные дни в часовом поясе {0}. Каждый заказ учитывается в день его оформления.</value></data>
+  <data name="Reports.Export.Note.CurrentStatus" xml:space="preserve"><value>Каждый заказ учитывается в статусе на момент создания файла; последующее изменение статуса меняет и прошлые дни.</value></data>
+  <data name="Reports.Export.Note.NotDefined" xml:space="preserve"><value>Показатель, который нельзя вычислить (среднее без доставленных заказов, доля без заказов), не имеет значения и никогда не показывается как 0.</value></data>
+  <data name="Reports.Export.Note.Practice" xml:space="preserve"><value>Тренировочные заказы из пошаговой настройки не являются заказами и не учитываются.</value></data>
   <data name="Reports.FilterError.UnknownPreset" xml:space="preserve"><value>Выбранный период не распознан.</value></data>
   <data name="Reports.FilterError.StartDateInvalid" xml:space="preserve"><value>Укажите правильную дату начала.</value></data>
   <data name="Reports.FilterError.EndDateInvalid" xml:space="preserve"><value>Укажите правильную дату окончания.</value></data>

@@ -2,7 +2,7 @@
 
 **Owns:** the order report metrics, the shared report filter (periods, platform, time zone, range policy), the daily and platform breakdowns, and which surfaces use them (WAS-182).
 
-**Does not own:** order statuses and transitions ([lifecycle.md](./lifecycle.md)), order times ([lifecycle.md](./lifecycle.md#order-times-was-125)), roles ([../product/roles-and-permissions.md](../product/roles-and-permissions.md)). The report page is WAS-183 and the CSV export is WAS-184; both use this contract and add no calculation of their own.
+**Does not own:** order statuses and transitions ([lifecycle.md](./lifecycle.md)), order times ([lifecycle.md](./lifecycle.md#order-times-was-125)), roles ([../product/roles-and-permissions.md](../product/roles-and-permissions.md)). The report page is WAS-183 and its CSV, PDF and Excel export is WAS-184 ([Export](#export)); both use this contract and add no calculation of their own.
 
 ---
 
@@ -134,6 +134,7 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 | `GET /api/dashboard/summary`, `GET /api/dashboard/today` (`CanViewReports`) | The same `today` figures through `IDashboardService` | Response fields and meanings unchanged: `revenue` / `TodayRevenue` stay the all-order value (`OrderValue`), `pendingCount` is `InProgressOrderCount`. Platform rows are now ordered as above. Sync statistics and latest orders are unchanged |
 | `GET /api/dashboard/report` (`CanViewReports`) | The full contract: filter in the query string, `OrderReportDto` out | Invalid filters answer 400 with the error codes by parameter. The data route WAS-184 builds on. WAS-200 only added fields: the split and missing-reason counts in every figures object, and `CancellationReasons` |
 | Web report page (`/reports`, `/reports/content`, `CanViewReports`, WAS-183) | `IOrderReportService` directly, with the same filter rules | See [Report page](#report-page) |
+| Web report export (`/reports/export`, `CanViewReports`, WAS-184) | One read of `IOrderReportService` per file, with the page's filter rules and default | See [Export](#export) |
 
 ## Report page
 
@@ -147,7 +148,48 @@ Errors (`OrderReportFilterError`): `UnknownPreset`, `StartDateInvalid`, `EndDate
 - **Cancellations** shows `CancelledOrderCount` and `CancellationRate`, labelled "cancelled or rejected", then, from the same report, how those orders ended (the three groups, the restaurant-origin and no-origin parts of the unknown group, and one row per platform when more than one has any), the reasons per platform with their codes and a no-reason row, and the daily chart and table with the split. When any order lacks a classification or reason, a notice says older records may have none and that missing information does not mean it did not happen. With no cancelled or rejected order the split and reasons are replaced by one statement. Labels come from `ProviderCancellationReasons.LabelKey`: a code an operator can also choose keeps its existing label, and a stored code without a label is shown by its number.
 - **Comparison** is on Overview only. It reads the report of `PrecedingPeriod` and shows both periods with their dates, the difference and the percentage change. A change against a previous value of 0, or where either average does not exist, is shown as not comparable. A period that includes today is not compared: the page offers the same number of complete days ending yesterday.
 
-Busy hours (WAS-197), products (WAS-198), durations (WAS-202) and CSV (WAS-184) are not on the page.
+Busy hours (WAS-197), products (WAS-198) and durations (WAS-202) are not on the page.
+
+## Export
+
+The page header's **Export** menu (WAS-184) downloads the report the page shows as **CSV**, **PDF** or **Excel (.xlsx)**. `ReportsController.Export` (`GET /reports/export?format=csv|pdf|xlsx` with the page's filter parameters) resolves the filter exactly as the page does, page default (last 30 days) included, reads `IOrderReportService` once, and builds one `ReportExportDocument` (`src/Wasla.Web/Reports/Export`) that the three writers only format. Section and comparison do not apply to a file.
+
+**What a file holds.** The summary, the platform rows and the day rows of the report, each with the same ten figures in this order: order count, delivered, in progress, cancelled or rejected, failed, other, cancellation or rejection rate, completed order value, average completed order value, all order value. Amount headers name the currency (`TRY`). Every value is a field of the report (the averages and rates are the report's own properties), so the file's summary equals the page's, each platform's and each day's rows add up to it, and status counts add up to the order count. Also in every file: the restaurant (the tenant's name), the period selected, first and last day, day count, complete or partial period, platform filter, currency, time zone (IANA id), the generation time (the report's, in that zone), a definition of every figure, and notes: no orders, a partial period, values are platform order totals and not payments received, settled revenue, profit or payouts, local days and order time, current statuses, cancelled and rejected counted together, undefined figures have no value, practice orders are not orders. How cancelled orders ended, reason codes, the days per platform, busy hours, products and durations are not exported (WAS-197, WAS-198, WAS-200, WAS-202).
+
+**No order customer data, no other order detail.** The report holds counts, amounts, platforms, statuses and days only, so no file can contain a customer name, phone, address, credential or item.
+
+### CSV format
+
+- UTF-8 with a byte order mark (so spreadsheet programs read Turkish, Arabic and Russian), CRLF line ends, comma delimiter, RFC 4180 quoting: a field with a comma, double quote or line break is quoted and its quotes doubled.
+- Sections in order, separated by an empty line: the title line and the details (`label,value`), `Summary` (`measure,value,definition`), the platform rows, the day rows (oldest first, every local day), then the notes. Section titles, column headers and labels are in the user's language; record lengths differ between sections.
+- Values never follow the culture: counts are integers, amounts have two decimals with a dot and no grouping (`2645.05`), a rate is a fraction from 0 to 1 with four decimals (`0.0909`), days are `yyyy-MM-dd` (Gregorian), the generation time is ISO 8601 with its offset (`2026-11-10T14:10:05+03:00`). A figure that is not defined is an empty field, never `0`.
+- Text that starts with `=`, `+`, `-`, `@`, a tab or a line break (or the full-width `＝ ＋ － ＠`), after leading spaces, gets a leading apostrophe so no spreadsheet runs it as a formula (OWASP CSV injection guidance). Numbers are written as numbers and never prefixed. Control characters in text (line breaks included) become spaces.
+- A spreadsheet program in a culture whose list separator is `;` (Turkish Excel, for example) may not split a comma CSV when the file is opened by double-click; the Excel export is the file for spreadsheets, the CSV for data tools.
+
+### Excel workbook
+
+An Office Open XML workbook written with the Open XML SDK (`ReportXlsxWriter`): sheets **Summary**, **Platforms** and **Daily**, named in the user's language, right to left in Arabic. Counts, amounts and rates are number cells with number formats (`#,##0`, `#,##0.00`, `0.0%`), days and the generation time date cells (`yyyy-mm-dd`, `yyyy-mm-dd hh:mm`, the time zone is a detail row). Every label is an inline string cell in Text format (`@`): there are no formulas, shared strings, macros, external links or hyperlinks. Data sheets have a frozen header row and first column and a filter. Amounts are stored from the exact decimal, but spreadsheet programs hold numbers as doubles, so an amount beyond 15 significant digits is rounded there; the CSV keeps every digit.
+
+### PDF
+
+`ReportPdfWriter` draws an A4 landscape document with QuestPDF in the page's light colours: a header with the title, restaurant, period and platform on every page; the details and notices; the four headline figures; the Overview's daily orders and completed value charts, from the page's own chart model (`ReportPresenter`: the same columns, stacked segments, partial day, axis and day labels), when the period has two days or more; the platform share when every platform is shown; then the summary with definitions, the platform table, the daily table and the notes. Tables repeat their header row on every page they continue on, long labels wrap instead of being cut, and every page has its number ("Page 2 of 6") and the generation time. Arabic is laid out right to left.
+
+- Fonts are bundled, never taken from the server: QuestPDF's Lato for Latin, Turkish and Cyrillic, and Noto Sans Arabic (Regular and Bold, SIL Open Font License 1.1, `src/Wasla.Web/Reports/Export/Fonts`) as the fallback for Arabic. System fonts are off. A character no bundled font has (an emoji in a restaurant name) is drawn as a placeholder instead of failing the export.
+- Text is shaped by the library (HarfBuzz) and written as real text: Latin, Turkish and Russian text and every figure can be searched and copied. Arabic is shaped and readable, but Noto Sans Arabic draws dotted letters as a dotless form plus separate dots, which the PDF's character map cannot name, so searching or copying Arabic words with dotted letters is unreliable.
+- Report text is only ever text: no markup is parsed, no image, link, script or font is loaded from outside the assembly, and the file has no annotations, actions or forms.
+
+### Requests, limits and failures
+
+- The tenant comes from the session, the role is the page's (`CanViewReports`); the menu is only a shortcut. A refused filter (the [filter](#filter) errors, a repeated parameter, a missing or unknown `format`) answers 400 with its reason as short localized text and runs no report; another role is sent to access denied and a signed-out request to the login page.
+- A period has at most 92 days and the report returns grouped figures only, so a file holds at most 92 day rows and three platform rows. One export runs at a time per signed-in user of a tenant and at most four per Web process (`ReportExportGate`); another answers 429 with `Retry-After` at once. The report read must finish within 60 seconds and stops when the browser abandons the request; writing the file is not interruptible, and its work is bounded by those at most 92 day rows. Any failure answers 500 with a short localized text and logs only the format and exception type.
+- Files are attachments with ASCII names from the accepted filter (`wasla-orders-report_2026-10-12_2026-11-10[_platform].csv|pdf|xlsx`); every answer of the export action, file or not, is `Cache-Control: no-store` and `X-Content-Type-Options: nosniff` (the redirects to sign in or access denied come from the authorization pipeline before it).
+- The page keeps the menu disabled until a report has loaded for an accepted filter, shows "Preparing the PDF file…" while the file is made, then that it was created or why it failed, and does not start a second export while one runs. A lost session reloads the page.
+
+### Dependencies
+
+- **QuestPDF** 2026.9.1 (Web): PDF layout and text shaping, with native Skia libraries for each platform (about 11 MB for `linux-x64` in the release). It is used under the **QuestPDF Community License** (version 3.0, 6 July 2026), which is free only for organisations under USD 1 million annual gross revenue that are not publicly traded or government bodies; otherwise a paid licence is required. It is not open source. `ReportPdfWriter` declares `LicenseType.Community`; whoever runs Wasla confirms that eligibility.
+- **DocumentFormat.OpenXml** 3.5.1 (Web, MIT): the Excel workbook.
+- **PdfPig** 0.1.16 (tests only, Apache-2.0): reads the PDFs back in the tests.
 
 ## Known limits
 

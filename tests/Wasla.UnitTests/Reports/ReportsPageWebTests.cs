@@ -427,7 +427,8 @@ public sealed class ReportsPageWebTests(ReportsPageWebTests.Hosts hosts) : IClas
         foreach (var section in new[] { "data-rpt-section=\"overview\"", "data-rpt-section=\"platforms\"", "data-rpt-section=\"cancellations\"" })
             Assert.Contains(section, html, StringComparison.Ordinal);
         Assert.Equal(3, html.Split("data-rpt-section=").Length - 1);
-        Assert.DoesNotContain("CSV", html, StringComparison.Ordinal);
+        // The export (WAS-184) offers the shipped report only: CSV, PDF and Excel (ReportsExportWebTests).
+        Assert.Equal(["csv", "pdf", "xlsx"], System.Text.RegularExpressions.Regex.Matches(html, "data-rpt-export=\"([a-z]+)\"").Select(m => m.Groups[1].Value));
         foreach (var absent in new[] { "Busy", "Products", "Timing", "Reason" })
             Assert.DoesNotContain(absent, html, StringComparison.Ordinal);
     }
