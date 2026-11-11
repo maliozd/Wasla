@@ -658,30 +658,86 @@ internal static class CliCommands
         }
     }
 
-    public static async Task<int> SeedAddressReferenceDataAsync(IHost host, CancellationToken ct)
+    /// <summary>
+    /// WAS-214: without <paramref name="source"/>, the country, cities and districts only, as before, saying that no
+    /// neighbourhood or street was imported. With it, the pinned catalog too; <paramref name="dryRun"/> writes nothing.
+    /// </summary>
+    public static async Task<int> SeedAddressReferenceDataAsync(IHost host, string? source, bool dryRun, string? reportPath, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(source) && (dryRun || !string.IsNullOrWhiteSpace(reportPath)))
+        {
+            WriteError("seed-address-reference-data: --dry-run and --report need --source <data/jsonl folder>.");
+            return 2;
+        }
+
         try
         {
             using var scope = host.Services.CreateScope();
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
-            var turkeyLogger = scope.ServiceProvider.GetRequiredService<ILogger<TurkeyReferenceDataSeeder>>();
-            var importerLogger = scope.ServiceProvider.GetRequiredService<ILogger<AddressReferenceDataImporter>>();
-            var turkeySeeder = new TurkeyReferenceDataSeeder(central, turkeyLogger);
-            var importer = new AddressReferenceDataImporter(central, turkeySeeder, importerLogger);
+            var services = scope.ServiceProvider;
+            var importer = new AddressReferenceDataImporter(
+                central,
+                new TurkeyReferenceDataSeeder(central, services.GetRequiredService<ILogger<TurkeyReferenceDataSeeder>>()),
+                new AddressCatalogImporter(central, services.GetRequiredService<ILogger<AddressCatalogImporter>>()),
+                services.GetRequiredService<ILogger<AddressReferenceDataImporter>>());
 
-            var result = await importer.ImportAsync(ct).ConfigureAwait(false);
+            var catalog = string.IsNullOrWhiteSpace(source) ? null : new AddressCatalogImportOptions(source.Trim(), dryRun);
+            var result = await importer.ImportAsync(catalog, ct).ConfigureAwait(false);
+
+            if (result.Catalog is { } report && !string.IsNullOrWhiteSpace(reportPath))
+                await File.WriteAllTextAsync(reportPath.Trim(), report.ToJson(), new System.Text.UTF8Encoding(false), ct).ConfigureAwait(false);
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(
-                $"✓ seed-address-reference-data completed. Countries inserted={result.CountriesInserted}, cities inserted={result.CitiesInserted}, districts inserted={result.DistrictsInserted}, neighborhoods inserted={result.NeighborhoodsInserted}, streets inserted={result.StreetsInserted}, total cities={result.TotalCities}.");
+            if (!dryRun)
+            {
+                Console.WriteLine(
+                    $"✓ seed-address-reference-data completed. Countries inserted={result.CountriesInserted}, cities inserted={result.CitiesInserted}, districts inserted={result.DistrictsInserted}, total cities={result.TotalCities}.");
+            }
+
             Console.ResetColor();
+            if (result.Catalog is null)
+            {
+                Console.WriteLine("Neighbourhoods and streets were not imported: pass --source with the pinned catalog (docs/operations/address-reference-data.md).");
+                return 0;
+            }
+
+            PrintCatalogSummary(result.Catalog, reportPath);
             return 0;
         }
         catch (Exception ex)
         {
-            WriteError($"seed-address-reference-data failed: {ex.Message}");
+            // A refused batch names its database error only in the inner exception.
+            var inner = ex.GetBaseException();
+            WriteError($"seed-address-reference-data failed: {ex.Message}{(ReferenceEquals(inner, ex) ? string.Empty : " " + inner.Message)}");
             return 1;
         }
+    }
+
+    private static void PrintCatalogSummary(AddressCatalogReport report, string? reportPath)
+    {
+        static string Line(string level, AddressCatalogCounts c, bool dryRun) =>
+            $"  {level,-14} source={c.Source} {(dryRun ? "to insert" : "inserted")}={c.Insert} {(dryRun ? "to fill ExternalCode" : "ExternalCode filled")}={c.Fill} unchanged={c.Unchanged} " +
+            $"quarantined={c.Quarantined} rejected={c.Rejected} conflicts={c.Conflict} parent not imported={c.ParentNotImported}";
+
+        var dryRun = report.Mode == "dry-run";
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine(dryRun
+            ? "✓ Address catalog dry run completed; nothing was written."
+            : "✓ Address catalog import completed.");
+        Console.ResetColor();
+        Console.WriteLine($"  Source: {report.Dataset} {report.Repository} at {report.Commit} ({report.FilesVerified} files verified by SHA-256)");
+        Console.WriteLine($"  CentralDb collation: {report.DatabaseCollation ?? "(not SQL Server)"}");
+        Console.WriteLine($"  Provinces matched: {report.MatchedProvinces}/{report.SourceProvinces}; districts matched: {report.MatchedDistricts}/{report.SourceDistricts}");
+        Console.WriteLine(Line("Neighbourhoods", report.Neighborhoods, dryRun));
+        Console.WriteLine(Line("Streets", report.Streets, dryRun));
+        Console.WriteLine(
+            $"  Neighbourhood names: source name={report.NeighborhoodNames.Name}, official name (none in source)={report.NeighborhoodNames.OfficialNameForMissingName}, official name (shared name)={report.NeighborhoodNames.OfficialNameForSharedName}");
+        Console.WriteLine(
+            $"  Listed: fills={report.Fills.Count}, collision groups={report.Collisions.Count}, rejected entries={report.Rejected.Count}, conflicts={report.Conflicts.Count}{(report.ListsTruncated ? " (lists truncated; counts are exact)" : string.Empty)}");
+        if (report.Fills.Count > 0)
+            Console.WriteLine("  Existing rows that get a source id as ExternalCode are listed under Fills in the --report file.");
+        if (!string.IsNullOrWhiteSpace(reportPath))
+            Console.WriteLine($"  Report: {reportPath.Trim()}");
     }
 
     public static async Task<int> MigrateTenantAsync(

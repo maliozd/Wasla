@@ -1,0 +1,209 @@
+name: Address reference import
+
+# WAS-214: the neighbourhood and street catalog import against the real pinned source, on a disposable CentralDb that
+# exists only on this runner. It runs when the importer, the address tables' model or this check changes, and by hand
+# (for example after a CLI change). The unit and SQL Server tests of the importer run in ci.yml with every other test;
+# this job adds what they cannot: the full Türkiye dataset, a stopped and resumed import, and a repeat.
+# See docs/operations/address-reference-data.md.
+on:
+  pull_request:
+    branches:
+      - dev
+      - master
+    paths:
+      - 'src/Wasla.Infrastructure/ReferenceData/**'
+      - 'src/Wasla.Infrastructure/Persistence/Central/Configurations/CityConfiguration.cs'
+      - 'src/Wasla.Infrastructure/Persistence/Central/Configurations/DistrictConfiguration.cs'
+      - 'src/Wasla.Infrastructure/Persistence/Central/Configurations/NeighborhoodConfiguration.cs'
+      - 'src/Wasla.Infrastructure/Persistence/Central/Configurations/StreetConfiguration.cs'
+      - 'scripts/ci/check-address-catalog-import.ps1'
+      - '.github/workflows/address-reference-import.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: address-reference-import-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  real-source-import:
+    name: Real-source catalog import (disposable LocalDB)
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # The pinned turkey-geo-api commit; the embedded manifest names the same commit and every file's SHA-256.
+      SOURCE_REPOSITORY: https://github.com/onurusluca/turkey-geo-api.git
+      SOURCE_COMMIT: e44ca84316a8b3d6ff3d9b898b806b1c3d853449
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # Only the data files are used; nothing from the source repository is run. core.autocrlf=false keeps the bytes
+      # the manifest's SHA-256 values were taken from.
+      - name: Fetch the pinned catalog source
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'turkey-geo-api'
+          git init -q $dir
+          git -C $dir remote add origin $env:SOURCE_REPOSITORY
+          git -C $dir -c protocol.version=2 fetch -q --depth 1 origin $env:SOURCE_COMMIT
+          git -C $dir -c core.autocrlf=false checkout -q FETCH_HEAD
+          $head = git -C $dir rev-parse HEAD
+          if ($head -ne $env:SOURCE_COMMIT) { Write-Host "::error::Fetched $head, expected $env:SOURCE_COMMIT."; exit 1 }
+          "CATALOG_SOURCE=$(Join-Path $dir 'data\jsonl')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build the CLI
+        run: dotnet build src/Wasla.Cli/Wasla.Cli.csproj --configuration Release
+
+      - name: Start LocalDB and name a disposable CentralDb
+        shell: pwsh
+        run: |
+          $sqllocaldb = (Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue).Source
+          if (-not $sqllocaldb) {
+            $sqllocaldb = Get-ChildItem -Path "$env:ProgramFiles\Microsoft SQL Server\*\Tools\Binn\SqlLocalDB.exe" -ErrorAction SilentlyContinue |
+              Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $sqllocaldb) { Write-Host '::error::SqlLocalDB.exe was not found on the runner.'; exit 1 }
+          # As in ci.yml: create the instance when the image has none, then start it.
+          $instances = @(& $sqllocaldb info | ForEach-Object { $_.Trim() })
+          if ($instances -notcontains 'MSSQLLocalDB') {
+            & $sqllocaldb create MSSQLLocalDB
+            if ($LASTEXITCODE -ne 0) { Write-Host '::error::sqllocaldb could not create MSSQLLocalDB.'; exit 1 }
+          }
+          & $sqllocaldb start MSSQLLocalDB
+          if ($LASTEXITCODE -ne 0) { Write-Host '::error::sqllocaldb could not start MSSQLLocalDB.'; exit 1 }
+          $name = "Wasla_AddressImport_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
+          "CATALOG_DATABASE=$name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ConnectionStrings__CentralDb=Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=$name;Integrated Security=True;TrustServerCertificate=True;Connect Timeout=180" |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # The CLI requires a master key; this database holds no secret, so a throwaway key is generated here.
+          $key = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+          Write-Host "::add-mask::$key"
+          "ENCRYPTION_MASTER_KEY=$key" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          New-Item -ItemType Directory -Force artifacts/address-catalog | Out-Null
+
+      - name: Create CentralDb, seed cities and districts, add one existing neighbourhood
+        shell: pwsh
+        run: |
+          $cli = 'src/Wasla.Cli/bin/Release/net8.0/Wasla.Cli.dll'
+          dotnet $cli migrate-central
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          dotnet $cli seed-address-reference-data | Tee-Object artifacts/address-catalog/seed-cities.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # A neighbourhood entered before the catalog, as an operator might have: the import must keep its id and name.
+          $connection = [System.Data.SqlClient.SqlConnection]::new($env:ConnectionStrings__CentralDb)
+          $connection.Open()
+          try {
+            $command = $connection.CreateCommand()
+            $command.CommandText = @"
+          INSERT INTO dbo.Neighborhoods (DistrictId, Name, ExternalCode, SortOrder, IsActive)
+          OUTPUT INSERTED.Id
+          SELECT d.Id, N'Caferağa', NULL, 0, 1 FROM dbo.Districts d JOIN dbo.Cities c ON c.Id = d.CityId
+          WHERE c.PlateCode = '34' AND d.Name = N'Kadıköy'
+          "@
+            $id = $command.ExecuteScalar()
+          }
+          finally { $connection.Dispose() }
+          if (-not $id) { Write-Host '::error::Kadıköy was not seeded.'; exit 1 }
+          Write-Host "Existing neighbourhood Caferağa: id $id"
+          "PRESERVED_NEIGHBORHOOD_ID=$id" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Dry run
+        shell: pwsh
+        run: |
+          dotnet src/Wasla.Cli/bin/Release/net8.0/Wasla.Cli.dll seed-address-reference-data --source $env:CATALOG_SOURCE --dry-run --report artifacts/address-catalog/dry-run.json |
+            Tee-Object artifacts/address-catalog/dry-run.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $connection = [System.Data.SqlClient.SqlConnection]::new($env:ConnectionStrings__CentralDb)
+          $connection.Open()
+          try {
+            $command = $connection.CreateCommand()
+            $command.CommandText = 'SELECT (SELECT COUNT(*) FROM dbo.Neighborhoods) + (SELECT COUNT(*) FROM dbo.Streets)'
+            $rows = $command.ExecuteScalar()
+          }
+          finally { $connection.Dispose() }
+          Write-Host "Catalog rows after the dry run: $rows"
+          "ROWS_AFTER_DRY_RUN=$rows" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # Stops the process from outside once part of the streets are in, as a lost session or a killed process would.
+      - name: Import, stopped part-way
+        shell: pwsh
+        run: |
+          $process = Start-Process dotnet -PassThru -NoNewWindow `
+            -ArgumentList 'src/Wasla.Cli/bin/Release/net8.0/Wasla.Cli.dll', 'seed-address-reference-data', '--source', $env:CATALOG_SOURCE `
+            -RedirectStandardOutput artifacts/address-catalog/stopped-import.txt -RedirectStandardError artifacts/address-catalog/stopped-import-errors.txt
+          $deadline = [DateTime]::UtcNow.AddMinutes(40)
+          $streets = 0
+          do {
+            Start-Sleep -Seconds 2
+            $connection = [System.Data.SqlClient.SqlConnection]::new($env:ConnectionStrings__CentralDb)
+            $connection.Open()
+            try {
+              $command = $connection.CreateCommand()
+              $command.CommandText = 'SELECT COUNT(*) FROM dbo.Streets WITH (NOLOCK)'
+              $streets = [int]$command.ExecuteScalar()
+            }
+            finally { $connection.Dispose() }
+          } while (-not $process.HasExited -and $streets -lt 200000 -and [DateTime]::UtcNow -lt $deadline)
+          if ($process.HasExited) { Write-Host "::error::The import ended (exit $($process.ExitCode)) before it could be stopped."; exit 1 }
+          Stop-Process -Id $process.Id -Force
+          $process.WaitForExit()
+          Write-Host "Stopped the import after about $streets streets."
+
+      - name: Import again (resumes the stopped one)
+        shell: pwsh
+        run: |
+          dotnet src/Wasla.Cli/bin/Release/net8.0/Wasla.Cli.dll seed-address-reference-data --source $env:CATALOG_SOURCE --report artifacts/address-catalog/import.json |
+            Tee-Object artifacts/address-catalog/import.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Import a third time (must change nothing)
+        shell: pwsh
+        run: |
+          dotnet src/Wasla.Cli/bin/Release/net8.0/Wasla.Cli.dll seed-address-reference-data --source $env:CATALOG_SOURCE --report artifacts/address-catalog/repeat.json |
+            Tee-Object artifacts/address-catalog/repeat.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Check the reports and CentralDb
+        shell: pwsh
+        run: >
+          ./scripts/ci/check-address-catalog-import.ps1
+          -Source $env:CATALOG_SOURCE
+          -DryRunReport artifacts/address-catalog/dry-run.json
+          -ImportReport artifacts/address-catalog/import.json
+          -RepeatReport artifacts/address-catalog/repeat.json
+          -PreservedNeighborhoodId $env:PRESERVED_NEIGHBORHOOD_ID
+          -RowsBeforeImport $env:ROWS_AFTER_DRY_RUN
+
+      - name: Upload the reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: address-catalog-reports
+          path: artifacts/address-catalog/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Drop the disposable CentralDb
+        if: ${{ always() && env.CATALOG_DATABASE != '' }}
+        shell: pwsh
+        run: |
+          $connection = [System.Data.SqlClient.SqlConnection]::new('Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=master;Integrated Security=True;Connect Timeout=60')
+          $connection.Open()
+          try {
+            $command = $connection.CreateCommand()
+            $command.CommandText = "IF DB_ID(N'$env:CATALOG_DATABASE') IS NOT NULL BEGIN ALTER DATABASE [$env:CATALOG_DATABASE] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$env:CATALOG_DATABASE]; END"
+            $command.ExecuteNonQuery() | Out-Null
+          }
+          finally { $connection.Dispose() }

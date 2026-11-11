@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Domain.Entities.Central;
 using Wasla.Infrastructure.Persistence.Central;
@@ -8,58 +6,58 @@ using Wasla.Infrastructure.Persistence.Central;
 namespace Wasla.Infrastructure.ReferenceData;
 
 /// <summary>
-/// Idempotent importer for CentralDb address reference data (country, city, district, neighborhood, street).
-/// Large datasets are loaded from embedded JSON via CLI, not EF migrations.
+/// Idempotent importer for CentralDb address reference data: the country, Türkiye's cities and districts (embedded
+/// JSON), and, when a catalog source is given, the pinned neighbourhood and street catalog (WAS-214, see
+/// <see cref="AddressCatalogImporter"/>). Large datasets are loaded via the CLI, not EF migrations.
 /// </summary>
 public sealed class AddressReferenceDataImporter
 {
-    private const string NeighborhoodResourceName =
-        "Wasla.Infrastructure.ReferenceData.turkey-neighborhoods-reference-data.json";
-
-    private const string StreetResourceName =
-        "Wasla.Infrastructure.ReferenceData.turkey-streets-reference-data.json";
-
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     private readonly CentralDbContext _central;
     private readonly TurkeyReferenceDataSeeder _turkeySeeder;
+    private readonly AddressCatalogImporter _catalog;
     private readonly ILogger<AddressReferenceDataImporter> _logger;
 
     public AddressReferenceDataImporter(
         CentralDbContext central,
         TurkeyReferenceDataSeeder turkeySeeder,
+        AddressCatalogImporter catalog,
         ILogger<AddressReferenceDataImporter> logger)
     {
         _central = central;
         _turkeySeeder = turkeySeeder;
+        _catalog = catalog;
         _logger = logger;
     }
 
-    public async Task<AddressReferenceImportResult> ImportAsync(CancellationToken ct)
+    /// <param name="catalog">
+    /// The neighbourhood and street catalog to import; null imports none and says so in the result. Its source is
+    /// verified before anything is written, so a bad source leaves every table as it was. A dry run writes nothing at
+    /// all, so the country, cities and districts are not seeded either.
+    /// </param>
+    public async Task<AddressReferenceImportResult> ImportAsync(AddressCatalogImportOptions? catalog, CancellationToken ct)
     {
+        var source = catalog is null ? null : await _catalog.OpenSourceAsync(catalog, ct);
+        if (catalog is { DryRun: true })
+            return new AddressReferenceImportResult(0, 0, 0, 0, await _catalog.RunAsync(source!, catalog, ct));
+
         var countriesInserted = await ImportCountriesAsync(ct);
         var cityDistrictResult = await _turkeySeeder.SeedAsync(ct);
-        var neighborhoodsInserted = await ImportNeighborhoodsAsync(ct);
-        var streetsInserted = await ImportStreetsAsync(ct);
+        var report = catalog is null ? null : await _catalog.RunAsync(source!, catalog, ct);
 
         _logger.LogInformation(
-            "Address reference import completed. Countries inserted={CountriesInserted}, cities inserted={CitiesInserted}, districts inserted={DistrictsInserted}, neighborhoods inserted={NeighborhoodsInserted}, streets inserted={StreetsInserted}",
+            "Address reference import completed. Countries inserted={CountriesInserted}, cities inserted={CitiesInserted}, districts inserted={DistrictsInserted}, neighbourhoods inserted={NeighborhoodsInserted}, streets inserted={StreetsInserted}",
             countriesInserted,
             cityDistrictResult.CitiesInserted,
             cityDistrictResult.DistrictsInserted,
-            neighborhoodsInserted,
-            streetsInserted);
+            report?.Neighborhoods.Insert ?? 0,
+            report?.Streets.Insert ?? 0);
 
         return new AddressReferenceImportResult(
             countriesInserted,
             cityDistrictResult.CitiesInserted,
             cityDistrictResult.DistrictsInserted,
-            neighborhoodsInserted,
-            streetsInserted,
-            cityDistrictResult.TotalCities);
+            cityDistrictResult.TotalCities,
+            report);
     }
 
     private async Task<int> ImportCountriesAsync(CancellationToken ct)
@@ -95,196 +93,12 @@ public sealed class AddressReferenceDataImporter
         await _central.SaveChangesAsync(ct);
         return inserted;
     }
-
-    private async Task<int> ImportNeighborhoodsAsync(CancellationToken ct)
-    {
-        var data = TryLoadEmbeddedData<AddressNeighborhoodDataFile>(NeighborhoodResourceName);
-        if (data?.Entries is null || data.Entries.Count == 0)
-        {
-            _logger.LogInformation("Neighborhood reference file not found or empty; skipping neighborhood import.");
-            return 0;
-        }
-
-        var inserted = 0;
-        foreach (var entry in data.Entries)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            var district = await ResolveDistrictAsync(entry.CityPlateCode, entry.DistrictName, ct);
-            if (district is null)
-            {
-                _logger.LogWarning(
-                    "Skipping neighborhood import for unknown district. PlateCode={PlateCode} District={DistrictName}",
-                    entry.CityPlateCode,
-                    entry.DistrictName);
-                continue;
-            }
-
-            var sortOrder = 1;
-            foreach (var neighborhoodData in entry.Neighborhoods
-                         .OrderBy(n => n.SortOrder > 0 ? n.SortOrder : int.MaxValue)
-                         .ThenBy(n => n.Name, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), false)))
-            {
-                var name = neighborhoodData.Name.Trim();
-                if (name.Length == 0)
-                    continue;
-
-                var neighborhood = await _central.Neighborhoods
-                    .FirstOrDefaultAsync(n => n.DistrictId == district.Id && n.Name == name, ct);
-
-                var order = neighborhoodData.SortOrder > 0 ? neighborhoodData.SortOrder : sortOrder;
-                if (neighborhood is null)
-                {
-                    _central.Neighborhoods.Add(new Neighborhood
-                    {
-                        DistrictId = district.Id,
-                        Name = name,
-                        ExternalCode = string.IsNullOrWhiteSpace(neighborhoodData.ExternalCode)
-                            ? null
-                            : neighborhoodData.ExternalCode.Trim(),
-                        SortOrder = order,
-                        IsActive = true
-                    });
-                    inserted++;
-                }
-                else
-                {
-                    neighborhood.ExternalCode = string.IsNullOrWhiteSpace(neighborhoodData.ExternalCode)
-                        ? null
-                        : neighborhoodData.ExternalCode.Trim();
-                    neighborhood.SortOrder = order;
-                    neighborhood.IsActive = true;
-                }
-
-                sortOrder++;
-            }
-
-            await _central.SaveChangesAsync(ct);
-        }
-
-        return inserted;
-    }
-
-    private async Task<int> ImportStreetsAsync(CancellationToken ct)
-    {
-        var data = TryLoadEmbeddedData<AddressStreetDataFile>(StreetResourceName);
-        if (data?.Entries is null || data.Entries.Count == 0)
-        {
-            _logger.LogInformation("Street reference file not found or empty; skipping street import.");
-            return 0;
-        }
-
-        var inserted = 0;
-        foreach (var entry in data.Entries)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            var district = await ResolveDistrictAsync(entry.CityPlateCode, entry.DistrictName, ct);
-            if (district is null)
-            {
-                _logger.LogWarning(
-                    "Skipping street import for unknown district. PlateCode={PlateCode} District={DistrictName}",
-                    entry.CityPlateCode,
-                    entry.DistrictName);
-                continue;
-            }
-
-            var neighborhoodName = entry.NeighborhoodName.Trim();
-            var neighborhood = await _central.Neighborhoods
-                .FirstOrDefaultAsync(n => n.DistrictId == district.Id && n.Name == neighborhoodName, ct);
-
-            if (neighborhood is null)
-            {
-                _logger.LogWarning(
-                    "Skipping street import for unknown neighborhood. DistrictId={DistrictId} Neighborhood={NeighborhoodName}",
-                    district.Id,
-                    neighborhoodName);
-                continue;
-            }
-
-            var sortOrder = 1;
-            foreach (var streetData in entry.Streets
-                         .OrderBy(s => s.SortOrder > 0 ? s.SortOrder : int.MaxValue)
-                         .ThenBy(s => s.Name, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), false)))
-            {
-                var name = streetData.Name.Trim();
-                if (name.Length == 0)
-                    continue;
-
-                var streetType = NormalizeStreetType(streetData.StreetType);
-                var street = await _central.Streets
-                    .FirstOrDefaultAsync(s =>
-                        s.NeighborhoodId == neighborhood.Id
-                        && s.Name == name
-                        && s.StreetType == streetType, ct);
-
-                var order = streetData.SortOrder > 0 ? streetData.SortOrder : sortOrder;
-                if (street is null)
-                {
-                    _central.Streets.Add(new Street
-                    {
-                        NeighborhoodId = neighborhood.Id,
-                        Name = name,
-                        StreetType = streetType,
-                        ExternalCode = string.IsNullOrWhiteSpace(streetData.ExternalCode)
-                            ? null
-                            : streetData.ExternalCode.Trim(),
-                        SortOrder = order,
-                        IsActive = true
-                    });
-                    inserted++;
-                }
-                else
-                {
-                    street.ExternalCode = string.IsNullOrWhiteSpace(streetData.ExternalCode)
-                        ? null
-                        : streetData.ExternalCode.Trim();
-                    street.SortOrder = order;
-                    street.IsActive = true;
-                }
-
-                sortOrder++;
-            }
-
-            await _central.SaveChangesAsync(ct);
-        }
-
-        return inserted;
-    }
-
-    private async Task<District?> ResolveDistrictAsync(string cityPlateCode, string districtName, CancellationToken ct)
-    {
-        var plateCode = cityPlateCode.Trim();
-        var name = districtName.Trim();
-
-        return await (
-            from d in _central.Districts
-            join c in _central.Cities on d.CityId equals c.Id
-            where c.CountryCode == "TR"
-                  && c.PlateCode == plateCode
-                  && d.Name == name
-            select d).FirstOrDefaultAsync(ct);
-    }
-
-    private static string? NormalizeStreetType(string? streetType) =>
-        string.IsNullOrWhiteSpace(streetType) ? null : streetType.Trim();
-
-    private static T? TryLoadEmbeddedData<T>(string resourceName)
-        where T : class
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream is null)
-            return null;
-
-        return JsonSerializer.Deserialize<T>(stream, JsonOptions);
-    }
 }
 
+/// <param name="Catalog">The neighbourhood and street catalog report; null when no catalog source was given.</param>
 public sealed record AddressReferenceImportResult(
     int CountriesInserted,
     int CitiesInserted,
     int DistrictsInserted,
-    int NeighborhoodsInserted,
-    int StreetsInserted,
-    int TotalCities);
+    int TotalCities,
+    AddressCatalogReport? Catalog);

@@ -119,7 +119,7 @@ Both `provision-signup-request` and `add-tenant` create the tenant's single `Ten
 | `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants; supports `--dry-run`, `--only` |
 | `migration-status` | Show CentralDb and per-tenant migration status; `--require-current` provides a strict, read-only release gate (pending, unknown or unreadable schema exits non-zero) |
 | `seed-turkey-reference-data` | Seed Turkish cities/districts into CentralDb |
-| `seed-address-reference-data` | Import address reference data |
+| `seed-address-reference-data` | Seed the country, cities and districts; with `--source <data/jsonl>` also the pinned neighbourhood and street catalog (`--dry-run` writes nothing, `--report <file>` writes the JSON report). See [address-reference-data.md](address-reference-data.md) |
 
 Details: [migrations.md](migrations.md).
 
