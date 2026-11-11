@@ -79,7 +79,7 @@ internal static class CliHelpPrinter
         Console.WriteLine("Migration commands:");
         Console.WriteLine("  migrate-central           Apply pending CentralDb migrations.");
         Console.WriteLine("  seed-turkey-reference-data Seed all 81 Turkish cities and districts into CentralDb.");
-        Console.WriteLine("  seed-address-reference-data Import address reference data (country, city, district; neighborhoods/streets when files are available).");
+        Console.WriteLine("  seed-address-reference-data Import address reference data (country, city, district; with --source the neighbourhood and street catalog).");
         Console.WriteLine("  migrate-tenant            Apply pending TenantDb migrations for one tenant.");
         Console.WriteLine("  migrate-all-tenants       Apply pending TenantDb migrations for all active tenants.");
         Console.WriteLine("  migration-status          Show CentralDb and TenantDb migration status; --require-current gates a release.");
@@ -377,6 +377,23 @@ internal static class CliHelpPrinter
                 Console.WriteLine("Lists central admin users (safe output only).");
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  list-central-admins");
+                return;
+
+            case "seed-address-reference-data":
+                Console.WriteLine("seed-address-reference-data");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  seed-address-reference-data [--source <data/jsonl folder>] [--dry-run] [--report <file.json>]");
+                Console.WriteLine();
+                Console.WriteLine("Without --source: seeds the country, Türkiye's cities and districts, and imports no neighbourhood or street.");
+                Console.WriteLine("With --source: also imports the pinned neighbourhood and street catalog. Every source file is first");
+                Console.WriteLine("checked against the embedded manifest (size and SHA-256); any difference stops the command.");
+                Console.WriteLine("--dry-run validates and plans against CentralDb and writes nothing, not even cities and districts.");
+                Console.WriteLine("Existing rows keep their ids and names; nothing is deleted or deactivated. A stopped import is");
+                Console.WriteLine("resumed by running it again. See docs/operations/address-reference-data.md.");
+                Console.WriteLine();
+                Console.WriteLine("Example:");
+                Console.WriteLine("  dotnet run --project src\\Wasla.Cli -- seed-address-reference-data --source /srv/turkey-geo-api/data/jsonl --dry-run --report dry-run.json");
                 return;
 
             default:

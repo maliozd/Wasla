@@ -136,11 +136,23 @@ internal static class CliCommandTree
         // --- seed-address-reference-data ---
         var seedAddressReferenceData = new Command(
             "seed-address-reference-data",
-            "Import address reference data into CentralDb (idempotent; neighborhoods/streets when data files are available).");
+            "Import address reference data into CentralDb (idempotent): the country, cities and districts, and with --source the pinned neighbourhood and street catalog.");
 
+        var optAddressSource = new Option<string?>("--source", "The data/jsonl folder of the pinned turkey-geo-api commit; its files are checked against the embedded manifest");
+        var optAddressDryRun = new Option<bool>("--dry-run", "Validate the catalog and plan the changes without writing anything (needs --source)");
+        var optAddressReport = new Option<string?>("--report", "Write the full catalog report as JSON to this file (needs --source)");
+        seedAddressReferenceData.AddOption(optAddressSource);
+        seedAddressReferenceData.AddOption(optAddressDryRun);
+        seedAddressReferenceData.AddOption(optAddressReport);
         seedAddressReferenceData.SetHandler(async (InvocationContext context) =>
         {
-            context.ExitCode = await CliCommands.SeedAddressReferenceDataAsync(host, context.GetCancellationToken());
+            var p = context.ParseResult;
+            context.ExitCode = await CliCommands.SeedAddressReferenceDataAsync(
+                host,
+                p.GetValueForOption(optAddressSource),
+                p.GetValueForOption(optAddressDryRun),
+                p.GetValueForOption(optAddressReport),
+                context.GetCancellationToken());
         });
 
         // --- migrate-tenant ---
