@@ -1,0 +1,42 @@
+@model Wasla.Web.Models.Reports.ReportPageViewModel
+@using Wasla.Web.Models.Reports
+@using Wasla.Web.Reports.Export
+@{
+    // The file is the report the page shows: it is offered once a report has loaded for an accepted filter. The server
+    // checks the role, the tenant and the filter again on every export (ReportsController.Export).
+    var available = Model.State is ReportResultState.Report or ReportResultState.NoOrders;
+    var options = new[]
+    {
+        (Format: ReportExportFormat.Csv, Key: "Reports.Export.Csv", Hint: "Reports.Export.CsvHint", Icon: "bi-filetype-csv"),
+        (Format: ReportExportFormat.Pdf, Key: "Reports.Export.Pdf", Hint: "Reports.Export.PdfHint", Icon: "bi-filetype-pdf"),
+        (Format: ReportExportFormat.Xlsx, Key: "Reports.Export.Xlsx", Hint: "Reports.Export.XlsxHint", Icon: "bi-filetype-xlsx")
+    };
+}
+<div class="rpt-export dropdown" id="rptExport"
+     data-export-url="@ReportPageQuery.ExportPath"
+     data-preparing-text="@L["Reports.Export.Preparing"]"
+     data-ready-text="@L["Reports.Export.Ready"]"
+     data-failed-text="@L["Reports.Export.Failed"]"
+     data-unavailable-text="@L["Reports.Export.Unavailable"]">
+    <button type="button" class="rpt-btn dropdown-toggle" id="rptExportToggle" data-bs-toggle="dropdown" aria-expanded="false"
+            aria-controls="rptExportMenu" disabled="@(!available)" title="@(available ? null : L["Reports.Export.Unavailable"].Value)">
+        <i class="bi bi-download" aria-hidden="true"></i>
+        <span>@L["Reports.Export.Button"]</span>
+        <span class="spinner-border spinner-border-sm rpt-export__spinner" aria-hidden="true" hidden></span>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end rpt-export__menu" id="rptExportMenu" aria-labelledby="rptExportToggle">
+        <p class="rpt-export__scope">@L["Reports.Export.Scope"]</p>
+        @foreach (var option in options)
+        {
+            var format = ReportExportFormats.Value(option.Format);
+            <a class="dropdown-item rpt-export__item" href="@Model.Query.ExportUrl(format)" data-rpt-export="@format" data-format-label="@L[option.Key]">
+                <i class="bi @option.Icon" aria-hidden="true"></i>
+                <span>
+                    <span class="rpt-export__name">@L[option.Key]</span>
+                    <span class="rpt-export__hint">@L[option.Hint]</span>
+                </span>
+            </a>
+        }
+    </div>
+    <p class="rpt-export__message" id="rptExportMessage" aria-live="polite"></p>
+</div>

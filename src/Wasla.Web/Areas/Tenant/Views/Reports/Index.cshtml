@@ -30,11 +30,12 @@
      data-page-url="@ReportPageQuery.PagePath"
      data-loading-text="@L["Reports.Loading"]">
 
-    <header class="wasla-tenant-page-header mb-3">
+    <header class="wasla-tenant-page-header d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
         <div class="wasla-tenant-page-header__main">
             <h1 class="wasla-tenant-page-header__title h4 mb-1">@L["Reports.Title"]</h1>
             <p class="wasla-tenant-page-header__subtitle text-muted small mb-0">@L["Reports.Subtitle"]</p>
         </div>
+        @await Html.PartialAsync("_ReportExport", Model)
     </header>
 
     <section class="rpt-filters" aria-label="@L["Reports.FiltersLabel"]">

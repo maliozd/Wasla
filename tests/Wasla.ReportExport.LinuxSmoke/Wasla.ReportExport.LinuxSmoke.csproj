@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Report export smoke check for Linux (WAS-184). Not part of Wasla.sln: the "Report export checks" workflow builds it,
+    copies only its own assembly into a copy of the published linux-x64 Wasla.Web output and runs it there with
+    Wasla.Web's deps.json and runtimeconfig.json, so the exporter, QuestPDF and its native library are the release's.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\src\Wasla.Web\Wasla.Web.csproj" />
+  </ItemGroup>
+
+</Project>
