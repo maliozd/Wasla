@@ -177,6 +177,9 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Log klasörü henüz oluşturulmadı.</value>
   </data>
+  <data name="Message.RunningInAnotherSession" xml:space="preserve">
+    <value>Wasla Print Bridge bu bilgisayarda başka bir Windows kullanıcısı veya oturumu için zaten çalışıyor.{0}{0}Bir bilgisayarda yalnızca bir Print Bridge çalışabilir. Önce o oturumda uygulamadan çıkın, sonra Print Bridge'i veya kurulum bağlantısını yeniden açın.</value>
+  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge Windows gerektirir.</value>
   </data>

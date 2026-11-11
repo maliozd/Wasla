@@ -1,0 +1,1240 @@
+{
+  "dataset": "turkey-geo-api data/jsonl",
+  "repository": "https://github.com/onurusluca/turkey-geo-api",
+  "commit": "e44ca84316a8b3d6ff3d9b898b806b1c3d853449",
+  "builtAtUtc": "2026-10-08T08:31:53.340Z",
+  "upstream": "https://github.com/melihozkara/il-ilce-mahalle-sokak-veritabani (data/, 06.10.2026)",
+  "declaredCounts": {
+    "provinces": 81,
+    "districts": 973,
+    "neighborhoods": 73398,
+    "streets": 1276922
+  },
+  "files": [
+    {
+      "path": "meta.json",
+      "bytes": 12391,
+      "sha256": "f4ef88033a545693feedc60968603edcbeba4634f08827a21ea745221492db7d"
+    },
+    {
+      "path": "provinces.jsonl",
+      "bytes": 47315,
+      "sha256": "30bcb8d06cdca465abf40ca9ed5724be905a9e5b4a664abc589d303eecab9f2f"
+    },
+    {
+      "path": "province-1/districts.jsonl",
+      "bytes": 2273,
+      "sha256": "dd58f0e86a71de729e2d926c24f322d07c33e324549e64c00ada7dbfce51c03e"
+    },
+    {
+      "path": "province-1/neighborhoods.jsonl",
+      "bytes": 176282,
+      "sha256": "c1bb6bebb6aa2bc8b9669e6dd1fec7d22485d441b4f1f31d8dbc6e8a4c044781"
+    },
+    {
+      "path": "province-1/streets.jsonl",
+      "bytes": 6492825,
+      "sha256": "2e1a1c405fd4d50da4847b10887bddbae0208d487944883e5b38f2af283038f1"
+    },
+    {
+      "path": "province-2/districts.jsonl",
+      "bytes": 1336,
+      "sha256": "a0f9d3544f5bc6c059585d79cde81aa5bd4c892aa5c07ca229601c9bc4b43d5a"
+    },
+    {
+      "path": "province-2/neighborhoods.jsonl",
+      "bytes": 247800,
+      "sha256": "18a4638be29437979704cddd50c254ad72357b654f6be8c7792dc6a1b541121b"
+    },
+    {
+      "path": "province-2/streets.jsonl",
+      "bytes": 1488671,
+      "sha256": "138a4a9dbdb95c92da08f846044ad4c502b3b4d9e74781e3703d895bae18ce73"
+    },
+    {
+      "path": "province-3/districts.jsonl",
+      "bytes": 2725,
+      "sha256": "af7b4aafaa9e951effe757bb211e1874e4b62105d34a030872ced5cdd9e9b63e"
+    },
+    {
+      "path": "province-3/neighborhoods.jsonl",
+      "bytes": 233163,
+      "sha256": "3532d7007a0a43cf31726c8c311fdcd36ef2f911bd5f8797a184142f91306415"
+    },
+    {
+      "path": "province-3/streets.jsonl",
+      "bytes": 3549737,
+      "sha256": "2a86312f9168629297273c93d980fb3c4bf8d199a48d53f80db50beb2ca4b0c2"
+    },
+    {
+      "path": "province-4/districts.jsonl",
+      "bytes": 1215,
+      "sha256": "90bfc473de145b3f047c2aae7ab91cf3586bdef3c98d9e2eab7a8325c6271395"
+    },
+    {
+      "path": "province-4/neighborhoods.jsonl",
+      "bytes": 206237,
+      "sha256": "2b8dcbc7384a7c96f30bbf500d9fb073be448a4b5a563f76270d5467beeb1551"
+    },
+    {
+      "path": "province-4/streets.jsonl",
+      "bytes": 1042894,
+      "sha256": "f4d7435c23feabc02e6e0e1ed498e52c0dcf5c3c56a3b0d5fc68badb6bdfb4e9"
+    },
+    {
+      "path": "province-5/districts.jsonl",
+      "bytes": 1076,
+      "sha256": "813ec969c48500a3102d46b3ef2326877a27d1111ba9b8627dfdfabecc5afab1"
+    },
+    {
+      "path": "province-5/neighborhoods.jsonl",
+      "bytes": 150391,
+      "sha256": "0de1ca4e4a45eb4218f887ce73665c27d2d13344a64f5412e9ab0ab0baf2d2eb"
+    },
+    {
+      "path": "province-5/streets.jsonl",
+      "bytes": 1012741,
+      "sha256": "92c258d86177f04b8d9bcdbdb04edb43a11b00f43fc9cada12f974cd9fa0d3da"
+    },
+    {
+      "path": "province-6/districts.jsonl",
+      "bytes": 3824,
+      "sha256": "8120cb219dc58a2ce335a1988260e2b6d4cb18127eeff5b8ebf9b9f6560b14e8"
+    },
+    {
+      "path": "province-6/neighborhoods.jsonl",
+      "bytes": 307029,
+      "sha256": "fd6f12072037ffa7785f14905cfc9f753874ba7c46d8920a0648b74a32f7d597"
+    },
+    {
+      "path": "province-6/streets.jsonl",
+      "bytes": 9182841,
+      "sha256": "7cca56c005cc5005b920a4588d4f3888d2d0652ad90b0df59d2ca91d75c01a5c"
+    },
+    {
+      "path": "province-7/districts.jsonl",
+      "bytes": 2865,
+      "sha256": "d593ad3779d14199d48faa8940e14fcaf3300aaf1c6c0fa94bcd75ccecdd476b"
+    },
+    {
+      "path": "province-7/neighborhoods.jsonl",
+      "bytes": 195120,
+      "sha256": "dab7c9656953f7dae481a92a983e443f35324db8a2810a784fda58f296af500e"
+    },
+    {
+      "path": "province-7/streets.jsonl",
+      "bytes": 7670581,
+      "sha256": "a1da9fa65b9f82be85ecfdd7e71d69e20c2d3c3c5005289914af98e7a38aaa47"
+    },
+    {
+      "path": "province-8/districts.jsonl",
+      "bytes": 1350,
+      "sha256": "33342e6f16ca4a542441ae67e0ef34804c855dee9763ef966deb1ca8d691d013"
+    },
+    {
+      "path": "province-8/neighborhoods.jsonl",
+      "bytes": 423070,
+      "sha256": "cc1d1ba7980859af94c54e72dcc2535fc32ec055d1338052ba68cce7cdea01b4"
+    },
+    {
+      "path": "province-8/streets.jsonl",
+      "bytes": 617097,
+      "sha256": "c5920fbd125f914852304f0b5c355580f90dd14150c30d03e8539e594c1c531d"
+    },
+    {
+      "path": "province-9/districts.jsonl",
+      "bytes": 2602,
+      "sha256": "3ad80aa35fa5835112927f8576a518b6bfe5762baecb72fa4a1178571d59cd9f"
+    },
+    {
+      "path": "province-9/neighborhoods.jsonl",
+      "bytes": 143590,
+      "sha256": "67332d732ce581164d04989cdc400326c6d5249fcc9d5233279618406ea187ed"
+    },
+    {
+      "path": "province-9/streets.jsonl",
+      "bytes": 6613879,
+      "sha256": "a54ed4aa2e2eb8fcc03ff99fe0bf15dee6c14628ab3c26110ba55283fcb18ea4"
+    },
+    {
+      "path": "province-10/districts.jsonl",
+      "bytes": 3054,
+      "sha256": "2ebb45de27e75bc5567616a4b587cc4114a2eb6634c3c3343d9adaa884ffb69a"
+    },
+    {
+      "path": "province-10/neighborhoods.jsonl",
+      "bytes": 243642,
+      "sha256": "716208c960582e0f53a129265a721813d78eeba3ca72896cf01d661d0dd0f7a1"
+    },
+    {
+      "path": "province-10/streets.jsonl",
+      "bytes": 8730664,
+      "sha256": "087b43b495766c0e51c68e7cb7154adae87a108699c52d56a131ffc0eb79de9d"
+    },
+    {
+      "path": "province-11/districts.jsonl",
+      "bytes": 1234,
+      "sha256": "9f34f481611f6a157c70c6f87310bf9a7b517a8484d2cda3f56b7b2e5dd7fd63"
+    },
+    {
+      "path": "province-11/neighborhoods.jsonl",
+      "bytes": 74359,
+      "sha256": "11732c70f3cd8b77e4a0d3ba5b5db34a2ff24477262330072f651ee4a8cd13d7"
+    },
+    {
+      "path": "province-11/streets.jsonl",
+      "bytes": 900709,
+      "sha256": "3ba3a3a1422727499d5db0c2f1229e43c02af4e64af8e7ff5f80171c3e135fe3"
+    },
+    {
+      "path": "province-12/districts.jsonl",
+      "bytes": 1203,
+      "sha256": "5850a6235c3266bb67ccf94c881d9fb4908ca534d37f156f5aa8238e9ced4776"
+    },
+    {
+      "path": "province-12/neighborhoods.jsonl",
+      "bytes": 247967,
+      "sha256": "f5af2d5dade4582ca63cf3763f3e13c293178b5355aa99b6944c93aaf3dfc612"
+    },
+    {
+      "path": "province-12/streets.jsonl",
+      "bytes": 735034,
+      "sha256": "0802e58ff769bd04a7367bd284fcdc91d70000a3833a39fcaed50cc726b7a2d3"
+    },
+    {
+      "path": "province-13/districts.jsonl",
+      "bytes": 1062,
+      "sha256": "4c996e7f5b4a434b8b87fba96af807306b3f9b4ee6f5a408d943e42a02cb1220"
+    },
+    {
+      "path": "province-13/neighborhoods.jsonl",
+      "bytes": 169491,
+      "sha256": "3c60d593886020cdafbcc84d0ca1f82cee8ba9417caa8739fbc18d30a472f487"
+    },
+    {
+      "path": "province-13/streets.jsonl",
+      "bytes": 850586,
+      "sha256": "6a8fac1a4b5f9713f8e6250853df7a62fcb856031e3bebf38c37dd775a8f3ca4"
+    },
+    {
+      "path": "province-14/districts.jsonl",
+      "bytes": 1372,
+      "sha256": "5534a556406c4c744d75353a44fac88013a96d6921d95cda69d099b44e96058b"
+    },
+    {
+      "path": "province-14/neighborhoods.jsonl",
+      "bytes": 375076,
+      "sha256": "e8e993512b45be073292bd584e0025881b6bf6de879290061cfaa06f14cc4c6e"
+    },
+    {
+      "path": "province-14/streets.jsonl",
+      "bytes": 1500376,
+      "sha256": "b91d8e15bfb85e97ec165f6b3cbdc3025985757a4773e7525d11b08b0e249bae"
+    },
+    {
+      "path": "province-15/districts.jsonl",
+      "bytes": 1686,
+      "sha256": "9543cde815aefcca95221314f1d235e4cd8f9cc586c50c29a7c8a71e42e19e7b"
+    },
+    {
+      "path": "province-15/neighborhoods.jsonl",
+      "bytes": 110483,
+      "sha256": "f63697b951fec73c8f2931c873e288f2442437cd0a0d7f76c6ab9273aeab8179"
+    },
+    {
+      "path": "province-15/streets.jsonl",
+      "bytes": 1452052,
+      "sha256": "2ae9320715bf3db2c1daf07886eef3a8240ce9cb6c17569fbde4467cd4238247"
+    },
+    {
+      "path": "province-16/districts.jsonl",
+      "bytes": 2641,
+      "sha256": "74bc89526470689e775ccf430f068823663207f61f5e381a54b747e35d330a9d"
+    },
+    {
+      "path": "province-16/neighborhoods.jsonl",
+      "bytes": 231060,
+      "sha256": "4dcc7e05ad85f1dc98de26964e9ce4d55baf5b0c6f674958a5c835e3db3e048a"
+    },
+    {
+      "path": "province-16/streets.jsonl",
+      "bytes": 8357867,
+      "sha256": "b01c1b7fc20fff17e4cd1ef562fdbae439675bcbf0128f5a76440dd802499e54"
+    },
+    {
+      "path": "province-17/districts.jsonl",
+      "bytes": 1820,
+      "sha256": "2c7745f163233028c010390a0b57c474b00cdaccb74d665ad726c6a3726c886b"
+    },
+    {
+      "path": "province-17/neighborhoods.jsonl",
+      "bytes": 198039,
+      "sha256": "b97ff2174b21b8d57fec35531b3815844a59971e033c80a7238ef2da90136bbb"
+    },
+    {
+      "path": "province-17/streets.jsonl",
+      "bytes": 2365409,
+      "sha256": "a991a71107b54f5f9ec3d28811eadf9f0297e5f57edd2d2795e762fd3688a4f9"
+    },
+    {
+      "path": "province-18/districts.jsonl",
+      "bytes": 1832,
+      "sha256": "6f53cb75bc31c51e1dca625d424e91ea0b1b769ecd73d16d38ede5f83e082fde"
+    },
+    {
+      "path": "province-18/neighborhoods.jsonl",
+      "bytes": 137078,
+      "sha256": "57ae2d55d3e7986a02b26f3d8987045649379011153488a5c53ec7fda298ec99"
+    },
+    {
+      "path": "province-18/streets.jsonl",
+      "bytes": 933683,
+      "sha256": "9cfad308661205a46c258b259c356d137f6f1f8322d9b8cc6aa7a1e9004fb7bf"
+    },
+    {
+      "path": "province-19/districts.jsonl",
+      "bytes": 2137,
+      "sha256": "ef002d739e2e706cdff722b0e95e8cc40133649a9f86fe5cfad63207b483f16b"
+    },
+    {
+      "path": "province-19/neighborhoods.jsonl",
+      "bytes": 328704,
+      "sha256": "f690c55dee13d708102d3021aad60af92423fa241dd43f101d19852460340851"
+    },
+    {
+      "path": "province-19/streets.jsonl",
+      "bytes": 2064725,
+      "sha256": "53b5bfcbcc5789704d0ea8dbb13090abd10d3b8a7a63fa266cee5beeedc19983"
+    },
+    {
+      "path": "province-20/districts.jsonl",
+      "bytes": 2891,
+      "sha256": "567d99b70be36e78fed132f8a1d356cd5b93837a0b3809926644dc3abefda287"
+    },
+    {
+      "path": "province-20/neighborhoods.jsonl",
+      "bytes": 132559,
+      "sha256": "c83b9ef87e1798fb5361533f7cdabac634001443c64e6a0b0fc4c6a21cdc7923"
+    },
+    {
+      "path": "province-20/streets.jsonl",
+      "bytes": 6371687,
+      "sha256": "e4b97477affe58295ac9138c44eb58b1ad5d6bc76e037d4e7c8932fab30ec192"
+    },
+    {
+      "path": "province-21/districts.jsonl",
+      "bytes": 2572,
+      "sha256": "d994b16d4afa9464edaff975e0d988db5b307613d11be9bc4c036fa921fa80e4"
+    },
+    {
+      "path": "province-21/neighborhoods.jsonl",
+      "bytes": 226501,
+      "sha256": "6e4e7c2e02f80d0690aa70e2381dadcb142727d4df7a8a59ad635c6ea10fd978"
+    },
+    {
+      "path": "province-21/streets.jsonl",
+      "bytes": 2566218,
+      "sha256": "59bbc0a1d4e1cd3ba4d6dc694d364849c5aa3f480d9e4825825337860ee0c160"
+    },
+    {
+      "path": "province-22/districts.jsonl",
+      "bytes": 1362,
+      "sha256": "73857abec18585a81243e3c23fbd220fff2da8b63db0e8f8a5dcd161930cb07d"
+    },
+    {
+      "path": "province-22/neighborhoods.jsonl",
+      "bytes": 79164,
+      "sha256": "b5d3e1529b6a716d1815629e5f0cc8b7d17b70d2c011b5887d6d66cb0e8b4eb6"
+    },
+    {
+      "path": "province-22/streets.jsonl",
+      "bytes": 1416079,
+      "sha256": "86eb2601de92e05d1ea09ed0e6dbdaffb3c538f3a4919653073bcf702c8b91a2"
+    },
+    {
+      "path": "province-23/districts.jsonl",
+      "bytes": 1660,
+      "sha256": "e13c97994d6a634d2d1085cb0c09ae44ba9cd0e5de75d8dc53939680758fdca1"
+    },
+    {
+      "path": "province-23/neighborhoods.jsonl",
+      "bytes": 323116,
+      "sha256": "20b0941296ca5e592ae08d9f3d21ddb1e6ca24b18761937d52fe5299661a9af1"
+    },
+    {
+      "path": "province-23/streets.jsonl",
+      "bytes": 2216491,
+      "sha256": "a036fd2fe63b8edc4f7dafcb7ea39c45824fb38fdd38bccbe949895a6bbb0044"
+    },
+    {
+      "path": "province-24/districts.jsonl",
+      "bytes": 1375,
+      "sha256": "aab8fbb1ae527044417d4c40ac138f02eee7603ae2d28f845ed47a256a30e751"
+    },
+    {
+      "path": "province-24/neighborhoods.jsonl",
+      "bytes": 225238,
+      "sha256": "447521a9229bcc430902c0ca96c5133276c3c488edd80287e51224ff7bacb35f"
+    },
+    {
+      "path": "province-24/streets.jsonl",
+      "bytes": 1319793,
+      "sha256": "53c1904ac49f67abe39c1a62efcdaa4825084f2883e170a7df9de69369743cc2"
+    },
+    {
+      "path": "province-25/districts.jsonl",
+      "bytes": 3047,
+      "sha256": "a99f9cfd12290e2cde1f8b1f339f2d97ae2aad235684028f29cf6a2266847562"
+    },
+    {
+      "path": "province-25/neighborhoods.jsonl",
+      "bytes": 255977,
+      "sha256": "a52ab7aab03ce5093fc940171f628acff8b2be0af15d46f58669e8b38e9f01de"
+    },
+    {
+      "path": "province-25/streets.jsonl",
+      "bytes": 1929993,
+      "sha256": "0f9232780dd6f94c4094c394103752f5e1b417fa4dde440e2a72cc2b492a113f"
+    },
+    {
+      "path": "province-26/districts.jsonl",
+      "bytes": 2182,
+      "sha256": "4e46046d9a8690ff109b8cb080be8136f8e5cf0f15cbeb6451130711ebfbeab1"
+    },
+    {
+      "path": "province-26/neighborhoods.jsonl",
+      "bytes": 116672,
+      "sha256": "84bd59dba0bd008061ea74553e4377f2603782dc1d7710568795569bc64dc535"
+    },
+    {
+      "path": "province-26/streets.jsonl",
+      "bytes": 2529347,
+      "sha256": "0437decc006fb9404819b368b64e39582a3e047d63017891030787d085bf6ea4"
+    },
+    {
+      "path": "province-27/districts.jsonl",
+      "bytes": 1399,
+      "sha256": "9220046b6bc21af22a6402dcdf78abaac5db75e83c1b25fc3388f3526eccc8d4"
+    },
+    {
+      "path": "province-27/neighborhoods.jsonl",
+      "bytes": 159964,
+      "sha256": "c7a8d62d3fecbcb4e54aa430bbf873105beb63c3ee126fd5145ca559a3cbba21"
+    },
+    {
+      "path": "province-27/streets.jsonl",
+      "bytes": 3989634,
+      "sha256": "9d43f367f320704619b3c77dd69139591f85a33a50d70f642b34e4449a0c8b04"
+    },
+    {
+      "path": "province-28/districts.jsonl",
+      "bytes": 2454,
+      "sha256": "9222ee1f3cf86996b298aa94b008b588319284a0d66487380f9e675612bb4332"
+    },
+    {
+      "path": "province-28/neighborhoods.jsonl",
+      "bytes": 620128,
+      "sha256": "967477020f9f0004fad5b79a23a89e903152598790a9caa77a7b5bf2b3877fbe"
+    },
+    {
+      "path": "province-28/streets.jsonl",
+      "bytes": 1520491,
+      "sha256": "939501adccf4aab9888e1bb4f4444e503c0826c44960518c48687f51d052be38"
+    },
+    {
+      "path": "province-29/districts.jsonl",
+      "bytes": 899,
+      "sha256": "edddc4311b064be273d7367f8e13f2bfbc7bb5422a264ff83167b1e7ba3ec058"
+    },
+    {
+      "path": "province-29/neighborhoods.jsonl",
+      "bytes": 252637,
+      "sha256": "4e779ac9b666509bed89f6ff8826366edafe42c2e5cf2a1baa6039644a346e4b"
+    },
+    {
+      "path": "province-29/streets.jsonl",
+      "bytes": 707822,
+      "sha256": "f716858977ad3e063f59a25e15be3ea1c8ce70630b67e3ab37e27c590e664fbb"
+    },
+    {
+      "path": "province-30/districts.jsonl",
+      "bytes": 776,
+      "sha256": "f2829ebd8cd5fede2653330087e2021c27202801539b55a719f82aa965c16576"
+    },
+    {
+      "path": "province-30/neighborhoods.jsonl",
+      "bytes": 101830,
+      "sha256": "28867b5af1af7c44f2490ee0dbd84b81379ce53cb6bb3f5235e44c5a67f16d11"
+    },
+    {
+      "path": "province-30/streets.jsonl",
+      "bytes": 384802,
+      "sha256": "b97cf807aa7f9ffd609042d431a1780990c361dd479175e7ddb7363aeadac064"
+    },
+    {
+      "path": "province-31/districts.jsonl",
+      "bytes": 2279,
+      "sha256": "74fc227e6a951c5a74afb81b5eacae5cd9acf29e463ca51b6bb2d0a035eeed8d"
+    },
+    {
+      "path": "province-31/neighborhoods.jsonl",
+      "bytes": 129875,
+      "sha256": "c1ab467c4f281b7f40d85ef375b71d9bf9a2981ea3f0dfec729c3b2577f97411"
+    },
+    {
+      "path": "province-31/streets.jsonl",
+      "bytes": 5833222,
+      "sha256": "541222cb7bcae923dc27db14cec828d28b8eb2e98e6af783cd99c221748b6401"
+    },
+    {
+      "path": "province-32/districts.jsonl",
+      "bytes": 2025,
+      "sha256": "d6d9fd614ddf4664663e9cec11254fe4d34cbad1623442a65178fcd64764a4c6"
+    },
+    {
+      "path": "province-32/neighborhoods.jsonl",
+      "bytes": 126574,
+      "sha256": "440a4f9e80369961f7a04c439430ba55423f7a4157156217873a8a13037f9a4c"
+    },
+    {
+      "path": "province-32/streets.jsonl",
+      "bytes": 2060191,
+      "sha256": "6cd1db89cd02decd61ee941006edea4bb53901abb3006b0af4646f736dffb932"
+    },
+    {
+      "path": "province-33/districts.jsonl",
+      "bytes": 1998,
+      "sha256": "3d1561d818e018c0f15d633e2bf82804ed8bbb9b0d221a92c012e04d0c6503b7"
+    },
+    {
+      "path": "province-33/neighborhoods.jsonl",
+      "bytes": 174770,
+      "sha256": "750d093e79015408cb8aa0ecf595ced30a0680c611f17be1c928fd54f2e5ec58"
+    },
+    {
+      "path": "province-33/streets.jsonl",
+      "bytes": 5142411,
+      "sha256": "2e03352421d95d9fecf5039abd6db59cb19390b20c13459800f0e6788b43fa90"
+    },
+    {
+      "path": "province-34/districts.jsonl",
+      "bytes": 6096,
+      "sha256": "4a6fe035202acb4806210a5bc5163f42a41b9118f7deea486788d20a53af99ca"
+    },
+    {
+      "path": "province-34/neighborhoods.jsonl",
+      "bytes": 212531,
+      "sha256": "dd43d9ce775168f341ca8bde174ddd9e7f93f5b11b660da4b2a93214e6ae39ba"
+    },
+    {
+      "path": "province-34/streets.jsonl",
+      "bytes": 16771071,
+      "sha256": "934aeabdf01bd581d620e59ad31bdbf2bb91cbd735ea1f62b4ce529cff5130c1"
+    },
+    {
+      "path": "province-35/districts.jsonl",
+      "bytes": 4587,
+      "sha256": "a2a3cac7caa0dc64b0bb7a03e6a0ab22aee0fa7fc31ac7957f406e5f940a81e9"
+    },
+    {
+      "path": "province-35/neighborhoods.jsonl",
+      "bytes": 283672,
+      "sha256": "c5637e5ff836212755bfad631d10398f4a740db250ec7e4f057727537479e0ae"
+    },
+    {
+      "path": "province-35/streets.jsonl",
+      "bytes": 12020069,
+      "sha256": "8aa0c0b093de9c8a5286c379f726aaaeaa5cc7c0e89d432cfe103a292f357a5d"
+    },
+    {
+      "path": "province-36/districts.jsonl",
+      "bytes": 1212,
+      "sha256": "b10fa35081c32fea0fd12671f69cf146b51f641e7c77333684ade08def6c9608"
+    },
+    {
+      "path": "province-36/neighborhoods.jsonl",
+      "bytes": 110600,
+      "sha256": "6fdbc3c92cf2660c94c492b2ffd52861d313f728e4db551e7fa115d6609cad23"
+    },
+    {
+      "path": "province-36/streets.jsonl",
+      "bytes": 474359,
+      "sha256": "c6c1f2eeb0d1dc627b8d3ddbd9e0fe962b7f1d496e3b6ce47558b4f5dc837007"
+    },
+    {
+      "path": "province-37/districts.jsonl",
+      "bytes": 3039,
+      "sha256": "2c7907883de1af412bf32ddd4936173992a171ac18b75002a5c11a9f425bbdb7"
+    },
+    {
+      "path": "province-37/neighborhoods.jsonl",
+      "bytes": 1001066,
+      "sha256": "fcf6751c01daab03cd35b3cb735b8c6fe10e47706a620536ce6443a93928414d"
+    },
+    {
+      "path": "province-37/streets.jsonl",
+      "bytes": 1850390,
+      "sha256": "443a1f5f022b581730be01eaba66c9828bc84013dc10832b9ae04564615b5fd3"
+    },
+    {
+      "path": "province-38/districts.jsonl",
+      "bytes": 2461,
+      "sha256": "08dd65ee5427c92581892218b5f60b273d137a967969338f5fac2d14a750ba26"
+    },
+    {
+      "path": "province-38/neighborhoods.jsonl",
+      "bytes": 154649,
+      "sha256": "96e20ef657d7cb01188a123ebc4867ec64906cf3ebe67512c2166790345f29b0"
+    },
+    {
+      "path": "province-38/streets.jsonl",
+      "bytes": 3650449,
+      "sha256": "fcb91c1b3052ef7bc9b13434707d82bee5f414d3e053304ec4a7ae3d4d10774d"
+    },
+    {
+      "path": "province-39/districts.jsonl",
+      "bytes": 1242,
+      "sha256": "2593e0e598168a220a0bc43192a6d4f488bc8000310ad35c7301c42912f91b5b"
+    },
+    {
+      "path": "province-39/neighborhoods.jsonl",
+      "bytes": 64078,
+      "sha256": "73722e036fbae745b143557e387e88e7713036dd710d52c0d8d600c086a89786"
+    },
+    {
+      "path": "province-39/streets.jsonl",
+      "bytes": 1394160,
+      "sha256": "6059197d52bbc7bb23660790e17e9f68cf31796d03a07afa8191ae7f91fc5fb1"
+    },
+    {
+      "path": "province-40/districts.jsonl",
+      "bytes": 1063,
+      "sha256": "f64bae0190e5e828725a9119e997a9b422b31735c573228dfedbb3dfea857264"
+    },
+    {
+      "path": "province-40/neighborhoods.jsonl",
+      "bytes": 92271,
+      "sha256": "39172a11e4a46a34750f678c60f3ce29d100b1cadaf65fd1f3fa8811f2b13815"
+    },
+    {
+      "path": "province-40/streets.jsonl",
+      "bytes": 1358395,
+      "sha256": "469d4936e53082978b66372b2c4884c45a9ab3ccb03638a57e6dd5f10d8373f7"
+    },
+    {
+      "path": "province-41/districts.jsonl",
+      "bytes": 1841,
+      "sha256": "291ab83c89e467b53bc49ea62c847e205a381555a6141ba4814942a3e606ac40"
+    },
+    {
+      "path": "province-41/neighborhoods.jsonl",
+      "bytes": 105874,
+      "sha256": "c5f80e47fdf9a00f61d6048416a44a65205df10a6a7800b7b2e421691f2ebf2d"
+    },
+    {
+      "path": "province-41/streets.jsonl",
+      "bytes": 4651345,
+      "sha256": "5db967a326de8c9ea103a80377c4ca6356c46aed4373f7eb965dfa6de126cbb6"
+    },
+    {
+      "path": "province-42/districts.jsonl",
+      "bytes": 4773,
+      "sha256": "e104cb5fd8daef84bf00c9d0815f9b53d9773edf731c30081655a47c0c652c24"
+    },
+    {
+      "path": "province-42/neighborhoods.jsonl",
+      "bytes": 246163,
+      "sha256": "5f2e8df76036103da8691066513c8df80506a96929670e1b71ca82ee18edb838"
+    },
+    {
+      "path": "province-42/streets.jsonl",
+      "bytes": 11112220,
+      "sha256": "cbeb749b6e2fb2460a6f1e536b2074ef1ebea9edd079ebe2ebf92f96e18378a7"
+    },
+    {
+      "path": "province-43/districts.jsonl",
+      "bytes": 1992,
+      "sha256": "021b21932cb6dd477e52feb5f22987a9d1b5718b3f516c75ccc13eb3b8064bcd"
+    },
+    {
+      "path": "province-43/neighborhoods.jsonl",
+      "bytes": 201615,
+      "sha256": "56be370fccab398ceeb3dad3a68d27fa71a9fac1b2d043bd6f3ee64a0da56651"
+    },
+    {
+      "path": "province-43/streets.jsonl",
+      "bytes": 2841699,
+      "sha256": "8379c089d5c6a5af01ea9118fee1b0bf364566cf97fab24675c36dc698c3cd10"
+    },
+    {
+      "path": "province-44/districts.jsonl",
+      "bytes": 2009,
+      "sha256": "fa059ab60cd85b1e472f1f2b87626ce580eaeb2d79bf1b1ae889ebc11e0abfd0"
+    },
+    {
+      "path": "province-44/neighborhoods.jsonl",
+      "bytes": 155036,
+      "sha256": "6514ac93895d88b7bcb0ab0b9d498e1ea5ac5e94b9a2a144daa391f70716a16b"
+    },
+    {
+      "path": "province-44/streets.jsonl",
+      "bytes": 2232329,
+      "sha256": "3ccd3b1baa352b4ddc9ed2ac4c456c3f3b983d36b0ca8c3a3809d84cf478e664"
+    },
+    {
+      "path": "province-45/districts.jsonl",
+      "bytes": 2631,
+      "sha256": "83cb03fc8e2b2251e9c3d64b75272eec50d8e22f38f8e1c06f68620ede9b3534"
+    },
+    {
+      "path": "province-45/neighborhoods.jsonl",
+      "bytes": 235390,
+      "sha256": "6a9d698e6163f545cc9ac3625cf800dc3f6c511b9ea76bec3e5a3de2edd6645a"
+    },
+    {
+      "path": "province-45/streets.jsonl",
+      "bytes": 3292422,
+      "sha256": "a3fe1455460f37151ca657c25960d1e989a936c7c99a5e542246d4e99fb829c9"
+    },
+    {
+      "path": "province-46/districts.jsonl",
+      "bytes": 1734,
+      "sha256": "0bc8e83e85b78c1510018c19e20ea6a4ded28abb7c75442585213116a25cd478"
+    },
+    {
+      "path": "province-46/neighborhoods.jsonl",
+      "bytes": 156826,
+      "sha256": "55d639ef6db8f8ca8e28fb4ce491567d974884f35420e892069ac3d3f90c11de"
+    },
+    {
+      "path": "province-46/streets.jsonl",
+      "bytes": 3436730,
+      "sha256": "74cfbd9ab0f96e15adb73c62fc5e57fe568dbdc8c48ac1cbd58bf86d1d5e8190"
+    },
+    {
+      "path": "province-47/districts.jsonl",
+      "bytes": 1539,
+      "sha256": "04128466393bb6ca954b79073b00c50a89183b17a7d014f84bb6b9c3ab903a29"
+    },
+    {
+      "path": "province-47/neighborhoods.jsonl",
+      "bytes": 151061,
+      "sha256": "d9846af7cb0e6355578425e84762f023b187f5b9de80a8c37184991ee8434ec3"
+    },
+    {
+      "path": "province-47/streets.jsonl",
+      "bytes": 1484625,
+      "sha256": "68f38368310168292c4f6a96bb11b717aba90826b653972ef637405932f6db8f"
+    },
+    {
+      "path": "province-48/districts.jsonl",
+      "bytes": 1991,
+      "sha256": "a3ee149f05d70e96ba2ec3e2dfd4ec8889ccc31f81acb4e3fc4fa0b683d9c019"
+    },
+    {
+      "path": "province-48/neighborhoods.jsonl",
+      "bytes": 123314,
+      "sha256": "674739fac25c765bbcc1b00f236c47eaa369989a11dd5e13246b490fb98d9054"
+    },
+    {
+      "path": "province-48/streets.jsonl",
+      "bytes": 4602329,
+      "sha256": "dc441abc00284355f5423bfc8c24f044b073e66bff6b023474381fde361cf3c4"
+    },
+    {
+      "path": "province-49/districts.jsonl",
+      "bytes": 909,
+      "sha256": "51d2cbcd34587853143f661c384328ddbcec7913b91bf4984d1f91961e2ef34e"
+    },
+    {
+      "path": "province-49/neighborhoods.jsonl",
+      "bytes": 156259,
+      "sha256": "2a2ac09e14a046da781d8bdfd5b843e874d97319537c592593f0f18cab9ff4b5"
+    },
+    {
+      "path": "province-49/streets.jsonl",
+      "bytes": 887645,
+      "sha256": "dbcecefe47adbbae2e21d786f7a82849879ca07fed6d38d797db00de705c57fc"
+    },
+    {
+      "path": "province-50/districts.jsonl",
+      "bytes": 1227,
+      "sha256": "96925d378324501eef7abff75bc87fa93292a78621230d0381d7c3e36a3e50bc"
+    },
+    {
+      "path": "province-50/neighborhoods.jsonl",
+      "bytes": 85055,
+      "sha256": "5bfa8b75deec61bdf92a818906b600ec882051560114a2f89a9c981ee2d15025"
+    },
+    {
+      "path": "province-50/streets.jsonl",
+      "bytes": 1580316,
+      "sha256": "2472d7cc1c5427ebd561be7df2df73bc0eceebb19ed46da83e34e8a2ccc11e3e"
+    },
+    {
+      "path": "province-51/districts.jsonl",
+      "bytes": 921,
+      "sha256": "a4676d6ff5e9270cfe88a03fffddc13f1c46c53ba079d54d1387be862bb366db"
+    },
+    {
+      "path": "province-51/neighborhoods.jsonl",
+      "bytes": 78539,
+      "sha256": "75b03e7915c6aeb68449bbcb1d847559e58b2346aaadad7b5aef0779da5035c0"
+    },
+    {
+      "path": "province-51/streets.jsonl",
+      "bytes": 2123036,
+      "sha256": "fc569c816a89ff5cfef9139ec715f37d6f12cbd4e6c0190c0ce285ddde6558ab"
+    },
+    {
+      "path": "province-52/districts.jsonl",
+      "bytes": 2893,
+      "sha256": "5c3a59573e58d5491df91ae3a4c88b36452e757e21baee8c666d5bb39d5f2c7e"
+    },
+    {
+      "path": "province-52/neighborhoods.jsonl",
+      "bytes": 166036,
+      "sha256": "251b2da81984b32ac086f6751fbf26501b03e16a38be30ea34f943512256a4a0"
+    },
+    {
+      "path": "province-52/streets.jsonl",
+      "bytes": 1840552,
+      "sha256": "4ec8c15fe1998c60b02bf93807b1789ad095288c94fe7dac72fd72fa2e1cec69"
+    },
+    {
+      "path": "province-53/districts.jsonl",
+      "bytes": 1846,
+      "sha256": "b333fb332c5550d53c1c11c85d19f80f9612cec0e94e4b77e2a57ca38b146780"
+    },
+    {
+      "path": "province-53/neighborhoods.jsonl",
+      "bytes": 315521,
+      "sha256": "8da2e576a7c0e31a8ccf034a7508ce27328d8db8857dd9041ff25025c8b0063b"
+    },
+    {
+      "path": "province-53/streets.jsonl",
+      "bytes": 964772,
+      "sha256": "441082862140548455620320e9c30305583acf86d8d0330a2f8eb8f4055e41a2"
+    },
+    {
+      "path": "province-54/districts.jsonl",
+      "bytes": 2446,
+      "sha256": "dc54cd72cc6ed9fab79b8a1918e25757abacf398093b2abdfef56044e9cf08ac"
+    },
+    {
+      "path": "province-54/neighborhoods.jsonl",
+      "bytes": 146335,
+      "sha256": "be672f2475a5534959dadaa90314b413d749b80b087f8b468c5bed6fe474daac"
+    },
+    {
+      "path": "province-54/streets.jsonl",
+      "bytes": 4466090,
+      "sha256": "8a7c15a24ff4a1c5cfba5946d84daf682495ec196b1ddd223cfce11f74795aa5"
+    },
+    {
+      "path": "province-55/districts.jsonl",
+      "bytes": 2585,
+      "sha256": "9684a6b2ae7dc1f90d545068a48a74ff2303a62c879aeb77b7868b3d858edbdc"
+    },
+    {
+      "path": "province-55/neighborhoods.jsonl",
+      "bytes": 270976,
+      "sha256": "ad414d87386d90ad9b2d59c44eb16c6f0fba9e9ee5e94af7759834937cf30a29"
+    },
+    {
+      "path": "province-55/streets.jsonl",
+      "bytes": 4945926,
+      "sha256": "24f8fcd46c20627c91b0331d45d50bcdd94788dfb678fe39b6470e04d0c7f6ad"
+    },
+    {
+      "path": "province-56/districts.jsonl",
+      "bytes": 1053,
+      "sha256": "b31efa945c1f58bd6bfa2bbbf08b3a2bd4e151ea46b560c878c668d0584704dc"
+    },
+    {
+      "path": "province-56/neighborhoods.jsonl",
+      "bytes": 114209,
+      "sha256": "653a0fde9f0ffefd91b8011a506f641ad242ef5103b5063b6b01f9c6ea1709b0"
+    },
+    {
+      "path": "province-56/streets.jsonl",
+      "bytes": 638546,
+      "sha256": "7afd8f3ec4280a78467a0dae4d38c79762782a5672d6b5e3c17974c1348a04e6"
+    },
+    {
+      "path": "province-57/districts.jsonl",
+      "bytes": 1366,
+      "sha256": "746e858f37a3ae0d4eb947ccbd7240ecf49e0bc717b14aac44642bcb0b7052e7"
+    },
+    {
+      "path": "province-57/neighborhoods.jsonl",
+      "bytes": 458477,
+      "sha256": "f107bf4162e295ca65648c63f553cfdaa2d65e3acdffc7c145fd7102b0a020ac"
+    },
+    {
+      "path": "province-57/streets.jsonl",
+      "bytes": 1027000,
+      "sha256": "3c2a3ede1eae119a2b0e7ecaf860a9e8d199c37cb5e47370c15909ce941a7f1a"
+    },
+    {
+      "path": "province-58/districts.jsonl",
+      "bytes": 2607,
+      "sha256": "1e0ae7e2fbf6de29a81085bf68d3e53fe668b31ca45472aaee9763590e982ecc"
+    },
+    {
+      "path": "province-58/neighborhoods.jsonl",
+      "bytes": 506313,
+      "sha256": "e03429c230675e14527d9e996f1fa6bbb434e539a6dfaced35699fc802e3c18a"
+    },
+    {
+      "path": "province-58/streets.jsonl",
+      "bytes": 2395398,
+      "sha256": "0484eb78ba5c26c8308d68a0440ebd847e084f9676b4291c8ad4d408fd98c75d"
+    },
+    {
+      "path": "province-59/districts.jsonl",
+      "bytes": 1712,
+      "sha256": "4d5251dbc9cc1071da2dc20c9cffea131048d6aea760aaa1ddaf8033def9153d"
+    },
+    {
+      "path": "province-59/neighborhoods.jsonl",
+      "bytes": 84060,
+      "sha256": "e2e0bcf8872f47c46b16b3d045c63a079555dc45162643fffc107e20fd593684"
+    },
+    {
+      "path": "province-59/streets.jsonl",
+      "bytes": 4704102,
+      "sha256": "4b5d91f42015cb4b229d43292bf877424f1637d6da38ca4727a32b2d7983385a"
+    },
+    {
+      "path": "province-60/districts.jsonl",
+      "bytes": 1825,
+      "sha256": "c155652bc1a32b09a0efa419efba7a5f79f2e486d85d41996e3b331f43835fe8"
+    },
+    {
+      "path": "province-60/neighborhoods.jsonl",
+      "bytes": 322568,
+      "sha256": "5a89999f7da39388419634267f49786ca13458dc2a81406b8b555712bbc72750"
+    },
+    {
+      "path": "province-60/streets.jsonl",
+      "bytes": 2222093,
+      "sha256": "2a431472a65512ef4de679c0cc4818adce6bd6adb73992c07024ac2ea5c9299c"
+    },
+    {
+      "path": "province-61/districts.jsonl",
+      "bytes": 2761,
+      "sha256": "a0e6fd3756ec699dd8a10910ed86f6de51d214064ce714ec7f5ff1b8d62b6da4"
+    },
+    {
+      "path": "province-61/neighborhoods.jsonl",
+      "bytes": 154184,
+      "sha256": "3d6ab81c03a991e5d31dd38dafcc095aca33c03ecab452d4206847e209e5f0af"
+    },
+    {
+      "path": "province-61/streets.jsonl",
+      "bytes": 3504276,
+      "sha256": "1559f4daade7c840619713b7e4cba14442df6ec954c5944139fb8f0444306e2d"
+    },
+    {
+      "path": "province-62/districts.jsonl",
+      "bytes": 1219,
+      "sha256": "1620ce15bee28d8fca27c3db70c53e3ed20d94d84a4dd551f77f2600638b3c91"
+    },
+    {
+      "path": "province-62/neighborhoods.jsonl",
+      "bytes": 236445,
+      "sha256": "7c56f173a8725bca89cb2e93c333354d0c4ff5b84d23ad7b2b19a5c5b7010762"
+    },
+    {
+      "path": "province-62/streets.jsonl",
+      "bytes": 569983,
+      "sha256": "699cfc42fc5d48cd3fa6404d15c5f58c9308b9a1e1423afd06867d512180709a"
+    },
+    {
+      "path": "province-63/districts.jsonl",
+      "bytes": 2028,
+      "sha256": "e60f508cfddd7227122a6ff959be5744c5b1e56fec2ce82b097f911196a2d261"
+    },
+    {
+      "path": "province-63/neighborhoods.jsonl",
+      "bytes": 315763,
+      "sha256": "f61d7437e2afc51cdf9576e88a12bde51096a69ac3dd370ac555d95baa0c8b52"
+    },
+    {
+      "path": "province-63/streets.jsonl",
+      "bytes": 3854324,
+      "sha256": "51e5893d81f51d314646c8d3af438d20fea38fae6eb35f91f55800d5bf4b42d2"
+    },
+    {
+      "path": "province-64/districts.jsonl",
+      "bytes": 903,
+      "sha256": "ffac91223fee5404a3fe41ea4b0e232900de5cc1d4a8686469323047f51f401d"
+    },
+    {
+      "path": "province-64/neighborhoods.jsonl",
+      "bytes": 157236,
+      "sha256": "b8bede428fc0707ac0b83cb793ed61c2af26ba9fa25eaa2b749fb23980e12d33"
+    },
+    {
+      "path": "province-64/streets.jsonl",
+      "bytes": 1855194,
+      "sha256": "6a384d5acd000c04dbfa6f7b7e5dc58c9c807861af5650abf9e05c8c9508a04a"
+    },
+    {
+      "path": "province-65/districts.jsonl",
+      "bytes": 1993,
+      "sha256": "683aaf0f5879003dd6521e3d16c4fabfabd3f395ebb13bd970d231c1c3fe3d97"
+    },
+    {
+      "path": "province-65/neighborhoods.jsonl",
+      "bytes": 150419,
+      "sha256": "e84ddec88951fa2893c89c375cfaee6291d5d7cddef14e3ac9774e6b6204c301"
+    },
+    {
+      "path": "province-65/streets.jsonl",
+      "bytes": 3134792,
+      "sha256": "2e2a0a4eb5026ab287242ad52ef7193468cbc99825cd500350527b0f387e72ab"
+    },
+    {
+      "path": "province-66/districts.jsonl",
+      "bytes": 2173,
+      "sha256": "55591017851f4dd556ffcbfca7fe8bb99317a1509baf54ced94aac49c4fb8ea2"
+    },
+    {
+      "path": "province-66/neighborhoods.jsonl",
+      "bytes": 180876,
+      "sha256": "5891dd3efbdb97e7341247462726ea0f3955f9475b8bdfc9bc2b06038a80448e"
+    },
+    {
+      "path": "province-66/streets.jsonl",
+      "bytes": 2241514,
+      "sha256": "d61c84a631782221d5e587887cb5f44f88e9bb67e8deb3a39c612a4ad1bf6100"
+    },
+    {
+      "path": "province-67/districts.jsonl",
+      "bytes": 1218,
+      "sha256": "73611dfc64020484ef45194cd2d641930ed6ec10ffea67121ac1a2a46ba15739"
+    },
+    {
+      "path": "province-67/neighborhoods.jsonl",
+      "bytes": 347650,
+      "sha256": "6481e4b56f5e9870b5c6e46c5dc22c538fd4ca9b132d1f1035821fa4dddcce7f"
+    },
+    {
+      "path": "province-67/streets.jsonl",
+      "bytes": 1366519,
+      "sha256": "b70828dcfd2f7246194d2544f47d93b3650cf04a2c1aa67574c6640f05ca8981"
+    },
+    {
+      "path": "province-68/districts.jsonl",
+      "bytes": 1242,
+      "sha256": "8d19d2b144a2701f02c2797526db07b20eeac1753c26692ac5bcd8bd8e71ccd0"
+    },
+    {
+      "path": "province-68/neighborhoods.jsonl",
+      "bytes": 92039,
+      "sha256": "72c3e24ea38fc43e54efe85f1e265c716cf5fa5326fae12348fe09a70c08ac7b"
+    },
+    {
+      "path": "province-68/streets.jsonl",
+      "bytes": 2976664,
+      "sha256": "afcc47d4b00ae87638c05297606fa12a948cc3885fbc438273013126be4fd46c"
+    },
+    {
+      "path": "province-69/districts.jsonl",
+      "bytes": 462,
+      "sha256": "bc88e46f9ba28a0dd56d6ea93270a1e30b7d9c4b2fc00e9e4dcbfda9a6958382"
+    },
+    {
+      "path": "province-69/neighborhoods.jsonl",
+      "bytes": 51610,
+      "sha256": "f812550cb3e362fa302b060c5a6e44e46f5ff70a05bf23cd17a478085c54d901"
+    },
+    {
+      "path": "province-69/streets.jsonl",
+      "bytes": 406575,
+      "sha256": "1b228541b00ff60bb7ba0dd40eb36888d138665a45f15859b272e481b3a0f60f"
+    },
+    {
+      "path": "province-70/districts.jsonl",
+      "bytes": 935,
+      "sha256": "9a4b84ae3dae9e480d09d7fcd19fdd20ba47cdecfa71bd7c34fce86837b730c5"
+    },
+    {
+      "path": "province-70/neighborhoods.jsonl",
+      "bytes": 95090,
+      "sha256": "f2f94e9c5be17e91034c2d6110c75000079eff7857b488c14ca29e2be6928cbc"
+    },
+    {
+      "path": "province-70/streets.jsonl",
+      "bytes": 1233213,
+      "sha256": "f3f42f7094a91e4f1ff89dbaf6e76c2b9a8ff30bd43bc3f4bc1415e6cf64ab85"
+    },
+    {
+      "path": "province-71/districts.jsonl",
+      "bytes": 1384,
+      "sha256": "b7db75b695f219bf8ab0e9760cd6f20f4e5c87c2da31ebefd74c97ed32434081"
+    },
+    {
+      "path": "province-71/neighborhoods.jsonl",
+      "bytes": 75472,
+      "sha256": "26bc9c9dcde01b236607398a5a757f7160bdb67a6e7d96bcfbcd59f40229cae8"
+    },
+    {
+      "path": "province-71/streets.jsonl",
+      "bytes": 1864604,
+      "sha256": "aafc0d6072bd90da0e8815c2ba017bffa3016df26dc7aed051ba8b52d0bb8dc2"
+    },
+    {
+      "path": "province-72/districts.jsonl",
+      "bytes": 909,
+      "sha256": "5813f2c9029e0b076cd640c0fb8483202710090fbafbf0da29250a1d1978d382"
+    },
+    {
+      "path": "province-72/neighborhoods.jsonl",
+      "bytes": 163670,
+      "sha256": "3a0fc02286dffd42b1cee955df89ab68d01849c7445565b847c54840c35c244a"
+    },
+    {
+      "path": "province-72/streets.jsonl",
+      "bytes": 1002547,
+      "sha256": "0601695b4b2c3b30dc8ddc88e63f5ace65b377cf06eb9ef6d6a74af2e7994516"
+    },
+    {
+      "path": "province-73/districts.jsonl",
+      "bytes": 1085,
+      "sha256": "126adb79b009f3be8be4b5b772c2c2924a2d4192271398a8d4483f53db41cfdd"
+    },
+    {
+      "path": "province-73/neighborhoods.jsonl",
+      "bytes": 88533,
+      "sha256": "4198c100ab3e49b4ec549cd8e4229e922e054a9213f6208511dbc9261fc896ef"
+    },
+    {
+      "path": "province-73/streets.jsonl",
+      "bytes": 790077,
+      "sha256": "827b77c93e2066678548df5253d5f77b7be40df251c02f9527022af07c621dc1"
+    },
+    {
+      "path": "province-74/districts.jsonl",
+      "bytes": 605,
+      "sha256": "ea80dbc294730ec6b1e3f13a107502189662f958cd69f341d5c51efcb853eebc"
+    },
+    {
+      "path": "province-74/neighborhoods.jsonl",
+      "bytes": 236848,
+      "sha256": "24582372b168da02757ec05c520db9f94a91a1988790c41892d2ac361e799555"
+    },
+    {
+      "path": "province-74/streets.jsonl",
+      "bytes": 551816,
+      "sha256": "4e9d47290e7d1fa2f715924a89219046ceb79913b5881c99bf9537cf23b9eb1c"
+    },
+    {
+      "path": "province-75/districts.jsonl",
+      "bytes": 886,
+      "sha256": "6468a632e6d09a8439e73540ce5c0f8e2ceb8399204c2c51060b763b5ed5fee5"
+    },
+    {
+      "path": "province-75/neighborhoods.jsonl",
+      "bytes": 75221,
+      "sha256": "513742cf2834940bcd930989a02c44a697015c651047b25c23230f1c23413142"
+    },
+    {
+      "path": "province-75/streets.jsonl",
+      "bytes": 398428,
+      "sha256": "3a01cf3c48043cd073a9dbeded086bf73ce7a5aad5709c0845010e5bf7c6103c"
+    },
+    {
+      "path": "province-76/districts.jsonl",
+      "bytes": 611,
+      "sha256": "7700da29fb79e1b2c1ab9910912400ae056c9967771d8d6997cd56ae3ab5d215"
+    },
+    {
+      "path": "province-76/neighborhoods.jsonl",
+      "bytes": 53089,
+      "sha256": "33331b93bb6a53523c4b4ad3f007f1231132f41cd1a9ee267240568a34fe50dd"
+    },
+    {
+      "path": "province-76/streets.jsonl",
+      "bytes": 562320,
+      "sha256": "db0e71ba58cf1ecc43e1e7b649322c5a16074502e585d9f569a5cec81db90b65"
+    },
+    {
+      "path": "province-77/districts.jsonl",
+      "bytes": 921,
+      "sha256": "c69779096b81e5e3c99e7cdd56cd96ebbb4c2ef64c01a68e3f680355f636f5a6"
+    },
+    {
+      "path": "province-77/neighborhoods.jsonl",
+      "bytes": 24256,
+      "sha256": "39b99acd8196c8b4c7fc42079368bf8cb31b2f5c6b1737ee53cbe67f2878eefd"
+    },
+    {
+      "path": "province-77/streets.jsonl",
+      "bytes": 1501139,
+      "sha256": "9484e2bc79ead68d6a9dbbcafa973cd22fe55807b03bef3ff0fc3625208e98c5"
+    },
+    {
+      "path": "province-78/districts.jsonl",
+      "bytes": 914,
+      "sha256": "6d4cd782ed6786676413c1d1a62f0e8950f96f7989628c625c5b678d02ba4428"
+    },
+    {
+      "path": "province-78/neighborhoods.jsonl",
+      "bytes": 253780,
+      "sha256": "85c551fe7ab38fdc119111e3b828ce02a126941942ef0adfe6f5978611805b9e"
+    },
+    {
+      "path": "province-78/streets.jsonl",
+      "bytes": 664387,
+      "sha256": "e1295d32394f42abe96c2a0bd217f14ec4b2469919c3b4c3d70064b50b71e6a8"
+    },
+    {
+      "path": "province-79/districts.jsonl",
+      "bytes": 613,
+      "sha256": "b994382c6ae529900cc8c1f00494929ca2644295da3c7b37b1fa7ac725001d30"
+    },
+    {
+      "path": "province-79/neighborhoods.jsonl",
+      "bytes": 65490,
+      "sha256": "119a36ade0024b556ad82c11529b130521d261ad080a8be83f97b36b6207d662"
+    },
+    {
+      "path": "province-79/streets.jsonl",
+      "bytes": 516191,
+      "sha256": "b1852f72b2dd5240cfbb11019eb7f6669894061ce4aaecae9725eaa20b2e6498"
+    },
+    {
+      "path": "province-80/districts.jsonl",
+      "bytes": 1077,
+      "sha256": "1ee723afa631383f766ed955677e6ea2567cdbdd3cf8e3bedf3b01ff778a6199"
+    },
+    {
+      "path": "province-80/neighborhoods.jsonl",
+      "bytes": 142401,
+      "sha256": "354ff7af6465a8de86f68671dd881b894e89e7a5b52d73c2fd99a0c6d23ad810"
+    },
+    {
+      "path": "province-80/streets.jsonl",
+      "bytes": 1922088,
+      "sha256": "7d229f5ab7b772fbcff69fa6ed6020bfd0f5f56a5c0f46350d4c965c7d3e3278"
+    },
+    {
+      "path": "province-81/districts.jsonl",
+      "bytes": 1238,
+      "sha256": "aee07cb963a6468caf86cd8e1bb8f3fb985a2a40a89396fa5a9742c30b31faae"
+    },
+    {
+      "path": "province-81/neighborhoods.jsonl",
+      "bytes": 149703,
+      "sha256": "e3cfd47562dbd4192301b4e95f5c32e13e255dc95e53cacfdc825f2f8f9610b8"
+    },
+    {
+      "path": "province-81/streets.jsonl",
+      "bytes": 1581123,
+      "sha256": "351942064233dd46688efb964a677669288faf8840f0390e70909026ce1efdf6"
+    }
+  ]
+}

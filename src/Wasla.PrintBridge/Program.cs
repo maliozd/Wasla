@@ -33,12 +33,25 @@ internal static class Program
         System.Windows.Forms.Application.EnableVisualStyles();
         System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
-        using var singleInstance = SingleInstanceGuard.TryAcquire();
+        using var singleInstance = SingleInstanceGuard.TryAcquire(out var instanceOutcome);
         if (singleInstance is null)
         {
-            // Already running: forward the setup URI to the primary instance instead of starting a second tray app.
+            if (instanceOutcome == SingleInstanceOutcome.EngineRunningElsewhere)
+            {
+                // Another Windows user or session holds the machine-wide engine. No pipe of this user listens, so the
+                // setup link is not forwarded anywhere.
+                MessageBox.Show(
+                    PrintBridgeLocalizer.GetStringForCulture("Message.RunningInAnotherSession", startupCulture, Environment.NewLine),
+                    PrintBridgePaths.ProductDisplayName,
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            // This user's instance in this session is running: forward the setup link to it, and only to a pipe this
+            // user owns. A refused, missing or broken pipe ends here; it never starts a second engine.
             if (!string.IsNullOrWhiteSpace(setupUri) &&
-                SetupInstanceChannel.TrySend(setupUri!, TimeSpan.FromSeconds(3)))
+                SetupInstanceChannel.TrySend(setupUri!, TimeSpan.FromSeconds(3)) == SetupForwardResult.Delivered)
             {
                 return;
             }
