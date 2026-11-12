@@ -287,6 +287,7 @@
                     label.appendChild(document.createTextNode(before[1] || ""));
                     typedRow.appendChild(icon);
                     typedRow.appendChild(label);
+                    typedRow.classList.toggle("su-combo__option--after", visible.length > 0);
                     list.appendChild(typedRow);
                     visible.push(typedRow);
                 }
@@ -355,9 +356,12 @@
             var row = sample ? sample.getBoundingClientRect().height || 44 : 44;
             var wanted = Math.round(row * ROW_LIMIT) + 8;
             var up = below < Math.min(wanted, 220) && above > below;
-            var room = Math.max(120, up ? above : below);
+            var room = up ? above : below;
             rootEl.classList.toggle("su-combo--up", up);
-            list.style.maxHeight = Math.min(wanted, room - (stateEl && !stateEl.hidden ? stateEl.offsetHeight : 0)) + "px";
+            // The popup's own padding, border and state line take room too; at least two rows stay usable when the
+            // screen is very short (a high zoom).
+            var chrome = popup.offsetHeight - list.offsetHeight;
+            list.style.maxHeight = Math.min(wanted, Math.max(row * 2, room - chrome)) + "px";
         }
 
         function schedulePlace() {

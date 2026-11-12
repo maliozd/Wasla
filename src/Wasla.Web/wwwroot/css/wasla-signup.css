@@ -83,8 +83,14 @@
 
 /* ---------- Layout ---------- */
 
+/* The page's grid is the public header's (.wm-container--wide, same gutters): the steps start at the logo's edge and
+   the receipt ends at the header's end. The step column keeps one measure for its heading, text and cards. */
+.su-shell {
+  --su-main-width: 680px;
+}
+
 .su-container {
-  width: min(1120px, 100% - 2 * var(--su-gutter));
+  width: min(1280px, 100% - 2 * var(--su-gutter));
   margin-inline: auto;
 }
 
@@ -96,7 +102,7 @@
 
 .su-main {
   min-width: 0;
-  max-width: 624px;
+  max-width: var(--su-main-width);
 }
 
 .su-aside {
@@ -111,25 +117,20 @@
 @media (min-width: 768px) {
   .su-shell {
     --su-gutter: 32px;
-    padding-block: 40px 64px;
+    padding-block: 24px 64px;
   }
 
   .su-main {
-    margin-inline: auto;
     width: 100%;
   }
 }
 
 @media (min-width: 992px) {
   .su-layout {
-    grid-template-columns: minmax(0, 624px) minmax(320px, 376px);
+    grid-template-columns: minmax(0, var(--su-main-width)) minmax(320px, 376px);
     justify-content: space-between;
     column-gap: clamp(48px, 8vw, 120px);
     align-items: start;
-  }
-
-  .su-main {
-    margin-inline: 0;
   }
 
   .su-aside {
@@ -172,8 +173,7 @@
 
 @media (min-width: 768px) {
   .su-progress {
-    max-inline-size: 624px;
-    margin-inline: auto;
+    max-inline-size: var(--su-main-width);
   }
 }
 
@@ -195,7 +195,7 @@
   justify-content: space-between;
   gap: 16px;
   min-block-size: 40px;
-  margin-block-end: 24px;
+  margin-block-end: 16px;
 }
 
 .su-back {
@@ -470,9 +470,22 @@
   position: relative;
 }
 
-.su-combo__input {
-  padding-inline-end: 44px;
+/* The field takes its text's direction (dir="auto": a Latin name in the Arabic page is left to right), so its padding
+   follows the page, where the chevron and the magnifier sit, not the field's own start and end. An empty field shows
+   its placeholder in the page's direction. */
+.su-combo .su-combo__input {
+  padding-left: 14px;
+  padding-right: 44px;
   text-overflow: ellipsis;
+}
+
+[dir="rtl"] .su-combo .su-combo__input {
+  padding-left: 44px;
+  padding-right: 14px;
+}
+
+[dir="rtl"] .su-combo .su-combo__input:placeholder-shown {
+  direction: rtl;
 }
 
 .su-combo__toggle {
@@ -518,7 +531,11 @@
 }
 
 .su-combo.is-open .su-combo__input {
-  padding-inline-start: 40px;
+  padding-left: 40px;
+}
+
+[dir="rtl"] .su-combo.is-open .su-combo__input {
+  padding-right: 40px;
 }
 
 .su-combo__popup {
@@ -616,12 +633,13 @@
 
 /* "Keep what I typed": the way to use a name the catalog does not have. */
 .su-combo__option--typed {
-  margin-block-start: 4px;
   color: var(--su-action);
   font-weight: 600;
 }
 
-.su-combo__option--typed:not(:first-child) {
+/* Set by the script when catalog names are listed above it (hidden ones stay in the list, so no :first-child). */
+.su-combo__option--typed.su-combo__option--after {
+  margin-block-start: 4px;
   border-block-start: 1px solid var(--su-border);
   border-start-start-radius: 0;
   border-start-end-radius: 0;
