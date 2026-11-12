@@ -4728,4 +4728,55 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>تعذر إزالة الجهاز</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد؟</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>بدء الاتصال</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>الحي / القرية</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>الشارع أو سطر العنوان</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>اسم الحي أو القرية</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>الشارع، أو العنوان داخل القرية</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>اكتب للبحث</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>جارٍ التحميل…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>لا توجد نتائج مطابقة.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>لا توجد خيارات.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>لا توجد اقتراحات؛ يمكنك كتابة الاسم.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>استخدم «{0}» كما كتبته</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>{0} نتيجة</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>إعادة المحاولة</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>تعذّر تحميل المناطق.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>لم يتم تحميل المناطق</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>تعذّر تحميل اقتراحات الأحياء؛ يمكنك كتابة الاسم مع ذلك.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>تعذّر تحميل اقتراحات الشوارع؛ يمكنك كتابة العنوان مع ذلك.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>أدخل اسم الحي أو القرية.</value>
+  </data>
 </root>

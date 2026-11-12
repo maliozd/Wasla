@@ -52,11 +52,13 @@ public sealed class SignupViewModel
 
     public string? District { get; set; }
 
-    [Display(Name = "Signup.Neighborhood")]
+    // Required for a Türkiye address; any name is accepted, with or without a catalog id (NeighborhoodId).
+    [Required(ErrorMessage = "Validation.NeighborhoodRequired")]
+    [Display(Name = "Signup.Address.NeighborhoodLabel")]
     public string? Neighborhood { get; set; }
 
     [Required(ErrorMessage = "Validation.StreetAddressRequired")]
-    [Display(Name = "Signup.StreetAddress")]
+    [Display(Name = "Signup.Address.StreetLabel")]
     public string? StreetAddress { get; set; }
 
     [Display(Name = "Signup.BuildingNumber")]

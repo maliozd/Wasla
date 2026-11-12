@@ -12,7 +12,8 @@ namespace Wasla.UnitTests.Signup;
 /// <summary>
 /// The signup page's markup and resources (WAS-194), rendered by the real controllers and views of a
 /// <see cref="SignupWebHost"/>: one H1, the five steps in flow order, the receipt marking the open step, the SMS code
-/// field's attributes, the no-script notice, the draft and endpoints the script reads, truthful money wording per
+/// field's attributes, the address fields' searchable lists and required markers, the no-script notice, the draft and
+/// endpoints the script reads, truthful money wording per
 /// environment, and every resource key the signup views and the draft API use present in all five resource files.
 /// Browser behaviour is in <see cref="SignupFlowBrowserTests"/>.
 /// </summary>
@@ -88,6 +89,41 @@ public sealed partial class SignupPageMarkupTests : IAsyncLifetime
         Assert.Contains("aria-describedby=\"signupPhoneCode-error\"", input);
         Assert.Contains("<label class=\"su-label\" for=\"signupPhoneCode\">", page.Body);
         Assert.Contains("id=\"signupPhoneCode-error\" role=\"alert\"", page.Body);
+    }
+
+    // The four address fields are searchable lists (signup-combobox.js) with their own labels. City and district keep a
+    // native select, out of sight and out of the tab order, as the value; neighbourhood and street are the inputs
+    // themselves. The neighbourhood is required like the city, district and street; the building details are optional.
+    [Fact]
+    public async Task TheAddressFields_AreLabelledSearchableLists_AndOnlyTheBuildingDetailsAreOptional()
+    {
+        var page = await GetAsync("Production", "tr-TR");
+        var body = WebUtility.HtmlDecode(page.Body);
+
+        Assert.Equal(new[] { "city", "district", "neighborhood", "street" },
+            Regex.Matches(page.Body, "data-su-combo=\"(?<field>[a-z]+)\"").Select(m => m.Groups["field"].Value).ToArray());
+        Assert.DoesNotContain("<datalist", page.Body);
+        foreach (var (input, list) in new[] { ("signupCityInput", "signupCityList"), ("signupDistrictInput", "signupDistrictList"),
+                     ("signupNeighborhood", "signupNeighborhoodList"), ("signupStreetAddress", "signupStreetList") })
+        {
+            var label = Regex.Match(page.Body, $"<label class=\"su-label\" for=\"{input}\">(?<text>.*?)</label>", RegexOptions.Singleline);
+            Assert.True(label.Success, $"No label for {input}.");
+            Assert.DoesNotContain("su-optional", label.Groups["text"].Value);
+            Assert.Contains("aria-required=\"true\"", Regex.Match(page.Body, $"<input[^>]*id=\"{input}\"[^>]*>", RegexOptions.Singleline).Value);
+            Assert.Matches($"<ul class=\"su-combo__list\" role=\"listbox\" id=\"{list}\" aria-label=\"[^\"]+\">", page.Body);
+        }
+        foreach (var select in new[] { "signupCityId", "signupDistrictId" })
+        {
+            var tag = Regex.Match(page.Body, $"<select[^>]*id=\"{select}\"[^>]*>", RegexOptions.Singleline).Value;
+            Assert.Contains("tabindex=\"-1\"", tag);
+            Assert.Contains("aria-hidden=\"true\"", tag);
+            Assert.Contains("data-val-required=", tag);
+        }
+        foreach (var input in new[] { "signupNeighborhood", "signupStreetAddress" })
+            Assert.Contains("data-val-required=", Regex.Match(page.Body, $"<input[^>]*id=\"{input}\"[^>]*>", RegexOptions.Singleline).Value);
+        foreach (var optional in new[] { "signupBuildingNumber", "signupFloor", "signupDoorNumber", "signupPostalCode", "signupAddressNote", "signupLocationUrl" })
+            Assert.Matches($"<label class=\"su-label\" for=\"{optional}\">[^<]*<span class=\"su-optional\">", page.Body);
+        Assert.Contains(Text("Signup.Address.NeighborhoodLabel", "tr-TR"), body);
     }
 
     [Fact]

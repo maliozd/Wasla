@@ -150,6 +150,22 @@
         selectDistrictText = L["Signup.SelectDistrict"].Value,
         neighborhoodManualHint = L["Signup.NeighborhoodManualHint"].Value,
         streetManualHint = L["Signup.StreetManualHint"].Value,
+        address = new
+        {
+            search = L["Signup.Address.Search"].Value,
+            loading = L["Signup.Address.Loading"].Value,
+            noMatches = L["Signup.Address.NoMatches"].Value,
+            empty = L["Signup.Address.Empty"].Value,
+            noSuggestions = L["Signup.Address.NoSuggestions"].Value,
+            useTyped = L["Signup.Address.UseTyped"].Value,
+            results = L["Signup.Address.Results"].Value,
+            districtsFailed = L["Signup.Address.DistrictsFailed"].Value,
+            districtsFailedShort = L["Signup.Address.DistrictsFailedShort"].Value,
+            neighborhoodsFailed = L["Signup.Address.NeighborhoodsFailed"].Value,
+            streetsFailed = L["Signup.Address.StreetsFailed"].Value,
+            neighborhoodPlaceholder = L["Signup.Address.NeighborhoodPlaceholder"].Value,
+            streetPlaceholder = L["Signup.Address.StreetPlaceholder"].Value
+        },
         showPasswordText = L["Common.ShowPassword"].Value,
         hidePasswordText = L["Common.HidePassword"].Value,
         passwordMismatchText = L["Validation.PasswordMismatch"].Value,
@@ -512,28 +528,85 @@
                         </p>
                         <input type="hidden" asp-for="Country" id="signupCountry" />
                         <span class="field-validation-valid" data-su-error-for="restaurant.country"></span>
+                        @* The four address fields are searchable lists (signup-combobox.js). City and district keep their
+                           native selects, visually hidden, as the value, the validation and the events the page uses;
+                           the text input beside each is what the visitor sees and types in. Neighbourhood and street are
+                           the inputs themselves: catalog names are suggestions, typed text is a valid value. *@
                         <div class="su-row su-row--aligned su-row--2">
                             <div class="su-field">
-                                <label class="su-label" for="signupCityId">@L["Signup.CityLabel"]</label>
-                                <select asp-for="CityId" asp-items="Model.CityOptions" class="su-select" id="signupCityId"
-                                        data-su-field="restaurant.cityId" aria-describedby="signupCityId-error"></select>
+                                <label class="su-label" for="signupCityInput">@L["Signup.CityLabel"]</label>
+                                <div class="su-combo" id="signupCityCombo" data-su-combo="city">
+                                    <div class="su-combo__control">
+                                        <i class="bi bi-search su-combo__search" aria-hidden="true"></i>
+                                        <input type="text" class="su-input su-combo__input" id="signupCityInput" dir="auto" spellcheck="false"
+                                               aria-required="true" aria-describedby="signupCityId-error" data-su-combo-input />
+                                        <span class="su-combo__toggle" data-su-combo-toggle aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+                                    </div>
+                                    <div class="su-combo__popup" data-su-combo-popup hidden>
+                                        <ul class="su-combo__list" role="listbox" id="signupCityList" aria-label="@L["Signup.CityLabel"]"></ul>
+                                        <p class="su-combo__state" data-su-combo-state hidden><span data-su-combo-state-text></span></p>
+                                    </div>
+                                    <span class="su-visually-hidden" aria-live="polite" data-su-combo-live></span>
+                                    <select asp-for="CityId" asp-items="Model.CityOptions" class="su-select su-combo__native su-visually-hidden" id="signupCityId"
+                                            tabindex="-1" aria-hidden="true" data-su-field="restaurant.cityId"></select>
+                                </div>
                                 <span asp-validation-for="CityId" id="signupCityId-error" data-su-error-for="restaurant.cityId"></span>
                             </div>
                             <div class="su-field">
-                                <label class="su-label" for="signupDistrictId">@L["Signup.DistrictLabel"]</label>
-                                <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="su-select" id="signupDistrictId"
-                                        data-su-field="restaurant.districtId" aria-describedby="signupDistrictId-error"></select>
+                                <label class="su-label" for="signupDistrictInput">@L["Signup.DistrictLabel"]</label>
+                                <div class="su-combo" id="signupDistrictCombo" data-su-combo="district">
+                                    <div class="su-combo__control">
+                                        <i class="bi bi-search su-combo__search" aria-hidden="true"></i>
+                                        <input type="text" class="su-input su-combo__input" id="signupDistrictInput" dir="auto" spellcheck="false"
+                                               aria-required="true" aria-describedby="signupDistrictId-error" data-su-combo-input />
+                                        <span class="su-combo__toggle" data-su-combo-toggle aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+                                    </div>
+                                    <div class="su-combo__popup" data-su-combo-popup hidden>
+                                        <ul class="su-combo__list" role="listbox" id="signupDistrictList" aria-label="@L["Signup.DistrictLabel"]"></ul>
+                                        <p class="su-combo__state" data-su-combo-state hidden>
+                                            <span data-su-combo-state-text></span>
+                                            <button type="button" class="su-combo__retry" data-su-combo-retry hidden>@L["Signup.Address.Retry"]</button>
+                                        </p>
+                                    </div>
+                                    <p class="su-combo__alert" id="signupDistrictAlert" data-su-combo-alert hidden>
+                                        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+                                        <span>@L["Signup.Address.DistrictsFailed"]</span>
+                                        <button type="button" class="su-combo__retry" data-su-combo-retry>@L["Signup.Address.Retry"]</button>
+                                    </p>
+                                    <span class="su-visually-hidden" aria-live="polite" data-su-combo-live></span>
+                                    <select asp-for="DistrictId" asp-items="Model.DistrictOptions" class="su-select su-combo__native su-visually-hidden" id="signupDistrictId"
+                                            tabindex="-1" aria-hidden="true" data-su-field="restaurant.districtId"></select>
+                                </div>
                                 <span asp-validation-for="DistrictId" id="signupDistrictId-error" data-su-error-for="restaurant.districtId"></span>
                             </div>
                         </div>
                         <div class="su-row su-row--aligned su-row--2">
                             <div class="su-field">
-                                <label class="su-label" for="signupNeighborhood">@L["Signup.Neighborhood"] <span class="su-optional">@Optional()</span></label>
-                                <input asp-for="Neighborhood" class="su-input" id="signupNeighborhood" dir="auto" list="signupNeighborhoodList" autocomplete="off"
-                                       data-su-field="restaurant.neighborhood" aria-describedby="signupNeighborhood-error signupNeighborhoodHint" />
+                                <label class="su-label" for="signupNeighborhood">@L["Signup.Address.NeighborhoodLabel"]</label>
+                                <div class="su-combo" id="signupNeighborhoodCombo" data-su-combo="neighborhood">
+                                    <div class="su-combo__control">
+                                        <i class="bi bi-search su-combo__search" aria-hidden="true"></i>
+                                        <input asp-for="Neighborhood" class="su-input su-combo__input" id="signupNeighborhood" dir="auto" spellcheck="false"
+                                               aria-required="true" data-su-field="restaurant.neighborhood" data-su-combo-input
+                                               aria-describedby="signupNeighborhood-error signupNeighborhoodHint" />
+                                        <span class="su-combo__toggle" data-su-combo-toggle aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+                                    </div>
+                                    <div class="su-combo__popup" data-su-combo-popup hidden>
+                                        <ul class="su-combo__list" role="listbox" id="signupNeighborhoodList" aria-label="@L["Signup.Address.NeighborhoodLabel"]"></ul>
+                                        <p class="su-combo__state" data-su-combo-state hidden>
+                                            <span data-su-combo-state-text></span>
+                                            <button type="button" class="su-combo__retry" data-su-combo-retry hidden>@L["Signup.Address.Retry"]</button>
+                                        </p>
+                                    </div>
+                                    <p class="su-combo__alert" id="signupNeighborhoodAlert" data-su-combo-alert hidden>
+                                        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+                                        <span>@L["Signup.Address.NeighborhoodsFailed"]</span>
+                                        <button type="button" class="su-combo__retry" data-su-combo-retry>@L["Signup.Address.Retry"]</button>
+                                    </p>
+                                    <span class="su-visually-hidden" aria-live="polite" data-su-combo-live></span>
+                                </div>
                                 <input type="hidden" asp-for="NeighborhoodId" id="signupNeighborhoodId" />
-                                <datalist id="signupNeighborhoodList"></datalist>
-                                <span class="field-validation-valid" id="signupNeighborhood-error" data-su-error-for="restaurant.neighborhood"></span>
+                                <span asp-validation-for="Neighborhood" id="signupNeighborhood-error" data-su-error-for="restaurant.neighborhood"></span>
                                 <p id="signupNeighborhoodHint" class="su-help"></p>
                             </div>
                             <div class="su-field">
@@ -544,11 +617,30 @@
                             </div>
                         </div>
                         <div class="su-field">
-                            <label class="su-label" for="signupStreetAddress">@L["Signup.StreetAddress"]</label>
-                            <input asp-for="StreetAddress" class="su-input" id="signupStreetAddress" dir="auto" list="signupStreetList" autocomplete="address-line1"
-                                   data-su-field="restaurant.streetAddress" aria-describedby="signupStreetAddress-error signupStreetId-error signupStreetHint" />
+                            <label class="su-label" for="signupStreetAddress">@L["Signup.Address.StreetLabel"]</label>
+                            <div class="su-combo" id="signupStreetCombo" data-su-combo="street">
+                                <div class="su-combo__control">
+                                    <i class="bi bi-search su-combo__search" aria-hidden="true"></i>
+                                    <input asp-for="StreetAddress" class="su-input su-combo__input" id="signupStreetAddress" dir="auto" spellcheck="false"
+                                           aria-required="true" data-su-field="restaurant.streetAddress" data-su-combo-input
+                                           aria-describedby="signupStreetAddress-error signupStreetId-error signupStreetHint" />
+                                    <span class="su-combo__toggle" data-su-combo-toggle aria-hidden="true"><i class="bi bi-chevron-down"></i></span>
+                                </div>
+                                <div class="su-combo__popup" data-su-combo-popup hidden>
+                                    <ul class="su-combo__list" role="listbox" id="signupStreetList" aria-label="@L["Signup.Address.StreetLabel"]"></ul>
+                                    <p class="su-combo__state" data-su-combo-state hidden>
+                                        <span data-su-combo-state-text></span>
+                                        <button type="button" class="su-combo__retry" data-su-combo-retry hidden>@L["Signup.Address.Retry"]</button>
+                                    </p>
+                                </div>
+                                <p class="su-combo__alert" id="signupStreetAlert" data-su-combo-alert hidden>
+                                    <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+                                    <span>@L["Signup.Address.StreetsFailed"]</span>
+                                    <button type="button" class="su-combo__retry" data-su-combo-retry>@L["Signup.Address.Retry"]</button>
+                                </p>
+                                <span class="su-visually-hidden" aria-live="polite" data-su-combo-live></span>
+                            </div>
                             <input type="hidden" asp-for="StreetId" id="signupStreetId" />
-                            <datalist id="signupStreetList"></datalist>
                             <span asp-validation-for="StreetAddress" id="signupStreetAddress-error" data-su-error-for="restaurant.streetAddress"></span>
                             <span class="field-validation-valid" id="signupStreetId-error" data-su-error-for="restaurant.streetId"></span>
                             <p id="signupStreetHint" class="su-help"></p>
@@ -827,6 +919,8 @@
     <script src="~/js/signup/signup-draft.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-sheet.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-viewport.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-address-search.js" asp-append-version="true"></script>
+    <script src="~/js/signup/signup-combobox.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-form.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-phone-step.js" asp-append-version="true"></script>
     <script src="~/js/signup/signup-flow.js" asp-append-version="true"></script>

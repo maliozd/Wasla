@@ -187,6 +187,11 @@ public static class PendingRegistrationRules
             .WithMessage("Validation.LocationUrlInvalid")
             .When(x => !string.IsNullOrWhiteSpace(x.LocationUrl));
 
+        // A Türkiye address names its neighbourhood or village. The name need not be in the catalog: NeighborhoodId is
+        // optional, so a place the catalog lacks is still a valid address.
+        v.RuleFor(x => x.Neighborhood)
+            .NotEmpty().WithMessage("Validation.NeighborhoodRequired")
+            .When(x => IsTurkey(x.Country));
         v.RuleFor(x => x.Neighborhood).MaximumLength(150).WithMessage(TooLong).When(x => !string.IsNullOrWhiteSpace(x.Neighborhood));
         v.RuleFor(x => x.BuildingNumber).MaximumLength(30).WithMessage(TooLong).When(x => !string.IsNullOrWhiteSpace(x.BuildingNumber));
         v.RuleFor(x => x.Floor).MaximumLength(20).WithMessage(TooLong).When(x => !string.IsNullOrWhiteSpace(x.Floor));

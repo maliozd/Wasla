@@ -5216,4 +5216,55 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>Не удалось удалить устройство</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Создать новое подключение?</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Начать подключение</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>Район / село</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>Улица или адрес</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>Название района или села</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>Улица или адрес в селе</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>Начните вводить для поиска</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>Совпадений нет.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>Нет вариантов.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>Подсказок нет; можно ввести название.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>Использовать «{0}» как введено</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>Результатов: {0}</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>Не удалось загрузить округа.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>Округа не загружены</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>Не удалось загрузить подсказки районов; название можно ввести вручную.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>Не удалось загрузить подсказки улиц; адрес можно ввести вручную.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>Укажите район или село.</value>
+  </data>
 </root>

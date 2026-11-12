@@ -458,6 +458,262 @@
   background-position: left 14px center;
 }
 
+/* ---------- Searchable address fields (signup-combobox.js) ----------
+   A text input that opens its list under itself, anchored to the field and as wide as it. The list shows about six
+   rows and scrolls; it opens upward when the space below (minus the mobile strip) is short. */
+
+.su-combo {
+  position: relative;
+}
+
+.su-combo__control {
+  position: relative;
+}
+
+.su-combo__input {
+  padding-inline-end: 44px;
+  text-overflow: ellipsis;
+}
+
+.su-combo__toggle {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  color: var(--su-text-muted);
+  cursor: pointer;
+}
+
+.su-combo__toggle .bi {
+  font-size: 0.875rem;
+  transition: transform 0.18s ease;
+}
+
+.su-combo.is-open .su-combo__toggle .bi {
+  transform: rotate(180deg);
+}
+
+.su-combo__input:disabled ~ .su-combo__toggle {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* While the list is open the field is a search box: a magnifier marks it, and the typed text filters the list. */
+.su-combo__search {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 14px;
+  display: none;
+  align-items: center;
+  color: var(--su-text-muted);
+  font-size: 0.9375rem;
+  pointer-events: none;
+}
+
+.su-combo.is-open .su-combo__search {
+  display: inline-flex;
+}
+
+.su-combo.is-open .su-combo__input {
+  padding-inline-start: 40px;
+}
+
+.su-combo__popup {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 6px);
+  z-index: 1030;
+  padding: 6px;
+  border: 1px solid var(--su-border);
+  border-radius: var(--su-radius-panel);
+  background: var(--su-surface);
+  box-shadow: 0 12px 28px -12px rgba(41, 31, 23, 0.28);
+}
+
+.su-combo--up .su-combo__popup {
+  top: auto;
+  bottom: calc(100% + 6px);
+  box-shadow: 0 -12px 28px -12px rgba(41, 31, 23, 0.28);
+}
+
+.su-combo__popup[hidden],
+.su-combo__list[hidden],
+.su-combo__state[hidden],
+.su-combo__alert[hidden],
+.su-combo__retry[hidden] {
+  display: none;
+}
+
+.su-combo__list {
+  max-block-size: 300px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--su-border-strong) transparent;
+}
+
+.su-combo__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  padding: 10px 12px;
+  border-radius: var(--su-radius-control);
+  color: var(--su-text-body);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.su-combo__option[hidden] {
+  display: none;
+}
+
+.su-combo__option.is-active {
+  background: var(--su-surface-muted);
+  color: var(--su-text);
+}
+
+.su-combo__option[aria-selected="true"] {
+  background: var(--su-selected);
+  color: var(--su-text);
+  font-weight: 600;
+}
+
+.su-combo__option[aria-selected="true"].is-active {
+  background: var(--su-action-soft);
+}
+
+.su-combo__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.su-combo__match {
+  padding: 0;
+  background: none;
+  color: var(--su-text);
+  font-weight: 700;
+}
+
+.su-combo__check {
+  flex: none;
+  color: var(--su-action);
+  font-size: 1rem;
+  visibility: hidden;
+}
+
+.su-combo__option[aria-selected="true"] .su-combo__check {
+  visibility: visible;
+}
+
+/* "Keep what I typed": the way to use a name the catalog does not have. */
+.su-combo__option--typed {
+  margin-block-start: 4px;
+  color: var(--su-action);
+  font-weight: 600;
+}
+
+.su-combo__option--typed:not(:first-child) {
+  border-block-start: 1px solid var(--su-border);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.su-combo__typed-icon {
+  flex: none;
+  font-size: 0.875rem;
+}
+
+.su-combo__typed-value {
+  color: var(--su-text);
+}
+
+.su-combo__state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--su-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.43;
+}
+
+.su-combo__state[data-state="loading"]::before {
+  content: "";
+  flex: none;
+  inline-size: 14px;
+  block-size: 14px;
+  border: 2px solid var(--su-border-strong);
+  border-block-start-color: var(--su-action);
+  border-radius: 50%;
+  animation: su-combo-spin 0.8s linear infinite;
+}
+
+.su-combo__state[data-state="error"] {
+  color: var(--su-danger);
+}
+
+@keyframes su-combo-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .su-combo__state[data-state="loading"]::before {
+    animation-duration: 2.4s;
+  }
+
+  .su-combo__toggle .bi {
+    transition: none;
+  }
+}
+
+/* A failed list says so under the field, with its retry, without opening the list. */
+.su-combo__alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 8px 0 0;
+  color: var(--su-danger);
+  font-size: 0.875rem;
+  line-height: 1.43;
+}
+
+.su-combo__retry {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 32px;
+  padding: 4px 8px;
+  margin-inline-start: -8px;
+  border: 0;
+  border-radius: var(--su-radius-control);
+  background: none;
+  color: var(--su-action);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.su-combo__alert .su-combo__retry {
+  margin-inline-start: 0;
+}
+
+.su-combo__retry:hover {
+  background: var(--su-action-soft);
+}
+
 /* A control with a fixed prefix (+90) or suffix (.app.wasla.tr) or a trailing button. The group is the bordered box. */
 .su-group {
   display: flex;

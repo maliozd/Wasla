@@ -4728,4 +4728,55 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>Cihaz kaldırılamadı</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Yeni bağlantı oluşturulsun mu?</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Bağlantıyı başlat</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>Mahalle / köy</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>Cadde, sokak veya adres</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>Mahalle veya köy adı</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>Cadde, sokak ya da köy içindeki adres</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>Yazarak arayın</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>Yükleniyor…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>Eşleşen sonuç yok.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>Seçenek yok.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>Öneri yok; adı yazabilirsiniz.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>“{0}” yazdığım gibi kalsın</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>{0} sonuç</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>Tekrar dene</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>İlçeler yüklenemedi.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>İlçeler yüklenemedi</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>Mahalle önerileri yüklenemedi; adı yine de yazabilirsiniz.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>Sokak önerileri yüklenemedi; adresi yine de yazabilirsiniz.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>Mahalle veya köy adını yazın.</value>
+  </data>
 </root>

@@ -4728,4 +4728,55 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>The device could not be removed</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Create a new connection?</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Start connection</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>Neighbourhood / village</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>Street or address line</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>Neighbourhood or village name</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>Street, or the address within a village</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>Type to search</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>No matches.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>No options.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>No suggestions; you can type the name.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>Use “{0}” as typed</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>{0} results</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>The districts could not be loaded.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>Districts not loaded</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>Neighbourhood suggestions could not be loaded; you can still type the name.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>Street suggestions could not be loaded; you can still type the address.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>Enter the neighbourhood or village.</value>
+  </data>
 </root>
