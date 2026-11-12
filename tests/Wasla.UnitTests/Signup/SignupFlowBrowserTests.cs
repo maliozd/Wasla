@@ -555,11 +555,14 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal("", await ValueAsync(browser, "signupStreetId", ct));
         Assert.Equal(1, _lookups.Cancelled);
 
+        // A Türkiye address names its neighbourhood: a typed one, so nothing of the saved one comes with it.
+        await Js(browser, "__su.set('signupNeighborhood', 'Yeni Mahalle')", ct);
         await Js(browser, "__su.set('signupStreetAddress', 'Yeni Sokak 1')", ct);
         await Js(browser, $"{NextButton}.click()", ct);
         await WaitForAsync(browser, "__su.current() === 'owner'", ct);
         var saved = await SavedRestaurantAsync(browser, ct);
         Assert.Equal(OtherDistrictId, saved.GetProperty("districtId").GetInt32());
+        Assert.Equal("Yeni Mahalle", saved.GetProperty("neighborhood").GetString());
         Assert.Equal(JsonValueKind.Null, saved.GetProperty("neighborhoodId").ValueKind);
         Assert.Equal("Yeni Sokak 1", saved.GetProperty("streetAddress").GetString());
     }

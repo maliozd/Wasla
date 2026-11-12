@@ -71,6 +71,8 @@
     var citiesById = {};
     var neighborhoodsCache = [];
     var streetsCache = [];
+    // The neighbourhood whose streets the street list shows or is loading; empty when it shows none.
+    var streetsNeighborhoodId = "";
     // The district list that failed to load, for its retry: the city it was for and the district to select again.
     var districtRetry = null;
 
@@ -338,6 +340,7 @@
     }
 
     function clearStreetFields() {
+        streetsNeighborhoodId = "";
         streetsCache = [];
         setComboItems(streetCombo, []);
         setComboStatus(streetCombo, "ready");
@@ -470,6 +473,7 @@
         if (!options.restoring) {
             clearStreetFields();
         }
+        streetsNeighborhoodId = String(neighborhoodId);
         setComboStatus(streetCombo, "loading");
 
         return fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
@@ -507,6 +511,8 @@
                 if (!answerApplies(isCurrent, options)) {
                     return false;
                 }
+                // Choosing the neighbourhood again loads its streets again.
+                streetsNeighborhoodId = "";
                 streetsCache = [];
                 setComboItems(streetCombo, []);
                 setComboStatus(streetCombo, "error");
@@ -719,10 +725,16 @@
     }
 
     // A changed neighbourhood takes its streets with it: its own when it is on the list, none otherwise. Either way a
-    // street answer still out for the neighbourhood before is stale.
+    // street answer still out for the neighbourhood before is stale. Still the neighbourhood whose streets are shown or
+    // on their way (the change event after the input events, or its name in another case) changes nothing: the street
+    // and its list stay.
     function followNeighborhood() {
         syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name", neighborhoodCombo);
-        loadStreets(neighborhoodIdInput ? neighborhoodIdInput.value : "", null, null);
+        var id = neighborhoodIdInput ? neighborhoodIdInput.value : "";
+        if (id && id === streetsNeighborhoodId) {
+            return;
+        }
+        loadStreets(id, null, null);
     }
 
     if (neighborhoodInput) {
