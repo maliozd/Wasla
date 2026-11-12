@@ -43,6 +43,7 @@
     }
 
     var SECTIONS = ["plan", "restaurant", "owner"];
+    var ADDRESS_RESTORE_TIMEOUT_MS = 15000;
     var state = Steps.create(order, Draft.currentStep(draft), Draft.completedSteps(draft));
     var baseTitle = document.title;
     var strip = shell.querySelector("[data-su-strip]");
@@ -52,6 +53,11 @@
     var busy = false;
     var submitting = false;
     var phone = null;
+    // The saved address being put back after a load, one lookup after another. It stays set when its attempt ran out of
+    // time (running is null then), so the next Continue can try again.
+    var addressRestore = null;
+    // The one Continue waiting for it; going back or a page brought back from the cache forgets it.
+    var addressWait = null;
     var tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
     var api = Api.create({
         endpoints: readJson("signupEndpoints") || {},
@@ -123,6 +129,61 @@
 
     // ---------------------------------------------------------------- Draft → form
 
+    // previous: the attempt that ran out of time, for a retry. streetEdited / neighborhoodEdited: the visitor changed the
+    // street / the neighbourhood since the first attempt began, so no attempt writes the saved one over it; a changed
+    // neighbourhood also keeps the saved street out, while the city and district still come back (WAS-212).
+    function startAddressRestore(values, previous) {
+        var controller = new AbortController();
+        var attempt = {
+            values: values,
+            controller: controller,
+            retry: !!previous,
+            streetEdited: !!(previous && previous.streetEdited),
+            neighborhoodEdited: !!(previous && previous.neighborhoodEdited),
+            timedOut: false,
+            running: null
+        };
+        var timer = setTimeout(function () {
+            attempt.timedOut = true;
+            controller.abort();
+        }, ADDRESS_RESTORE_TIMEOUT_MS);
+        var settled = function () {
+            clearTimeout(timer);
+            attempt.running = null;
+            if (addressRestore === attempt && !attempt.timedOut) {
+                addressRestore = null;
+            }
+            renderReceipt();
+        };
+        addressRestore = attempt;
+        attempt.running = window.WaslaSignupForm.restoreAddress(values, {
+            signal: controller.signal,
+            retry: attempt.retry,
+            keepStreet: function () { return attempt.streetEdited; },
+            keepNeighborhood: function () { return attempt.neighborhoodEdited; }
+        }).then(settled, settled);
+        return attempt;
+    }
+
+    // The visitor chose another city or district, from the first attempt on (WAS-212): the saved address no longer
+    // applies, its lookups are cancelled, and nothing is put back over the new choice.
+    function abandonAddressRestore() {
+        var attempt = addressRestore;
+        if (!attempt) {
+            return;
+        }
+        addressRestore = null;
+        attempt.controller.abort();
+        hidePageAlert();
+    }
+
+    function forgetAddressWait() {
+        if (addressWait) {
+            addressWait = null;
+            setBusy(false);
+        }
+    }
+
     function restoreForm(source) {
         var values = Draft.formValues(source);
         var plan = Draft.initialPlan(source, config.requestedPlanCode, config.selfServicePlans);
@@ -177,14 +238,14 @@
             }
         }
         if (window.WaslaSignupForm && restaurant.cityId != null) {
-            window.WaslaSignupForm.restoreAddress({
+            startAddressRestore({
                 cityId: restaurant.cityId,
                 districtId: restaurant.districtId,
                 neighborhoodId: restaurant.neighborhoodId,
                 neighborhood: restaurant.neighborhood,
                 streetId: restaurant.streetId,
                 streetAddress: restaurant.streetAddress
-            }).then(renderReceipt);
+            }, null);
         } else {
             setValue("signupNeighborhood", restaurant.neighborhood);
             setValue("signupStreetAddress", restaurant.streetAddress);
@@ -733,8 +794,9 @@
 
     function setBusy(on) {
         busy = on;
-        var panel = panels[state.current];
-        var buttons = [stripAction].concat(panel ? Array.prototype.slice.call(panel.querySelectorAll("[data-su-next]")) : []);
+        // Cleared on every step: the visitor may have gone back while the move was waiting.
+        var scope = on ? panels[state.current] : shell;
+        var buttons = [stripAction].concat(scope ? Array.prototype.slice.call(scope.querySelectorAll("[data-su-next]")) : []);
         buttons.forEach(function (button) {
             if (!button) {
                 return;
@@ -773,6 +835,27 @@
             }
             var heading = show(target, { history: "push" });
             return enterStep(state.current, options).then(function (focus) { return focus || heading; });
+        }
+
+        // Until the saved address is back its fields are empty, not missing: the move goes on from there, so the first
+        // click counts and nothing the draft already holds is reported as left out. The wait is limited; after it the
+        // visitor is told, a late answer moves nothing, and Continue tries again.
+        if (from === "restaurant" && addressRestore) {
+            var attempt = addressRestore.running ? addressRestore : startAddressRestore(addressRestore.values, addressRestore);
+            hidePageAlert();
+            var wait = addressWait = {};
+            setBusy(true);
+            return attempt.running.then(function () {
+                if (addressWait !== wait) {
+                    return null;
+                }
+                addressWait = null;
+                setBusy(false);
+                if (attempt.timedOut) {
+                    return showPageAlert(messages.networkError, null);
+                }
+                return attempt.controller.signal.aborted ? null : navigate(target, options);
+            });
         }
 
         var errors = validateStep(from);
@@ -1121,6 +1204,16 @@
         if (name === "Password" || name === "ConfirmPassword") {
             updatePasswordRules();
         }
+        if (name === "StreetAddress" && addressRestore) {
+            addressRestore.streetEdited = true;
+        }
+        // A typed neighbourhood leaves the city and district it did not touch to the restore, which keeps going.
+        if (name === "Neighborhood" && addressRestore) {
+            addressRestore.neighborhoodEdited = true;
+        }
+        if (name === "CityId" || name === "DistrictId") {
+            abandonAddressRestore();
+        }
         var key = target && target.getAttribute && target.getAttribute("data-su-field");
         if (key && form.querySelector('[data-su-error-for="' + key + '"][data-su-server-error]')) {
             setFieldError(key, "");
@@ -1161,6 +1254,7 @@
     window.addEventListener("pageshow", function (event) {
         if (event.persisted) {
             submitting = false;
+            addressWait = null;
             setBusy(false);
             setSubmitBusy(false);
         }
@@ -1171,6 +1265,7 @@
         if (!requested || !panels[requested]) {
             return;
         }
+        forgetAddressWait();
         if (sheet && sheet.isOpen && sheet.isOpen()) {
             sheet.close();
         }

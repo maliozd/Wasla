@@ -123,31 +123,89 @@
         });
     }
 
-    function loadDistricts(cityId, selectedDistrictId) {
+    // Each level's answer is used only while its request is the newest of that level. A new city, district or
+    // neighbourhood lookup turns the answers still out for its own level and the levels below into stale ones, so an
+    // answer for an earlier choice never lands on a later one.
+    var LOOKUP_LEVELS = ["districts", "neighborhoods", "streets"];
+    var lookupRounds = { districts: 0, neighborhoods: 0, streets: 0 };
+
+    function startLookup(level) {
+        for (var i = LOOKUP_LEVELS.indexOf(level); i < LOOKUP_LEVELS.length; i++) {
+            lookupRounds[LOOKUP_LEVELS[i]]++;
+        }
+        var round = lookupRounds[level];
+        return function () {
+            return lookupRounds[level] === round;
+        };
+    }
+
+    // options, from restoreAddress only. restoring: the fields are not emptied, so nothing the visitor entered meanwhile
+    // is lost; signal: ends the restore's lookups; keepStreet() / keepNeighborhood(): the visitor changed the street /
+    // the neighbourhood since the restore began.
+    function answerApplies(isCurrent, options) {
+        return isCurrent() && !(options.signal && options.signal.aborted);
+    }
+
+    function kept(options, key) {
+        return !!(options[key] && options[key]());
+    }
+
+    // The saved street, unless the visitor changed it, or the neighbourhood it belongs to, since the restore began; then
+    // only its id follows its text.
+    function restoreStreet(streetId, streetName, options) {
+        if (kept(options, "keepStreet") || kept(options, "keepNeighborhood")) {
+            if (streetInput) {
+                syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
+            }
+            return;
+        }
+        if (streetId && streetIdInput) {
+            streetIdInput.value = String(streetId);
+        }
+        if (streetName && streetInput) {
+            streetInput.value = streetName;
+        }
+    }
+
+    // Each load resolves to true while its answer still applies, so a restore goes on only with its own answers.
+    function loadDistricts(cityId, selectedDistrictId, options) {
+        options = options || {};
+        var isCurrent = startLookup("districts");
         if (!districtSelect || !cityId) {
             setDistrictDisabled(true);
             clearNeighborhoodFields();
             clearStreetFields();
-            return Promise.resolve();
+            return Promise.resolve(true);
         }
 
         setDistrictDisabled(true);
-        clearNeighborhoodFields();
-        clearStreetFields();
+        if (!options.restoring) {
+            clearNeighborhoodFields();
+            clearStreetFields();
+        }
         return fetch((config.districtsUrl || "/signup/districts") + "?cityId=" + encodeURIComponent(cityId), {
-            headers: { Accept: "application/json" }
+            headers: { Accept: "application/json" },
+            signal: options.signal
         })
             .then(function (response) {
                 if (!response.ok) throw new Error("districts");
                 return response.json();
             })
             .then(function (districts) {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 populateDistrictOptions(districts, selectedDistrictId);
                 setDistrictDisabled(false);
+                return true;
             })
             .catch(function () {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 populateDistrictOptions([], null);
                 setDistrictDisabled(true);
+                return true;
             });
     }
 
@@ -197,26 +255,50 @@
     }
 
     // selectedStreetId / selectedStreetName: the street to restore after the neighbourhood's streets are loaded.
-    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName, selectedStreetId, selectedStreetName) {
+    function loadNeighborhoods(districtId, selectedNeighborhoodId, selectedNeighborhoodName, selectedStreetId, selectedStreetName, options) {
+        options = options || {};
+        var isCurrent = startLookup("neighborhoods");
         if (!districtId) {
             clearNeighborhoodFields();
             clearStreetFields();
-            return Promise.resolve();
+            return Promise.resolve(true);
         }
 
         var streetIdToRestore = selectedStreetId === undefined ? null : selectedStreetId;
         var streetNameToRestore = selectedStreetName === undefined ? null : selectedStreetName;
-        clearNeighborhoodFields();
-        clearStreetFields();
+        if (!options.restoring) {
+            clearNeighborhoodFields();
+            clearStreetFields();
+        }
+
+        // The saved neighbourhood, unless the visitor typed one since the restore began; then only its id follows its text.
+        function restoreNeighborhood() {
+            if (kept(options, "keepNeighborhood")) {
+                if (neighborhoodInput) {
+                    syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+                }
+                return;
+            }
+            if (selectedNeighborhoodId && neighborhoodIdInput) {
+                neighborhoodIdInput.value = String(selectedNeighborhoodId);
+            }
+            if (selectedNeighborhoodName && neighborhoodInput) {
+                neighborhoodInput.value = selectedNeighborhoodName;
+            }
+        }
 
         return fetch((config.neighborhoodsUrl || "/signup/neighborhoods") + "?districtId=" + encodeURIComponent(districtId), {
-            headers: { Accept: "application/json" }
+            headers: { Accept: "application/json" },
+            signal: options.signal
         })
             .then(function (response) {
                 if (!response.ok) throw new Error("neighborhoods");
                 return response.json();
             })
             .then(function (neighborhoods) {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 neighborhoodsCache = neighborhoods || [];
                 populateDatalist(neighborhoodList, neighborhoodsCache, "name");
 
@@ -226,46 +308,55 @@
                         : (config.neighborhoodManualHint || "");
                 }
 
-                if (selectedNeighborhoodId && neighborhoodIdInput) {
-                    neighborhoodIdInput.value = String(selectedNeighborhoodId);
-                }
-
-                if (selectedNeighborhoodName && neighborhoodInput) {
-                    neighborhoodInput.value = selectedNeighborhoodName;
-                }
-
+                restoreNeighborhood();
                 if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                    return loadStreets(neighborhoodIdInput.value, streetIdToRestore, streetNameToRestore);
+                    return loadStreets(neighborhoodIdInput.value, streetIdToRestore, streetNameToRestore, options);
                 }
-                if (streetNameToRestore && streetInput) {
-                    streetInput.value = streetNameToRestore;
-                }
-                return undefined;
+                restoreStreet(null, streetNameToRestore, options);
+                return true;
             })
             .catch(function () {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 neighborhoodsCache = [];
                 if (neighborhoodHint) {
                     neighborhoodHint.textContent = config.neighborhoodManualHint || "";
                 }
+                // The list only suggests names: without it the saved neighbourhood and street stay, with the ids the
+                // server stored for them (WAS-211).
+                if (options.restoring) {
+                    restoreNeighborhood();
+                    restoreStreet(neighborhoodIdInput && neighborhoodIdInput.value ? streetIdToRestore : null, streetNameToRestore, options);
+                }
+                return true;
             });
     }
 
-    function loadStreets(neighborhoodId, selectedStreetId, selectedStreetName) {
+    function loadStreets(neighborhoodId, selectedStreetId, selectedStreetName, options) {
+        options = options || {};
+        var isCurrent = startLookup("streets");
         if (!neighborhoodId) {
             clearStreetFields();
-            return Promise.resolve();
+            return Promise.resolve(true);
         }
 
-        clearStreetFields();
+        if (!options.restoring) {
+            clearStreetFields();
+        }
 
         return fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
-            headers: { Accept: "application/json" }
+            headers: { Accept: "application/json" },
+            signal: options.signal
         })
             .then(function (response) {
                 if (!response.ok) throw new Error("streets");
                 return response.json();
             })
             .then(function (streets) {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 streetsCache = (streets || []).map(function (street) {
                     return {
                         id: street.id,
@@ -281,19 +372,21 @@
                         : (config.streetManualHint || "");
                 }
 
-                if (selectedStreetId && streetIdInput) {
-                    streetIdInput.value = String(selectedStreetId);
-                }
-
-                if (selectedStreetName && streetInput) {
-                    streetInput.value = selectedStreetName;
-                }
+                restoreStreet(selectedStreetId, selectedStreetName, options);
+                return true;
             })
             .catch(function () {
+                if (!answerApplies(isCurrent, options)) {
+                    return false;
+                }
                 streetsCache = [];
                 if (streetHint) {
                     streetHint.textContent = config.streetManualHint || "";
                 }
+                if (options.restoring) {
+                    restoreStreet(selectedStreetId, selectedStreetName, options);
+                }
+                return true;
             });
     }
 
@@ -472,24 +565,16 @@
         }
     }
 
-    if (neighborhoodInput) {
-        neighborhoodInput.addEventListener("input", function () {
-            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
-            if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                loadStreets(neighborhoodIdInput.value, null, null);
-            } else {
-                clearStreetFields();
-            }
-        });
+    // A changed neighbourhood takes its streets with it: its own when it is on the list, none otherwise. Either way a
+    // street answer still out for the neighbourhood before is stale.
+    function followNeighborhood() {
+        syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+        loadStreets(neighborhoodIdInput ? neighborhoodIdInput.value : "", null, null);
+    }
 
-        neighborhoodInput.addEventListener("change", function () {
-            syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
-            if (neighborhoodIdInput && neighborhoodIdInput.value) {
-                loadStreets(neighborhoodIdInput.value, null, null);
-            } else {
-                clearStreetFields();
-            }
-        });
+    if (neighborhoodInput) {
+        neighborhoodInput.addEventListener("input", followNeighborhood);
+        neighborhoodInput.addEventListener("change", followNeighborhood);
     }
 
     if (streetInput) {
@@ -512,8 +597,19 @@
     });
 
     // Puts a saved address back (WAS-194: the page restores the registration draft): the city, then its districts with
-    // the saved one selected, then the neighbourhood and street lists with the saved values.
-    function restoreAddress(values) {
+    // the saved one selected, then the neighbourhood and street lists with the saved values. No field is emptied on the
+    // way, and nothing the visitor changed is written over: not a street (options.keepStreet), and not a neighbourhood
+    // (options.keepNeighborhood), which also keeps the saved street out. The chain stops when a newer choice replaced its
+    // lookup or options.signal ends it. A retry (options.retry) does not load the districts again once the saved one is
+    // selected.
+    function restoreAddress(values, options) {
+        options = options || {};
+        var restore = {
+            restoring: true,
+            signal: options.signal,
+            keepStreet: options.keepStreet,
+            keepNeighborhood: options.keepNeighborhood
+        };
         if (!citySelect) {
             return Promise.resolve();
         }
@@ -525,8 +621,11 @@
             return Promise.resolve();
         }
 
-        return loadDistricts(citySelect.value, values.districtId).then(function () {
-            if (!values.districtId) {
+        var districtsReady = options.retry && districtSelect && districtSelect.value === String(values.districtId)
+            ? Promise.resolve(true)
+            : loadDistricts(citySelect.value, values.districtId, restore);
+        return districtsReady.then(function (applies) {
+            if (!applies || !values.districtId || (restore.signal && restore.signal.aborted)) {
                 return undefined;
             }
             return loadNeighborhoods(
@@ -534,7 +633,8 @@
                 values.neighborhoodId,
                 values.neighborhood || null,
                 values.streetId,
-                values.streetAddress || null);
+                values.streetAddress || null,
+                restore);
         });
     }
 

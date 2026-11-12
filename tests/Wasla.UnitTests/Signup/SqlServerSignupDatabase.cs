@@ -112,10 +112,12 @@ public sealed class SqlServerSignupDatabase : IAsyncLifetime
             await master.OpenAsync();
             await using var create = master.CreateCommand();
             create.CommandText = $"CREATE DATABASE [{DatabaseName}];";
+            create.CommandTimeout = (int)SqlServerTenantDatabase.SetupCommandTimeout.TotalSeconds;
             await create.ExecuteNonQueryAsync();
         }
 
         await using var db = Open("Setup");
+        db.Database.SetCommandTimeout(SqlServerTenantDatabase.SetupCommandTimeout);
         await db.Database.MigrateAsync();
         // The business subtype catalog, once, before callers race.
         await new SignupReferenceDataService(db).GetActiveBusinessTypesAsync(CancellationToken.None);
