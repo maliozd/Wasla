@@ -530,20 +530,33 @@
         return checked ? checked.value : "";
     }
 
+    // The localized landline example ("Örnek: {0}") with the number kept left to right, also in Arabic.
+    function showLandlineHint(city) {
+        var helper = window.WaslaSignupPhone;
+        var example = helper ? helper.landlineExample(city && city.phoneAreaCode) : "";
+        var parts = String(config.landlineHint || "{0}").split("{0}");
+        phoneHint.textContent = "";
+        phoneHint.appendChild(document.createTextNode(parts[0] || ""));
+        var number = document.createElement("bdi");
+        number.setAttribute("dir", "ltr");
+        number.textContent = example;
+        phoneHint.appendChild(number);
+        phoneHint.appendChild(document.createTextNode(parts[1] || ""));
+    }
+
     function updatePhoneUi() {
         if (!phoneTypeInputs.length) return;
-        var isMobile = currentPhoneType() === "Mobile";
-        var city = getSelectedCity();
+        var type = currentPhoneType();
 
         if (phonePrefix) {
             phonePrefix.textContent = config.defaultCountryCode || "+90";
         }
 
         if (phoneHint) {
-            if (isMobile) {
+            if (type === "Mobile") {
                 phoneHint.textContent = config.mobileHint || "";
-            } else if (city && city.phoneAreaCode) {
-                phoneHint.textContent = (config.defaultCountryCode || "+90") + " " + city.phoneAreaCode;
+            } else if (type === "Landline") {
+                showLandlineHint(getSelectedCity());
             } else {
                 phoneHint.textContent = "";
             }

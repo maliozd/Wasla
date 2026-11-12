@@ -1,36 +1,48 @@
 (function (window) {
     "use strict";
 
-    var MOBILE_TYPE = "Mobile";
+    // Türkiye phone numbers on the signup page: the owner's mobile, and the restaurant's mobile or landline. Each is the
+    // 10-digit national number after the fixed +90 prefix (mobile 5xx, landline area code and 7 digits), typed and shown
+    // as "212 345 67 89" and sent as digits. A country code or trunk zero the visitor types or pastes is removed, so it is
+    // never stored twice. The server keeps the business phone as sent (trimmed, at most 50 characters).
 
-    function runWhenReady(callback) {
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", callback);
-        } else {
-            callback();
-        }
-    }
+    var MOBILE_TYPE = "Mobile";
+    var NATIONAL_LENGTH = 10;
+    var EXAMPLE_AREA_CODE = "212";
+    var EXAMPLE_SUBSCRIBER = "345 67 89";
 
     function stripPhoneDigits(value) {
-        return (value || "").replace(/\D/g, "");
+        return String(value == null ? "" : value).replace(/\D/g, "");
+    }
+
+    // The national digits and how many prefix digits came off the front. A national number has 10 digits, so with more
+    // the front is a prefix: 0090, 90 or the trunk 0, the prefixes the server removes from the owner's mobile. Waiting
+    // for more than 10 digits lets "0212…" and "+90 212…" be typed digit by digit and never drops a digit while editing.
+    // At most 10 digits remain.
+    function splitNational(value) {
+        var digits = stripPhoneDigits(value);
+        var prefix = 0;
+
+        if (digits.length > NATIONAL_LENGTH) {
+            if (digits.indexOf("0090") === 0) {
+                prefix = 4;
+            } else if (digits.indexOf("90") === 0) {
+                prefix = 2;
+            } else if (digits.charAt(0) === "0") {
+                prefix = 1;
+            }
+        }
+
+        return { national: digits.slice(prefix, prefix + NATIONAL_LENGTH), prefix: prefix };
     }
 
     function normalizeTurkishLocalDigits(value) {
-        var digits = stripPhoneDigits(value);
-
-        if (digits.length >= 12 && digits.indexOf("90") === 0) {
-            digits = digits.slice(2);
-        } else if (digits.length === 11 && digits.charAt(0) === "0") {
-            digits = digits.slice(1);
-        } else if (digits.length > 10 && digits.indexOf("90") === 0) {
-            digits = digits.slice(2);
-        }
-
-        return digits.slice(0, 10);
+        return splitNational(value).national;
     }
 
-    function formatTurkishMobileDigits(digits) {
-        digits = digits.slice(0, 10);
+    // "2123456789" → "212 345 67 89"; fewer digits are grouped as far as they go.
+    function formatTurkishPhoneDigits(digits) {
+        digits = stripPhoneDigits(digits).slice(0, NATIONAL_LENGTH);
         var parts = [];
 
         if (digits.length > 0) {
@@ -43,20 +55,78 @@
             parts.push(digits.slice(6, Math.min(8, digits.length)));
         }
         if (digits.length > 8) {
-            parts.push(digits.slice(8, 10));
+            parts.push(digits.slice(8, NATIONAL_LENGTH));
         }
 
         return parts.join(" ");
     }
 
-    function formatMobileInput(input) {
+    // The field's text after typing or pasting, and where the caret goes: after the digit it followed before, less any
+    // prefix digits removed in front of it. Without a caret it goes to the end.
+    function formatPhoneValue(value, caret) {
+        var text = String(value == null ? "" : value);
+        var split = splitNational(text);
+        var formatted = formatTurkishPhoneDigits(split.national);
+        if (typeof caret !== "number") {
+            return { value: formatted, caret: formatted.length };
+        }
+
+        var before = stripPhoneDigits(text.slice(0, Math.max(0, Math.min(caret, text.length)))).length;
+        var wanted = Math.max(0, Math.min(split.national.length, before - split.prefix));
+        var position = 0;
+        var seen = 0;
+        while (position < formatted.length && seen < wanted) {
+            if (/\d/.test(formatted.charAt(position))) {
+                seen++;
+            }
+            position++;
+        }
+        return { value: formatted, caret: position };
+    }
+
+    // The landline example for the hint: the chosen city's area code when it has one, otherwise 212. Only a hint: a city
+    // can have several codes (İstanbul has 212 and 216), so nothing is filled in or checked against it.
+    function landlineExample(areaCode) {
+        var code = stripPhoneDigits(areaCode);
+        return "+90 " + (code.length === 3 ? code : EXAMPLE_AREA_CODE) + " " + EXAMPLE_SUBSCRIBER;
+    }
+
+    var pure = {
+        stripPhoneDigits: stripPhoneDigits,
+        normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
+        formatTurkishPhoneDigits: formatTurkishPhoneDigits,
+        formatPhoneValue: formatPhoneValue,
+        landlineExample: landlineExample
+    };
+
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = pure;
+    }
+    if (!window || !window.document) {
+        return;
+    }
+    var document = window.document;
+
+    function runWhenReady(callback) {
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", callback);
+        } else {
+            callback();
+        }
+    }
+
+    function formatPhoneInput(input) {
         if (!input) {
             return;
         }
 
-        var formatted = formatTurkishMobileDigits(normalizeTurkishLocalDigits(input.value));
-        if (input.value !== formatted) {
-            input.value = formatted;
+        var focused = document.activeElement === input;
+        var result = formatPhoneValue(input.value, focused ? input.selectionStart : null);
+        if (input.value !== result.value) {
+            input.value = result.value;
+            if (focused && typeof input.setSelectionRange === "function") {
+                input.setSelectionRange(result.caret, result.caret);
+            }
         }
     }
 
@@ -78,67 +148,42 @@
         return !!checked && checked.value === MOBILE_TYPE;
     }
 
-    function bindPasteFormatter(input, shouldFormat) {
+    // A paste replaces the selection with the pasted text; then the whole field is formatted, the caret follows the
+    // pasted digits, and the page hears an input like any other change.
+    function bindPasteFormatter(input) {
         input.addEventListener("paste", function (event) {
-            if (typeof shouldFormat === "function" && !shouldFormat()) {
+            var clipboard = event.clipboardData;
+            if (!clipboard) {
                 return;
             }
 
             event.preventDefault();
-            var clipboard = event.clipboardData || window.clipboardData;
-            var pasted = clipboard ? clipboard.getData("text") : "";
-            input.value = pasted;
-            formatMobileInput(input);
+            var pasted = clipboard.getData("text") || "";
+            var start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
+            var end = typeof input.selectionEnd === "number" ? input.selectionEnd : start;
+            var result = formatPhoneValue(input.value.slice(0, start) + pasted + input.value.slice(end), start + pasted.length);
+            input.value = result.value;
+            if (typeof input.setSelectionRange === "function") {
+                input.setSelectionRange(result.caret, result.caret);
+            }
+            input.dispatchEvent(new Event("input", { bubbles: true }));
         });
     }
 
-    function bindOwnerPhoneInput(input) {
-        if (!input || input.dataset.waslaOwnerPhoneBound === "true") {
+    function bindPhoneInput(input, flag) {
+        if (!input || input.dataset[flag] === "true") {
             return;
         }
 
-        input.dataset.waslaOwnerPhoneBound = "true";
-
+        input.dataset[flag] = "true";
         input.addEventListener("input", function () {
-            formatMobileInput(input);
+            formatPhoneInput(input);
         });
         input.addEventListener("blur", function () {
-            formatMobileInput(input);
+            formatPhoneInput(input);
         });
-        bindPasteFormatter(input, function () {
-            return true;
-        });
-
-        formatMobileInput(input);
-    }
-
-    function bindBusinessPhoneInput(businessInput, phoneTypeInputs) {
-        if (!businessInput || !phoneTypeInputs || phoneTypeInputs.length === 0
-            || businessInput.dataset.waslaBusinessPhoneBound === "true") {
-            return;
-        }
-
-        businessInput.dataset.waslaBusinessPhoneBound = "true";
-
-        function handleBusinessInput() {
-            if (isBusinessMobileSelected()) {
-                formatMobileInput(businessInput);
-            }
-        }
-
-        businessInput.addEventListener("input", handleBusinessInput);
-        businessInput.addEventListener("blur", handleBusinessInput);
-        bindPasteFormatter(businessInput, isBusinessMobileSelected);
-
-        Array.prototype.forEach.call(phoneTypeInputs, function (input) {
-            if (input.dataset.waslaPhoneTypeBound === "true") {
-                return;
-            }
-            input.dataset.waslaPhoneTypeBound = "true";
-            input.addEventListener("change", handleBusinessInput);
-        });
-
-        handleBusinessInput();
+        bindPasteFormatter(input);
+        formatPhoneInput(input);
     }
 
     function normalizeForSubmit() {
@@ -146,13 +191,8 @@
         var ownerInput = getOwnerPhoneInput();
 
         if (businessInput) {
-            if (isBusinessMobileSelected()) {
-                businessInput.value = normalizeTurkishLocalDigits(businessInput.value);
-            } else {
-                businessInput.value = stripPhoneDigits(businessInput.value).slice(0, 50);
-            }
+            businessInput.value = normalizeTurkishLocalDigits(businessInput.value);
         }
-
         if (ownerInput && ownerInput.value) {
             ownerInput.value = normalizeTurkishLocalDigits(ownerInput.value);
         }
@@ -168,17 +208,17 @@
         form.addEventListener("submit", normalizeForSubmit);
     }
 
+    // Mobile and landline share one format, so switching the type leaves the number as it is.
     function refreshExistingValues() {
-        formatMobileInput(getOwnerPhoneInput());
-
-        if (isBusinessMobileSelected()) {
-            formatMobileInput(getBusinessPhoneInput());
-        }
+        formatPhoneInput(getOwnerPhoneInput());
+        formatPhoneInput(getBusinessPhoneInput());
     }
 
     function init() {
-        bindOwnerPhoneInput(getOwnerPhoneInput());
-        bindBusinessPhoneInput(getBusinessPhoneInput(), getPhoneTypeInputs());
+        bindPhoneInput(getOwnerPhoneInput(), "waslaOwnerPhoneBound");
+        if (getPhoneTypeInputs().length) {
+            bindPhoneInput(getBusinessPhoneInput(), "waslaBusinessPhoneBound");
+        }
         bindSubmitNormalization();
         refreshExistingValues();
         window.setTimeout(refreshExistingValues, 0);
@@ -186,8 +226,10 @@
 
     window.WaslaSignupPhone = {
         init: init,
-        formatMobileInput: formatMobileInput,
+        formatMobileInput: formatPhoneInput,
+        formatPhoneInput: formatPhoneInput,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
+        landlineExample: landlineExample,
         normalizeForSubmit: normalizeForSubmit,
         refreshExistingValues: refreshExistingValues,
         isBusinessMobileSelected: isBusinessMobileSelected
@@ -195,4 +237,4 @@
 
     runWhenReady(init);
     window.addEventListener("pageshow", init);
-})(window);
+})(typeof window !== "undefined" ? window : null);

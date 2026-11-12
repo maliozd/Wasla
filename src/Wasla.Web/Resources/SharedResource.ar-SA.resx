@@ -4779,4 +4779,7 @@
   <data name="Validation.NeighborhoodRequired" xml:space="preserve">
     <value>أدخل اسم الحي أو القرية.</value>
   </data>
+  <data name="Signup.LandlinePhoneHint" xml:space="preserve">
+    <value>مثال: {0}</value>
+  </data>
 </root>

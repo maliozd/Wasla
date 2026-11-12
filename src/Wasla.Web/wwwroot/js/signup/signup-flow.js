@@ -119,9 +119,11 @@
         return select.options[select.selectedIndex].text.trim();
     }
 
-    function phoneDigits(value, mobile) {
+    // The 10-digit national number, without +90 or a trunk 0, for the owner's mobile and for the restaurant's mobile or
+    // landline alike (signup-phone-format.js).
+    function phoneDigits(value) {
         var helper = window.WaslaSignupPhone;
-        if (mobile && helper) {
+        if (helper) {
             return helper.normalizeTurkishLocalDigits(value);
         }
         return String(value || "").replace(/\D/g, "").slice(0, 50);
@@ -269,13 +271,12 @@
     // ---------------------------------------------------------------- Form → requests
 
     function restaurantValues() {
-        var mobile = valueOf("BusinessPhoneType") === "Mobile";
         return {
             businessName: valueOf("BusinessName"),
             businessTypeCodes: Array.prototype.map.call(
                 form.querySelectorAll('input[name="SelectedBusinessTypeCodes"]:checked'), function (input) { return input.value; }),
             businessPhoneType: valueOf("BusinessPhoneType"),
-            businessPhone: phoneDigits(valueOf("BusinessPhone"), mobile),
+            businessPhone: phoneDigits(valueOf("BusinessPhone")),
             businessEmail: valueOf("BusinessEmail"),
             slug: valueOf("Slug").trim().toLowerCase(),
             country: valueOf("Country"),
@@ -298,7 +299,7 @@
         return {
             fullName: valueOf("OwnerFullName"),
             email: valueOf("OwnerEmail"),
-            mobilePhone: phoneDigits(valueOf("OwnerPhone"), true),
+            mobilePhone: phoneDigits(valueOf("OwnerPhone")),
             password: valueOf("Password"),
             confirmPassword: valueOf("ConfirmPassword")
         };
@@ -1060,7 +1061,7 @@
                 onNumberChanged: function (number) {
                     // The accepted number is the owner's number from now on; the draft read below confirms it.
                     if (draft.owner) {
-                        draft.owner.mobilePhone = phoneDigits(number, true);
+                        draft.owner.mobilePhone = phoneDigits(number);
                         setValue("signupOwnerPhone", Draft.formatMobile(draft.owner.mobilePhone));
                         phone.setFullNumber(fullOwnerPhone());
                     }

@@ -5267,4 +5267,7 @@
   <data name="Validation.NeighborhoodRequired" xml:space="preserve">
     <value>Укажите район или село.</value>
   </data>
+  <data name="Signup.LandlinePhoneHint" xml:space="preserve">
+    <value>Пример: {0}</value>
+  </data>
 </root>

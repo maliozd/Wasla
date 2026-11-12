@@ -1130,6 +1130,70 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         }
     }
 
+    // The restaurant's landline after the fixed +90: grouped as it is typed and pasted, with a trunk zero or country code
+    // removed instead of stored twice, the caret kept in place, and the same number after switching the type. The hint
+    // shows an example with the city's area code, left to right in Arabic too. The saved value is the national number,
+    // and the owner's mobile is a separate field.
+    [Theory]
+    [InlineData("tr-TR", 1440, 900, false)]
+    [InlineData("ar-SA", 390, 844, true)]
+    public async Task TheBusinessLandline_IsGroupedAsTypedAndPasted_KeepsOnePrefix_AndSurvivesATypeSwitch(string culture, int width, int height, bool mobile)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, height, mobile, ct);
+        await OpenAsync(browser, "/signup?plan=Pro", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+        await FillRestaurantAsync(browser, Applicant.New(), ct);
+        Assert.Equal("212 555 12 34", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // Typed with the trunk zero: the zero goes once the number is complete.
+        await Js(browser, "const p = document.getElementById('signupBusinessPhone'); p.focus(); p.select()", ct);
+        await browser.InsertTextAsync("0212 345 67 89", ct);
+        Assert.Equal("212 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // A digit typed in the middle: regrouped, the caret right after it.
+        await Js(browser, "const p = document.getElementById('signupBusinessPhone'); p.focus(); p.value = '212 345 67 8'; p.setSelectionRange(5, 5)", ct);
+        await browser.InsertTextAsync("9", ct);
+        Assert.Equal("212 394 56 78", await ValueAsync(browser, "signupBusinessPhone", ct));
+        Assert.Equal(6, await browser.EvaluateAsync<int>("document.getElementById('signupBusinessPhone').selectionStart", ct));
+
+        // Pasted with the country code over the whole field.
+        await Js(browser, """
+            const p = document.getElementById('signupBusinessPhone');
+            p.focus(); p.select();
+            const data = new DataTransfer(); data.setData('text', '+90 (216) 345-67-89');
+            p.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+            """, ct);
+        Assert.Equal("216 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // Switching the type and back changes nothing.
+        await Js(browser, "document.getElementById('signupBusinessPhoneType-Mobile').click()", ct);
+        Assert.Equal("216 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
+        Assert.Equal(Text("Signup.MobilePhoneHint", culture), await browser.EvaluateAsync<string>("document.getElementById('signupPhoneHint').textContent", ct));
+        await Js(browser, "document.getElementById('signupBusinessPhoneType-Landline').click()", ct);
+        Assert.Equal("216 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // The hint: the localized example with İstanbul's code (216 here), its number isolated left to right.
+        var hint = await browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const hint = document.getElementById('signupPhoneHint');
+              const number = hint.querySelector('bdi[dir=ltr]');
+              const text = number.firstChild;
+              const rect = (from, to) => { const r = document.createRange(); r.setStart(text, from); r.setEnd(text, to); return r.getBoundingClientRect(); };
+              return { text: hint.textContent, number: number.textContent, countryLeft: rect(0, 3).left, areaLeft: rect(4, 7).left };
+            })()
+            """, ct);
+        Assert.Equal(Text("Signup.LandlinePhoneHint", culture).Replace("{0}", "+90 216 345 67 89", StringComparison.Ordinal), hint.GetProperty("text").GetString());
+        Assert.Equal("+90 216 345 67 89", hint.GetProperty("number").GetString());
+        Assert.True(hint.GetProperty("countryLeft").GetDouble() < hint.GetProperty("areaLeft").GetDouble(), $"+90 is not shown before the area code: {hint}");
+
+        await ContinueAsync(browser, "owner", ct);
+        var saved = await SavedRestaurantAsync(browser, ct);
+        Assert.Equal("Landline", saved.GetProperty("businessPhoneType").GetString());
+        Assert.Equal("2163456789", saved.GetProperty("businessPhone").GetString());
+        Assert.Equal("", await ValueAsync(browser, "signupOwnerPhone", ct));
+    }
+
     // The bottom of what the visitor sees: the top of the phone's strip when it shows, otherwise the window's bottom.
     private const string ViewBottom = "(() => { const s = document.querySelector('[data-su-strip]'); return s && s.getClientRects().length ? s.getBoundingClientRect().top : innerHeight; })()";
 
