@@ -1,96 +1,167 @@
 @model Wasla.Web.Models.Signup.SignupPendingViewModel
 @using Microsoft.Extensions.Localization
 @using Wasla.Domain.Enums
+@using Wasla.Web.Models.Signup
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    var isProvisioned = Model.Status == PendingRegistrationStatus.Provisioned;
-    var isPaymentReceived = Model.Status == PendingRegistrationStatus.PaymentSucceeded;
-    var centralHomepageUrl = Model.CentralHomepageUrl;
+    // Signup/Pending and Checkout/Success (Figma 03: pending, preparing, ready, public non-owner). Every state comes
+    // from Model.Status; nothing here polls, promises a time or shows an amount (this model carries no price).
+    var simulator = Model.IsPaymentSimulatorAvailable;
+    var isOwner = Model.ShowPrivateDetails;
+    var status = Model.Status;
+    var isProvisioned = status == PendingRegistrationStatus.Provisioned;
+    var isPaymentReceived = status == PendingRegistrationStatus.PaymentSucceeded;
+    var isAwaitingPayment = status is PendingRegistrationStatus.AwaitingPayment or PendingRegistrationStatus.Draft;
+    var isCancelled = status == PendingRegistrationStatus.Cancelled;
+    var showPanelAction = isProvisioned && RegistrationStatusPresentation.IsUsablePanelLoginUrl(Model.PanelLoginUrl);
+    var badge = RegistrationStatusPresentation.Badge(status, simulator);
+    var steps = RegistrationStatusPresentation.Steps(status, simulator);
+    var periodWord = string.Equals(Model.BillingPeriod, "Yearly", StringComparison.OrdinalIgnoreCase)
+        ? L["Signup.Receipt.PeriodYearly"].Value
+        : L["Signup.Receipt.PeriodMonthly"].Value;
+    var addressHelpKey = isProvisioned ? "RegistrationStatus.AddressHelpReady" : "RegistrationStatus.AddressHelpPending";
+    var showAddressHelp = isProvisioned || isPaymentReceived || isAwaitingPayment;
+    ViewData["TenantAddressLinkClass"] = "su-status-card__domain-link su-ltr";
+    // "Durumu yenile" is an ordinary GET of this same page: the visitor checks again, nothing polls.
+    var currentPageUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
 }
+<div class="su-shell su-status-page">
+    <div class="su-container su-status__layout">
+        <div class="su-status__main">
+            <h1 class="su-title">@L[RegistrationStatusPresentation.TitleKey(status, simulator, isOwner)]</h1>
+            <p class="su-lead">@L[RegistrationStatusPresentation.LeadKey(status, simulator, isOwner)]</p>
 
-@if (isProvisioned)
-{
-    <div class="mb-3 text-success">
-        <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;" aria-hidden="true"></i>
-    </div>
-    <h1 class="h4 fw-bold mb-2">@L["Signup.PanelReadyTitle"]</h1>
-    <p class="text-secondary mb-4">@L["Signup.PanelReadyBody"]</p>
+            @if (showPanelAction)
+            {
+                <section class="su-status-login" aria-labelledby="statusLoginTitle">
+                    <h2 class="su-status-login__label" id="statusLoginTitle">@L["RegistrationStatus.LoginAddress"]</h2>
+                    @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
+                    {
+                        <p class="su-status-login__domain su-ltr"><bdi>@Model.PrimaryDomain</bdi></p>
+                    }
+                    <a class="su-btn su-btn--primary" href="@Model.PanelLoginUrl" data-su-panel-login>
+                        <span>@L["Signup.GoToPanel"]</span>
+                        <i class="bi bi-arrow-right su-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                </section>
+            }
 
-    @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
-    {
-        <p class="mb-4 fs-6">
-            <partial name="_RegistrationStatusTenantAddressLink" model="Model" />
-        </p>
-    }
+            <partial name="_RegistrationStatusSteps" model="steps" />
 
-    <partial name="_RegistrationStatusDetails" model="Model" />
+            @if (isProvisioned && isOwner)
+            {
+                <section class="su-status-next" aria-labelledby="statusNextTitle">
+                    <h2 class="su-status-section__title" id="statusNextTitle">@L["RegistrationStatus.NextInPanelTitle"]</h2>
+                    <ul class="su-status-steps su-status-steps--plain">
+                        <li class="su-status-step" data-state="upcoming">
+                            <span class="su-status-step__marker" aria-hidden="true"></span>
+                            <span class="su-status-step__body">
+                                <span class="su-status-step__name">@L["RegistrationStatus.NextPlatforms"]</span>
+                                <span class="su-status-step__description">@L["RegistrationStatus.NextPlatformsBody"]</span>
+                            </span>
+                        </li>
+                        <li class="su-status-step" data-state="upcoming">
+                            <span class="su-status-step__marker" aria-hidden="true"></span>
+                            <span class="su-status-step__body">
+                                <span class="su-status-step__name">@L["RegistrationStatus.NextPrinter"]</span>
+                                <span class="su-status-step__description">@L["RegistrationStatus.NextPrinterBody"]</span>
+                            </span>
+                        </li>
+                    </ul>
+                </section>
+            }
 
-    <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
-        @if (!string.IsNullOrWhiteSpace(Model.PanelLoginUrl))
-        {
-            <a class="btn btn-primary rounded-pill d-inline-flex align-items-center justify-content-center gap-2 px-4"
-               href="@Model.PanelLoginUrl">
-                <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
-                <span>@L["Signup.GoToPanel"]</span>
-            </a>
-        }
-        <a class="btn btn-outline-secondary rounded-pill px-4" href="@centralHomepageUrl">@L["Signup.PendingBackHome"]</a>
-    </div>
-}
-else if (isPaymentReceived)
-{
-    <div class="mb-3 text-primary">
-        <i class="bi bi-hourglass-split" style="font-size: 2.5rem;" aria-hidden="true"></i>
-    </div>
-    <h1 class="h4 fw-bold mb-2">@L["Signup.PaymentReceivedPreparingTitle"]</h1>
-    <p class="fw-semibold text-secondary mb-2">@L["Signup.PaymentReceivedPreparingSubtitle"]</p>
-    <p class="text-secondary mb-4">@L["Signup.PaymentReceivedPreparingBody"]</p>
+            @if (Model.ShowCheckoutAction)
+            {
+                @* Only the applicant of a registration that still awaits payment (the controller decides). *@
+                <div class="su-notice su-notice--info" role="note">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    <div>
+                        <strong class="su-notice__title">@L["RegistrationStatus.NextStepTitle"]</strong>
+                        <p>@L[Model.ShowPaymentSimulatorNote ? "Signup.PendingTestNote" : "RegistrationStatus.NextStepBody"]</p>
+                    </div>
+                </div>
+            }
+            else if (isPaymentReceived && isOwner)
+            {
+                <div class="su-notice su-notice--info" role="note">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    <div>
+                        <strong class="su-notice__title">@L["RegistrationStatus.CheckLaterTitle"]</strong>
+                        <p>@L["RegistrationStatus.CheckLaterBody"]</p>
+                    </div>
+                </div>
+            }
 
-    <partial name="_RegistrationStatusDetails" model="Model" />
+            <div class="su-status__actions">
+                @if (Model.ShowCheckoutAction)
+                {
+                    <a class="su-btn su-btn--primary"
+                       asp-controller="Checkout"
+                       asp-action="Review"
+                       asp-route-id="@Model.RegistrationId">@L[simulator ? "Signup.ContinueToCheckout" : "Signup.ViewRegistrationSummary"]</a>
+                }
+                else if (isCancelled)
+                {
+                    <a class="su-btn su-btn--primary" href="@Model.CentralSignupUrl" data-su-register-again>@L["Checkout.RegisterAgain"]</a>
+                }
+                else if (isPaymentReceived)
+                {
+                    <a class="su-btn su-btn--secondary" href="@currentPageUrl" data-su-refresh-status>
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                        <span>@L["RegistrationStatus.RefreshStatus"]</span>
+                    </a>
+                }
+                <a class="su-btn su-btn--quiet" href="@Model.CentralHomepageUrl">@L["Signup.PendingBackHome"]</a>
+            </div>
 
-    <a class="btn btn-outline-secondary rounded-pill px-4" href="@centralHomepageUrl">@L["Signup.PendingBackHome"]</a>
-}
-else
-{
-    <div class="mb-3">
-        <i class="bi bi-hourglass-split text-primary" style="font-size: 2.5rem;" aria-hidden="true"></i>
-    </div>
-    <h1 class="h4 fw-bold mb-2">@L["Signup.PendingTitle"]</h1>
-    <p class="text-secondary mb-4">@L[Model.IsPaymentSimulatorAvailable ? "Signup.PendingSubtitle" : "Signup.PendingSubtitleAwaitingPayment"]</p>
-
-    <partial name="_RegistrationStatusDetails" model="Model" />
-
-    <p class="small text-muted mb-3">@L["Signup.PendingCheckoutNote"]</p>
-
-    <div class="text-start mx-auto mb-4 wasla-signup-pending-next-steps" style="max-width: 28rem;">
-        <p class="small text-muted mb-2">@L["Signup.PendingNextStepsTitle"]</p>
-        <ul class="small text-muted mb-0 ps-3">
-            <li>@L["Signup.PendingNextStep1"]</li>
-            <li>@L["Signup.PendingNextStep2"]</li>
-            <li>@L["Signup.PendingNextStep3"]</li>
-        </ul>
-    </div>
-
-    @if (Model.ShowPaymentSimulatorNote)
-    {
-        <p class="small text-muted mb-4 opacity-75">@L["Signup.PendingTestNote"]</p>
-    }
-
-    @if (Model.ShowCheckoutAction)
-    {
-        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
-            <a class="btn btn-primary rounded-pill d-inline-flex align-items-center justify-content-center gap-2 px-4"
-               asp-controller="Checkout"
-               asp-action="Review"
-               asp-route-id="@Model.RegistrationId">
-                <i class="bi @(Model.IsPaymentSimulatorAvailable ? "bi-credit-card" : "bi-card-list")" aria-hidden="true"></i>
-                <span>@L[Model.IsPaymentSimulatorAvailable ? "Signup.ContinueToCheckout" : "Signup.ViewRegistrationSummary"]</span>
-            </a>
-            <a class="btn btn-outline-secondary rounded-pill px-4" href="@centralHomepageUrl">@L["Signup.PendingBackHome"]</a>
+            @if (isOwner)
+            {
+                <partial name="_RegistrationStatusDetails" model="Model" />
+            }
         </div>
-    }
-    else
-    {
-        <a class="btn btn-outline-secondary rounded-pill px-4" href="@centralHomepageUrl">@L["Signup.PendingBackHome"]</a>
-    }
-}
+
+        <aside class="su-status__aside">
+            <section class="su-receipt su-status-card" aria-labelledby="statusCardTitle">
+                <header class="su-receipt__head">
+                    <h2 class="su-receipt__title" id="statusCardTitle">@L[isOwner ? "Signup.Receipt.Title" : "RegistrationStatus.PublicCardTitle"]</h2>
+                </header>
+                <div class="su-status-card__body">
+                    <partial name="_RegistrationStatusBadge" model="badge" />
+
+                    @if (isOwner)
+                    {
+                        <h3 class="su-status-card__heading">@L["RegistrationStatus.CardRestaurant"]</h3>
+                        <dl class="su-status-facts su-status-facts--compact">
+                            <div class="su-status-facts__row">
+                                <dt>@L["RegistrationStatus.BusinessLabel"]</dt>
+                                <dd dir="auto">@Model.BusinessName</dd>
+                            </div>
+                            <div class="su-status-facts__row">
+                                <dt>@L["Checkout.PlanLabel"]</dt>
+                                <dd>@string.Format(L["Signup.Receipt.PlanLine"].Value, Model.PlanDisplayName, periodWord)</dd>
+                            </div>
+                        </dl>
+                    }
+
+                    @* The address is a link only once the panel exists (the model has no URL before that); until then it is
+                       plain monospaced text, so nothing suggests the panel can be opened. *@
+                    @if (isProvisioned && !string.IsNullOrWhiteSpace(Model.PrimaryDomain) && !string.IsNullOrWhiteSpace(Model.TenantAddressUrl))
+                    {
+                        <p class="su-status-card__domain">
+                            <partial name="_RegistrationStatusTenantAddressLink" model="Model" />
+                        </p>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
+                    {
+                        <p class="su-status-card__domain" data-su-tenant-address="text"><bdi class="su-ltr">@Model.PrimaryDomain</bdi></p>
+                    }
+                    @if (showAddressHelp)
+                    {
+                        <p class="su-help">@L[addressHelpKey]</p>
+                    }
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>

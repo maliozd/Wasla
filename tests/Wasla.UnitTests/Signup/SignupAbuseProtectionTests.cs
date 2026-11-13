@@ -186,6 +186,9 @@ public sealed class SignupAbuseProtectionTests : IAsyncLifetime
         Assert.Contains(Localized(host, "tr-TR", "Checkout.ReturnToRegistrationSummary"), html, StringComparison.Ordinal);
         Assert.DoesNotContain(Localized(host, "tr-TR", "Checkout.TryAgain"), html, StringComparison.Ordinal);
         Assert.DoesNotContain(applicant.Entity.OwnerEmail, html, StringComparison.Ordinal);
+        // The page answers a POST, so its language links return to the summary, never to the cancel address as a GET.
+        Assert.Contains($"returnUrl=%2Fcheckout%2Freview%2F{applicant.Id}", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("returnUrl=%2Fcheckout%2Fcancel", html, StringComparison.Ordinal);
         await using var check = NewDb();
         var stored = await check.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Id == applicant.Id, TestContext.Current.CancellationToken);
         Assert.Equal(PendingRegistrationStatus.AwaitingPayment, stored.Status);

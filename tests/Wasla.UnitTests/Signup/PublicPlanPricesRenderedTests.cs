@@ -121,7 +121,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         Assert.Equal("2.750 TL / yıl", Price(signupBefore, "yearly"));
         Assert.Equal("KDV dahil", signupBefore.GetProperty("yearly").GetProperty("vat").GetString());
         Assert.Equal(Saving("850 TL"), signupBefore.GetProperty("yearlySaving").GetString());
-        Assert.Contains("300 TL / ay", reviewBefore, StringComparison.Ordinal);
+        Assert.Equal(("300 TL", "KDV dahil", "Starter planı, aylık ödeme dönemi."), ReviewPrice(reviewBefore));
 
         _clock.UtcNow = BillingPlanPriceInput.EffectiveFromUtc(Today.AddDays(3));
 
@@ -134,7 +134,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         Assert.Equal("400 TL / ay", Price(signupAfter, "monthly"));
         Assert.Equal(Saving("2.050 TL"), signupAfter.GetProperty("yearlySaving").GetString());
         // No subscription yet, so the summary follows the price in effect.
-        Assert.Contains("400 TL / ay", reviewAfter, StringComparison.Ordinal);
+        Assert.Equal("400 TL", ReviewPrice(reviewAfter).Amount);
         Assert.DoesNotContain("300 TL", reviewAfter, StringComparison.Ordinal);
     }
 
@@ -158,8 +158,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         Assert.Equal((a, 300m), (firstView!.PlanPriceId, firstView.Price.Amount));
         Assert.All(reloads, review =>
         {
-            Assert.Contains("300 TL / ay", review, StringComparison.Ordinal);
-            Assert.Contains("(KDV dahil)", review, StringComparison.Ordinal);
+            Assert.Equal(("300 TL", "KDV dahil"), (ReviewPrice(review).Amount, ReviewPrice(review).Vat));
             Assert.DoesNotContain("400 TL", review, StringComparison.Ordinal);
             Assert.DoesNotContain("KDV hariç", review, StringComparison.Ordinal);
         });
@@ -169,12 +168,11 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         var secondStart = await StoreAsync(store => store.StartForRegistrationAsync(second.Id, BillingTestData.Sandbox, Ct));
         var secondView = await StoreAsync(store => store.GetForRegistrationAsync(second.Id, Ct));
 
-        Assert.Contains("400 TL / ay", secondReview, StringComparison.Ordinal);
-        Assert.Contains("(KDV hariç)", secondReview, StringComparison.Ordinal);
+        Assert.Equal(("400 TL", "KDV hariç"), (ReviewPrice(secondReview).Amount, ReviewPrice(secondReview).Vat));
         Assert.Equal(BillingStoreOutcome.Applied, secondStart.Outcome);
         Assert.Equal((b, 400m), (secondView!.PlanPriceId, secondView.Price.Amount));
         // The new price is shown to new restaurants; the first subscription's summary is unchanged.
-        Assert.Contains("300 TL / ay", await ReviewAsync(first), StringComparison.Ordinal);
+        Assert.Equal("300 TL", ReviewPrice(await ReviewAsync(first)).Amount);
     }
 
     [Fact]
@@ -235,6 +233,16 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         var page = await browser.GetAsync($"/checkout/review/{applicant.Id}");
         Assert.Equal(HttpStatusCode.OK, page.Status);
         return WebUtility.HtmlDecode(page.Body);
+    }
+
+    /// <summary>The registration card's amount, VAT text and period line on the checkout summary (Figma 03 checkout).</summary>
+    private static (string Amount, string Vat, string Period) ReviewPrice(string review)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            review,
+            """<span class="su-receipt__amount"><bdi>(?<amount>[^<]*)</bdi></span>\s*<span class="su-receipt__vat">(?<vat>[^<]*)</span>\s*</div>\s*<p class="su-receipt__period">(?<period>[^<]*)</p>""");
+        Assert.True(match.Success, "The summary shows no amount.");
+        return (match.Groups["amount"].Value, match.Groups["vat"].Value, match.Groups["period"].Value);
     }
 
     private async Task<TestResponse> GetAsync(string path, string culture)

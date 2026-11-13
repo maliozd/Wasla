@@ -2939,33 +2939,19 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve"><value>إكمال التسجيل والمتابعة إلى الدفع</value></data>
   <data name="Signup.SubmitRegistration" xml:space="preserve"><value>إرسال التسجيل</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>إنشاء الحساب</value></data>
-  <data name="Signup.PendingTitle" xml:space="preserve"><value>حسابك جاهز تقريباً</value></data>
+  <data name="Signup.PendingTitle" xml:space="preserve"><value>تم استلام تسجيلك</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>استلمنا بياناتك. أكمل خطوة الدفع للمتابعة.</value></data>
-  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>استلمنا بياناتك. تسجيلك بانتظار الدفع.</value></data>
-  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>بعد إتمام الدفع، سيتم تجهيز لوحة مطعمك.</value></data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>حُفظت معلوماتك. يلزم إكمال خطوة الدفع قبل إعداد لوحة مطعمك.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>متابعة الدفع</value></data>
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>عرض ملخص التسجيل</value></data>
-  <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>مطعمك</value></data>
-  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve"><value>عنوان Wasla الخاص بك</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>فتح {0}</value></data>
-  <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>باقتك</value></data>
-  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>فترة الدفع</value></data>
-  <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>بعد إتمام الدفع:</value></data>
-  <data name="Signup.PendingNextStep1" xml:space="preserve"><value>يتم إنشاء لوحة مطعمك</value></data>
-  <data name="Signup.PendingNextStep2" xml:space="preserve"><value>يتم تفعيل حساب المدير</value></data>
-  <data name="Signup.PendingNextStep3" xml:space="preserve"><value>يمكنك البدء بربط المنصات</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>في بيئة الاختبار، سيتم محاكاة خطوة الدفع.</value></data>
   <data name="Signup.PanelReadyTitle" xml:space="preserve"><value>لوحتك جاهزة</value></data>
   <data name="Signup.PanelReadyBody" xml:space="preserve"><value>تم إنشاء لوحة مطعمك بنجاح. يمكنك الآن تسجيل الدخول من عنوان Wasla الخاص بك.</value></data>
   <data name="Signup.GoToPanel" xml:space="preserve"><value>الذهاب إلى اللوحة</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>تم استلام الدفع</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>تم استلام دفعتك. لوحة مطعمك قيد التجهيز.</value></data>
-  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>لوحة مطعمك قيد التجهيز.</value></data>
-  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>عند اكتمال الإعداد، ستتمكن من تسجيل الدخول من عنوان Wasla الخاص بك.</value></data>
-  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>تفاصيل التسجيل</value></data>
-  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>حالة الدفع</value></data>
-  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>حالة الإعداد</value></data>
   <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>هاتف النشاط</value></data>
   <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>بريد النشاط</value></data>
   <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>صاحب الحساب</value></data>
@@ -2977,15 +2963,11 @@
   <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>فشل الدفع</value></data>
   <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>ملغى</value></data>
   <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>منتهي الصلاحية</value></data>
-  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>بانتظار الإعداد</value></data>
-  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>الإعداد قيد التنفيذ</value></data>
-  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>اكتمل الإعداد</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>ملخص الدفع</value></data>
   <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve"><value>ملخص التسجيل</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>راجع الباقة المختارة وبيانات المطعم. في بيئة الاختبار هذه، سيتم محاكاة نتيجة الدفع.</value></data>
-  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>راجع الباقة المختارة وبيانات مطعمك. لا يتم تحصيل الدفع في هذه الصفحة؛ ويبقى تسجيلك معلقًا حتى يتم استلام الدفع.</value></data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>راجع معلومات مطعمك وحسابك. الباقة التي اخترتها وسعرها الحالي جزء من ملخص التسجيل.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>تكامل الدفع الحقيقي غير مفعّل بعد. تتم محاكاة نتيجة الدفع في هذه الشاشة.</value></data>
-  <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>معلومات الباقة</value></data>
   <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>معلومات المطعم</value></data>
   <data name="Checkout.SectionAccountOwner" xml:space="preserve"><value>صاحب الحساب</value></data>
   <data name="Checkout.SectionRegistration" xml:space="preserve"><value>ملخص التسجيل</value></data>
@@ -3001,21 +2983,19 @@
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح.</value></data>
   <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>سيتم تجهيز لوحة مطعمك في الخطوة التالية.</value></data>
-  <data name="Checkout.PanelReadyTitle" xml:space="preserve"><value>لوحتك جاهزة</value></data>
   <data name="Checkout.PanelReadyMessage" xml:space="preserve"><value>اكتمل الدفع وتم إنشاء لوحة مطعمك.</value></data>
   <data name="Checkout.GoToPanel" xml:space="preserve"><value>الذهاب إلى لوحة المطعم</value></data>
-  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve"><value>تم استلام الدفع</value></data>
   <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve"><value>تم استلام دفعتك. لوحة مطعمك قيد التجهيز.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>تمت محاكاة فشل الدفع</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>تمت محاكاة فشل الدفع.</value></data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>لم يتم إنشاء لوحة مطعمك. يمكنك إعادة محاولة خطوة الدفع إذا رغبت.</value></data>
   <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve"><value>لم يكتمل الدفع</value></data>
   <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve"><value>لم يكتمل الدفع لهذا التسجيل، لذلك لم يتم إنشاء لوحة مطعمك.</value></data>
-  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء التسجيل</value></data>
-  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>تم إلغاء التسجيل. يمكنك التسجيل مرة أخرى إذا رغبت.</value></data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>تم إلغاء تسجيلك</value></data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>إذا أردت المتابعة يمكنك بدء تسجيل جديد.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>العودة إلى خطوة الدفع</value></data>
   <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve"><value>العودة إلى ملخص التسجيل</value></data>
-  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>التسجيل مرة أخرى</value></data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>إنشاء تسجيل جديد</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>تمت محاكاة الدفع بنجاح مسبقاً لهذا التسجيل.</value></data>
   <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>تم استلام الدفع لهذا التسجيل.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>تم إلغاء هذا التسجيل.</value></data>
@@ -4796,5 +4776,131 @@
   </data>
   <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
     <value>تم التحقق من الهاتف، جارٍ المتابعة…</value>
+  </data>
+  <data name="RegistrationStatus.PanelReady" xml:space="preserve">
+    <value>اللوحة جاهزة</value>
+  </data>
+  <data name="RegistrationStatus.StepRegistered" xml:space="preserve">
+    <value>تم استلام التسجيل</value>
+  </data>
+  <data name="RegistrationStatus.StepRegisteredBody" xml:space="preserve">
+    <value>معلومات المطعم والحساب محفوظة.</value>
+  </data>
+  <data name="RegistrationStatus.StepAwaitingPaymentBody" xml:space="preserve">
+    <value>لم يتم تأكيد استلام الدفع بعد.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetup" xml:space="preserve">
+    <value>إعداد اللوحة</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetupBody" xml:space="preserve">
+    <value>يبدأ بعد إكمال خطوة الدفع.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentReceivedBody" xml:space="preserve">
+    <value>اكتملت عملية الدفع.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaiting" xml:space="preserve">
+    <value>بانتظار إعداد اللوحة</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaitingBody" xml:space="preserve">
+    <value>لوحة مطعمك ليست جاهزة بعد.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelReadyBody" xml:space="preserve">
+    <value>يظهر زر تسجيل الدخول عند اكتمال الإعداد.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentNotCompletedBody" xml:space="preserve">
+    <value>لم يتم إنشاء لوحة المطعم.</value>
+  </data>
+  <data name="RegistrationStatus.StateNotCompleted" xml:space="preserve">
+    <value>لم تكتمل</value>
+  </data>
+  <data name="RegistrationStatus.PublicTitle" xml:space="preserve">
+    <value>حالة التسجيل</value>
+  </data>
+  <data name="RegistrationStatus.PublicLead" xml:space="preserve">
+    <value>يمكنك هنا معرفة حالة التسجيل واللوحة لعنوان Wasla هذا.</value>
+  </data>
+  <data name="RegistrationStatus.PublicCardTitle" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
+    <value>لوحة مطعمك بانتظار الإعداد.</value>
+  </data>
+  <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
+    <value>عنوان الدخول</value>
+  </data>
+  <data name="RegistrationStatus.NextInPanelTitle" xml:space="preserve">
+    <value>الخطوات التالية في اللوحة</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatforms" xml:space="preserve">
+    <value>ربط المنصات</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatformsBody" xml:space="preserve">
+    <value>اربط منصات الطلب التي تستخدمها.</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinter" xml:space="preserve">
+    <value>طابعة الإيصالات</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinterBody" xml:space="preserve">
+    <value>ثبّت Wasla Print Bridge واختر الطابعة.</value>
+  </data>
+  <data name="RegistrationStatus.NextStepTitle" xml:space="preserve">
+    <value>الخطوة التالية</value>
+  </data>
+  <data name="RegistrationStatus.NextStepBody" xml:space="preserve">
+    <value>افتح صفحة تسجيلك لمراجعة معلوماتك وحالة الدفع.</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterTitle" xml:space="preserve">
+    <value>يمكنك التحقق من الحالة لاحقاً</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
+    <value>عند اكتمال الإعداد يظهر زر «الذهاب إلى اللوحة» في هذه الصفحة.</value>
+  </data>
+  <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
+    <value>معلومات الاتصال</value>
+  </data>
+  <data name="RegistrationStatus.CardRestaurant" xml:space="preserve">
+    <value>المطعم</value>
+  </data>
+  <data name="RegistrationStatus.BusinessLabel" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpPending" xml:space="preserve">
+    <value>عندما تصبح لوحتك جاهزة يمكنك تسجيل الدخول من هذا العنوان.</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpReady" xml:space="preserve">
+    <value>عنوان تسجيل الدخول إلى لوحة مطعمك.</value>
+  </data>
+  <data name="RegistrationStatus.ExpiredTitle" xml:space="preserve">
+    <value>انتهت صلاحية التسجيل</value>
+  </data>
+  <data name="RegistrationStatus.PanelAddressLabel" xml:space="preserve">
+    <value>عنوان اللوحة</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeTitle" xml:space="preserve">
+    <value>خطوة الدفع معلّقة</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeBody" xml:space="preserve">
+    <value>الدفع الإلكتروني غير متاح بعد. معلومات تسجيلك محفوظة.</value>
+  </data>
+  <data name="RegistrationStatus.SimulatorTitle" xml:space="preserve">
+    <value>بيئة الاختبار فقط</value>
+  </data>
+  <data name="RegistrationStatus.PriceLater" xml:space="preserve">
+    <value>سيظهر السعر الحالي هنا عند تحديده.</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptTitle" xml:space="preserve">
+    <value>معلوماتك محفوظة</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptBody" xml:space="preserve">
+    <value>قبل المتابعة، تحقق من الحالة الحالية في صفحة تسجيلك.</value>
+  </data>
+  <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
+    <value>يمكنك التحقق من الحالة في صفحة تسجيلك.</value>
+  </data>
+  <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
+    <value>محاولات كثيرة جداً</value>
+  </data>
+  <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
+    <value>تحديث الحالة</value>
   </data>
 </root>

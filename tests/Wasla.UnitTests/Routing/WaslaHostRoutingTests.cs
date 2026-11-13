@@ -304,7 +304,9 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
 
         var pending = await browser.GetAsync(statusPage, Marketing);
         Assert.Equal(HttpStatusCode.OK, pending.Status);
-        Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", pending.Body);
+        // Before the panel exists the address is shown, never offered as a link.
+        Assert.Contains($">{slug}.app.wasla.tr</bdi>", pending.Body);
+        Assert.DoesNotContain($"href=\"http://{slug}.app.wasla.tr", pending.Body);
         Assert.Contains("href=\"http://wasla.tr/\"", pending.Body);
 
         // The tenant host of a registration that is not provisioned shows its status page.
@@ -327,6 +329,7 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
 
         var provisioned = await browser.GetAsync(statusPage, Marketing);
         Assert.Contains($"href=\"http://{slug}.app.wasla.tr/auth/login\"", provisioned.Body);
+        Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", provisioned.Body);
     }
 
     [Theory]
@@ -349,11 +352,33 @@ public sealed partial class WaslaHostRoutingTests : IClassFixture<WaslaHostRouti
             ("X-Forwarded-Host", "attacker.example"));
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
-        Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", page.Body);
+        Assert.Contains($">{slug}.app.wasla.tr</bdi>", page.Body);
         Assert.Contains("href=\"http://wasla.tr/\"", page.Body);
         Assert.DoesNotContain("attacker.example", page.Body);
         Assert.DoesNotContain(":8443", page.Body);
         Assert.DoesNotContain("APP.wasla", page.Body);
+
+        // Once provisioned, the address and the panel sign-in become links, built the same way.
+        var registrationId = submitted.Json.GetProperty("registrationId").GetGuid();
+        await using (var db = NewDb())
+        {
+            var stored = await db.PendingRegistrations.SingleAsync(r => r.Id == registrationId, TestContext.Current.CancellationToken);
+            stored.Status = PendingRegistrationStatus.Provisioned;
+            stored.PaymentSucceededAtUtc = DateTime.UtcNow;
+            stored.ProvisionedAtUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var ready = await browser.SendWithHeadersAsync(
+            statusPage,
+            host.Replace("{own}", $"{slug}.APP.wasla.tr", StringComparison.Ordinal),
+            ("X-Forwarded-Host", "attacker.example"));
+        Assert.Equal(HttpStatusCode.OK, ready.Status);
+        Assert.Contains($"href=\"http://{slug}.app.wasla.tr\"", ready.Body);
+        Assert.Contains($"href=\"http://{slug}.app.wasla.tr/auth/login\"", ready.Body);
+        Assert.DoesNotContain("attacker.example", ready.Body);
+        Assert.DoesNotContain(":8443", ready.Body);
+        Assert.DoesNotContain("APP.wasla", ready.Body);
 
         // Any other host does not serve it at all.
         foreach (var other in new[] { "evil.example", "app.wasla.tr", "known.app.wasla.tr.evil.example" })

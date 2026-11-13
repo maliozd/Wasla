@@ -1,0 +1,13 @@
+@model Wasla.Web.Models.Signup.RegistrationStatusBadge
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Signup
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var tone = Model.Tone switch
+    {
+        RegistrationStatusTone.Success => "success",
+        RegistrationStatusTone.Danger => "danger",
+        _ => "neutral"
+    };
+}
+<span class="su-badge su-badge--@tone su-status-badge" data-su-status-badge="@tone">@L[Model.LabelKey]</span>

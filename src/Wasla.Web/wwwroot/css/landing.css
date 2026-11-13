@@ -53,11 +53,6 @@
   margin-inline: auto;
 }
 
-.wasla-logo--status {
-  height: 2.25rem;
-  margin-inline: auto;
-}
-
 /* Platform logo badges (marketing reuse of tenant badge markup) */
 .wasla-landing .platform-badge {
   display: inline-flex;

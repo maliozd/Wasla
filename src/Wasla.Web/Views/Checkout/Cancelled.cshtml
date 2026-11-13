@@ -1,25 +1,30 @@
 ﻿@model Wasla.Web.Models.Checkout.CheckoutResultViewModel
 @using Microsoft.Extensions.Localization
+@using Wasla.Domain.Enums
+@using Wasla.Web.Models.Signup
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    Layout = "_PublicLayout";
+    // Public page (Figma 03 cancelled, 92:2302): a terminal state, so one bounded card with the status marker, the
+    // heading, the explanation and the two ways on, and no registration card beside it. It carries only the ID and
+    // generic text.
+    Layout = "_RegistrationStatusLayout";
     ViewData["Title"] = L["Checkout.CancelledTitle"];
+    var badge = RegistrationStatusPresentation.Badge(PendingRegistrationStatus.Cancelled, Model.IsPaymentSimulatorAvailable);
 }
-<div class="wasla-signup-page py-4 py-md-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm wasla-signup-card">
-                    <div class="card-body p-4 p-md-5 text-center">
-                        <div class="mb-3 text-secondary">
-                            <i class="bi bi-slash-circle" style="font-size: 2.5rem;" aria-hidden="true"></i>
-                        </div>
-                        <h1 class="h4 fw-bold mb-2">@L["Checkout.CancelledTitle"]</h1>
-                        <p class="text-secondary mb-4">@L["Checkout.CancelledMessage"]</p>
-                        <a class="btn btn-primary rounded-pill" href="/signup">@L["Checkout.RegisterAgain"]</a>
-                    </div>
-                </div>
+<div class="su-shell su-status-page su-status-page--terminal">
+    <div class="su-container su-terminal">
+        <section class="su-terminal__card" data-su-terminal="cancelled" aria-labelledby="cancelledTitle">
+            <div class="su-terminal__marker">
+                <span class="su-terminal__icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
+                <partial name="_RegistrationStatusBadge" model="badge" />
             </div>
-        </div>
+            <h1 class="su-title" id="cancelledTitle">@L["Checkout.CancelledTitle"]</h1>
+            <p class="su-lead">@L["Checkout.CancelledMessage"]</p>
+
+            <div class="su-status__actions su-status__actions--inline">
+                <a class="su-btn su-btn--primary" href="/signup">@L["Checkout.RegisterAgain"]</a>
+                <a class="su-btn su-btn--quiet" href="/">@L["Signup.PendingBackHome"]</a>
+            </div>
+        </section>
     </div>
 </div>
