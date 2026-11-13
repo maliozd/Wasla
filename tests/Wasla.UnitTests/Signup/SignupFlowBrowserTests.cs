@@ -740,8 +740,12 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal("phone", await CurrentAsync(browser, ct));
     }
 
-    [Fact]
-    public async Task ChangingTheNumber_SendsANewCode_AndOnlyTheNewNumbersCodeVerifies()
+    // Two numbers that end in the same two digits show the same masked number, and the page keeps the old number's
+    // code-sent state until the server has taken the new one; that case runs every time (WAS-213).
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ChangingTheNumber_SendsANewCode_AndOnlyTheNewNumbersCodeVerifies(bool sameLastTwoDigits)
     {
         var ct = TestContext.Current.CancellationToken;
         // The draft read made after the number change is held back, so it answers after the new code was sent: its older
@@ -759,13 +763,17 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await ReachPhoneStepAsync(browser, applicant, ct);
         var oldCode = Outbox.LatestCodeTo(applicant.E164)!;
 
-        var other = Applicant.New();
+        var other = applicant.AnotherNumber(sameLastTwoDigits);
         await Js(browser, "__su.click('[data-su-phone-change]')", ct);
         await WaitForAsync(browser, "!document.querySelector('[data-su-phone-changer]').hidden", ct);
         Assert.Equal("signupPhoneChange", await ActiveIdAsync(browser, ct));
         await Js(browser, $"__su.set('signupPhoneChange', '{other.Digits}')", ct);
         await Js(browser, "__su.click('[data-su-phone-primary]')", ct);
-        await WaitForAsync(browser, $"document.querySelector('[data-su-phone-masked]').textContent.trim().endsWith('{other.Digits[^2..]}') && document.getElementById('signupStep-phone').getAttribute('data-phone-state') === 'codeSent'", ct);
+        // The code sent to the whole new number, then the page showing that send's answer: the page sends only after the
+        // server took the new number, so the code-sent state it shows from then on is the new number's.
+        await UntilAsync(() => Outbox.MessagesTo(other.E164).Count, 1, ct);
+        await WaitForAsync(browser, $"document.querySelector('[data-su-phone-changer]').hidden && {PhoneState} === 'codeSent'", ct);
+        Assert.EndsWith(other.Digits[^2..], await browser.EvaluateAsync<string>("document.querySelector('[data-su-phone-masked]').textContent.trim()", ct));
         var newCode = Outbox.LatestCodeTo(other.E164) ?? throw new InvalidOperationException("No code to the new number.");
 
         if (oldCode != newCode)
@@ -1928,6 +1936,20 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
             var token = Guid.NewGuid().ToString("N")[..10];
             var digits = "5" + Random.Shared.Next(0, 1_000_000_000).ToString("D9", CultureInfo.InvariantCulture);
             return new Applicant($"Lezzet {token[..4]}", $"lezzet-{token}", digits, $"owner.{token}@example.test");
+        }
+
+        // Another applicant whose number differs from this one's and ends in the same two digits (the masked numbers are
+        // then equal) or in two other digits.
+        public Applicant AnotherNumber(bool sameLastTwoDigits)
+        {
+            while (true)
+            {
+                var other = New();
+                if (sameLastTwoDigits)
+                    other = other with { Digits = other.Digits[..8] + Digits[^2..] };
+                if (other.Digits != Digits && (other.Digits[^2..] == Digits[^2..]) == sameLastTwoDigits)
+                    return other;
+            }
         }
     }
 
