@@ -51,33 +51,81 @@
     var enterpriseNotice = document.getElementById("signupEnterpriseNotice");
     var baseDomainEl = document.getElementById("signupBaseDomain");
     var baseDomain = baseDomainEl ? baseDomainEl.value : "";
-    var slugManuallyEdited = false;
-    var initialSlug = slugInput ? slugInput.value : "";
     var citySelect = document.getElementById("signupCityId");
     var districtSelect = document.getElementById("signupDistrictId");
     var neighborhoodInput = document.getElementById("signupNeighborhood");
     var neighborhoodIdInput = document.getElementById("signupNeighborhoodId");
-    var neighborhoodList = document.getElementById("signupNeighborhoodList");
     var neighborhoodHint = document.getElementById("signupNeighborhoodHint");
     var streetInput = document.getElementById("signupStreetAddress");
     var streetIdInput = document.getElementById("signupStreetId");
-    var streetList = document.getElementById("signupStreetList");
     var streetHint = document.getElementById("signupStreetHint");
+    var cityCombo = null;
+    var districtCombo = null;
+    var neighborhoodCombo = null;
+    var streetCombo = null;
     var phoneTypeInputs = document.querySelectorAll('input[name="BusinessPhoneType"]');
     var phonePrefix = document.getElementById("signupPhonePrefix");
     var phoneHint = document.getElementById("signupPhoneHint");
     var citiesById = {};
     var neighborhoodsCache = [];
     var streetsCache = [];
+    // The neighbourhood whose streets the street list shows or is loading; empty when it shows none.
+    var streetsNeighborhoodId = "";
+    // The district list that failed to load, for its retry: the city it was for and the district to select again.
+    var districtRetry = null;
+
+    // The searchable address fields (signup-combobox.js). Without the script the native controls still work.
+    var addressText = config.address || {};
+    function attachCombo(rootId, mode, select, extra) {
+        var rootEl = document.getElementById(rootId);
+        if (!rootEl || !window.WaslaCombobox) {
+            return null;
+        }
+        var messages = {
+            search: addressText.search,
+            loading: addressText.loading,
+            noMatches: addressText.noMatches,
+            empty: addressText.empty,
+            noSuggestions: addressText.noSuggestions,
+            useTyped: addressText.useTyped,
+            results: addressText.results
+        };
+        Object.keys(extra.messages || {}).forEach(function (key) {
+            messages[key] = extra.messages[key];
+        });
+        return window.WaslaCombobox.attach({
+            root: rootEl,
+            input: rootEl.querySelector("[data-su-combo-input]"),
+            list: rootEl.querySelector('[role="listbox"]'),
+            popup: rootEl.querySelector("[data-su-combo-popup]"),
+            state: rootEl.querySelector("[data-su-combo-state]"),
+            alert: rootEl.querySelector("[data-su-combo-alert]"),
+            live: rootEl.querySelector("[data-su-combo-live]"),
+            mode: mode,
+            select: select,
+            messages: messages,
+            onRetry: extra.onRetry || null,
+            avoidBottom: stripHeight
+        });
+    }
+
+    // Below the desktop layout the signup's summary strip is fixed to the bottom of the screen.
+    function stripHeight() {
+        var strip = document.querySelector("[data-su-strip]");
+        if (!strip) {
+            return 0;
+        }
+        var style = window.getComputedStyle(strip);
+        if (style.position !== "fixed" || style.display === "none" || strip.hidden) {
+            return 0;
+        }
+        return Math.max(0, window.innerHeight - strip.getBoundingClientRect().top);
+    }
 
     if (Array.isArray(config.cities)) {
         config.cities.forEach(function (city) {
             citiesById[city.id] = city;
         });
-    }
-
-    if (slugInput && initialSlug.trim().length > 0) {
-        slugManuallyEdited = true;
     }
 
     function updateDomainPreview() {
@@ -102,6 +150,27 @@
         if (disabled) {
             districtSelect.value = "";
         }
+        refreshCombo(districtCombo);
+    }
+
+    function refreshCombo(combo) {
+        if (combo) {
+            combo.refresh();
+        }
+    }
+
+    function setComboStatus(combo, status) {
+        if (combo) {
+            combo.setStatus(status);
+        }
+    }
+
+    function setComboItems(combo, items) {
+        if (combo) {
+            combo.setItems(items.map(function (item) {
+                return { id: item.id, label: item.name };
+            }));
+        }
     }
 
     function populateDistrictOptions(districts, selectedId) {
@@ -121,6 +190,7 @@
             }
             districtSelect.appendChild(option);
         });
+        refreshCombo(districtCombo);
     }
 
     // Each level's answer is used only while its request is the newest of that level. A new city, district or
@@ -129,8 +199,11 @@
     var LOOKUP_LEVELS = ["districts", "neighborhoods", "streets"];
     var lookupRounds = { districts: 0, neighborhoods: 0, streets: 0 };
 
-    function startLookup(level) {
-        for (var i = LOOKUP_LEVELS.indexOf(level); i < LOOKUP_LEVELS.length; i++) {
+    // ownLevelOnly: a retry of the same choice. It replaces the failed answer of its level only, so the answers still
+    // out for the levels below (the restore's neighbourhoods of that same district) stay current.
+    function startLookup(level, ownLevelOnly) {
+        var last = ownLevelOnly ? LOOKUP_LEVELS.indexOf(level) + 1 : LOOKUP_LEVELS.length;
+        for (var i = LOOKUP_LEVELS.indexOf(level); i < last; i++) {
             lookupRounds[LOOKUP_LEVELS[i]]++;
         }
         var round = lookupRounds[level];
@@ -155,7 +228,7 @@
     function restoreStreet(streetId, streetName, options) {
         if (kept(options, "keepStreet") || kept(options, "keepNeighborhood")) {
             if (streetInput) {
-                syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
+                syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name", streetCombo);
             }
             return;
         }
@@ -168,16 +241,20 @@
     }
 
     // Each load resolves to true while its answer still applies, so a restore goes on only with its own answers.
+    // options.retry: the same city again after a failed list (see retryDistricts).
     function loadDistricts(cityId, selectedDistrictId, options) {
         options = options || {};
-        var isCurrent = startLookup("districts");
+        var isCurrent = startLookup("districts", !!options.retry);
+        districtRetry = null;
         if (!districtSelect || !cityId) {
+            setComboStatus(districtCombo, "ready");
             setDistrictDisabled(true);
             clearNeighborhoodFields();
             clearStreetFields();
             return Promise.resolve(true);
         }
 
+        setComboStatus(districtCombo, "loading");
         setDistrictDisabled(true);
         if (!options.restoring) {
             clearNeighborhoodFields();
@@ -195,6 +272,7 @@
                 if (!answerApplies(isCurrent, options)) {
                     return false;
                 }
+                setComboStatus(districtCombo, "ready");
                 populateDistrictOptions(districts, selectedDistrictId);
                 setDistrictDisabled(false);
                 return true;
@@ -203,43 +281,83 @@
                 if (!answerApplies(isCurrent, options)) {
                     return false;
                 }
+                // The list did not load. The field stays usable and empty, so a save still asks for a district, and
+                // it says so with a retry; nothing else the visitor entered is cleared.
+                districtRetry = { cityId: String(cityId), selectedId: selectedDistrictId == null ? null : String(selectedDistrictId) };
                 populateDistrictOptions([], null);
-                setDistrictDisabled(true);
+                setComboStatus(districtCombo, "error");
+                setDistrictDisabled(false);
                 return true;
             });
     }
 
+    // Loads the failed district list again for the city still chosen, and selects the district that was wanted then
+    // (the saved one during a restore). It replaces only the district answer, so the neighbourhood and street fields and
+    // any of their answers still out keep belonging to that district.
+    function retryDistricts() {
+        var retry = districtRetry;
+        if (!retry || !citySelect || citySelect.value !== retry.cityId) {
+            return Promise.resolve(false);
+        }
+        return loadDistricts(retry.cityId, retry.selectedId, { restoring: true, retry: true });
+    }
+
+    // A retry keeps what the fields show: the lists come back, and each id follows its field's text again.
+    function keepAll() {
+        return true;
+    }
+
+    function retryNeighborhoods() {
+        if (!districtSelect || !districtSelect.value) {
+            setComboStatus(neighborhoodCombo, "ready");
+            return Promise.resolve(false);
+        }
+        return loadNeighborhoods(districtSelect.value, null, null, null, null,
+            { restoring: true, retry: true, keepNeighborhood: keepAll, keepStreet: keepAll });
+    }
+
+    function retryStreets() {
+        if (!neighborhoodIdInput || !neighborhoodIdInput.value) {
+            setComboStatus(streetCombo, "ready");
+            return Promise.resolve(false);
+        }
+        return loadStreets(neighborhoodIdInput.value, null, null, { restoring: true, retry: true, keepStreet: keepAll });
+    }
+
     function clearNeighborhoodFields() {
         neighborhoodsCache = [];
-        if (neighborhoodList) neighborhoodList.innerHTML = "";
+        setComboItems(neighborhoodCombo, []);
+        setComboStatus(neighborhoodCombo, "ready");
         if (neighborhoodInput) neighborhoodInput.value = "";
         if (neighborhoodIdInput) neighborhoodIdInput.value = "";
         if (neighborhoodHint) neighborhoodHint.textContent = config.neighborhoodManualHint || "";
     }
 
     function clearStreetFields() {
+        streetsNeighborhoodId = "";
         streetsCache = [];
-        if (streetList) streetList.innerHTML = "";
+        setComboItems(streetCombo, []);
+        setComboStatus(streetCombo, "ready");
         if (streetInput) streetInput.value = "";
         if (streetIdInput) streetIdInput.value = "";
         if (streetHint) streetHint.textContent = config.streetManualHint || "";
     }
 
-    function populateDatalist(listElement, items, valueKey) {
-        if (!listElement) return;
-        listElement.innerHTML = "";
-        items.forEach(function (item) {
-            var option = document.createElement("option");
-            option.value = item[valueKey];
-            listElement.appendChild(option);
-        });
-    }
-
-    function syncReferenceSelection(textValue, cache, idInput, nameKey) {
+    // The id that goes with a neighbourhood or street text: the option the visitor picked while its name is still in the
+    // field, otherwise the catalog entry with exactly that name, otherwise the one entry with that name in another case
+    // or Turkish letter form (the list then offers no "keep as typed" row; the server saves the catalog's name with the
+    // id), otherwise none, so typed text never keeps an id from an earlier place.
+    function syncReferenceSelection(textValue, cache, idInput, nameKey, combo) {
         if (!idInput) return;
         var normalized = (textValue || "").trim();
         if (!normalized) {
             idInput.value = "";
+            return;
+        }
+
+        var pickedId = combo ? combo.pickedId() : null;
+        if (pickedId) {
+            idInput.value = pickedId;
             return;
         }
 
@@ -251,7 +369,8 @@
             }
         }
 
-        idInput.value = match ? String(match.id) : "";
+        var equivalent = !match && combo ? combo.equivalentId(normalized) : null;
+        idInput.value = match ? String(match.id) : (equivalent || "");
     }
 
     // selectedStreetId / selectedStreetName: the street to restore after the neighbourhood's streets are loaded.
@@ -270,12 +389,13 @@
             clearNeighborhoodFields();
             clearStreetFields();
         }
+        setComboStatus(neighborhoodCombo, "loading");
 
         // The saved neighbourhood, unless the visitor typed one since the restore began; then only its id follows its text.
         function restoreNeighborhood() {
             if (kept(options, "keepNeighborhood")) {
                 if (neighborhoodInput) {
-                    syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
+                    syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name", neighborhoodCombo);
                 }
                 return;
             }
@@ -300,7 +420,8 @@
                     return false;
                 }
                 neighborhoodsCache = neighborhoods || [];
-                populateDatalist(neighborhoodList, neighborhoodsCache, "name");
+                setComboItems(neighborhoodCombo, neighborhoodsCache);
+                setComboStatus(neighborhoodCombo, "ready");
 
                 if (neighborhoodHint) {
                     neighborhoodHint.textContent = neighborhoodsCache.length > 0
@@ -320,12 +441,14 @@
                     return false;
                 }
                 neighborhoodsCache = [];
+                setComboItems(neighborhoodCombo, []);
+                setComboStatus(neighborhoodCombo, "error");
                 if (neighborhoodHint) {
                     neighborhoodHint.textContent = config.neighborhoodManualHint || "";
                 }
                 // The list only suggests names: without it the saved neighbourhood and street stay, with the ids the
-                // server stored for them (WAS-211).
-                if (options.restoring) {
+                // server stored for them (WAS-211). A failed retry changes nothing either.
+                if (options.restoring && !options.retry) {
                     restoreNeighborhood();
                     restoreStreet(neighborhoodIdInput && neighborhoodIdInput.value ? streetIdToRestore : null, streetNameToRestore, options);
                 }
@@ -344,6 +467,8 @@
         if (!options.restoring) {
             clearStreetFields();
         }
+        streetsNeighborhoodId = String(neighborhoodId);
+        setComboStatus(streetCombo, "loading");
 
         return fetch((config.streetsUrl || "/signup/streets") + "?neighborhoodId=" + encodeURIComponent(neighborhoodId), {
             headers: { Accept: "application/json" },
@@ -364,7 +489,8 @@
                         streetType: street.streetType
                     };
                 });
-                populateDatalist(streetList, streetsCache, "name");
+                setComboItems(streetCombo, streetsCache);
+                setComboStatus(streetCombo, "ready");
 
                 if (streetHint) {
                     streetHint.textContent = streetsCache.length > 0
@@ -379,11 +505,15 @@
                 if (!answerApplies(isCurrent, options)) {
                     return false;
                 }
+                // Choosing the neighbourhood again loads its streets again.
+                streetsNeighborhoodId = "";
                 streetsCache = [];
+                setComboItems(streetCombo, []);
+                setComboStatus(streetCombo, "error");
                 if (streetHint) {
                     streetHint.textContent = config.streetManualHint || "";
                 }
-                if (options.restoring) {
+                if (options.restoring && !options.retry) {
                     restoreStreet(selectedStreetId, selectedStreetName, options);
                 }
                 return true;
@@ -400,20 +530,48 @@
         return checked ? checked.value : "";
     }
 
+    function isolated(text, dir) {
+        var element = document.createElement("bdi");
+        element.setAttribute("dir", dir);
+        element.textContent = text;
+        return element;
+    }
+
+    // A localized sentence with its {n} slots filled by the given nodes.
+    function fillTemplate(target, template, nodes) {
+        target.textContent = "";
+        String(template).split(/(\{\d+\})/).forEach(function (part) {
+            var slot = /^\{(\d+)\}$/.exec(part);
+            var node = slot ? nodes[Number(slot[1])] : null;
+            target.appendChild(node || document.createTextNode(slot ? "" : part));
+        });
+    }
+
+    // Landline: the chosen city's area code by name ("Ordu alan kodu: 452"; İstanbul lists 212 and 216), the codes kept
+    // left to right in Arabic. Before a city is chosen, the localized example. Only a hint: the number stays as typed.
+    function showLandlineHint(city) {
+        var codes = city && city.phoneAreaCodes && city.phoneAreaCodes.length ? city.phoneAreaCodes : null;
+        if (codes && config.landlineAreaCodeHint) {
+            fillTemplate(phoneHint, config.landlineAreaCodeHint, [isolated(city.name, "auto"), isolated(codes.join(" / "), "ltr")]);
+            return;
+        }
+        var helper = window.WaslaSignupPhone;
+        fillTemplate(phoneHint, config.landlineHint || "{0}", [isolated(helper ? helper.landlineExample(null) : "", "ltr")]);
+    }
+
     function updatePhoneUi() {
         if (!phoneTypeInputs.length) return;
-        var isMobile = currentPhoneType() === "Mobile";
-        var city = getSelectedCity();
+        var type = currentPhoneType();
 
         if (phonePrefix) {
             phonePrefix.textContent = config.defaultCountryCode || "+90";
         }
 
         if (phoneHint) {
-            if (isMobile) {
+            if (type === "Mobile") {
                 phoneHint.textContent = config.mobileHint || "";
-            } else if (city && city.phoneAreaCode) {
-                phoneHint.textContent = (config.defaultCountryCode || "+90") + " " + city.phoneAreaCode;
+            } else if (type === "Landline") {
+                showLandlineHint(getSelectedCity());
             } else {
                 phoneHint.textContent = "";
             }
@@ -482,24 +640,37 @@
         }
     }
 
+    // Show / Hide in each password field. The text says what a press does next and the accessible name says it in full
+    // ("Şifreyi göster"). Switching keeps the value, the caret and the focus: a pointer press leaves the focus in the
+    // field it was in, a keyboard press leaves it on the control.
     function initPasswordToggles() {
         document.querySelectorAll(".signup-password-toggle").forEach(function (button) {
-            button.addEventListener("click", function () {
-                var targetId = button.getAttribute("data-target");
-                var input = targetId ? document.getElementById(targetId) : null;
-                if (!input) return;
+            var targetId = button.getAttribute("data-target");
+            var input = targetId ? document.getElementById(targetId) : null;
+            if (!input) return;
 
-                var isPassword = input.type === "password";
-                input.type = isPassword ? "text" : "password";
-                var icon = button.querySelector("i");
-                if (icon) {
-                    icon.classList.toggle("bi-eye", !isPassword);
-                    icon.classList.toggle("bi-eye-slash", isPassword);
+            button.addEventListener("mousedown", function (event) {
+                if (document.activeElement === input) {
+                    event.preventDefault();
                 }
+            });
 
-                var label = isPassword ? (config.hidePasswordText || "") : (config.showPasswordText || "");
-                button.setAttribute("aria-label", label);
-                button.setAttribute("title", label);
+            button.addEventListener("click", function () {
+                var reveal = input.type === "password";
+                var focused = document.activeElement === input;
+                var start = input.selectionStart;
+                var end = input.selectionEnd;
+                var direction = input.selectionDirection;
+                input.type = reveal ? "text" : "password";
+                if (focused && typeof start === "number") {
+                    try {
+                        input.setSelectionRange(start, end, direction || "none");
+                    } catch (e) {
+                        // A browser without selection on this type keeps its own caret.
+                    }
+                }
+                button.textContent = (reveal ? config.hidePasswordLabel : config.showPasswordLabel) || "";
+                button.setAttribute("aria-label", (reveal ? config.hidePasswordText : config.showPasswordText) || "");
             });
         });
     }
@@ -510,29 +681,40 @@
     updatePlanUi();
 
     if (slugInput) {
-        slugInput.addEventListener("input", function () {
-            slugManuallyEdited = true;
-            updateDomainPreview();
-        });
+        slugInput.addEventListener("input", updateDomainPreview);
     }
 
+    // Every edit of the business name makes the panel address again from it, also after the visitor changed the
+    // address by hand (owner's decision); an empty name empties it. The new address goes through the address field's
+    // own input event, so its old availability answer and server error go and the check runs for the new value. A
+    // draft put back on load sets the name without an event, so its saved address stays.
     if (businessNameInput && slugInput) {
         businessNameInput.addEventListener("input", function () {
-            if (slugManuallyEdited) {
+            var generated = generateSlugFromBusinessName(businessNameInput.value);
+            if (slugInput.value === generated) {
                 return;
             }
-
-            slugInput.value = generateSlugFromBusinessName(businessNameInput.value);
-            updateDomainPreview();
+            slugInput.value = generated;
+            slugInput.dispatchEvent(new Event("input", { bubbles: true }));
         });
     }
+
+    cityCombo = citySelect ? attachCombo("signupCityCombo", "select", citySelect, {}) : null;
+    districtCombo = districtSelect ? attachCombo("signupDistrictCombo", "select", districtSelect, {
+        messages: { failed: addressText.districtsFailed, failedShort: addressText.districtsFailedShort },
+        onRetry: retryDistricts
+    }) : null;
+    neighborhoodCombo = neighborhoodInput ? attachCombo("signupNeighborhoodCombo", "suggest", null, {
+        messages: { failed: addressText.neighborhoodsFailed, placeholder: addressText.neighborhoodPlaceholder },
+        onRetry: retryNeighborhoods
+    }) : null;
+    streetCombo = streetInput ? attachCombo("signupStreetCombo", "suggest", null, {
+        messages: { failed: addressText.streetsFailed, placeholder: addressText.streetPlaceholder },
+        onRetry: retryStreets
+    }) : null;
 
     if (citySelect) {
         var initialDistrictId = districtSelect ? districtSelect.value : "";
-        var initialNeighborhoodId = neighborhoodIdInput ? neighborhoodIdInput.value : "";
-        var initialNeighborhoodName = neighborhoodInput ? neighborhoodInput.value : "";
-        var initialStreetId = streetIdInput ? streetIdInput.value : "";
-        var initialStreetName = streetInput ? streetInput.value : "";
 
         citySelect.addEventListener("change", function () {
             loadDistricts(citySelect.value, null);
@@ -566,10 +748,16 @@
     }
 
     // A changed neighbourhood takes its streets with it: its own when it is on the list, none otherwise. Either way a
-    // street answer still out for the neighbourhood before is stale.
+    // street answer still out for the neighbourhood before is stale. Still the neighbourhood whose streets are shown or
+    // on their way (the change event after the input events, or its name in another case) changes nothing: the street
+    // and its list stay.
     function followNeighborhood() {
-        syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name");
-        loadStreets(neighborhoodIdInput ? neighborhoodIdInput.value : "", null, null);
+        syncReferenceSelection(neighborhoodInput.value, neighborhoodsCache, neighborhoodIdInput, "name", neighborhoodCombo);
+        var id = neighborhoodIdInput ? neighborhoodIdInput.value : "";
+        if (id && id === streetsNeighborhoodId) {
+            return;
+        }
+        loadStreets(id, null, null);
     }
 
     if (neighborhoodInput) {
@@ -578,13 +766,11 @@
     }
 
     if (streetInput) {
-        streetInput.addEventListener("input", function () {
-            syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
-        });
-
-        streetInput.addEventListener("change", function () {
-            syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name");
-        });
+        var followStreet = function () {
+            syncReferenceSelection(streetInput.value, streetsCache, streetIdInput, "name", streetCombo);
+        };
+        streetInput.addEventListener("input", followStreet);
+        streetInput.addEventListener("change", followStreet);
     }
 
     Array.prototype.forEach.call(phoneTypeInputs, function (input) {
@@ -615,6 +801,7 @@
         }
 
         citySelect.value = values && values.cityId != null ? String(values.cityId) : "";
+        refreshCombo(cityCombo);
         updatePhoneUi();
         if (!citySelect.value) {
             setDistrictDisabled(true);

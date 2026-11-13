@@ -147,10 +147,19 @@ test("the phone step: an expired code, a lock, verification and an unavailable s
     assert.equal(locked.canSendNow, false);
     assert.equal(locked.codeEnabled, false);
 
+    // A verified number opened again: its card, "continue" and "change number"; no code field.
     const verified = draft.phoneView(fixture.phoneStatuses.verified);
     assert.equal(verified.primary, "continue");
     assert.equal(verified.showVerifiedCard, true);
-    assert.equal(verified.canChangeNumber, false);
+    assert.equal(verified.canChangeNumber, true);
+    assert.equal(verified.showCode, false);
+    assert.equal(verified.canSendNow, false);
+    // Right after the code was accepted, the code stays in sight during the confirmation.
+    assert.equal(draft.phoneView(fixture.phoneStatuses.verified, { confirming: true }).showCode, true);
+    // Changing a verified number hides its card and offers to send to the new one.
+    const changingVerified = draft.phoneView(fixture.phoneStatuses.verified, { changing: true });
+    assert.equal(changingVerified.showVerifiedCard, false);
+    assert.equal(changingVerified.primary, "sendToNumber");
 
     const unavailable = draft.phoneView(fixture.phoneStatuses.unavailable);
     assert.equal(unavailable.primary, null);

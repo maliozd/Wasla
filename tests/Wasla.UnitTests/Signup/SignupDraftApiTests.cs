@@ -609,6 +609,130 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         Assert.Equal("invalid", (await CheckAsync("")).Status);
     }
 
+    // --- Türkiye address: the neighbourhood or village is required, the catalog is not -------------------
+
+    private const int TurkeyCityId = 9_341;
+    private const int TurkeyDistrictId = 93_411;
+    private const int TurkeyNeighborhoodId = 934_111;
+
+    [Fact]
+    public async Task TurkeyRestaurant_RequiresTheNeighbourhood_AcceptsAnyNameWithoutACatalogId_AndKeepsTheRestOptional()
+    {
+        await EnsureTurkeyAddressAsync();
+        using var client = Client();
+        await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+
+        AssertFieldError(await client.SaveRestaurantAsync(TurkeyRestaurant(neighborhood: null)), "restaurant", "neighborhood", "Validation.NeighborhoodRequired");
+        AssertFieldError(await client.SaveRestaurantAsync(TurkeyRestaurant(neighborhood: "   ")), "restaurant", "neighborhood", "Validation.NeighborhoodRequired");
+
+        // A village the catalog does not have: no catalog id, and no building, floor, unit or postal code either.
+        var manual = await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync(TurkeyRestaurant(neighborhood: "Yukarıçamlıca Köyü")));
+        var saved = manual.Json.GetProperty("restaurant");
+        Assert.Equal("Yukarıçamlıca Köyü", saved.GetProperty("neighborhood").GetString());
+        foreach (var optional in new[] { "neighborhoodId", "streetId", "buildingNumber", "floor", "doorNumber", "postalCode", "addressNote", "locationUrl" })
+            Assert.Equal(JsonValueKind.Null, saved.GetProperty(optional).ValueKind);
+
+        // A catalog neighbourhood keeps its name and its id.
+        var catalog = await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync(TurkeyRestaurant("Caferağa", TurkeyNeighborhoodId)));
+        Assert.Equal("Caferağa", catalog.Json.GetProperty("restaurant").GetProperty("neighborhood").GetString());
+        Assert.Equal(TurkeyNeighborhoodId, catalog.Json.GetProperty("restaurant").GetProperty("neighborhoodId").GetInt32());
+    }
+
+    [Fact]
+    public async Task Submit_OfADraftSavedWithoutANeighbourhood_AsksForIt_KeepsTheRest_AndSucceedsOnceItIsSaved()
+    {
+        await EnsureTurkeyAddressAsync();
+        var ct = TestContext.Current.CancellationToken;
+        using var client = Client();
+        await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync(TurkeyRestaurant("Caferağa", TurkeyNeighborhoodId)));
+        await SignupDraftClient.AssertOkAsync(client.SaveOwnerAsync());
+        await SignupDraftClient.AssertOkAsync(client.SendCodeAsync());
+        await SignupDraftClient.AssertOkAsync(client.VerifyAsync(client.LatestCode()));
+
+        // A draft saved before the neighbourhood was required: its stored section has none.
+        await using (var db = _host.Db())
+        {
+            var stored = await db.RegistrationDrafts.SingleAsync(d => d.OwnerMobilePhone == client.MobileE164, ct);
+            stored.Neighborhood = null;
+            stored.NeighborhoodId = null;
+            await db.SaveChangesAsync(ct);
+        }
+
+        var state = (await SignupDraftClient.AssertOkAsync(client.GetDraftAsync())).Json.GetProperty("restaurant");
+        Assert.Equal("Kadıköy", state.GetProperty("district").GetString());
+        Assert.Equal(TurkeyDistrictId, state.GetProperty("districtId").GetInt32());
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("neighborhood").ValueKind);
+
+        AssertFieldError(await client.SubmitAsync(), "restaurant", "neighborhood", "Validation.NeighborhoodRequired");
+        await using (var db = _host.Db())
+            Assert.False(await db.PendingRegistrations.AnyAsync(r => r.OwnerPhone == client.MobileE164, ct));
+
+        // Saving the restaurant again with a neighbourhood keeps the verified phone; the submit then goes through.
+        await SignupDraftClient.AssertOkAsync(client.SaveRestaurantAsync(TurkeyRestaurant("Yukarıçamlıca Köyü")));
+        var submitted = await SignupDraftClient.AssertOkAsync(client.SubmitAsync());
+        var id = submitted.Json.GetProperty("registrationId").GetGuid();
+        await using (var db = _host.Db())
+        {
+            var registration = await db.PendingRegistrations.AsNoTracking().SingleAsync(r => r.Id == id, ct);
+            Assert.Equal("Yukarıçamlıca Köyü", registration.Neighborhood);
+            Assert.Null(registration.NeighborhoodId);
+            Assert.Equal(TurkeyDistrictId, registration.DistrictId);
+        }
+    }
+
+    // The page keeps every digit a visitor types or pastes; the server refuses a number longer than a Türkiye number
+    // instead of saving it, and keeps accepting a short one and the prefixes the page removes.
+    [Theory]
+    [InlineData("212345678912", false)]
+    [InlineData("+90 212 345 67 89 12", false)]
+    [InlineData("0212 345 67 89 dahili 123", false)]
+    [InlineData("2123456789", true)]
+    [InlineData("0212 345 67 89", true)]
+    [InlineData("+90 212 345 67 89", true)]
+    [InlineData("4441234", true)]
+    public async Task ABusinessPhoneLongerThanATurkishNumber_IsRefusedAtItsField_NeverCut(string businessPhone, bool accepted)
+    {
+        using var client = Client();
+        await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        var body = SignupDraftClient.Restaurant();
+        body["businessPhone"] = businessPhone;
+
+        var response = await client.SaveRestaurantAsync(body);
+        if (!accepted)
+        {
+            AssertFieldError(response, "restaurant", "businessPhone", "Validation.BusinessPhoneTooLong");
+            return;
+        }
+        Assert.True(response.Status == HttpStatusCode.OK, response.Body);
+        Assert.Equal(businessPhone, response.Json.GetProperty("restaurant").GetProperty("businessPhone").GetString());
+    }
+
+    private static Dictionary<string, object?> TurkeyRestaurant(string? neighborhood, int? neighborhoodId = null)
+    {
+        var body = SignupDraftClient.Restaurant();
+        body.Remove("city");
+        body.Remove("district");
+        body["country"] = "Türkiye";
+        body["cityId"] = TurkeyCityId;
+        body["districtId"] = TurkeyDistrictId;
+        body["neighborhood"] = neighborhood;
+        body["neighborhoodId"] = neighborhoodId;
+        return body;
+    }
+
+    private async Task EnsureTurkeyAddressAsync()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = _host.Db();
+        if (await db.Cities.AnyAsync(c => c.Id == TurkeyCityId, ct))
+            return;
+        db.Cities.Add(new City { Id = TurkeyCityId, CountryCode = "TR", Name = "İstanbul", PhoneAreaCode = "216", IsActive = true });
+        db.Districts.Add(new District { Id = TurkeyDistrictId, CityId = TurkeyCityId, Name = "Kadıköy", IsActive = true });
+        db.Neighborhoods.Add(new Neighborhood { Id = TurkeyNeighborhoodId, DistrictId = TurkeyDistrictId, Name = "Caferağa", IsActive = true });
+        await db.SaveChangesAsync(ct);
+    }
+
     // --- Helpers --------------------------------------------------------------------------------------
 
     private static string Wrong(string code) =>

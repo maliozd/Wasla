@@ -4432,6 +4432,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Phone verification is temporarily unavailable. Please try again in a few minutes.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Mobile phone number is required.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Enter a valid Turkish mobile number, for example 532 123 45 67.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>The phone number is too long. Enter at most 10 digits after +90, without an extension.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>Phone verification</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Verification by SMS</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Verified</value></data>
@@ -4461,7 +4464,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>The code goes to</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>The code was sent to</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Verified number</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Change number</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Change phone number</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Enter the mobile number that should receive the code.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>We will send a code to the new number. The previous number's verification no longer counts.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Send the code to this number</value></data>
@@ -4728,4 +4731,70 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>The device could not be removed</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Create a new connection?</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Start connection</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>Neighbourhood / village</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>Street or address line</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>Neighbourhood or village name</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>Street, or the address within a village</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>Type to search</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>No matches.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>No options.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>No suggestions; you can type the name.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>Use “{0}” as typed</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>{0} results</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>Try again</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>The districts could not be loaded.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>Districts not loaded</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>Neighbourhood suggestions could not be loaded; you can still type the name.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>Street suggestions could not be loaded; you can still type the address.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>Enter the neighbourhood or village.</value>
+  </data>
+  <data name="Signup.LandlinePhoneHint" xml:space="preserve">
+    <value>Example: {0}</value>
+  </data>
+  <data name="Signup.LandlineAreaCodeHint" xml:space="preserve">
+    <value>{0} area code: {1}</value>
+  </data>
+  <data name="Signup.Password.Show" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="Signup.Password.Hide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
+    <value>Phone verified, continuing…</value>
+  </data>
 </root>

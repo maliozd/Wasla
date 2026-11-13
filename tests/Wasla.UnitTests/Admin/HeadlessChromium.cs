@@ -208,8 +208,8 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     }
 
     /// <summary>
-    /// Presses and releases one key as real keyboard input (Escape, Tab, Enter, a space, the left and right arrows, Home
-    /// or End), with optional Shift.
+    /// Presses and releases one key as real keyboard input (Escape, Tab, Enter, a space, the arrows, Home or End), with
+    /// optional Shift.
     /// </summary>
     public async Task PressKeyAsync(string key, bool shift, CancellationToken ct)
     {
@@ -219,6 +219,8 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             "Tab" => ("Tab", 9, null),
             "ArrowLeft" => ("ArrowLeft", 37, null),
             "ArrowRight" => ("ArrowRight", 39, null),
+            "ArrowUp" => ("ArrowUp", 38, null),
+            "ArrowDown" => ("ArrowDown", 40, null),
             "Home" => ("Home", 36, null),
             "End" => ("End", 35, null),
             "Enter" => ("Enter", 13, "\r"),
@@ -233,6 +235,12 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         await SendAsync("Input.dispatchKeyEvent", down, ct);
         await SendAsync("Input.dispatchKeyEvent", new { type = "keyUp", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers }, ct);
     }
+
+    /// <summary>
+    /// Types text into the focused field as the keyboard would (trusted input events), replacing any selected text. A
+    /// paste goes through the same path in Chromium, so this also stands for pasting into a field.
+    /// </summary>
+    public Task InsertTextAsync(string text, CancellationToken ct) => SendAsync("Input.insertText", new { text }, ct);
 
     /// <summary>A real left mouse click at a viewport point: whatever element is on top there receives it.</summary>
     public async Task ClickAtAsync(double x, double y, CancellationToken ct)

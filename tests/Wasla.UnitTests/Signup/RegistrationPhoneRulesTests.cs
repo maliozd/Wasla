@@ -43,6 +43,25 @@ public sealed class RegistrationPhoneRulesTests
         Assert.False(TurkishMobilePhone.TryNormalize(input, out _));
     }
 
+    // The business phone is read like the signup page reads it (signup-phone-format.js): a prefix goes only when there
+    // are more than 10 digits, and every other digit counts, so too long is refused instead of cut.
+    [Theory]
+    [InlineData("212 345 67 89", "2123456789", false)]
+    [InlineData("0212 345 67 89", "2123456789", false)]
+    [InlineData("+90 212 345 67 89", "2123456789", false)]
+    [InlineData("0090 212 345 67 89", "2123456789", false)]
+    [InlineData("444 12 34", "4441234", false)]
+    [InlineData("900 123 45 67", "9001234567", false)]
+    [InlineData("212 345 67 89 1", "21234567891", true)]
+    [InlineData("+90 212 345 67 89 12", "212345678912", true)]
+    [InlineData("0212 345 67 89 dahili 123", "2123456789123", true)]
+    [InlineData("0090 532 123 45 67 8", "53212345678", true)]
+    public void BusinessPhones_KeepEveryDigitPastTheirPrefix_AndAreTooLongPastTenDigits(string input, string national, bool tooLong)
+    {
+        Assert.Equal(national, TurkishBusinessPhone.NationalDigits(input));
+        Assert.Equal(tooLong, TurkishBusinessPhone.IsTooLong(input));
+    }
+
     [Theory]
     [InlineData("tr-TR", "Wasla doğrulama kodunuz: 042917. Kod 5 dakika geçerlidir.")]
     [InlineData("en-US", "Your Wasla verification code is 042917. It is valid for 5 minutes.")]

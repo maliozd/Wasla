@@ -4920,6 +4920,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Подтверждение телефона временно недоступно. Попробуйте через несколько минут.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Укажите номер мобильного телефона.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Введите действующий мобильный номер Турции, например 532 123 45 67.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>Номер телефона слишком длинный. Введите не более 10 цифр после +90, без добавочного номера.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>Подтверждение телефона</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Подтверждение по SMS</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Подтверждён</value></data>
@@ -4949,7 +4952,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>Код будет отправлен на номер</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>Код отправлен на номер</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Подтверждённый номер</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Изменить номер</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Изменить номер телефона</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Введите номер мобильного телефона, на который нужно отправить код.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>Мы отправим код на новый номер. Подтверждение прежнего номера перестанет действовать.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Отправить код на этот номер</value></data>
@@ -5216,4 +5219,70 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>Не удалось удалить устройство</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>Создать новое подключение?</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>Начать подключение</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>Район / село</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>Улица или адрес</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>Название района или села</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>Улица или адрес в селе</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>Начните вводить для поиска</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>Совпадений нет.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>Нет вариантов.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>Подсказок нет; можно ввести название.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>Использовать «{0}» как введено</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>Результатов: {0}</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>Не удалось загрузить округа.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>Округа не загружены</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>Не удалось загрузить подсказки районов; название можно ввести вручную.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>Не удалось загрузить подсказки улиц; адрес можно ввести вручную.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>Укажите район или село.</value>
+  </data>
+  <data name="Signup.LandlinePhoneHint" xml:space="preserve">
+    <value>Пример: {0}</value>
+  </data>
+  <data name="Signup.LandlineAreaCodeHint" xml:space="preserve">
+    <value>Код города {0}: {1}</value>
+  </data>
+  <data name="Signup.Password.Show" xml:space="preserve">
+    <value>Показать</value>
+  </data>
+  <data name="Signup.Password.Hide" xml:space="preserve">
+    <value>Скрыть</value>
+  </data>
+  <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
+    <value>Телефон подтверждён, продолжаем…</value>
+  </data>
 </root>

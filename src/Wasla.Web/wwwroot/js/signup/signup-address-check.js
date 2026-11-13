@@ -118,6 +118,8 @@
                 return;
             }
 
+            // The old answer goes at once; the new address waits ("idle") for its own check.
+            onState({ state: "idle", slug: slug });
             timer = setTimer(function () { run(slug); }, debounceMs);
         }
 

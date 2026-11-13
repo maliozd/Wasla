@@ -119,9 +119,11 @@
         return select.options[select.selectedIndex].text.trim();
     }
 
-    function phoneDigits(value, mobile) {
+    // The 10-digit national number, without +90 or a trunk 0, for the owner's mobile and for the restaurant's mobile or
+    // landline alike (signup-phone-format.js).
+    function phoneDigits(value) {
         var helper = window.WaslaSignupPhone;
-        if (mobile && helper) {
+        if (helper) {
             return helper.normalizeTurkishLocalDigits(value);
         }
         return String(value || "").replace(/\D/g, "").slice(0, 50);
@@ -219,7 +221,8 @@
         if (restaurant.slug) {
             var slug = byId("signupSlug");
             slug.value = restaurant.slug;
-            // Marks the address as chosen, so typing the business name no longer rewrites it.
+            // Shows and checks the saved address. The business name was put back without an event, so it does not
+            // make a new address; the visitor's next edit of the name does.
             slug.dispatchEvent(new Event("input", { bubbles: true }));
         }
         if (restaurant.country) {
@@ -269,13 +272,12 @@
     // ---------------------------------------------------------------- Form → requests
 
     function restaurantValues() {
-        var mobile = valueOf("BusinessPhoneType") === "Mobile";
         return {
             businessName: valueOf("BusinessName"),
             businessTypeCodes: Array.prototype.map.call(
                 form.querySelectorAll('input[name="SelectedBusinessTypeCodes"]:checked'), function (input) { return input.value; }),
             businessPhoneType: valueOf("BusinessPhoneType"),
-            businessPhone: phoneDigits(valueOf("BusinessPhone"), mobile),
+            businessPhone: phoneDigits(valueOf("BusinessPhone")),
             businessEmail: valueOf("BusinessEmail"),
             slug: valueOf("Slug").trim().toLowerCase(),
             country: valueOf("Country"),
@@ -298,7 +300,7 @@
         return {
             fullName: valueOf("OwnerFullName"),
             email: valueOf("OwnerEmail"),
-            mobilePhone: phoneDigits(valueOf("OwnerPhone"), true),
+            mobilePhone: phoneDigits(valueOf("OwnerPhone")),
             password: valueOf("Password"),
             confirmPassword: valueOf("ConfirmPassword")
         };
@@ -390,6 +392,43 @@
         });
 
         shell.setAttribute("data-su-period-shown", isYearly() ? "Yearly" : "Monthly");
+        syncOwnerAction();
+    }
+
+    // The number in the owner's field is the one the server verified: the same national digits (spacing and a typed
+    // +90 or 0 make no difference) while the server's phone state says "verified". Only that state counts.
+    function ownerPhoneStillVerified() {
+        var saved = draft.owner && draft.owner.mobilePhone;
+        return phoneVerified() && !!saved && phoneDigits(valueOf("OwnerPhone")) === String(saved);
+    }
+
+    // The owner step's action: with the verified number it continues to the phone step, which shows the verified state
+    // and sends nothing; with another number it sends a code, as the visitor's explicit choice.
+    function syncOwnerAction() {
+        var panel = panels.owner;
+        if (!panel) {
+            return;
+        }
+        var verified = ownerPhoneStillVerified();
+        var next = panel.querySelector("[data-su-next]");
+        if (next) {
+            var label = verified ? messages.ownerContinue : messages.ownerSendCode;
+            if (label && next.textContent !== label) {
+                next.textContent = label;
+            }
+            if (verified) {
+                next.removeAttribute("data-su-autosend");
+            } else {
+                next.setAttribute("data-su-autosend", "");
+            }
+        }
+        var stripLabel = verified ? messages.ownerContinue : messages.ownerSendCodeShort;
+        if (stripLabel) {
+            panel.setAttribute("data-su-strip-label", stripLabel);
+            if (stripAction && state.current === "owner" && stripAction.textContent !== stripLabel) {
+                stripAction.textContent = stripLabel;
+            }
+        }
     }
 
     // ---------------------------------------------------------------- Review (from the server's draft)
@@ -1048,7 +1087,12 @@
                     state = Steps.setComplete(state, "phone", verified && !!(draft.owner && draft.owner.complete));
                     renderReceipt();
                 },
+                // Opens the review at its heading. Only from the phone step: an answer that arrives after the visitor
+                // went elsewhere moves nothing.
                 onVerified: function () {
+                    if (state.current !== "phone") {
+                        return;
+                    }
                     hidePageAlert();
                     navigateAndFocus("review");
                 },
@@ -1060,7 +1104,7 @@
                 onNumberChanged: function (number) {
                     // The accepted number is the owner's number from now on; the draft read below confirms it.
                     if (draft.owner) {
-                        draft.owner.mobilePhone = phoneDigits(number, true);
+                        draft.owner.mobilePhone = phoneDigits(number);
                         setValue("signupOwnerPhone", Draft.formatMobile(draft.owner.mobilePhone));
                         phone.setFullNumber(fullOwnerPhone());
                     }
@@ -1139,13 +1183,8 @@
         slugInput.addEventListener("blur", function () {
             addressCheck.flush();
         });
-        var businessName = byId("signupBusinessName");
-        if (businessName) {
-            // The address follows the business name until the visitor edits it (signup-form.js); check what it shows.
-            businessName.addEventListener("input", function () {
-                addressCheck.input(slugInput.value.trim().toLowerCase());
-            });
-        }
+        // A business name edit writes a new address through the address field's input event (signup-form.js), so the
+        // listener above checks it too.
     }
 
     // ---------------------------------------------------------------- Events

@@ -4432,6 +4432,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>التحقق من الهاتف غير متاح مؤقتًا. يرجى المحاولة بعد بضع دقائق.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>رقم الجوال مطلوب.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>أدخل رقم جوال تركيًا صالحًا، مثل &#x2066;532 123 45 67&#x2069;.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>رقم الهاتف طويل جدًا. أدخل 10 أرقام على الأكثر بعد &#x2066;+90&#x2069;، دون رقم داخلي.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>التحقق من الهاتف</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>التحقق عبر رسالة نصية</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>تم التحقق</value></data>
@@ -4461,7 +4464,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>الرقم الذي سيُرسل إليه الرمز</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>الرقم الذي أُرسل إليه الرمز</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>الرقم الذي تم التحقق منه</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>تغيير الرقم</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>تغيير رقم الهاتف</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>أدخل رقم الجوال الذي تريد استلام الرمز عليه.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>سنرسل رمزًا إلى الرقم الجديد، ولن يعود التحقق من الرقم السابق ساريًا.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>أرسل الرمز إلى هذا الرقم</value></data>
@@ -4728,4 +4731,70 @@
   <data name="PrintBridge.DeviceRemoveFailedTitle" xml:space="preserve"><value>تعذر إزالة الجهاز</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmTitle" xml:space="preserve"><value>هل تريد إنشاء اتصال جديد؟</value></data>
   <data name="PrintBridge.Auto.ReconnectConfirmAction" xml:space="preserve"><value>بدء الاتصال</value></data>
+  <data name="Signup.Address.NeighborhoodLabel" xml:space="preserve">
+    <value>الحي / القرية</value>
+  </data>
+  <data name="Signup.Address.StreetLabel" xml:space="preserve">
+    <value>الشارع أو سطر العنوان</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodPlaceholder" xml:space="preserve">
+    <value>اسم الحي أو القرية</value>
+  </data>
+  <data name="Signup.Address.StreetPlaceholder" xml:space="preserve">
+    <value>الشارع، أو العنوان داخل القرية</value>
+  </data>
+  <data name="Signup.Address.Search" xml:space="preserve">
+    <value>اكتب للبحث</value>
+  </data>
+  <data name="Signup.Address.Loading" xml:space="preserve">
+    <value>جارٍ التحميل…</value>
+  </data>
+  <data name="Signup.Address.NoMatches" xml:space="preserve">
+    <value>لا توجد نتائج مطابقة.</value>
+  </data>
+  <data name="Signup.Address.Empty" xml:space="preserve">
+    <value>لا توجد خيارات.</value>
+  </data>
+  <data name="Signup.Address.NoSuggestions" xml:space="preserve">
+    <value>لا توجد اقتراحات؛ يمكنك كتابة الاسم.</value>
+  </data>
+  <data name="Signup.Address.UseTyped" xml:space="preserve">
+    <value>استخدم «{0}» كما كتبته</value>
+  </data>
+  <data name="Signup.Address.Results" xml:space="preserve">
+    <value>{0} نتيجة</value>
+  </data>
+  <data name="Signup.Address.Retry" xml:space="preserve">
+    <value>إعادة المحاولة</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailed" xml:space="preserve">
+    <value>تعذّر تحميل المناطق.</value>
+  </data>
+  <data name="Signup.Address.DistrictsFailedShort" xml:space="preserve">
+    <value>لم يتم تحميل المناطق</value>
+  </data>
+  <data name="Signup.Address.NeighborhoodsFailed" xml:space="preserve">
+    <value>تعذّر تحميل اقتراحات الأحياء؛ يمكنك كتابة الاسم مع ذلك.</value>
+  </data>
+  <data name="Signup.Address.StreetsFailed" xml:space="preserve">
+    <value>تعذّر تحميل اقتراحات الشوارع؛ يمكنك كتابة العنوان مع ذلك.</value>
+  </data>
+  <data name="Validation.NeighborhoodRequired" xml:space="preserve">
+    <value>أدخل اسم الحي أو القرية.</value>
+  </data>
+  <data name="Signup.LandlinePhoneHint" xml:space="preserve">
+    <value>مثال: {0}</value>
+  </data>
+  <data name="Signup.LandlineAreaCodeHint" xml:space="preserve">
+    <value>رمز منطقة {0}: {1}</value>
+  </data>
+  <data name="Signup.Password.Show" xml:space="preserve">
+    <value>إظهار</value>
+  </data>
+  <data name="Signup.Password.Hide" xml:space="preserve">
+    <value>إخفاء</value>
+  </data>
+  <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
+    <value>تم التحقق من الهاتف، جارٍ المتابعة…</value>
+  </data>
 </root>
