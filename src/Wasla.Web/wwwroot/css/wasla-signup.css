@@ -19,10 +19,10 @@
   --su-action: #b94f2a;
   --su-action-hover: #9e4122;
   --su-action-soft: #fbe9df;
-  /* Hover of the page's secondary actions (Edit, back, change number, Show / Hide, retry, resend): warm stone gray, so
-     orange stays the main action's colour (owner's choice). #514a43 on #e8e3dd is about 6.8:1. */
+  /* Hover background of the page's secondary actions (Edit, back, change number, Show / Hide, retry, resend): warm
+     stone gray, the owner's choice. Only the background changes; their text and icons keep their own colour (the action
+     orange #b94f2a on it is about 5.4:1). */
   --su-secondary-hover: #e8e3dd;
-  --su-secondary-hover-ink: #514a43;
   --su-selected: #fdf4ee;
   --su-danger: #b4232c;
   --su-danger-soft: #f6e2e1;
@@ -229,7 +229,6 @@
 
 .su-back:hover {
   background: var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 .su-back .bi {
@@ -743,7 +742,6 @@
 
 .su-combo__retry:hover {
   background: var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 /* A control with a fixed prefix (+90) or suffix (.app.wasla.tr). The group is the bordered box. */
@@ -840,7 +838,6 @@
 
 .su-reveal__toggle:hover {
   background: var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 .su-reveal__toggle:focus-visible {
@@ -1359,7 +1356,6 @@
 
 .su-btn--quiet:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 .su-btn--block {
@@ -1561,7 +1557,6 @@
   border-radius: 4px;
   background: var(--su-secondary-hover);
   box-shadow: 0 0 0 4px var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 /* The perforation: a dashed cut line with two half-circle notches cut out of the card edges. */
@@ -2291,7 +2286,6 @@
 .su-btn--inline:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--su-secondary-hover);
   box-shadow: 0 0 0 4px var(--su-secondary-hover);
-  color: var(--su-secondary-hover-ink);
 }
 
 .su-spinner {

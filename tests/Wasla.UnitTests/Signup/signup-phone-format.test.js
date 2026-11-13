@@ -3,49 +3,78 @@ const assert = require("node:assert/strict");
 
 const phone = require("../../../src/Wasla.Web/wwwroot/js/signup/signup-phone-format.js");
 
-// Types the text one character at a time at the end of the field, as the page formats after every input.
+// Types the text one character at a time at the end of the field, as the page does: a keystroke that would give more
+// than 10 national digits is refused, and the field is formatted after every input.
 function typeInto(text) {
     let value = "";
     for (const character of text) {
+        if (phone.wouldOverflow(value, value.length, value.length, character)) {
+            continue;
+        }
         value = phone.formatPhoneValue(value + character, value.length + 1).value;
     }
     return value;
 }
 
-test("a landline is grouped as it is typed, and a digit past the 10th stays in sight instead of being cut", () => {
+test("a landline is grouped as it is typed and stops at 10 national digits", () => {
     assert.equal(typeInto("2"), "2");
     assert.equal(typeInto("212"), "212");
     assert.equal(typeInto("2123"), "212 3");
     assert.equal(typeInto("2123456"), "212 345 6");
     assert.equal(typeInto("2123456789"), "212 345 67 89");
-    assert.equal(phone.isTooLong("212 345 67 89"), false);
-    assert.equal(typeInto("21234567890"), "212 345 67 89 0");
-    assert.equal(phone.normalizeTurkishLocalDigits("212 345 67 89 0"), "21234567890");
-    assert.equal(phone.isTooLong("212 345 67 89 0"), true);
+    assert.equal(typeInto("21234567890"), "212 345 67 89");
+    assert.equal(typeInto("5441312312999"), "544 131 23 12");
 });
 
-test("a pasted number that is too long keeps every digit, also after its prefix goes, and is reported as too long", () => {
+test("a digit typed into a full number is refused, so no digit already there is pushed out", () => {
+    const full = "544 131 23 12";
+    // At the end, in the middle, at the start (a digit that is no prefix).
+    assert.equal(phone.wouldOverflow(full, full.length, full.length, "9"), true);
+    assert.equal(phone.wouldOverflow(full, 4, 4, "9"), true);
+    assert.equal(phone.wouldOverflow(full, 0, 0, "5"), true);
+    // A space or a selection replaced by as many digits fits.
+    assert.equal(phone.wouldOverflow(full, 3, 3, " "), false);
+    assert.equal(phone.wouldOverflow(full, 4, 7, "9"), false);
+    assert.equal(phone.wouldOverflow(full, 4, 5, "9"), false);
+    // A trunk zero typed in front fits: it comes off as a prefix.
+    assert.equal(phone.wouldOverflow(full, 0, 0, "0"), false);
+    assert.deepEqual(phone.formatPhoneValue("0" + full, 1), { value: full, caret: 0 });
+    // Fewer digits: any digit fits.
+    assert.equal(phone.wouldOverflow("544 131 23 1", 4, 4, "9"), false);
+});
+
+test("a selection replaced, a digit deleted or Backspaced, the caret follows its digit", () => {
+    // "131" selected and replaced by "9".
+    assert.deepEqual(phone.formatPhoneValue("544 9 23 12", 5), { value: "544 923 12", caret: 5 });
+    // The "1" after the first space deleted (Delete): caret stays before the next digit.
+    assert.deepEqual(phone.formatPhoneValue("544 31 23 12", 4), { value: "544 312 31 2", caret: 3 });
+    // The last digit Backspaced.
+    assert.deepEqual(phone.formatPhoneValue("544 131 23 1", 12), { value: "544 131 23 1", caret: 12 });
+});
+
+test("a longer paste keeps its first 10 national digits after its prefix goes, as asked", () => {
     const cases = [
-        ["+90 212 345 67 89 12", "212 345 67 89 12", "212345678912"],
-        ["0212 345 67 89 dahili 123", "212 345 67 89 123", "2123456789123"],
-        ["0090 532 123 45 67 8", "532 123 45 67 8", "53212345678"],
-        ["53212345678", "532 123 45 67 8", "53212345678"]
+        ["+90 544 131 23 12 99", "544 131 23 12", "5441312312"],
+        ["0090 544 131 23 12 9", "544 131 23 12", "5441312312"],
+        ["0544 131 23 12 9", "544 131 23 12", "5441312312"],
+        ["54413123129", "544 131 23 12", "5441312312"],
+        ["0212 345 67 89 dahili 123", "212 345 67 89", "2123456789"]
     ];
     for (const [pasted, shown, digits] of cases) {
-        assert.equal(phone.formatPhoneValue(pasted).value, shown, pasted);
+        const result = phone.formatPhoneValue(pasted, pasted.length);
+        assert.deepEqual(result, { value: shown, caret: shown.length }, pasted);
         assert.equal(phone.normalizeTurkishLocalDigits(pasted), digits, pasted);
-        assert.equal(phone.isTooLong(pasted), true, pasted);
         // Formatting again (blur, a type switch, a restored draft) changes nothing.
         assert.equal(phone.formatPhoneValue(shown).value, shown, shown);
     }
-    // A digit typed after a complete mobile is kept, not swallowed.
-    assert.equal(typeInto("053212345678"), "532 123 45 67 8");
+    // Pasted over a selection in the middle: the digits after it that no longer fit go, the caret ends after the paste.
+    assert.deepEqual(phone.formatPhoneValue("544 1" + "999" + "31 23 12", 8), { value: "544 199 93 12", caret: 9 });
 });
 
-test("a short number is kept as typed and is not too long", () => {
+test("a short number is kept as typed", () => {
     assert.equal(phone.formatPhoneValue("444 12 34").value, "444 123 4");
     assert.equal(phone.normalizeTurkishLocalDigits("444 12 34"), "4441234");
-    assert.equal(phone.isTooLong("444 12 34"), false);
+    assert.equal(typeInto("4441234"), "444 123 4");
 });
 
 test("a trunk zero or country code typed or pasted in front is removed, never stored twice", () => {
@@ -84,8 +113,6 @@ test("the caret stays after the digit it followed, also when a prefix in front g
     assert.deepEqual(phone.formatPhoneValue(pasted, pasted.length), { value: "212 345 67 89", caret: 13 });
     // Deleting the space before a group leaves the digits and puts the caret before the space.
     assert.deepEqual(phone.formatPhoneValue("212345 67 89", 3), { value: "212 345 67 89", caret: 3 });
-    // An extra digit typed in the middle of a full number pushes the last one into its own group; the caret follows it.
-    assert.deepEqual(phone.formatPhoneValue("212 3945 67 89", 6), { value: "212 394 56 78 9", caret: 6 });
 });
 
 test("the landline example uses the city's area code only as an example", () => {

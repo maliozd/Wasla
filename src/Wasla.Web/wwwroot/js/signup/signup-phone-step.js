@@ -665,8 +665,9 @@
             }
         });
 
+        // The new number is the owner's mobile too: the same format and the same 10-digit limit.
         if (el.changeInput && window.WaslaSignupPhone) {
-            el.changeInput.addEventListener("input", function () { window.WaslaSignupPhone.formatMobileInput(el.changeInput); });
+            window.WaslaSignupPhone.bindMobileInput(el.changeInput);
         }
 
         apply(status);

@@ -1638,10 +1638,11 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal(sent, Outbox.MessagesTo(applicant.E164).Count);
     }
 
-    // A number with more digits than a Türkiye number keeps them all in its field, also through a type switch, and is
-    // refused at its field (business phone and owner mobile) instead of being saved as another number.
+    // Both phone fields hold at most 10 national digits (owner's decision): a digit typed into a full number is refused
+    // where the caret is, without pushing another out; a selection is replaced as typed; a longer paste keeps its first
+    // 10 digits after its prefix; a type switch changes nothing. The owner's mobile still needs its exact form.
     [Fact]
-    public async Task APhoneNumberTooLong_KeepsEveryDigitInSight_AndIsRefusedAtItsField()
+    public async Task BothPhoneFields_StopAtTenNationalDigits_WhileSelectionsPrefixesAndPastesStillWork()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, CountRestaurantSaves);
@@ -1649,36 +1650,55 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await OpenAsync(browser, "/signup?plan=Pro", ct);
         await ContinueAsync(browser, "restaurant", ct);
         await FillRestaurantAsync(browser, applicant, ct);
+        const string Phone = "document.getElementById('signupBusinessPhone')";
+        async Task<JsonElement> FieldAsync(string field) =>
+            await browser.EvaluateAsync<JsonElement>($"(() => {{ const p = {field}; return {{ value: p.value, caret: p.selectionStart }}; }})()", ct);
 
-        await Js(browser, """
-            const p = document.getElementById('signupBusinessPhone');
+        // Full: a digit typed at the end or in the middle changes nothing and the caret stays.
+        await Js(browser, $"__su.set('signupBusinessPhone', '5441312312'); const p = {Phone}; p.focus(); p.setSelectionRange(p.value.length, p.value.length)", ct);
+        await browser.InsertTextAsync("9", ct);
+        var end = await FieldAsync(Phone);
+        Assert.Equal("544 131 23 12", end.GetProperty("value").GetString());
+        await Js(browser, $"{Phone}.setSelectionRange(4, 4)", ct);
+        await browser.InsertTextAsync("9", ct);
+        var middle = await FieldAsync(Phone);
+        Assert.Equal("544 131 23 12", middle.GetProperty("value").GetString());
+        Assert.Equal(4, middle.GetProperty("caret").GetInt32());
+
+        // A selection replaced by a digit, then a digit typed again into the shorter number.
+        await Js(browser, $"{Phone}.setSelectionRange(4, 7)", ct);
+        await browser.InsertTextAsync("9", ct);
+        var replaced = await FieldAsync(Phone);
+        Assert.Equal("544 923 12", replaced.GetProperty("value").GetString());
+        Assert.Equal(5, replaced.GetProperty("caret").GetInt32());
+        await browser.InsertTextAsync("8", ct);
+        Assert.Equal("544 982 31 2", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // A longer number with its country code pasted over everything: its first 10 national digits.
+        await Js(browser, $$"""
+            const p = {{Phone}};
             p.focus(); p.select();
             const data = new DataTransfer(); data.setData('text', '+90 212 345 67 89 12');
             p.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
             """, ct);
-        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
+        Assert.Equal("212 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
         await Js(browser, "document.getElementById('signupBusinessPhoneType-Mobile').click()", ct);
-        await Js(browser, "document.getElementById('signupBusinessPhone').blur()", ct);
+        await Js(browser, $"{Phone}.blur()", ct);
         await Js(browser, "document.getElementById('signupBusinessPhoneType-Landline').click()", ct);
-        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
-
-        await Js(browser, NextButton + ".click()", ct);
-        await WaitForAsync(browser, "document.getElementById('signupBusinessPhone-error').textContent.trim().length > 0", ct);
-        Assert.Equal(Text("Validation.BusinessPhoneTooLong", "tr-TR"), await browser.EvaluateAsync<string>("document.getElementById('signupBusinessPhone-error').textContent.trim()", ct));
-        Assert.Equal("signupBusinessPhone", await ActiveIdAsync(browser, ct));
-        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
-        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
-        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
-
-        // Corrected, it saves as typed.
-        await Js(browser, "__su.set('signupBusinessPhone', '212 345 67 89')", ct);
+        Assert.Equal("212 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
         await ContinueAsync(browser, "owner", ct);
         Assert.Equal("2123456789", (await SavedRestaurantAsync(browser, ct)).GetProperty("businessPhone").GetString());
 
-        // The owner's mobile with one digit too many: kept in sight, refused at its field, and no code is sent.
+        // The owner's mobile: typed with its trunk zero it fits, one more digit is refused.
         await FillOwnerAsync(browser, applicant, ct);
-        await Js(browser, $"__su.set('signupOwnerPhone', '0{applicant.Digits}8')", ct);
-        Assert.Equal(applicant.Grouped + " 8", await ValueAsync(browser, "signupOwnerPhone", ct));
+        await Js(browser, "const o = document.getElementById('signupOwnerPhone'); o.focus(); o.value = ''; o.dispatchEvent(new Event('input', { bubbles: true }))", ct);
+        await browser.InsertTextAsync("0" + applicant.Digits, ct);
+        Assert.Equal(applicant.Grouped, await ValueAsync(browser, "signupOwnerPhone", ct));
+        await browser.InsertTextAsync("8", ct);
+        Assert.Equal(applicant.Grouped, await ValueAsync(browser, "signupOwnerPhone", ct));
+
+        // Still the exact rule before any code: nine digits are refused at the field and nothing is sent.
+        await Js(browser, $"__su.set('signupOwnerPhone', '{applicant.Digits[..9]}')", ct);
         await Js(browser, OwnerNext + ".click()", ct);
         await WaitForAsync(browser, "document.getElementById('signupOwnerPhone-error').textContent.trim().length > 0", ct);
         Assert.Equal(Text("Validation.MobilePhoneInvalid", "tr-TR"), await browser.EvaluateAsync<string>("document.getElementById('signupOwnerPhone-error').textContent.trim()", ct));

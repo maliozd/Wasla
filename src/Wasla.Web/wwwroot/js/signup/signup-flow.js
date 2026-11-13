@@ -675,19 +675,6 @@
             }
         }
 
-        // A phone number with more digits than a Türkiye number stays in its field (signup-phone-format.js) and is
-        // refused here, as the server refuses it, instead of being saved as another number.
-        var phoneFormat = window.WaslaSignupPhone;
-        var tooLong = phoneFormat && (id === "restaurant"
-            ? { key: "restaurant.businessPhone", name: "BusinessPhone", message: messages.businessPhoneTooLong }
-            : id === "owner" ? { key: "owner.mobilePhone", name: "OwnerPhone", message: messages.mobilePhoneInvalid } : null);
-        if (tooLong && phoneFormat.isTooLong(valueOf(tooLong.name))) {
-            var phoneField = setFieldError(tooLong.key, tooLong.message);
-            if (phoneField) {
-                errors.push({ element: phoneField, message: tooLong.message || "" });
-            }
-        }
-
         return sortByPage(errors);
     }
 

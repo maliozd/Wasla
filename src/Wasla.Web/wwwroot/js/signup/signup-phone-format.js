@@ -4,9 +4,9 @@
     // Türkiye phone numbers on the signup page: the owner's mobile, and the restaurant's mobile or landline. Each is the
     // 10-digit national number after the fixed +90 prefix (mobile 5xx, landline area code and 7 digits), typed and shown
     // as "212 345 67 89" and sent as digits. A country code or trunk zero the visitor types or pastes is removed, so it is
-    // never stored twice. No digit is ever dropped: digits past the 10th stay in the field, as one more group, so the
-    // visitor sees them, and the page and the server refuse the number as too long instead of keeping a different one.
-    // A shorter number (a 444 line) is kept as typed.
+    // never stored twice. A field holds at most 10 national digits (owner's decision): typing an 11th does nothing, and a
+    // longer paste keeps its first 10 after the prefix. A shorter number (a 444 line) is kept as typed. The server still
+    // refuses a longer business phone sent to it directly, and the owner's mobile keeps its exact rule.
 
     var MOBILE_TYPE = "Mobile";
     var NATIONAL_LENGTH = 10;
@@ -17,9 +17,10 @@
         return String(value == null ? "" : value).replace(/\D/g, "");
     }
 
-    // The national digits and how many prefix digits came off the front. A national number has 10 digits, so with more
-    // the front is a prefix: 0090, 90 or the trunk 0, the prefixes the server removes. Waiting for more than 10 digits
-    // lets "0212…" and "+90 212…" be typed digit by digit. Every other digit stays, even past 10 (too long, not cut).
+    // The national digits, how many prefix digits came off the front, and whether more than 10 national digits were
+    // there (cut to the first 10). A national number has 10 digits, so with more the front is a prefix: 0090, 90 or the
+    // trunk 0, the prefixes the server removes. Waiting for more than 10 digits lets "0212…" and "+90 212…" be typed
+    // digit by digit.
     function splitNational(value) {
         var digits = stripPhoneDigits(value);
         var prefix = 0;
@@ -34,22 +35,26 @@
             }
         }
 
-        return { national: digits.slice(prefix), prefix: prefix };
+        var rest = digits.slice(prefix);
+        return { national: rest.slice(0, NATIONAL_LENGTH), prefix: prefix, overflow: rest.length > NATIONAL_LENGTH };
     }
 
     function normalizeTurkishLocalDigits(value) {
         return splitNational(value).national;
     }
 
-    // More national digits than a Türkiye number has: the field says so instead of keeping another number.
-    function isTooLong(value) {
-        return normalizeTurkishLocalDigits(value).length > NATIONAL_LENGTH;
+    // Typing text over the selection [start, end) would give more than 10 national digits: the field refuses it, so a
+    // digit typed into a full number never pushes out one already there. A prefix typed in front still fits.
+    function wouldOverflow(value, start, end, text) {
+        var current = String(value == null ? "" : value);
+        var from = typeof start === "number" ? start : current.length;
+        var to = typeof end === "number" ? end : from;
+        return splitNational(current.slice(0, from) + String(text == null ? "" : text) + current.slice(to)).overflow;
     }
 
-    // "2123456789" → "212 345 67 89"; fewer digits are grouped as far as they go, more follow as one last group
-    // ("212 345 67 89 12").
+    // "2123456789" → "212 345 67 89"; fewer digits are grouped as far as they go.
     function formatTurkishPhoneDigits(digits) {
-        digits = stripPhoneDigits(digits);
+        digits = stripPhoneDigits(digits).slice(0, NATIONAL_LENGTH);
         var parts = [];
 
         if (digits.length > 0) {
@@ -64,15 +69,12 @@
         if (digits.length > 8) {
             parts.push(digits.slice(8, NATIONAL_LENGTH));
         }
-        if (digits.length > NATIONAL_LENGTH) {
-            parts.push(digits.slice(NATIONAL_LENGTH));
-        }
 
         return parts.join(" ");
     }
 
-    // The field's text after typing or pasting, and where the caret goes: after the digit it followed before, less any
-    // prefix digits removed in front of it. Without a caret it goes to the end.
+    // The field's text after typing or pasting, at most 10 national digits, and where the caret goes: after the digit it
+    // followed before, less any prefix digits removed in front of it. Without a caret it goes to the end.
     function formatPhoneValue(value, caret) {
         var text = String(value == null ? "" : value);
         var split = splitNational(text);
@@ -104,7 +106,7 @@
     var pure = {
         stripPhoneDigits: stripPhoneDigits,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
-        isTooLong: isTooLong,
+        wouldOverflow: wouldOverflow,
         formatTurkishPhoneDigits: formatTurkishPhoneDigits,
         formatPhoneValue: formatPhoneValue,
         landlineExample: landlineExample
@@ -181,15 +183,45 @@
         });
     }
 
+    function isTyping(inputType) {
+        return typeof inputType === "string" && inputType.indexOf("insert") === 0
+            && inputType !== "insertFromPaste" && inputType !== "insertFromDrop";
+    }
+
+    // Typing into a full field changes nothing: the keystroke is refused before it lands, and where a browser cannot
+    // refuse it (an input method), the field goes back to its last value with the caret where it was. Pastes, drops and
+    // values set by the page (a restored draft) keep their first 10 national digits instead.
+    function bindDigitLimit(input) {
+        var last = { value: input.value, caret: null };
+
+        input.addEventListener("beforeinput", function (event) {
+            var start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
+            var end = typeof input.selectionEnd === "number" ? input.selectionEnd : start;
+            last = { value: input.value, caret: start };
+            if (isTyping(event.inputType) && event.data != null && wouldOverflow(input.value, start, end, event.data)) {
+                event.preventDefault();
+            }
+        });
+
+        input.addEventListener("input", function (event) {
+            if (isTyping(event.inputType) && splitNational(input.value).overflow && splitNational(last.value).national.length === NATIONAL_LENGTH) {
+                input.value = last.value;
+                if (typeof last.caret === "number" && typeof input.setSelectionRange === "function") {
+                    input.setSelectionRange(last.caret, last.caret);
+                }
+            }
+            formatPhoneInput(input);
+            last = { value: input.value, caret: null };
+        }, true);
+    }
+
     function bindPhoneInput(input, flag) {
         if (!input || input.dataset[flag] === "true") {
             return;
         }
 
         input.dataset[flag] = "true";
-        input.addEventListener("input", function () {
-            formatPhoneInput(input);
-        });
+        bindDigitLimit(input);
         input.addEventListener("blur", function () {
             formatPhoneInput(input);
         });
@@ -240,7 +272,8 @@
         formatMobileInput: formatPhoneInput,
         formatPhoneInput: formatPhoneInput,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
-        isTooLong: isTooLong,
+        // Another field for the owner's mobile (the phone step's "change number"): same format and limit.
+        bindMobileInput: function (input) { bindPhoneInput(input, "waslaChangePhoneBound"); },
         landlineExample: landlineExample,
         normalizeForSubmit: normalizeForSubmit,
         refreshExistingValues: refreshExistingValues,
