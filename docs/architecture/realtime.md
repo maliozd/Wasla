@@ -405,18 +405,25 @@ endpoint.
   restore with one connection, order training, a Kitchen screen).
 - WAS-204: `live-screen-burst-reads.test.js` (the invalidation driving the real coordinator on a manual clock:
   notifications before a read, during a slow one and around its answer read together, one request at a time, a change
-  stored after the read under way was handled read by the follow-up; a snapshot endpoint that does not answer for
-  150 seconds makes six reads through the coordinator's timeout and backoff, with or without notifications). The burst
-  check in `LiveScreenRealtimeBrowserTests.cs` therefore counts only the reads the invalidation asked for, from its
-  `stats()` counters at each read's start; polls and retries are the safety net. It counts once all five notifications
-  have arrived, every read the page started has been answered and handled (or has failed) and no read is waiting to be
-  asked for, not after a quiet period: `ReadsSettle_OnlyAfterASlowReadAndTheFollowUpQueuedDuringItAreHandled` holds a
-  read with a follow-up queued during it, and then the follow-up, each for longer than such a period, and checks on the
-  page's own clock that the reads never count as settled meanwhile. It waits for the queued follow-up on the page's
-  clock as well: the test process, with the test web host in it, can be paused on a loaded CI runner, and a wait timed
-  there reported a page that had already queued the follow-up as not having done so. Its failure messages list every
-  read (start, end, cause, HTTP status or abort), the notifications' arrival times and versions, the test's steps, and
-  the connection states.
+  stored after the read under way was handled read by the follow-up; the store's opening read under way when two
+  changes arrive within a second of the connect read, the second coalesced into the read the first scheduled and that
+  read run as the opening read's follow-up, showing both; a snapshot endpoint that does not answer for 150 seconds makes
+  six reads through the coordinator's timeout and backoff, with or without notifications). The burst check in
+  `LiveScreenRealtimeBrowserTests.cs` therefore counts only the reads the invalidation asked for, from its `stats()`
+  counters at each read's start; the store's opening read (the first read after the page asked for it), polls and
+  retries are not. It counts once all five notifications have arrived, the store's opening read has been asked for,
+  every read the page started has been answered and handled (or has failed) and no read is waiting to be asked for, not
+  after a quiet period. The store asks for its opening read only once the notification settings have loaded, so it can
+  come after the live connection's own read. Without it in that condition,
+  `ReadsSettle_OnlyAfterASlowReadAndTheFollowUpQueuedDuringItAreHandled` held the opening read instead of the first
+  notification's in full CI, and both notifications were read as its follow-up. That test now holds the settings request until the connection's read is over, so every run has that order,
+  checks that reads do not count as settled meanwhile, takes its counts in one evaluation once both opening reads are
+  over, and checks that the held request is the read the first notification asked for. It then holds that read with a
+  follow-up queued during it, and the follow-up, each for longer than a quiet period, and checks on the page's own clock
+  that the reads never count as settled meanwhile. Its waits for the page are on the page's clock: the test process,
+  with the test web host in it, can be paused on a loaded CI runner, and a wait timed there reports a page that has
+  already done what it waits for as not having done so. Its failure messages list every read (start, end, cause, HTTP
+  status or abort), the notifications' arrival times and versions, the test's steps, and the invalidation's counters.
 - WAS-25: `RealtimeLoadTests.cs` (lightweight .NET SignalR clients over WebSockets against the real Web pipeline:
   many tabs across tenants and roles under concurrent bursts through the hub and the internal channel, each tab
   receiving exactly its own tenant's streams; reconnect storms; revocation and demotion during a storm; a client that

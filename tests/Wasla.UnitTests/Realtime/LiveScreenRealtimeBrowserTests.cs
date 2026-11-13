@@ -29,18 +29,44 @@ public sealed class LiveScreenRealtimeBrowserTests
 
     // Counts snapshot reads, the snapshots shown and SignalR connections built, before any page script runs. Each read is
     // also logged (bounded, no order data): when it started, when the page had its whole answer or the request failed,
-    // its HTTP status or why it failed, and the live invalidation's counters at its start, which say why it started (see
-    // ReadsSinceAsync). __liveReadsUnderWay counts the reads whose answer the page has not finished reading. The Live
-    // Screen renders an answer and starts the follow-up queued during it in the continuations of that body read, before
-    // any later task, so a read is over for the page once it leaves this count (see ReadsSettled).
+    // its HTTP status or why it failed, the live invalidation's counters at its start, and whether it is the store's
+    // opening read, which together say why it started (see ReadsSinceAsync). __liveReadsUnderWay counts the reads whose
+    // answer the page has not finished reading. The Live Screen renders an answer and starts the follow-up queued during
+    // it in the continuations of that body read, before any later task, so a read is over for the page once it leaves this
+    // count (see ReadsSettled). __storeStarted says the store's own opening read was asked for: the page asks for it only
+    // once its notification settings have loaded, which can be after the live connection's own read (WAS-204). The first
+    // read that starts from then on answers it, whether it starts at once or as the follow-up of a read under way.
     private const string Instrumentation = """
         window.__liveDataReads = 0;
         window.__liveReadsUnderWay = 0;
         window.__liveReadLog = [];
         window.__liveRendered = 0;
         window.__connectionsBuilt = 0;
+        window.__storeStarted = false;
         document.addEventListener('wasla:live-rendered', function () { window.__liveRendered++; });
         (function () {
+          let openingLogged = false;
+          let orders;
+          Object.defineProperty(window, 'WaslaOrders', {
+            configurable: true,
+            get: function () { return orders; },
+            set: function (value) {
+              orders = value;
+              let store;
+              Object.defineProperty(value, 'liveStore', {
+                configurable: true,
+                get: function () { return store; },
+                set: function (next) {
+                  store = next;
+                  const start = next.start;
+                  next.start = function () {
+                    window.__storeStarted = true;
+                    return start.apply(this, arguments);
+                  };
+                }
+              });
+            }
+          });
           const fetch = window.fetch;
           window.fetch = function (input) {
             if (String(input && input.url || input).indexOf('/orders/live-data') < 0) return fetch.apply(this, arguments);
@@ -48,9 +74,11 @@ public sealed class LiveScreenRealtimeBrowserTests
             window.__liveReadsUnderWay++;
             const live = window.WaslaOrders && window.WaslaOrders.liveInvalidation;
             const counters = live ? live.stats() : null;
+            const opening = window.__storeStarted && !openingLogged;
+            if (opening) openingLogged = true;
             const read = {
               at: Math.round(performance.now()), end: null, result: 'pending',
-              requested: counters ? counters.reads : 0, connects: counters ? counters.connectReads : 0
+              requested: counters ? counters.reads : 0, connects: counters ? counters.connectReads : 0, opening: opening
             };
             if (window.__liveReadLog.length < 500) window.__liveReadLog.push(read);
             const finish = function (result) {
@@ -185,47 +213,81 @@ public sealed class LiveScreenRealtimeBrowserTests
         // during it, keeps that state open for longer than a quiet period in which no other read starts.
         var ct = TestContext.Current.CancellationToken;
         await using var host = await StartHostAsync();
+        // The store's own opening read waits for the notification settings, so it can start after the live connection's
+        // read is over. On full CI on 06cdad13 it did, after the counts below had been taken: it was the request held
+        // below, and both notifications were read as its follow-up (WAS-204). Held here so that every run has that order.
+        var settings = host.HoldNextRequest("GET", "/notification-settings/current");
         await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
         Assert.True(await browser.EvaluateAsync<bool>(RecordLiveEvents, ct));
+        Assert.True(await BecomesTrueOnPageClockAsync(browser, "window.__liveDataReads >= 1 && window.__liveReadsUnderWay === 0", Push, ct),
+            "The live connection's read did not finish.");
+        // Reads are not settled while the store has yet to ask for its opening read (vacuous only if the page gave up
+        // waiting for its settings meanwhile).
+        Assert.False(await browser.EvaluateAsync<bool>($"window.__storeStarted === false && ({ReadsSettled})", ct),
+            "Reads counted as settled before the store's opening read was asked for.");
+        settings.Release();
         await WaitForReadsToSettleAsync(browser, host, ct);
-        var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
-        var requested = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
-        var received = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().notifications", ct);
+        Assert.Single(await ReadsSinceAsync(browser, 0, ct), r => r.Cause == ReadCause.Opening && r.Read.Result == "200");
+        // The counts are taken at one moment, with both opening reads over.
+        var baseline = JsonSerializer.Deserialize<Baseline>(await browser.EvaluateAsync<string>(
+            $"JSON.stringify((() => {{ const s = window.WaslaOrders.liveInvalidation.stats(); return {{ settled: {ReadsSettled}, started: window.__liveDataReads, requested: s.reads, received: s.notifications, coalesced: s.coalesced }}; }})())", ct),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var (readsBefore, requested, received) = (baseline.Started, baseline.Requested, baseline.Received);
         async Task<string> TimelineAsync() =>
-            $"Asked for before: {requested}, received before: {received}. {await DescribeAsync(browser, await ReadsSinceAsync(browser, readsBefore, ct), ct)}";
+            $"Asked for before: {requested}, received before: {received}, coalesced before: {baseline.Coalesced}. {await DescribeAsync(browser, await ReadsSinceAsync(browser, readsBefore, ct), ct)}";
+        Assert.True(baseline.Settled, $"Reads were under way or waiting when the counts were taken. {await TimelineAsync()}");
+        async Task ReachedAsync(TenantVisualWebHost.RequestHold hold, string request)
+        {
+            try { await hold.Reached.WaitAsync(Push, ct); }
+            catch (TimeoutException) { }
+            if (!hold.Reached.IsCompleted)
+                Assert.Fail($"{request} did not reach the server. {await TimelineAsync()}");
+        }
+        async Task ReadsStartedAsync(int expected, string failure)
+        {
+            if (await browser.EvaluateAsync<int>("window.__liveDataReads", ct) != readsBefore + expected)
+                Assert.Fail($"{failure} {await TimelineAsync()}");
+        }
 
         var slow = host.HoldNextRequest("GET", "/orders/live-data");
         var first = await InsertNewOrderAsync(host, "RT-SLOW-1", ct);
         await MarkAsync(browser, "announce 1", ct);
         await AnnounceAsync(host, first, ct);
-        await slow.Reached.WaitAsync(Push, ct);
+        await ReachedAsync(slow, "The first notification's read");
         await MarkAsync(browser, "held", ct);
+        // The held request is the read the first notification asked for: the invalidation had counted it when the request
+        // started, and no other read started. Nothing else could have started one by now: the opening reads are over, a
+        // poll comes 30 seconds after the last read and a retry only after a failed one.
+        var held = await ReadsSinceAsync(browser, readsBefore, ct);
+        Assert.True(held.Count == 1 && held[0].Cause == ReadCause.Notification && held[0].Read.Requested == requested + 1,
+            $"The held request is not the read the first notification asked for. {await TimelineAsync()}");
         var second = await InsertNewOrderAsync(host, "RT-SLOW-2", ct);
         await MarkAsync(browser, "announce 2", ct);
         await AnnounceAsync(host, second, ct);
-        // The second notification arrives and the invalidation asks for its read (at least a second after the first); the
-        // coordinator queues it as the held read's follow-up, so no request starts. Waited for on the page's clock, then
-        // checked exactly: the counters only grow, so the wait cannot miss a state that held only briefly.
+        // The second notification arrives after the first one's read was asked for, so it is not coalesced into it: the
+        // invalidation asks for its own read (at least a second after the first), and the coordinator queues it as the held
+        // read's follow-up, so no request starts. Waited for on the page's clock, then checked exactly: the counters only
+        // grow, so the wait cannot miss a state that held only briefly.
         if (!await BecomesTrueOnPageClockAsync(browser,
             $"window.WaslaOrders.liveInvalidation.stats().notifications >= {received + 2} && window.WaslaOrders.liveInvalidation.stats().reads >= {requested + 2} && window.WaslaOrders.liveInvalidation.stats().pendingRead === false",
             Push, ct))
             Assert.Fail($"The second notification's read was not asked for while the first read was held. {await TimelineAsync()}");
         Assert.True(
-            await browser.EvaluateAsync<bool>($"(() => {{ const s = window.WaslaOrders.liveInvalidation.stats(); return s.notifications === {received + 2} && s.reads === {requested + 2}; }})()", ct),
+            await browser.EvaluateAsync<bool>($"(() => {{ const s = window.WaslaOrders.liveInvalidation.stats(); return s.notifications === {received + 2} && s.reads === {requested + 2} && s.coalesced === {baseline.Coalesced}; }})()", ct),
             $"Other notifications or reads than the two announced. {await TimelineAsync()}");
-        Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+        await ReadsStartedAsync(1, "Another read started while the first one was held.");
         // Longer than the 1.5 seconds without a new read that the earlier wait took for settled: never settled meanwhile.
         Assert.False(await BecomesTrueOnPageClockAsync(browser, ReadsSettled, TimeSpan.FromSeconds(2), ct),
             $"Reads counted as settled while a read was under way with a follow-up queued. {await TimelineAsync()}");
-        Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+        await ReadsStartedAsync(1, "Another read started while the first one was held.");
 
         // The held read is answered; the queued follow-up starts while that answer is handled, and is held as well.
         var followUp = host.HoldNextRequest("GET", "/orders/live-data");
         slow.Release();
-        await followUp.Reached.WaitAsync(Push, ct);
+        await ReachedAsync(followUp, "The follow-up queued during the held read");
         Assert.False(await BecomesTrueOnPageClockAsync(browser, ReadsSettled, TimeSpan.FromSeconds(2), ct),
             $"Reads counted as settled while the follow-up was under way. {await TimelineAsync()}");
-        Assert.Equal(readsBefore + 2, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+        await ReadsStartedAsync(2, "Another read started while the follow-up was held.");
         followUp.Release();
         await WaitForReadsToSettleAsync(browser, host, ct);
 
@@ -492,12 +554,11 @@ public sealed class LiveScreenRealtimeBrowserTests
     private const string HoldBackNextNavigation = "(window.addEventListener('submit', function (event) { event.preventDefault(); }, { once: true }), true)";
 
     // Both opening reads of a Live Screen page have been shown and none is under way: the read its live connection makes
-    // on connecting and the store's own first read, which waits for the notification settings, in either order. Needs
-    // AnnouncementLog.
+    // on connecting and the store's own first read, which waits for the notification settings, in either order.
     private const string OpeningReadsShown = "window.__storeStarted === true && window.__liveRendered === window.__liveDataReads";
 
     // Records, across page loads in this tab, each order the Live Screen announced, each notification attempt and the
-    // reads a page had started when a form was submitted; marks when the store's own first read was asked for.
+    // reads a page had started when a form was submitted. Runs after Instrumentation and keeps its hooks.
     private const string AnnouncementLog = """
         document.addEventListener('wasla:real-order-arrived', function (event) {
           const log = JSON.parse(sessionStorage.getItem('__announced') || '[]');
@@ -508,12 +569,12 @@ public sealed class LiveScreenRealtimeBrowserTests
           sessionStorage.setItem('__readsAtSubmit', String(window.__liveDataReads));
         }, true);
         (function () {
-          let orders;
+          const instrumented = Object.getOwnPropertyDescriptor(window, 'WaslaOrders');
           Object.defineProperty(window, 'WaslaOrders', {
             configurable: true,
-            get: function () { return orders; },
+            get: instrumented.get,
             set: function (value) {
-              orders = value;
+              instrumented.set.call(this, value);
               let audio;
               Object.defineProperty(value, 'audio', {
                 configurable: true,
@@ -524,19 +585,6 @@ public sealed class LiveScreenRealtimeBrowserTests
                   next.showBrowserNotificationIfAllowed = function () {
                     sessionStorage.setItem('__notified', String(Number(sessionStorage.getItem('__notified') || 0) + 1));
                     return show && show.apply(this, arguments);
-                  };
-                }
-              });
-              let store;
-              Object.defineProperty(value, 'liveStore', {
-                configurable: true,
-                get: function () { return store; },
-                set: function (next) {
-                  store = next;
-                  const start = next.start;
-                  next.start = function () {
-                    window.__storeStarted = true;
-                    return start.apply(this, arguments);
                   };
                 }
               });
@@ -598,13 +646,15 @@ public sealed class LiveScreenRealtimeBrowserTests
     }
 
     /// <summary>
-    /// Every snapshot read the page started has been answered and handled (or has failed), and the live invalidation has
-    /// no read waiting to be asked for. A follow-up queued during a read starts while that read's answer is handled, so it
-    /// is under way by then; nothing but a new notification or the coordinator's own poll or retry timer starts a read
-    /// afterwards. It needs no quiet period: a slow read keeps it false however long no other read starts.
+    /// The store's opening read has been asked for, every snapshot read the page started has been answered and handled (or
+    /// has failed), and the live invalidation has no read waiting to be asked for. A follow-up queued during a read starts
+    /// while that read's answer is handled, so it is under way by then; nothing but a new notification or the
+    /// coordinator's own poll or retry timer starts a read afterwards. It needs no quiet period: a slow read keeps it false
+    /// however long no other read starts. Without the opening read, the live connection's read alone could settle it while
+    /// the page still had its own first read to make (WAS-204).
     /// </summary>
     private const string ReadsSettled =
-        "window.__liveReadsUnderWay === 0 && !!window.WaslaOrders.liveInvalidation && window.WaslaOrders.liveInvalidation.stats().pendingRead === false";
+        "window.__storeStarted === true && window.__liveReadsUnderWay === 0 && !!window.WaslaOrders.liveInvalidation && window.WaslaOrders.liveInvalidation.stats().pendingRead === false";
 
     /// <summary>
     /// Waits for <see cref="ReadsSettled"/>. The bound only stops a test whose reads never settle; on a stalled machine a
@@ -662,19 +712,25 @@ public sealed class LiveScreenRealtimeBrowserTests
         Notification,
         /// <summary>A (re)connect of the live connection read the snapshot.</summary>
         Connect,
+        /// <summary>The store's own opening read, which the page asks for once its notification settings have loaded.</summary>
+        Opening,
         /// <summary>The coordinator's own poll, or its retry after a failed or timed-out read: the safety net.</summary>
         SafetyNet
     }
 
-    private sealed record LoggedRead(double At, double? End, string Result, int Requested, int Connects);
+    private sealed record LoggedRead(double At, double? End, string Result, int Requested, int Connects, bool Opening);
 
     private sealed record ClassifiedRead(LoggedRead Read, ReadCause Cause);
+
+    /// <summary>Whether reads had settled, and the read counts and invalidation counters, taken in one evaluation.</summary>
+    private sealed record Baseline(bool Settled, int Started, int Requested, int Received, int Coalesced);
 
     /// <summary>
     /// The snapshot reads started since the page had made <paramref name="from"/>, each with why it started. The live
     /// invalidation counts every read it asks for (<c>stats().reads</c>, the reconnect reads also in <c>connectReads</c>)
     /// before the request, so a read that starts after either counter grew was asked for by it. A read it asked for while
-    /// another was under way runs as that read's follow-up, and is counted as asked for. Any other read is the
+    /// another was under way runs as that read's follow-up, and is counted as asked for. Of the others, the first one
+    /// started after the store's own opening read was asked for is that read (see Instrumentation); any other is the
     /// coordinator's own poll or retry.
     /// </summary>
     private static async Task<IReadOnlyList<ClassifiedRead>> ReadsSinceAsync(HeadlessChromium browser, int from, CancellationToken ct)
@@ -684,9 +740,11 @@ public sealed class LiveScreenRealtimeBrowserTests
         var started = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
         Assert.True(log.Count == started, $"The read log has {log.Count} of {started} reads.");
         return log
-            .Select((read, i) => new ClassifiedRead(read, i == 0 || read.Connects > log[i - 1].Connects
+            .Select((read, i) => new ClassifiedRead(read, read.Connects > (i == 0 ? 0 : log[i - 1].Connects)
                 ? ReadCause.Connect
-                : read.Requested > log[i - 1].Requested ? ReadCause.Notification : ReadCause.SafetyNet))
+                : read.Requested > (i == 0 ? 0 : log[i - 1].Requested) ? ReadCause.Notification
+                : read.Opening ? ReadCause.Opening
+                : ReadCause.SafetyNet))
             .Skip(from)
             .ToList();
     }

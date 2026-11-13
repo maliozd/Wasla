@@ -58,6 +58,8 @@ async function liveScreen(options) {
   const reads = [];
   let announcements = 0;
   let sync = null;
+  let openingAskedFor = false;
+  let openingLogged = false;
 
   function snapshotOf(orders) {
     return {
@@ -89,7 +91,9 @@ async function liveScreen(options) {
     },
     fetchSnapshot: function (signal) {
       const stats = sync ? sync.stats() : { reads: 0, connectReads: 0 };
-      const read = { start: c.now(), end: null, result: "pending", requested: stats.reads, connects: stats.connectReads };
+      const opening = openingAskedFor && !openingLogged;
+      if (opening) openingLogged = true;
+      const read = { start: c.now(), end: null, result: "pending", requested: stats.reads, connects: stats.connectReads, opening: opening };
       reads.push(read);
       return new Promise(function (resolve, reject) {
         signal.onAbort(function () {
@@ -133,7 +137,7 @@ async function liveScreen(options) {
 
   server.orders.set(orderId(900), 1); // already on screen before the test starts
   sync.onConnectionState({ state: "connected", reconnected: false });
-  await c.advance(server.latencyMs + 1000);
+  await c.advance(options && options.afterConnectMs != null ? options.afterConnectMs : server.latencyMs + 1000);
   assert.equal(reads.length, 1, "the connect read");
   assert.equal(coordinator.isBaselineReady(), true);
 
@@ -143,6 +147,8 @@ async function liveScreen(options) {
     reads: reads,
     sync: sync,
     announcements: function () { return announcements; },
+    /** The store's own opening read, which the page asks for once its notification settings have loaded. */
+    startStore: function () { openingAskedFor = true; return coordinator.start(); },
     store: function (n) { server.orders.set(orderId(n), (server.orders.get(orderId(n)) || 0) + 1); return orderId(n); },
     notify: function (n) { sync.onNotification({ type: "OrderChanged", orderId: orderId(n), version: server.orders.get(orderId(n)) }); },
     shown: function (n) {
@@ -155,6 +161,7 @@ async function liveScreen(options) {
         const previous = reads[from + i - 1];
         if (read.connects > previous.connects) return "connect";
         if (read.requested > previous.requested) return "notification";
+        if (read.opening) return "opening";
         return "safety-net";
       });
     }
@@ -238,6 +245,37 @@ test("around a read's answer: a change just before it is read again, one the ans
   assert.equal(live.reads.length - from, 2);
   assert.equal(live.sync.stats().skipped, 1);
   assert.equal(inFlightAtOnce(live.reads), 1);
+});
+
+test("the store's opening read under way when two changes arrive within a second of the connect read: one follow-up shows both", async function () {
+  // The order of the full CI failure on 06cdad13: the page's own opening read (it waits for the notification settings)
+  // starts after the live connection's read. Two notifications arrive while it is under way, within a second of the
+  // connect read, so the second is coalesced into the read the first scheduled; that read is asked for while the opening
+  // read is still under way and becomes its follow-up.
+  const live = await liveScreen({ latencyMs: 50, afterConnectMs: 300 });
+  const from = live.reads.length;
+  const askedFor = live.sync.stats().reads;
+  live.server.latencyMs = 3000; // the opening read is answered 3 s after the server read its orders, without 1 and 2
+  live.startStore();
+  await live.clock.advance(100);
+  live.store(1);
+  live.notify(1); // its read is due a second after the connect read
+  await live.clock.advance(200);
+  live.store(2);
+  live.notify(2);
+  assert.equal(live.sync.stats().coalesced, 1, "the second is read with the first");
+  await live.clock.advance(700); // the read the notifications asked for is due now; the opening read is still under way
+  assert.equal(live.sync.stats().reads - askedFor, 1);
+  assert.equal(live.reads.length - from, 1, "queued as the opening read's follow-up, not a second request at once");
+  await live.clock.advance(2500); // the opening read is answered, without either change
+  assert.equal(live.shown(1) || live.shown(2), false);
+  assert.equal(live.reads.length - from, 2, "the follow-up started as the opening read's answer was handled");
+  await live.clock.advance(5000);
+
+  assert.deepEqual(live.causes(from), ["opening", "notification"]);
+  assert.ok(live.shown(1) && live.shown(2), "both changes shown by the follow-up");
+  assert.equal(inFlightAtOnce(live.reads), 1);
+  assert.equal(live.announcements(), 1);
 });
 
 test("while the snapshot endpoint does not answer, retries add reads that no notification caused", async function () {
