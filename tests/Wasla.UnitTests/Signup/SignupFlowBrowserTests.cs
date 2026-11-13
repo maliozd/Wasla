@@ -1601,11 +1601,14 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await Js(browser, "__su.click('#signupStep-phone [data-su-go=owner]')", ct);
         await WaitForAsync(browser, "__su.current() === 'owner'", ct);
         await Js(browser, $"__su.set('signupOwnerPhone', '{third.Digits}')", ct);
-        await ContinueAsync(browser, "phone", ct);
-        Assert.Equal(third.Digits, (await SavedDraftAsync(browser, ct)).GetProperty("owner").GetProperty("mobilePhone").GetString());
 
-        // The late "verified" for the second number verifies nothing and moves nothing.
+        // The page sends its writes one after another, so the save of the third number waits for that answer: the
+        // visitor presses continue, then the "verified" for the second number arrives while they are not on the phone
+        // step. It moves nothing, and the save that follows makes the third number the one to verify.
+        await Js(browser, OwnerNext + ".click()", ct);
         await Js(browser, "window.__suVerify.hold = false; window.__suVerify.held()", ct);
+        await WaitForAsync(browser, "__su.current() === 'phone'", ct);
+        Assert.Equal(third.Digits, (await SavedDraftAsync(browser, ct)).GetProperty("owner").GetProperty("mobilePhone").GetString());
         await WaitForAsync(browser, $"{PhoneState} !== 'verified' && !document.querySelector('[data-su-phone-primary]').hasAttribute('aria-busy')", ct);
         Assert.Equal("phone", await CurrentAsync(browser, ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
