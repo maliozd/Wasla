@@ -32,7 +32,8 @@ public sealed partial class SignupPageMarkupTests : IAsyncLifetime
         "Signup.Phone.CodeIncorrect", "Signup.Phone.CodeExpired", "Signup.Phone.CodeFormatInvalid", "Signup.Phone.NoActiveCode",
         "Signup.Phone.ResendNotAvailable", "Signup.Phone.Locked", "Signup.Phone.SendLimitReached", "Signup.Phone.DeliveryFailed",
         "Signup.Phone.Unavailable", "Signup.Phone.CapacityReached", "Validation.MobilePhoneRequired", "Validation.MobilePhoneInvalid",
-        "Signup.TooManyAttempts", "Signup.SlugUnavailable", "Signup.EnterpriseContactOnly", "Signup.ProvisioningFailed"
+        "Signup.TooManyAttempts", "Signup.SlugUnavailable", "Signup.EnterpriseContactOnly", "Signup.ProvisioningFailed",
+        "Validation.BusinessPhoneTooLong"
     ];
 
     private readonly SqliteConnection _connection = new("Data Source=:memory:");

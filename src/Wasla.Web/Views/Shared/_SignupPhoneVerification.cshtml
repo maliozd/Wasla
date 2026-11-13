@@ -13,7 +13,8 @@
     var fullNumber = digits is { Length: 10 } d ? $"+90 {d[..3]} {d[3..6]} {d[6..8]} {d[8..]}" : string.Empty;
     var supportEmail = Model.SupportEmail;
     ViewData["SignupCodeLength"] = Model.PhoneCodeLength;
-    ViewData["SignupCodeHidden"] = !(sent || verified);
+    // A verified number opened again shows no code field; signup-phone-step.js shows it during a fresh confirmation.
+    ViewData["SignupCodeHidden"] = !sent;
 }
 <h2 class="su-title" id="signupStep-phone-title" tabindex="-1" data-su-phone-title
     data-title-default="@L["Signup.Phone.Title"]" data-title-verified="@L["Signup.Phone.TitleVerified"]">@L[verified ? "Signup.Phone.TitleVerified" : "Signup.Phone.Title"]</h2>
@@ -50,6 +51,10 @@
             <span class="su-phone-card__label">@L["Signup.Phone.VerifiedNumberLabel"]</span>
             <bdi class="su-phone-card__number" dir="ltr" data-su-phone-full>@fullNumber</bdi>
         </div>
+        @* Another number needs its own code, sent only when the visitor asks for it in the form that opens. *@
+        <button type="button" class="su-btn su-btn--quiet" data-su-phone-change>
+            <i class="bi bi-pencil" aria-hidden="true"></i>@L["Signup.Phone.ChangeNumber"]
+        </button>
     </div>
 
     <fieldset class="su-field su-phone-changer" data-su-phone-changer data-su-skip-validation hidden>

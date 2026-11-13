@@ -4,7 +4,9 @@
     // Türkiye phone numbers on the signup page: the owner's mobile, and the restaurant's mobile or landline. Each is the
     // 10-digit national number after the fixed +90 prefix (mobile 5xx, landline area code and 7 digits), typed and shown
     // as "212 345 67 89" and sent as digits. A country code or trunk zero the visitor types or pastes is removed, so it is
-    // never stored twice. The server keeps the business phone as sent (trimmed, at most 50 characters).
+    // never stored twice. No digit is ever dropped: digits past the 10th stay in the field, as one more group, so the
+    // visitor sees them, and the page and the server refuse the number as too long instead of keeping a different one.
+    // A shorter number (a 444 line) is kept as typed.
 
     var MOBILE_TYPE = "Mobile";
     var NATIONAL_LENGTH = 10;
@@ -16,9 +18,8 @@
     }
 
     // The national digits and how many prefix digits came off the front. A national number has 10 digits, so with more
-    // the front is a prefix: 0090, 90 or the trunk 0, the prefixes the server removes from the owner's mobile. Waiting
-    // for more than 10 digits lets "0212…" and "+90 212…" be typed digit by digit and never drops a digit while editing.
-    // At most 10 digits remain.
+    // the front is a prefix: 0090, 90 or the trunk 0, the prefixes the server removes. Waiting for more than 10 digits
+    // lets "0212…" and "+90 212…" be typed digit by digit. Every other digit stays, even past 10 (too long, not cut).
     function splitNational(value) {
         var digits = stripPhoneDigits(value);
         var prefix = 0;
@@ -33,16 +34,22 @@
             }
         }
 
-        return { national: digits.slice(prefix, prefix + NATIONAL_LENGTH), prefix: prefix };
+        return { national: digits.slice(prefix), prefix: prefix };
     }
 
     function normalizeTurkishLocalDigits(value) {
         return splitNational(value).national;
     }
 
-    // "2123456789" → "212 345 67 89"; fewer digits are grouped as far as they go.
+    // More national digits than a Türkiye number has: the field says so instead of keeping another number.
+    function isTooLong(value) {
+        return normalizeTurkishLocalDigits(value).length > NATIONAL_LENGTH;
+    }
+
+    // "2123456789" → "212 345 67 89"; fewer digits are grouped as far as they go, more follow as one last group
+    // ("212 345 67 89 12").
     function formatTurkishPhoneDigits(digits) {
-        digits = stripPhoneDigits(digits).slice(0, NATIONAL_LENGTH);
+        digits = stripPhoneDigits(digits);
         var parts = [];
 
         if (digits.length > 0) {
@@ -56,6 +63,9 @@
         }
         if (digits.length > 8) {
             parts.push(digits.slice(8, NATIONAL_LENGTH));
+        }
+        if (digits.length > NATIONAL_LENGTH) {
+            parts.push(digits.slice(NATIONAL_LENGTH));
         }
 
         return parts.join(" ");
@@ -94,6 +104,7 @@
     var pure = {
         stripPhoneDigits: stripPhoneDigits,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
+        isTooLong: isTooLong,
         formatTurkishPhoneDigits: formatTurkishPhoneDigits,
         formatPhoneValue: formatPhoneValue,
         landlineExample: landlineExample
@@ -229,6 +240,7 @@
         formatMobileInput: formatPhoneInput,
         formatPhoneInput: formatPhoneInput,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
+        isTooLong: isTooLong,
         landlineExample: landlineExample,
         normalizeForSubmit: normalizeForSubmit,
         refreshExistingValues: refreshExistingValues,

@@ -221,7 +221,8 @@
         if (restaurant.slug) {
             var slug = byId("signupSlug");
             slug.value = restaurant.slug;
-            // Marks the address as chosen, so typing the business name no longer rewrites it.
+            // Shows and checks the saved address. The business name was put back without an event, so it does not
+            // make a new address; the visitor's next edit of the name does.
             slug.dispatchEvent(new Event("input", { bubbles: true }));
         }
         if (restaurant.country) {
@@ -391,6 +392,43 @@
         });
 
         shell.setAttribute("data-su-period-shown", isYearly() ? "Yearly" : "Monthly");
+        syncOwnerAction();
+    }
+
+    // The number in the owner's field is the one the server verified: the same national digits (spacing and a typed
+    // +90 or 0 make no difference) while the server's phone state says "verified". Only that state counts.
+    function ownerPhoneStillVerified() {
+        var saved = draft.owner && draft.owner.mobilePhone;
+        return phoneVerified() && !!saved && phoneDigits(valueOf("OwnerPhone")) === String(saved);
+    }
+
+    // The owner step's action: with the verified number it continues to the phone step, which shows the verified state
+    // and sends nothing; with another number it sends a code, as the visitor's explicit choice.
+    function syncOwnerAction() {
+        var panel = panels.owner;
+        if (!panel) {
+            return;
+        }
+        var verified = ownerPhoneStillVerified();
+        var next = panel.querySelector("[data-su-next]");
+        if (next) {
+            var label = verified ? messages.ownerContinue : messages.ownerSendCode;
+            if (label && next.textContent !== label) {
+                next.textContent = label;
+            }
+            if (verified) {
+                next.removeAttribute("data-su-autosend");
+            } else {
+                next.setAttribute("data-su-autosend", "");
+            }
+        }
+        var stripLabel = verified ? messages.ownerContinue : messages.ownerSendCodeShort;
+        if (stripLabel) {
+            panel.setAttribute("data-su-strip-label", stripLabel);
+            if (stripAction && state.current === "owner" && stripAction.textContent !== stripLabel) {
+                stripAction.textContent = stripLabel;
+            }
+        }
     }
 
     // ---------------------------------------------------------------- Review (from the server's draft)
@@ -634,6 +672,19 @@
             var types = window.WaslaSignupBusinessTypes.check(document);
             if (!types.ok && types.focusTarget) {
                 errors.push({ element: types.focusTarget, message: types.message });
+            }
+        }
+
+        // A phone number with more digits than a Türkiye number stays in its field (signup-phone-format.js) and is
+        // refused here, as the server refuses it, instead of being saved as another number.
+        var phoneFormat = window.WaslaSignupPhone;
+        var tooLong = phoneFormat && (id === "restaurant"
+            ? { key: "restaurant.businessPhone", name: "BusinessPhone", message: messages.businessPhoneTooLong }
+            : id === "owner" ? { key: "owner.mobilePhone", name: "OwnerPhone", message: messages.mobilePhoneInvalid } : null);
+        if (tooLong && phoneFormat.isTooLong(valueOf(tooLong.name))) {
+            var phoneField = setFieldError(tooLong.key, tooLong.message);
+            if (phoneField) {
+                errors.push({ element: phoneField, message: tooLong.message || "" });
             }
         }
 
@@ -1145,13 +1196,8 @@
         slugInput.addEventListener("blur", function () {
             addressCheck.flush();
         });
-        var businessName = byId("signupBusinessName");
-        if (businessName) {
-            // The address follows the business name until the visitor edits it (signup-form.js); check what it shows.
-            businessName.addEventListener("input", function () {
-                addressCheck.input(slugInput.value.trim().toLowerCase());
-            });
-        }
+        // A business name edit writes a new address through the address field's input event (signup-form.js), so the
+        // listener above checks it too.
     }
 
     // ---------------------------------------------------------------- Events

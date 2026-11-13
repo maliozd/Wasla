@@ -4920,6 +4920,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Подтверждение телефона временно недоступно. Попробуйте через несколько минут.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Укажите номер мобильного телефона.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Введите действующий мобильный номер Турции, например 532 123 45 67.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>Номер телефона слишком длинный. Введите не более 10 цифр после +90, без добавочного номера.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>Подтверждение телефона</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Подтверждение по SMS</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Подтверждён</value></data>
@@ -4949,7 +4952,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>Код будет отправлен на номер</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>Код отправлен на номер</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Подтверждённый номер</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Изменить номер</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Изменить номер телефона</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Введите номер мобильного телефона, на который нужно отправить код.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>Мы отправим код на новый номер. Подтверждение прежнего номера перестанет действовать.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Отправить код на этот номер</value></data>

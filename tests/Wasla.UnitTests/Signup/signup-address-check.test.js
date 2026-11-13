@@ -91,8 +91,39 @@ test("an answer for an address that changed meanwhile is dropped and its request
     requests[0].resolve({ state: "taken" });
     await flush();
 
-    const settled = states.filter(s => s.state !== "checking");
+    const settled = states.filter(s => s.state !== "checking" && s.state !== "idle");
     assert.deepEqual(settled, [{ state: "available", slug: "sushim" }]);
+});
+
+test("a new address drops the old answer at once, before its own check, and a late answer for the old one changes nothing", async () => {
+    const { timers, requests, states, checker } = harness();
+
+    checker.input("lezzet");
+    timers.fire();
+    await flush();
+    requests[0].resolve({ state: "available" });
+    await flush();
+    assert.deepEqual(states.at(-1), { state: "available", slug: "lezzet" });
+
+    // The business name changed, so the page wrote another address: the "available" of the old one goes now.
+    checker.input("lezzet-kadikoy");
+    assert.deepEqual(states.at(-1), { state: "idle", slug: "lezzet-kadikoy" });
+    assert.equal(requests.length, 1, "the new address waits for the pause");
+
+    // Its check is in flight when the name changes again; that answer arrives late and is ignored.
+    timers.fire();
+    await flush();
+    checker.input("lezzet-moda");
+    requests[1].resolve({ state: "taken" });
+    await flush();
+    assert.deepEqual(states.at(-1), { state: "idle", slug: "lezzet-moda" });
+
+    // Emptied with the name: no address and no answer.
+    checker.input("");
+    assert.deepEqual(states.at(-1), { state: "idle", slug: "" });
+    timers.fire();
+    await flush();
+    assert.equal(requests.length, 2);
 });
 
 test("the request in flight is aborted when the address changes", async () => {

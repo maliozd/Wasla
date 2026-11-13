@@ -1432,6 +1432,260 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal("owner", await CurrentAsync(browser, ct));
     }
 
+    // Holds the page's address checks while __suAddressHold.on is set; each held check waits for its release().
+    private const string HoldAddressChecks = """
+        (() => {
+          const original = window.fetch.bind(window);
+          window.__suAddressHold = { on: false, held: [] };
+          window.fetch = (url, init) => {
+            const u = new URL(String(url), location.href);
+            if (!window.__suAddressHold.on || !u.pathname.endsWith('/address-availability')) return original(url, init);
+            return new Promise(resolve => window.__suAddressHold.held.push({ slug: u.searchParams.get('slug'), release: () => resolve(original(url, init)) }));
+          };
+        })();
+        """;
+
+    private const string SlugState = "document.getElementById('signupSlugStatus').getAttribute('data-state')";
+
+    // Every edit of the business name makes the panel address again from it, also after a manual edit (owner's
+    // decision); the old availability answer goes at once and a late one never comes back; an empty name empties the
+    // address; a draft put back on load keeps its own address until the name is edited again.
+    [Fact]
+    public async Task EveryBusinessNameEdit_MakesTheAddressAgain_EvenAfterAManualEdit_ButARestoredDraftKeepsItsOwn()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, HoldAddressChecks);
+        var applicant = Applicant.New();
+        var token = applicant.BusinessName["Lezzet ".Length..];
+        await OpenAsync(browser, "/signup?plan=Pro", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+
+        await Js(browser, $"__su.set('signupBusinessName', '{applicant.BusinessName}')", ct);
+        Assert.Equal($"lezzet-{token}", await ValueAsync(browser, "signupSlug", ct));
+        await WaitForAsync(browser, $"{SlugState} === 'available'", ct);
+
+        // A manual edit, checked and available; then its next spelling's check is held back.
+        await Js(browser, $"__su.set('signupSlug', '{applicant.Slug}')", ct);
+        await WaitForAsync(browser, $"{SlugState} === 'available'", ct);
+        await Js(browser, "window.__suAddressHold.on = true", ct);
+        await Js(browser, $"__su.set('signupSlug', '{applicant.Slug}-2')", ct);
+        await WaitForAsync(browser, $"window.__suAddressHold.held.some(h => h.slug === '{applicant.Slug}-2')", ct);
+
+        // The business name changes: the manual address is replaced at once and its "available" goes with it.
+        await Js(browser, $"__su.set('signupBusinessName', 'Lezzet {token} Kadıköy')", ct);
+        Assert.Equal($"lezzet-{token}-kadikoy", await ValueAsync(browser, "signupSlug", ct));
+        Assert.NotEqual("available", await browser.EvaluateAsync<string>(SlugState, ct));
+        Assert.Contains($"lezzet-{token}-kadikoy.{ApplicationDomain}", await browser.EvaluateAsync<string>("document.getElementById('signupDomainPreview').textContent", ct));
+
+        // The held answer for the old address arrives late: nothing changes. Then the new address's own answer shows.
+        await Js(browser, $"window.__suAddressHold.held.find(h => h.slug === '{applicant.Slug}-2').release()", ct);
+        await WaitForAsync(browser, $"window.__suAddressHold.held.some(h => h.slug === 'lezzet-{token}-kadikoy')", ct);
+        Assert.Equal($"lezzet-{token}-kadikoy", await ValueAsync(browser, "signupSlug", ct));
+        Assert.NotEqual("available", await browser.EvaluateAsync<string>(SlugState, ct));
+        await Js(browser, $"window.__suAddressHold.held.find(h => h.slug === 'lezzet-{token}-kadikoy').release()", ct);
+        await WaitForAsync(browser, $"{SlugState} === 'available'", ct);
+        Assert.Contains($"lezzet-{token}-kadikoy.{ApplicationDomain}", await browser.EvaluateAsync<string>("document.querySelector('[data-su-slug-message]').textContent", ct));
+        await Js(browser, "window.__suAddressHold.on = false", ct);
+
+        // An empty name empties the address and its answer.
+        await Js(browser, "__su.set('signupBusinessName', '')", ct);
+        Assert.Equal("", await ValueAsync(browser, "signupSlug", ct));
+        Assert.Equal("preview", await browser.EvaluateAsync<string>(SlugState, ct));
+
+        // Saved with a manual address, the draft comes back with it; the next name edit makes it again.
+        await FillRestaurantAsync(browser, applicant, ct);
+        Assert.Equal(applicant.Slug, await ValueAsync(browser, "signupSlug", ct));
+        await ContinueAsync(browser, "owner", ct);
+        await OpenAsync(browser, "/signup?step=restaurant", ct);
+        await WaitForAsync(browser, "__su.current() === 'restaurant'", ct);
+        Assert.Equal(applicant.BusinessName, await ValueAsync(browser, "signupBusinessName", ct));
+        Assert.Equal(applicant.Slug, await ValueAsync(browser, "signupSlug", ct));
+        await Js(browser, $"__su.set('signupBusinessName', '{applicant.BusinessName} Moda')", ct);
+        Assert.Equal($"lezzet-{token}-moda", await ValueAsync(browser, "signupSlug", ct));
+    }
+
+    // Holds the answer of a code check while __suVerify.hold is set: the server has already handled it.
+    private const string HoldVerifyAnswers = """
+        (() => {
+          const original = window.fetch.bind(window);
+          window.__suVerify = { hold: false, held: null };
+          window.fetch = (url, init) => {
+            const path = new URL(String(url), location.href).pathname;
+            if (!window.__suVerify.hold || !path.endsWith('/phone/verify')) return original(url, init);
+            return original(url, init).then(response => new Promise(resolve => { window.__suVerify.held = () => resolve(response); }));
+          };
+        })();
+        """;
+
+    private const string OwnerNext = "document.querySelector('#signupStep-owner [data-su-next]')";
+    private const string PhoneState = "document.getElementById('signupStep-phone').getAttribute('data-phone-state')";
+
+    private static Task<JsonElement> SavedDraftAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<JsonElement>("fetch('/signup/draft', { cache: 'no-store' }).then(r => r.json())", ct);
+
+    // Back through the account step with the verified number: "continue", the details saved, the phone step showing
+    // the verified number with "continue to review" and "change", no new code, no wait and no jump. Another number needs
+    // its own code, sent only by the visitor's choice; the review stays closed until it is verified, and a late
+    // "verified" for the earlier number verifies nothing. Numbers are compared whole, not by their last digits.
+    [Fact]
+    public async Task AVerifiedNumber_StaysVerifiedThroughTheAccountStep_AndOnlyANewNumberNeedsItsOwnCode()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, ControlVerifiedPause + HoldVerifyAnswers);
+        var applicant = Applicant.New();
+        await ReachPhoneStepAsync(browser, applicant, ct);
+        await Js(browser, $"__su.set('signupPhoneCode', '{Outbox.LatestCodeTo(applicant.E164)}')", ct);
+        await WaitForAsync(browser, "!!window.__suMove.pending", ct);
+        await Js(browser, "window.__suMove.pending()", ct);
+        await WaitForAsync(browser, "__su.current() === 'review'", ct);
+        var sent = Outbox.MessagesTo(applicant.E164).Count;
+
+        // Back to the account step: the verified number continues, also when typed with a trunk zero.
+        await Js(browser, "__su.click('#signupStep-review [data-su-go=owner]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+        Assert.Equal(Text("Signup.Strip.Continue", "tr-TR"), await browser.EvaluateAsync<string>($"{OwnerNext}.textContent.trim()", ct));
+        Assert.False(await browser.EvaluateAsync<bool>($"{OwnerNext}.hasAttribute('data-su-autosend')", ct));
+        await Js(browser, "__su.set('signupOwnerFullName', 'Ayşe Kaya')", ct);
+        await Js(browser, $"__su.set('signupOwnerEmail', 'yeni.{applicant.Email}')", ct);
+        await Js(browser, $"__su.set('signupOwnerPhone', '0{applicant.Digits}')", ct);
+        Assert.Equal(applicant.Grouped, await ValueAsync(browser, "signupOwnerPhone", ct));
+        Assert.Equal(Text("Signup.Strip.Continue", "tr-TR"), await browser.EvaluateAsync<string>($"{OwnerNext}.textContent.trim()", ct));
+
+        await ContinueAsync(browser, "phone", ct);
+        var verified = await browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const step = document.getElementById('signupStep-phone');
+              const change = [...step.querySelectorAll('[data-su-phone-change]')].find(b => !b.hidden && b.getClientRects().length > 0);
+              return {
+                state: step.getAttribute('data-phone-state'),
+                title: step.querySelector('[data-su-phone-title]').textContent.trim(),
+                number: step.querySelector('[data-su-phone-full]').textContent.trim(),
+                primary: step.querySelector('[data-su-phone-primary]').textContent.trim(),
+                change: change ? change.textContent.trim() : '',
+                codeShown: !step.querySelector('[data-su-code-field]').hidden
+              };
+            })()
+            """, ct);
+        Assert.Equal("verified", verified.GetProperty("state").GetString());
+        Assert.Equal(Text("Signup.Phone.TitleVerified", "tr-TR"), verified.GetProperty("title").GetString());
+        Assert.Equal(applicant.Display, verified.GetProperty("number").GetString());
+        Assert.Equal(Text("Signup.Flow.ToReview", "tr-TR"), verified.GetProperty("primary").GetString());
+        Assert.Equal(Text("Signup.Phone.ChangeNumber", "tr-TR"), verified.GetProperty("change").GetString());
+        Assert.False(verified.GetProperty("codeShown").GetBoolean());
+        Assert.Equal(sent, Outbox.MessagesTo(applicant.E164).Count);
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
+        Assert.Equal("phone", await CurrentAsync(browser, ct));
+        var draft = await SavedDraftAsync(browser, ct);
+        Assert.Equal("verified", draft.GetProperty("phone").GetProperty("state").GetString());
+        Assert.Equal("Ayşe Kaya", draft.GetProperty("owner").GetProperty("fullName").GetString());
+        Assert.Equal(applicant.Digits, draft.GetProperty("owner").GetProperty("mobilePhone").GetString());
+
+        // Another number: the account step offers to send a code, and typing it sends nothing.
+        var second = Applicant.New();
+        await Js(browser, "__su.click('#signupStep-phone [data-su-go=owner]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+        await Js(browser, $"__su.set('signupOwnerPhone', '{second.Digits}')", ct);
+        Assert.Equal(Text("Signup.Flow.ToPhone", "tr-TR"), await browser.EvaluateAsync<string>($"{OwnerNext}.textContent.trim()", ct));
+        Assert.True(await browser.EvaluateAsync<bool>($"{OwnerNext}.hasAttribute('data-su-autosend')", ct));
+        Assert.Empty(Outbox.MessagesTo(second.E164));
+
+        // The visitor's send: one code to the second number. Its check is answered "verified" by the server, but the
+        // answer is held while the visitor goes back and changes to a third number.
+        await ContinueAsync(browser, "phone", ct);
+        await WaitForAsync(browser, $"{PhoneState} === 'codeSent'", ct);
+        Assert.Single(Outbox.MessagesTo(second.E164));
+        await Js(browser, "window.__suVerify.hold = true", ct);
+        await Js(browser, $"__su.set('signupPhoneCode', '{Outbox.LatestCodeTo(second.E164)}')", ct);
+        await WaitForAsync(browser, "!!window.__suVerify.held", ct);
+        var third = Applicant.New();
+        await Js(browser, "__su.click('#signupStep-phone [data-su-go=owner]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+        await Js(browser, $"__su.set('signupOwnerPhone', '{third.Digits}')", ct);
+        await ContinueAsync(browser, "phone", ct);
+        Assert.Equal(third.Digits, (await SavedDraftAsync(browser, ct)).GetProperty("owner").GetProperty("mobilePhone").GetString());
+
+        // The late "verified" for the second number verifies nothing and moves nothing.
+        await Js(browser, "window.__suVerify.hold = false; window.__suVerify.held()", ct);
+        await WaitForAsync(browser, $"{PhoneState} !== 'verified' && !document.querySelector('[data-su-phone-primary]').hasAttribute('aria-busy')", ct);
+        Assert.Equal("phone", await CurrentAsync(browser, ct));
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
+        Assert.NotEqual("verified", (await SavedDraftAsync(browser, ct)).GetProperty("phone").GetProperty("state").GetString());
+
+        // No submit before the third number is verified.
+        var refused = await browser.EvaluateAsync<JsonElement>("""
+            (async () => {
+              const endpoints = JSON.parse(document.getElementById('signupEndpoints').textContent);
+              const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+              const response = await fetch(endpoints.submit, { method: 'POST', headers: { 'RequestVerificationToken': token, 'Content-Type': 'application/json' }, body: '{}' });
+              return { status: response.status, body: await response.json() };
+            })()
+            """, ct);
+        Assert.Equal(409, refused.GetProperty("status").GetInt32());
+        Assert.Equal("Signup.Phone.NotVerified", refused.GetProperty("body").GetProperty("code").GetString());
+
+        // The third number gets its code by the visitor's send and is verified like any new number.
+        if (await browser.EvaluateAsync<string>(PhoneState, ct) != "codeSent")
+        {
+            await Js(browser, "__su.click('[data-su-phone-primary]')", ct);
+            await WaitForAsync(browser, $"{PhoneState} === 'codeSent'", ct);
+        }
+        Assert.Single(Outbox.MessagesTo(third.E164));
+        await Js(browser, $"__su.set('signupPhoneCode', '{Outbox.LatestCodeTo(third.E164)}')", ct);
+        await WaitForAsync(browser, "window.__suMove.scheduled === 2", ct);
+        await Js(browser, "window.__suMove.pending()", ct);
+        await WaitForAsync(browser, "__su.current() === 'review'", ct);
+        Assert.Equal(third.Display, (await ReviewAsync(browser, ct)).GetProperty("ownerPhone").GetString());
+        Assert.Equal(sent, Outbox.MessagesTo(applicant.E164).Count);
+    }
+
+    // A number with more digits than a Türkiye number keeps them all in its field, also through a type switch, and is
+    // refused at its field (business phone and owner mobile) instead of being saved as another number.
+    [Fact]
+    public async Task APhoneNumberTooLong_KeepsEveryDigitInSight_AndIsRefusedAtItsField()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, CountRestaurantSaves);
+        var applicant = Applicant.New();
+        await OpenAsync(browser, "/signup?plan=Pro", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+        await FillRestaurantAsync(browser, applicant, ct);
+
+        await Js(browser, """
+            const p = document.getElementById('signupBusinessPhone');
+            p.focus(); p.select();
+            const data = new DataTransfer(); data.setData('text', '+90 212 345 67 89 12');
+            p.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+            """, ct);
+        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
+        await Js(browser, "document.getElementById('signupBusinessPhoneType-Mobile').click()", ct);
+        await Js(browser, "document.getElementById('signupBusinessPhone').blur()", ct);
+        await Js(browser, "document.getElementById('signupBusinessPhoneType-Landline').click()", ct);
+        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        await Js(browser, NextButton + ".click()", ct);
+        await WaitForAsync(browser, "document.getElementById('signupBusinessPhone-error').textContent.trim().length > 0", ct);
+        Assert.Equal(Text("Validation.BusinessPhoneTooLong", "tr-TR"), await browser.EvaluateAsync<string>("document.getElementById('signupBusinessPhone-error').textContent.trim()", ct));
+        Assert.Equal("signupBusinessPhone", await ActiveIdAsync(browser, ct));
+        Assert.Equal("restaurant", await CurrentAsync(browser, ct));
+        Assert.Equal(0, await RestaurantSavesAsync(browser, ct));
+        Assert.Equal("212 345 67 89 12", await ValueAsync(browser, "signupBusinessPhone", ct));
+
+        // Corrected, it saves as typed.
+        await Js(browser, "__su.set('signupBusinessPhone', '212 345 67 89')", ct);
+        await ContinueAsync(browser, "owner", ct);
+        Assert.Equal("2123456789", (await SavedRestaurantAsync(browser, ct)).GetProperty("businessPhone").GetString());
+
+        // The owner's mobile with one digit too many: kept in sight, refused at its field, and no code is sent.
+        await FillOwnerAsync(browser, applicant, ct);
+        await Js(browser, $"__su.set('signupOwnerPhone', '0{applicant.Digits}8')", ct);
+        Assert.Equal(applicant.Grouped + " 8", await ValueAsync(browser, "signupOwnerPhone", ct));
+        await Js(browser, OwnerNext + ".click()", ct);
+        await WaitForAsync(browser, "document.getElementById('signupOwnerPhone-error').textContent.trim().length > 0", ct);
+        Assert.Equal(Text("Validation.MobilePhoneInvalid", "tr-TR"), await browser.EvaluateAsync<string>("document.getElementById('signupOwnerPhone-error').textContent.trim()", ct));
+        Assert.Equal("owner", await CurrentAsync(browser, ct));
+        Assert.Empty(Outbox.MessagesTo(applicant.E164));
+    }
+
     // The bottom of what the visitor sees: the top of the phone's strip when it shows, otherwise the window's bottom.
     private const string ViewBottom = "(() => { const s = document.querySelector('[data-su-strip]'); return s && s.getClientRects().length ? s.getBoundingClientRect().top : innerHeight; })()";
 

@@ -4432,6 +4432,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Phone verification is temporarily unavailable. Please try again in a few minutes.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Mobile phone number is required.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Enter a valid Turkish mobile number, for example 532 123 45 67.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>The phone number is too long. Enter at most 10 digits after +90, without an extension.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>Phone verification</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>Verification by SMS</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Verified</value></data>
@@ -4461,7 +4464,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>The code goes to</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>The code was sent to</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Verified number</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Change number</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Change phone number</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Enter the mobile number that should receive the code.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>We will send a code to the new number. The previous number's verification no longer counts.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Send the code to this number</value></data>

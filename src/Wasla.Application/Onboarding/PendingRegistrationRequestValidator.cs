@@ -127,9 +127,12 @@ public static class PendingRegistrationRules
                           || string.Equals(type, nameof(BusinessPhoneType.Landline), StringComparison.OrdinalIgnoreCase))
             .WithMessage("Validation.BusinessPhoneTypeInvalid");
 
+        // Too many digits for a Türkiye number is refused, never cut (the page keeps them in sight). Shorter numbers and
+        // the rest of the format stay unchecked, as before.
         v.RuleFor(x => x.BusinessPhone)
             .NotEmpty().WithMessage("Validation.Required")
-            .MaximumLength(50).WithMessage(TooLong);
+            .MaximumLength(50).WithMessage(TooLong)
+            .Must(phone => !TurkishBusinessPhone.IsTooLong(phone)).WithMessage("Validation.BusinessPhoneTooLong");
 
         v.RuleFor(x => x.BusinessEmail)
             .EmailAddress().WithMessage("Validation.EmailInvalid")

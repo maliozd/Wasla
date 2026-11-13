@@ -51,8 +51,6 @@
     var enterpriseNotice = document.getElementById("signupEnterpriseNotice");
     var baseDomainEl = document.getElementById("signupBaseDomain");
     var baseDomain = baseDomainEl ? baseDomainEl.value : "";
-    var slugManuallyEdited = false;
-    var initialSlug = slugInput ? slugInput.value : "";
     var citySelect = document.getElementById("signupCityId");
     var districtSelect = document.getElementById("signupDistrictId");
     var neighborhoodInput = document.getElementById("signupNeighborhood");
@@ -128,10 +126,6 @@
         config.cities.forEach(function (city) {
             citiesById[city.id] = city;
         });
-    }
-
-    if (slugInput && initialSlug.trim().length > 0) {
-        slugManuallyEdited = true;
     }
 
     function updateDomainPreview() {
@@ -687,20 +681,21 @@
     updatePlanUi();
 
     if (slugInput) {
-        slugInput.addEventListener("input", function () {
-            slugManuallyEdited = true;
-            updateDomainPreview();
-        });
+        slugInput.addEventListener("input", updateDomainPreview);
     }
 
+    // Every edit of the business name makes the panel address again from it, also after the visitor changed the
+    // address by hand (owner's decision); an empty name empties it. The new address goes through the address field's
+    // own input event, so its old availability answer and server error go and the check runs for the new value. A
+    // draft put back on load sets the name without an event, so its saved address stays.
     if (businessNameInput && slugInput) {
         businessNameInput.addEventListener("input", function () {
-            if (slugManuallyEdited) {
+            var generated = generateSlugFromBusinessName(businessNameInput.value);
+            if (slugInput.value === generated) {
                 return;
             }
-
-            slugInput.value = generateSlugFromBusinessName(businessNameInput.value);
-            updateDomainPreview();
+            slugInput.value = generated;
+            slugInput.dispatchEvent(new Event("input", { bubbles: true }));
         });
     }
 

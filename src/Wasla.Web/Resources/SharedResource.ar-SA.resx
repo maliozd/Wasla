@@ -4432,6 +4432,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>التحقق من الهاتف غير متاح مؤقتًا. يرجى المحاولة بعد بضع دقائق.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>رقم الجوال مطلوب.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>أدخل رقم جوال تركيًا صالحًا، مثل &#x2066;532 123 45 67&#x2069;.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>رقم الهاتف طويل جدًا. أدخل 10 أرقام على الأكثر بعد &#x2066;+90&#x2069;، دون رقم داخلي.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>التحقق من الهاتف</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>التحقق عبر رسالة نصية</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>تم التحقق</value></data>
@@ -4461,7 +4464,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>الرقم الذي سيُرسل إليه الرمز</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>الرقم الذي أُرسل إليه الرمز</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>الرقم الذي تم التحقق منه</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>تغيير الرقم</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>تغيير رقم الهاتف</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>أدخل رقم الجوال الذي تريد استلام الرمز عليه.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>سنرسل رمزًا إلى الرقم الجديد، ولن يعود التحقق من الرقم السابق ساريًا.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>أرسل الرمز إلى هذا الرقم</value></data>

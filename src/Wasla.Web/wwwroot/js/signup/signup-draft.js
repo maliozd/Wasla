@@ -213,11 +213,13 @@
             state: state,
             sending: !!local.sending,
             changing: !!local.changing,
-            showCode: state === "codeSent" || state === "expired" || state === "verified",
+            // A verified number shows its card, "continue" and "change"; the code field only during the confirmation
+            // right after the code was accepted (local.confirming), not when the verified step is opened again.
+            showCode: state === "codeSent" || state === "expired" || (state === "verified" && !!local.confirming),
             codeEnabled: state === "codeSent" && !local.sending,
             showNumberCard: state !== "verified" && state !== "unavailable",
-            showVerifiedCard: state === "verified",
-            canChangeNumber: state !== "verified" && state !== "unavailable" && !local.sending,
+            showVerifiedCard: state === "verified" && !local.changing,
+            canChangeNumber: state !== "unavailable" && !local.sending,
             resendIn: null,
             canSendNow: false,
             primary: null

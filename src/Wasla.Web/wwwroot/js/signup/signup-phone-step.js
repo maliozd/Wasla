@@ -42,7 +42,7 @@
             card: q("[data-su-phone-card]"),
             cardLabel: q("[data-su-phone-card-label]"),
             masked: q("[data-su-phone-masked]"),
-            changeButton: q("[data-su-phone-change]"),
+            changeButtons: root.querySelectorAll("[data-su-phone-change]"),
             verifiedCard: q("[data-su-phone-verified]"),
             fullNumber: q("[data-su-phone-full]"),
             changer: q("[data-su-phone-changer]"),
@@ -71,7 +71,7 @@
         var moving = null;
 
         var status = options.status || { state: "notSent" };
-        var local = { sending: false, changing: false, codeExpired: false, busy: false };
+        var local = { sending: false, changing: false, codeExpired: false, busy: false, confirming: false };
         // Counts the phone requests started and answered here, so a draft read that overlapped one of them does not
         // put back the older phone state it carries.
         var revision = 0;
@@ -162,7 +162,9 @@
             }
             clearTimeout(moving.timer);
             moving = null;
+            local.confirming = false;
             showMoving("");
+            render();
         }
 
         function moveOn() {
@@ -177,6 +179,8 @@
                 return;
             }
             var move = moving = {};
+            local.confirming = true;
+            render();
             showMoving(messages.verifiedMoving);
             move.timer = setTimeout(function () {
                 if (moving === move) {
@@ -295,9 +299,9 @@
                         : el.cardLabel.getAttribute("data-label-default"));
                 }
             }
-            if (el.changeButton) {
-                el.changeButton.hidden = !view.canChangeNumber;
-            }
+            Array.prototype.forEach.call(el.changeButtons, function (button) {
+                button.hidden = !view.canChangeNumber;
+            });
             if (el.verifiedCard) {
                 el.verifiedCard.hidden = !view.showVerifiedCard;
                 setText(el.fullNumber, fullNumber || status.maskedPhone || "");
@@ -521,9 +525,16 @@
             revision += 1;
             setCodeError("");
             render();
+            // The number this code was typed for. If the owner's number changed while the check was out, its answer
+            // belongs to the old number: it verifies nothing here and moves nobody; the server's current state is read.
+            var forNumber = fullNumber;
             return api.verifyCode(normalized).then(function (result) {
                 revision += 1;
                 local.busy = false;
+                if (fullNumber !== forNumber) {
+                    render();
+                    return refreshStatus();
+                }
                 if (result.ok) {
                     clearAlert();
                     apply(result.data);
@@ -552,12 +563,20 @@
             }
         }
 
+        // The visible "change number" button: on the number card, or on the verified card.
+        function shownChangeButton() {
+            return Array.prototype.filter.call(el.changeButtons, function (button) {
+                return !button.hidden && button.getClientRects().length > 0;
+            })[0] || null;
+        }
+
         function closeChanger() {
             local.changing = false;
             setChangeError("");
             render();
-            if (el.changeButton && !el.changeButton.hidden) {
-                el.changeButton.focus();
+            var change = shownChangeButton();
+            if (change) {
+                change.focus();
             }
         }
 

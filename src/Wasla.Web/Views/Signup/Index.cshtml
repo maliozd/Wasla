@@ -205,6 +205,11 @@
             stateDone = L["Signup.Receipt.StateDone"].Value,
             stateCurrent = L["Signup.Receipt.StateCurrent"].Value,
             stateUpcoming = L["Signup.Receipt.StateUpcoming"].Value,
+            businessPhoneTooLong = L["Validation.BusinessPhoneTooLong"].Value,
+            mobilePhoneInvalid = L["Validation.MobilePhoneInvalid"].Value,
+            ownerContinue = L["Signup.Strip.Continue"].Value,
+            ownerSendCode = L["Signup.Flow.ToPhone"].Value,
+            ownerSendCodeShort = L["Signup.Phone.Send"].Value,
             phoneVerified = L["Signup.Receipt.PhoneVerified"].Value,
             planRequired = L["Validation.PlanRequired"].Value,
             payPlanRow = L["Signup.Pay.PlanRow"].Value,
@@ -707,9 +712,11 @@
                     </div>
                 </section>
 
-                @* ---------------------------------------------------------------- 3. Account owner (Figma D3, M3) *@
+                @* ---------------------------------------------------------------- 3. Account owner (Figma D3, M3)
+                   With the number the server verified, the step's action only continues (no code is sent); otherwise it
+                   sends the code. signup-flow.js keeps it in line with the number in the field. *@
                 <section class="su-step" id="signupStep-owner" data-su-step="owner" aria-labelledby="signupStep-owner-title"
-                         data-su-strip-label="@L["Signup.Phone.Send"]" data-su-strip-carries hidden="@Hidden("owner")">
+                         data-su-strip-label="@L[phoneVerified ? "Signup.Strip.Continue" : "Signup.Phone.Send"]" data-su-strip-carries hidden="@Hidden("owner")">
                     <div class="su-step__bar">
                         <button type="button" class="su-back" data-su-go="restaurant" aria-label="@string.Format(L["Signup.Flow.BackTo"].Value, L["Signup.StepBusiness"].Value)">
                             <i class="bi bi-chevron-left su-flip-rtl" aria-hidden="true"></i>@L["Signup.StepBusiness"]
@@ -791,7 +798,7 @@
                     <p class="su-help su-inline-note">@L["Signup.SetupLaterNote"]</p>
 
                     <div class="su-actions su-actions--strip">
-                        <button type="button" class="su-btn su-btn--primary" data-su-next data-su-autosend>@L["Signup.Flow.ToPhone"]</button>
+                        <button type="button" class="su-btn su-btn--primary" data-su-next data-su-autosend="@(phoneVerified ? null : "")">@L[phoneVerified ? "Signup.Strip.Continue" : "Signup.Flow.ToPhone"]</button>
                     </div>
                 </section>
 

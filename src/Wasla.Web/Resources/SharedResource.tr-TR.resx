@@ -4432,6 +4432,9 @@
   <data name="Signup.Phone.CapacityReached" xml:space="preserve"><value>Telefon doğrulaması geçici olarak kullanılamıyor. Lütfen birkaç dakika sonra tekrar deneyin.</value></data>
   <data name="Validation.MobilePhoneRequired" xml:space="preserve"><value>Cep telefonu numarası gereklidir.</value></data>
   <data name="Validation.MobilePhoneInvalid" xml:space="preserve"><value>Geçerli bir Türkiye cep telefonu numarası girin, örneğin 532 123 45 67.</value></data>
+  <data name="Validation.BusinessPhoneTooLong" xml:space="preserve">
+    <value>Telefon numarası çok uzun. +90'dan sonra en fazla 10 rakam girin; dahili numara eklemeyin.</value>
+  </data>
   <data name="Signup.StepPhone" xml:space="preserve"><value>Telefon doğrulama</value></data>
   <data name="Signup.Receipt.HintPhone" xml:space="preserve"><value>SMS ile doğrulama</value></data>
   <data name="Signup.Receipt.PhoneVerified" xml:space="preserve"><value>Doğrulandı</value></data>
@@ -4461,7 +4464,7 @@
   <data name="Signup.Phone.NumberLabel" xml:space="preserve"><value>Kodun gönderileceği numara</value></data>
   <data name="Signup.Phone.NumberLabelSent" xml:space="preserve"><value>Kodun gönderildiği numara</value></data>
   <data name="Signup.Phone.VerifiedNumberLabel" xml:space="preserve"><value>Doğrulanan numara</value></data>
-  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Numarayı değiştir</value></data>
+  <data name="Signup.Phone.ChangeNumber" xml:space="preserve"><value>Telefon numarasını değiştir</value></data>
   <data name="Signup.Phone.ChangeLead" xml:space="preserve"><value>Kodu almak istediğiniz cep telefonu numarasını girin.</value></data>
   <data name="Signup.Phone.ChangeHelp" xml:space="preserve"><value>Yeni numaraya kod göndereceğiz. Önceki numaranın doğrulaması geçerliliğini yitirir.</value></data>
   <data name="Signup.Phone.SendToNumber" xml:space="preserve"><value>Kodu bu numaraya gönder</value></data>

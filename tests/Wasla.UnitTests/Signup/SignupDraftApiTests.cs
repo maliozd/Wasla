@@ -681,6 +681,33 @@ public sealed class SignupDraftApiTests : IClassFixture<SignupDraftApiTests.Host
         }
     }
 
+    // The page keeps every digit a visitor types or pastes; the server refuses a number longer than a Türkiye number
+    // instead of saving it, and keeps accepting a short one and the prefixes the page removes.
+    [Theory]
+    [InlineData("212345678912", false)]
+    [InlineData("+90 212 345 67 89 12", false)]
+    [InlineData("0212 345 67 89 dahili 123", false)]
+    [InlineData("2123456789", true)]
+    [InlineData("0212 345 67 89", true)]
+    [InlineData("+90 212 345 67 89", true)]
+    [InlineData("4441234", true)]
+    public async Task ABusinessPhoneLongerThanATurkishNumber_IsRefusedAtItsField_NeverCut(string businessPhone, bool accepted)
+    {
+        using var client = Client();
+        await SignupDraftClient.AssertOkAsync(client.SavePlanAsync());
+        var body = SignupDraftClient.Restaurant();
+        body["businessPhone"] = businessPhone;
+
+        var response = await client.SaveRestaurantAsync(body);
+        if (!accepted)
+        {
+            AssertFieldError(response, "restaurant", "businessPhone", "Validation.BusinessPhoneTooLong");
+            return;
+        }
+        Assert.True(response.Status == HttpStatusCode.OK, response.Body);
+        Assert.Equal(businessPhone, response.Json.GetProperty("restaurant").GetProperty("businessPhone").GetString());
+    }
+
     private static Dictionary<string, object?> TurkeyRestaurant(string? neighborhood, int? neighborhoodId = null)
     {
         var body = SignupDraftClient.Restaurant();
