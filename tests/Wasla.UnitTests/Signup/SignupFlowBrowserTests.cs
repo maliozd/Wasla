@@ -26,8 +26,9 @@ namespace Wasla.UnitTests.Signup;
 /// Edit and a reload; the phone step gating the review (a wrong code, a changed number, a failed delivery, and a submit
 /// sent before verification); the advisory address check ignoring a stale answer; the final address conflict at submit;
 /// the searchable address lists (keyboard choice, catalog ids, a failed district list and its retry, the required
-/// neighbourhood, the list's place on screen); keyboard and error focus; and Arabic right to left at phone width. Every
-/// wait is on page state.
+/// neighbourhood, the list's place on screen); the landline's area-code hint; the checked plan and the receipt after the
+/// browser reloads the page from its history; the confirmation after a fresh verification and its cancellation; the
+/// password Show control; keyboard and error focus; and Arabic right to left at phone width. Every wait is on page state.
 /// </summary>
 [Trait("Category", "Browser")]
 public sealed class SignupFlowBrowserTests : IAsyncLifetime
@@ -910,6 +911,11 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await ContinueAsync(browser, "restaurant", ct);
         await FillBusinessAsync(browser, Applicant.New(), ct);
 
+        // The four fields search their own lists. Their autocomplete token is one the browser does not read as an
+        // address field, so its saved-address popup stays closed over them (Chrome ignores "off" there).
+        foreach (var id in new[] { "signupCityInput", "signupDistrictInput", "signupNeighborhood", "signupStreetAddress" })
+            Assert.Equal("wasla-list-search", await AttributeAsync(browser, id, "autocomplete", ct));
+
         // City: focus alone opens nothing; a lower-case query without Turkish letters finds İstanbul, Enter chooses it
         // and the step stays where it is, with focus in the field.
         await Js(browser, "document.getElementById('signupCityInput').focus()", ct);
@@ -1176,25 +1182,254 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         await Js(browser, "document.getElementById('signupBusinessPhoneType-Landline').click()", ct);
         Assert.Equal("216 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
 
-        // The hint: the localized example with İstanbul's code (216 here), its number isolated left to right.
+        // The hint names the chosen city's area code: İstanbul has two (the catalog stores one), isolated left to right.
+        // The number typed is left as it is.
         var hint = await browser.EvaluateAsync<JsonElement>("""
             (() => {
               const hint = document.getElementById('signupPhoneHint');
-              const number = hint.querySelector('bdi[dir=ltr]');
-              const text = number.firstChild;
+              const codes = hint.querySelector('bdi[dir=ltr]');
+              const text = codes.firstChild;
               const rect = (from, to) => { const r = document.createRange(); r.setStart(text, from); r.setEnd(text, to); return r.getBoundingClientRect(); };
-              return { text: hint.textContent, number: number.textContent, countryLeft: rect(0, 3).left, areaLeft: rect(4, 7).left };
+              return { text: hint.textContent, codes: codes.textContent, firstLeft: rect(0, 3).left, secondLeft: rect(6, 9).left };
             })()
             """, ct);
-        Assert.Equal(Text("Signup.LandlinePhoneHint", culture).Replace("{0}", "+90 216 345 67 89", StringComparison.Ordinal), hint.GetProperty("text").GetString());
-        Assert.Equal("+90 216 345 67 89", hint.GetProperty("number").GetString());
-        Assert.True(hint.GetProperty("countryLeft").GetDouble() < hint.GetProperty("areaLeft").GetDouble(), $"+90 is not shown before the area code: {hint}");
+        Assert.Equal(string.Format(CultureInfo.InvariantCulture, Text("Signup.LandlineAreaCodeHint", culture), "İstanbul", "212 / 216"), hint.GetProperty("text").GetString());
+        Assert.Equal("212 / 216", hint.GetProperty("codes").GetString());
+        Assert.True(hint.GetProperty("firstLeft").GetDouble() < hint.GetProperty("secondLeft").GetDouble(), $"212 is not shown before 216: {hint}");
+        Assert.Equal("216 345 67 89", await ValueAsync(browser, "signupBusinessPhone", ct));
 
         await ContinueAsync(browser, "owner", ct);
         var saved = await SavedRestaurantAsync(browser, ct);
         Assert.Equal("Landline", saved.GetProperty("businessPhoneType").GetString());
         Assert.Equal("2163456789", saved.GetProperty("businessPhone").GetString());
         Assert.Equal("", await ValueAsync(browser, "signupOwnerPhone", ct));
+    }
+
+    // The checked plan and period, the price its card shows, and what the receipt says.
+    private static Task<JsonElement> PlanChoiceAsync(HeadlessChromium browser, CancellationToken ct) =>
+        browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const plan = document.querySelector('input[name=PlanCode]:checked');
+              const period = document.querySelector('input[name=BillingPeriod]:checked');
+              const card = plan.closest('.su-plan');
+              const price = [...card.querySelectorAll('.su-plan__price [data-su-period]')].find(e => e.getClientRects().length > 0);
+              const receipt = document.getElementById('signupReceipt-title').closest('[data-su-receipt]');
+              return {
+                plan: plan.value,
+                period: period.value,
+                planName: card.querySelector('.su-plan__name').textContent.trim(),
+                periodShown: document.querySelector('[data-su-root]').getAttribute('data-su-period-shown'),
+                cardPeriod: price ? price.getAttribute('data-su-period') : '',
+                cardAmount: price ? price.querySelector('.su-plan__amount').textContent.trim() : '',
+                receiptPlan: receipt.querySelector('[data-su-text="planLine"]').textContent.trim(),
+                receiptAmount: receipt.querySelector('[data-su-text="amount"]').textContent.trim()
+              };
+            })()
+            """, ct);
+
+    // One plan and one period on the whole page: the checked radios, the prices the cards show and the receipt.
+    private static void AssertOnePlanChoice(JsonElement choice)
+    {
+        var period = choice.GetProperty("period").GetString();
+        var periodWord = Text(period == "Yearly" ? "Signup.Receipt.PeriodYearly" : "Signup.Receipt.PeriodMonthly", "tr-TR");
+        Assert.Equal(period, choice.GetProperty("periodShown").GetString());
+        Assert.Equal(period, choice.GetProperty("cardPeriod").GetString());
+        Assert.Equal(string.Format(CultureInfo.InvariantCulture, Text("Signup.Receipt.PlanLine", "tr-TR"), choice.GetProperty("planName").GetString(), periodWord),
+            choice.GetProperty("receiptPlan").GetString());
+        Assert.Equal(choice.GetProperty("cardAmount").GetString(), choice.GetProperty("receiptAmount").GetString());
+    }
+
+    // Chrome reloads a page from its history when the back/forward cache cannot keep it (an unload listener rules it out
+    // here), then checks the radios the visitor last chose: after the page's script drew the receipt, with no change
+    // event, leaving one plan checked beside another plan's price. The plan and period radios belong to the draft, so
+    // the browser leaves them alone and the page shows one choice.
+    [Fact]
+    public async Task APlanChosenButNotSaved_IsNotPutBackByTheBrowserAfterAHistoryReload_SoTheReceiptMatchesTheCheckedPlan()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, mobile: false, ct);
+        await OpenAsync(browser, "/signup?plan=Starter", ct);
+        var start = await PlanChoiceAsync(browser, ct);
+        Assert.Equal("Starter", start.GetProperty("plan").GetString());
+        Assert.Equal("Monthly", start.GetProperty("period").GetString());
+        AssertOnePlanChoice(start);
+
+        await ClickAsync(browser, "document.querySelector('label[for=signupBillingPeriod-Yearly]')", ct);
+        await ClickAsync(browser, "document.querySelector('label[for=signupPlan-Pro]')", ct);
+        var chosen = await PlanChoiceAsync(browser, ct);
+        Assert.Equal("Pro", chosen.GetProperty("plan").GetString());
+        Assert.Equal("Yearly", chosen.GetProperty("period").GetString());
+        AssertOnePlanChoice(chosen);
+
+        // Away and back through the history, as a new document: a page kept by the cache would still have its marker.
+        await Js(browser, "window.__suSamePage = true; window.addEventListener('unload', () => {})", ct);
+        await browser.NavigateAsync(new Uri($"http://{Host}:{Port}/"), ct);
+        await WaitForAsync(browser, "location.pathname === '/'", ct);
+        await Js(browser, "history.back()", ct);
+        await WaitForAsync(browser, "location.pathname === '/signup' && document.readyState === 'complete' && !!window.__su && __su.current() === 'plan'", ct);
+        Assert.False(await browser.EvaluateAsync<bool>("window.__suSamePage === true", ct), "The page came back from the back/forward cache: nothing was restored.");
+        Assert.Equal("back_forward", await browser.EvaluateAsync<string>("performance.getEntriesByType('navigation')[0].type", ct));
+
+        // The unsaved choice is not put back; what is checked is what the cards and the receipt say.
+        var back = await PlanChoiceAsync(browser, ct);
+        AssertOnePlanChoice(back);
+        Assert.Equal("Starter", back.GetProperty("plan").GetString());
+        Assert.Equal("Monthly", back.GetProperty("period").GetString());
+    }
+
+    // The page's pause after a fresh verification, held by the test instead of the clock: the timer is recorded, not
+    // started. A changed pause is not caught here, so pending stays null and the test fails.
+    private const string ControlVerifiedPause = """
+        (() => {
+          const setTimer = window.setTimeout.bind(window);
+          window.__suMove = { pending: null, scheduled: 0 };
+          window.setTimeout = (callback, ms, ...args) => {
+            if (ms !== 1200) return setTimer(callback, ms, ...args);
+            window.__suMove.scheduled++;
+            window.__suMove.pending = callback;
+            return 0;
+          };
+        })();
+        """;
+
+    private const string MovingText = "document.querySelector('[data-su-phone-moving]').textContent.trim()";
+
+    [Fact]
+    public async Task AFreshVerification_ConfirmsOnThePhoneStep_ThenOpensTheReviewAtItsHeading_AndARestoredOneDoesNotWait()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, ControlVerifiedPause);
+        var applicant = Applicant.New();
+        await ReachPhoneStepAsync(browser, applicant, ct);
+        await Js(browser, $"__su.set('signupPhoneCode', '{Outbox.LatestCodeTo(applicant.E164)}')", ct);
+
+        // The server's answer starts the confirmation: still the phone step, the verified state, the visible line, and
+        // its sentence once in the step's status region (the line itself is hidden from assistive technology).
+        await WaitForAsync(browser, "!!window.__suMove.pending", ct);
+        Assert.Equal("phone", await CurrentAsync(browser, ct));
+        Assert.Equal("verified", await browser.EvaluateAsync<string>("document.getElementById('signupStep-phone').getAttribute('data-phone-state')", ct));
+        var confirmation = await browser.EvaluateAsync<JsonElement>("""
+            (() => {
+              const line = document.querySelector('[data-su-phone-moving]');
+              const live = document.querySelector('[data-su-phone-moving-live]');
+              return { line: line.textContent.trim(), shown: !line.hidden && line.getClientRects().length > 0, lineHidden: line.getAttribute('aria-hidden'), live: live.textContent, role: live.getAttribute('role') };
+            })()
+            """, ct);
+        Assert.Equal(Text("Signup.Phone.VerifiedMoving", "tr-TR"), confirmation.GetProperty("line").GetString());
+        Assert.True(confirmation.GetProperty("shown").GetBoolean());
+        Assert.Equal("true", confirmation.GetProperty("lineHidden").GetString());
+        Assert.Equal(Text("Signup.Phone.VerifiedMoving", "tr-TR"), confirmation.GetProperty("live").GetString());
+        Assert.Equal("status", confirmation.GetProperty("role").GetString());
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
+
+        // When the pause ends the review opens with focus on its heading, and the confirmation is gone.
+        await Js(browser, "window.__suMove.pending()", ct);
+        await WaitForAsync(browser, "__su.current() === 'review'", ct);
+        await WaitForAsync(browser, "document.activeElement === document.getElementById('signupStep-review-title')", ct);
+        Assert.Equal("", await browser.EvaluateAsync<string>(MovingText, ct));
+        Assert.Equal("", await browser.EvaluateAsync<string>("document.querySelector('[data-su-phone-moving-live]').textContent", ct));
+
+        // A draft that comes back verified does not wait again: the phone step shows the verified number without the
+        // confirmation, and its "continue" opens the review at once.
+        await OpenAsync(browser, "/signup?step=phone", ct);
+        await WaitForAsync(browser, "__su.current() === 'phone' && document.getElementById('signupStep-phone').getAttribute('data-phone-state') === 'verified'", ct);
+        Assert.Equal("", await browser.EvaluateAsync<string>(MovingText, ct));
+        await Js(browser, "__su.click('[data-su-phone-primary]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'review'", ct);
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
+    }
+
+    [Fact]
+    public async Task LeavingThePhoneStepDuringTheConfirmation_CancelsTheMove_AndItsTimerMovesNothingLater()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, ControlVerifiedPause);
+        var applicant = Applicant.New();
+        await ReachPhoneStepAsync(browser, applicant, ct);
+        await Js(browser, $"__su.set('signupPhoneCode', '{Outbox.LatestCodeTo(applicant.E164)}')", ct);
+        await WaitForAsync(browser, "!!window.__suMove.pending", ct);
+
+        // Back to the owner step during the confirmation: the move is dropped with its sentence.
+        await Js(browser, "__su.click('#signupStep-phone [data-su-go=owner]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'owner'", ct);
+        Assert.Equal("", await browser.EvaluateAsync<string>(MovingText, ct));
+
+        // The timer that was already running ends: nothing moves.
+        await Js(browser, "window.__suMove.pending()", ct);
+        await browser.EvaluateAsync<bool>("new Promise(resolve => setTimeout(() => resolve(true), 300))", ct);
+        Assert.Equal("owner", await CurrentAsync(browser, ct));
+
+        // Coming back to the verified number does not start another wait; "continue" opens the review once.
+        await ContinueAsync(browser, "phone", ct);
+        Assert.Equal("verified", await browser.EvaluateAsync<string>("document.getElementById('signupStep-phone').getAttribute('data-phone-state')", ct));
+        await Js(browser, "__su.click('[data-su-phone-primary]')", ct);
+        await WaitForAsync(browser, "__su.current() === 'review'", ct);
+        Assert.Equal(1, await browser.EvaluateAsync<int>("window.__suMove.scheduled", ct));
+    }
+
+    [Theory]
+    [InlineData("tr-TR", 1440, 900, false)]
+    [InlineData("ar-SA", 390, 844, true)]
+    public async Task ThePasswordsShowControl_KeepsTheValueCaretAndFocus_SaysWhatItDoesNext_AndSitsAtTheFieldsEnd(string culture, int width, int height, bool mobile)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, height, mobile, ct);
+        await OpenAsync(browser, "/signup?plan=Pro", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+        await FillRestaurantAsync(browser, Applicant.New(), ct);
+        await ContinueAsync(browser, "owner", ct);
+        await Js(browser, "__su.set('signupPassword', 'Fake-pass-194')", ct);
+        const string Toggle = "document.querySelector('[data-target=signupPassword]')";
+
+        // At the field's end (the left in Arabic), inside its box, with the field's text kept clear of it.
+        var place = await browser.EvaluateAsync<JsonElement>($$"""
+            (() => {
+              const input = document.getElementById('signupPassword');
+              const toggle = {{Toggle}};
+              const i = input.getBoundingClientRect();
+              const t = toggle.getBoundingClientRect();
+              const rtl = getComputedStyle(input).direction === 'rtl';
+              return {
+                rtl,
+                inside: t.top >= i.top && t.bottom <= i.bottom && t.left >= i.left && t.right <= i.right,
+                fromEnd: rtl ? t.left - i.left : i.right - t.right,
+                room: parseFloat(getComputedStyle(input).paddingInlineEnd) - t.width,
+                height: t.height
+              };
+            })()
+            """, ct);
+        Assert.Equal(culture == "ar-SA", place.GetProperty("rtl").GetBoolean());
+        Assert.True(place.GetProperty("inside").GetBoolean(), $"The control is not inside the field: {place}");
+        Assert.InRange(place.GetProperty("fromEnd").GetDouble(), 0, 12);
+        Assert.True(place.GetProperty("room").GetDouble() >= 6, $"The field's text can run under the control: {place}");
+        Assert.True(place.GetProperty("height").GetDouble() >= 24, $"The control is too small to press: {place}");
+
+        // A pointer press with the caret in the field: shown, value and caret kept, focus still in the field.
+        await Js(browser, "const p = document.getElementById('signupPassword'); p.focus(); p.setSelectionRange(4, 4)", ct);
+        await ClickAsync(browser, Toggle, ct);
+        var shown = await browser.EvaluateAsync<JsonElement>($$"""
+            (() => {
+              const p = document.getElementById('signupPassword');
+              const t = {{Toggle}};
+              return { type: p.type, value: p.value, caret: p.selectionStart, focused: document.activeElement === p, text: t.textContent.trim(), name: t.getAttribute('aria-label') };
+            })()
+            """, ct);
+        Assert.Equal("text", shown.GetProperty("type").GetString());
+        Assert.Equal("Fake-pass-194", shown.GetProperty("value").GetString());
+        Assert.Equal(4, shown.GetProperty("caret").GetInt32());
+        Assert.True(shown.GetProperty("focused").GetBoolean());
+        Assert.Equal(Text("Signup.Password.Hide", culture), shown.GetProperty("text").GetString());
+        Assert.Equal(Text("Common.HidePassword", culture), shown.GetProperty("name").GetString());
+
+        // From the keyboard: Enter on the control hides it again and the focus stays on the control.
+        await Js(browser, $"{Toggle}.focus()", ct);
+        await browser.PressKeyAsync("Enter", shift: false, ct);
+        Assert.Equal("password", await browser.EvaluateAsync<string>("document.getElementById('signupPassword').type", ct));
+        Assert.Equal("Fake-pass-194", await ValueAsync(browser, "signupPassword", ct));
+        Assert.True(await browser.EvaluateAsync<bool>($"document.activeElement === {Toggle}", ct));
+        Assert.Equal(Text("Signup.Password.Show", culture), await browser.EvaluateAsync<string>($"{Toggle}.textContent.trim()", ct));
+        Assert.Equal(Text("Common.ShowPassword", culture), await browser.EvaluateAsync<string>($"{Toggle}.getAttribute('aria-label')", ct));
+        Assert.Equal("owner", await CurrentAsync(browser, ct));
     }
 
     // The bottom of what the visitor sees: the top of the phone's strip when it shows, otherwise the window's bottom.

@@ -4782,4 +4782,16 @@
   <data name="Signup.LandlinePhoneHint" xml:space="preserve">
     <value>Example: {0}</value>
   </data>
+  <data name="Signup.LandlineAreaCodeHint" xml:space="preserve">
+    <value>{0} area code: {1}</value>
+  </data>
+  <data name="Signup.Password.Show" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="Signup.Password.Hide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
+    <value>Phone verified, continuing…</value>
+  </data>
 </root>

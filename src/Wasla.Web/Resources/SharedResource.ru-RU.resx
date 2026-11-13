@@ -5270,4 +5270,16 @@
   <data name="Signup.LandlinePhoneHint" xml:space="preserve">
     <value>Пример: {0}</value>
   </data>
+  <data name="Signup.LandlineAreaCodeHint" xml:space="preserve">
+    <value>Код города {0}: {1}</value>
+  </data>
+  <data name="Signup.Password.Show" xml:space="preserve">
+    <value>Показать</value>
+  </data>
+  <data name="Signup.Password.Hide" xml:space="preserve">
+    <value>Скрыть</value>
+  </data>
+  <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
+    <value>Телефон подтверждён, продолжаем…</value>
+  </data>
 </root>

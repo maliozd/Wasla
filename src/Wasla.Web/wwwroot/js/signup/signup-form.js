@@ -536,18 +536,33 @@
         return checked ? checked.value : "";
     }
 
-    // The localized landline example ("Örnek: {0}") with the number kept left to right, also in Arabic.
+    function isolated(text, dir) {
+        var element = document.createElement("bdi");
+        element.setAttribute("dir", dir);
+        element.textContent = text;
+        return element;
+    }
+
+    // A localized sentence with its {n} slots filled by the given nodes.
+    function fillTemplate(target, template, nodes) {
+        target.textContent = "";
+        String(template).split(/(\{\d+\})/).forEach(function (part) {
+            var slot = /^\{(\d+)\}$/.exec(part);
+            var node = slot ? nodes[Number(slot[1])] : null;
+            target.appendChild(node || document.createTextNode(slot ? "" : part));
+        });
+    }
+
+    // Landline: the chosen city's area code by name ("Ordu alan kodu: 452"; İstanbul lists 212 and 216), the codes kept
+    // left to right in Arabic. Before a city is chosen, the localized example. Only a hint: the number stays as typed.
     function showLandlineHint(city) {
+        var codes = city && city.phoneAreaCodes && city.phoneAreaCodes.length ? city.phoneAreaCodes : null;
+        if (codes && config.landlineAreaCodeHint) {
+            fillTemplate(phoneHint, config.landlineAreaCodeHint, [isolated(city.name, "auto"), isolated(codes.join(" / "), "ltr")]);
+            return;
+        }
         var helper = window.WaslaSignupPhone;
-        var example = helper ? helper.landlineExample(city && city.phoneAreaCode) : "";
-        var parts = String(config.landlineHint || "{0}").split("{0}");
-        phoneHint.textContent = "";
-        phoneHint.appendChild(document.createTextNode(parts[0] || ""));
-        var number = document.createElement("bdi");
-        number.setAttribute("dir", "ltr");
-        number.textContent = example;
-        phoneHint.appendChild(number);
-        phoneHint.appendChild(document.createTextNode(parts[1] || ""));
+        fillTemplate(phoneHint, config.landlineHint || "{0}", [isolated(helper ? helper.landlineExample(null) : "", "ltr")]);
     }
 
     function updatePhoneUi() {
@@ -631,24 +646,37 @@
         }
     }
 
+    // Show / Hide in each password field. The text says what a press does next and the accessible name says it in full
+    // ("Şifreyi göster"). Switching keeps the value, the caret and the focus: a pointer press leaves the focus in the
+    // field it was in, a keyboard press leaves it on the control.
     function initPasswordToggles() {
         document.querySelectorAll(".signup-password-toggle").forEach(function (button) {
-            button.addEventListener("click", function () {
-                var targetId = button.getAttribute("data-target");
-                var input = targetId ? document.getElementById(targetId) : null;
-                if (!input) return;
+            var targetId = button.getAttribute("data-target");
+            var input = targetId ? document.getElementById(targetId) : null;
+            if (!input) return;
 
-                var isPassword = input.type === "password";
-                input.type = isPassword ? "text" : "password";
-                var icon = button.querySelector("i");
-                if (icon) {
-                    icon.classList.toggle("bi-eye", !isPassword);
-                    icon.classList.toggle("bi-eye-slash", isPassword);
+            button.addEventListener("mousedown", function (event) {
+                if (document.activeElement === input) {
+                    event.preventDefault();
                 }
+            });
 
-                var label = isPassword ? (config.hidePasswordText || "") : (config.showPasswordText || "");
-                button.setAttribute("aria-label", label);
-                button.setAttribute("title", label);
+            button.addEventListener("click", function () {
+                var reveal = input.type === "password";
+                var focused = document.activeElement === input;
+                var start = input.selectionStart;
+                var end = input.selectionEnd;
+                var direction = input.selectionDirection;
+                input.type = reveal ? "text" : "password";
+                if (focused && typeof start === "number") {
+                    try {
+                        input.setSelectionRange(start, end, direction || "none");
+                    } catch (e) {
+                        // A browser without selection on this type keeps its own caret.
+                    }
+                }
+                button.textContent = (reveal ? config.hidePasswordLabel : config.showPasswordLabel) || "";
+                button.setAttribute("aria-label", (reveal ? config.hidePasswordText : config.showPasswordText) || "");
             });
         });
     }

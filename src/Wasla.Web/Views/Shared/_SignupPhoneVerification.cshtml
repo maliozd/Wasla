@@ -89,6 +89,12 @@
         </li>
     </ul>
 
+    @* A fresh verification: a short confirmation before the review opens (signup-phone-step.js). The line is what the
+       visitor sees; its sentence is announced once from the status region, which is always in the page so that a
+       screen reader hears the change. *@
+    <p class="su-status su-phone-moving" data-state="moving" data-su-phone-moving aria-hidden="true" hidden></p>
+    <span class="su-visually-hidden" role="status" data-su-phone-moving-live></span>
+
     <div class="su-actions">
         <button type="button" class="su-btn su-btn--primary" data-su-phone-primary>@L[verified ? "Signup.Flow.ToReview" : sent ? "Signup.Phone.Verify" : "Signup.Phone.Send"]</button>
     </div>

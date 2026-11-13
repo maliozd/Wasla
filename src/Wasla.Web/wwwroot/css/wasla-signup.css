@@ -84,9 +84,11 @@
 /* ---------- Layout ---------- */
 
 /* The page's grid is the public header's (.wm-container--wide, same gutters): the steps start at the logo's edge and
-   the receipt ends at the header's end. The step column keeps one measure for its heading, text and cards. */
+   the receipt ends at the header's end. The step column keeps one measure for its heading, text and cards; the
+   receipt column widens on wide screens, where the step column still has its full measure. */
 .su-shell {
   --su-main-width: 680px;
+  --su-aside-width: 376px;
 }
 
 .su-container {
@@ -127,7 +129,7 @@
 
 @media (min-width: 992px) {
   .su-layout {
-    grid-template-columns: minmax(0, var(--su-main-width)) minmax(320px, 376px);
+    grid-template-columns: minmax(0, var(--su-main-width)) minmax(320px, var(--su-aside-width));
     justify-content: space-between;
     column-gap: clamp(48px, 8vw, 120px);
     align-items: start;
@@ -145,6 +147,12 @@
   /* On the review step the aside shows the payment card instead of the step list. */
   .su-shell[data-su-current="review"] .su-aside .su-receipt-block {
     display: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .su-shell {
+    --su-aside-width: 408px;
   }
 }
 
@@ -732,7 +740,7 @@
   background: var(--su-action-soft);
 }
 
-/* A control with a fixed prefix (+90) or suffix (.app.wasla.tr) or a trailing button. The group is the bordered box. */
+/* A control with a fixed prefix (+90) or suffix (.app.wasla.tr). The group is the bordered box. */
 .su-group {
   display: flex;
   align-items: stretch;
@@ -790,24 +798,48 @@
   border-inline-start: 1px solid var(--su-border);
 }
 
-.su-group__button {
+/* Show / Hide in a password field: quiet text at the field's trailing edge, no box of its own. The field keeps its own
+   border, focus and error states, with room left for the longest label (Russian "Показать"). */
+.su-reveal {
+  position: relative;
+}
+
+.su-reveal .su-reveal__input {
+  padding-inline-end: 96px;
+}
+
+/* Edge's own reveal eye would sit beside this control. */
+.su-reveal .su-reveal__input::-ms-reveal,
+.su-reveal .su-reveal__input::-ms-clear {
+  display: none;
+}
+
+.su-reveal__toggle {
+  position: absolute;
+  inset-block: 6px;
+  inset-inline-end: 6px;
   display: inline-flex;
-  flex: none;
   align-items: center;
-  justify-content: center;
-  inline-size: 48px;
+  min-inline-size: 44px;
+  padding-inline: 10px;
   border: 0;
+  border-radius: calc(var(--su-radius-control) - 4px);
   background: none;
-  color: var(--su-text-muted);
+  color: var(--su-action);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.su-group__button:hover {
-  color: var(--su-text);
+.su-reveal__toggle:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.su-group__button:focus-visible {
-  outline-offset: -4px;
+.su-reveal__toggle:focus-visible {
+  outline: 2px solid var(--su-action);
+  outline-offset: 0;
 }
 
 /* ---------- Segmented control (billing period, phone type) ---------- */
@@ -1914,9 +1946,11 @@
   box-shadow: inset 0 0 0 1px var(--su-success);
 }
 
+/* The code runs left to right in every language, so its check sits at its right end, also in Arabic (a logical end
+   would put it on the first digit there). */
 .su-code__check {
   position: absolute;
-  inset-inline-end: 16px;
+  right: 16px;
   top: 50%;
   display: none;
   color: var(--su-success);
@@ -2257,6 +2291,19 @@
   color: var(--su-action);
 }
 
+/* A fresh verification's confirmation, shown for a moment before the review opens. */
+.su-phone-moving {
+  align-items: center;
+  color: var(--su-success);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.su-phone-moving .su-spinner {
+  margin-block-start: 0;
+  margin-inline-start: 2px;
+}
+
 .su-dev-note {
   display: flex;
   gap: 8px;
@@ -2323,5 +2370,10 @@
   .su-spinner,
   .su-status[data-state="checking"]::before {
     animation-duration: 2.4s;
+  }
+
+  /* The confirmation's sentence says it all; nothing spins. */
+  .su-phone-moving .su-spinner {
+    display: none;
   }
 }

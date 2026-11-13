@@ -22,6 +22,13 @@
 
     var ROW_LIMIT = 6.5;
 
+    // The input searches this control's own list, so the browser's address suggestions must not open over it. Chrome
+    // (checked in 157 with a saved address) ignores autocomplete="off" on fields it reads as address fields: its
+    // "Manage addresses…" popup opened on the city and street inputs beside the list. A token it does not recognise
+    // keeps that popup closed, and filling a saved address from another field (the postal code) leaves these inputs
+    // alone. The rest of the form keeps its standard tokens, so autofill and password managers work there as before.
+    var SEARCH_AUTOCOMPLETE = "wasla-list-search";
+
     function format(template, value) {
         return String(template || "").replace("{0}", value);
     }
@@ -60,7 +67,7 @@
         input.setAttribute("aria-autocomplete", "list");
         input.setAttribute("aria-expanded", "false");
         input.setAttribute("aria-controls", list.id);
-        input.setAttribute("autocomplete", "off");
+        input.setAttribute("autocomplete", SEARCH_AUTOCOMPLETE);
         input.removeAttribute("list");
 
         // ------------------------------------------------------------------ items

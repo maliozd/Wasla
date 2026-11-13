@@ -12,7 +12,8 @@ namespace Wasla.UnitTests.Signup;
 /// <summary>
 /// The signup page's markup and resources (WAS-194), rendered by the real controllers and views of a
 /// <see cref="SignupWebHost"/>: one H1, the five steps in flow order, the receipt marking the open step, the SMS code
-/// field's attributes, the address fields' searchable lists and required markers, the no-script notice, the draft and
+/// field's attributes, the address fields' searchable lists and required markers, the address before the contact
+/// details, the draft's radios kept out of the browser's form restore, the password Show controls, the no-script notice, the draft and
 /// endpoints the script reads, truthful money wording per
 /// environment, and every resource key the signup views and the draft API use present in all five resource files.
 /// Browser behaviour is in <see cref="SignupFlowBrowserTests"/>.
@@ -124,6 +125,43 @@ public sealed partial class SignupPageMarkupTests : IAsyncLifetime
         foreach (var optional in new[] { "signupBuildingNumber", "signupFloor", "signupDoorNumber", "signupPostalCode", "signupAddressNote", "signupLocationUrl" })
             Assert.Matches($"<label class=\"su-label\" for=\"{optional}\">[^<]*<span class=\"su-optional\">", page.Body);
         Assert.Contains(Text("Signup.Address.NeighborhoodLabel", "tr-TR"), body);
+    }
+
+    // The restaurant step asks for the address before the contact details, so the city is chosen before the landline
+    // (its hint names the city's area code), in the page's order, which is also the tab and reading order. The radios
+    // the draft decides stay out of the browser's form restore, and each password field has one Show control at its end.
+    [Theory]
+    [InlineData("tr-TR")]
+    [InlineData("ar-SA")]
+    public async Task TheAddressComesBeforeTheContact_TheDraftsRadiosStayOutOfTheFormRestore_AndEachPasswordHasOneShowControl(string culture)
+    {
+        var page = await GetAsync("Production", culture);
+        var body = WebUtility.HtmlDecode(page.Body);
+
+        var restaurant = Regex.Match(body, "<section class=\"su-step\" id=\"signupStep-restaurant\".*?</section>", RegexOptions.Singleline).Value;
+        Assert.Equal(
+            new[] { "Signup.Flow.SectionBusiness", "Signup.Flow.SectionPanelAddress", "Signup.StepAddress", "Signup.StepContact" }.Select(key => Text(key, culture)).ToArray(),
+            Regex.Matches(restaurant, "<h3 class=\"su-section__title\">(?<text>[^<]*)</h3>").Select(m => m.Groups["text"].Value.Trim()).ToArray());
+        Assert.True(restaurant.IndexOf("id=\"signupStreetAddress\"", StringComparison.Ordinal) < restaurant.IndexOf("id=\"signupBusinessPhoneType-Mobile\"", StringComparison.Ordinal));
+
+        foreach (var name in new[] { "BillingPeriod", "PlanCode", "BusinessPhoneType" })
+        {
+            var radios = Regex.Matches(page.Body, $"<input(?=[^>]*type=\"radio\")(?=[^>]*name=\"{name}\")[^>]*>", RegexOptions.Singleline);
+            Assert.True(radios.Count >= 2, $"Only {radios.Count} {name} radios found.");
+            Assert.All(radios, radio => Assert.Contains("autocomplete=\"off\"", radio.Value));
+        }
+
+        foreach (var input in new[] { "signupPassword", "signupConfirmPassword" })
+        {
+            var reveal = Regex.Match(body, $"<div class=\"su-reveal\">\\s*<input[^>]*id=\"{input}\"[^>]*>\\s*<button (?<attributes>[^>]*)>(?<text>[^<]*)</button>\\s*</div>", RegexOptions.Singleline);
+            Assert.True(reveal.Success, $"No Show control at the end of {input}.");
+            var attributes = reveal.Groups["attributes"].Value;
+            Assert.Contains("type=\"button\"", attributes);
+            Assert.Contains($"aria-controls=\"{input}\"", attributes);
+            Assert.Contains($"aria-label=\"{Text("Common.ShowPassword", culture)}\"", attributes);
+            Assert.Equal(Text("Signup.Password.Show", culture), reveal.Groups["text"].Value.Trim());
+        }
+        Assert.DoesNotContain("bi-eye", Regex.Match(body, "<section class=\"su-step\" id=\"signupStep-owner\".*?</section>", RegexOptions.Singleline).Value);
     }
 
     [Fact]

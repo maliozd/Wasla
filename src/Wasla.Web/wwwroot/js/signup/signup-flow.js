@@ -1049,7 +1049,12 @@
                     state = Steps.setComplete(state, "phone", verified && !!(draft.owner && draft.owner.complete));
                     renderReceipt();
                 },
+                // Opens the review at its heading. Only from the phone step: an answer that arrives after the visitor
+                // went elsewhere moves nothing.
                 onVerified: function () {
+                    if (state.current !== "phone") {
+                        return;
+                    }
                     hidePageAlert();
                     navigateAndFocus("review");
                 },

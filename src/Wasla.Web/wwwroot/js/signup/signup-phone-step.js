@@ -59,8 +59,16 @@
             countdownValue: q("[data-su-phone-countdown] .su-countdown"),
             resend: q("[data-su-phone-resend]"),
             sending: q("[data-su-phone-sending]"),
+            moving: q("[data-su-phone-moving]"),
+            movingLive: q("[data-su-phone-moving-live]"),
             primary: q("[data-su-phone-primary]")
         };
+
+        // After a verify answer of this page confirms the number, the step stays for a moment with a confirmation, then
+        // the flow moves on. Only that answer starts the wait (a draft restored as verified moves at once). Leaving the
+        // step, another phone state or the visitor's own "continue" ends it, and a wait that ended never moves anyone.
+        var VERIFIED_PAUSE_MS = 1200;
+        var moving = null;
 
         var status = options.status || { state: "notSent" };
         var local = { sending: false, changing: false, codeExpired: false, busy: false };
@@ -117,6 +125,64 @@
             } else {
                 el.changeInput.removeAttribute("aria-invalid");
             }
+        }
+
+        // ------------------------------------------------------------ The move after a fresh verification
+
+        // The confirmation: its sentence once in the status region, and the visible line (hidden from assistive
+        // technology, so the sentence is not read twice) with a check and a small spinner.
+        function showMoving(text) {
+            if (el.movingLive) {
+                el.movingLive.textContent = text || "";
+            }
+            if (!el.moving) {
+                return;
+            }
+            el.moving.textContent = "";
+            el.moving.hidden = !text;
+            if (!text) {
+                return;
+            }
+            var icon = document.createElement("i");
+            icon.className = "bi bi-check-circle-fill";
+            icon.setAttribute("aria-hidden", "true");
+            var label = document.createElement("span");
+            label.textContent = text;
+            var spinner = document.createElement("span");
+            spinner.className = "su-spinner";
+            spinner.setAttribute("aria-hidden", "true");
+            el.moving.appendChild(icon);
+            el.moving.appendChild(label);
+            el.moving.appendChild(spinner);
+        }
+
+        function endMove() {
+            if (!moving) {
+                return;
+            }
+            clearTimeout(moving.timer);
+            moving = null;
+            showMoving("");
+        }
+
+        function moveOn() {
+            endMove();
+            if (status.state === "verified" && typeof hooks.onVerified === "function") {
+                hooks.onVerified(status);
+            }
+        }
+
+        function startMove() {
+            if (moving) {
+                return;
+            }
+            var move = moving = {};
+            showMoving(messages.verifiedMoving);
+            move.timer = setTimeout(function () {
+                if (moving === move) {
+                    moveOn();
+                }
+            }, VERIFIED_PAUSE_MS);
         }
 
         // ------------------------------------------------------------ Timers
@@ -300,6 +366,9 @@
         function apply(next) {
             var previous = status.state;
             status = next || status;
+            if (status.state !== "verified") {
+                endMove();
+            }
             if (status.state !== "codeSent") {
                 local.codeExpired = false;
             }
@@ -458,8 +527,10 @@
                 if (result.ok) {
                     clearAlert();
                     apply(result.data);
-                    if (status.state === "verified" && typeof hooks.onVerified === "function") {
-                        hooks.onVerified(status);
+                    // An answer that arrives after the visitor left the step starts nothing: back on the step, the
+                    // verified number waits for their "continue".
+                    if (status.state === "verified" && !root.hidden) {
+                        startMove();
                     }
                     return;
                 }
@@ -468,6 +539,7 @@
         }
 
         function openChanger() {
+            endMove();
             local.changing = true;
             clearAlert();
             setChangeError("");
@@ -526,8 +598,9 @@
                 send();
             } else if (kind === "verify") {
                 verify(el.code ? el.code.value : "");
-            } else if (kind === "continue" && typeof hooks.onVerified === "function") {
-                hooks.onVerified(status);
+            } else if (kind === "continue") {
+                // During the confirmation too: the visitor's press moves now, once, and the wait is dropped.
+                moveOn();
             } else if (kind === "sendToNumber") {
                 submitChange();
             }
@@ -594,6 +667,7 @@
             },
             leave: function () {
                 stopOtp();
+                endMove();
             },
             focusTarget: function () {
                 if (local.changing && el.changeInput) {
