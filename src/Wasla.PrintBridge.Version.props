@@ -1,0 +1,17 @@
+<Project>
+
+	<!--
+		The one Print Bridge version (WAS-62): the app (Wasla.PrintBridge.exe), the service (Wasla.PrintBridge.Service.exe),
+		the MSI and the setup EXE all carry it, so an installed app and service always come from the same release.
+		Imported by both executables' projects and by the installer projects under installer/print-bridge.
+
+		Format major.minor.build, each part within Windows Installer's limits (255.255.65535): the MSI compares these three
+		parts for major upgrades and downgrade refusal. scripts/release/package-print-bridge.ps1 -Version overrides it for one
+		build (PrintBridgeVersion); a release raises it here.
+	-->
+	<PropertyGroup>
+		<PrintBridgeVersion Condition="'$(PrintBridgeVersion)' == ''">1.0.0</PrintBridgeVersion>
+		<Version>$(PrintBridgeVersion)</Version>
+	</PropertyGroup>
+
+</Project>

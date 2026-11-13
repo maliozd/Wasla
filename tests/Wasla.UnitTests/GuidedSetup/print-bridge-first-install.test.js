@@ -5,7 +5,7 @@ const {
   guided, page, MESSAGES, TOKEN, NEW_DEVICE_URL, SESSION_URL, DOWNLOAD_URL, PROTOCOL_URL
 } = require("./print-bridge-setup-page.js");
 
-// Guided first install on the Print Bridge setup page: download the ZIP, confirm it is prepared (or say it is already
+// Guided first install on the Print Bridge setup page: download and run the setup, confirm it (or say it is already
 // installed), then choose automatic or manual connection. Page load does nothing; only "Open Print Bridge and connect"
 // creates the setup session; the manual section opens only when the user chooses it.
 

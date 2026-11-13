@@ -1,7 +1,7 @@
 @model Wasla.Web.Models.PrintBridge.PrintBridgeSetupViewModel
 @*
-    Guided first install, for a new device: download the Windows application package, prepare it, choose automatic or
-    manual connection, then test the printer and meet the device. There is no setup-type choice and no reconnect here;
+    Guided first install, for a new device: download Print Bridge setup, install and open Print Bridge (WAS-62), choose
+    automatic or manual connection, then test the printer and meet the device. There is no setup-type choice and no reconnect here;
     reconnecting belongs to the ordinary setup page and the device pages.
     Nothing happens on load. The download is a plain link the user clicks; it creates no session, device or token.
     Later steps appear only after an explicit click (print-bridge-setup.js), and their numbers stay fixed. Only "Open
@@ -44,11 +44,11 @@
     <li value="2" class="wasla-print-bridge-first-install__step" id="pbStepPrepare" hidden>
         <h2 class="wasla-print-bridge-first-install__title" id="pbStepPrepareTitle" tabindex="-1">@L["PrintBridge.FirstInstall.Prepare.Title"]</h2>
         <ol class="wasla-print-bridge-first-install__substeps">
-            <li>@L["PrintBridge.FirstInstall.Prepare.Extract"]</li>
-            <li>@L["PrintBridge.FirstInstall.Prepare.Run"]</li>
+            <li>@L["PrintBridge.FirstInstall.Prepare.RunSetup", Model.PackageFileName]</li>
             <li>@L["PrintBridge.FirstInstall.Prepare.Runtime"]</li>
+            <li>@L["PrintBridge.FirstInstall.Prepare.Run"]</li>
         </ol>
-        @* The browser cannot see the extraction or the app starting, so the user says when it is done. *@
+        @* The browser cannot see the setup or the app starting, so the user says when it is done. *@
         <div class="wasla-print-bridge-first-install__actions">
             <button type="button" class="btn btn-primary" id="pbPreparedBtn" aria-controls="pbStepConnect">@L["PrintBridge.FirstInstall.Prepare.Done"]</button>
         </div>

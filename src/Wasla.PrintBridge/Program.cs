@@ -32,6 +32,7 @@ internal static class Program
 
         // A wasla-printbridge://setup?... URI may be passed by the OS when the browser launches us.
         var setupUri = ExtractSetupUri(args);
+        var startedAtSignIn = PrintBridgeSignInStart.IsRequestedBy(args);
 
         ApplicationConfiguration.Initialize();
         System.Windows.Forms.Application.EnableVisualStyles();
@@ -48,6 +49,9 @@ internal static class Program
                 return;
             }
 
+            if (startedAtSignIn)
+                return;
+
             MessageBox.Show(
                 PrintBridgeLocalizer.GetStringForCulture("Message.AlreadyRunning", startupCulture, Environment.NewLine),
                 PrintBridgePaths.ProductDisplayName,
@@ -58,7 +62,8 @@ internal static class Program
 
         var services = PrintBridgeUiServices.Build(startupCulture);
 
-        // Register/repair the per-user protocol handler on each launch (no admin rights required).
+        // The installed app uses the setup's machine-wide protocol handler and removes a per-user copy an earlier Print
+        // Bridge wrote; a development or support copy registers or repairs its per-user handler (WAS-62).
         // An isolated Debug instance (WASLA_PRINTBRIDGE_DATA_ROOT) must not take over the real install's
         // protocol handler or setup pipe.
         var startupLogger = services.Loggers.CreateLogger("Wasla.PrintBridge.Startup");

@@ -1,0 +1,28 @@
+<Project Sdk="WixToolset.Sdk/7.0.1">
+
+	<!--
+		Wasla.PrintBridge-Setup-x64.exe (WAS-62). Built by scripts/release/package-print-bridge.ps1 after the MSI
+		(PrintBridgeMsiPath) and with Microsoft's WebView2 Runtime bootstrapper it downloaded and verified
+		(WebView2BootstrapperPath); it is not part of Wasla.sln.
+	-->
+	<PropertyGroup>
+		<OutputType>Bundle</OutputType>
+		<OutputName>Wasla.PrintBridge-Setup-x64</OutputName>
+		<!-- Must match WebView2RuntimeProbe.MinimumRuntimeVersion (checked by PrintBridgeInstallerSourceTests). -->
+		<WebView2MinimumVersion>120.0.2210.55</WebView2MinimumVersion>
+		<DefineConstants>Version=$(PrintBridgeVersion);ProductName=$(PrintBridgeProductName);MsiPath=$(PrintBridgeMsiPath);WebView2Bootstrapper=$(WebView2BootstrapperPath);WebView2MinimumVersion=$(WebView2MinimumVersion)</DefineConstants>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="WixToolset.Bal.wixext" Version="7.0.1" />
+		<PackageReference Include="WixToolset.Util.wixext" Version="7.0.1" />
+	</ItemGroup>
+
+	<Target Name="WaslaRequireBundleInputs" BeforeTargets="Build;CoreCompile">
+		<Error Condition="'$(PrintBridgeMsiPath)' == '' or !Exists('$(PrintBridgeMsiPath)')"
+		       Text="PrintBridgeMsiPath must name the built Print Bridge MSI. Build with scripts/release/package-print-bridge.ps1." />
+		<Error Condition="'$(WebView2BootstrapperPath)' == '' or !Exists('$(WebView2BootstrapperPath)')"
+		       Text="WebView2BootstrapperPath must name Microsoft's WebView2 Runtime bootstrapper (MicrosoftEdgeWebview2Setup.exe). Build with scripts/release/package-print-bridge.ps1." />
+	</Target>
+
+</Project>

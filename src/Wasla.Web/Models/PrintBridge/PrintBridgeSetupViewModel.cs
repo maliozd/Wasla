@@ -2,7 +2,7 @@
 
 public sealed class PrintBridgeSetupViewModel
 {
-    public const string DefaultPackageFileName = "Wasla.PrintBridge-win-x64.zip";
+    public const string DefaultPackageFileName = Wasla.Web.PrintBridge.PrintBridgePackagePaths.DefaultPackageFileName;
 
     public string PackageDownloadUrl { get; set; } = "/print-bridge/download/package";
     public string DevicesUrl { get; set; } = "/print-bridge/devices";

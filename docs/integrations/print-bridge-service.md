@@ -1,12 +1,12 @@
 # Wasla Print Bridge Windows Service (WAS-61)
 
-> **Distribution warning.** After WAS-61 the portable ZIP of `Wasla.PrintBridge.exe` is **not a complete printing installation**: the app alone does not print, and it shows "The Print Bridge service is not running" until `Wasla.PrintBridge.Service.exe` is registered as a Windows Service (commands below). Do not distribute a Print Bridge package built from `dev` until WAS-62 delivers the installer that registers the service. `scripts/release/package-print-bridge.ps1` still publishes and zips only `Wasla.PrintBridge`, and its README still says to extract the ZIP and run `Wasla.PrintBridge.exe`; WAS-62 replaces both.
+> **Installation.** Since WAS-62 Print Bridge is installed with `Wasla.PrintBridge-Setup-x64.exe`, which registers this service exactly as documented below ([print-bridge-installer.md](print-bridge-installer.md)). The app alone is not a printing installation: it shows "The Print Bridge service is not running" until the service is registered. The support ZIP (development and support recovery only) needs the manual commands in [Installer handoff](#installer-handoff-was-62). Builds from this repository are unsigned development builds until the release pipeline signs them; do not give them to restaurants.
 
 ## Purpose and scope
 
 This document owns the Print Bridge process split introduced by WAS-61: the Windows Service that runs the printing engine, the tray/WebView2 app that is now its client, the local IPC contract between them, the service identity and data folder permissions, lifecycle and crash recovery, and the handoff to the installer (WAS-62) and update delivery (WAS-63).
 
-It does not repeat the job flow, setup links, moves between restaurants or the app window; those stay in [print-bridge.md](print-bridge.md). Production packaging, WebView2 bootstrapping, startup registration of the tray app and automatic updates are WAS-62 and WAS-63, not this change.
+It does not repeat the job flow, setup links, moves between restaurants or the app window; those stay in [print-bridge.md](print-bridge.md). The installer, the WebView2 Runtime and the app's start at sign-in are in [print-bridge-installer.md](print-bridge-installer.md) (WAS-62); automatic updates are WAS-63.
 
 ## Process boundary
 
@@ -52,7 +52,7 @@ What the account needs, and why it has it:
 - **Spooler and printers:** see [Supported printer installation](#supported-printer-installation).
 - **Session 0:** the service has no desktop. Printing is RAW through winspool (`OpenPrinter`/`StartDocPrinter`/`WritePrinter`), which needs no desktop and no GDI device context, so it works in session 0. Nothing in the service shows UI; every confirmation is shown by the app in the user's session.
 - **Data folder:** Modify on `C:\ProgramData\Wasla\PrintBridge` (below).
-- **Registry:** none. The app's `wasla-printbridge://` handler stays per user in `HKCU` and is written by the app.
+- **Registry:** none. The `wasla-printbridge://` handler is the installer's, for every user (`HKLM\Software\Classes`, WAS-62); a development or support copy of the app writes it per user.
 
 ## Supported printer installation
 
@@ -229,7 +229,7 @@ The journal is settled before new jobs are claimed. The first cycle after a star
 
 ## Installer handoff (WAS-62)
 
-Commands for an elevated PowerShell or command prompt, with the binaries installed in `C:\Program Files\Wasla\Print Bridge\` (adjust the path):
+The setup (WAS-62, [print-bridge-installer.md](print-bridge-installer.md)) applies exactly these settings and the rules below. The commands remain for support (the support ZIP) and development: an elevated PowerShell or command prompt, with the binaries in `C:\Program Files\Wasla\Print Bridge\` (adjust the path):
 
 ```cmd
 sc.exe create WaslaPrintBridge binPath= "\"C:\Program Files\Wasla\Print Bridge\Wasla.PrintBridge.Service.exe\"" obj= "NT SERVICE\WaslaPrintBridge" start= auto depend= Spooler DisplayName= "Wasla Print Bridge"
@@ -254,7 +254,7 @@ Rules for the installer:
 - Install both executables and `shell-ui\` in one folder that only administrators can write (Program Files). The service account needs Read & execute there, which Program Files grants to `Users`.
 - Stop and remove an older Print Bridge app that runs its own engine (any build before WAS-61) before starting the service; until it exits, the service waits (engine lock). Close the app (`Wasla.PrintBridge.exe`) before replacing it.
 - Run `secure-data` after `sc create` (the account must exist) and before `sc start`; on an update run it again.
-- Start the tray app at sign-in for every user (for example `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`). The app no longer reads `Ui.StartWithWindows`; startup is the installer's.
+- Start the tray app at sign-in for every user: the setup's `HKLM\Software\Microsoft\Windows\CurrentVersion\Run` entry passes `--startup`, so a second start in the same session ends quietly. The app does not read `Ui.StartWithWindows`; startup is the installer's.
 - Uninstall: stop and delete the service, close the app, remove the files. Keep `C:\ProgramData\Wasla\PrintBridge` unless the user asks to remove the pairing (it holds the token, the installation id and history).
 - Updates (WAS-63) replace both executables together: the app and the service must speak the same protocol version, and a mismatch is shown, never guessed around.
 
@@ -284,4 +284,4 @@ Two levels, reported separately:
    dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj -c Release --filter "FullyQualifiedName~PrintBridgeWindowsServiceTests|FullyQualifiedName~SetupInstanceCrossAccountTests"
    ```
 
-Not covered by either: a physical receipt printer, a real per-user printer connection (needs a second computer, above), Windows shutdown with a job in progress, a reboot, a domain-joined machine, and the installer itself (WAS-62, WAS-28).
+Not covered by either: a physical receipt printer, a real per-user printer connection (needs a second computer, above), Windows shutdown with a job in progress, a reboot and a domain-joined machine (WAS-28). The installer has its own tests ([print-bridge-installer.md](print-bridge-installer.md#verification)).

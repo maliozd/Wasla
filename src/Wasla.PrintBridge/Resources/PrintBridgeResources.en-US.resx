@@ -825,10 +825,19 @@
     <value>WebView2 Runtime required</value>
   </data>
   <data name="RuntimeNotice.Message" xml:space="preserve">
-    <value>The Print Bridge window needs the Microsoft Edge WebView2 Runtime, which is missing or cannot be used on this computer. Receipt printing continues in the background. Install or repair the Microsoft Edge WebView2 Runtime, then restart Print Bridge.</value>
+    <value>The Print Bridge window needs the Microsoft Edge WebView2 Runtime, which is missing or cannot be used on this computer. Receipt printing continues in the background. Run Wasla Print Bridge setup (download it from the Print Bridge page in Wasla): it installs the runtime. Then open Print Bridge again.</value>
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>Close</value>
+  </data>
+  <data name="RuntimeNotice.MessageRepair" xml:space="preserve">
+    <value>The Print Bridge window needs the Microsoft Edge WebView2 Runtime, which is missing or cannot be used on this computer. Receipt printing continues in the background. Choose Repair to run Wasla Print Bridge setup again: it installs the runtime. It needs administrator permission and an internet connection. Then open Print Bridge again.</value>
+  </data>
+  <data name="RuntimeNotice.Repair" xml:space="preserve">
+    <value>Repair</value>
+  </data>
+  <data name="RuntimeNotice.RepairFailed" xml:space="preserve">
+    <value>Setup could not be started. In Windows Settings &gt; Apps &gt; Installed apps, choose Modify for Wasla Print Bridge, then Repair, or run Wasla Print Bridge setup again. Receipt printing continues in the background.</value>
   </data>
   <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
     <value>Print Bridge service is not running</value>
