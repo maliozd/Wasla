@@ -221,6 +221,14 @@
   margin: 0;
 }
 
+/* The bordered secondary action (Durumu yenile, the simulator's failure button): on hover only the background
+   changes, to the same token as "Giriş yap"; border and text stay. */
+.su-status-page .su-btn--secondary:hover {
+  border-color: var(--su-border-strong);
+  background: var(--su-secondary-hover);
+  color: var(--su-text);
+}
+
 .su-status__actions .su-btn--quiet {
   padding-inline: 12px;
 }
@@ -313,23 +321,22 @@
   padding-block-end: 16px;
 }
 
-/* ---------- Contact details (closed by default; the line under it previews the name and email) ---------- */
+/* ---------- Contact details: one full-width disclosure row under a hairline, then a label/value grid ---------- */
 
 .su-status-contact {
-  margin-block-start: 32px;
+  margin-block-start: 40px;
+  border-block-start: 1px solid var(--su-border);
 }
 
 .su-status-contact__toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  min-block-size: 40px;
-  margin-inline-start: -8px;
-  padding: 0 8px;
+  justify-content: space-between;
+  gap: 16px;
+  min-block-size: 56px;
+  padding: 10px 12px;
+  margin-inline: -12px;
   border-radius: var(--su-radius-control);
-  color: var(--su-action);
-  font-size: 0.875rem;
-  font-weight: 600;
   list-style: none;
   cursor: pointer;
 }
@@ -342,29 +349,90 @@
   background: var(--su-secondary-hover);
 }
 
-.su-status-contact__toggle .bi {
-  font-size: 0.75rem;
-  transition: transform 0.15s ease;
+.su-status-contact__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  min-width: 0;
 }
 
-.su-status-contact[open] .su-status-contact__toggle .bi {
-  transform: rotate(180deg);
-}
-
-.su-status-contact .su-status-facts {
-  max-inline-size: 520px;
-  margin-block-start: 8px;
+.su-status-contact__title {
+  color: var(--su-action);
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
 .su-status-contact__preview {
-  margin: 4px 0 0;
+  min-width: 0;
   color: var(--su-text-muted);
   font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
-.su-status-contact[open] + .su-status-contact__preview {
+.su-status-contact[open] .su-status-contact__preview {
   display: none;
+}
+
+.su-status-contact__chevron {
+  flex: none;
+  color: var(--su-action);
+  font-size: 0.875rem;
+  transition: transform 0.15s ease;
+}
+
+.su-status-contact[open] .su-status-contact__chevron {
+  transform: rotate(180deg);
+}
+
+/* Opened: a stable grid, one row per detail (label column 184 px, values aligned at its edge). */
+.su-status-contact__list {
+  display: grid;
+  margin: 4px 0 0;
+  padding: 4px 0 8px;
+}
+
+.su-status-contact__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding-block: 10px;
+  border-block-start: 1px solid var(--su-border);
+  font-size: 0.875rem;
+}
+
+.su-status-contact__row:first-child {
+  border-block-start: 0;
+}
+
+.su-status-contact__row dt {
+  color: var(--su-text-muted);
+  font-weight: 400;
+}
+
+.su-status-contact__row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--su-text);
+  overflow-wrap: anywhere;
+}
+
+/* Values keep their own direction, but line up with the page's side right to left. */
+[dir="rtl"] .su-status-contact__row dd {
+  text-align: right;
+}
+
+@media (min-width: 576px) {
+  .su-status-contact__row {
+    grid-template-columns: 184px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .su-status-contact__chevron {
+    transition: none;
+  }
 }
 
 /* ---------- Registration card (the receipt's look) ---------- */

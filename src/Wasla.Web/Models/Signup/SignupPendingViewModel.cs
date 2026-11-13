@@ -8,9 +8,13 @@ public sealed class SignupPendingViewModel
 
     public string PrimaryDomain { get; set; } = string.Empty;
 
+    /// <summary>The tenant address as a link: set only for a provisioned registration, null before that.</summary>
     public string? TenantAddressUrl { get; set; }
 
     public string CentralHomepageUrl { get; set; } = string.Empty;
+
+    /// <summary>The signup page on the marketing host (the status page may be served on the registration's own host).</summary>
+    public string CentralSignupUrl { get; set; } = string.Empty;
 
     public string BusinessName { get; set; } = string.Empty;
 

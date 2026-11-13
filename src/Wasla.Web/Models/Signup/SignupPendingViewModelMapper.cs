@@ -21,6 +21,7 @@ public static class SignupPendingViewModelMapper
         bool showCheckoutAction = false)
     {
         var hasPrimaryDomain = !string.IsNullOrWhiteSpace(summary.PrimaryDomain);
+        var isProvisioned = summary.Status == PendingRegistrationStatus.Provisioned;
         var isPaymentSimulatorAvailable = CheckoutPaymentSimulator.IsAvailable(environment);
 
         var model = new SignupPendingViewModel
@@ -31,7 +32,12 @@ public static class SignupPendingViewModelMapper
                 request,
                 environment,
                 marketingBaseDomain),
-            TenantAddressUrl = hasPrimaryDomain
+            CentralSignupUrl = TenantWelcomeUrlBuilder.BuildCentralSignupUrl(
+                request,
+                environment,
+                marketingBaseDomain),
+            // The address leads somewhere only once the panel exists; before that the pages show it as text.
+            TenantAddressUrl = isProvisioned && hasPrimaryDomain
                 ? TenantWelcomeUrlBuilder.BuildTenantAddressUrl(
                     request,
                     environment,

@@ -4823,7 +4823,7 @@
     <value>الحالة</value>
   </data>
   <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
-    <value>لوحة مطعمك بانتظار الإعداد. عندما تصبح جاهزة سترى عنوان تسجيل الدخول هنا.</value>
+    <value>لوحة مطعمك بانتظار الإعداد.</value>
   </data>
   <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
     <value>عنوان الدخول</value>
@@ -4853,7 +4853,7 @@
     <value>يمكنك التحقق من الحالة لاحقاً</value>
   </data>
   <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
-    <value>عندما تصبح لوحتك جاهزة يمكنك تسجيل الدخول من هنا.</value>
+    <value>عند اكتمال الإعداد يظهر زر «الذهاب إلى اللوحة» في هذه الصفحة.</value>
   </data>
   <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
     <value>معلومات الاتصال</value>
@@ -4902,5 +4902,8 @@
   </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>محاولات كثيرة جداً</value>
+  </data>
+  <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
+    <value>تحديث الحالة</value>
   </data>
 </root>

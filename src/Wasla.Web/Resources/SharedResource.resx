@@ -2440,7 +2440,7 @@
     <value>Kayıt durumu</value>
   </data>
   <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
-    <value>Restoran panelinizin hazırlanmasını bekleyin. Panel hazır olduğunda giriş adresinizi burada görebilirsiniz.</value>
+    <value>Restoran panelinizin hazırlanması bekleniyor.</value>
   </data>
   <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
     <value>Giriş adresiniz</value>
@@ -2470,7 +2470,7 @@
     <value>Durumu daha sonra kontrol edebilirsiniz</value>
   </data>
   <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
-    <value>Paneliniz hazır olduğunda buradan giriş yapabilirsiniz.</value>
+    <value>Hazırlık tamamlandığında “Panele git” düğmesi bu sayfada görünür.</value>
   </data>
   <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
     <value>İletişim bilgileri</value>
@@ -2519,5 +2519,8 @@
   </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>Çok fazla deneme</value>
+  </data>
+  <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
+    <value>Durumu yenile</value>
   </data>
 </root>

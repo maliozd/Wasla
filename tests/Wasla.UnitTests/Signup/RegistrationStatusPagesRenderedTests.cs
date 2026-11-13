@@ -53,9 +53,10 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
             status == PendingRegistrationStatus.PaymentSucceeded,
             body.Contains($">{Text("Signup.PaymentReceivedPreparingTitle")}</h1>", StringComparison.Ordinal));
         Assert.Equal(status == PendingRegistrationStatus.AwaitingPayment, body.Contains($"/checkout/review/{applicant.Id}", StringComparison.Ordinal));
+        AssertStateActions(body, status, applicant, $"/signup/pending/{applicant.Id}");
 
-        // The applicant's details all stay, under the contact disclosure and in the card.
-        Assert.Contains(Text("RegistrationStatus.ContactDetails"), body, StringComparison.Ordinal);
+        // The applicant's details all stay, under the contact disclosure (a full-width row) and in the card.
+        Assert.Contains($"class=\"su-status-contact__title\">{Text("RegistrationStatus.ContactDetails")}</span>", body, StringComparison.Ordinal);
         Assert.Contains(Text("RegistrationStatus.CardRestaurant"), body, StringComparison.Ordinal);
         Assert.Contains(Html(applicant.Entity.BusinessEmail!), body, StringComparison.Ordinal);
         Assert.Contains(Html(applicant.OwnerPhoneDisplay), body, StringComparison.Ordinal);
@@ -81,6 +82,8 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         Assert.Equal(provisioned, page.Body.Contains(Text("RegistrationStatus.LoginAddress"), StringComparison.Ordinal));
         Assert.Equal(!provisioned, page.Body.Contains(Text("RegistrationStatus.StepPanelWaiting"), StringComparison.Ordinal));
         Assert.Equal(!provisioned, page.Body.Contains(Text("RegistrationStatus.CheckLaterTitle"), StringComparison.Ordinal));
+        Assert.Equal(!provisioned, page.Body.Contains(Text("RegistrationStatus.CheckLaterBody"), StringComparison.Ordinal));
+        AssertStateActions(page.Body, status, applicant, $"/checkout/success/{applicant.Id}");
     }
 
     [Theory]
@@ -103,7 +106,7 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         foreach (var fragment in new[]
                  {
                      $">{Text("RegistrationStatus.CardRestaurant")}</h3>", $"<dt>{Text("RegistrationStatus.BusinessLabel")}</dt>",
-                     $"<dt>{Text("Checkout.PlanLabel")}</dt>", $"<span>{Text("RegistrationStatus.ContactDetails")}</span>",
+                     $"<dt>{Text("Checkout.PlanLabel")}</dt>", $"class=\"su-status-contact__title\">{Text("RegistrationStatus.ContactDetails")}</span>",
                      $"<dt>{Text("Signup.PendingLabelOwnerEmail")}</dt>", $"<dt>{Text("Signup.PendingLabelCreatedAt")}</dt>",
                      $">{Text("RegistrationStatus.NextStepTitle")}</strong>", $">{Text("RegistrationStatus.CheckLaterTitle")}</strong>"
                  })
@@ -115,6 +118,9 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         }
 
         Assert.DoesNotContain("su-status-facts", page.Body, StringComparison.Ordinal);
+        // The same state actions as the applicant: the address a link only when provisioned, refresh while the panel is
+        // prepared, a new registration after a cancellation.
+        AssertStateActions(page.Body, status, applicant, $"/signup/pending/{applicant.Id}");
         Assert.DoesNotContain("su-status-contact", page.Body, StringComparison.Ordinal);
         Assert.DoesNotContain(Text("Pricing.Plan.Starter.Name"), page.Body, StringComparison.Ordinal);
         foreach (var value in applicant.PrivateValues)
@@ -182,6 +188,49 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         Assert.Contains("css/rtl.css", page.Body, StringComparison.Ordinal);
         Assert.Contains("id=\"su-status-languages\"", page.Body, StringComparison.Ordinal);
         Assert.Contains($">{Text("Signup.PendingTitle", "ar-SA")}</h1>", page.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CancelledPage_OffersANewRegistrationFirst_AndHomeSecond_ToEveryBrowser()
+    {
+        var applicant = await _hosts.SeedAsync(PendingRegistrationStatus.Cancelled);
+        using var stranger = _hosts.Production.NewBrowser();
+
+        var page = await stranger.GetAsync($"/checkout/cancelled/{applicant.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        var primary = page.Body.IndexOf($"<a class=\"su-btn su-btn--primary\" href=\"/signup\">{Text("Checkout.RegisterAgain")}</a>", StringComparison.Ordinal);
+        var home = page.Body.IndexOf($"<a class=\"su-btn su-btn--quiet\" href=\"/\">{Text("Signup.PendingBackHome")}</a>", StringComparison.Ordinal);
+        Assert.True(primary >= 0 && home > primary, "the new registration comes first, home second");
+        foreach (var value in applicant.PrivateValues)
+            Assert.DoesNotContain(Html(value), page.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(applicant.Entity.PrimaryDomain, page.Body, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// What a status page offers for a stored status, owner or not: the tenant address is a link only once the panel is
+    /// provisioned (monospaced text before), "Durumu yenile" is a plain link to the same page only while the panel is
+    /// prepared, and only a cancelled registration offers a new one, before the way home.
+    /// </summary>
+    private static void AssertStateActions(string body, PendingRegistrationStatus status, SentinelApplicant applicant, string pagePath)
+    {
+        var provisioned = status == PendingRegistrationStatus.Provisioned;
+        Assert.Equal(provisioned, body.Contains("class=\"su-status-card__domain-link", StringComparison.Ordinal));
+        Assert.Equal(provisioned, body.Contains($"://{applicant.Entity.PrimaryDomain}", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(!provisioned, body.Contains($"data-su-tenant-address=\"text\"><bdi class=\"su-ltr\">{applicant.Entity.PrimaryDomain}</bdi>", StringComparison.Ordinal));
+
+        Assert.Equal(
+            status == PendingRegistrationStatus.PaymentSucceeded,
+            body.Contains($"href=\"{pagePath}\" data-su-refresh-status", StringComparison.Ordinal));
+        Assert.Equal(status == PendingRegistrationStatus.PaymentSucceeded, body.Contains(Text("RegistrationStatus.RefreshStatus"), StringComparison.Ordinal));
+
+        var registerAgain = body.IndexOf("data-su-register-again", StringComparison.Ordinal);
+        Assert.Equal(status == PendingRegistrationStatus.Cancelled, registerAgain >= 0);
+        if (registerAgain >= 0)
+        {
+            Assert.Contains("/signup\" data-su-register-again", body, StringComparison.Ordinal);
+            Assert.True(body.IndexOf(Text("Signup.PendingBackHome"), StringComparison.Ordinal) > registerAgain, "home comes after the new registration");
+        }
     }
 
     private static (string Key, string Tone) ExpectedBadge(PendingRegistrationStatus status, bool simulator = false) => status switch

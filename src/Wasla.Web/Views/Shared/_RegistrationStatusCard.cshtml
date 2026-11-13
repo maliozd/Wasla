@@ -12,6 +12,7 @@
     var isProvisioned = status == PendingRegistrationStatus.Provisioned;
     var isPaymentReceived = status == PendingRegistrationStatus.PaymentSucceeded;
     var isAwaitingPayment = status is PendingRegistrationStatus.AwaitingPayment or PendingRegistrationStatus.Draft;
+    var isCancelled = status == PendingRegistrationStatus.Cancelled;
     var showPanelAction = isProvisioned && RegistrationStatusPresentation.IsUsablePanelLoginUrl(Model.PanelLoginUrl);
     var badge = RegistrationStatusPresentation.Badge(status, simulator);
     var steps = RegistrationStatusPresentation.Steps(status, simulator);
@@ -21,6 +22,8 @@
     var addressHelpKey = isProvisioned ? "RegistrationStatus.AddressHelpReady" : "RegistrationStatus.AddressHelpPending";
     var showAddressHelp = isProvisioned || isPaymentReceived || isAwaitingPayment;
     ViewData["TenantAddressLinkClass"] = "su-status-card__domain-link su-ltr";
+    // "Durumu yenile" is an ordinary GET of this same page: the visitor checks again, nothing polls.
+    var currentPageUrl = (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : string.Empty);
 }
 <div class="su-shell su-status-page">
     <div class="su-container su-status__layout">
@@ -98,6 +101,17 @@
                        asp-action="Review"
                        asp-route-id="@Model.RegistrationId">@L[simulator ? "Signup.ContinueToCheckout" : "Signup.ViewRegistrationSummary"]</a>
                 }
+                else if (isCancelled)
+                {
+                    <a class="su-btn su-btn--primary" href="@Model.CentralSignupUrl" data-su-register-again>@L["Checkout.RegisterAgain"]</a>
+                }
+                else if (isPaymentReceived)
+                {
+                    <a class="su-btn su-btn--secondary" href="@currentPageUrl" data-su-refresh-status>
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                        <span>@L["RegistrationStatus.RefreshStatus"]</span>
+                    </a>
+                }
                 <a class="su-btn su-btn--quiet" href="@Model.CentralHomepageUrl">@L["Signup.PendingBackHome"]</a>
             </div>
 
@@ -130,11 +144,17 @@
                         </dl>
                     }
 
-                    @if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain) && !string.IsNullOrWhiteSpace(Model.TenantAddressUrl))
+                    @* The address is a link only once the panel exists (the model has no URL before that); until then it is
+                       plain monospaced text, so nothing suggests the panel can be opened. *@
+                    @if (isProvisioned && !string.IsNullOrWhiteSpace(Model.PrimaryDomain) && !string.IsNullOrWhiteSpace(Model.TenantAddressUrl))
                     {
                         <p class="su-status-card__domain">
                             <partial name="_RegistrationStatusTenantAddressLink" model="Model" />
                         </p>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.PrimaryDomain))
+                    {
+                        <p class="su-status-card__domain" data-su-tenant-address="text"><bdi class="su-ltr">@Model.PrimaryDomain</bdi></p>
                     }
                     @if (showAddressHelp)
                     {

@@ -4823,7 +4823,7 @@
     <value>Status</value>
   </data>
   <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
-    <value>Your restaurant panel is waiting to be set up. When it is ready, you will see your sign-in address here.</value>
+    <value>Your restaurant panel is waiting to be set up.</value>
   </data>
   <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
     <value>Your sign-in address</value>
@@ -4853,7 +4853,7 @@
     <value>You can check the status later</value>
   </data>
   <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
-    <value>When your panel is ready, you can sign in from here.</value>
+    <value>When setup is complete, the “Go to panel” button appears on this page.</value>
   </data>
   <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
     <value>Contact details</value>
@@ -4902,5 +4902,8 @@
   </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>Too many attempts</value>
+  </data>
+  <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
+    <value>Refresh status</value>
   </data>
 </root>
