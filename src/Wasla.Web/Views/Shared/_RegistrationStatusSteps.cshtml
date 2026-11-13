@@ -1,0 +1,38 @@
+@model IReadOnlyList<Wasla.Web.Models.Signup.RegistrationStatusStep>
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Signup
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@* The registration's progress (Figma 03 pending, preparing, failed): done, current, upcoming or failed, all from the
+   stored status. The state is also spoken, since the marker alone is visual. *@
+@if (Model.Count > 0)
+{
+    <ol class="su-status-steps">
+        @foreach (var step in Model)
+        {
+            var state = step.State switch
+            {
+                RegistrationStepState.Done => "done",
+                RegistrationStepState.Current => "current",
+                RegistrationStepState.Failed => "failed",
+                _ => "upcoming"
+            };
+            var stateKey = step.State switch
+            {
+                RegistrationStepState.Done => "Signup.Receipt.StateDone",
+                RegistrationStepState.Current => "Signup.Receipt.StateCurrent",
+                RegistrationStepState.Failed => "RegistrationStatus.StateNotCompleted",
+                _ => "Signup.Receipt.StateUpcoming"
+            };
+            <li class="su-status-step" data-state="@state" aria-current="@(step.State == RegistrationStepState.Current ? "step" : null)">
+                <span class="su-status-step__marker" aria-hidden="true">
+                    <i class="bi bi-check2"></i>
+                    <i class="bi bi-x-lg"></i>
+                </span>
+                <span class="su-status-step__body">
+                    <span class="su-status-step__name">@L[step.NameKey]<span class="su-visually-hidden">, @L[stateKey]</span></span>
+                    <span class="su-status-step__description">@L[step.DescriptionKey]</span>
+                </span>
+            </li>
+        }
+    </ol>
+}

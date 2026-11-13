@@ -1,0 +1,512 @@
+/* Registration status and checkout pages: Figma "03 · Güncel kayıt durumu ve ödeme" (pending, checkout summary,
+   payment received, panel ready, payment not completed, cancelled; public, simulator and no-price variants).
+   They reuse the signup page's tokens and components (wasla-signup.css: .su-shell, .su-title, .su-lead, .su-btn,
+   .su-notice, .su-receipt) and add only what these pages need. Grid: 680 px main column and the 408 px receipt on
+   the 1280 px header grid, so the content starts at the logo's edge. Logical properties, so dir="rtl" mirrors it. */
+
+.su-status-page {
+  --su-info: #2f5a8a;
+  --su-info-soft: #e1eaf4;
+  --su-warning: #8a5a12;
+  --su-warning-soft: #f6ecd8;
+  --su-step-line-done: #a7beae;
+
+  padding-block: 24px 64px;
+}
+
+/* The root class is not .su-status: that name is the signup form's inline status line. */
+
+/* No footer: the warm canvas runs to the bottom of the window. */
+.su-status-body {
+  background: #f7f4ee;
+}
+
+/* ---------- Header: the signup grid, logo and language menu only ---------- */
+
+.su-status-header .wm-header__bar {
+  min-height: 78px;
+}
+
+/* ---------- Layout ---------- */
+
+.su-status__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+
+.su-status__main {
+  min-width: 0;
+  max-width: var(--su-main-width);
+}
+
+.su-status__aside {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .su-status-page {
+    padding-block: 32px 80px;
+  }
+}
+
+@media (min-width: 992px) {
+  .su-status__layout {
+    grid-template-columns: minmax(0, var(--su-main-width)) minmax(320px, var(--su-aside-width));
+    justify-content: space-between;
+    column-gap: clamp(48px, 8vw, 120px);
+    align-items: start;
+  }
+
+  .su-status__layout--single {
+    grid-template-columns: minmax(0, var(--su-main-width));
+  }
+
+  .su-status__aside {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.su-status-page .su-lead {
+  margin-block-end: 32px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Progress list ---------- */
+
+.su-status-steps {
+  display: grid;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.su-status-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  column-gap: 16px;
+  padding-block-end: 24px;
+}
+
+/* The line to the next marker; the last step keeps a short tail, as in the design. */
+.su-status-step::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 13px;
+  top: 32px;
+  bottom: 4px;
+  inline-size: 2px;
+  border-radius: 1px;
+  background: var(--su-border);
+}
+
+.su-status-step:last-child {
+  padding-block-end: 16px;
+}
+
+.su-status-step[data-state="done"]::before {
+  background: var(--su-step-line-done);
+}
+
+.su-status-step__marker {
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 2px solid var(--su-border);
+  border-radius: 50%;
+  background: var(--su-surface);
+  color: var(--su-text-muted);
+  font-size: 0.875rem;
+}
+
+.su-status-step__marker .bi {
+  display: none;
+  line-height: 1;
+}
+
+.su-status-step[data-state="done"] .su-status-step__marker {
+  border-color: var(--su-success-soft);
+  background: var(--su-success-soft);
+  color: var(--su-success);
+}
+
+.su-status-step[data-state="done"] .bi-check2 {
+  display: block;
+}
+
+.su-status-step[data-state="current"] .su-status-step__marker {
+  border-color: var(--su-border-strong);
+}
+
+.su-status-step[data-state="failed"] .su-status-step__marker {
+  border-color: var(--su-danger-soft);
+  background: var(--su-danger-soft);
+  color: var(--su-danger);
+  font-size: 0.75rem;
+}
+
+.su-status-step[data-state="failed"] .bi-x-lg {
+  display: block;
+}
+
+.su-status-step__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-block-start: 2px;
+}
+
+.su-status-step__name {
+  color: var(--su-text-body);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.su-status-step[data-state="done"] .su-status-step__name,
+.su-status-step[data-state="current"] .su-status-step__name,
+.su-status-step[data-state="failed"] .su-status-step__name {
+  color: var(--su-text);
+}
+
+.su-status-step__description {
+  color: var(--su-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+/* ---------- Notices (info and the rate-limit warning; danger and success come from the signup page) ---------- */
+
+.su-status-page .su-notice {
+  margin-block-end: 32px;
+}
+
+/* A notice right under the heading (the rate-limit page) keeps the lead's distance. */
+.su-status-page .su-title + .su-notice {
+  margin-block-start: 24px;
+}
+
+.su-notice--info {
+  background: var(--su-info-soft);
+  color: var(--su-text);
+}
+
+.su-notice--info > .bi {
+  color: var(--su-info);
+}
+
+.su-notice--warning {
+  background: var(--su-warning-soft);
+  color: var(--su-text);
+}
+
+.su-notice--warning > .bi {
+  color: var(--su-warning);
+}
+
+/* ---------- Actions: the primary action, then quiet ones (hover changes only their background) ---------- */
+
+/* Its top margin collapses with the 32 px below a lead, list, notice or section. */
+.su-status__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-block-start: 32px;
+}
+
+.su-status__actions form {
+  margin: 0;
+}
+
+.su-status__actions .su-btn--quiet {
+  padding-inline: 12px;
+}
+
+/* ---------- Sections and label/value rows (checkout summary, card, contact details) ---------- */
+
+.su-status-section + .su-status-section {
+  margin-block-start: 32px;
+}
+
+.wasla-landing .su-shell .su-status-section__title {
+  margin: 0 0 8px;
+  color: var(--su-text);
+  font-family: var(--su-font-body);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.su-status-facts {
+  display: grid;
+  margin: 0;
+}
+
+.su-status-facts__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 8px;
+  font-size: 0.875rem;
+}
+
+.su-status-facts__row dt {
+  flex: none;
+  max-inline-size: 45%;
+  color: var(--su-text-muted);
+  font-weight: 400;
+}
+
+.su-status-facts__row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--su-text);
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
+.su-status-facts--compact .su-status-facts__row {
+  padding-block: 6px;
+}
+
+/* ---------- Panel ready: the sign-in card and the panel's next steps ---------- */
+
+.su-status-login {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-block-end: 32px;
+  padding: 24px 20px;
+  border: 1px solid var(--su-border);
+  border-radius: var(--su-radius-panel);
+  background: var(--su-surface);
+}
+
+.wasla-landing .su-shell .su-status-login__label {
+  margin: 0;
+  color: var(--su-text-muted);
+  font-family: var(--su-font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.su-status-login__domain {
+  max-inline-size: 100%;
+  margin: 0 0 4px;
+  color: var(--su-text);
+  font-family: var(--su-font-mono);
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.su-status-next .su-status-section__title {
+  margin-block-end: 20px;
+}
+
+.su-status-steps--plain .su-status-step:last-child {
+  padding-block-end: 16px;
+}
+
+/* ---------- Contact details (closed by default; the line under it previews the name and email) ---------- */
+
+.su-status-contact {
+  margin-block-start: 32px;
+}
+
+.su-status-contact__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 40px;
+  margin-inline-start: -8px;
+  padding: 0 8px;
+  border-radius: var(--su-radius-control);
+  color: var(--su-action);
+  font-size: 0.875rem;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.su-status-contact__toggle::-webkit-details-marker {
+  display: none;
+}
+
+.su-status-contact__toggle:hover {
+  background: var(--su-secondary-hover);
+}
+
+.su-status-contact__toggle .bi {
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.su-status-contact[open] .su-status-contact__toggle .bi {
+  transform: rotate(180deg);
+}
+
+.su-status-contact .su-status-facts {
+  max-inline-size: 520px;
+  margin-block-start: 8px;
+}
+
+.su-status-contact__preview {
+  margin: 4px 0 0;
+  color: var(--su-text-muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.su-status-contact[open] + .su-status-contact__preview {
+  display: none;
+}
+
+/* ---------- Registration card (the receipt's look) ---------- */
+
+.su-status-card .su-receipt__head {
+  padding-block-start: 24px;
+}
+
+.su-status-card__body {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 12px 24px 24px;
+}
+
+.su-status-card__body:has(+ .su-receipt__cut) {
+  padding-block-end: 16px;
+}
+
+.su-status-card__body > .su-status-facts {
+  justify-self: stretch;
+}
+
+.wasla-landing .su-shell .su-status-card__heading {
+  margin: 8px 0 -4px;
+  color: var(--su-text);
+  font-family: var(--su-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.su-status-card__domain {
+  max-inline-size: 100%;
+  margin: 4px 0 0;
+  font-family: var(--su-font-mono);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.su-status-card__domain-link {
+  border-radius: 4px;
+  color: var(--su-text);
+  text-decoration: underline;
+  text-decoration-color: var(--su-border-strong);
+  text-underline-offset: 3px;
+}
+
+.su-status-card__domain-link:hover {
+  color: var(--su-action);
+  text-decoration-color: currentColor;
+}
+
+.su-status-card__plan {
+  margin: 0 0 8px;
+  color: var(--su-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.su-status-card__total {
+  padding-block-start: 12px;
+}
+
+.su-status-card .su-receipt__amount {
+  overflow-wrap: anywhere;
+}
+
+/* No server price: the design's quieter heading in place of an amount, never a number. */
+.su-status-card .su-status-card__unset {
+  margin: 4px 0 8px;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* ---------- Status chip ---------- */
+
+.su-status-badge {
+  white-space: normal;
+}
+
+.su-status-badge::before {
+  content: "";
+  flex: none;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.su-badge--neutral {
+  background: var(--su-surface-muted);
+  color: var(--su-text);
+}
+
+.su-badge--neutral::before {
+  background: var(--su-text-muted);
+}
+
+.su-badge--danger {
+  background: var(--su-danger-soft);
+  color: var(--su-danger);
+}
+
+/* ---------- Development payment simulator ---------- */
+
+.su-status-sim {
+  margin-block-start: 40px;
+  padding: 24px;
+  border: 1px dashed var(--su-border-strong);
+  border-radius: var(--su-radius-panel);
+  background: var(--su-surface-muted);
+}
+
+.wasla-landing .su-shell .su-status-sim__title {
+  margin: 0 0 8px;
+  color: var(--su-text);
+  font-family: var(--su-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.su-status-sim p {
+  margin: 0 0 16px;
+  color: var(--su-text-body);
+}
+
+.su-status-sim__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.su-status-sim__actions form {
+  margin: 0;
+}
+
+/* Long values (business names, emails, addresses) wrap instead of widening the page. */
+.su-status-page bdi,
+.su-status-page dd {
+  overflow-wrap: anywhere;
+}

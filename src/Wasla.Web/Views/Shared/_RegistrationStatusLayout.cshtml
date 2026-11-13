@@ -1,12 +1,21 @@
 @using System.Globalization
 @using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     var culture = CultureInfo.CurrentUICulture?.Name ?? "tr-TR";
     var isRtl = culture.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+    // A page answering a POST (the 429 page) names the page to come back to; a language link must never repeat the POST's
+    // address as a GET.
+    var returnUrl = ViewData["LanguageReturnUrl"] as string
+        ?? (Context.Request.Path.Value ?? "/") + (Context.Request.QueryString.HasValue ? Context.Request.QueryString.Value : "");
 }
+@* Registration status and checkout pages (Figma "03 · Güncel kayıt durumu ve ödeme"): the signup page's canvas, fonts
+   and grid under a header with the logo and the shared language menu only. The status page is also served on a pending
+   registration's own host, where "/" is not the central homepage, so the logo is not a link; each page has its own way
+   home. Static files and /culture are served on every host. *@
 <!DOCTYPE html>
-<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")">
+<html lang="@culture" dir="@(isRtl ? "rtl" : "ltr")" class="wm-no-js">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,22 +25,30 @@
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-marketing.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-signup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/wasla-registration-status.css" asp-append-version="true" />
     @if (isRtl)
     {
         <link rel="stylesheet" href="~/css/rtl.css" asp-append-version="true" />
     }
+    <script src="~/js/wasla-marketing.js" asp-append-version="true" defer></script>
 </head>
-<body class="wasla-landing">
-    @* Logo only, not a link: on a tenant host "/" is not the central Wasla homepage. *@
-    <header class="pt-4 pt-md-5">
-        @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--status" })
+<body class="wasla-landing su-status-body">
+    <a class="wm-skip-link" href="#main-content">@L["Marketing.SkipToContent"]</a>
+    <header class="wm-header wm-header--soon su-status-header">
+        <div class="wm-container wm-container--wide wm-header__bar">
+            <span class="wm-header__brand">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
+            </span>
+            <div class="wm-header__soon-end">
+                @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "su-status-languages", ShowLanguageName: true))
+            </div>
+        </div>
     </header>
-    <main>
+    <main id="main-content" tabindex="-1">
         @RenderBody()
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-            crossorigin="anonymous"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

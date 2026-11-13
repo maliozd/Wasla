@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using System.Resources;
 using Wasla.Domain.Billing;
@@ -32,7 +32,10 @@ public sealed class CheckoutReviewPriceRenderedTests : IClassFixture<SignupRende
         Assert.Equal(HttpStatusCode.OK, before.Status);
         var unpriced = WebUtility.HtmlDecode(before.Body);
         Assert.Contains(Text("Billing.PriceNotSet"), unpriced, StringComparison.Ordinal);
-        Assert.DoesNotContain(" TL / ay", unpriced, StringComparison.Ordinal);
+        Assert.Contains(Text("RegistrationStatus.PriceLater"), unpriced, StringComparison.Ordinal);
+        Assert.Contains("data-su-price=\"unset\"", unpriced, StringComparison.Ordinal);
+        Assert.DoesNotContain("su-receipt__amount-row", unpriced, StringComparison.Ordinal);
+        Assert.DoesNotContain(" TL", unpriced, StringComparison.Ordinal);
 
         // The registration is Starter, Monthly. Another plan's price and a future Starter price must not show.
         await _hosts.AddPlanPriceAsync(Price("Starter", 123.45m, vatIncluded: false, DateTime.UtcNow.AddDays(-1)));
@@ -41,11 +44,20 @@ public sealed class CheckoutReviewPriceRenderedTests : IClassFixture<SignupRende
 
         var after = WebUtility.HtmlDecode((await owner.GetAsync($"/checkout/review/{applicant.Id}")).Body);
 
-        Assert.Contains("123,45 TL / ay", after, StringComparison.Ordinal);
-        Assert.Contains(Text("Billing.VatExcluded"), after, StringComparison.Ordinal);
+        // The registration card (Figma 03 checkout): the quote's amount and currency, its VAT choice and its period.
+        Assert.Contains("data-su-price=\"set\"", after, StringComparison.Ordinal);
+        Assert.Contains("<span class=\"su-receipt__amount\"><bdi>123,45 TL</bdi></span>", after, StringComparison.Ordinal);
+        Assert.Contains($"<span class=\"su-receipt__vat\">{Text("Billing.VatExcluded")}</span>", after, StringComparison.Ordinal);
+        Assert.Contains(string.Format(Turkish, Text("Signup.Receipt.PeriodLineMonthly"), "Starter"), after, StringComparison.Ordinal);
         Assert.DoesNotContain(Text("Billing.PriceNotSet"), after, StringComparison.Ordinal);
+        Assert.DoesNotContain(Text("RegistrationStatus.PriceLater"), after, StringComparison.Ordinal);
         Assert.DoesNotContain("999,99", after, StringComparison.Ordinal);
         Assert.DoesNotContain("555,55", after, StringComparison.Ordinal);
+
+        // The status pages have no quote, so they never show an amount, even once a price is set.
+        var pending = WebUtility.HtmlDecode((await owner.GetAsync($"/signup/pending/{applicant.Id}")).Body);
+        Assert.DoesNotContain("123,45", pending, StringComparison.Ordinal);
+        Assert.DoesNotContain(" TL", pending, StringComparison.Ordinal);
     }
 
     private static BillingPlanPrice Price(string plan, decimal amount, bool vatIncluded, DateTime effectiveFromUtc) =>

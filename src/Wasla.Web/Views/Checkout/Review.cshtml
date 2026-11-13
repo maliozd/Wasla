@@ -1,110 +1,159 @@
 ﻿@model Wasla.Web.Models.Checkout.CheckoutReviewViewModel
 @using Microsoft.Extensions.Localization
+@using Wasla.Domain.Enums
 @using Wasla.Web.Formatting
+@using Wasla.Web.Models.Signup
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    Layout = "_PublicLayout";
-    var titleKey = Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewTitle" : "Checkout.RegistrationSummaryTitle";
+    // The applicant's registration summary (Figma 03 checkout, its Development-simulator and no-price variants). Only
+    // the proven applicant reaches this view; the amount, currency, period and VAT all come from Model.Price, the
+    // server's quote, and nothing is shown in its place when there is none.
+    Layout = "_RegistrationStatusLayout";
+    var simulator = Model.IsPaymentSimulatorAvailable;
+    var titleKey = simulator ? "Checkout.ReviewTitle" : "Checkout.RegistrationSummaryTitle";
     ViewData["Title"] = L[titleKey];
-    var billingLabel = Model.IsYearlyBilling ? L["Signup.BillingYearly"] : L["Signup.BillingMonthly"];
+    var price = Model.Price;
+    var isYearly = price is not null
+        ? string.Equals(price.BillingPeriod, PlanPriceText.Yearly, StringComparison.OrdinalIgnoreCase)
+        : Model.IsYearlyBilling;
+    var periodWord = L[isYearly ? "Signup.Receipt.PeriodYearly" : "Signup.Receipt.PeriodMonthly"].Value;
+    var badge = RegistrationStatusPresentation.Badge(Model.Status, simulator);
+    var awaitsPayment = Model.Status is PendingRegistrationStatus.AwaitingPayment or PendingRegistrationStatus.PaymentFailed;
 }
-<div class="wasla-signup-page py-4 py-md-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-xl-9">
-                <div class="text-center mb-4">
-                    <h1 class="h3 fw-bold mb-2">@L[titleKey]</h1>
-                    <p class="text-secondary mb-0">@L[Model.IsPaymentSimulatorAvailable ? "Checkout.ReviewSubtitle" : "Checkout.ReviewSubtitleAwaitingPayment"]</p>
+<div class="su-shell su-status-page">
+    <div class="su-container su-status__layout">
+        <div class="su-status__main">
+            <h1 class="su-title">@L[titleKey]</h1>
+            <p class="su-lead">@L[simulator ? "Checkout.ReviewSubtitle" : "Checkout.ReviewSubtitleAwaitingPayment"]</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.StatusNoticeKey))
+            {
+                <div class="su-notice su-notice--info" role="status">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    <p>@L[Model.StatusNoticeKey]</p>
                 </div>
+            }
 
-                <div class="card border-0 shadow-sm wasla-signup-card mb-3">
-                    <div class="card-body p-4 p-md-5">
-                        @if (!string.IsNullOrWhiteSpace(Model.StatusNoticeKey))
-                        {
-                            <div class="alert alert-info small" role="status">@L[Model.StatusNoticeKey]</div>
-                        }
+            <section class="su-status-section" aria-labelledby="reviewRestaurantTitle">
+                <h2 class="su-status-section__title" id="reviewRestaurantTitle">@L["Checkout.SectionRestaurantInfo"]</h2>
+                <dl class="su-status-facts">
+                    <div class="su-status-facts__row">
+                        <dt>@L["RegistrationStatus.BusinessLabel"]</dt>
+                        <dd dir="auto">@Model.BusinessName</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.BusinessTypesDisplay))
+                    {
+                        <div class="su-status-facts__row">
+                            <dt>@L["Signup.BusinessType"]</dt>
+                            <dd dir="auto">@Model.BusinessTypesDisplay</dd>
+                        </div>
+                    }
+                    <div class="su-status-facts__row">
+                        <dt>@L["RegistrationStatus.PanelAddressLabel"]</dt>
+                        <dd><bdi class="su-ltr">@Model.PrimaryDomain</bdi></dd>
+                    </div>
+                    <div class="su-status-facts__row">
+                        <dt>@L["Checkout.AddressSummary"]</dt>
+                        <dd dir="auto">@Model.AddressSummary</dd>
+                    </div>
+                    <div class="su-status-facts__row">
+                        <dt>@L["Signup.BusinessPhone"]</dt>
+                        <dd><bdi class="su-ltr">@Model.BusinessPhone</bdi></dd>
+                    </div>
+                </dl>
+            </section>
 
-                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionPackageInfo"]</h2>
-                        <dl class="row small mb-4">
-                            <dt class="col-sm-4">@L["Signup.PendingLabelPackage"]</dt>
-                            <dd class="col-sm-8">@Model.PlanDisplayName</dd>
-                            <dt class="col-sm-4">@L["Signup.PendingLabelPaymentPeriod"]</dt>
-                            <dd class="col-sm-8">@billingLabel</dd>
-                            <dt class="col-sm-4">@L["Checkout.TotalAmount"]</dt>
-                            @if (Model.Price is { } price)
-                            {
-                                <dd class="col-sm-8"><span class="fw-semibold">@PlanPriceText.PerPeriod(price, price.BillingPeriod, L)</span> <span class="text-muted">(@PlanPriceText.Vat(price, L))</span></dd>
-                            }
-                            else
-                            {
-                                <dd class="col-sm-8 text-muted">@PlanPriceText.PerPeriod(null, Model.BillingPeriod, L)</dd>
-                            }
-                        </dl>
+            <section class="su-status-section" aria-labelledby="reviewOwnerTitle">
+                <h2 class="su-status-section__title" id="reviewOwnerTitle">@L["Checkout.SectionAccountOwner"]</h2>
+                <dl class="su-status-facts">
+                    <div class="su-status-facts__row">
+                        <dt>@L["Checkout.OwnerFullNameLabel"]</dt>
+                        <dd dir="auto">@Model.OwnerFullName</dd>
+                    </div>
+                    <div class="su-status-facts__row">
+                        <dt>@L["Signup.OwnerEmail"]</dt>
+                        <dd><bdi>@Model.OwnerEmail</bdi></dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
+                    {
+                        <div class="su-status-facts__row">
+                            <dt>@L["Signup.OwnerPhone"]</dt>
+                            <dd><bdi class="su-ltr">@TurkishPhoneDisplayFormatter.FormatStored(Model.OwnerPhone)</bdi></dd>
+                        </div>
+                    }
+                </dl>
+            </section>
 
-                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionRestaurantInfo"]</h2>
-                        <dl class="row small mb-4">
-                            <dt class="col-sm-4">@L["Signup.PendingLabelRestaurant"]</dt>
-                            <dd class="col-sm-8">@Model.BusinessName</dd>
-                            @if (!string.IsNullOrWhiteSpace(Model.BusinessTypesDisplay))
-                            {
-                                <dt class="col-sm-4">@L["Signup.BusinessType"]</dt>
-                                <dd class="col-sm-8">@Model.BusinessTypesDisplay</dd>
-                            }
-                            <dt class="col-sm-4">@L["Signup.PendingLabelWaslaAddress"]</dt>
-                            <dd class="col-sm-8"><code>@Model.PrimaryDomain</code></dd>
-                            <dt class="col-sm-4">@L["Signup.BusinessPhone"]</dt>
-                            <dd class="col-sm-8">@Model.BusinessPhone</dd>
-                            <dt class="col-sm-4">@L["Checkout.AddressSummary"]</dt>
-                            <dd class="col-sm-8">@Model.AddressSummary</dd>
-                        </dl>
-
-                        <h2 class="h6 fw-semibold mb-3">@L["Checkout.SectionAccountOwner"]</h2>
-                        <dl class="row small mb-4">
-                            <dt class="col-sm-4">@L["Checkout.OwnerFullNameLabel"]</dt>
-                            <dd class="col-sm-8">@Model.OwnerFullName</dd>
-                            <dt class="col-sm-4">@L["Signup.OwnerEmail"]</dt>
-                            <dd class="col-sm-8">@Model.OwnerEmail</dd>
-                            @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
-                            {
-                                <dt class="col-sm-4">@L["Signup.OwnerPhone"]</dt>
-                                <dd class="col-sm-8">@TurkishPhoneDisplayFormatter.FormatStored(Model.OwnerPhone)</dd>
-                            }
-                        </dl>
-
-                        @if (Model.CanSimulatePayment)
-                        {
-                            <div class="d-flex flex-column flex-sm-row flex-wrap gap-2">
-                                <form asp-action="SimulateSuccess" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-primary rounded-pill d-inline-flex align-items-center gap-2">
-                                        <i class="bi bi-check-circle" aria-hidden="true"></i>
-                                        <span>@L["Checkout.SimulateSuccess"]</span>
-                                    </button>
-                                </form>
-                                <form asp-action="SimulateFailed" asp-route-id="@Model.RegistrationId" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-outline-danger rounded-pill d-inline-flex align-items-center gap-2">
-                                        <i class="bi bi-x-circle" aria-hidden="true"></i>
-                                        <span>@L["Checkout.SimulateFailed"]</span>
-                                    </button>
-                                </form>
-                            </div>
-                        }
-
-                        @if (Model.CanCancel)
-                        {
-                            <form asp-action="Cancel" asp-route-id="@Model.RegistrationId" method="post" class="mt-3">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-link btn-sm text-muted px-0">@L["Checkout.CancelRegistration"]</button>
-                            </form>
-                        }
+            @if (awaitsPayment && !simulator)
+            {
+                <div class="su-notice su-notice--info" role="note">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    <div>
+                        <strong class="su-notice__title">@L["RegistrationStatus.AwaitingPaymentNoticeTitle"]</strong>
+                        <p>@L["RegistrationStatus.AwaitingPaymentNoticeBody"]</p>
                     </div>
                 </div>
+            }
 
-                <p class="text-center mb-0">
-                    <a class="btn btn-outline-secondary btn-sm rounded-pill" href="/">@L["Signup.PendingBackHome"]</a>
-                </p>
+            <div class="su-status__actions">
+                @if (Model.CanCancel)
+                {
+                    <form asp-action="Cancel" asp-route-id="@Model.RegistrationId" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="su-btn su-btn--quiet">@L["Checkout.CancelRegistration"]</button>
+                    </form>
+                }
+                <a class="su-btn su-btn--quiet" href="/">@L["Signup.PendingBackHome"]</a>
             </div>
+
+            @if (Model.CanSimulatePayment)
+            {
+                @* Development only: CanSimulatePayment needs CheckoutPaymentSimulator.IsAvailable, and the POST actions
+                   check it again. *@
+                <section class="su-status-sim" aria-labelledby="reviewSimulatorTitle">
+                    <h2 class="su-status-sim__title" id="reviewSimulatorTitle">@L["RegistrationStatus.SimulatorTitle"]</h2>
+                    <p>@L["Checkout.SimulationNotice"]</p>
+                    <div class="su-status-sim__actions">
+                        <form asp-action="SimulateSuccess" asp-route-id="@Model.RegistrationId" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="su-btn su-btn--primary">@L["Checkout.SimulateSuccess"]</button>
+                        </form>
+                        <form asp-action="SimulateFailed" asp-route-id="@Model.RegistrationId" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="su-btn su-btn--secondary">@L["Checkout.SimulateFailed"]</button>
+                        </form>
+                    </div>
+                </section>
+            }
         </div>
+
+        <aside class="su-status__aside">
+            <section class="su-receipt su-status-card" aria-labelledby="reviewCardTitle">
+                <header class="su-receipt__head">
+                    <h2 class="su-receipt__title" id="reviewCardTitle">@L["Signup.Receipt.Title"]</h2>
+                </header>
+                <div class="su-status-card__body">
+                    <partial name="_RegistrationStatusBadge" model="badge" />
+                </div>
+                <div class="su-receipt__cut" aria-hidden="true"></div>
+                <div class="su-receipt__total su-status-card__total" data-su-price="@(price is null ? "unset" : "set")">
+                    <p class="su-status-card__plan">@string.Format(L["Signup.Receipt.PlanLine"].Value, Model.PlanDisplayName, periodWord)</p>
+                    <span class="su-receipt__total-label">@L["Checkout.TotalAmount"]</span>
+                    @if (price is not null)
+                    {
+                        <div class="su-receipt__amount-row">
+                            <span class="su-receipt__amount"><bdi>@PlanPriceText.Amount(price.Price, L)</bdi></span>
+                            <span class="su-receipt__vat">@PlanPriceText.Vat(price, L)</span>
+                        </div>
+                        <p class="su-receipt__period">@string.Format(L[isYearly ? "Signup.Receipt.PeriodLineYearly" : "Signup.Receipt.PeriodLineMonthly"].Value, Model.PlanDisplayName)</p>
+                    }
+                    else
+                    {
+                        <p class="su-receipt__amount su-status-card__unset">@L["Billing.PriceNotSet"]</p>
+                        <p class="su-receipt__period">@L["RegistrationStatus.PriceLater"]</p>
+                    }
+                </div>
+            </section>
+        </aside>
     </div>
 </div>

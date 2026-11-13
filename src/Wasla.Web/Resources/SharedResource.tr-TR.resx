@@ -2939,33 +2939,19 @@
   <data name="Signup.ContinueToPayment" xml:space="preserve"><value>Kaydı tamamla ve ödemeye geç</value></data>
   <data name="Signup.SubmitRegistration" xml:space="preserve"><value>Kaydı gönder</value></data>
   <data name="Signup.CreateAccount" xml:space="preserve"><value>Hesabı oluştur</value></data>
-  <data name="Signup.PendingTitle" xml:space="preserve"><value>Hesabınız neredeyse hazır</value></data>
+  <data name="Signup.PendingTitle" xml:space="preserve"><value>Kaydınız alındı</value></data>
   <data name="Signup.PendingSubtitle" xml:space="preserve"><value>Bilgilerinizi aldık. Devam etmek için ödeme adımını tamamlayın.</value></data>
-  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>Bilgilerinizi aldık. Kaydınız ödeme bekliyor.</value></data>
-  <data name="Signup.PendingCheckoutNote" xml:space="preserve"><value>Ödeme tamamlandıktan sonra restoran paneliniz hazırlanır.</value></data>
+  <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve"><value>Bilgileriniz kayıtlı. Restoran panelinizin hazırlanabilmesi için ödeme adımının tamamlanması gerekiyor.</value></data>
   <data name="Signup.PendingBackHome" xml:space="preserve"><value>Ana sayfaya dön</value></data>
   <data name="Signup.ContinueToCheckout" xml:space="preserve"><value>Ödemeye devam et</value></data>
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve"><value>Kayıt özetini görüntüle</value></data>
-  <data name="Signup.PendingLabelRestaurant" xml:space="preserve"><value>Restoranınız</value></data>
-  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve"><value>Wasla adresiniz</value></data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve"><value>{0} adresini aç</value></data>
-  <data name="Signup.PendingLabelPackage" xml:space="preserve"><value>Paketiniz</value></data>
-  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve"><value>Ödeme dönemi</value></data>
-  <data name="Signup.PendingNextStepsTitle" xml:space="preserve"><value>Ödeme tamamlandıktan sonra:</value></data>
-  <data name="Signup.PendingNextStep1" xml:space="preserve"><value>Restoran paneliniz oluşturulur</value></data>
-  <data name="Signup.PendingNextStep2" xml:space="preserve"><value>Yönetici hesabınız aktif edilir</value></data>
-  <data name="Signup.PendingNextStep3" xml:space="preserve"><value>Platform bağlantılarını kurmaya başlayabilirsiniz</value></data>
   <data name="Signup.PendingTestNote" xml:space="preserve"><value>Test ortamında ödeme adımı simüle edilecektir.</value></data>
   <data name="Signup.PanelReadyTitle" xml:space="preserve"><value>Paneliniz hazır</value></data>
   <data name="Signup.PanelReadyBody" xml:space="preserve"><value>Restoran paneliniz başarıyla oluşturuldu. Artık size özel Wasla adresinizden giriş yapabilirsiniz.</value></data>
   <data name="Signup.GoToPanel" xml:space="preserve"><value>Panele git</value></data>
   <data name="Signup.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Ödemeniz alındı</value></data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Ödemeniz alındı. Restoran paneliniz hazırlanıyor.</value></data>
-  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve"><value>Restoran paneliniz hazırlanıyor.</value></data>
-  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve"><value>Kurulum tamamlandığında Wasla adresinizden giriş yapabileceksiniz.</value></data>
-  <data name="Signup.PendingRegistrationDetails" xml:space="preserve"><value>Kayıt bilgileri</value></data>
-  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve"><value>Ödeme durumu</value></data>
-  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve"><value>Kurulum durumu</value></data>
   <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve"><value>İşletme telefonu</value></data>
   <data name="Signup.PendingLabelBusinessEmail" xml:space="preserve"><value>İşletme e-postası</value></data>
   <data name="Signup.PendingLabelOwnerName" xml:space="preserve"><value>Hesap sahibi</value></data>
@@ -2977,15 +2963,11 @@
   <data name="Signup.PaymentStatusFailed" xml:space="preserve"><value>Ödeme başarısız</value></data>
   <data name="Signup.PaymentStatusCancelled" xml:space="preserve"><value>İptal edildi</value></data>
   <data name="Signup.PaymentStatusExpired" xml:space="preserve"><value>Süresi doldu</value></data>
-  <data name="Signup.ProvisioningStatusPending" xml:space="preserve"><value>Kurulum bekleniyor</value></data>
-  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve"><value>Kurulum devam ediyor</value></data>
-  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve"><value>Kurulum tamamlandı</value></data>
   <data name="Checkout.ReviewTitle" xml:space="preserve"><value>Ödeme özeti</value></data>
   <data name="Checkout.RegistrationSummaryTitle" xml:space="preserve"><value>Kayıt özeti</value></data>
   <data name="Checkout.ReviewSubtitle" xml:space="preserve"><value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu test ortamında ödeme sonucu simüle edilecektir.</value></data>
-  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>Seçtiğiniz paketi ve restoran bilgilerinizi kontrol edin. Bu sayfada ödeme alınmaz; kaydınız ödeme alınana kadar beklemede kalır.</value></data>
+  <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve"><value>İşletme ve hesap bilgilerinizi kontrol edin. Seçtiğiniz plan ve güncel tutar kayıt özetinde yer alıyor.</value></data>
   <data name="Checkout.SimulationNotice" xml:space="preserve"><value>Gerçek ödeme entegrasyonu henüz aktif değil. Bu ekranda ödeme sonucu simüle edilir.</value></data>
-  <data name="Checkout.SectionPackageInfo" xml:space="preserve"><value>Paket bilgileri</value></data>
   <data name="Checkout.SectionRestaurantInfo" xml:space="preserve"><value>Restoran bilgileri</value></data>
   <data name="Checkout.SectionAccountOwner" xml:space="preserve"><value>Hesap sahibi</value></data>
   <data name="Checkout.SectionRegistration" xml:space="preserve"><value>Kayıt özeti</value></data>
@@ -3001,21 +2983,19 @@
   <data name="Checkout.SuccessTitle" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi</value></data>
   <data name="Checkout.SuccessMessage" xml:space="preserve"><value>Ödeme başarılı olarak simüle edildi.</value></data>
   <data name="Checkout.SuccessNextPhase" xml:space="preserve"><value>Bir sonraki adımda restoran paneliniz hazırlanacak.</value></data>
-  <data name="Checkout.PanelReadyTitle" xml:space="preserve"><value>Paneliniz hazır</value></data>
   <data name="Checkout.PanelReadyMessage" xml:space="preserve"><value>Ödemeniz tamamlandı ve restoran paneliniz oluşturuldu.</value></data>
   <data name="Checkout.GoToPanel" xml:space="preserve"><value>Restoran paneline git</value></data>
-  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve"><value>Ödemeniz alındı</value></data>
   <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve"><value>Ödemeniz alındı. Restoran paneliniz hazırlanıyor.</value></data>
   <data name="Checkout.FailedTitle" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi</value></data>
   <data name="Checkout.FailedMessage" xml:space="preserve"><value>Ödeme başarısız olarak simüle edildi.</value></data>
   <data name="Checkout.FailedNoWorkspace" xml:space="preserve"><value>Restoran paneliniz oluşturulmadı. İsterseniz ödeme adımını tekrar deneyebilirsiniz.</value></data>
   <data name="Checkout.PaymentNotCompletedTitle" xml:space="preserve"><value>Ödeme tamamlanmadı</value></data>
   <data name="Checkout.PaymentNotCompletedMessage" xml:space="preserve"><value>Bu kayıt için ödeme tamamlanmadı, bu nedenle restoran paneliniz oluşturulmadı.</value></data>
-  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Kayıt iptal edildi</value></data>
-  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Kayıt iptal edildi. İsterseniz yeniden kayıt oluşturabilirsiniz.</value></data>
+  <data name="Checkout.CancelledTitle" xml:space="preserve"><value>Kaydınız iptal edildi</value></data>
+  <data name="Checkout.CancelledMessage" xml:space="preserve"><value>Devam etmek isterseniz yeni bir kayıt başlatabilirsiniz.</value></data>
   <data name="Checkout.TryAgain" xml:space="preserve"><value>Ödeme adımına dön</value></data>
   <data name="Checkout.ReturnToRegistrationSummary" xml:space="preserve"><value>Kayıt özetine dön</value></data>
-  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Yeniden kayıt ol</value></data>
+  <data name="Checkout.RegisterAgain" xml:space="preserve"><value>Yeni kayıt oluştur</value></data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve"><value>Bu kayıt için ödeme zaten başarılı olarak simüle edildi.</value></data>
   <data name="Checkout.StatusPaymentReceived" xml:space="preserve"><value>Bu kayıt için ödeme alındı.</value></data>
   <data name="Checkout.StatusCancelled" xml:space="preserve"><value>Bu kayıt iptal edilmiş.</value></data>
@@ -4796,5 +4776,131 @@
   </data>
   <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
     <value>Telefon doğrulandı, devam ediliyor…</value>
+  </data>
+  <data name="RegistrationStatus.PanelReady" xml:space="preserve">
+    <value>Panel hazır</value>
+  </data>
+  <data name="RegistrationStatus.StepRegistered" xml:space="preserve">
+    <value>Kayıt alındı</value>
+  </data>
+  <data name="RegistrationStatus.StepRegisteredBody" xml:space="preserve">
+    <value>İşletme ve hesap bilgileriniz kayıtlı.</value>
+  </data>
+  <data name="RegistrationStatus.StepAwaitingPaymentBody" xml:space="preserve">
+    <value>Ödeme alındığı henüz doğrulanmadı.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetup" xml:space="preserve">
+    <value>Panel hazırlığı</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetupBody" xml:space="preserve">
+    <value>Ödeme adımı tamamlandıktan sonra.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentReceivedBody" xml:space="preserve">
+    <value>Ödeme işlemi tamamlandı.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaiting" xml:space="preserve">
+    <value>Panel hazırlığı bekleniyor</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaitingBody" xml:space="preserve">
+    <value>Restoran paneliniz henüz hazır değil.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelReadyBody" xml:space="preserve">
+    <value>Hazırlık tamamlanınca giriş düğmesi görünür.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentNotCompletedBody" xml:space="preserve">
+    <value>Restoran paneli oluşturulmadı.</value>
+  </data>
+  <data name="RegistrationStatus.StateNotCompleted" xml:space="preserve">
+    <value>tamamlanmadı</value>
+  </data>
+  <data name="RegistrationStatus.PublicTitle" xml:space="preserve">
+    <value>Kaydın durumu</value>
+  </data>
+  <data name="RegistrationStatus.PublicLead" xml:space="preserve">
+    <value>Bu Wasla adresine ait kayıt ve panel durumunu buradan görebilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.PublicCardTitle" xml:space="preserve">
+    <value>Kayıt durumu</value>
+  </data>
+  <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
+    <value>Restoran panelinizin hazırlanmasını bekleyin. Panel hazır olduğunda giriş adresinizi burada görebilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
+    <value>Giriş adresiniz</value>
+  </data>
+  <data name="RegistrationStatus.NextInPanelTitle" xml:space="preserve">
+    <value>Panelde sonraki adımlar</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatforms" xml:space="preserve">
+    <value>Platform bağlantıları</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatformsBody" xml:space="preserve">
+    <value>Kullandığınız sipariş platformlarını bağlayın.</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinter" xml:space="preserve">
+    <value>Fiş yazıcısı</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinterBody" xml:space="preserve">
+    <value>Wasla Print Bridge'i kurun ve yazıcınızı seçin.</value>
+  </data>
+  <data name="RegistrationStatus.NextStepTitle" xml:space="preserve">
+    <value>Sonraki adım</value>
+  </data>
+  <data name="RegistrationStatus.NextStepBody" xml:space="preserve">
+    <value>Bilgilerinizi ve ödeme durumunu görmek için kayıt özetini açın.</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterTitle" xml:space="preserve">
+    <value>Durumu daha sonra kontrol edebilirsiniz</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
+    <value>Paneliniz hazır olduğunda buradan giriş yapabilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
+    <value>İletişim bilgileri</value>
+  </data>
+  <data name="RegistrationStatus.CardRestaurant" xml:space="preserve">
+    <value>Restoran</value>
+  </data>
+  <data name="RegistrationStatus.BusinessLabel" xml:space="preserve">
+    <value>İşletme</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpPending" xml:space="preserve">
+    <value>Paneliniz hazır olduğunda bu adresten giriş yapabilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpReady" xml:space="preserve">
+    <value>Restoran panelinizin giriş adresi.</value>
+  </data>
+  <data name="RegistrationStatus.ExpiredTitle" xml:space="preserve">
+    <value>Kaydın süresi doldu</value>
+  </data>
+  <data name="RegistrationStatus.PanelAddressLabel" xml:space="preserve">
+    <value>Panel adresi</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeTitle" xml:space="preserve">
+    <value>Ödeme adımı bekleniyor</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeBody" xml:space="preserve">
+    <value>Online ödeme henüz kullanılamıyor. Kayıt bilgileriniz saklanıyor.</value>
+  </data>
+  <data name="RegistrationStatus.SimulatorTitle" xml:space="preserve">
+    <value>Yalnızca test ortamı</value>
+  </data>
+  <data name="RegistrationStatus.PriceLater" xml:space="preserve">
+    <value>Güncel fiyat belirlendiğinde burada gösterilir.</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptTitle" xml:space="preserve">
+    <value>Bilgileriniz kayıtlı</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptBody" xml:space="preserve">
+    <value>Devam etmeden önce kayıt özetinden güncel durumu kontrol edin.</value>
+  </data>
+  <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
+    <value>İşlemin durumunu kayıt özetinden kontrol edebilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
+    <value>Yeni bir kayıt oluşturarak başlayabilirsiniz.</value>
+  </data>
+  <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
+    <value>Çok fazla deneme</value>
   </data>
 </root>

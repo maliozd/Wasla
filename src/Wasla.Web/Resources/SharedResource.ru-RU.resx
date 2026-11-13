@@ -3160,16 +3160,13 @@
     <value>Зарегистрироваться</value>
   </data>
   <data name="Signup.PendingTitle" xml:space="preserve">
-    <value>Ваш аккаунт почти готов</value>
+    <value>Регистрация получена</value>
   </data>
   <data name="Signup.PendingSubtitle" xml:space="preserve">
     <value>Мы получили ваши данные. Завершите шаг оплаты, чтобы продолжить.</value>
   </data>
   <data name="Signup.PendingSubtitleAwaitingPayment" xml:space="preserve">
-    <value>Мы получили ваши данные. Ваша регистрация ожидает оплаты.</value>
-  </data>
-  <data name="Signup.PendingCheckoutNote" xml:space="preserve">
-    <value>После оплаты панно вашего ресторана будет готово.</value>
+    <value>Ваши данные сохранены. Чтобы подготовить панель ресторана, нужно завершить шаг оплаты.</value>
   </data>
   <data name="Signup.PendingBackHome" xml:space="preserve">
     <value>Вернуться на главную страницу</value>
@@ -3180,32 +3177,8 @@
   <data name="Signup.ViewRegistrationSummary" xml:space="preserve">
     <value>Посмотреть сводку регистрации</value>
   </data>
-  <data name="Signup.PendingLabelRestaurant" xml:space="preserve">
-    <value>Ваш ресторан</value>
-  </data>
-  <data name="Signup.PendingLabelWaslaAddress" xml:space="preserve">
-    <value>Ваш адрес Wasla</value>
-  </data>
   <data name="Signup.OpenTenantAddressTitle" xml:space="preserve">
     <value>Открыть {0}</value>
-  </data>
-  <data name="Signup.PendingLabelPackage" xml:space="preserve">
-    <value>Ваш пакет</value>
-  </data>
-  <data name="Signup.PendingLabelPaymentPeriod" xml:space="preserve">
-    <value>Период оплаты</value>
-  </data>
-  <data name="Signup.PendingNextStepsTitle" xml:space="preserve">
-    <value>После завершения оплаты:</value>
-  </data>
-  <data name="Signup.PendingNextStep1" xml:space="preserve">
-    <value>Панель вашего ресторана создана.</value>
-  </data>
-  <data name="Signup.PendingNextStep2" xml:space="preserve">
-    <value>Ваша учетная запись администратора активирована</value>
-  </data>
-  <data name="Signup.PendingNextStep3" xml:space="preserve">
-    <value>Вы можете начать подключать свои платформы</value>
   </data>
   <data name="Signup.PendingTestNote" xml:space="preserve">
     <value>В тестовой среде будет смоделирован этап оплаты.</value>
@@ -3224,21 +3197,6 @@
   </data>
   <data name="Signup.PaymentReceivedPreparingMessage" xml:space="preserve">
     <value>Ваш платеж был получен. Готовится ваша ресторанная панель.</value>
-  </data>
-  <data name="Signup.PaymentReceivedPreparingSubtitle" xml:space="preserve">
-    <value>Готовится ваша ресторанная панель.</value>
-  </data>
-  <data name="Signup.PaymentReceivedPreparingBody" xml:space="preserve">
-    <value>После завершения настройки вы сможете войти в систему со своего адреса Wasla.</value>
-  </data>
-  <data name="Signup.PendingRegistrationDetails" xml:space="preserve">
-    <value>Детали регистрации</value>
-  </data>
-  <data name="Signup.PendingLabelPaymentStatus" xml:space="preserve">
-    <value>Статус платежа</value>
-  </data>
-  <data name="Signup.PendingLabelProvisioningStatus" xml:space="preserve">
-    <value>Статус настройки</value>
   </data>
   <data name="Signup.PendingLabelBusinessPhone" xml:space="preserve">
     <value>Рабочий телефон</value>
@@ -3273,15 +3231,6 @@
   <data name="Signup.PaymentStatusExpired" xml:space="preserve">
     <value>Истекший</value>
   </data>
-  <data name="Signup.ProvisioningStatusPending" xml:space="preserve">
-    <value>Ожидается установка</value>
-  </data>
-  <data name="Signup.ProvisioningStatusInProgress" xml:space="preserve">
-    <value>Выполняется установка</value>
-  </data>
-  <data name="Signup.ProvisioningStatusComplete" xml:space="preserve">
-    <value>Настройка завершена</value>
-  </data>
   <data name="Checkout.ReviewTitle" xml:space="preserve">
     <value>Сводка платежей</value>
   </data>
@@ -3292,13 +3241,10 @@
     <value>Просмотрите выбранный пакет и информацию о ресторане. В этой тестовой среде будет смоделирован результат платежа.</value>
   </data>
   <data name="Checkout.ReviewSubtitleAwaitingPayment" xml:space="preserve">
-    <value>Проверьте выбранный пакет и данные ресторана. На этой странице оплата не принимается; регистрация остаётся в ожидании, пока оплата не будет получена.</value>
+    <value>Проверьте данные заведения и аккаунта. Выбранный тариф и его текущая цена указаны в сводке регистрации.</value>
   </data>
   <data name="Checkout.SimulationNotice" xml:space="preserve">
     <value>Интеграция реальных платежей еще не активна. На этом экране моделируется результат платежа.</value>
-  </data>
-  <data name="Checkout.SectionPackageInfo" xml:space="preserve">
-    <value>Детали пакета</value>
   </data>
   <data name="Checkout.SectionRestaurantInfo" xml:space="preserve">
     <value>Подробности о ресторане</value>
@@ -3345,17 +3291,11 @@
   <data name="Checkout.SuccessNextPhase" xml:space="preserve">
     <value>Панель вашего ресторана будет подготовлена ​​на следующем этапе.</value>
   </data>
-  <data name="Checkout.PanelReadyTitle" xml:space="preserve">
-    <value>Ваша панель готова</value>
-  </data>
   <data name="Checkout.PanelReadyMessage" xml:space="preserve">
     <value>Ваш платеж завершен, и панель вашего ресторана создана.</value>
   </data>
   <data name="Checkout.GoToPanel" xml:space="preserve">
     <value>Перейти на панель ресторана</value>
-  </data>
-  <data name="Checkout.PaymentReceivedPreparingTitle" xml:space="preserve">
-    <value>Платеж получен</value>
   </data>
   <data name="Checkout.PaymentReceivedPreparingMessage" xml:space="preserve">
     <value>Ваш платеж был получен. Готовится ваша ресторанная панель.</value>
@@ -3376,10 +3316,10 @@
     <value>Оплата по этой регистрации не завершена, поэтому панель ресторана не создана.</value>
   </data>
   <data name="Checkout.CancelledTitle" xml:space="preserve">
-    <value>Регистрация отменена</value>
+    <value>Ваша регистрация отменена</value>
   </data>
   <data name="Checkout.CancelledMessage" xml:space="preserve">
-    <value>Регистрация отменена. При желании вы можете зарегистрироваться еще раз.</value>
+    <value>Если хотите продолжить, начните новую регистрацию.</value>
   </data>
   <data name="Checkout.TryAgain" xml:space="preserve">
     <value>Вернуться к этапу оплаты</value>
@@ -3388,7 +3328,7 @@
     <value>Вернуться к сводке регистрации</value>
   </data>
   <data name="Checkout.RegisterAgain" xml:space="preserve">
-    <value>Зарегистрируйтесь снова</value>
+    <value>Новая регистрация</value>
   </data>
   <data name="Checkout.StatusAlreadyPaid" xml:space="preserve">
     <value>Платеж уже смоделирован как успешный для этой регистрации.</value>
@@ -5284,5 +5224,131 @@
   </data>
   <data name="Signup.Phone.VerifiedMoving" xml:space="preserve">
     <value>Телефон подтверждён, продолжаем…</value>
+  </data>
+  <data name="RegistrationStatus.PanelReady" xml:space="preserve">
+    <value>Панель готова</value>
+  </data>
+  <data name="RegistrationStatus.StepRegistered" xml:space="preserve">
+    <value>Регистрация получена</value>
+  </data>
+  <data name="RegistrationStatus.StepRegisteredBody" xml:space="preserve">
+    <value>Данные заведения и аккаунта сохранены.</value>
+  </data>
+  <data name="RegistrationStatus.StepAwaitingPaymentBody" xml:space="preserve">
+    <value>Получение оплаты ещё не подтверждено.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetup" xml:space="preserve">
+    <value>Подготовка панели</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelSetupBody" xml:space="preserve">
+    <value>После завершения шага оплаты.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentReceivedBody" xml:space="preserve">
+    <value>Оплата завершена.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaiting" xml:space="preserve">
+    <value>Ожидается подготовка панели</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelWaitingBody" xml:space="preserve">
+    <value>Панель ресторана ещё не готова.</value>
+  </data>
+  <data name="RegistrationStatus.StepPanelReadyBody" xml:space="preserve">
+    <value>Кнопка входа появится, когда подготовка завершится.</value>
+  </data>
+  <data name="RegistrationStatus.StepPaymentNotCompletedBody" xml:space="preserve">
+    <value>Панель ресторана не создана.</value>
+  </data>
+  <data name="RegistrationStatus.StateNotCompleted" xml:space="preserve">
+    <value>не завершено</value>
+  </data>
+  <data name="RegistrationStatus.PublicTitle" xml:space="preserve">
+    <value>Статус регистрации</value>
+  </data>
+  <data name="RegistrationStatus.PublicLead" xml:space="preserve">
+    <value>Здесь показан статус регистрации и панели для этого адреса Wasla.</value>
+  </data>
+  <data name="RegistrationStatus.PublicCardTitle" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="RegistrationStatus.PaymentReceivedLead" xml:space="preserve">
+    <value>Панель ресторана ожидает подготовки. Когда она будет готова, здесь появится адрес для входа.</value>
+  </data>
+  <data name="RegistrationStatus.LoginAddress" xml:space="preserve">
+    <value>Ваш адрес для входа</value>
+  </data>
+  <data name="RegistrationStatus.NextInPanelTitle" xml:space="preserve">
+    <value>Следующие шаги в панели</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatforms" xml:space="preserve">
+    <value>Подключение платформ</value>
+  </data>
+  <data name="RegistrationStatus.NextPlatformsBody" xml:space="preserve">
+    <value>Подключите платформы заказов, которыми пользуетесь.</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinter" xml:space="preserve">
+    <value>Принтер чеков</value>
+  </data>
+  <data name="RegistrationStatus.NextPrinterBody" xml:space="preserve">
+    <value>Установите Wasla Print Bridge и выберите принтер.</value>
+  </data>
+  <data name="RegistrationStatus.NextStepTitle" xml:space="preserve">
+    <value>Следующий шаг</value>
+  </data>
+  <data name="RegistrationStatus.NextStepBody" xml:space="preserve">
+    <value>Откройте сводку регистрации, чтобы увидеть данные и статус оплаты.</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterTitle" xml:space="preserve">
+    <value>Проверить статус можно позже</value>
+  </data>
+  <data name="RegistrationStatus.CheckLaterBody" xml:space="preserve">
+    <value>Когда панель будет готова, отсюда можно будет войти.</value>
+  </data>
+  <data name="RegistrationStatus.ContactDetails" xml:space="preserve">
+    <value>Контактные данные</value>
+  </data>
+  <data name="RegistrationStatus.CardRestaurant" xml:space="preserve">
+    <value>Ресторан</value>
+  </data>
+  <data name="RegistrationStatus.BusinessLabel" xml:space="preserve">
+    <value>Заведение</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpPending" xml:space="preserve">
+    <value>Когда панель будет готова, входите по этому адресу.</value>
+  </data>
+  <data name="RegistrationStatus.AddressHelpReady" xml:space="preserve">
+    <value>Адрес входа в панель ресторана.</value>
+  </data>
+  <data name="RegistrationStatus.ExpiredTitle" xml:space="preserve">
+    <value>Срок регистрации истёк</value>
+  </data>
+  <data name="RegistrationStatus.PanelAddressLabel" xml:space="preserve">
+    <value>Адрес панели</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeTitle" xml:space="preserve">
+    <value>Ожидается шаг оплаты</value>
+  </data>
+  <data name="RegistrationStatus.AwaitingPaymentNoticeBody" xml:space="preserve">
+    <value>Онлайн-оплата пока недоступна. Данные регистрации сохранены.</value>
+  </data>
+  <data name="RegistrationStatus.SimulatorTitle" xml:space="preserve">
+    <value>Только тестовая среда</value>
+  </data>
+  <data name="RegistrationStatus.PriceLater" xml:space="preserve">
+    <value>Актуальная цена появится здесь, когда её установят.</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptTitle" xml:space="preserve">
+    <value>Ваши данные сохранены</value>
+  </data>
+  <data name="RegistrationStatus.DetailsKeptBody" xml:space="preserve">
+    <value>Прежде чем продолжить, проверьте текущий статус в сводке регистрации.</value>
+  </data>
+  <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
+    <value>Статус можно проверить в сводке регистрации.</value>
+  </data>
+  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
+    <value>Можно начать заново с новой регистрации.</value>
+  </data>
+  <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
+    <value>Слишком много попыток</value>
   </data>
 </root>

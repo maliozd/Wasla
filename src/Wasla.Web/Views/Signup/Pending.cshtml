@@ -1,27 +1,9 @@
-﻿@model Wasla.Web.Models.Signup.SignupPendingViewModel
+@model Wasla.Web.Models.Signup.SignupPendingViewModel
 @using Microsoft.Extensions.Localization
-@using Wasla.Domain.Enums
+@using Wasla.Web.Models.Signup
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
     Layout = "_RegistrationStatusLayout";
-    var isProvisioned = Model.Status == PendingRegistrationStatus.Provisioned;
-    var isPaymentReceived = Model.Status == PendingRegistrationStatus.PaymentSucceeded;
-    ViewData["Title"] = isProvisioned
-        ? L["Signup.PanelReadyTitle"]
-        : isPaymentReceived
-            ? L["Signup.PaymentReceivedPreparingTitle"]
-            : L["Signup.PendingTitle"];
+    ViewData["Title"] = L[RegistrationStatusPresentation.TitleKey(Model.Status, Model.IsPaymentSimulatorAvailable, Model.ShowPrivateDetails)];
 }
-<div class="wasla-signup-page py-4 py-md-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm wasla-signup-card">
-                    <div class="card-body p-4 p-md-5 text-center">
-                        <partial name="_RegistrationStatusCard" model="Model" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<partial name="_RegistrationStatusCard" model="Model" />
