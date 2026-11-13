@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
+using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
-using Wasla.PrintBridge.Options;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.WebShell;
@@ -14,13 +13,18 @@ namespace Wasla.PrintBridge.UI;
 /// The tray application. Its one window is the WebView2 app (<see cref="PrintBridgeShellForm"/>): tray Open,
 /// double-click, Print history, Settings, setup links and a first run without a usable connection all open it. When
 /// the WebView2 Runtime is missing, too old or fails to start, the tray shows <see cref="WebView2RuntimeNotice"/>
-/// instead; the tray and the engine keep running, so receipts still print.
+/// instead; the tray keeps running.
+/// <para>
+/// WAS-61: the engine runs in the Print Bridge service. The tray is a client of it (<see cref="IPrintBridgeEngine"/>):
+/// closing, exiting, crashing or restarting the app never stops printing or acknowledgement. Only the explicit Stop in
+/// the app stops printing.
+/// </para>
 /// </summary>
 public sealed class TrayApplicationContext : ApplicationContext
 {
-    private readonly ServiceProvider _services;
+    private readonly PrintBridgeUiServices _services;
 
-    private readonly PrintBridgeRuntime _runtime;
+    private readonly IPrintBridgeEngine _engine;
 
     private readonly PrintBridgeLocalizer _localizer;
 
@@ -28,15 +32,11 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly NotifyIcon _trayIcon;
 
-    private readonly PrintBridgeAutoSetupCoordinator _autoSetup;
-
-    private readonly PrintBridgeServerTrustPolicy _trustPolicy;
-
-    /// <summary>1 while a setup link or the recovery of a pending connection change runs; they never overlap.</summary>
+    /// <summary>1 while this app applies a setup link; the service refuses a second one meanwhile.</summary>
     private int _autoSetupRunning;
 
-    /// <summary>1 while the loop that finishes a pending connection change (WAS-91) is waiting or running.</summary>
-    private int _pendingChangeLoopRunning;
+    /// <summary>Set once the first state from the service decided whether the first-run window opens.</summary>
+    private bool _firstStateHandled;
 
     private readonly ContextMenuStrip _trayMenu;
 
@@ -54,7 +54,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly IWebView2RuntimeProbe _webViewRuntimeProbe;
 
-    private readonly IPrinterCatalog _printerCatalog = new WindowsPrinterCatalog();
+    private readonly IPrinterCatalog _printerCatalog;
 
     /// <summary>Cancelled on Exit, so a connection change still in progress is abandoned instead of half-applied.</summary>
     private readonly CancellationTokenSource _lifetime = new();
@@ -84,22 +84,21 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private WebView2RuntimeNotice? _runtimeNotice;
 
-    public TrayApplicationContext(ServiceProvider services)
+    public TrayApplicationContext(PrintBridgeUiServices services)
         : this(services, new WebView2RuntimeProbe())
     {
     }
 
     /// <summary>For tests: a runtime probe that can report the WebView2 Runtime as missing.</summary>
-    internal TrayApplicationContext(ServiceProvider services, IWebView2RuntimeProbe webViewRuntimeProbe)
+    internal TrayApplicationContext(PrintBridgeUiServices services, IWebView2RuntimeProbe webViewRuntimeProbe)
     {
         _services = services;
         _webViewRuntimeProbe = webViewRuntimeProbe;
-        _runtime = services.GetRequiredService<PrintBridgeRuntime>();
-        _localizer = services.GetRequiredService<PrintBridgeLocalizer>();
-        _cultureService = services.GetRequiredService<PrintBridgeCultureService>();
-        _autoSetup = services.GetRequiredService<PrintBridgeAutoSetupCoordinator>();
-        _trustPolicy = services.GetRequiredService<PrintBridgeServerTrustPolicy>();
-        _logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Tray");
+        _engine = services.Engine;
+        _localizer = services.Localizer;
+        _cultureService = services.Culture;
+        _printerCatalog = new EnginePrinterCatalog(_engine);
+        _logger = services.Loggers.CreateLogger("Wasla.PrintBridge.Tray");
 
         // The menu is the first control created here; creating it installs the Windows Forms context on this thread,
         // the UI thread.
@@ -133,23 +132,16 @@ public sealed class TrayApplicationContext : ApplicationContext
         };
         _trayIcon.DoubleClick += (_, _) => ShowPrimaryWindow();
 
-        _runtime.StatusChanged += OnRuntimeStatusChanged;
+        _engine.StatusChanged += OnRuntimeStatusChanged;
+        _engine.BackgroundSetupCompleted += OnBackgroundSetupCompleted;
         _cultureService.CultureChanged += OnCultureChanged;
         ApplyTrayLocalization();
         UpdateTrayMenu();
 
-        TryAutoStartPolling();
-
-        // First run (or a connection that was reset): open the app, whose next step is connecting. A configured
-        // installation starts in the tray only. Queued, so it runs once the message loop does.
-        if (!HasConnectionSettings())
-            _uiContext.Post(_ => ShowPrimaryWindow(), null);
-
-        // WAS-91: a move to another restaurant confirmed before a restart, a lost answer or a failed settings write is
-        // finished from its pending change. Meanwhile the old token cannot print for the old restaurant if the server
-        // stored the move (it retired that token), and still prints for it if the move was never stored.
-        if (_services.GetRequiredService<PrintBridgeSettingsStore>().PendingConnectionChangeExists())
-            _uiContext.Post(_ => StartPendingConnectionChangeLoop(), null);
+        // The service starts printing on its own and finishes a pending move (WAS-91); the app only shows the result.
+        // First run (or a connection that was reset): once the service's first state shows that no connection is saved,
+        // the app window opens on Overview, whose next step is connecting. Queued, so it runs once the message loop does.
+        _uiContext.Post(_ => HandleFirstState(), null);
     }
 
     private void ApplyTrayLocalization()
@@ -162,31 +154,32 @@ public sealed class TrayApplicationContext : ApplicationContext
         _trayMenu.RightToLeft = _cultureService.IsRightToLeft ? RightToLeft.Yes : RightToLeft.No;
     }
 
-    private void TryAutoStartPolling()
+    /// <summary>
+    /// Once, on the UI thread, when the service's state is known: opens the app window when no connection is saved. While
+    /// the service cannot be reached the decision waits; the tray shows that the service is unavailable.
+    /// </summary>
+    private void HandleFirstState()
     {
-        var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
-        var (connection, bridge, _) = holder.Snapshot();
-        if (!PrintBridgeSettingsValidator.TryValidate(connection, bridge, out _))
+        if (_firstStateHandled || IsShuttingDown)
             return;
 
-        try
-        {
-            _runtime.Start();
-        }
-        catch
-        {
-        }
+        if (_engine.GetStatus().LastIssue is { IsServiceIssue: true })
+            return;
+
+        _firstStateHandled = true;
+        if (!_engine.Settings.HasSavedToken)
+            ShowPrimaryWindow();
     }
 
-    /// <summary>
-    /// True when a server URL and a device token are saved and pass the local checks; whether the server accepts the
-    /// token is decided by the engine. Checked on a copy, because the validator normalizes what it checks.
-    /// </summary>
-    private bool HasConnectionSettings()
+    /// <summary>The language saved in the service is the app's language; a change made in another app follows here.</summary>
+    private void ApplySavedLanguage()
     {
-        var (saved, _, _) = _services.GetRequiredService<PrintBridgeSettingsHolder>().Snapshot();
-        var copy = new WaslaOptions { ServerUrl = saved.ServerUrl, AgentToken = saved.AgentToken };
-        return PrintBridgeSettingsValidator.TryValidateConnectionSettings(copy, out _);
+        var saved = _engine.Settings.Ui.Language;
+        if (SupportedCultures.IsExactSupportedName(saved)
+            && !string.Equals(saved, _cultureService.CurrentCulture.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            _cultureService.Initialize(saved);
+        }
     }
 
     /// <summary>Tray "Open", double-click and the first run.</summary>
@@ -238,20 +231,18 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (_shellForm is { IsDisposed: false })
             return _shellForm;
 
-        var store = _services.GetRequiredService<PrintBridgeSettingsStore>();
-        var holder = _services.GetRequiredService<PrintBridgeSettingsHolder>();
-        var loggers = _services.GetRequiredService<ILoggerFactory>();
+        var loggers = _services.Loggers;
         var logger = loggers.CreateLogger("Wasla.PrintBridge.Shell");
         _shellForm = new PrintBridgeShellForm(
-            _runtime,
-            holder,
+            _engine,
+            _engine.Settings,
             _printerCatalog,
-            new ShellPrinterSettings(store, holder),
-            new ShellOperationalSettings(store, holder),
-            new ShellConnectionSetup(_runtime, holder, _localizer, logger, _lifetime.Token),
+            new EnginePrinterSettings(_engine),
+            new EngineOperationalSettings(_engine),
+            new ShellConnectionSetup(_engine, _engine.Settings, _localizer, logger, _lifetime.Token),
             _localizer,
             _cultureService,
-            new PrintBridgeLanguageService(store, holder, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
+            new PrintBridgeLanguageService(_engine, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
             _webViewRuntimeProbe.Probe().Version,
             logger);
         _shellForm.ShellUnavailable += OnShellUnavailable;
@@ -320,7 +311,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            await _runtime.TestPrinterAsync(cts.Token).ConfigureAwait(true);
+            await _engine.TestPrinterAsync(cts.Token).ConfigureAwait(true);
             MessageBox.Show(
                 _localizer["Message.TestPrintSent"],
                 PrintBridgePaths.ProductDisplayName,
@@ -338,6 +329,32 @@ public sealed class TrayApplicationContext : ApplicationContext
     }
 
     private void OnRuntimeStatusChanged(object? sender, EventArgs e) => UpdateTrayMenu();
+
+    /// <summary>
+    /// A move confirmed earlier was finished by the service in the background (WAS-91): shown in the app window when it is
+    /// open, never as an unprompted message box.
+    /// </summary>
+    private void OnBackgroundSetupCompleted(object? sender, PrintBridgeAutoSetupOutcome outcome)
+    {
+        if (IsShuttingDown)
+            return;
+
+        try
+        {
+            _uiContext.Post(_ =>
+            {
+                if (IsShuttingDown || outcome == PrintBridgeAutoSetupOutcome.ChangePending)
+                    return;
+
+                UpdateTrayMenu();
+                if (_shellForm is { IsDisposed: false, Visible: true } shell)
+                    ReportAutoSetupOutcome(shell, outcome);
+            }, null);
+        }
+        catch (InvalidOperationException) when (IsShuttingDown)
+        {
+        }
+    }
 
     private void OnCultureChanged(object? sender, EventArgs e) => UpdateTrayMenu();
 
@@ -375,9 +392,14 @@ public sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+        ApplySavedLanguage();
         ApplyTrayLocalization();
+        // The first-run window opens from the message loop, never inside the update that learned the state (which can
+        // run in the constructor).
+        if (!_firstStateHandled)
+            _uiContext.Post(_ => HandleFirstState(), null);
 
-        var status = _runtime.GetStatus();
+        var status = _engine.GetStatus();
         _connectionMenuItem.Text = _localizer.GetTrayConnectionLabel(status);
         _trayIcon.Text = _localizer.GetTrayTooltip(
             status.TrayIconState,
@@ -400,7 +422,8 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (ex is LocalizedApplicationException localized)
             return _localizer.GetString(localized.ResourceKey, localized.Args);
 
-        return ex.Message;
+        // Never exception text (it can be technical or come from elsewhere).
+        return _localizer["Shell.Op.Failed"];
     }
 
     /// <summary>
@@ -441,21 +464,19 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (shell is null)
             ShowRuntimeNotice();
 
-        var outcome = (PrintBridgeAutoSetupOutcome?)null;
         try
         {
-            if (!PrintBridgeProtocolUri.TryParseSetup(uri, _trustPolicy, out var request, out _))
-            {
-                ReportSetupResult(shell, ShellOperationOutcome.Failed, _localizer["Auto.InvalidLink"], MessageBoxIcon.Warning);
-                return;
-            }
-
-            // The coordinator bounds its own network work; the user's decision in the confirmation has no time limit.
-            outcome = await _autoSetup.ApplyAsync(request!, ConfirmConnectionTransferAsync, _lifetime.Token).ConfigureAwait(true);
+            // The service decides whether the link is trusted, applies it, verifies a saved connection and resumes
+            // printing (WAS-61). A move to another restaurant asks this app's user, here, through the confirmation.
+            var outcome = await _engine.ApplySetupLinkAsync(uri, ConfirmConnectionTransferAsync, _lifetime.Token).ConfigureAwait(true);
             if (IsShuttingDown)
                 return;
 
-            await ReportAutoSetupOutcomeAsync(shell, outcome.Value).ConfigureAwait(true);
+            ReportAutoSetupOutcome(shell, outcome);
+        }
+        catch (PrintBridgeEngineBusyException)
+        {
+            // Another setup link or a pending move is being applied; as before, this link is not queued.
         }
         catch (Exception ex)
         {
@@ -472,28 +493,14 @@ public sealed class TrayApplicationContext : ApplicationContext
         {
             Interlocked.Exchange(ref _autoSetupRunning, 0);
         }
-
-        // A confirmed move whose result is not saved yet is finished in the background (WAS-91).
-        if (outcome == PrintBridgeAutoSetupOutcome.ChangePending)
-            StartPendingConnectionChangeLoop();
     }
 
-    /// <summary>Updates the tray, verifies a saved connection and resumes listening, then shows the result.</summary>
-    private async Task ReportAutoSetupOutcomeAsync(PrintBridgeShellForm? shell, PrintBridgeAutoSetupOutcome outcome)
+    /// <summary>Updates the tray and shows the result; the service already verified a saved connection.</summary>
+    private void ReportAutoSetupOutcome(PrintBridgeShellForm? shell, PrintBridgeAutoSetupOutcome outcome)
     {
         var result = DescribeAutoSetupOutcome(outcome);
 
         UpdateTrayMenu();
-
-        // A refused link changed nothing, so the saved connection is neither reloaded nor re-verified.
-        if (result.Saved && !IsShuttingDown)
-        {
-            // Verify the saved connection and resume listening.
-            using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-            verify.CancelAfter(TimeSpan.FromSeconds(30));
-            await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
-        }
-
         if (_lifetime.IsCancellationRequested)
             return;
 
@@ -570,88 +577,6 @@ public sealed class TrayApplicationContext : ApplicationContext
         }
     }
 
-    /// <summary>
-    /// Finishes a confirmed move whose result is not saved yet (WAS-91), now and then every
-    /// <see cref="PendingChangeRetryInterval"/> while the server cannot be reached. One loop at a time; a setup link
-    /// running meanwhile finishes it itself first.
-    /// </summary>
-    private void StartPendingConnectionChangeLoop()
-    {
-        if (IsShuttingDown || Interlocked.Exchange(ref _pendingChangeLoopRunning, 1) == 1)
-            return;
-
-        _ = RunAsync();
-
-        async Task RunAsync()
-        {
-            try
-            {
-                while (!IsShuttingDown)
-                {
-                    if (Interlocked.Exchange(ref _autoSetupRunning, 1) == 0)
-                    {
-                        PrintBridgeAutoSetupOutcome? outcome;
-                        try
-                        {
-                            outcome = await _autoSetup.RecoverPendingChangeAsync(_lifetime.Token).ConfigureAwait(true);
-                        }
-                        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
-                        {
-                            return;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Finishing a pending connection change failed; it is tried again later.");
-                            outcome = PrintBridgeAutoSetupOutcome.ChangePending;
-                        }
-                        finally
-                        {
-                            Interlocked.Exchange(ref _autoSetupRunning, 0);
-                        }
-
-                        if (outcome is null)
-                            return;
-
-                        if (outcome != PrintBridgeAutoSetupOutcome.ChangePending)
-                        {
-                            // Saved now: shown in the app window if it is open, never as an unprompted message box.
-                            var shell = _shellForm is { IsDisposed: false, Visible: true } open ? open : null;
-                            if (shell is not null)
-                                await ReportAutoSetupOutcomeAsync(shell, outcome.Value).ConfigureAwait(true);
-                            else
-                                await ReportAutoSetupOutcomeQuietlyAsync(outcome.Value).ConfigureAwait(true);
-                            return;
-                        }
-                    }
-
-                    await Task.Delay(PendingChangeRetryInterval, _lifetime.Token).ConfigureAwait(true);
-                }
-            }
-            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
-            {
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _pendingChangeLoopRunning, 0);
-            }
-        }
-    }
-
-    /// <summary>A move finished in the background: the tray and the engine follow it without a message.</summary>
-    private async Task ReportAutoSetupOutcomeQuietlyAsync(PrintBridgeAutoSetupOutcome outcome)
-    {
-        UpdateTrayMenu();
-        if (!DescribeAutoSetupOutcome(outcome).Saved || IsShuttingDown)
-            return;
-
-        using var verify = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
-        verify.CancelAfter(TimeSpan.FromSeconds(30));
-        await _runtime.VerifyAndResumeAsync(verify.Token).ConfigureAwait(true);
-    }
-
-    /// <summary>How often a pending connection change is tried again while its server cannot be reached.</summary>
-    internal TimeSpan PendingChangeRetryInterval { get; set; } = TimeSpan.FromMinutes(1);
-
     /// <summary>For tests: runs once for a connection-change confirmation shown without the app window, before it is shown.</summary>
     internal Action<ShellConfirmDialog>? ConnectionTransferDialogCreatedForTests { get; set; }
 
@@ -690,6 +615,8 @@ public sealed class TrayApplicationContext : ApplicationContext
             // An earlier approved move was saved first: connected (to that restaurant), the new link not applied.
             PrintBridgeAutoSetupOutcome.PreviousChangeCompleted =>
                 new("Auto.PreviousChangeCompleted", MessageBoxIcon.Information, Saved: true, Connected: true),
+            PrintBridgeAutoSetupOutcome.InvalidLink =>
+                new("Auto.InvalidLink", MessageBoxIcon.Warning, Saved: false, Connected: false),
             _ => new("Auto.Failed", MessageBoxIcon.Warning, Saved: false, Connected: false)
         };
 
@@ -740,7 +667,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     internal Task ExitForTests() => ExitAsync();
 
-    internal PrintBridgeRuntime RuntimeForTests => _runtime;
+    internal IPrintBridgeEngine EngineForTests => _engine;
 
     /// <summary>For tests: the shutdown steps in the order they ran.</summary>
     internal IReadOnlyList<string> ShutdownStepsForTests
@@ -758,7 +685,8 @@ public sealed class TrayApplicationContext : ApplicationContext
     private bool IsShuttingDown => Volatile.Read(ref _shutdownRequested) != 0;
 
     /// <summary>
-    /// Exits the application (tray Exit). The first request enters the shutting-down state at once, so no window,
+    /// Closes the app (tray "Close app"; WAS-61: printing continues in the service). The first request enters the
+    /// shutting-down state at once, so no window,
     /// setup link, tray update or printer test starts from then on, and queues the one shutdown sequence on the UI
     /// thread. Queued rather than run inside the caller (for example the Exit item's own click), so nothing the sequence
     /// disposes is still in use further up the stack. Every later or concurrent request, from any thread, returns the
@@ -769,7 +697,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (Interlocked.CompareExchange(ref _shutdownRequested, 1, 0) != 0)
             return _shutdownCompleted.Task;
 
-        _logger.LogInformation("Print Bridge exit requested.");
+        _logger.LogInformation("Print Bridge app close requested.");
         _uiContext.Post(_ => _ = RunShutdownAsync(), null);
         return _shutdownCompleted.Task;
     }
@@ -791,17 +719,16 @@ public sealed class TrayApplicationContext : ApplicationContext
     }
 
     /// <summary>
-    /// The one shutdown sequence (WAS-59), on the UI thread. Engine first, then what shows the engine, then the services:
+    /// The one shutdown sequence (WAS-59), on the UI thread. WAS-61: the engine is the service's and keeps printing; closing
+    /// the app never stops it.
     /// <list type="number">
-    /// <item>Nothing new starts: a connection change or setup link still running is abandoned before it writes anything,
-    /// the tray stops following the engine, and the icon and windows disappear at once. A tray update queued earlier
-    /// finds the shutting-down state and does nothing.</item>
-    /// <item>The engine stops, awaited so the UI thread is never blocked. A claimed job is not cancelled: Stop waits for it
-    /// up to its limit (<see cref="PrintBridgeRuntime.StopAsync"/>, WAS-56); a job that takes longer finishes in the
-    /// background only while the process still runs.</item>
+    /// <item>Nothing new starts: a move confirmation still open is closed as a refusal, a setup link or connection change
+    /// not yet sent to the service is abandoned, the tray stops following the engine, and the icon and windows disappear at
+    /// once. A command already sent finishes in the service. A tray update queued earlier finds the shutting-down state
+    /// and does nothing.</item>
     /// <item>The app window (WebView2), the runtime notice and the tray icon are disposed; nothing raises events for them
     /// any more.</item>
-    /// <item>The services are disposed and the message loop ends, so the process exits.</item>
+    /// <item>The connection to the service is closed and the message loop ends, so the process exits.</item>
     /// </list>
     /// </summary>
     private async Task ShutdownAsync()
@@ -810,25 +737,20 @@ public sealed class TrayApplicationContext : ApplicationContext
         try
         {
             _lifetime.Cancel();
-            _runtime.StatusChanged -= OnRuntimeStatusChanged;
+            _engine.StatusChanged -= OnRuntimeStatusChanged;
+            _engine.BackgroundSetupCompleted -= OnBackgroundSetupCompleted;
             _cultureService.CultureChanged -= OnCultureChanged;
             _trayIcon.Visible = false;
             _shellForm?.Hide();
             _runtimeNotice?.Hide();
-
-            await _runtime.StopAsync().ConfigureAwait(true);
-            RecordShutdownStep("runtime-stopped");
+            RecordShutdownStep("ui-hidden");
 
             DisposeShellWindow();
             DisposeRuntimeNotice();
             DisposeTrayIcon();
 
-            // An operation that was already running when Exit began could have started listening again meanwhile; with
-            // every window gone nothing can any more. Normally this returns at once.
-            await _runtime.StopAsync().ConfigureAwait(true);
-
-            _logger.LogInformation("Print Bridge shutdown complete; the application exits.");
-            _services.Dispose();
+            _logger.LogInformation("Print Bridge app closed; printing continues in the Print Bridge service.");
+            await _services.DisposeAsync().ConfigureAwait(true);
             RecordShutdownStep("services-disposed");
         }
         finally

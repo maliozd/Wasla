@@ -30,7 +30,8 @@
       "lastContact": "04.10.2026 20:20",
       "lastPrint": "04.10.2026 20:23",
       "jobsToday": 0,
-      "failedToday": 0
+      "failedToday": 0,
+    "needsCheck": 0
     },
     "lastJob": {
       "status": "printed",
@@ -140,6 +141,12 @@
       "Button.OpenLogsFolder": "Log klasörünü aç",
       "Button.ResetConnection": "Bağlantıyı sıfırla",
       "Reprint.Button": "Yeniden yazdır",
+      "Shell.Activity.NeedsCheck": "Kontrol gereken fişler",
+      "Shell.Printer.ServiceScope": "Yalnızca bu bilgisayarın tüm kullanıcıları için kurulu yazıcılar listelenir. Yalnızca kendi Windows hesabınıza eklenen bir yazıcıyı bir yöneticinin tüm kullanıcılar için kurması gerekir.",
+      "Shell.History.Printed": "Basıldı",
+      "Shell.History.NotPrinted": "Basılmadı",
+      "Shell.History.ConfirmPrinted": "Fiş kâğıda basıldı mı? Wasla'ya basıldı olarak bildirilecek.",
+      "Shell.History.ConfirmNotPrinted": "Fiş basılmadı mı? Wasla'ya basılmadı olarak bildirilecek; fişi Wasla'dan yeniden yazdırabilirsiniz.",
       "Shell.Action.Connect": "Wasla'ya bağlan",
       "Shell.Action.ChangeConnection": "Bağlantıyı değiştir",
       "Shell.Action.Reconnect": "Yeniden bağlan",

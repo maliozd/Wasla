@@ -57,7 +57,7 @@ public sealed class TrayRuntimeNoticeTests : IDisposable
             // Let anything the start queued on the UI thread run first.
             await Task.Delay(500);
 
-            Assert.True(tray.RuntimeForTests.IsRunning);
+            Assert.True(_host.Runtime.IsRunning);
             Assert.Null(tray.ShellFormForTests);
             Assert.Null(tray.RuntimeNoticeForTests);
             Assert.Empty(VisibleWindows());
@@ -74,7 +74,7 @@ public sealed class TrayRuntimeNoticeTests : IDisposable
             Assert.Equal(localizer["RuntimeNotice.Message"], notice.Message.Text);
             Assert.Equal(localizer["RuntimeNotice.Message"], notice.AccessibleDescription);
             Assert.Null(tray.ShellFormForTests);
-            Assert.False(tray.RuntimeForTests.IsRunning);
+            Assert.False(_host.Runtime.IsRunning);
 
             // Enter and Escape both close it through its one button; a closed notice is gone.
             Assert.Same(notice.CloseButton, notice.AcceptButton);
@@ -136,7 +136,7 @@ public sealed class TrayRuntimeNoticeTests : IDisposable
             await _server.JobFinished(jobId).WaitAsync(Timeout);
             Assert.Equal(["mark-printing", "mark-printed"], _server.ReportsFor(jobId));
             Assert.Equal("Printed", _server.State(jobId));
-            Assert.True(tray.RuntimeForTests.IsRunning);
+            Assert.True(_host.Runtime.IsRunning);
         }, configure: Listen);
 
     [Fact]

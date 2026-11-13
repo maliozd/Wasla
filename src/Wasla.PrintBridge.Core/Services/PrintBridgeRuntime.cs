@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
@@ -6,7 +7,7 @@ using Wasla.PrintBridge.Printing;
 
 namespace Wasla.PrintBridge.Services;
 
-public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrintBridgeConnectionGuard
+public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, IPrintBridgeConnectionGuard
 {
     private const int MaxRecentJobs = 50;
 
@@ -17,6 +18,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     private readonly PrintBridgeSettingsStore _store;
     private readonly PrintBridgeDeviceMetadataSync _deviceMetadataSync;
     private readonly LocalPrintJobHistoryStore _historyStore;
+    private readonly PrintBridgeJobJournal _journal;
     private readonly AppVersionInfo _appVersion;
     private readonly ILogger<PrintBridgeRuntime> _logger;
     private readonly object _sync = new();
@@ -43,7 +45,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         PrintBridgeDeviceMetadataSync deviceMetadataSync,
         LocalPrintJobHistoryStore historyStore,
         AppVersionInfo appVersion,
-        ILogger<PrintBridgeRuntime> logger)
+        ILogger<PrintBridgeRuntime> logger,
+        PrintBridgeJobJournal? journal = null)
     {
         _client = client;
         _formatter = formatter;
@@ -52,6 +55,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         _store = store;
         _deviceMetadataSync = deviceMetadataSync;
         _historyStore = historyStore;
+        _journal = journal ?? new PrintBridgeJobJournal(NullLogger<PrintBridgeJobJournal>.Instance);
         _appVersion = appVersion;
         _logger = logger;
     }
@@ -123,7 +127,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                     isConnected,
                     _lastIssue),
                 PrinterHealthStatus = WindowsPrinterHealth.Resolve(bridge),
-                TrayIconState = trayIconState
+                TrayIconState = trayIconState,
+                UncertainJobsCount = _historyStore.CountWithStatus(LocalPrintJobStatus.Uncertain)
             };
         }
     }
@@ -440,7 +445,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out var errorKey))
             throw new LocalizedApplicationException(errorKey!);
 
-        var printedAt = DateTime.Now.ToString("G", Wasla.Application.Printing.GregorianCulture.For(System.Globalization.CultureInfo.CurrentCulture));
+        var printedAt = DateTime.Now.ToString("G", Wasla.Application.Printing.GregorianCulture.For(TestPrintCulture()));
         var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{printedAt}";
         await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);
     }
@@ -449,6 +454,198 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     {
         StopAsync().GetAwaiter().GetResult();
     }
+
+    /// <summary>
+    /// The saved app language, so the service (whose own culture is the machine's) dates a test print as the app did
+    /// before WAS-61; the current culture when no supported language is saved.
+    /// </summary>
+    private System.Globalization.CultureInfo TestPrintCulture()
+    {
+        var language = _holder.Ui.Language?.Trim();
+        if (language is "tr-TR" or "en-US" or "ar-SA" or "ru-RU")
+            return System.Globalization.CultureInfo.GetCultureInfo(language);
+
+        return System.Globalization.CultureInfo.CurrentCulture;
+    }
+
+    /// <summary>
+    /// Settles the jobs an earlier run left in the journal (WAS-61), with the connection of this cycle, before new jobs are
+    /// claimed. Only jobs claimed with this connection are reported (WAS-58). A job never printed is reported failed and a
+    /// printed one printed (a repeat is answered skipped). One whose paper outcome is unknown (the process ended while the
+    /// receipt was being sent to the printer) becomes <see cref="PrintJournalStage.Uncertain"/>: never printed again, never
+    /// reported on its own, and shown in the app as needing a check until the user says whether it printed
+    /// (<see cref="ResolveUncertainJobAsync"/>). The first cycle after a start settles every entry; later cycles retry an
+    /// entry whose report failed for a network or server reason only after <see cref="JournalRetryInterval"/>. A failing
+    /// report never stops polling. Runs on the loop, so no job of this engine is active meanwhile.
+    /// </summary>
+    private async Task ResumeJournalAsync(PollingLoop loop, WaslaOptions connection, bool firstCycle)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var entry in _journal.Entries)
+        {
+            lock (_sync)
+            {
+                if (loop.StopRequested || _connectionChanges > 0 || !IsSavedConnection(connection))
+                    return;
+            }
+
+            if (!entry.BelongsTo(connection))
+            {
+                // The token that claimed it is gone, and WAS-58 forbids reporting with another one: Wasla keeps the job in
+                // Printing, where it is resolved. An uncertain job stays visible locally, without the resolve action.
+                _logger.LogWarning(
+                    "A job claimed with an earlier connection was not reported; that connection was replaced. JobId={JobId}, Stage={Stage}",
+                    entry.JobId,
+                    entry.Stage);
+                _journal.Remove(entry.JobId);
+                if (entry.Stage is PrintJournalStage.Uncertain or PrintJournalStage.Submitting)
+                    RecordUncertain(entry.JobId, resolvableHere: false);
+                continue;
+            }
+
+            if (entry.Stage == PrintJournalStage.Uncertain || (!firstCycle && now - entry.UpdatedAtUtc < JournalRetryInterval))
+                continue;
+
+            try
+            {
+                await SettleJournalEntryAsync(entry, connection).ConfigureAwait(false);
+            }
+            catch (PrintBridgeConnectionException ex) when (IsTransient(ex))
+            {
+                // The server may have stored the report or not: the entry stays (its time renewed) and is reported again
+                // after the retry interval. New jobs are still polled.
+                _journal.Record(entry.JobId, entry.Stage, connection);
+                _logger.LogWarning(
+                    ex,
+                    "An interrupted job could not be reported yet; it is tried again later. JobId={JobId}, Stage={Stage}",
+                    entry.JobId,
+                    entry.Stage);
+                return;
+            }
+        }
+    }
+
+    private async Task SettleJournalEntryAsync(PrintJournalEntry entry, WaslaOptions connection)
+    {
+        switch (entry.Stage)
+        {
+            case PrintJournalStage.Submitting:
+                _logger.LogWarning(
+                    "Print Bridge stopped while a receipt was being sent to the printer; whether it printed is unknown. It is not printed again; it waits for the user's check. JobId={JobId}",
+                    entry.JobId);
+                _journal.Record(entry.JobId, PrintJournalStage.Uncertain, connection);
+                RecordUncertain(entry.JobId, resolvableHere: true);
+                break;
+
+            case PrintJournalStage.NotPrinted:
+            {
+                var failed = await _client.MarkFailedAsync(
+                    entry.JobId,
+                    "Print Bridge stopped before this receipt was printed.",
+                    CancellationToken.None,
+                    connection).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "Interrupted job reported failed (not printed). JobId={JobId}, Success={Success}, Skipped={Skipped}",
+                    entry.JobId,
+                    failed.Success,
+                    failed.Skipped);
+                _journal.Remove(entry.JobId);
+                break;
+            }
+
+            case PrintJournalStage.Printed:
+            {
+                var printed = await _client.MarkPrintedAsync(entry.JobId, CancellationToken.None, connection).ConfigureAwait(false);
+                _logger.LogInformation(
+                    "Printed job reported after an interruption. JobId={JobId}, Success={Success}, Skipped={Skipped}",
+                    entry.JobId,
+                    printed.Success,
+                    printed.Skipped);
+                _journal.Remove(entry.JobId);
+                break;
+            }
+        }
+    }
+
+    /// <summary>The job is shown in history as needing a check; it was claimed and possibly printed before an interruption.</summary>
+    private void RecordUncertain(Guid jobId, bool resolvableHere)
+    {
+        var existing = _historyStore.FindByJobId(jobId);
+        var record = new LocalPrintJobRecord
+        {
+            JobId = jobId,
+            OrderId = existing?.OrderId ?? Guid.Empty,
+            OrderDisplay = existing?.OrderDisplay,
+            Platform = existing?.Platform,
+            JobType = existing?.JobType,
+            PrinterName = existing?.PrinterName,
+            Status = LocalPrintJobStatus.Uncertain,
+            CreatedAtUtc = existing?.CreatedAtUtc ?? DateTime.UtcNow,
+            LastAttemptAtUtc = DateTime.UtcNow,
+            StatusNote = resolvableHere ? null : UncertainResolveInWaslaNote
+        };
+        _historyStore.Record(record);
+        RaiseStatusChanged();
+    }
+
+    /// <summary>History note of an uncertain job that only Wasla can resolve (its connection was replaced).</summary>
+    public const string UncertainResolveInWaslaNote = "Resolve in Wasla";
+
+    /// <summary>
+    /// The user checked the printer for a job whose paper outcome was unknown (WAS-61) and says whether it printed. The
+    /// answer is reported with the connection that claimed the job, as any report (WAS-58): printed → <c>mark-printed</c>;
+    /// not printed → <c>mark-failed</c>, so Wasla can print it again. Nothing is printed here. While it is reported, a
+    /// connection change waits, as for a job in progress.
+    /// </summary>
+    public async Task ResolveUncertainJobAsync(Guid jobId, bool printed, CancellationToken ct)
+    {
+        var entry = _journal.Entries.FirstOrDefault(e => e.JobId == jobId && e.Stage == PrintJournalStage.Uncertain);
+        var (current, _, _) = _holder.Snapshot();
+        var connection = new WaslaOptions { ServerUrl = current.ServerUrl, AgentToken = current.AgentToken };
+        if (entry is null || !entry.BelongsTo(connection))
+            throw new LocalizedApplicationException("History.Uncertain.NotResolvable");
+
+        lock (_sync)
+        {
+            if (_connectionChanges > 0 || !IsSavedConnection(connection))
+                throw new LocalizedApplicationException("History.Uncertain.NotResolvable");
+            _jobsInProgress++;
+        }
+
+        try
+        {
+            var result = printed
+                ? await _client.MarkPrintedAsync(jobId, ct, connection).ConfigureAwait(false)
+                : await _client.MarkFailedAsync(jobId, "Not printed (checked by the user after an interruption).", ct, connection).ConfigureAwait(false);
+            _logger.LogInformation(
+                "Uncertain job resolved by the user. JobId={JobId}, Printed={Printed}, Success={Success}, Skipped={Skipped}",
+                jobId,
+                printed,
+                result.Success,
+                result.Skipped);
+        }
+        finally
+        {
+            EndJob();
+        }
+
+        _journal.Remove(jobId);
+        var existing = _historyStore.FindByJobId(jobId);
+        if (existing is not null)
+        {
+            existing.Status = printed ? LocalPrintJobStatus.Printed : LocalPrintJobStatus.Failed;
+            existing.LastAttemptAtUtc = DateTime.UtcNow;
+            existing.PrintedAtUtc = printed ? DateTime.UtcNow : existing.PrintedAtUtc;
+            existing.StatusNote = printed ? "Confirmed printed by the user" : null;
+            existing.ErrorMessage = printed ? null : "Not printed (checked by the user)";
+            _historyStore.Record(existing);
+        }
+
+        RaiseStatusChanged();
+    }
+
+    /// <summary>How long a journal entry whose report failed waits before it is reported again within one run.</summary>
+    internal TimeSpan JournalRetryInterval { get; set; } = TimeSpan.FromMinutes(1);
 
     /// <summary>
     /// Runs a loop once the previous one has ended. A loop stopped while it finishes a claimed job may still be running,
@@ -478,6 +675,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
     private async Task RunLoopAsync(PollingLoop loop)
     {
         var stoppingToken = loop.Cancellation.Token;
+        var firstCycle = true;
         _logger.LogInformation("Wasla Print Bridge background loop started.");
 
         while (!stoppingToken.IsCancellationRequested)
@@ -506,6 +704,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                         _lastIssue = null;
                     }
                 }
+
+                // Jobs an earlier run claimed but did not finish reporting (WAS-61) are settled before new ones are claimed.
+                await ResumeJournalAsync(loop, connection, firstCycle).ConfigureAwait(false);
+                firstCycle = false;
 
                 var jobs = await _client.GetPendingJobsAsync(stoppingToken, connection).ConfigureAwait(false);
                 _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
@@ -667,6 +869,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
 
         UpdateRecentJob(job.Id, LocalPrintJobStatus.Printing, statusNote: null);
         _logger.LogInformation("Job claim succeeded. JobId={JobId}", job.Id);
+        _journal.Record(job.Id, PrintJournalStage.NotPrinted, connection);
 
         // Only the print itself (or, in test mode, writing the receipt) decides whether the job failed. Updating the status
         // afterwards is outside, so nothing that happens after the receipt was printed can report it failed (WAS-56, WAS-59).
@@ -676,6 +879,8 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
             var (_, bridge, _) = _holder.Snapshot();
             var receipt = _formatter.Format(job.PayloadJson);
 
+            // From here until Windows answers, a crash leaves the paper outcome unknown: such a job is never printed again.
+            _journal.Record(job.Id, PrintJournalStage.Submitting, connection);
             if (bridge.DryRun)
             {
                 // TEMPORARY: remove after the manual receipt-content verification.
@@ -710,6 +915,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
         {
             // The receipt was not printed: this is a real failure, reported once.
             _logger.LogWarning(ex, "Print failed. JobId={JobId}", job.Id);
+            _journal.Record(job.Id, PrintJournalStage.NotPrinted, connection);
             UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, ex.Message);
 
             try
@@ -721,6 +927,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
                     failed.Success,
                     failed.Skipped,
                     failed.Result);
+                _journal.Remove(job.Id);
             }
             catch (Exception markEx)
             {
@@ -731,9 +938,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeEngine, IPrint
             return;
         }
 
+        _journal.Record(job.Id, PrintJournalStage.Printed, connection);
         UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: printedNote);
 
+        // If every attempt fails, the exception reaches the loop and the journal keeps the job for a later report.
         var printed = await ReportPrintedAsync(job.Id, connection).ConfigureAwait(false);
+        _journal.Remove(job.Id);
         if (!printed.Success && !printed.Skipped)
             UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
 

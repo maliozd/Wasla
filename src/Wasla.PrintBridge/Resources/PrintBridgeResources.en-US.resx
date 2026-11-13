@@ -183,9 +183,6 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Logs folder has not been created yet.</value>
   </data>
-  <data name="Message.RunningInAnotherSession" xml:space="preserve">
-    <value>Wasla Print Bridge is already running for another Windows user or session on this computer.{0}{0}Only one Print Bridge can run on a computer. Exit it in that session first, then open Print Bridge or the setup link again.</value>
-  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge requires Windows.</value>
   </data>
@@ -433,7 +430,7 @@
     <value>● {0}</value>
   </data>
   <data name="Tray.Exit" xml:space="preserve">
-    <value>Exit</value>
+    <value>Close app (printing continues)</value>
   </data>
   <data name="Tray.PrintHistory" xml:space="preserve">
     <value>Print History</value>
@@ -540,7 +537,7 @@
     <value>Contacting the Wasla server…</value>
   </data>
   <data name="Shell.Detail.Stopped" xml:space="preserve">
-    <value>Listening is stopped. New print jobs are not being received.</value>
+    <value>Printing is stopped. New print jobs are not received, and it stays stopped, also after a restart, until you select Start.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
     <value>This device is not connected to Wasla yet. Select Connect to Wasla to set it up.</value>
@@ -693,7 +690,7 @@
     <value>Listening started.</value>
   </data>
   <data name="Shell.Op.Stopped" xml:space="preserve">
-    <value>Listening stopped.</value>
+    <value>Printing stopped. It stays stopped until you select Start.</value>
   </data>
   <data name="Shell.Op.Busy" xml:space="preserve">
     <value>This operation is already running.</value>
@@ -832,5 +829,77 @@
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>Close</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
+    <value>Print Bridge service is not running</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Detail" xml:space="preserve">
+    <value>Receipts cannot be printed because the Wasla Print Bridge service cannot be reached. Restart the computer; if this continues, reinstall Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Title" xml:space="preserve">
+    <value>Versions do not match</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Detail" xml:space="preserve">
+    <value>The Print Bridge app and the Print Bridge service are different versions. Reinstall Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Title" xml:space="preserve">
+    <value>Another Print Bridge is running</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Detail" xml:space="preserve">
+    <value>Another Print Bridge with its own printing engine (for example an older version) is running on this computer. Exit it; the service then starts printing.</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Title" xml:space="preserve">
+    <value>Data folder is not protected</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Detail" xml:space="preserve">
+    <value>The Print Bridge service did not start printing because the permissions of its data folder are not safe. Reinstall Print Bridge or contact your computer administrator.</value>
+  </data>
+  <data name="ConnectionSummary.ServiceUnavailable" xml:space="preserve">
+    <value>Service unavailable</value>
+  </data>
+  <data name="Shell.Setup.CheckExpired" xml:space="preserve">
+    <value>The connection check expired; nothing was saved. Try connecting again.</value>
+  </data>
+  <data name="JobStatus.Uncertain" xml:space="preserve">
+    <value>Needs checking</value>
+  </data>
+  <data name="JobStatusBadge.Uncertain" xml:space="preserve">
+    <value>Needs checking</value>
+  </data>
+  <data name="Shell.History.Uncertain" xml:space="preserve">
+    <value>Print Bridge stopped while this receipt was being sent to the printer, so it is not known whether it printed. Check the printer and choose what happened. If it did not print, Wasla can print it again.</value>
+  </data>
+  <data name="Shell.History.UncertainInWasla" xml:space="preserve">
+    <value>It is not known whether this receipt printed, and the connection has changed since. Check this order's receipt in the Wasla panel.</value>
+  </data>
+  <data name="Shell.History.Printed" xml:space="preserve">
+    <value>It printed</value>
+  </data>
+  <data name="Shell.History.NotPrinted" xml:space="preserve">
+    <value>It did not print</value>
+  </data>
+  <data name="Shell.History.ConfirmPrinted" xml:space="preserve">
+    <value>Did the receipt come out on paper? It is reported to Wasla as printed.</value>
+  </data>
+  <data name="Shell.History.ConfirmNotPrinted" xml:space="preserve">
+    <value>The receipt did not print? It is reported to Wasla as not printed, so you can print it again from Wasla.</value>
+  </data>
+  <data name="Shell.Activity.NeedsCheck" xml:space="preserve">
+    <value>Receipts to check</value>
+  </data>
+  <data name="Shell.Op.ResolvedPrinted" xml:space="preserve">
+    <value>Reported as printed.</value>
+  </data>
+  <data name="Shell.Op.ResolvedNotPrinted" xml:space="preserve">
+    <value>Reported as not printed. You can print it again from Wasla.</value>
+  </data>
+  <data name="History.Uncertain.NotResolvable" xml:space="preserve">
+    <value>This receipt cannot be resolved here because the connection has changed. Check it in the Wasla panel.</value>
+  </data>
+  <data name="Shell.Printer.ServiceScope" xml:space="preserve">
+    <value>Only printers installed for all users of this computer are listed. A printer added only to your own Windows account must be installed for all users by an administrator.</value>
+  </data>
+  <data name="Shell.Printer.UserOnly" xml:space="preserve">
+    <value>This printer is installed only for your Windows account, so the Print Bridge service cannot use it. An administrator must install it for all users.</value>
   </data>
 </root>

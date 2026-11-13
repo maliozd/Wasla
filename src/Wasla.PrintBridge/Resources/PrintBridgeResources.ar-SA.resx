@@ -177,9 +177,6 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>لم يتم إنشاء مجلد السجلات بعد.</value>
   </data>
-  <data name="Message.RunningInAnotherSession" xml:space="preserve">
-    <value>Wasla Print Bridge يعمل بالفعل لمستخدم Windows آخر أو في جلسة أخرى على هذا الكمبيوتر.{0}{0}لا يمكن تشغيل أكثر من نسخة واحدة من Print Bridge على الكمبيوتر. اخرج منه في تلك الجلسة أولاً، ثم افتح Print Bridge أو رابط الإعداد مرة أخرى.</value>
-  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>يتطلب Wasla Print Bridge نظام Windows.</value>
   </data>
@@ -421,7 +418,7 @@
     <value>● {0}</value>
   </data>
   <data name="Tray.Exit" xml:space="preserve">
-    <value>خروج</value>
+    <value>إغلاق التطبيق (تستمر الطباعة)</value>
   </data>
   <data name="Tray.PrintHistory" xml:space="preserve">
     <value>سجل الطباعة</value>
@@ -526,7 +523,7 @@
     <value>جارٍ الاتصال بخادم Wasla…</value>
   </data>
   <data name="Shell.Detail.Stopped" xml:space="preserve">
-    <value>الاستماع متوقف. لا يتم استلام مهام طباعة جديدة.</value>
+    <value>الطباعة متوقفة. لا يتم استلام مهام طباعة جديدة، وتبقى متوقفة حتى بعد إعادة التشغيل إلى أن تختار بدء.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
     <value>هذا الجهاز غير متصل بـ Wasla بعد. اختر «الاتصال بـ Wasla» لإعداده.</value>
@@ -679,7 +676,7 @@
     <value>بدأ الاستماع.</value>
   </data>
   <data name="Shell.Op.Stopped" xml:space="preserve">
-    <value>توقف الاستماع.</value>
+    <value>توقفت الطباعة. ستبقى متوقفة إلى أن تختار بدء.</value>
   </data>
   <data name="Shell.Op.Busy" xml:space="preserve">
     <value>هذه العملية قيد التنفيذ بالفعل.</value>
@@ -818,5 +815,77 @@
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>إغلاق</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
+    <value>خدمة Print Bridge لا تعمل</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Detail" xml:space="preserve">
+    <value>لا يمكن طباعة الإيصالات لأنه يتعذر الوصول إلى خدمة Wasla Print Bridge. أعد تشغيل الكمبيوتر، وإذا استمرت المشكلة فأعد تثبيت Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Title" xml:space="preserve">
+    <value>الإصدارات غير متوافقة</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Detail" xml:space="preserve">
+    <value>إصدار تطبيق Print Bridge لا يتوافق مع إصدار خدمة Print Bridge. أعد تثبيت Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Title" xml:space="preserve">
+    <value>يعمل Print Bridge آخر</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Detail" xml:space="preserve">
+    <value>يعمل على هذا الكمبيوتر Print Bridge آخر بمحرك طباعة خاص به (مثل إصدار أقدم). اخرج منه، وستبدأ الخدمة الطباعة بعد ذلك.</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Title" xml:space="preserve">
+    <value>مجلد البيانات غير محمي</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Detail" xml:space="preserve">
+    <value>لم تبدأ خدمة Print Bridge الطباعة لأن أذونات مجلد البيانات الخاص بها غير آمنة. أعد تثبيت Print Bridge أو اتصل بمسؤول الكمبيوتر.</value>
+  </data>
+  <data name="ConnectionSummary.ServiceUnavailable" xml:space="preserve">
+    <value>الخدمة غير متاحة</value>
+  </data>
+  <data name="Shell.Setup.CheckExpired" xml:space="preserve">
+    <value>انتهت صلاحية فحص الاتصال ولم يُحفظ أي شيء. حاول الاتصال مرة أخرى.</value>
+  </data>
+  <data name="JobStatus.Uncertain" xml:space="preserve">
+    <value>يحتاج إلى تحقق</value>
+  </data>
+  <data name="JobStatusBadge.Uncertain" xml:space="preserve">
+    <value>يحتاج إلى تحقق</value>
+  </data>
+  <data name="Shell.History.Uncertain" xml:space="preserve">
+    <value>توقف Print Bridge أثناء إرسال هذا الإيصال إلى الطابعة، لذلك لا يُعرف ما إذا كان قد طُبع. تحقق من الطابعة واختر ما حدث. إذا لم يُطبع، يمكن لـ Wasla طباعته مرة أخرى.</value>
+  </data>
+  <data name="Shell.History.UncertainInWasla" xml:space="preserve">
+    <value>لا يُعرف ما إذا كان هذا الإيصال قد طُبع، وقد تغيّر الاتصال منذ ذلك الحين. تحقق من إيصال هذا الطلب في لوحة Wasla.</value>
+  </data>
+  <data name="Shell.History.Printed" xml:space="preserve">
+    <value>تمت الطباعة</value>
+  </data>
+  <data name="Shell.History.NotPrinted" xml:space="preserve">
+    <value>لم تتم الطباعة</value>
+  </data>
+  <data name="Shell.History.ConfirmPrinted" xml:space="preserve">
+    <value>هل خرج الإيصال على الورق؟ سيتم إبلاغ Wasla بأنه طُبع.</value>
+  </data>
+  <data name="Shell.History.ConfirmNotPrinted" xml:space="preserve">
+    <value>لم يُطبع الإيصال؟ سيتم إبلاغ Wasla بأنه لم يُطبع، لتتمكن من طباعته مرة أخرى من Wasla.</value>
+  </data>
+  <data name="Shell.Activity.NeedsCheck" xml:space="preserve">
+    <value>إيصالات تحتاج إلى تحقق</value>
+  </data>
+  <data name="Shell.Op.ResolvedPrinted" xml:space="preserve">
+    <value>تم الإبلاغ بأنه طُبع.</value>
+  </data>
+  <data name="Shell.Op.ResolvedNotPrinted" xml:space="preserve">
+    <value>تم الإبلاغ بأنه لم يُطبع. يمكنك طباعته مرة أخرى من Wasla.</value>
+  </data>
+  <data name="History.Uncertain.NotResolvable" xml:space="preserve">
+    <value>لا يمكن حل هذا الإيصال هنا لأن الاتصال تغيّر. تحقق منه في لوحة Wasla.</value>
+  </data>
+  <data name="Shell.Printer.ServiceScope" xml:space="preserve">
+    <value>تُعرض فقط الطابعات المثبتة لجميع مستخدمي هذا الكمبيوتر. يجب أن يثبّت المسؤول لجميع المستخدمين أي طابعة أُضيفت إلى حساب Windows الخاص بك فقط.</value>
+  </data>
+  <data name="Shell.Printer.UserOnly" xml:space="preserve">
+    <value>هذه الطابعة مثبتة لحساب Windows الخاص بك فقط، لذلك لا تستطيع خدمة Print Bridge استخدامها. يجب أن يثبّتها المسؤول لجميع المستخدمين.</value>
   </data>
 </root>

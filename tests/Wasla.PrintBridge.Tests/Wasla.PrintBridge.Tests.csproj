@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\Wasla.Infrastructure\Wasla.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj" />
     <ProjectReference Include="..\..\src\Wasla.PrintBridge\Wasla.PrintBridge.csproj" />
+    <ProjectReference Include="..\..\src\Wasla.PrintBridge.Service\Wasla.PrintBridge.Service.csproj" />
   </ItemGroup>
 
   <!-- Same as the desktop host: the WebView2 package's WPF wrapper is unused and conflicts with WinForms (MSB3277). -->

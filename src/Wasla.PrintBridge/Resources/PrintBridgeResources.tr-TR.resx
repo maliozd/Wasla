@@ -177,9 +177,6 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Log klasörü henüz oluşturulmadı.</value>
   </data>
-  <data name="Message.RunningInAnotherSession" xml:space="preserve">
-    <value>Wasla Print Bridge bu bilgisayarda başka bir Windows kullanıcısı veya oturumu için zaten çalışıyor.{0}{0}Bir bilgisayarda yalnızca bir Print Bridge çalışabilir. Önce o oturumda uygulamadan çıkın, sonra Print Bridge'i veya kurulum bağlantısını yeniden açın.</value>
-  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge Windows gerektirir.</value>
   </data>
@@ -421,7 +418,7 @@
     <value>● {0}</value>
   </data>
   <data name="Tray.Exit" xml:space="preserve">
-    <value>Çıkış</value>
+    <value>Uygulamayı kapat (yazdırma sürer)</value>
   </data>
   <data name="Tray.PrintHistory" xml:space="preserve">
     <value>Yazdırma geçmişi</value>
@@ -526,7 +523,7 @@
     <value>Wasla sunucusuyla bağlantı kuruluyor…</value>
   </data>
   <data name="Shell.Detail.Stopped" xml:space="preserve">
-    <value>Dinleme durduruldu. Yeni yazdırma işleri alınmıyor.</value>
+    <value>Yazdırma durduruldu. Yeni yazdırma işleri alınmıyor; bilgisayar yeniden başlasa da Başlat'ı seçene kadar durdurulmuş kalır.</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
     <value>Bu cihaz henüz Wasla'ya bağlı değil. Kurmak için Wasla'ya bağlan'ı seçin.</value>
@@ -679,7 +676,7 @@
     <value>Dinleme başlatıldı.</value>
   </data>
   <data name="Shell.Op.Stopped" xml:space="preserve">
-    <value>Dinleme durduruldu.</value>
+    <value>Yazdırma durduruldu. Başlat'ı seçene kadar durdurulmuş kalır.</value>
   </data>
   <data name="Shell.Op.Busy" xml:space="preserve">
     <value>Bu işlem zaten sürüyor.</value>
@@ -818,5 +815,77 @@
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>Kapat</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
+    <value>Print Bridge hizmeti çalışmıyor</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Detail" xml:space="preserve">
+    <value>Fişler yazdırılamıyor, çünkü Wasla Print Bridge hizmetine ulaşılamıyor. Bilgisayarı yeniden başlatın; sorun sürerse Print Bridge'i yeniden kurun.</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Title" xml:space="preserve">
+    <value>Sürümler uyumsuz</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Detail" xml:space="preserve">
+    <value>Print Bridge uygulamasının ve Print Bridge hizmetinin sürümleri uyumsuz. Print Bridge'i yeniden kurun.</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Title" xml:space="preserve">
+    <value>Başka bir Print Bridge çalışıyor</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Detail" xml:space="preserve">
+    <value>Bu bilgisayarda kendi yazdırma motoruyla çalışan başka bir Print Bridge (örneğin eski bir sürüm) var. Ondan çıkın; hizmet o zaman yazdırmaya başlar.</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Title" xml:space="preserve">
+    <value>Veri klasörü korunmuyor</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Detail" xml:space="preserve">
+    <value>Print Bridge hizmeti, veri klasörünün izinleri güvenli olmadığı için yazdırmayı başlatmadı. Print Bridge'i yeniden kurun veya bilgisayar yöneticinize başvurun.</value>
+  </data>
+  <data name="ConnectionSummary.ServiceUnavailable" xml:space="preserve">
+    <value>Hizmet kullanılamıyor</value>
+  </data>
+  <data name="Shell.Setup.CheckExpired" xml:space="preserve">
+    <value>Bağlantı denetiminin süresi doldu; hiçbir şey kaydedilmedi. Yeniden bağlanmayı deneyin.</value>
+  </data>
+  <data name="JobStatus.Uncertain" xml:space="preserve">
+    <value>Kontrol gerekiyor</value>
+  </data>
+  <data name="JobStatusBadge.Uncertain" xml:space="preserve">
+    <value>Kontrol gerekiyor</value>
+  </data>
+  <data name="Shell.History.Uncertain" xml:space="preserve">
+    <value>Print Bridge bu fiş yazıcıya gönderilirken durdu; basılıp basılmadığı bilinmiyor. Yazıcıyı kontrol edin ve ne olduğunu seçin. Basılmadıysa Wasla fişi yeniden yazdırabilir.</value>
+  </data>
+  <data name="Shell.History.UncertainInWasla" xml:space="preserve">
+    <value>Bu fişin basılıp basılmadığı bilinmiyor ve bağlantı o zamandan beri değişti. Bu siparişin fişini Wasla panelinde kontrol edin.</value>
+  </data>
+  <data name="Shell.History.Printed" xml:space="preserve">
+    <value>Basıldı</value>
+  </data>
+  <data name="Shell.History.NotPrinted" xml:space="preserve">
+    <value>Basılmadı</value>
+  </data>
+  <data name="Shell.History.ConfirmPrinted" xml:space="preserve">
+    <value>Fiş kâğıda basıldı mı? Wasla'ya basıldı olarak bildirilecek.</value>
+  </data>
+  <data name="Shell.History.ConfirmNotPrinted" xml:space="preserve">
+    <value>Fiş basılmadı mı? Wasla'ya basılmadı olarak bildirilecek; fişi Wasla'dan yeniden yazdırabilirsiniz.</value>
+  </data>
+  <data name="Shell.Activity.NeedsCheck" xml:space="preserve">
+    <value>Kontrol gereken fişler</value>
+  </data>
+  <data name="Shell.Op.ResolvedPrinted" xml:space="preserve">
+    <value>Fiş basıldı olarak bildirildi.</value>
+  </data>
+  <data name="Shell.Op.ResolvedNotPrinted" xml:space="preserve">
+    <value>Fiş basılmadı olarak bildirildi; Wasla'dan yeniden yazdırabilirsiniz.</value>
+  </data>
+  <data name="History.Uncertain.NotResolvable" xml:space="preserve">
+    <value>Bu fiş burada çözülemiyor, çünkü bağlantı değişti. Wasla panelinde kontrol edin.</value>
+  </data>
+  <data name="Shell.Printer.ServiceScope" xml:space="preserve">
+    <value>Yalnızca bu bilgisayarın tüm kullanıcıları için kurulu yazıcılar listelenir. Yalnızca kendi Windows hesabınıza eklenen bir yazıcıyı bir yöneticinin tüm kullanıcılar için kurması gerekir.</value>
+  </data>
+  <data name="Shell.Printer.UserOnly" xml:space="preserve">
+    <value>Bu yazıcı yalnızca Windows hesabınıza kurulu, bu yüzden Print Bridge hizmeti onu kullanamıyor. Bir yöneticinin yazıcıyı tüm kullanıcılar için kurması gerekir.</value>
   </data>
 </root>

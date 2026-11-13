@@ -99,18 +99,18 @@ public sealed class SetupInstanceCrossAccountTests
         var instanceName = $@"Global\WaslaPbTest.Instance.{id}";
         var engineName = $@"Global\WaslaPbTest.Engine.{id}";
 
+        // WAS-61: the engine lock is the service's. One another account created (an older app with its own engine, or a
+        // squatter) keeps the service from building its engine.
         using (other.Run(() => new Mutex(initiallyOwned: false, engineName)))
         {
-            var guard = SingleInstanceGuard.TryAcquire(instanceName, engineName, out var outcome);
-            guard?.Dispose();
+            using var engineLock = Wasla.PrintBridge.Hosting.PrintBridgeEngineLock.TryAcquire(engineName);
 
-            Assert.Null(guard);
-            Assert.Equal(SingleInstanceOutcome.EngineRunningElsewhere, outcome);
+            Assert.Null(engineLock);
         }
 
         using (other.Run(() => new Mutex(initiallyOwned: false, instanceName)))
         {
-            var guard = SingleInstanceGuard.TryAcquire(instanceName, engineName, out var outcome);
+            var guard = SingleInstanceGuard.TryAcquire(instanceName, out var outcome);
             guard?.Dispose();
 
             Assert.Null(guard);
@@ -118,7 +118,7 @@ public sealed class SetupInstanceCrossAccountTests
         }
     }
 
-    private static void SkipUnlessDisposableRunner()
+    internal static void SkipUnlessDisposableRunner()
     {
         var onHostedRunner =
             string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.OrdinalIgnoreCase) &&
@@ -147,7 +147,7 @@ public sealed class SetupInstanceCrossAccountTests
     }
 
     /// <summary>A local standard-user account that exists only for one test.</summary>
-    private sealed class TemporaryWindowsAccount : IDisposable
+    internal sealed class TemporaryWindowsAccount : IDisposable
     {
         private const uint UserPrivUser = 1;
         private const uint UfScript = 0x0001;
@@ -169,7 +169,12 @@ public sealed class SetupInstanceCrossAccountTests
 
         public SecurityIdentifier Sid { get; }
 
-        public static TemporaryWindowsAccount Create()
+        /// <param name="logon">
+        /// The kind of token: a network logon when the account may have one, else interactive (what these tests have always
+        /// used); only an interactive logon (an ordinary signed-in user, member of INTERACTIVE); or only a network logon
+        /// (member of NETWORK), failing when the account may not have one.
+        /// </param>
+        public static TemporaryWindowsAccount Create(TemporaryLogon logon = TemporaryLogon.NetworkOrInteractive)
         {
             var name = "wpbipc" + RandomNumberGenerator.GetHexString(8, lowercase: true);
             var password = "Wp9!" + RandomNumberGenerator.GetString(
@@ -192,7 +197,7 @@ public sealed class SetupInstanceCrossAccountTests
 
             try
             {
-                var token = LogOn(name, password);
+                var token = LogOn(name, password, logon);
                 using var identity = new WindowsIdentity(token.DangerousGetHandle());
                 var sid = identity.User ?? throw new InvalidOperationException("The temporary account has no SID.");
                 using var current = WindowsIdentity.GetCurrent();
@@ -222,16 +227,30 @@ public sealed class SetupInstanceCrossAccountTests
             return 0;
         });
 
+        /// <summary>Whether the account's token has <paramref name="group"/> (for example INTERACTIVE or NETWORK).</summary>
+        public bool HasGroup(WellKnownSidType group)
+        {
+            var sid = new SecurityIdentifier(group, null);
+            using var identity = new WindowsIdentity(_token.DangerousGetHandle());
+            return identity.Groups?.Any(g => sid.Equals(g)) == true;
+        }
+
         public void Dispose()
         {
             _token.Dispose();
             _ = NetUserDel(null, Name);
         }
 
-        private static SafeAccessTokenHandle LogOn(string name, string password)
+        private static SafeAccessTokenHandle LogOn(string name, string password, TemporaryLogon logon)
         {
             var errors = new List<string>();
-            foreach (var logonType in new[] { Logon32LogonNetwork, Logon32LogonInteractive })
+            var logonTypes = logon switch
+            {
+                TemporaryLogon.Interactive => new[] { Logon32LogonInteractive },
+                TemporaryLogon.Network => new[] { Logon32LogonNetwork },
+                _ => new[] { Logon32LogonNetwork, Logon32LogonInteractive }
+            };
+            foreach (var logonType in logonTypes)
             {
                 if (LogonUserW(name, ".", password, logonType, Logon32ProviderDefault, out var handle))
                     return new SafeAccessTokenHandle(handle);
@@ -265,4 +284,12 @@ public sealed class SetupInstanceCrossAccountTests
         private static extern bool LogonUserW(
             string userName, string domain, string password, int logonType, int logonProvider, out IntPtr token);
     }
+}
+
+/// <summary>The kind of logon token of a <see cref="SetupInstanceCrossAccountTests.TemporaryWindowsAccount"/>.</summary>
+internal enum TemporaryLogon
+{
+    NetworkOrInteractive,
+    Interactive,
+    Network
 }

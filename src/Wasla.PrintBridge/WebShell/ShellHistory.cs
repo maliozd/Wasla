@@ -19,8 +19,9 @@ public sealed record ShellHistoryPage(
     IReadOnlyList<ShellHistoryItem> Items);
 
 /// <param name="Ref">Opaque per-session handle; the page never sees the server job id.</param>
-/// <param name="Status"><c>pending</c>, <c>printing</c>, <c>printed</c>, <c>failed</c> or <c>skipped</c>.</param>
-/// <param name="Detail">Localized summary for failed, skipped or dry-run jobs; never raw exception text.</param>
+/// <param name="Status"><c>pending</c>, <c>printing</c>, <c>printed</c>, <c>failed</c>, <c>skipped</c> or <c>uncertain</c>.</param>
+/// <param name="Detail">Localized summary for failed, skipped, dry-run or uncertain jobs; never raw exception text.</param>
+/// <param name="CanResolve">An uncertain job the user can resolve here: it printed, or it did not (WAS-61).</param>
 public sealed record ShellHistoryItem(
     string Ref,
     string Time,
@@ -30,7 +31,8 @@ public sealed record ShellHistoryItem(
     string Status,
     string StatusLabel,
     string? Detail,
-    bool CanReprint);
+    bool CanReprint,
+    bool CanResolve);
 
 /// <summary>
 /// Projects the engine's local print history into safe page rows. Receipt content, raw error text, payloads,
@@ -41,17 +43,6 @@ public sealed class ShellHistory
 {
     public const int PageSize = 20;
     private const int MaxHandles = 2000;
-
-    private static readonly string[] PrinterErrorPrefixes =
-    [
-        "Printer not found",
-        "Unable to open printer",
-        "Unable to start print",
-        "Unable to write to printer",
-        "PrinterName is required"
-    ];
-
-    private static readonly string[] ServerErrorPrefixes = ["Claim failed:", "mark-printed:"];
 
     private readonly IPrintBridgeEngine _engine;
     private readonly PrintBridgeLocalizer _localizer;
@@ -67,14 +58,15 @@ public sealed class ShellHistory
         _culture = culture;
     }
 
-    public ShellHistoryPage Query(PrintHistoryDateFilter range, int page, string? search)
+    /// <summary>One page, read from the engine (WAS-61: the service pages; the app never loads the whole history).</summary>
+    public async Task<ShellHistoryPage> QueryAsync(PrintHistoryDateFilter range, int page, string? search, CancellationToken ct = default)
     {
         var trimmedSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-        var jobs = _engine.GetPrintHistory(range, trimmedSearch);
-        var total = jobs.Count;
+        var result = await _engine.QueryPrintHistoryAsync(range, trimmedSearch, page, PageSize, ct).ConfigureAwait(true);
+        var total = result.Total;
         var lastPage = total == 0 ? 0 : (total - 1) / PageSize;
-        var current = Math.Clamp(page, 0, lastPage);
-        var pageJobs = jobs.Skip(current * PageSize).Take(PageSize).ToArray();
+        var current = Math.Clamp(result.Page, 0, lastPage);
+        var pageJobs = result.Rows.Take(PageSize).ToArray();
         var from = total == 0 ? 0 : current * PageSize + 1;
         var to = current * PageSize + pageJobs.Length;
 
@@ -109,7 +101,9 @@ public sealed class ShellHistory
             Status: ToStatus(job.Status),
             StatusLabel: _localizer.GetJobStatusBadge(job.Status),
             Detail: DescribeDetail(job),
-            CanReprint: job.Status == LocalPrintJobStatus.Printed);
+            CanReprint: job.Status == LocalPrintJobStatus.Printed,
+            CanResolve: job.Status == LocalPrintJobStatus.Uncertain
+                        && !string.Equals(job.StatusNote, PrintBridgeRuntime.UncertainResolveInWaslaNote, StringComparison.Ordinal));
     }
 
     private string? DescribeDetail(LocalPrintJobRecord job)
@@ -117,16 +111,18 @@ public sealed class ShellHistory
         switch (job.Status)
         {
             case LocalPrintJobStatus.Failed:
-            {
-                var error = job.ErrorMessage ?? string.Empty;
-                if (PrinterErrorPrefixes.Any(p => error.StartsWith(p, StringComparison.Ordinal)))
-                    return _localizer["Shell.History.Error.Printer"];
-                if (ServerErrorPrefixes.Any(p => error.StartsWith(p, StringComparison.Ordinal)))
-                    return _localizer["Shell.History.Error.Server"];
-                return _localizer["Shell.History.Error.Generic"];
-            }
+                return (job.FailureCategory ?? LocalPrintJobFailure.Classify(job.ErrorMessage)) switch
+                {
+                    LocalPrintJobFailureCategory.Printer => _localizer["Shell.History.Error.Printer"],
+                    LocalPrintJobFailureCategory.Server => _localizer["Shell.History.Error.Server"],
+                    _ => _localizer["Shell.History.Error.Generic"]
+                };
             case LocalPrintJobStatus.Skipped:
                 return _localizer["Shell.History.Skipped"];
+            case LocalPrintJobStatus.Uncertain:
+                return _localizer[string.Equals(job.StatusNote, PrintBridgeRuntime.UncertainResolveInWaslaNote, StringComparison.Ordinal)
+                    ? "Shell.History.UncertainInWasla"
+                    : "Shell.History.Uncertain"];
             case LocalPrintJobStatus.Printed when string.Equals(job.StatusNote, "Dry run", StringComparison.Ordinal):
                 return _localizer["Shell.History.DryRun"];
             default:
@@ -166,6 +162,7 @@ public sealed class ShellHistory
         LocalPrintJobStatus.Printing => "printing",
         LocalPrintJobStatus.Printed => "printed",
         LocalPrintJobStatus.Failed => "failed",
+        LocalPrintJobStatus.Uncertain => "uncertain",
         _ => "skipped"
     };
 }

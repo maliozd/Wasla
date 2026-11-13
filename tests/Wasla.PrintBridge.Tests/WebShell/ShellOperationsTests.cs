@@ -327,7 +327,7 @@ public sealed class ShellOperationsTests : IDisposable
     {
         var jobId = Guid.NewGuid();
         _rig.Engine.History = [new LocalPrintJobRecord { JobId = jobId, OrderDisplay = "GTR-1001", Status = LocalPrintJobStatus.Printed, CreatedAtUtc = DateTime.UtcNow }];
-        var itemRef = Assert.Single(_rig.History.Query(PrintHistoryDateFilter.Today, 0, null).Items).Ref;
+        var itemRef = Assert.Single((await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items).Ref;
 
         var unknown = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.reprint", "\"itemRef\":\"h0000000000000000\"")));
         var known = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.reprint", $"\"itemRef\":\"{itemRef}\"")));
@@ -348,7 +348,7 @@ public sealed class ShellOperationsTests : IDisposable
         var jobId = Guid.NewGuid();
         _rig.Engine.History = [new LocalPrintJobRecord { JobId = jobId, Status = LocalPrintJobStatus.Printed, CreatedAtUtc = DateTime.UtcNow }];
         _rig.Engine.ReprintMessageKey = serverKey!;
-        var itemRef = Assert.Single(_rig.History.Query(PrintHistoryDateFilter.Today, 0, null).Items).Ref;
+        var itemRef = Assert.Single((await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items).Ref;
 
         var result = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.reprint", $"\"itemRef\":\"{itemRef}\"")));
 
@@ -361,7 +361,7 @@ public sealed class ShellOperationsTests : IDisposable
     {
         var jobId = Guid.NewGuid();
         _rig.Engine.History = [new LocalPrintJobRecord { JobId = jobId, Status = LocalPrintJobStatus.Printed, CreatedAtUtc = DateTime.UtcNow }];
-        var itemRef = Assert.Single(_rig.History.Query(PrintHistoryDateFilter.Today, 0, null).Items).Ref;
+        var itemRef = Assert.Single((await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items).Ref;
         _rig.Engine.ReprintFailure = new LocalizedApplicationException("PrintBridge.ReprintAlreadyPending");
 
         var result = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.reprint", $"\"itemRef\":\"{itemRef}\"")));
@@ -517,6 +517,34 @@ public sealed class ShellOperationsTests : IDisposable
     {
         foreach (var leak in new[] { "secret-host", SentinelToken, SentinelServerUrl, "api/print-bridge", "ProgramData", "Exception", "Token=" })
             Assert.DoesNotContain(leak, message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(true, "Shell.Op.ResolvedPrinted")]
+    [InlineData(false, "Shell.Op.ResolvedNotPrinted")]
+    public async Task ResolvingAnUncertainReceipt_SendsTheUsersAnswer_ForAHandleIssuedByTheHistory(bool printed, string messageKey)
+    {
+        var jobId = Guid.NewGuid();
+        _rig.Engine.History = [new LocalPrintJobRecord { JobId = jobId, OrderDisplay = "GTR-1001", Status = LocalPrintJobStatus.Uncertain, CreatedAtUtc = DateTime.UtcNow }];
+        var itemRef = Assert.Single((await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items).Ref;
+        var answer = printed ? "true" : "false";
+
+        var unknown = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.resolve", $"\"itemRef\":\"h0000000000000000\",\"printed\":{answer}")));
+        var known = await _rig.Operations.ExecuteAsync(Parse(Tracked("history.resolve", $"\"itemRef\":\"{itemRef}\",\"printed\":{answer}")));
+
+        Assert.Equal(ShellOperationOutcome.Rejected, unknown.Outcome);
+        Assert.Equal(_localizer["History.Uncertain.NotResolvable"], unknown.Message);
+        Assert.Equal(ShellOperationOutcome.Succeeded, known.Outcome);
+        Assert.Equal(_localizer[messageKey], known.Message);
+        Assert.Equal([(jobId, printed)], _rig.Engine.Resolved);
+        Assert.Equal(0, _rig.Engine.ReprintCalls);
+    }
+
+    [Fact]
+    public void AResolveWithoutTheUsersAnswer_IsRejectedByTheContract()
+    {
+        Assert.False(ShellMessageParser.TryParse(Tracked("history.resolve", "\"itemRef\":\"h0123456789abcdef\""), out _, out _));
+        Assert.False(ShellMessageParser.TryParse(Tracked("history.resolve", "\"itemRef\":\"h0123456789abcdef\",\"printed\":\"yes\""), out _, out _));
     }
 
     private static string SettingsFields(bool testMode, int idle, int busy, int error) =>

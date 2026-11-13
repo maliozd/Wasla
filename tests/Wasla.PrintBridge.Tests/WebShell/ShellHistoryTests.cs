@@ -31,11 +31,11 @@ public sealed partial class ShellHistoryTests : IDisposable
     [InlineData(2, 2, 5, false, "41–45 / 45")]
     [InlineData(99, 2, 5, false, "41–45 / 45")]
     [InlineData(-3, 0, 20, true, "1–20 / 45")]
-    public void Pages_AreBoundedAndClampedToTheAvailableRange(int requested, int page, int count, bool hasNext, string label)
+    public async Task Pages_AreBoundedAndClampedToTheAvailableRange(int requested, int page, int count, bool hasNext, string label)
     {
         _rig.Engine.History = Jobs(45);
 
-        var result = _rig.History.Query(PrintHistoryDateFilter.Today, requested, null);
+        var result = await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, requested, null, TestContext.Current.CancellationToken);
 
         Assert.Equal(page, result.Page);
         Assert.Equal(count, result.Items.Count);
@@ -47,9 +47,9 @@ public sealed partial class ShellHistoryTests : IDisposable
     }
 
     [Fact]
-    public void EmptyHistory_IsOneEmptyPage()
+    public async Task EmptyHistory_IsOneEmptyPage()
     {
-        var result = _rig.History.Query(PrintHistoryDateFilter.Last30Days, 3, null);
+        var result = await _rig.History.QueryAsync(PrintHistoryDateFilter.Last30Days, 3, null, TestContext.Current.CancellationToken);
 
         Assert.Equal(new ShellHistoryPage("last30Days", 0, ShellHistory.PageSize, 0, false, false, false, "0–0 / 0", []), result with { Items = [] });
         Assert.Empty(result.Items);
@@ -59,9 +59,9 @@ public sealed partial class ShellHistoryTests : IDisposable
     [InlineData(PrintHistoryDateFilter.Today, "today")]
     [InlineData(PrintHistoryDateFilter.Last7Days, "last7Days")]
     [InlineData(PrintHistoryDateFilter.Last30Days, "last30Days")]
-    public void RangeAndSearch_AreForwardedToTheEngine(PrintHistoryDateFilter range, string name)
+    public async Task RangeAndSearch_AreForwardedToTheEngine(PrintHistoryDateFilter range, string name)
     {
-        var result = _rig.History.Query(range, 0, "  GTR-10  ");
+        var result = await _rig.History.QueryAsync(range, 0, "  GTR-10  ", TestContext.Current.CancellationToken);
 
         Assert.Equal(name, result.Range);
         Assert.True(result.Filtered);
@@ -72,22 +72,22 @@ public sealed partial class ShellHistoryTests : IDisposable
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void BlankSearch_IsNoFilter(string? search)
+    public async Task BlankSearch_IsNoFilter(string? search)
     {
-        var result = _rig.History.Query(PrintHistoryDateFilter.Today, 0, search);
+        var result = await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, search, TestContext.Current.CancellationToken);
 
         Assert.False(result.Filtered);
         Assert.Equal((PrintHistoryDateFilter.Today, (string?)null), _rig.Engine.LastHistoryQuery);
     }
 
     [Fact]
-    public void Rows_UseOpaqueHandles_NeverTheServerJobId()
+    public async Task Rows_UseOpaqueHandles_NeverTheServerJobId()
     {
         var jobs = Jobs(3);
         _rig.Engine.History = jobs;
 
-        var first = _rig.History.Query(PrintHistoryDateFilter.Today, 0, null);
-        var again = _rig.History.Query(PrintHistoryDateFilter.Today, 0, null);
+        var first = await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken);
+        var again = await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken);
         var json = ShellMessageSerializer.SerializeHistoryResult(new ShellHistoryResult(NewRequestId(), first), 1);
 
         Assert.All(first.Items, item => Assert.Matches(HandleRegex(), item.Ref));
@@ -107,10 +107,10 @@ public sealed partial class ShellHistoryTests : IDisposable
     [InlineData("")]
     [InlineData("../../job")]
     [InlineData("4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001")]
-    public void UnknownHandles_ResolveToNothing(string itemRef)
+    public async Task UnknownHandles_ResolveToNothing(string itemRef)
     {
         _rig.Engine.History = Jobs(2);
-        _rig.History.Query(PrintHistoryDateFilter.Today, 0, null);
+        await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken);
 
         Assert.Null(_rig.History.Resolve(itemRef));
     }
@@ -123,11 +123,11 @@ public sealed partial class ShellHistoryTests : IDisposable
     [InlineData("mark-printed: HttpRequestException secret-host.internal", "Shell.History.Error.Server")]
     [InlineData("System.NullReferenceException: Object reference not set", "Shell.History.Error.Generic")]
     [InlineData(null, "Shell.History.Error.Generic")]
-    public void FailedRows_ShowACategory_NeverTheRawError(string? error, string expectedKey)
+    public async Task FailedRows_ShowACategory_NeverTheRawError(string? error, string expectedKey)
     {
         _rig.Engine.History = [Job(LocalPrintJobStatus.Failed, error: error)];
 
-        var page = _rig.History.Query(PrintHistoryDateFilter.Today, 0, null);
+        var page = await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken);
         var json = ShellMessageSerializer.SerializeHistoryResult(new ShellHistoryResult(NewRequestId(), page), 1);
 
         var item = Assert.Single(page.Items);
@@ -139,7 +139,7 @@ public sealed partial class ShellHistoryTests : IDisposable
     }
 
     [Fact]
-    public void SkippedDryRunAndPrintedRows_AreDescribedAndOnlyPrintedRowsCanBeReprinted()
+    public async Task SkippedDryRunAndPrintedRows_AreDescribedAndOnlyPrintedRowsCanBeReprinted()
     {
         _rig.Engine.History =
         [
@@ -150,7 +150,7 @@ public sealed partial class ShellHistoryTests : IDisposable
             Job(LocalPrintJobStatus.Received)
         ];
 
-        var items = _rig.History.Query(PrintHistoryDateFilter.Today, 0, null).Items;
+        var items = (await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items;
 
         Assert.Equal(["skipped", "printed", "printed", "printing", "pending"], items.Select(i => i.Status));
         Assert.Equal(
@@ -161,12 +161,33 @@ public sealed partial class ShellHistoryTests : IDisposable
     }
 
     [Fact]
-    public void MissingValues_FallBackToTheShortJobIdAndTheLocalizedDash()
+    public async Task UncertainRows_AreShownAsNeedingACheck_AndOnlyThoseThisComputerCanReportAreResolvable()
+    {
+        // WAS-61: a receipt whose paper outcome is unknown is never hidden; the user resolves it, or Wasla does when the
+        // connection that claimed it was replaced.
+        _rig.Engine.History =
+        [
+            Job(LocalPrintJobStatus.Uncertain),
+            Job(LocalPrintJobStatus.Uncertain, note: Wasla.PrintBridge.Services.PrintBridgeRuntime.UncertainResolveInWaslaNote)
+        ];
+
+        var items = (await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items;
+
+        Assert.Equal(["uncertain", "uncertain"], items.Select(i => i.Status));
+        Assert.Equal([_localizer["Shell.History.Uncertain"], _localizer["Shell.History.UncertainInWasla"]], items.Select(i => i.Detail));
+        Assert.Equal([true, false], items.Select(i => i.CanResolve));
+        Assert.All(items, i => Assert.False(i.CanReprint));
+        Assert.All(items, i => Assert.Equal(_localizer.GetJobStatusBadge(LocalPrintJobStatus.Uncertain), i.StatusLabel));
+        Assert.NotEqual("JobStatusBadge.Uncertain", items[0].StatusLabel);
+    }
+
+    [Fact]
+    public async Task MissingValues_FallBackToTheShortJobIdAndTheLocalizedDash()
     {
         var job = new LocalPrintJobRecord { JobId = Guid.NewGuid(), Status = LocalPrintJobStatus.Printed, CreatedAtUtc = DateTime.UtcNow };
         _rig.Engine.History = [job];
 
-        var item = Assert.Single(_rig.History.Query(PrintHistoryDateFilter.Today, 0, null).Items);
+        var item = Assert.Single((await _rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken)).Items);
 
         Assert.Equal(job.ShortJobId, item.Order);
         Assert.Equal(_localizer["Common.Dash"], item.Printer);

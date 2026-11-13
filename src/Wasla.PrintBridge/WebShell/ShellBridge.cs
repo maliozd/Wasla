@@ -119,7 +119,7 @@ public sealed class ShellBridge : IDisposable
                 break;
 
             case ShellCommandType.HistoryQuery:
-                SendHistory(command);
+                _ = SendHistoryAsync(command);
                 break;
 
             default:
@@ -201,17 +201,22 @@ public sealed class ShellBridge : IDisposable
         _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeSnapshotMessage(snapshot, NextSequence()));
     }
 
-    private void SendHistory(ShellCommand command)
+    private async Task SendHistoryAsync(ShellCommand command)
     {
         if (!_host.IsAvailable)
             return;
 
         try
         {
-            var page = _history.Query(
+            using var timeout = new CancellationTokenSource(ShellOperations.DefaultTimeout);
+            var page = await _history.QueryAsync(
                 command.HistoryRange ?? PrintHistoryDateFilter.Today,
                 command.HistoryPage ?? 0,
-                command.HistorySearch);
+                command.HistorySearch,
+                timeout.Token).ConfigureAwait(true);
+            if (_disposed || !_host.IsAvailable)
+                return;
+
             _host.PostWebMessageAsJson(ShellMessageSerializer.SerializeHistoryResult(
                 new ShellHistoryResult(command.RequestId!, page),
                 NextSequence()));

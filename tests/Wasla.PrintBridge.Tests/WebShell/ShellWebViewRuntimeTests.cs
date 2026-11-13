@@ -507,7 +507,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                         settings,
                         new FakePrinterCatalog(),
                         new FakePrinterSettings(),
-                        new ShellOperationalSettings(store, settings),
+                        new EngineOperationalSettings(Wasla.PrintBridge.Tests.Service.TestEngineHost.Create(store, settings)),
                         new ShellConnectionSetup(source, settings, localizer, NullLogger.Instance, CancellationToken.None),
                         localizer,
                         culture,

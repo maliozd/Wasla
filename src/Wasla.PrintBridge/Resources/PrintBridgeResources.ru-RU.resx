@@ -177,9 +177,6 @@
   <data name="Message.LogsFolderMissing" xml:space="preserve">
     <value>Папка журналов еще не создана.</value>
   </data>
-  <data name="Message.RunningInAnotherSession" xml:space="preserve">
-    <value>Wasla Print Bridge уже запущен для другого пользователя Windows или в другом сеансе на этом компьютере.{0}{0}На компьютере может работать только один Print Bridge. Сначала выйдите из него в том сеансе, затем снова откройте Print Bridge или ссылку настройки.</value>
-  </data>
   <data name="Message.RequiresWindows" xml:space="preserve">
     <value>Wasla Print Bridge требует Windows.</value>
   </data>
@@ -421,7 +418,7 @@
     <value>● {0}</value>
   </data>
   <data name="Tray.Exit" xml:space="preserve">
-    <value>Выход</value>
+    <value>Закрыть приложение (печать продолжится)</value>
   </data>
   <data name="Tray.PrintHistory" xml:space="preserve">
     <value>Распечатать историю</value>
@@ -526,7 +523,7 @@
     <value>Подключение к серверу Wasla…</value>
   </data>
   <data name="Shell.Detail.Stopped" xml:space="preserve">
-    <value>Прослушивание остановлено. Новые задания печати не принимаются.</value>
+    <value>Печать остановлена. Новые задания не принимаются; печать остаётся остановленной и после перезагрузки, пока вы не нажмёте «Начинать».</value>
   </data>
   <data name="Shell.Detail.NotConfigured" xml:space="preserve">
     <value>Это устройство ещё не подключено к Wasla. Выберите «Подключить к Wasla», чтобы настроить его.</value>
@@ -679,7 +676,7 @@
     <value>Прослушивание запущено.</value>
   </data>
   <data name="Shell.Op.Stopped" xml:space="preserve">
-    <value>Прослушивание остановлено.</value>
+    <value>Печать остановлена и останется остановленной, пока вы не нажмёте «Начинать».</value>
   </data>
   <data name="Shell.Op.Busy" xml:space="preserve">
     <value>Эта операция уже выполняется.</value>
@@ -818,5 +815,77 @@
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>Закрыть</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
+    <value>Служба Print Bridge не запущена</value>
+  </data>
+  <data name="RuntimeIssue.ServiceUnavailable.Detail" xml:space="preserve">
+    <value>Чеки не печатаются: служба Wasla Print Bridge недоступна. Перезагрузите компьютер; если проблема сохранится, переустановите Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Title" xml:space="preserve">
+    <value>Версии не совпадают</value>
+  </data>
+  <data name="RuntimeIssue.ServiceIncompatible.Detail" xml:space="preserve">
+    <value>Версии приложения и службы Print Bridge не совпадают. Переустановите Print Bridge.</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Title" xml:space="preserve">
+    <value>Работает другой Print Bridge</value>
+  </data>
+  <data name="RuntimeIssue.EngineHeldElsewhere.Detail" xml:space="preserve">
+    <value>На этом компьютере работает другой Print Bridge со своим модулем печати (например, старая версия). Закройте его — после этого служба начнёт печатать.</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Title" xml:space="preserve">
+    <value>Папка данных не защищена</value>
+  </data>
+  <data name="RuntimeIssue.DataFolderNotSecured.Detail" xml:space="preserve">
+    <value>Служба Print Bridge не начала печать, потому что права доступа к её папке данных небезопасны. Переустановите Print Bridge или обратитесь к администратору компьютера.</value>
+  </data>
+  <data name="ConnectionSummary.ServiceUnavailable" xml:space="preserve">
+    <value>Служба недоступна</value>
+  </data>
+  <data name="Shell.Setup.CheckExpired" xml:space="preserve">
+    <value>Срок проверки подключения истёк, ничего не сохранено. Попробуйте подключиться ещё раз.</value>
+  </data>
+  <data name="JobStatus.Uncertain" xml:space="preserve">
+    <value>Требует проверки</value>
+  </data>
+  <data name="JobStatusBadge.Uncertain" xml:space="preserve">
+    <value>Требует проверки</value>
+  </data>
+  <data name="Shell.History.Uncertain" xml:space="preserve">
+    <value>Print Bridge остановился, когда этот чек отправлялся на принтер, поэтому неизвестно, напечатан ли он. Проверьте принтер и выберите, что произошло. Если чек не напечатан, Wasla сможет напечатать его снова.</value>
+  </data>
+  <data name="Shell.History.UncertainInWasla" xml:space="preserve">
+    <value>Неизвестно, напечатан ли этот чек, а подключение с тех пор изменилось. Проверьте чек этого заказа в панели Wasla.</value>
+  </data>
+  <data name="Shell.History.Printed" xml:space="preserve">
+    <value>Напечатан</value>
+  </data>
+  <data name="Shell.History.NotPrinted" xml:space="preserve">
+    <value>Не напечатан</value>
+  </data>
+  <data name="Shell.History.ConfirmPrinted" xml:space="preserve">
+    <value>Чек вышел на бумаге? Wasla получит отметку «напечатан».</value>
+  </data>
+  <data name="Shell.History.ConfirmNotPrinted" xml:space="preserve">
+    <value>Чек не напечатан? Wasla получит отметку «не напечатан», и вы сможете напечатать его снова из Wasla.</value>
+  </data>
+  <data name="Shell.Activity.NeedsCheck" xml:space="preserve">
+    <value>Чеки для проверки</value>
+  </data>
+  <data name="Shell.Op.ResolvedPrinted" xml:space="preserve">
+    <value>Отмечен как напечатанный.</value>
+  </data>
+  <data name="Shell.Op.ResolvedNotPrinted" xml:space="preserve">
+    <value>Отмечен как ненапечатанный. Его можно напечатать снова из Wasla.</value>
+  </data>
+  <data name="History.Uncertain.NotResolvable" xml:space="preserve">
+    <value>Этот чек нельзя отметить здесь: подключение изменилось. Проверьте его в панели Wasla.</value>
+  </data>
+  <data name="Shell.Printer.ServiceScope" xml:space="preserve">
+    <value>Показаны только принтеры, установленные для всех пользователей этого компьютера. Принтер, добавленный только в вашу учётную запись Windows, администратор должен установить для всех пользователей.</value>
+  </data>
+  <data name="Shell.Printer.UserOnly" xml:space="preserve">
+    <value>Этот принтер установлен только для вашей учётной записи Windows, поэтому служба Print Bridge не может его использовать. Администратор должен установить его для всех пользователей.</value>
   </data>
 </root>

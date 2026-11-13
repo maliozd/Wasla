@@ -19,13 +19,46 @@ public static class PrintBridgePaths
 
     private static string? _testRootOverride;
 
+    private static string? _configuredRoot;
+
     private static string? _testDefaultRoot;
 
     public static string ProgramDataRoot =>
         Volatile.Read(ref _testRootOverride)
         ?? Volatile.Read(ref _testDefaultRoot)
+        ?? Volatile.Read(ref _configuredRoot)
         ?? DevelopmentDataRoot
-        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Wasla", "PrintBridge");
+        ?? ProductionDataRoot;
+
+    /// <summary>The data folder of an installed Print Bridge: <c>C:\ProgramData\Wasla\PrintBridge</c>.</summary>
+    public static string ProductionDataRoot =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Wasla", "PrintBridge");
+
+    /// <summary>Whether <paramref name="root"/> is <see cref="ProductionDataRoot"/> (compared as full paths, ignoring case).</summary>
+    public static bool IsProductionDataRoot(string root) =>
+        string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(ProductionDataRoot)),
+            StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The service only, once at start and before anything reads a path: the data folder given on its command line
+    /// (<c>--data-root</c>). Only the Service Control Manager's configuration, which administrators own, or a console
+    /// run by the developer passes it. The engine lock and the pipe follow the folder
+    /// (<see cref="Ipc.PrintBridgeServiceEndpoint.ForDataRoot"/>), so two engines never share one folder.
+    /// </summary>
+    public static void ConfigureDataRoot(string root)
+    {
+        if (!Path.IsPathFullyQualified(root))
+            throw new ArgumentException("The data root must be an absolute path.", nameof(root));
+
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        if (Interlocked.CompareExchange(ref _configuredRoot, full, null) is { } existing
+            && !string.Equals(existing, full, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The data root is already configured for this process.");
+        }
+    }
 
     /// <summary>
     /// True when a Debug build runs against <see cref="DevelopmentDataRootVariable"/>. Such an instance must
@@ -45,6 +78,22 @@ public static class PrintBridgePaths
 
     public static string ProgramDataHistoryPath =>
         Path.Combine(ProgramDataRoot, "print-history.json");
+
+    /// <summary>
+    /// Jobs claimed by the engine whose last report is not confirmed yet, with the stage they reached (WAS-61). Read at the
+    /// next engine start to finish or conservatively drop them; see <c>PrintBridgeJobJournal</c>.
+    /// </summary>
+    public static string JournalPath =>
+        Path.Combine(ProgramDataRoot, "print-journal.json");
+
+    /// <summary>
+    /// The app's own log folder, per Windows user (WAS-61): the app no longer writes to the service's data folder. Tests and
+    /// a development root keep it under that root.
+    /// </summary>
+    public static string AppLogDirectory =>
+        IsRedirectedForTests || Volatile.Read(ref _configuredRoot) is not null || DevelopmentDataRoot is not null
+            ? Path.Combine(ProgramDataRoot, "app-logs")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wasla", "PrintBridge", "logs");
 
     /// <summary>
     /// A confirmed move to another restaurant that may have been stored by the server but not yet saved here (WAS-91).

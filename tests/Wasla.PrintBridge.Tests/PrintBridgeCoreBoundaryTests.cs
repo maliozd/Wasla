@@ -21,6 +21,21 @@ public sealed class PrintBridgeCoreBoundaryTests
     }
 
     [Fact]
+    public void TheService_HasNoDesktopPresentationTechnology_AndDoesNotReferenceTheApp()
+    {
+        // WAS-61: the service runs in session 0 with no desktop; every window and confirmation is the app's.
+        var service = typeof(Hosting.PrintBridgeServiceBackend).Assembly;
+        var references = service.GetReferencedAssemblies().Select(a => a.Name ?? string.Empty).ToArray();
+
+        Assert.Equal("Wasla.PrintBridge.Service", service.GetName().Name);
+        Assert.DoesNotContain(references, name => name.StartsWith("System.Windows.Forms", StringComparison.Ordinal));
+        Assert.DoesNotContain(references, name => name.StartsWith("Microsoft.Web.WebView2", StringComparison.Ordinal));
+        Assert.DoesNotContain(references, name => name.StartsWith("PresentationFramework", StringComparison.Ordinal));
+        Assert.DoesNotContain("Wasla.PrintBridge", references);
+        Assert.Contains("Wasla.PrintBridge.Core", references);
+    }
+
+    [Fact]
     public void EngineTypes_LiveInCore_AndKeepTheirNamespaces()
     {
         var core = typeof(PrintBridgeRuntime).Assembly;

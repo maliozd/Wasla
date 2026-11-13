@@ -119,6 +119,14 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
 
     public event EventHandler? StatusChanged;
 
+    public event EventHandler<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome>? BackgroundSetupCompleted;
+
+    /// <summary>The settings the fake engine reports; the token is never visible through it, only whether one is saved.</summary>
+    public IPrintBridgeSettingsView Settings { get; set; } = ShellTestRig.NewSettings("test-token-not-a-real-credential");
+
+    public void RaiseBackgroundSetup(Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome outcome) =>
+        BackgroundSetupCompleted?.Invoke(this, outcome);
+
     public int GetStatusCalls { get; private set; }
 
     public int StartCalls => Volatile.Read(ref _startCalls);
@@ -169,12 +177,13 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
 
     public int SubscriberCount => StatusChanged?.GetInvocationList().Length ?? 0;
 
-    public void Start()
+    public Task StartAsync(CancellationToken ct)
     {
         Interlocked.Increment(ref _startCalls);
         if (StartFailure is not null)
             throw StartFailure;
         Set(WebShellTestSupport.Status(isRunning: true), raise: true);
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync()
@@ -205,8 +214,15 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
     public int CheckConnectionCalls => Volatile.Read(ref _checkConnectionCalls);
     public int ApplyConnectionCalls => Volatile.Read(ref _applyConnectionCalls);
 
-    /// <summary>Server URL and token of every candidate the setup asked the fake server to check.</summary>
+    /// <summary>
+    /// Server URL and token of every candidate the setup asked the fake server to check. A candidate that keeps the saved
+    /// token is recorded with <see cref="KeptSavedToken"/>: the app never knows the saved token (WAS-61).
+    /// </summary>
     public List<(string ServerUrl, string Token)> CheckedConnections { get; } = [];
+
+    public const string KeptSavedToken = "(saved token kept by the engine)";
+
+    private readonly Dictionary<string, (string ServerUrl, string Token)> _verified = [];
 
     public Exception? CheckConnectionFailure { get; set; }
 
@@ -223,23 +239,26 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
     /// <summary>Runs after a successful apply, like the real engine recording the verified contact.</summary>
     public Action? OnApplied { get; set; }
 
-    public async Task<WaslaPrintBridgeClient.PrintBridgeHealthResult> CheckConnectionAsync(
-        Wasla.PrintBridge.Options.WaslaOptions candidate,
+    public async Task<PrintBridgeConnectionVerification> CheckConnectionAsync(
+        PrintBridgeConnectionCandidate candidate,
         CancellationToken ct)
     {
         Interlocked.Increment(ref _checkConnectionCalls);
+        var checkedConnection = (candidate.ServerUrl, candidate.KeepSavedToken ? KeptSavedToken : candidate.Token);
         lock (CheckedConnections)
-            CheckedConnections.Add((candidate.ServerUrl, candidate.AgentToken));
+            CheckedConnections.Add(checkedConnection);
         if (CheckConnectionGate is { } gate)
             await gate.Task.WaitAsync(ct);
         if (CheckConnectionFailure is not null)
             throw CheckConnectionFailure;
-        return new WaslaPrintBridgeClient.PrintBridgeHealthResult("QA", "Kasa 1", DateTime.UtcNow);
+        var id = Guid.NewGuid().ToString("N");
+        lock (_verified)
+            _verified[id] = checkedConnection;
+        return new PrintBridgeConnectionVerification(id, new WaslaPrintBridgeClient.PrintBridgeHealthResult("QA", "Kasa 1", DateTime.UtcNow));
     }
 
     public async Task<PrintBridgeConnectionChange> ApplyVerifiedConnectionAsync(
-        Wasla.PrintBridge.Options.WaslaOptions verified,
-        WaslaPrintBridgeClient.PrintBridgeHealthResult health,
+        PrintBridgeConnectionVerification verification,
         bool startListening,
         CancellationToken abandon)
     {
@@ -248,10 +267,17 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
             await gate.Task;
         if (abandon.IsCancellationRequested)
             return PrintBridgeConnectionChange.Abandoned;
+        (string ServerUrl, string Token) verified;
+        lock (_verified)
+        {
+            if (!_verified.Remove(verification.VerificationId, out verified))
+                throw new LocalizedApplicationException("Shell.Setup.CheckExpired");
+        }
+
         // Like the engine, only an applied result changes the connection; a refused or failed one leaves it as it was.
         if (ApplyResult is PrintBridgeConnectionChange.AppliedListening or PrintBridgeConnectionChange.AppliedNotListening)
         {
-            AppliedConnection = (verified.ServerUrl, verified.AgentToken, startListening);
+            AppliedConnection = (verified.ServerUrl, verified.Token, startListening);
             OnApplied?.Invoke();
         }
 
@@ -267,12 +293,93 @@ internal sealed class FakeStatusSource : IPrintBridgeEngine
             throw TestPrintFailure;
     }
 
-    public IReadOnlyList<LocalPrintJobRecord> GetPrintHistory(PrintHistoryDateFilter filter, string? orderSearch)
+    /// <summary>Pages <see cref="History"/> as the engine does: the page is clamped to the last one.</summary>
+    public Task<PrintBridgeHistoryPage> QueryPrintHistoryAsync(
+        PrintHistoryDateFilter filter,
+        string? orderSearch,
+        int page,
+        int pageSize,
+        CancellationToken ct)
     {
         LastHistoryQuery = (filter, orderSearch);
         if (HistoryFailure is not null)
             throw HistoryFailure;
-        return History;
+        var total = History.Count;
+        var lastPage = total == 0 ? 0 : (total - 1) / pageSize;
+        var current = Math.Clamp(page, 0, lastPage);
+        return Task.FromResult(new PrintBridgeHistoryPage(total, current, History.Skip(current * pageSize).Take(pageSize).ToArray()));
+    }
+
+    /// <summary>Every check of an uncertain receipt the user answered: the job and whether it printed.</summary>
+    public List<(Guid JobId, bool Printed)> Resolved { get; } = [];
+
+    public Exception? ResolveFailure { get; set; }
+
+    public Task ResolveUncertainJobAsync(Guid jobId, bool printed, CancellationToken ct)
+    {
+        if (ResolveFailure is not null)
+            throw ResolveFailure;
+        Resolved.Add((jobId, printed));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The printers the fake engine lists, as the service would (names only).</summary>
+    public List<string> Printers { get; } = ["Microsoft Print to PDF", "POS-58"];
+
+    public int ListPrintersCalls;
+
+    public Task<IReadOnlyList<string>> ListPrintersAsync(CancellationToken ct)
+    {
+        Interlocked.Increment(ref ListPrintersCalls);
+        return Task.FromResult<IReadOnlyList<string>>(Printers.ToArray());
+    }
+
+    public List<string> SavedPrinters { get; } = [];
+
+    public Task<string?> SavePrinterAsync(string printerName, CancellationToken ct)
+    {
+        SavedPrinters.Add(printerName);
+        return Task.FromResult<string?>(null);
+    }
+
+    public Task<string?> SaveOperationalSettingsAsync(PrintBridgeOperationalSettings settings, CancellationToken ct) =>
+        Task.FromResult<string?>(null);
+
+    public List<string> SavedLanguages { get; } = [];
+
+    public Task SaveLanguageAsync(string culture, CancellationToken ct)
+    {
+        SavedLanguages.Add(culture);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Setup links the fake engine was asked to apply, and what it answers.</summary>
+    public List<string> AppliedLinks { get; } = [];
+
+    public Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome SetupOutcome { get; set; } = Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Connected;
+
+    /// <summary>When set, applying a link first asks this move confirmation, as a move to another restaurant does.</summary>
+    public Wasla.PrintBridge.Setup.PrintBridgeConnectionTransferConsentRequest? ConsentRequest { get; set; }
+
+    /// <summary>Every answer the confirmation gave, in order.</summary>
+    public List<bool> ConsentAnswers { get; } = [];
+
+    public async Task<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome> ApplySetupLinkAsync(
+        string link,
+        Wasla.PrintBridge.Setup.PrintBridgeConnectionTransferConsent consent,
+        CancellationToken ct)
+    {
+        lock (AppliedLinks)
+            AppliedLinks.Add(link);
+        if (ConsentRequest is { } request)
+        {
+            var approved = await consent(request, ct);
+            lock (ConsentAnswers)
+                ConsentAnswers.Add(approved);
+            return approved ? SetupOutcome : Wasla.PrintBridge.Setup.PrintBridgeAutoSetupOutcome.Cancelled;
+        }
+
+        return SetupOutcome;
     }
 
     public Task<WaslaPrintBridgeClient.ReprintJobResult> ReprintJobAsync(Guid jobId, CancellationToken ct)
@@ -333,8 +440,8 @@ internal sealed class FakeOperationalSettings : IShellOperationalSettings
 {
     public List<ShellOperationalSettingsChange> Saved { get; } = [];
 
-    /// <summary>Behaves like the real validator unless overridden: its ranges decide.</summary>
-    public bool TrySave(ShellOperationalSettingsChange change, out string? errorKey)
+    /// <summary>Behaves like the engine (and its validator) unless overridden: the validator's ranges decide.</summary>
+    public Task<string?> SaveAsync(ShellOperationalSettingsChange change, CancellationToken ct)
     {
         var probe = new Wasla.PrintBridge.Options.PrintBridgeOptions
         {
@@ -343,11 +450,11 @@ internal sealed class FakeOperationalSettings : IShellOperationalSettings
             BusyPollIntervalSeconds = change.BusyPollSeconds,
             ErrorPollIntervalSeconds = change.ErrorPollSeconds
         };
-        if (!PrintBridgeSettingsValidator.TryValidateAdvancedBehaviorSettings(probe, out errorKey))
-            return false;
+        if (!PrintBridgeSettingsValidator.TryValidateAdvancedBehaviorSettings(probe, out var errorKey))
+            return Task.FromResult(errorKey);
 
         Saved.Add(change);
-        return true;
+        return Task.FromResult<string?>(null);
     }
 }
 
@@ -385,13 +492,12 @@ internal sealed class FakePrinterSettings : IShellPrinterSettings
 
     public string? FailWithKey { get; set; }
 
-    public bool TrySavePrinter(string printerName, out string? errorKey)
+    public Task<string?> SavePrinterAsync(string printerName, CancellationToken ct)
     {
-        errorKey = FailWithKey;
         if (FailWithKey is not null)
-            return false;
+            return Task.FromResult<string?>(FailWithKey);
         Saved.Add(printerName);
-        return true;
+        return Task.FromResult<string?>(null);
     }
 }
 

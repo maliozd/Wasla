@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.WebShell;
@@ -6,25 +5,21 @@ using Wasla.PrintBridge.WebShell;
 namespace Wasla.PrintBridge.Localization;
 
 /// <summary>
-/// Applies a UI language chosen in the WebView2 app: persist <c>Ui.Language</c>, update the in-memory
-/// settings, then switch the culture (which notifies the app window and the tray). Must be awaited on the
-/// UI thread.
+/// Applies a UI language chosen in the WebView2 app: the engine saves <c>Ui.Language</c> (WAS-61: the service owns the
+/// settings file), then the culture switches, which notifies the app window and the tray. Must be awaited on the UI thread.
 /// </summary>
 public sealed class PrintBridgeLanguageService : IShellLanguageSwitcher
 {
-    private readonly PrintBridgeSettingsStore _store;
-    private readonly PrintBridgeSettingsHolder _holder;
+    private readonly IPrintBridgeEngine _engine;
     private readonly PrintBridgeCultureService _cultureService;
     private readonly ILogger<PrintBridgeLanguageService> _logger;
 
     public PrintBridgeLanguageService(
-        PrintBridgeSettingsStore store,
-        PrintBridgeSettingsHolder holder,
+        IPrintBridgeEngine engine,
         PrintBridgeCultureService cultureService,
         ILogger<PrintBridgeLanguageService> logger)
     {
-        _store = store;
-        _holder = holder;
+        _engine = engine;
         _cultureService = cultureService;
         _logger = logger;
     }
@@ -39,17 +34,15 @@ public sealed class PrintBridgeLanguageService : IShellLanguageSwitcher
 
         try
         {
-            await Task.Run(() => _store.SaveLanguage(culture)).ConfigureAwait(true);
+            using var timeout = new CancellationTokenSource(ShellOperations.DefaultTimeout);
+            await _engine.SaveLanguageAsync(culture, timeout.Token).ConfigureAwait(true);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            _logger.LogWarning(ex, "Language setting could not be saved.");
+            _logger.LogWarning("Language setting could not be saved: {Error}", ex.GetType().Name);
             return false;
         }
 
-        var ui = _holder.Ui.Clone();
-        ui.Language = culture;
-        _holder.ReplaceUi(ui);
         _cultureService.Initialize(culture);
         return true;
     }

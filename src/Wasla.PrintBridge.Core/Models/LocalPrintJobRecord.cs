@@ -16,5 +16,12 @@ public sealed class LocalPrintJobRecord
     public string? ErrorMessage { get; set; }
     public string? StatusNote { get; set; }
 
+    /// <summary>
+    /// Why a failed job failed, without its error text (WAS-61): set on the copies the engine gives a client, never stored.
+    /// Null on stored records, whose category comes from <see cref="LocalPrintJobFailure.Classify"/>.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public LocalPrintJobFailureCategory? FailureCategory { get; set; }
+
     public DateTime DisplayTimeUtc => PrintedAtUtc ?? LastAttemptAtUtc ?? CreatedAtUtc;
 }

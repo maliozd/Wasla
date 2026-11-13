@@ -27,6 +27,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [integrations/provider-webhooks.md](integrations/provider-webhooks.md) | Decision: provider webhook evidence, polling as reconciliation, provider questions (WAS-17) |
 | [integrations/trendyol-go-meal-webhook-stage-pilot.md](integrations/trendyol-go-meal-webhook-stage-pilot.md) | Trendyol GO Meal webhook pilot against the provider's stage API, on the existing deployment: one configured seller, receiver, inbox, processing, test procedure |
 | [integrations/print-bridge.md](integrations/print-bridge.md) | Desktop printing client |
+| [integrations/print-bridge-service.md](integrations/print-bridge-service.md) | Print Bridge Windows Service (WAS-61): process split, service identity, data folder permissions, IPC contract, lifecycle, print journal and crash recovery, installer handoff (WAS-62) |
 | [frontend/architecture.md](frontend/architecture.md) | Razor, Bootstrap, vanilla JS |
 | [frontend/design-system.md](frontend/design-system.md) | Tokens; `wasla-foundation.css` is the foundation |
 | [operations/local-development.md](operations/local-development.md) | Local runbook |
@@ -60,7 +61,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | Orders management UI | [orders/lifecycle.md](orders/lifecycle.md), [frontend/architecture.md](frontend/architecture.md) |
 | Dashboard, reports or report export | [orders/reporting.md](orders/reporting.md), [orders/lifecycle.md](orders/lifecycle.md), [product/roles-and-permissions.md](product/roles-and-permissions.md) |
 | Provider or sync | [architecture/tenancy.md](architecture/tenancy.md), [orders/synchronization.md](orders/synchronization.md), [integrations/food-platforms.md](integrations/food-platforms.md), [integrations/provider-webhooks.md](integrations/provider-webhooks.md) |
-| Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md) |
+| Print Bridge | [architecture/tenancy.md](architecture/tenancy.md), [integrations/print-bridge.md](integrations/print-bridge.md), [integrations/print-bridge-service.md](integrations/print-bridge-service.md) |
 | Live updates, SignalR | [architecture/realtime.md](architecture/realtime.md), [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md), [architecture/authentication.md](architecture/authentication.md#long-lived-live-connections), [operations/observability.md](operations/observability.md#live-notification-metrics) |
 | Signup or provisioning | [architecture/tenancy.md](architecture/tenancy.md), [architecture/signup-registration.md](architecture/signup-registration.md), [operations/cli.md](operations/cli.md) |
 | Billing, subscriptions, payment provider | [architecture/billing.md](architecture/billing.md), [architecture/tenancy.md](architecture/tenancy.md), [operations/migrations.md](operations/migrations.md) |

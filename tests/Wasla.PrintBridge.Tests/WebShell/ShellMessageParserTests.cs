@@ -46,7 +46,7 @@ public sealed class ShellMessageParserTests
             [
                 "ui.ready", "snapshot.request", "language.change",
                 "engine.start", "engine.stop", "connection.test", "connection.openSetup", "connection.reset",
-                "printers.refresh", "printer.save", "printer.testPrint", "history.query", "history.reprint",
+                "printers.refresh", "printer.save", "printer.testPrint", "history.query", "history.reprint", "history.resolve",
                 "logs.openFolder", "settings.save"
             ],
             ShellMessageContract.CommandTypes);

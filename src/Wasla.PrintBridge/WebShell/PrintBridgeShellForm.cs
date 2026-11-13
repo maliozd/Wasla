@@ -38,7 +38,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
     public PrintBridgeShellForm(
         IPrintBridgeEngine engine,
-        PrintBridgeSettingsHolder settings,
+        IPrintBridgeSettingsView settings,
         IPrinterCatalog printers,
         IShellPrinterSettings printerSettings,
         IShellOperationalSettings operationalSettings,
@@ -79,7 +79,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         var operations = new ShellOperations(engine, printers, printerSettings, operationalSettings, this, history, settings, localizer, logger);
         _bridge = new ShellBridge(
             engine,
-            new ShellSnapshotFactory(localizer, cultureService, settings, printers, () => operations.Busy, webView2Version),
+            new ShellSnapshotFactory(localizer, cultureService, settings, printers, () => operations.Busy, webView2Version, UserPrinterProbe.IsInstalledForThisUser),
             this,
             languageSwitcher,
             cultureService,
