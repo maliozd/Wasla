@@ -25,6 +25,8 @@
      action orange #b94f2a on it is about 6:1). */
   --su-secondary-hover: var(--wm-surface-muted, #f4f0e9);
   --su-selected: #fdf4ee;
+  /* The chosen plan's row, features included: a very light warm gray (owner's choice), not the selected tint. */
+  --su-plan-selected: #f3f1ed;
   --su-danger: #b4232c;
   --su-danger-soft: #f6e2e1;
   --su-success: #2f6f4e;
@@ -947,7 +949,7 @@
 }
 
 .su-plan:has(.su-plan__input:checked) {
-  background: var(--su-selected);
+  background: var(--su-plan-selected);
 }
 
 .su-plan__input {
