@@ -4897,9 +4897,6 @@
   <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
     <value>You can check the status in your registration summary.</value>
   </data>
-  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
-    <value>You can start again with a new registration.</value>
-  </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>Too many attempts</value>
   </data>

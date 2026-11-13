@@ -5345,9 +5345,6 @@
   <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
     <value>Статус можно проверить в сводке регистрации.</value>
   </data>
-  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
-    <value>Можно начать заново с новой регистрации.</value>
-  </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>Слишком много попыток</value>
   </data>

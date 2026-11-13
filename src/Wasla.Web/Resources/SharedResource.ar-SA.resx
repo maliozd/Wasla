@@ -4897,9 +4897,6 @@
   <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
     <value>يمكنك التحقق من الحالة في صفحة تسجيلك.</value>
   </data>
-  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
-    <value>يمكنك البدء من جديد بتسجيل جديد.</value>
-  </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>محاولات كثيرة جداً</value>
   </data>

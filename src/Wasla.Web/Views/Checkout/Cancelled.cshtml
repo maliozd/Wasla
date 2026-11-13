@@ -4,33 +4,27 @@
 @using Wasla.Web.Models.Signup
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
-    // Public page (Figma 03 cancelled): it carries only the ID and generic text.
+    // Public page (Figma 03 cancelled, 92:2302): a terminal state, so one bounded card with the status marker, the
+    // heading, the explanation and the two ways on, and no registration card beside it. It carries only the ID and
+    // generic text.
     Layout = "_RegistrationStatusLayout";
     ViewData["Title"] = L["Checkout.CancelledTitle"];
     var badge = RegistrationStatusPresentation.Badge(PendingRegistrationStatus.Cancelled, Model.IsPaymentSimulatorAvailable);
 }
-<div class="su-shell su-status-page">
-    <div class="su-container su-status__layout">
-        <div class="su-status__main">
-            <h1 class="su-title">@L["Checkout.CancelledTitle"]</h1>
+<div class="su-shell su-status-page su-status-page--terminal">
+    <div class="su-container su-terminal">
+        <section class="su-terminal__card" data-su-terminal="cancelled" aria-labelledby="cancelledTitle">
+            <div class="su-terminal__marker">
+                <span class="su-terminal__icon" aria-hidden="true"><i class="bi bi-slash-circle"></i></span>
+                <partial name="_RegistrationStatusBadge" model="badge" />
+            </div>
+            <h1 class="su-title" id="cancelledTitle">@L["Checkout.CancelledTitle"]</h1>
             <p class="su-lead">@L["Checkout.CancelledMessage"]</p>
 
-            <div class="su-status__actions">
+            <div class="su-status__actions su-status__actions--inline">
                 <a class="su-btn su-btn--primary" href="/signup">@L["Checkout.RegisterAgain"]</a>
                 <a class="su-btn su-btn--quiet" href="/">@L["Signup.PendingBackHome"]</a>
             </div>
-        </div>
-
-        <aside class="su-status__aside">
-            <section class="su-receipt su-status-card" aria-labelledby="cancelledCardTitle">
-                <header class="su-receipt__head">
-                    <h2 class="su-receipt__title" id="cancelledCardTitle">@L["Signup.Receipt.Title"]</h2>
-                </header>
-                <div class="su-status-card__body">
-                    <partial name="_RegistrationStatusBadge" model="badge" />
-                    <p class="su-help">@L["RegistrationStatus.CancelledCardHelp"]</p>
-                </div>
-            </section>
-        </aside>
+        </section>
     </div>
 </div>

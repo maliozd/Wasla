@@ -2514,9 +2514,6 @@
   <data name="RegistrationStatus.FailedCardHelp" xml:space="preserve">
     <value>İşlemin durumunu kayıt özetinden kontrol edebilirsiniz.</value>
   </data>
-  <data name="RegistrationStatus.CancelledCardHelp" xml:space="preserve">
-    <value>Yeni bir kayıt oluşturarak başlayabilirsiniz.</value>
-  </data>
   <data name="RegistrationStatus.TooManyTitle" xml:space="preserve">
     <value>Çok fazla deneme</value>
   </data>

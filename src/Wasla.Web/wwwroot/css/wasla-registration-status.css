@@ -584,3 +584,87 @@
 .su-status-page dd {
   overflow-wrap: anywhere;
 }
+
+/* ---------- Terminal state (cancelled, Figma 92:2302): one bounded card, balanced under the header ---------- */
+
+/* The page fills the window below the header (78 px and its 1 px border) and holds the card a little above its middle;
+   nothing beside it. */
+.su-status-page--terminal {
+  display: flex;
+  align-items: center;
+  min-block-size: calc(100vh - 79px);
+  min-block-size: calc(100dvh - 79px);
+  padding-block: 24px 48px;
+}
+
+.su-terminal {
+  display: flex;
+  justify-content: center;
+}
+
+.su-terminal__card {
+  inline-size: 100%;
+  max-inline-size: 720px;
+  padding: 24px;
+  border: 1px solid var(--su-border);
+  border-radius: var(--su-radius-card);
+  background: var(--su-surface);
+  box-shadow: var(--su-shadow-card);
+}
+
+/* A restrained marker: the existing icon in a warm stone circle and the status chip. */
+.su-terminal__marker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block-end: 24px;
+}
+
+.su-terminal__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 50%;
+  background: var(--su-surface-muted);
+  color: var(--su-text-muted);
+  font-size: 1.25rem;
+}
+
+.su-terminal__icon .bi {
+  line-height: 1;
+}
+
+.su-terminal__card .su-lead {
+  margin-block-end: 0;
+}
+
+.su-terminal__card .su-status__actions {
+  margin-block-start: 28px;
+}
+
+/* From 576 px the two actions share a row: the primary first, the quiet one beside it (logical order, so in Arabic
+   the primary is on the right). The quiet action keeps its padding as the space between them. */
+@media (min-width: 576px) {
+  .su-status__actions--inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  .su-status__actions--inline .su-btn--quiet {
+    margin-inline-start: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .su-status-page--terminal {
+    padding-block: 32px max(64px, 10vh);
+  }
+
+  .su-terminal__card {
+    padding: 40px 48px 44px;
+  }
+}

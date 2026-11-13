@@ -31,6 +31,8 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         PendingRegistrationStatus.Expired
     };
 
+    public static TheoryData<string> Cultures => new() { "tr-TR", "en-US", "ar-SA", "ru-RU" };
+
     [Theory]
     [MemberData(nameof(AllStatuses))]
     public async Task StatusPage_ForTheApplicant_OffersOnlyWhatTheStoredStatusAllows(PendingRegistrationStatus status)
@@ -190,21 +192,45 @@ public sealed class RegistrationStatusPagesRenderedTests : IClassFixture<SignupR
         Assert.Contains($">{Text("Signup.PendingTitle", "ar-SA")}</h1>", page.Body, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task CancelledPage_OffersANewRegistrationFirst_AndHomeSecond_ToEveryBrowser()
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task CancelledPage_IsOneTerminalCard_NewRegistrationFirst_HomeSecond_AndNothingPrivate(string culture)
     {
         var applicant = await _hosts.SeedAsync(PendingRegistrationStatus.Cancelled);
         using var stranger = _hosts.Production.NewBrowser();
+        using var owner = _hosts.OwnerBrowser(_hosts.Production, applicant);
+        var query = $"?culture={culture}&ui-culture={culture}";
 
-        var page = await stranger.GetAsync($"/checkout/cancelled/{applicant.Id}");
+        foreach (var browser in new[] { stranger, owner })
+        {
+            var page = await browser.GetAsync($"/checkout/cancelled/{applicant.Id}{query}");
 
-        Assert.Equal(HttpStatusCode.OK, page.Status);
-        var primary = page.Body.IndexOf($"<a class=\"su-btn su-btn--primary\" href=\"/signup\">{Text("Checkout.RegisterAgain")}</a>", StringComparison.Ordinal);
-        var home = page.Body.IndexOf($"<a class=\"su-btn su-btn--quiet\" href=\"/\">{Text("Signup.PendingBackHome")}</a>", StringComparison.Ordinal);
-        Assert.True(primary >= 0 && home > primary, "the new registration comes first, home second");
-        foreach (var value in applicant.PrivateValues)
-            Assert.DoesNotContain(Html(value), page.Body, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain(applicant.Entity.PrimaryDomain, page.Body, StringComparison.Ordinal);
+            Assert.Equal(HttpStatusCode.OK, page.Status);
+            var body = page.Body;
+            // The terminal layout (Figma 92:2302): one card holding the marker, the heading, the text and the actions.
+            Assert.Contains("class=\"su-shell su-status-page su-status-page--terminal\"", body, StringComparison.Ordinal);
+            var card = body.IndexOf("data-su-terminal=\"cancelled\"", StringComparison.Ordinal);
+            Assert.True(card >= 0, "no terminal card");
+            Assert.Contains($"data-su-status-badge=\"neutral\">{Text("Signup.PaymentStatusCancelled", culture)}</span>", body, StringComparison.Ordinal);
+            Assert.Contains($"id=\"cancelledTitle\">{Text("Checkout.CancelledTitle", culture)}</h1>", body, StringComparison.Ordinal);
+            Assert.Contains(Text("Checkout.CancelledMessage", culture), body, StringComparison.Ordinal);
+
+            // The registration card that repeated the message is gone, and so is the two-column layout.
+            Assert.DoesNotContain("su-status__aside", body, StringComparison.Ordinal);
+            Assert.DoesNotContain("su-status-card", body, StringComparison.Ordinal);
+            Assert.DoesNotContain("su-status__layout", body, StringComparison.Ordinal);
+
+            // A new registration is the primary action and comes first; home stays the quiet one.
+            var primary = body.IndexOf($"<a class=\"su-btn su-btn--primary\" href=\"/signup\">{Text("Checkout.RegisterAgain", culture)}</a>", StringComparison.Ordinal);
+            var home = body.IndexOf($"<a class=\"su-btn su-btn--quiet\" href=\"/\">{Text("Signup.PendingBackHome", culture)}</a>", StringComparison.Ordinal);
+            Assert.True(primary > card && home > primary, "the new registration comes first, home second, both in the card");
+            Assert.Equal(1, CountOf(body, "su-btn--primary"));
+
+            foreach (var value in applicant.PrivateValues)
+                Assert.DoesNotContain(Html(value), body, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(applicant.Entity.PrimaryDomain, body, StringComparison.Ordinal);
+            Assert.DoesNotContain(Text("Pricing.Plan.Starter.Name", culture), body, StringComparison.Ordinal);
+        }
     }
 
     /// <summary>
