@@ -56,6 +56,8 @@ Character labels from design language: warm, reliable, fast, operational, restau
 | `--wasla-canvas` | `#F7F4EE` | `#0f1115` | Application canvas |
 | `--wasla-surface` | `#FFFEFA` | `#171a21` | Main surface |
 | `--wasla-surface-muted` | `#F4F0E9` | `#141820` | Nested / quiet surface |
+| `--wasla-sidebar-hover-bg` | `--wasla-surface-muted` (`#F4F0E9`, the signup secondary-action hover) | orange at 10 % (unchanged) | Sidebar hover: links, group and nested links, settings and user buttons, settings and language menu items |
+| `--wasla-sidebar-selected-bg` | `#EAE5DE` (one small step darker) | `--wasla-accent-soft` (unchanged) | Sidebar selected route, top-level and nested (with the 3 px orange accent), collapsed rail and active menu items |
 | `--wasla-border` / `--wasla-border-strong` | `#E3DDD3` / `#D3CABD` | white at 8 % / 14 % | Borders |
 | `--wasla-text` / `--wasla-text-secondary` / `--wasla-text-muted` | `#28231F` / `#746D66` / `#746D66` | `#f3f4f6` / `#aeb4c0` / `#8b939f` | Ink / secondary / muted |
 | Status family vars | success / warning / danger / info soft pairs | light status text on 14 % tints | Semantic, not decorative |

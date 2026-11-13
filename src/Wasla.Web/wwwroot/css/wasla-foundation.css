@@ -15,6 +15,12 @@ body.wasla-tenant-shell {
   --wasla-surface-elevated: #ffffff;
   --wasla-surface-muted: #F4F0E9;
 
+  /* Sidebar hover and selected (owner's choice, 2026-11-13): warm stone as on signup, never peach. Hover is the signup
+     page's secondary-action hover (#F4F0E9: --wasla-surface-muted here, --wm-surface-muted / --su-secondary-hover
+     there); selected is one small step darker, still clear of the #F1EDE6 sidebar. Text and icon colours stay. */
+  --wasla-sidebar-hover-bg: var(--wasla-surface-muted);
+  --wasla-sidebar-selected-bg: #EAE5DE;
+
   --wasla-border: #E3DDD3;
   --wasla-border-strong: #D3CABD;
 
@@ -126,6 +132,9 @@ body.wasla-tenant-shell {
 
   --color-sidebar-bg: #111318;
   --color-sidebar-hover: rgba(242, 107, 58, 0.10);
+  /* The dark sidebar keeps its existing hover and selected tints (the signup palette is light only). */
+  --wasla-sidebar-hover-bg: var(--color-sidebar-hover);
+  --wasla-sidebar-selected-bg: var(--wasla-accent-soft);
 
   color-scheme: dark;
 }
@@ -231,8 +240,11 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:no
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active:not(.wasla-sidebar-nav-sub__link):focus:hover,
 body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active,
 body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active:hover,
-body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active:focus {
-  background: var(--wasla-accent-soft) !important;
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item.active:focus,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-lang-menu .dropdown-item.active,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-lang-menu .dropdown-item.active:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-lang-menu .dropdown-item.active:focus {
+  background: var(--wasla-sidebar-selected-bg) !important;
   color: var(--wasla-text) !important;
   border-inline-start: 3px solid var(--wasla-accent) !important;
   border-inline-end: 0 !important;
@@ -240,6 +252,20 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dro
   padding-inline-end: 0.625rem !important;
   box-shadow: none;
   font-weight: 650;
+}
+
+/* Hover on an unselected item: top-level, group and nested links (the expanded parent of the current page too), the
+   settings and user buttons and the settings and language menu items. Only the background changes; selected items keep
+   their own background on hover. This outranks the older orange-tint hover in wasla-theme.css. */
+body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link:hover:not(.active),
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-action-btn:hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-action-btn:focus-visible,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-action-btn.show,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item:not(.active):hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-settings-menu .dropdown-item:not(.active):focus,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-lang-menu .dropdown-item:not(.active):hover,
+body.wasla-tenant.wasla-app.wasla-tenant-shell .wasla-sidebar-lang-menu .dropdown-item:not(.active):focus {
+  background: var(--wasla-sidebar-hover-bg) !important;
 }
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .nav-link.active i,
@@ -305,7 +331,7 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-
 
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link:hover,
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link:focus-visible {
-  background: color-mix(in srgb, var(--wasla-accent) 10%, transparent);
+  background: var(--wasla-sidebar-hover-bg);
   color: var(--wasla-text);
 }
 
@@ -313,7 +339,7 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link.active:hover,
 body.wasla-tenant.wasla-app.wasla-tenant-shell .sidebar-menu .wasla-sidebar-nav-sub__link.active:focus-visible,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .sidebar-menu .wasla-sidebar-nav-sub__link.active {
-  background: var(--wasla-accent-soft) !important;
+  background: var(--wasla-sidebar-selected-bg) !important;
   color: var(--wasla-text) !important;
   font-weight: 650;
   border: 0 !important;
@@ -369,7 +395,7 @@ body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .app-sidebar .nav-link.active i,
 body.wasla-tenant.wasla-app.wasla-tenant-shell.sidebar-collapsed .wasla-sidebar-settings-toggle.wasla-sidebar-nav-parent--current {
-  background: var(--wasla-accent-soft) !important;
+  background: var(--wasla-sidebar-selected-bg) !important;
   color: var(--wasla-text) !important;
   border-inline-start: 0;
   padding-inline: 0.5rem;

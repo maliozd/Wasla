@@ -380,6 +380,40 @@ public sealed class WaslaVisualFoundationTests
     }
 
     [Fact]
+    public void TenantSidebar_HoverAndSelectedAreWarmStone_NotPeach()
+    {
+        var foundation = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-foundation.css");
+        var signup = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-signup.css");
+        var marketing = Read("src", "Wasla.Web", "wwwroot", "css", "wasla-marketing.css");
+
+        // Hover is the signup secondary-action hover: --su-secondary-hover is --wm-surface-muted, the same #F4F0E9 as the
+        // tenant --wasla-surface-muted. Selected is one small step darker.
+        Assert.Contains("--su-secondary-hover: var(--wm-surface-muted, #f4f0e9)", signup, StringComparison.Ordinal);
+        Assert.Contains("--wm-surface-muted: #f4f0e9", marketing, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--wasla-surface-muted: #F4F0E9", foundation, StringComparison.Ordinal);
+        Assert.Contains("--wasla-sidebar-hover-bg: var(--wasla-surface-muted)", foundation, StringComparison.Ordinal);
+        Assert.Contains("--wasla-sidebar-selected-bg: #EAE5DE", foundation, StringComparison.Ordinal);
+
+        // Every sidebar selected and hover background uses the two tokens; none uses the peach tint any more.
+        var sidebarRules = System.Text.RegularExpressions.Regex.Matches(
+                foundation, @"(?<sel>[^{}]*(?:sidebar-menu|wasla-sidebar-settings-menu|wasla-sidebar-lang-menu|wasla-sidebar-action-btn)[^{}]*)\{(?<body>[^{}]*)\}")
+            .Where(m => m.Groups["body"].Value.Contains("background", StringComparison.Ordinal)
+                        && (m.Groups["sel"].Value.Contains(".active", StringComparison.Ordinal) || m.Groups["sel"].Value.Contains(":hover", StringComparison.Ordinal)))
+            .ToList();
+        Assert.NotEmpty(sidebarRules);
+        Assert.All(sidebarRules, m => Assert.DoesNotContain("accent-soft", m.Groups["body"].Value, StringComparison.Ordinal));
+        Assert.All(sidebarRules, m => Assert.DoesNotContain("var(--wasla-accent) 10%", m.Groups["body"].Value, StringComparison.Ordinal));
+        Assert.Contains(sidebarRules, m => m.Groups["body"].Value.Contains("var(--wasla-sidebar-selected-bg)", StringComparison.Ordinal)
+                                          && m.Groups["sel"].Value.Contains("wasla-sidebar-nav-sub__link.active", StringComparison.Ordinal));
+        Assert.Contains(sidebarRules, m => m.Groups["body"].Value.Contains("var(--wasla-sidebar-selected-bg)", StringComparison.Ordinal)
+                                          && m.Groups["sel"].Value.Contains(".nav-link.active:not(.wasla-sidebar-nav-sub__link)", StringComparison.Ordinal));
+        Assert.Contains(sidebarRules, m => m.Groups["body"].Value.Contains("var(--wasla-sidebar-hover-bg)", StringComparison.Ordinal)
+                                          && m.Groups["sel"].Value.Contains("wasla-sidebar-nav-sub__link:hover", StringComparison.Ordinal));
+        Assert.Contains(sidebarRules, m => m.Groups["body"].Value.Contains("var(--wasla-sidebar-hover-bg)", StringComparison.Ordinal)
+                                          && m.Groups["sel"].Value.Contains(":hover:not(.active)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void UsersPage_KeepsSidebarLabelAndLocalizesTeamTitle()
     {
         var layout = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Shared", "_TenantLayout.cshtml");
