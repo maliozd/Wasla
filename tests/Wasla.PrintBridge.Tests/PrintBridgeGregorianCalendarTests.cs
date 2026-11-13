@@ -140,7 +140,7 @@ public sealed class PrintBridgeGregorianCalendarTests : IDisposable
     }
 
     [Fact]
-    public void ArabicHistoryRows_UseGregorianTimes()
+    public async Task ArabicHistoryRows_UseGregorianTimes()
     {
         using var rig = new ShellTestRig(Culture(SupportedCultures.Arabic));
         rig.Engine.History =
@@ -155,7 +155,7 @@ public sealed class PrintBridgeGregorianCalendarTests : IDisposable
             }
         ];
 
-        var page = rig.History.Query(PrintHistoryDateFilter.Today, 0, null);
+        var page = await rig.History.QueryAsync(PrintHistoryDateFilter.Today, 0, null, TestContext.Current.CancellationToken);
 
         Assert.Equal("04/10/2026 20:23", Plain(Assert.Single(page.Items).Time));
     }

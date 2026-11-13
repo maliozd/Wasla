@@ -156,6 +156,9 @@ public sealed class PrintBridgeSettingsStore
         WriteJson(path, json);
     }
 
+    /// <summary>Writes <paramref name="json"/> so that a reader sees either the old or the new file, never a part.</summary>
+    internal static void WriteJsonAtomically(string path, string json) => WriteJson(path, json);
+
     private static void WriteJson(string path, string json)
     {
         var directory = Path.GetDirectoryName(path)!;

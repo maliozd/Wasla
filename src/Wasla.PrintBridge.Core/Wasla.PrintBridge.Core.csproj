@@ -27,6 +27,7 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="Wasla.PrintBridge" />
+		<InternalsVisibleTo Include="Wasla.PrintBridge.Service" />
 		<InternalsVisibleTo Include="Wasla.PrintBridge.Tests" />
 	</ItemGroup>
 

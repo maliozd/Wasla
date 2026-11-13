@@ -98,8 +98,15 @@ public sealed class PrintBridgeSettingsStoreTests : IDisposable
             ["Wasla", "PrintBridge", "Ui"],
             [WaslaOptions.SectionName, PrintBridgeOptions.SectionName, UiOptions.SectionName]);
 
+        // WAS-61: the holder is also the engine's settings view for clients, which never includes the token.
         Assert.Equal(
-            [("Connection", typeof(WaslaOptions)), ("Bridge", typeof(PrintBridgeOptions)), ("Ui", typeof(UiOptions))],
+            [
+                ("Connection", typeof(WaslaOptions)),
+                ("Bridge", typeof(PrintBridgeOptions)),
+                ("Ui", typeof(UiOptions)),
+                ("HasSavedToken", typeof(bool)),
+                ("IsPrinterUsable", typeof(bool))
+            ],
             PublicProperties(typeof(PrintBridgeSettingsHolder)));
 
         var snapshot = typeof(PrintBridgeSettingsHolder).GetMethod(nameof(PrintBridgeSettingsHolder.Snapshot))!;

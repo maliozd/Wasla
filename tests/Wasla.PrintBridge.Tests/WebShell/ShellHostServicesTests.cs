@@ -1,12 +1,20 @@
 using System.Reflection;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.PrintBridge.Configuration;
+using Wasla.PrintBridge.Hosting;
+using Wasla.PrintBridge.Printing;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Tests.WebShell;
 
-/// <summary>Printer persistence, printer discovery and the log folder, against an isolated temporary data root.</summary>
+/// <summary>
+/// Printer persistence, printer discovery and the log folder, against an isolated temporary data root. WAS-61: the app
+/// saves through the engine, which the service runs (<see cref="PrintBridgeEngineHost"/>); these tests run that engine host
+/// in-process with a fixed printer list.
+/// </summary>
 [Collection(PrintBridgeDataRootCollection.Name)]
 public sealed class ShellHostServicesTests : IDisposable
 {
@@ -17,12 +25,12 @@ public sealed class ShellHostServicesTests : IDisposable
     public void Dispose() => _dataRoot.Dispose();
 
     [Fact]
-    public void SavingAPrinter_PersistsOnlyThePrinterAndKeepsEveryOtherSetting()
+    public async Task SavingAPrinter_PersistsOnlyThePrinterAndKeepsEveryOtherSetting()
     {
         var (store, holder) = Configured();
         var before = holder.Bridge;
 
-        Assert.True(new ShellPrinterSettings(store, holder).TrySavePrinter(" Microsoft Print to PDF ", out var errorKey));
+        var errorKey = await Engine(store, holder).SavePrinterAsync(" Microsoft Print to PDF ", TestContext.Current.CancellationToken);
 
         Assert.Null(errorKey);
         var saved = store.Load();
@@ -48,31 +56,33 @@ public sealed class ShellHostServicesTests : IDisposable
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void BlankPrinter_IsRejectedAndNothingIsWritten(string name)
+    [InlineData(@"\\print-server\POS-58")]
+    public async Task BlankOrUnknownPrinter_IsRejectedAndNothingIsWritten(string name)
     {
         var (store, holder) = Configured();
         var fileBefore = File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath);
 
-        Assert.False(new ShellPrinterSettings(store, holder).TrySavePrinter(name, out var errorKey));
+        var errorKey = await Engine(store, holder).SavePrinterAsync(name, TestContext.Current.CancellationToken);
 
-        Assert.Equal("Validation.PrinterRequired", errorKey);
+        // Only a printer the engine itself lists can be saved.
+        Assert.Equal("Shell.Printer.NotInstalled", errorKey);
         Assert.Equal(fileBefore, File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath));
         Assert.Equal("POS-58", holder.Bridge.PrinterName);
     }
 
     [Fact]
-    public void InvalidExistingAdvancedSettings_BlockTheSaveInsteadOfBeingRewritten()
+    public async Task InvalidExistingAdvancedSettings_BlockTheSaveInsteadOfBeingRewritten()
     {
         var (store, holder) = Configured(idlePoll: 0);
 
-        Assert.False(new ShellPrinterSettings(store, holder).TrySavePrinter("Microsoft Print to PDF", out var errorKey));
+        var errorKey = await Engine(store, holder).SavePrinterAsync("Microsoft Print to PDF", TestContext.Current.CancellationToken);
 
         Assert.Equal("Validation.InvalidPollingIntervals", errorKey);
         Assert.Equal("POS-58", store.Load().PrintBridge.PrinterName);
     }
 
     [Fact]
-    public void SettingsFileFromAnEarlierVersion_StillLoadsAndKeepsItsValuesWhenThePrinterChanges()
+    public async Task SettingsFileFromAnEarlierVersion_StillLoadsAndKeepsItsValuesWhenThePrinterChanges()
     {
         // The shape written before the WebView2 app existed: no new sections or fields are required.
         PrintBridgePaths.EnsureProgramDataDirectories();
@@ -88,7 +98,7 @@ public sealed class ShellHostServicesTests : IDisposable
         var holder = new PrintBridgeSettingsHolder();
         holder.Replace(document.Wasla, document.PrintBridge, document.Ui);
 
-        Assert.True(new ShellPrinterSettings(store, holder).TrySavePrinter("Microsoft Print to PDF", out _));
+        Assert.Null(await Engine(store, holder).SavePrinterAsync("Microsoft Print to PDF", TestContext.Current.CancellationToken));
 
         var root = JsonNode.Parse(File.ReadAllText(PrintBridgePaths.ProgramDataConfigPath))!.AsObject();
         Assert.Equal(["Wasla", "PrintBridge", "Ui"], root.Select(p => p.Key));
@@ -102,14 +112,12 @@ public sealed class ShellHostServicesTests : IDisposable
     }
 
     [Fact]
-    public async Task PrinterCatalog_ListsWindowsPrintersOnceEach_InAStableOrder()
+    public async Task PrinterCatalog_ListsTheEnginesPrintersOnceEach_InAStableOrder()
     {
-        var calls = 0;
-        var catalog = new WindowsPrinterCatalog(() =>
-        {
-            Interlocked.Increment(ref calls);
-            return ["POS-58", "", "  ", "Microsoft Print to PDF", "pos-58", "Kitchen"];
-        });
+        var engine = new FakeStatusSource();
+        engine.Printers.Clear();
+        engine.Printers.AddRange(["POS-58", "", "  ", "Microsoft Print to PDF", "pos-58", "Kitchen"]);
+        var catalog = new EnginePrinterCatalog(engine);
 
         Assert.False(catalog.HasDiscovered);
         Assert.Empty(catalog.Installed);
@@ -118,7 +126,7 @@ public sealed class ShellHostServicesTests : IDisposable
         var listed = await catalog.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.True(catalog.HasDiscovered);
-        Assert.Equal(1, calls);
+        Assert.Equal(1, engine.ListPrintersCalls);
         Assert.Equal(3, listed.Count);
         Assert.Equal(listed, catalog.Installed);
         Assert.Equal(listed.Order(StringComparer.CurrentCultureIgnoreCase), listed);
@@ -153,12 +161,14 @@ public sealed class ShellHostServicesTests : IDisposable
     }
 
     [Fact]
-    public void SavingOperationalSettings_ChangesOnlyTestModeAndThePollIntervals()
+    public async Task SavingOperationalSettings_ChangesOnlyTestModeAndThePollIntervals()
     {
         var (store, holder) = Configured();
         var before = holder.Bridge;
 
-        Assert.True(new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, 30, 3, 60), out var errorKey));
+        var errorKey = await Engine(store, holder).SaveOperationalSettingsAsync(
+            new PrintBridgeOperationalSettings(false, 30, 3, 60),
+            TestContext.Current.CancellationToken);
 
         Assert.Null(errorKey);
         var saved = store.Load();
@@ -187,13 +197,15 @@ public sealed class ShellHostServicesTests : IDisposable
     [InlineData(5, 61, 15)]
     [InlineData(5, 1, 0)]
     [InlineData(5, 1, 301)]
-    public void OutOfRangeOperationalSettings_AreRejected_AndNothingIsWritten(int idle, int busy, int error)
+    public async Task OutOfRangeOperationalSettings_AreRejected_AndNothingIsWritten(int idle, int busy, int error)
     {
         var (store, holder) = Configured();
         var fileBefore = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
         var bridgeBefore = holder.Bridge;
 
-        Assert.False(new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, idle, busy, error), out var errorKey));
+        var errorKey = await Engine(store, holder).SaveOperationalSettingsAsync(
+            new PrintBridgeOperationalSettings(false, idle, busy, error),
+            TestContext.Current.CancellationToken);
 
         Assert.Equal("Validation.InvalidPollingIntervals", errorKey);
         Assert.Equal(fileBefore, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
@@ -201,15 +213,15 @@ public sealed class ShellHostServicesTests : IDisposable
     }
 
     [Fact]
-    public void OperationalSettings_ThatCannotBeWritten_LeaveTheEngineOnTheOldValues()
+    public async Task OperationalSettings_ThatCannotBeWritten_LeaveTheEngineOnTheOldValues()
     {
         var (store, holder) = Configured();
         var bridgeBefore = holder.Bridge;
         File.SetAttributes(PrintBridgePaths.ProgramDataConfigPath, FileAttributes.ReadOnly);
         try
         {
-            Assert.ThrowsAny<Exception>(() =>
-                new ShellOperationalSettings(store, holder).TrySave(new ShellOperationalSettingsChange(false, 30, 3, 60), out _));
+            await Assert.ThrowsAnyAsync<Exception>(() =>
+                Engine(store, holder).SaveOperationalSettingsAsync(new PrintBridgeOperationalSettings(false, 30, 3, 60), CancellationToken.None));
         }
         finally
         {
@@ -219,6 +231,10 @@ public sealed class ShellHostServicesTests : IDisposable
         Assert.Same(bridgeBefore, holder.Bridge);
         Assert.Equal(7, store.Load().PrintBridge.IdlePollIntervalSeconds);
     }
+
+    /// <summary>The service's engine over these settings; it lists exactly two printers.</summary>
+    private static PrintBridgeEngineHost Engine(PrintBridgeSettingsStore store, PrintBridgeSettingsHolder holder) =>
+        Wasla.PrintBridge.Tests.Service.TestEngineHost.Create(store, holder);
 
     private static (PrintBridgeSettingsStore Store, PrintBridgeSettingsHolder Holder) Configured(int idlePoll = 7)
     {

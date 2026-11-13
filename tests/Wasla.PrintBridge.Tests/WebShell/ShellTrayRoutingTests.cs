@@ -79,7 +79,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
 
             Assert.Equal([typeof(PrintBridgeShellForm)], VisibleWindows());
             Assert.Null(tray.RuntimeNoticeForTests);
-            Assert.True(tray.RuntimeForTests.IsRunning);
+            Assert.True(_host.Runtime.IsRunning);
         }, configure: Listen);
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
             await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('toast-text').textContent") == localizer["Auto.InvalidLink"]);
             Assert.Empty(_host.SetupResultMessages);
             Assert.Null(tray.RuntimeNoticeForTests);
-            Assert.True(tray.RuntimeForTests.IsRunning);
+            Assert.True(_host.Runtime.IsRunning);
         }, configure: Listen);
 
     [Fact]
@@ -120,7 +120,7 @@ public sealed class ShellTrayRoutingTests : IDisposable
             Assert.Equal([typeof(WebView2RuntimeNotice)], VisibleWindows());
 
             await _server.NextPoll().WaitAsync(Timeout);
-            Assert.True(tray.RuntimeForTests.IsRunning);
+            Assert.True(_host.Runtime.IsRunning);
         }, failShellStartup: true, configure: Listen);
 
     private void Listen(PrintBridgeSettingsStore.AppSettingsDocument document) => ListenToTheFakeServer(document, _server.Url);

@@ -24,6 +24,7 @@
     'printer.save': 'printerSave',
     'printer.testPrint': 'testPrint',
     'history.reprint': 'reprint',
+    'history.resolve': 'reprint',
     'settings.save': 'settingsSave'
   };
   var OPS_INPUTS = { idle: 'ops-idle', busy: 'ops-busy', error: 'ops-error' };
@@ -204,6 +205,10 @@
     setText(byId('jobs-today'), String(snapshot.activity.jobsToday));
     setText(byId('failed-today'), String(snapshot.activity.failedToday));
     byId('failed-stat').setAttribute('data-alert', snapshot.activity.failedToday > 0 ? 'true' : 'false');
+    // WAS-61: receipts whose paper outcome is unknown stay visible until the user checks them in History.
+    byId('needs-check-stat').hidden = snapshot.activity.needsCheck === 0;
+    byId('needs-check-stat').setAttribute('data-alert', snapshot.activity.needsCheck > 0 ? 'true' : 'false');
+    setText(byId('needs-check'), String(snapshot.activity.needsCheck));
     setText(byId('last-print'), model.orDash(snapshot, snapshot.activity.lastPrint));
 
     var job = snapshot.lastJob;
@@ -468,6 +473,81 @@
     td.appendChild(wrap);
   }
 
+  /**
+   * WAS-61: a receipt whose paper outcome is unknown. The user checks the printer and says whether it printed; each
+   * answer is confirmed inline, and nothing is printed from here.
+   */
+  function resolveControls(td, item) {
+    var wrap = document.createElement('div');
+    wrap.className = 'pb-row-actions';
+    var busy = isBusy('reprint');
+    var confirming = history.confirming && history.confirming.ref === item.ref ? history.confirming : null;
+    if (!confirming) {
+      [true, false].forEach(function (printed) {
+        var choice = document.createElement('button');
+        choice.type = 'button';
+        choice.className = 'pb-button pb-button--small';
+        choice.textContent = model.text(current, printed ? 'Shell.History.Printed' : 'Shell.History.NotPrinted');
+        choice.setAttribute('data-ref', item.ref);
+        choice.setAttribute('data-role', printed ? 'resolve-printed' : 'resolve-not-printed');
+        choice.setAttribute('aria-disabled', busy ? 'true' : 'false');
+        choice.addEventListener('click', function () {
+          if (choice.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
+          history.confirming = { ref: item.ref, printed: printed };
+          renderHistory(history.result);
+          var confirm = document.querySelector('[data-ref="' + item.ref + '"][data-role="confirm"]');
+          if (confirm) {
+            confirm.focus();
+          }
+        });
+        wrap.appendChild(choice);
+      });
+    } else {
+      var question = document.createElement('span');
+      question.className = 'pb-row-question';
+      question.textContent = model.text(current, confirming.printed ? 'Shell.History.ConfirmPrinted' : 'Shell.History.ConfirmNotPrinted');
+      wrap.appendChild(question);
+      var back = function () {
+        var again = document.querySelector('[data-ref="' + item.ref + '"][data-role="resolve-printed"]');
+        if (again) {
+          again.focus();
+        }
+      };
+      var yes = document.createElement('button');
+      yes.type = 'button';
+      yes.className = 'pb-button pb-button--small pb-button--primary';
+      yes.textContent = model.text(current, 'Shell.Action.Confirm');
+      yes.setAttribute('data-ref', item.ref);
+      yes.setAttribute('data-role', 'confirm');
+      yes.setAttribute('aria-disabled', busy ? 'true' : 'false');
+      yes.addEventListener('click', function () {
+        if (yes.getAttribute('aria-disabled') === 'true') {
+          return;
+        }
+        history.confirming = null;
+        sendTracked('history.resolve', { itemRef: item.ref, printed: confirming.printed });
+        renderHistory(history.result);
+        back();
+      });
+      var no = document.createElement('button');
+      no.type = 'button';
+      no.className = 'pb-button pb-button--small';
+      no.textContent = model.text(current, 'Shell.Action.Cancel');
+      no.setAttribute('data-ref', item.ref);
+      no.setAttribute('data-role', 'cancel');
+      no.addEventListener('click', function () {
+        history.confirming = null;
+        renderHistory(history.result);
+        back();
+      });
+      wrap.appendChild(yes);
+      wrap.appendChild(no);
+    }
+    td.appendChild(wrap);
+  }
+
   function renderHistory(result) {
     if (!current) {
       return;
@@ -502,6 +582,9 @@
       status.appendChild(badge);
       if (item.canReprint) {
         reprintControls(status, item);
+      }
+      if (item.canResolve) {
+        resolveControls(status, item);
       }
       body.appendChild(row);
     });
@@ -551,7 +634,7 @@
     if (result.operation === 'printer.save' && result.outcome === 'succeeded') {
       printerDraft = null;
     }
-    if (result.operation === 'history.reprint' && activeTab === 'history') {
+    if ((result.operation === 'history.reprint' || result.operation === 'history.resolve') && activeTab === 'history') {
       queryHistory();
     }
     renderButtons();

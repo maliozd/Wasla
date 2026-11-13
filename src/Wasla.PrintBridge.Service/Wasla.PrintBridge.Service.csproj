@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		The Print Bridge Windows Service (WAS-61): the only process that polls, claims, prints and reports receipt jobs.
+		It runs as NT SERVICE\WaslaPrintBridge and serves the tray/WebView2 app (Wasla.PrintBridge.exe) over a local
+		named pipe. See docs/integrations/print-bridge-service.md.
+	-->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+		<RootNamespace>Wasla.PrintBridge</RootNamespace>
+		<AssemblyName>Wasla.PrintBridge.Service</AssemblyName>
+		<Version>1.0.0</Version>
+		<Product>Wasla Print Bridge</Product>
+		<Description>Wasla Print Bridge printing service.</Description>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
+		<PackageReference Include="System.Threading.AccessControl" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Wasla.PrintBridge.Tests" />
+	</ItemGroup>
+
+</Project>

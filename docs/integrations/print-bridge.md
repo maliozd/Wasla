@@ -12,14 +12,20 @@ It owns:
 - ProgramData paths and polling defaults
 - Auth header and job API surface (high level)
 
-It does not own receipt template HTML, order lifecycle, or full tenant UI for devices.
+It does not own receipt template HTML, order lifecycle, or full tenant UI for devices. The Windows Service that runs
+the engine, the local IPC between it and the app, the data folder's permissions, crash recovery and the installer
+handoff are in [print-bridge-service.md](print-bridge-service.md) (WAS-61).
 
 ## Process boundary
 
-Wasla Print Bridge is a **separate Windows process** (`Wasla.PrintBridge`).
+Wasla Print Bridge runs on the restaurant's Windows computer as **two processes** (WAS-61): the Windows Service
+`Wasla.PrintBridge.Service.exe` (`WaslaPrintBridge`), which runs the only engine, and the tray/WebView2 app
+`Wasla.PrintBridge.exe` of each signed-in user, which is its client over a local named pipe
+([print-bridge-service.md](print-bridge-service.md)).
 
 - Web and Worker create `PrintJob` rows (or call existing print services). They do **not** print to Windows printers directly.
-- Print Bridge polls the server, claims jobs, and submits them to local Windows printing.
+- The Print Bridge service polls the server, claims jobs, and submits them to local Windows printing. Closing or
+  restarting the app does not stop it.
 - Physical paper output is not guaranteed by spooler acceptance alone.
 
 ## Desktop client structure
@@ -30,25 +36,30 @@ Print Bridge is **Windows-only**. It has no macOS or Linux build.
 WebView2 desktop app (packaged HTML/CSS/JS): the only Print Bridge window
         │ narrow, versioned web-message contract
         ▼
-Wasla.PrintBridge (WinExe): tray, app window and its native dialogs, WebView2 Runtime notice,
-                            localization resources, composition root, protocol registration,
-                            single-instance setup IPC
+Wasla.PrintBridge.exe (WinExe, per user and session): tray, app window and its native dialogs,
+                            WebView2 Runtime notice, localization resources, protocol registration,
+                            per-user single instance and setup-link forwarding (WAS-92)
         │ the app reads state through IPrintBridgeStatusSource and changes it only
         │ through ShellOperations → IPrintBridgeEngine (allowlisted, single-flight);
-        │ setup links use the engine through PrintBridgeAutoSetupCoordinator
+        │ IPrintBridgeEngine is PrintBridgeServiceClient: every call goes over the pipe
+        ▼  \\.\pipe\WaslaPrintBridge.Service (protocol 1, see print-bridge-service.md)
+Wasla.PrintBridge.Service.exe (Windows Service WaslaPrintBridge, NT SERVICE\WaslaPrintBridge):
+                            engine lock, pipe server, PrintBridgeEngineHost
         ▼
-Wasla.PrintBridge.Core (library): PrintBridgeRuntime (poll, claim, print, retry, mark-*),
+Wasla.PrintBridge.Core (library): PrintBridgeRuntime (poll, claim, print, retry, mark-*, journal),
                             WaslaPrintBridgeClient (X-PrintBridge-Token), settings and token
                             persistence, local print history, receipt formatting,
-                            setup-URI handling, Windows printer integration (winspool)
+                            setup-URI handling and setup links (PrintBridgeAutoSetupCoordinator),
+                            Windows printer integration (winspool), the IPC contract (Ipc/)
 ```
 
 | Project | Owns |
 |---------|------|
-| `Wasla.PrintBridge.Core` | Engine and integrations. Must not reference WinForms, WPF or WebView2 (checked by `PrintBridgeCoreBoundaryTests`). Namespaces stay `Wasla.PrintBridge.*`. |
-| `Wasla.PrintBridge` | Desktop host: `TrayApplicationContext`, `WebShell/` (the WebView2 app window `PrintBridgeShellForm`, its native dialogs and `WebView2RuntimeNotice`), `Localization/` and `Resources/` (TR, EN, AR, RU), `Program` |
+| `Wasla.PrintBridge.Core` | Engine and integrations, `PrintBridgeEngineHost` (what the service exposes), the IPC contract. Must not reference WinForms, WPF or WebView2 (checked by `PrintBridgeCoreBoundaryTests`). Namespaces stay `Wasla.PrintBridge.*`. |
+| `Wasla.PrintBridge.Service` | The Windows Service: `PrintBridgeAppServices` (the engine's composition root), the engine lock, the data folder check and `secure-data`, the pipe server |
+| `Wasla.PrintBridge` | Desktop app: `TrayApplicationContext`, `WebShell/` (the WebView2 app window `PrintBridgeShellForm`, its native dialogs and `WebView2RuntimeNotice`), `ServiceClient/` (the pipe client), `Localization/` and `Resources/` (TR, EN, AR, RU), `Program` |
 
-There is exactly one engine per process. The app window observes `PrintBridgeRuntime`; it never creates a second polling loop, and the engine keeps running while no window is open.
+There is exactly one engine per computer, in the service. The app holds no runtime, HTTP client, printer or settings store (checked by `PrintBridgeUiCompositionTests`); several users' apps are clients of the one engine at the same time.
 
 ## Setup (canonical fields)
 
@@ -86,33 +97,33 @@ Canonical root (Windows CommonApplicationData):
 
 | Path | Role |
 |------|------|
-| `...\appsettings.json` | Runtime config (preferred over Program Files / repo) |
-| `...\logs\` | Client logs, one file per day: `wasla-print-bridge-<yyyyMMdd>.log`. Log files with another name were written by earlier versions and can be deleted manually |
+| `...\appsettings.json` | Runtime config (preferred over Program Files / repo), including the device token |
+| `...\logs\` | Service logs, one file per day: `wasla-print-bridge-<yyyyMMdd>.log`. Log files with another name were written by earlier versions and can be deleted manually |
 | `...\print-history.json` | Local print history store |
+| `...\print-journal.json` | Only while a claimed job's last report is not confirmed (WAS-61, see [print-bridge-service.md](print-bridge-service.md#print-journal-and-crash-recovery)) |
 | `...\pending-connection-change.json` | Only between the approval of a move to another restaurant and its saved result (WAS-91, see [Moving to another restaurant](#moving-to-another-restaurant-was-91)). Holds secrets like the settings file |
 
 Source: `PrintBridgePaths`.
 
+Only the service reads and writes this folder (WAS-61). `Wasla.PrintBridge.Service.exe secure-data` gives it to `SYSTEM`, administrators and the service only; `logs\` is also readable by local users. Before WAS-61 every local user could read the settings file and so the device token. The app logs per user to `%LOCALAPPDATA%\Wasla\PrintBridge\logs\wasla-print-bridge-app-<yyyyMMdd>.log`.
+
 The WebView2 shell keeps its browser profile (cache only, never settings or tokens) per user in `%LOCALAPPDATA%\Wasla\PrintBridge\WebView2`.
 
-**Isolated development instance.** Debug builds only: set `WASLA_PRINTBRIDGE_DATA_ROOT` to an absolute folder to run with its own settings, token, history and logs instead of ProgramData. Such an instance does not register the `wasla-printbridge://` handler and does not listen on the setup pipe, so it cannot take over the installed client. Release builds ignore the variable. Never point a development instance at a real printer or a real device token.
+**Isolated development instance.** Debug builds only: set `WASLA_PRINTBRIDGE_DATA_ROOT` to an absolute folder to run with its own settings, token, history and logs instead of ProgramData. Start the service as a console program in that environment (`dotnet run --project src/Wasla.PrintBridge.Service`) and then the app; both use the folder's own pipe and engine lock, and the app checks that the pipe belongs to the same user. Such an app does not register the `wasla-printbridge://` handler and does not listen on the setup pipe, so it cannot take over the installed client. Release builds ignore the variable (the service accepts `--data-root` instead, see [print-bridge-service.md](print-bridge-service.md#developer-validation)). Never point a development instance at a real printer or a real device token.
 
 ## Single instance and setup links between launches (WAS-92)
 
-One engine runs per computer. A second launch hands its setup link only to the instance of its own Windows user in its own session.
+One engine runs per computer, in the service (WAS-61). A second launch of the app hands its setup link only to the app of its own Windows user in its own session.
 
-- **Two locks** (`SingleInstanceGuard`, taken in this order):
-  1. The instance lock of this Windows user in this session: `Local\WaslaPrintBridge.Instance.{user SID}` (`PrintBridgeInstanceScope`).
-  2. The machine-wide engine lock `Global\WaslaPrintBridge`. Settings, the device token and print history are in one ProgramData folder, so one engine polls and prints whichever user starts Print Bridge.
-
-  A lock counts as taken only when this launch created it. A lock that already exists, cannot be opened (another account's access rules) or names another kind of object is never read as free, so an unclear answer never starts a second engine.
-- **What a launch does.** Both locks taken: it starts the engine and listens for setup links. This user's instance lock exists: it forwards its setup link (below); if the link is not delivered, or there is none, it shows "already running" and exits. Only the engine lock is held elsewhere (another Windows user or session): it forwards nothing and shows `Message.RunningInAnotherSession`, which asks to exit Print Bridge there first.
+- **The app's lock** (`SingleInstanceGuard`): the instance lock of this Windows user in this session, `Local\WaslaPrintBridge.Instance.{user SID}` (`PrintBridgeInstanceScope`). A lock counts as taken only when this launch created it. A lock that already exists, cannot be opened (another account's access rules) or names another kind of object is never read as free.
+- **The engine lock** `Global\WaslaPrintBridge` moved to the service (`PrintBridgeEngineLock`): one engine polls and prints, whichever users run the app. An older app that still holds it keeps the service from printing until it exits, and an older app started while the service runs finds it held and starts no engine. `Message.RunningInAnotherSession` is gone: apps of several users or sessions run side by side as clients.
+- **What a launch does.** This user's instance lock taken: it connects to the service and listens for setup links. This user's instance lock exists: it forwards its setup link (below); if the link is not delivered, or there is none, it shows "already running" and exits.
 - **Setup pipe** `WaslaPrintBridge.Setup.v1.{user SID}.{session id}` (`SetupInstanceChannel`). Pipe names are machine-wide and not secret, so neither end trusts the name:
   - The listener creates the pipe with `PipeOptions.FirstPipeInstance` and access for this user only. If the name already exists, it never joins that pipe: it logs once, retries every 2 seconds and logs again when it listens.
   - The forwarding launch connects with `PipeOptions.CurrentUserOnly` and allows identification only, never impersonation. After connecting, .NET compares the pipe's owner with this user's token owner and refuses a pipe that another account created before anything is written. A refused pipe, no pipe within 3 seconds, or a broken connection ends the launch with "already running"; the link is not kept. The write has the same 3-second limit, so a pipe that accepts and never reads cannot keep the launch alive.
   - The message contract is unchanged: one UTF-8 setup link, ended by closing the pipe. The listener drops a message over 8 KiB, invalid UTF-8, anything that does not start with `wasla-printbridge://`, and a client that has not finished within 5 seconds, and never logs the content.
 - **Elevation.** `CurrentUserOnly` compares token owners, and an elevated administrator owns new objects as the Administrators group. A link is therefore not forwarded between an elevated and a non-elevated Print Bridge of the same user; the second launch shows "already running".
-- **Not prevented.** Anyone who can sign in to the computer can create the engine lock or this user's pipe name first. That keeps Print Bridge from starting, or setup links from reaching it, but never hands a link to that process. A stronger guarantee belongs to the Windows Service engine (WAS-61).
+- **Not prevented.** Anyone who can sign in to the computer can create this user's setup pipe name first, which keeps setup links from reaching this user's app but never hands a link to that process. The app hands links to the engine only after checking that the pipe's server is the process the Service Control Manager runs for `WaslaPrintBridge` (WAS-61), so a process that took the service's pipe name or the engine lock can keep Print Bridge from printing, never receive a link or a token.
 
 ## Authentication
 
@@ -164,18 +175,17 @@ Connection changes and active jobs (WAS-58):
 - **One connection per job.** Each polling cycle takes one copy of the URL and token. Its health check, its poll, and every request of the jobs it claims (`mark-printing`, `mark-printed` and its retries, `mark-failed`) use that copy, never the current settings. A job offered by a poll whose connection has changed since is not claimed and stays pending on the server that offered it. A failure of a replaced connection is logged but not recorded as a problem of the new one. This also covers **Reset connection**, which is not refused (it does not move to another server): a job already claimed still finishes with the token that claimed it.
 - **Not covered.** Editing `appsettings.json` by hand while Print Bridge runs is outside this guard. The running engine does not reload that file.
 
-Exiting the app (`TrayApplicationContext`, WAS-59):
+Closing the app (`TrayApplicationContext`, WAS-59; WAS-61 moved the engine out of the app):
 
-- **One shutdown.** The tray's **Exit** enters a shutting-down state at once. From then on no window, tray update, printer test or setup link starts; a setup link forwarded during shutdown is dropped and can be opened after a restart. A second or concurrent Exit joins the shutdown already running. The app window has no exit command of its own; closing it only hides it to the tray, and closing the runtime notice only closes the notice.
+- **Closing is not stopping.** The tray's **Close app (printing continues)** (formerly Exit) ends the app only: the engine is the service's and keeps polling, printing and reporting. Only **Stop** in the app stops printing, and that Stop is kept across service restarts and reboots until **Start** (`PrintBridge.PrintingStoppedByUser`). A crash or kill of the app has the same effect as closing it. The service's own stop, restart and crash recovery are in [print-bridge-service.md](print-bridge-service.md#lifecycle).
+- **One shutdown.** **Close app** enters a shutting-down state at once. From then on no window, tray update, printer test or setup link starts; a setup link forwarded during shutdown is dropped and can be opened after a restart. A second or concurrent Exit joins the shutdown already running. The app window has no exit command of its own; closing it only hides it to the tray, and closing the runtime notice only closes the notice.
 - **Order:**
-  1. A connection change or setup link still in progress is abandoned before it writes anything. The tray stops following the engine, and the tray icon and windows disappear. A tray update queued just before Exit does nothing when it arrives.
-  2. The engine stops. This is awaited, so the UI thread is never blocked.
-  3. The app window (WebView2), the runtime notice and the tray icon are disposed. Exit writes no settings.
-  4. The services are disposed, the message loop ends and the process exits.
-- **With an active print job:** the job is not cancelled (WAS-56). Exit waits for it for up to 10 seconds. A job that finishes in that time is printed and reported once, and Exit then completes. Only the print itself decides `mark-failed`: a status update after the receipt was printed can no longer turn it into a failure. Before WAS-59, the tray's status handler threw on the already disposed tray icon at exactly that point. Measured with test mode and a fake API: without a job the process ended about 0.5–0.7 seconds after Exit; with a job, when the job finished.
-- **After the 10-second limit:** the process exits anyway. The log line "stopped listening while a print job is still finishing; it completes in the background" still appears, but on Exit the process ends, so the job does **not** complete. Its remaining requests are not sent and the server keeps it in Printing (see Known gaps). WAS-59 does not change this limit and does not add a durable acknowledgement.
-- **Windows sign-out or shutdown** is not routed through this sequence; Windows ends the process, as before.
-- **Confirming the exit:** the tray icon is gone, and the log has "Print Bridge exit requested." followed by "Print Bridge shutdown complete; the application exits.". Task Manager (Details) shows no `Wasla.PrintBridge.exe`.
+  1. A move confirmation still open is closed as a refusal; a connection change or setup link not yet sent to the service is abandoned. A command already sent finishes in the service. The tray stops following the engine, and the tray icon and windows disappear. A tray update queued just before closing does nothing when it arrives.
+  2. The app window (WebView2), the runtime notice and the tray icon are disposed. Closing writes no settings.
+  3. The connection to the service is closed, the message loop ends and the process exits.
+- **With an active print job:** nothing waits: the job belongs to the service, which prints and reports it once (`TrayShutdownLifecycleTests`).
+- **Windows sign-out or shutdown** ends the app as before; the service stops at shutdown as described in [print-bridge-service.md](print-bridge-service.md#lifecycle).
+- **Confirming the close:** the tray icon is gone, the app's log has "Print Bridge app close requested." and "Print Bridge app closed; printing continues in the Print Bridge service.". Task Manager (Details) shows no `Wasla.PrintBridge.exe`, and `Wasla.PrintBridge.Service.exe` still runs.
 
 Typical client routes (relative to `ServerUrl`):
 
@@ -260,8 +270,8 @@ The only Print Bridge UI. WAS-53 added the secure shell and a status view, WAS-5
 |------|----------|
 | Header | Wasla logo and "Print Bridge" (the heading is named "Wasla Print Bridge"; below 36rem only the logo shows), compact connection status (text and dot), language picker |
 | Overview | Connection state with a localized explanation and the next step for every problem (connect, reconnect, choose printer, check connection, start, show diagnostics); test-mode notice; printer and its state; listening state and device name; last contact; latest print job; today's jobs, failures and last print time |
-| Printer | Installed Windows printers (listed by the host, refresh), save, printer state, test print, test-mode notice |
-| History | Today / last 7 days / last 30 days, order search, pages of 20 rows, status labels, failure category (printer, server or other), reprint of printed rows after an inline confirmation |
+| Printer | Printers the service can use (installed for all users of the computer; WAS-61), refresh, save, printer state (including "installed only for your Windows account"), test print, test-mode notice |
+| History | Today / last 7 days / last 30 days, order search, pages of 20 rows (read from the service page by page), status labels, failure category (printer, server or other), reprint of printed rows after an inline confirmation; a receipt whose paper outcome is unknown after an interruption shows "Needs checking" with **It printed** / **It did not print** (WAS-61) |
 | Settings | Wasla connection (state; **Connect**, **Reconnect** or **Change connection** opens the native connection dialog; check; reset with a native confirmation), printing behavior (test mode and the three poll intervals), language, theme note, diagnostics (app version, WebView2 Runtime version, listening state, last contact, last error category, printer, test mode, open log folder) |
 | Action bar | Start or Stop, Test print, Check connection; always visible below the scrolling content |
 
@@ -309,9 +319,9 @@ The WebView2 app is the only Print Bridge window (WAS-65). There is no other win
 | Setup link (`wasla-printbridge://setup`) | Applied in the app window; result shown there, Printer tab when a printer is missing |
 | Any of the above when the WebView2 Runtime is missing, too old or the app fails to start | The runtime notice (below); the tray and the engine keep running. A setup link is still applied and its result shown in a message box |
 
-The tray menu has exactly Open, Print history, Printer test, Settings and Exit, below a disabled line with the connection state.
+The tray menu has exactly Open, Print history, Printer test, Settings and Close app (printing continues), below a disabled line with the connection state. While the service cannot be reached, cannot print (another engine holds the lock, the data folder is not protected) or speaks another protocol version, the line and the app window say so (`RuntimeIssue.ServiceUnavailable`, `ServiceIncompatible`, `EngineHeldElsewhere`, `DataFolderNotSecured`) and no action is offered.
 
-The app window keeps no settings of its own: it reads the saved settings each time it renders. The settings file's `Ui` section holds only `Language`, `StartWithWindows` and `MinimizeToTray`; the last two have no effect today. Any other key in that section is ignored when the file is read and dropped the next time the settings are saved. Max jobs per poll has no UI and stays a settings-file value.
+The app window keeps no settings of its own: it reads the settings the service reports each time it renders (never the token: only whether one is saved). The settings file's `Ui` section holds only `Language`, `StartWithWindows` and `MinimizeToTray`; the last two have no effect today (starting the app at sign-in is the installer's, WAS-62). The language is the service's saved `Ui.Language`; until the app reaches the service it uses Turkish. Any other key in that section is ignored when the file is read and dropped the next time the settings are saved. Max jobs per poll has no UI and stays a settings-file value.
 
 Not in the app on purpose: a live log viewer (log lines contain the server URL, machine name, printer names and file paths; **Open log folder** in Settings → Diagnostics opens them in File Explorer), the Windows machine name and the settings file path (secret boundary).
 
@@ -354,6 +364,7 @@ Messages are JSON strings `{ "version": 3, "type": "…", "payload": { … } }`,
 | page → host | `printer.save` | `{ "requestId", "name" }`; 1–256 characters, no surrounding spaces or control characters, must be an installed printer |
 | page → host | `history.query` | `{ "requestId", "range", "page", "search"? }`; `range` is `today`, `last7Days` or `last30Days`, `page` 0–1000, `search` up to 64 characters |
 | page → host | `history.reprint` | `{ "requestId", "itemRef" }`; a handle from `history.result` |
+| page → host | `history.resolve` | `{ "requestId", "itemRef", "printed" }`; a handle of a "needs checking" row and the user's answer (boolean). Added by WAS-61 without raising the version: the page and the host ship together |
 | page → host | `settings.save` | `{ "requestId", "testMode", "idlePollSeconds", "busyPollSeconds", "errorPollSeconds" }`; a boolean and three whole numbers in 0–86400 (the host applies the real ranges and explains a refusal) |
 | host → page | `snapshot.updated` | Connection, engine, device, printer (with the installed list), activity, latest job, allowed actions, busy flags, diagnostics, test mode, operational settings (saved values and ranges), languages and localized strings |
 | host → page | `operation.result` | `{ "requestId", "operation", "outcome", "message" }`; outcome `succeeded`, `failed`, `busy`, `rejected` or `cancelled` (a repeated request id gets no second answer). A setup-link result arrives as `connection.openSetup` with `requestId: null` |
@@ -379,7 +390,7 @@ Rules:
 
 ### Future work
 
-- **WAS-55:** Windows Service, installer, WebView2 Runtime delivery and automatic update.
+- **WAS-62, WAS-63 (WAS-55):** installer, WebView2 Runtime delivery, startup registration of the app, automatic update. The Windows Service itself is WAS-61 ([print-bridge-service.md](print-bridge-service.md)).
 
 ## CLI helpers
 
@@ -404,7 +415,8 @@ See [../operations/cli.md](../operations/cli.md):
 - Connecting by hand with another restaurant's manually created token is an explicit choice in the connection dialog and not a setup link: the server binds the installation to that device at its first request and the old restaurant's device stays registered until it is removed there. Unchanged by WAS-91.
 - The CLI's `generate-print-bridge-token` adds an active device without the device limit or the tenant's setup lock; it is an operator tool, unchanged by WAS-190.
 - WAS-203 changed only the device reads of the setup and move checks. Other reads of `PrintBridgeDevices` through a secondary index have the same key-lookup shape, for example device authentication by token (`PrintBridgeAuthService`). No deadlock was observed in them; one that lost such a deadlock would fail that request.
-- The server has no claim lease. A printed job whose `mark-printed` never arrives stays in Printing, for example after every retry failed, after Exit (or Stop followed by Exit) gave up waiting at its 10-second limit, or after a crash or power loss between the print and the report. It is never printed again automatically, but it blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
+- The server has no claim lease. Since WAS-61 the print journal repeats a `mark-printed` that every retry, a service stop or a crash left unconfirmed, and reports `mark-failed` for a claimed job that was never sent to the printer. A job left in Printing remains for a claim whose answer was lost, a crash while the receipt was being sent to the spooler, and a connection that was replaced before its job was reported. The spooler case is never printed again: the app counts it on Overview and shows it in History as "Needs checking" until the user says whether it printed, which is then reported (see [print-bridge-service.md](print-bridge-service.md#print-journal-and-crash-recovery)). It blocks a manual print of that order until it is resolved. A `mark-printed` answered `not_found` still marks the local record failed, as before WAS-56.
+- WAS-61 was verified with a fake API: in this process over a real pipe, with the built service as a separate process, and as a real Windows Service on GitHub-hosted runners, which also prints through the Windows spooler to a disposable machine printer on a loopback TCP/IP port. Not yet: a physical receipt printer under the service account, a real printer connection in one user's profile (the service does not see it; it needs a second computer), Windows shutdown with a job in progress, a domain-joined machine, and the installer (WAS-62, WAS-28).
 - Every WebView2 host honors the `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` environment variable (for example a remote-debugging port). This is platform behavior the shell does not override; anyone who can set the user's environment can already inspect the process.
 - The device details page still formats times on the server with `ToLocalTime()` (the server's zone, not `Europe/Istanbul`) and does not refresh itself. The token regeneration response still returns device times without a UTC marker.
 - Each job creation and each accepted `mark-printing`, `mark-printed` and `mark-failed` is announced to the tenant's open order detail pages after it is recorded ([../architecture/realtime.md](../architecture/realtime.md)). A report sent to Wasla.Api is announced only when Api has `Realtime:Internal` configured. The Bridge's own polling, claiming and retries are unchanged, and a skipped report announces nothing. The historical planning note `docs/orders-printjob-status-signalr.md` is superseded.

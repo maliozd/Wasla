@@ -2,7 +2,7 @@
 
 namespace Wasla.PrintBridge.Services;
 
-public sealed class PrintBridgeSettingsHolder
+public sealed class PrintBridgeSettingsHolder : IPrintBridgeSettingsView
 {
     private readonly object _sync = new();
     private WaslaOptions _connection = new();
@@ -23,6 +23,14 @@ public sealed class PrintBridgeSettingsHolder
     {
         get { lock (_sync) return _ui; }
     }
+
+    string IPrintBridgeSettingsView.ServerUrl => Connection.ServerUrl;
+
+    public bool HasSavedToken => !string.IsNullOrWhiteSpace(Connection.AgentToken);
+
+    /// <summary>Asks Windows whether the saved printer is installed; call it off the UI thread when it matters.</summary>
+    public bool IsPrinterUsable =>
+        OperatingSystem.IsWindows() && PrintBridgeSettingsValidator.TryValidatePrinterAvailability(Bridge.Clone(), out _);
 
     public void Replace(WaslaOptions connection, PrintBridgeOptions bridge, UiOptions? ui = null)
     {

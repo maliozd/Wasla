@@ -58,7 +58,8 @@ function historyMessage(history, sequence) {
           status: 'printed',
           statusLabel: '✓ Yazdırıldı',
           detail: null,
-          canReprint: true
+          canReprint: true,
+          canResolve: false
         }]
       }, history)
     }
@@ -197,9 +198,15 @@ test('creates only allowlisted, versioned commands with their allowed fields', (
   assert.deepEqual(model.COMMANDS, [
     'ui.ready', 'snapshot.request', 'language.change',
     'engine.start', 'engine.stop', 'connection.test', 'connection.openSetup', 'connection.reset',
-    'printers.refresh', 'printer.save', 'printer.testPrint', 'history.query', 'history.reprint',
+    'printers.refresh', 'printer.save', 'printer.testPrint', 'history.query', 'history.reprint', 'history.resolve',
     'logs.openFolder', 'settings.save'
   ]);
+  // WAS-61: the user's check of a receipt whose paper outcome is unknown; printed must be a boolean, false included.
+  assert.deepEqual(
+    JSON.parse(model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: false, jobId: 'x' })),
+    { version: 3, type: 'history.resolve', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: false } });
+  assert.throws(() => model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: 'yes' }), /invalid printed/);
+  assert.throws(() => model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' }), /requires printed/);
   assert.deepEqual(
     JSON.parse(model.createCommand('connection.openSetup', { requestId: REQUEST_ID, serverUrl: 'https://x.test' })),
     { version: 3, type: 'connection.openSetup', payload: { requestId: REQUEST_ID } });
@@ -357,6 +364,7 @@ test('status tones fall back to neutral and never stand alone', () => {
   assert.equal(model.jobTone('failed'), 'danger');
   assert.equal(model.jobTone('pending'), 'warning');
   assert.equal(model.jobTone('skipped'), 'neutral');
+  assert.equal(model.jobTone('uncertain'), 'warning');
   assert.equal(model.outcomeTone('succeeded'), 'success');
   assert.equal(model.outcomeTone('rejected'), 'error');
   assert.equal(model.outcomeTone('failed'), 'error');

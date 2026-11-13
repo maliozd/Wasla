@@ -57,7 +57,10 @@ public enum PrintBridgeAutoSetupOutcome
     /// A confirmed move may have been stored by the server, but its result is not saved here yet (no answer, or the
     /// settings could not be written). The pending change is kept and the identical move is repeated later.
     /// </summary>
-    ChangePending
+    ChangePending,
+
+    /// <summary>The link is not a setup link of a trusted Wasla server (WAS-61: decided by the service). Nothing was sent.</summary>
+    InvalidLink
 }
 
 /// <summary>What the native confirmation shows: names verified by the server and server hosts. No secret.</summary>

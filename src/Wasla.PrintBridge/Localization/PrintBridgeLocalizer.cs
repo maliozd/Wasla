@@ -48,6 +48,7 @@ public sealed class PrintBridgeLocalizer
         LocalPrintJobStatus.Printed => GetString("JobStatus.Printed"),
         LocalPrintJobStatus.Failed => GetString("JobStatus.Failed"),
         LocalPrintJobStatus.Skipped => GetString("JobStatus.Skipped"),
+        LocalPrintJobStatus.Uncertain => GetString("JobStatus.Uncertain"),
         _ => status.ToString()
     };
 
@@ -58,6 +59,7 @@ public sealed class PrintBridgeLocalizer
         LocalPrintJobStatus.Received => GetString("JobStatusBadge.Pending"),
         LocalPrintJobStatus.Failed => GetString("JobStatusBadge.Failed"),
         LocalPrintJobStatus.Skipped => GetString("JobStatusBadge.Skipped"),
+        LocalPrintJobStatus.Uncertain => GetString("JobStatusBadge.Uncertain"),
         _ => GetJobStatus(status)
     };
 

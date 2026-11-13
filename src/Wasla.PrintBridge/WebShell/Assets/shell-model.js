@@ -36,6 +36,7 @@
     'printer.testPrint': ['requestId'],
     'history.query': ['requestId', 'range', 'page', 'search'],
     'history.reprint': ['requestId', 'itemRef'],
+    'history.resolve': ['requestId', 'itemRef', 'printed'],
     'logs.openFolder': ['requestId'],
     'settings.save': ['requestId', 'testMode', 'idlePollSeconds', 'busyPollSeconds', 'errorPollSeconds']
   };
@@ -47,7 +48,7 @@
   var CONNECTION_STATES = ['online', 'connecting', 'offline', 'error', 'notConfigured', 'stopped'];
   var ENGINE_STATES = ['running', 'stopped'];
   var PRINTER_STATES = ['ready', 'notConfigured', 'notFound', 'dryRun'];
-  var JOB_STATUSES = ['pending', 'printing', 'printed', 'failed', 'skipped'];
+  var JOB_STATUSES = ['pending', 'printing', 'printed', 'failed', 'skipped', 'uncertain'];
   var OUTCOMES = ['succeeded', 'failed', 'busy', 'duplicate', 'rejected', 'cancelled'];
   var HISTORY_RANGES = ['today', 'last7Days', 'last30Days'];
   var ACTION_FLAGS = ['start', 'stop', 'testPrint', 'checkConnection', 'reconnect', 'configurePrinter', 'resetConnection'];
@@ -160,6 +161,7 @@
       && isOptionalString(value.activity.lastPrint)
       && isCount(value.activity.jobsToday)
       && isCount(value.activity.failedToday)
+      && isCount(value.activity.needsCheck)
       && (value.lastJob === null || isJob(value.lastJob))
       && isFlagMap(value.actions, ACTION_FLAGS)
       && isFlagMap(value.busy, BUSY_FLAGS)
@@ -188,7 +190,8 @@
       && JOB_STATUSES.indexOf(value.status) >= 0
       && isString(value.statusLabel)
       && isOptionalString(value.detail)
-      && typeof value.canReprint === 'boolean';
+      && typeof value.canReprint === 'boolean'
+      && typeof value.canResolve === 'boolean';
   }
 
   function isHistoryResult(value) {
@@ -254,6 +257,7 @@
       case 'itemRef':
         return isString(value) && ITEM_REF.test(value);
       case 'testMode':
+      case 'printed':
         return typeof value === 'boolean';
       case 'idlePollSeconds':
       case 'busyPollSeconds':
@@ -415,6 +419,7 @@
     return a.lastPrint !== b.lastPrint
       || a.jobsToday !== b.jobsToday
       || a.failedToday !== b.failedToday
+      || a.needsCheck !== b.needsCheck
       || (jobA === null) !== (jobB === null)
       || (jobA !== null && jobB !== null && (jobA.order !== jobB.order || jobA.status !== jobB.status || jobA.time !== jobB.time))
       || previous.culture !== next.culture;
@@ -445,7 +450,7 @@
   }
 
   function jobTone(status) {
-    return { printed: 'success', printing: 'info', pending: 'warning', failed: 'danger' }[status] || 'neutral';
+    return { printed: 'success', printing: 'info', pending: 'warning', failed: 'danger', uncertain: 'warning' }[status] || 'neutral';
   }
 
   function outcomeTone(outcome) {

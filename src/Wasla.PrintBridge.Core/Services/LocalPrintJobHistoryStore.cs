@@ -99,6 +99,13 @@ public sealed class LocalPrintJobHistoryStore
         }
     }
 
+    /// <summary>How many kept records have <paramref name="status"/>, whatever their date (WAS-61: jobs needing a check).</summary>
+    public int CountWithStatus(LocalPrintJobStatus status)
+    {
+        lock (_sync)
+            return _entries.Count(e => e.Status == status);
+    }
+
     private static bool MatchesSearch(LocalPrintJobRecord entry, string? search)
     {
         if (string.IsNullOrWhiteSpace(search))

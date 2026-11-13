@@ -44,6 +44,12 @@ public sealed class ShellSnapshotFactory
         "Button.OpenLogsFolder",
         "Button.ResetConnection",
         "Reprint.Button",
+        "Shell.Activity.NeedsCheck",
+        "Shell.Printer.ServiceScope",
+        "Shell.History.Printed",
+        "Shell.History.NotPrinted",
+        "Shell.History.ConfirmPrinted",
+        "Shell.History.ConfirmNotPrinted",
         "Shell.Action.Connect",
         "Shell.Action.ChangeConnection",
         "Shell.Action.Reconnect",
@@ -126,18 +132,20 @@ public sealed class ShellSnapshotFactory
 
     private readonly PrintBridgeLocalizer _localizer;
     private readonly PrintBridgeCultureService _cultureService;
-    private readonly PrintBridgeSettingsHolder? _settings;
+    private readonly IPrintBridgeSettingsView? _settings;
     private readonly IPrinterCatalog? _printers;
     private readonly Func<ShellBusyState> _busy;
     private readonly string? _webView2Version;
+    private readonly Func<string?, bool> _installedForThisUserOnly;
 
     public ShellSnapshotFactory(
         PrintBridgeLocalizer localizer,
         PrintBridgeCultureService cultureService,
-        PrintBridgeSettingsHolder? settings = null,
+        IPrintBridgeSettingsView? settings = null,
         IPrinterCatalog? printers = null,
         Func<ShellBusyState>? busy = null,
-        string? webView2Version = null)
+        string? webView2Version = null,
+        Func<string?, bool>? installedForThisUser = null)
     {
         _localizer = localizer;
         _cultureService = cultureService;
@@ -145,6 +153,7 @@ public sealed class ShellSnapshotFactory
         _printers = printers;
         _busy = busy ?? (() => ShellBusyState.Idle);
         _webView2Version = webView2Version;
+        _installedForThisUserOnly = installedForThisUser ?? (_ => false);
     }
 
     public ShellSnapshot Create(PrintBridgeRuntimeStatus status)
@@ -155,7 +164,10 @@ public sealed class ShellSnapshotFactory
             status.IsRunning ? "running" : "stopped",
             _localizer[status.IsRunning ? "Status.Running" : "Status.Stopped"]);
         var printerName = string.IsNullOrWhiteSpace(status.PrinterName) ? null : status.PrinterName.Trim();
-        var printerLabel = _localizer.GetPrinterHealthStatus(status.PrinterHealthStatus);
+        // WAS-61: the service cannot see a printer installed only in this user's profile; say so, with the fix.
+        var printerLabel = status.PrinterHealthStatus == PrinterHealthStatus.NotFound && _installedForThisUserOnly(status.PrinterName)
+            ? _localizer["Shell.Printer.UserOnly"]
+            : _localizer.GetPrinterHealthStatus(status.PrinterHealthStatus);
         var lastContact = FormatUtc(status.LastSuccessfulContactUtc);
 
         return new ShellSnapshot(
@@ -176,7 +188,8 @@ public sealed class ShellSnapshotFactory
                 lastContact,
                 FormatUtc(status.LastPrintTimeUtc),
                 status.JobsTodayCount,
-                status.FailedTodayCount),
+                status.FailedTodayCount,
+                status.UncertainJobsCount),
             LastJob: CreateLastJob(status.RecentJobs),
             Actions: CreateActions(status, connection.State),
             Busy: _busy(),
@@ -224,9 +237,12 @@ public sealed class ShellSnapshotFactory
     /// </summary>
     internal ShellActionsView CreateActions(PrintBridgeRuntimeStatus status, string connectionState)
     {
-        var token = _settings?.Connection.AgentToken;
-        var hasToken = !string.IsNullOrWhiteSpace(token);
-        var requiresReconnect = PrintBridgePollingGate.RequiresReconnectBeforeStart(token, status.LastIssue)
+        // While the app cannot use the engine (WAS-61: the service is not reachable, or cannot print), nothing is offered.
+        if (status.LastIssue is { IsServiceIssue: true })
+            return new ShellActionsView(false, false, false, false, false, false, false);
+
+        var hasToken = _settings?.HasSavedToken ?? false;
+        var requiresReconnect = PrintBridgePollingGate.RequiresReconnectBeforeStart(hasToken, status.LastIssue)
                                 || status.LastIssue?.Code == PrintBridgeRuntimeIssueCode.DuplicateInstallation
                                 || connectionState == ShellConnectionStates.NotConfigured;
         var configured = connectionState != ShellConnectionStates.NotConfigured;

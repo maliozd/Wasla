@@ -44,6 +44,7 @@ public static partial class ShellMessageContract
     public const string PrinterTestPrint = "printer.testPrint";
     public const string HistoryQuery = "history.query";
     public const string HistoryReprint = "history.reprint";
+    public const string HistoryResolve = "history.resolve";
     public const string LogsOpenFolder = "logs.openFolder";
     public const string SettingsSave = "settings.save";
 
@@ -66,6 +67,7 @@ public static partial class ShellMessageContract
         HistoryPage,
         HistorySearch,
         HistoryItemRef,
+        Printed,
         TestMode,
         IdlePollSeconds,
         BusyPollSeconds,
@@ -101,6 +103,13 @@ public static partial class ShellMessageContract
                 new("search", FieldKind.HistorySearch, Required: false)
             ]),
             [HistoryReprint] = new(ShellCommandType.HistoryReprint, [RequestIdField, new("itemRef", FieldKind.HistoryItemRef, Required: true)]),
+            // WAS-61: the user's check of a receipt whose paper outcome is unknown.
+            [HistoryResolve] = new(ShellCommandType.HistoryResolve,
+            [
+                RequestIdField,
+                new("itemRef", FieldKind.HistoryItemRef, Required: true),
+                new("printed", FieldKind.Printed, Required: true)
+            ]),
             [LogsOpenFolder] = new(ShellCommandType.LogsOpenFolder, [RequestIdField]),
             // Exactly the operational settings the app edits (test mode and poll intervals); no other setting can be named.
             [SettingsSave] = new(ShellCommandType.SettingsSave,
@@ -146,6 +155,7 @@ public enum ShellCommandType
     PrinterTestPrint,
     HistoryQuery,
     HistoryReprint,
+    HistoryResolve,
     LogsOpenFolder,
     SettingsSave
 }
@@ -160,6 +170,7 @@ public sealed record ShellCommand(
     int? HistoryPage = null,
     string? HistorySearch = null,
     string? HistoryItemRef = null,
+    bool? Printed = null,
     bool? TestMode = null,
     int? IdlePollSeconds = null,
     int? BusyPollSeconds = null,
@@ -356,6 +367,12 @@ public static class ShellMessageParser
                 if (!TryString(value, out var itemRef) || !ShellMessageContract.HistoryItemRefPattern().IsMatch(itemRef))
                     return false;
                 command = command with { HistoryItemRef = itemRef };
+                return true;
+
+            case ShellMessageContract.FieldKind.Printed:
+                if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    return false;
+                command = command with { Printed = value.GetBoolean() };
                 return true;
 
             case ShellMessageContract.FieldKind.TestMode:

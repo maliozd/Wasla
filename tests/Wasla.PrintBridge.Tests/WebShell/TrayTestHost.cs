@@ -1,8 +1,11 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
+using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Localization;
+using Wasla.PrintBridge.ServiceClient;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
+using Wasla.PrintBridge.Tests.Service;
 using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
 
@@ -22,8 +25,10 @@ internal enum TrayExit
 }
 
 /// <summary>
-/// The real tray application (services, engine, WebView2 window or runtime notice) on its own STA message-loop thread,
-/// with a private data root that tracks the thread, so teardown waits for the application to exit before the root is
+/// The real tray application on its own STA message-loop thread, as a client of the service's engine (WAS-61): the
+/// production engine composition and pipe server run in this process (<see cref="InProcessPrintBridgeService"/>), and the
+/// tray talks to them through the production <see cref="PrintBridgeServiceClient"/> over a real pipe. The data root tracks
+/// the thread, so teardown waits for the application to exit, and then for the service part to stop, before the root is
 /// released. The tray icon is hidden, every window opens off-screen, and a setup-link result that would be shown in a
 /// message box is recorded in <see cref="SetupResultMessages"/> instead. No device token is configured unless a test
 /// points the engine at a local fake server with a fake token, so by default nothing contacts a server and the
@@ -39,13 +44,22 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
     /// <summary>Setup-link results the application would have shown in a message box.</summary>
     public ConcurrentQueue<string> SetupResultMessages { get; } = new();
 
+    /// <summary>The service's engine of the running test (the app itself never holds one).</summary>
+    public PrintBridgeEngineHost Engine => _service?.Engine ?? throw new InvalidOperationException("No service is running.");
+
+    public PrintBridgeRuntime Runtime => Engine.Runtime;
+
+    private InProcessPrintBridgeService? _service;
+
     /// <param name="available">Whether the WebView2 Runtime counts as usable. True needs a real runtime (skipped otherwise).</param>
+    /// <param name="afterAppExit">Runs once the app has exited and before the service stops: what the service still does.</param>
     public Task RunAsync(
         bool available,
         Func<TrayApplicationContext, PrintBridgeLocalizer, Task> body,
         bool failShellStartup = false,
         TrayExit exit = TrayExit.BeforeTheTestEnds,
-        Action<PrintBridgeSettingsStore.AppSettingsDocument>? configure = null)
+        Action<PrintBridgeSettingsStore.AppSettingsDocument>? configure = null,
+        Func<Task>? afterAppExit = null)
     {
         if (available && !new WebView2RuntimeProbe().Probe().IsAvailable)
             Assert.Skip("No usable WebView2 Runtime is installed on this machine.");
@@ -71,9 +85,14 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                 Exception? failure = null;
                 try
                 {
-                    // The fake servers listen on plain HTTP localhost, which Release builds never trust for setup links.
-                    var services = PrintBridgeAppServices.Build(
+                    // The service part: the fake servers listen on plain HTTP localhost, which Release builds never trust
+                    // for setup links.
+                    _service = await InProcessPrintBridgeService.StartAsync(
                         collection => collection.AddSingleton(PrintBridgeServerTrustPolicy.ForTests("localhost")));
+                    var client = _service.CreateClient();
+                    await client.Connected.WaitAsync(Timeout);
+
+                    var services = PrintBridgeUiServices.ForEngine(client);
                     tray = new TrayApplicationContext(services, new FixedProbe(available));
                     // No icon or balloon on the desktop; the menu is driven directly.
                     tray.TrayIconForTests.Visible = false;
@@ -94,7 +113,7 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                     };
                     tray.SetupResultMessageForTests = SetupResultMessages.Enqueue;
                     // The application's own culture service, so the expected text follows the language it runs in.
-                    var localizer = new PrintBridgeLocalizer(services.GetRequiredService<PrintBridgeCultureService>());
+                    var localizer = new PrintBridgeLocalizer(services.Culture);
                     await body(tray, localizer);
                 }
                 catch (Exception ex)
@@ -115,6 +134,19 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                     // Exit is queued on this thread and awaited, as from the tray menu; every request joins one shutdown.
                     if (tray is not null)
                         await tray.ExitForTests().WaitAsync(Timeout);
+                    if (failure is null && afterAppExit is not null)
+                        await afterAppExit();
+                }
+                catch (Exception ex)
+                {
+                    failure ??= ex;
+                }
+
+                try
+                {
+                    // The service stops last, as it would at shutdown, before the data root is released.
+                    if (_service is not null)
+                        await _service.DisposeAsync().AsTask().WaitAsync(Timeout);
                 }
                 catch (Exception ex)
                 {
@@ -133,7 +165,7 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
         thread.IsBackground = true;
         dataRoot.Track(thread);
         thread.Start();
-        return completion.Task.WaitAsync(Timeout + Timeout);
+        return completion.Task.WaitAsync(Timeout + Timeout + Timeout);
     }
 
     private static void Report(TaskCompletionSource completion, Exception? failure)

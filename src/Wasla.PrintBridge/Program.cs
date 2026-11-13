@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
@@ -9,11 +8,16 @@ using Wasla.PrintBridge.UI;
 
 namespace Wasla.PrintBridge;
 
+/// <summary>
+/// <c>Wasla.PrintBridge.exe</c>: the tray and WebView2 app of one Windows user in one session (WAS-61). It is a client of
+/// the Print Bridge service, which runs the only engine; it never polls, prints or reads the service's data folder.
+/// </summary>
 internal static class Program
 {
     [STAThread]
     private static void Main(string[] args)
     {
+        // The saved language lives in the service's settings; until the service answers, the default (Turkish) is used.
         var startupCulture = InitializeStartupCulture();
 
         if (!OperatingSystem.IsWindows())
@@ -33,23 +37,11 @@ internal static class Program
         System.Windows.Forms.Application.EnableVisualStyles();
         System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
-        using var singleInstance = SingleInstanceGuard.TryAcquire(out var instanceOutcome);
+        using var singleInstance = SingleInstanceGuard.TryAcquire(out _);
         if (singleInstance is null)
         {
-            if (instanceOutcome == SingleInstanceOutcome.EngineRunningElsewhere)
-            {
-                // Another Windows user or session holds the machine-wide engine. No pipe of this user listens, so the
-                // setup link is not forwarded anywhere.
-                MessageBox.Show(
-                    PrintBridgeLocalizer.GetStringForCulture("Message.RunningInAnotherSession", startupCulture, Environment.NewLine),
-                    PrintBridgePaths.ProductDisplayName,
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                return;
-            }
-
-            // This user's instance in this session is running: forward the setup link to it, and only to a pipe this
-            // user owns. A refused, missing or broken pipe ends here; it never starts a second engine.
+            // This user's app in this session is running: forward the setup link to it, and only to a pipe this user
+            // owns (WAS-92). A refused, missing or broken pipe ends here.
             if (!string.IsNullOrWhiteSpace(setupUri) &&
                 SetupInstanceChannel.TrySend(setupUri!, TimeSpan.FromSeconds(3)) == SetupForwardResult.Delivered)
             {
@@ -64,12 +56,12 @@ internal static class Program
             return;
         }
 
-        var services = PrintBridgeAppServices.Build();
+        var services = PrintBridgeUiServices.Build(startupCulture);
 
         // Register/repair the per-user protocol handler on each launch (no admin rights required).
         // An isolated Debug instance (WASLA_PRINTBRIDGE_DATA_ROOT) must not take over the real install's
         // protocol handler or setup pipe.
-        var startupLogger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.Startup");
+        var startupLogger = services.Loggers.CreateLogger("Wasla.PrintBridge.Startup");
         var isolated = PrintBridgePaths.IsIsolatedDevelopmentRoot;
         if (isolated)
             startupLogger.LogWarning("Isolated development data root in use; protocol handler and setup IPC are disabled.");
@@ -79,8 +71,7 @@ internal static class Program
         var context = new TrayApplicationContext(services);
 
         // Receive setup URIs forwarded from future second instances.
-        using var channel = new SetupInstanceChannel(
-            services.GetRequiredService<ILoggerFactory>().CreateLogger("Wasla.PrintBridge.SetupIpc"));
+        using var channel = new SetupInstanceChannel(services.Loggers.CreateLogger("Wasla.PrintBridge.SetupIpc"));
         channel.UriReceived += uri => context.HandleSetupUri(uri);
         if (!isolated)
             channel.StartListening();
@@ -108,11 +99,7 @@ internal static class Program
 
     private static string InitializeStartupCulture()
     {
-        PrintBridgePaths.EnsureProgramDataDirectories();
-        var store = new PrintBridgeSettingsStore();
-        store.SeedProgramDataConfigIfMissing();
-        var document = store.Load();
-        var cultureName = SupportedCultures.ResolveStartupCulture(document.Ui.Language);
+        var cultureName = SupportedCultures.ResolveStartupCulture(null);
         var culture = CultureInfo.GetCultureInfo(cultureName);
         Thread.CurrentThread.CurrentUICulture = culture;
         Thread.CurrentThread.CurrentCulture = culture;

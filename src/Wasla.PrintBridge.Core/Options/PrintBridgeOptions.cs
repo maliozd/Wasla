@@ -30,6 +30,13 @@ public sealed class PrintBridgeOptions
     /// <summary>Windows machine name for diagnostics and server last-seen tracking.</summary>
     public string MachineName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Set by an explicit Stop in the app and cleared by any start (WAS-61): the service does not start printing on its
+    /// own while it is set, so a service restart, a crash recovery or a reboot never undoes the user's Stop. Closing the
+    /// app does not set it.
+    /// </summary>
+    public bool PrintingStoppedByUser { get; set; }
+
     /// <summary>Legacy setting migrated to <see cref="DisplayName"/> on load; not used as a separate alias.</summary>
     public string BridgeName { get; set; } = string.Empty;
 

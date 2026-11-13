@@ -65,8 +65,9 @@ public sealed record ShellConnectionSetupResult(
 /// The logic behind the native connection dialog of the WebView2 app. A new server URL and token are validated with
 /// the existing rules, verified against the server without being saved, and only then saved and activated through the
 /// engine (<see cref="IPrintBridgeEngine.ApplyVerifiedConnectionAsync"/>), which uses the existing settings store. A
-/// failed check or a cancel leaves the saved settings untouched. The saved token is never returned: an empty token
-/// input keeps it only when the bridge is already connected (<see cref="ShellConnectionSetupMode.Change"/>).
+/// failed check or a cancel leaves the saved settings untouched. The saved token never reaches the app (WAS-61): an empty
+/// token input asks the engine to keep it, only when the bridge is already connected
+/// (<see cref="ShellConnectionSetupMode.Change"/>).
 /// </summary>
 public sealed class ShellConnectionSetup
 {
@@ -75,7 +76,7 @@ public sealed class ShellConnectionSetup
     public static readonly TimeSpan DefaultVerificationTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IPrintBridgeEngine _engine;
-    private readonly PrintBridgeSettingsHolder _settings;
+    private readonly IPrintBridgeSettingsView _settings;
     private readonly PrintBridgeLocalizer _localizer;
     private readonly ILogger _logger;
     private readonly CancellationToken _appLifetime;
@@ -83,7 +84,7 @@ public sealed class ShellConnectionSetup
 
     public ShellConnectionSetup(
         IPrintBridgeEngine engine,
-        PrintBridgeSettingsHolder settings,
+        IPrintBridgeSettingsView settings,
         PrintBridgeLocalizer localizer,
         ILogger logger,
         CancellationToken appLifetime,
@@ -120,17 +121,17 @@ public sealed class ShellConnectionSetup
     {
         get
         {
-            var url = _settings.Connection.ServerUrl?.Trim() ?? string.Empty;
+            var url = _settings.ServerUrl?.Trim() ?? string.Empty;
             return string.Equals(url, WaslaOptions.DefaultServerUrl, StringComparison.OrdinalIgnoreCase) ? string.Empty : url;
         }
     }
 
-    private bool HasSavedToken => !string.IsNullOrWhiteSpace(_settings.Connection.AgentToken);
+    private bool HasSavedToken => _settings.HasSavedToken;
 
     /// <summary>
     /// Validates the input with the existing connection rules and the setup-link paste guard. No request is sent.
     /// </summary>
-    public ShellConnectionSetupResult? Validate(string? serverUrl, string? tokenInput, out WaslaOptions? candidate)
+    public ShellConnectionSetupResult? Validate(string? serverUrl, string? tokenInput, out PrintBridgeConnectionCandidate? candidate)
     {
         candidate = null;
         var url = serverUrl?.Trim() ?? string.Empty;
@@ -145,17 +146,16 @@ public sealed class ShellConnectionSetup
         if (PrintBridgeTokenPasteGuard.LooksLikeSetupOrProtocolValue(token))
             return Invalid("Settings.AgentTokenPasteGuard", ShellConnectionSetupField.Token);
 
-        if (token.Length == 0 && CanKeepSavedToken)
-            token = _settings.Connection.AgentToken.Trim();
-
-        var options = new WaslaOptions { ServerUrl = url, AgentToken = token };
+        // Keeping the saved token: the engine uses it; the local check needs only a stand-in that is not empty.
+        var keepSavedToken = token.Length == 0 && CanKeepSavedToken;
+        var options = new WaslaOptions { ServerUrl = url, AgentToken = keepSavedToken ? "saved" : token };
         if (!PrintBridgeSettingsValidator.TryValidateConnectionSettings(options, out var errorKey))
         {
             var field = errorKey == "Validation.AgentTokenRequired" ? ShellConnectionSetupField.Token : ShellConnectionSetupField.ServerUrl;
             return Invalid(errorKey!, field);
         }
 
-        candidate = options;
+        candidate = new PrintBridgeConnectionCandidate(options.ServerUrl, keepSavedToken ? string.Empty : options.AgentToken, keepSavedToken);
         return null;
     }
 
@@ -175,13 +175,13 @@ public sealed class ShellConnectionSetup
             return invalid;
 
         var startListening = Mode != ShellConnectionSetupMode.Change;
-        WaslaPrintBridgeClient.PrintBridgeHealthResult health;
+        PrintBridgeConnectionVerification verified;
         using (var verification = CancellationTokenSource.CreateLinkedTokenSource(ct, _appLifetime))
         {
             verification.CancelAfter(_timeout);
             try
             {
-                health = await _engine.CheckConnectionAsync(candidate!, verification.Token).ConfigureAwait(true);
+                verified = await _engine.CheckConnectionAsync(candidate!, verification.Token).ConfigureAwait(true);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested || _appLifetime.IsCancellationRequested)
             {
@@ -202,7 +202,7 @@ public sealed class ShellConnectionSetup
         PrintBridgeConnectionChange change;
         try
         {
-            change = await _engine.ApplyVerifiedConnectionAsync(candidate!, health, startListening, _appLifetime).ConfigureAwait(true);
+            change = await _engine.ApplyVerifiedConnectionAsync(verified, startListening, _appLifetime).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -225,8 +225,7 @@ public sealed class ShellConnectionSetup
     }
 
     /// <summary>The engine's own start check for the printer (test mode does not make a missing printer usable).</summary>
-    private bool CanPrint() =>
-        PrintBridgeSettingsValidator.TryValidatePrinterAvailability(_settings.Bridge.Clone(), out _);
+    private bool CanPrint() => _settings.IsPrinterUsable;
 
     public ShellConnectionSetupResult Cancelled() =>
         new(ShellConnectionSetupOutcome.Cancelled, _localizer["Shell.Setup.Cancelled"]);

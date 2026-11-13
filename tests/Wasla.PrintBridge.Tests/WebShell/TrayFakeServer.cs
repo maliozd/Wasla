@@ -40,6 +40,9 @@ internal sealed class TrayFakeServer : IDisposable
     /// <summary>When set, the claim (mark-printing) is processed and then its answer is held until the gate opens.</summary>
     public TrayGate? HoldClaimAnswer { get; set; }
 
+    /// <summary>When set, every printed report is held and then refused without being processed (WAS-61 recovery tests).</summary>
+    public TrayGate? DropPrintedReports { get; set; }
+
     public Guid AddJob()
     {
         var id = Guid.NewGuid();
@@ -78,6 +81,7 @@ internal sealed class TrayFakeServer : IDisposable
     public void Dispose()
     {
         HoldClaimAnswer?.Open();
+        DropPrintedReports?.Open();
         _listener.Close();
         try
         {
@@ -174,9 +178,21 @@ internal sealed class TrayFakeServer : IDisposable
                 }
 
                 case "mark-printed":
+                {
+                    if (DropPrintedReports is { } dropped)
+                    {
+                        // The report arrives but the server never processes it, as when the device dies before the
+                        // answer: it is held, then answered 503 once the test lets it go.
+                        dropped.Entered.TrySetResult();
+                        await dropped.Opened.Task;
+                        Write(context, HttpStatusCode.ServiceUnavailable, new { error = "server_error" });
+                        return;
+                    }
+
                     Write(context, HttpStatusCode.OK, Transition(jobId, "Printing", "Printed"));
                     Finish(jobId);
                     return;
+                }
 
                 case "mark-failed":
                     Write(context, HttpStatusCode.OK, Transition(jobId, "Printing", "Failed"));

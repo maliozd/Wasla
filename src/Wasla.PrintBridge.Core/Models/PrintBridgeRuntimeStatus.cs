@@ -24,6 +24,9 @@ public sealed class PrintBridgeRuntimeStatus
     public PrinterHealthStatus PrinterHealthStatus { get; init; }
     public TrayIconState TrayIconState { get; init; }
 
+    /// <summary>Jobs whose paper outcome is unknown and that wait for the user's check (WAS-61).</summary>
+    public int UncertainJobsCount { get; init; }
+
     public static bool ResolveEffectiveConnection(
         bool hasRecentSuccessfulContact,
         PrintBridgeRuntimeIssue? lastIssue) =>

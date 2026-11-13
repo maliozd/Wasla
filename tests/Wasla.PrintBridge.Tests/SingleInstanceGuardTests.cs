@@ -2,21 +2,21 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
 
 namespace Wasla.PrintBridge.Tests;
 
 /// <summary>
-/// WAS-92: the startup decision of the desktop process. Every test uses mutex names of its own, never the installed
-/// client's, and each acquisition runs on its own thread, as a separate launch would.
+/// WAS-92: the startup decision of the app. Every test uses mutex names of its own, never the installed client's, and each
+/// acquisition runs on its own thread, as a separate launch would. WAS-61: the app takes only this user's instance lock;
+/// the machine-wide engine lock is the service's (<see cref="Service.PrintBridgeEngineLockTests"/>).
 /// Same-account only: a lock held by another Windows account is covered by <see cref="SetupInstanceCrossAccountTests"/>.
 /// </summary>
 public sealed class SingleInstanceGuardTests
 {
     [Fact]
-    public void FirstLaunch_TakesBothLocks_AndIsPrimary()
+    public void FirstLaunch_TakesTheInstanceLock_AndIsPrimary()
     {
         var names = LockNames.Create();
 
@@ -25,7 +25,6 @@ public sealed class SingleInstanceGuardTests
         {
             Assert.Equal(SingleInstanceOutcome.Primary, launch.Outcome);
             Assert.True(Exists(names.Instance));
-            Assert.True(Exists(names.Engine));
         }
         finally
         {
@@ -33,11 +32,10 @@ public sealed class SingleInstanceGuardTests
         }
 
         Assert.False(Exists(names.Instance));
-        Assert.False(Exists(names.Engine));
     }
 
     [Fact]
-    public void SecondLaunchOfTheSameUser_FindsItsInstance_AndStartsNoEngine()
+    public void SecondLaunchOfTheSameUser_FindsItsInstance()
     {
         var names = LockNames.Create();
         var primary = Launch.Start(names);
@@ -56,42 +54,7 @@ public sealed class SingleInstanceGuardTests
     }
 
     [Fact]
-    public void EngineHeldByAnotherUserOrSession_IsRefused_AndReleasesThisUsersInstanceLock()
-    {
-        var names = LockNames.Create();
-
-        // Another user's or session's primary holds the machine-wide engine lock; its instance lock is its own.
-        using var otherEngine = new Mutex(initiallyOwned: false, names.Engine, out var created);
-        Assert.True(created);
-
-        var launch = Launch.Start(names);
-        launch.Exit();
-
-        Assert.Equal(SingleInstanceOutcome.EngineRunningElsewhere, launch.Outcome);
-        Assert.False(launch.HeldGuard);
-        // The refused launch does not keep this user's instance lock, so it cannot block this user's next launch.
-        Assert.False(Exists(names.Instance));
-    }
-
-    [Fact]
-    public void EngineLockThatCannotBeOpened_IsNeverTreatedAsFree()
-    {
-        var names = LockNames.Create();
-
-        // Access rules that exclude this user, as on a lock another account created.
-        using var denied = MutexAcl.Create(initiallyOwned: false, names.Engine, out var created, DenyEveryone());
-        Assert.True(created);
-        AssertCannotBeOpened(names.Engine);
-
-        var launch = Launch.Start(names);
-        launch.Exit();
-
-        Assert.Equal(SingleInstanceOutcome.EngineRunningElsewhere, launch.Outcome);
-        Assert.False(Exists(names.Instance));
-    }
-
-    [Fact]
-    public void InstanceLockThatCannotBeOpened_IsTreatedAsRunning_AndTheEngineLockIsNotTaken()
+    public void InstanceLockThatCannotBeOpened_IsTreatedAsRunning()
     {
         var names = LockNames.Create();
         using var denied = MutexAcl.Create(initiallyOwned: false, names.Instance, out var created, DenyEveryone());
@@ -102,27 +65,17 @@ public sealed class SingleInstanceGuardTests
         launch.Exit();
 
         Assert.Equal(SingleInstanceOutcome.InstanceRunningForThisUser, launch.Outcome);
-        Assert.False(Exists(names.Engine));
     }
 
     [Fact]
-    public void AnotherKindOfObjectHoldingALockName_IsNeverTreatedAsFree()
+    public void AnotherKindOfObjectHoldingTheLockName_IsNeverTreatedAsFree()
     {
-        var engineNames = LockNames.Create();
-        using (new EventWaitHandle(false, EventResetMode.ManualReset, engineNames.Engine))
-        {
-            var launch = Launch.Start(engineNames);
-            launch.Exit();
-            Assert.Equal(SingleInstanceOutcome.EngineRunningElsewhere, launch.Outcome);
-        }
-
         var instanceNames = LockNames.Create();
         using (new Semaphore(1, 1, instanceNames.Instance))
         {
             var launch = Launch.Start(instanceNames);
             launch.Exit();
             Assert.Equal(SingleInstanceOutcome.InstanceRunningForThisUser, launch.Outcome);
-            Assert.False(Exists(instanceNames.Engine));
         }
     }
 
@@ -139,7 +92,7 @@ public sealed class SingleInstanceGuardTests
     }
 
     [Fact]
-    public void LaunchesRacingEachOther_YieldExactlyOnePrimary_AndNoOtherEngine()
+    public void LaunchesRacingEachOther_YieldExactlyOnePrimary()
     {
         const int launches = 8;
         var names = LockNames.Create();
@@ -148,7 +101,7 @@ public sealed class SingleInstanceGuardTests
         var threads = Enumerable.Range(0, launches).Select(i => new Thread(() =>
         {
             allTried.SignalAndWait(TimeSpan.FromSeconds(10));
-            using var guard = SingleInstanceGuard.TryAcquire(names.Instance, names.Engine, out outcomes[i]);
+            using var guard = SingleInstanceGuard.TryAcquire(names.Instance, out outcomes[i]);
             // Hold the result until every launch has decided, as running instances would.
             allTried.SignalAndWait(TimeSpan.FromSeconds(10));
         })).ToArray();
@@ -160,13 +113,6 @@ public sealed class SingleInstanceGuardTests
 
         Assert.Equal(1, outcomes.Count(o => o == SingleInstanceOutcome.Primary));
         Assert.Equal(launches - 1, outcomes.Count(o => o == SingleInstanceOutcome.InstanceRunningForThisUser));
-    }
-
-    [Fact]
-    public void TheEngineLockStaysMachineWide()
-    {
-        // One ProgramData folder holds settings, token and history for every user; one engine per machine.
-        Assert.Equal(@"Global\WaslaPrintBridge", SingleInstanceGuard.EngineMutexName);
     }
 
     [Fact]
@@ -204,23 +150,6 @@ public sealed class SingleInstanceGuardTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new PrintBridgeInstanceScope(alice, -1));
     }
 
-    [Fact]
-    public void RunningInAnotherSessionMessage_IsTranslatedInEveryCulture()
-    {
-        var turkish = PrintBridgeLocalizer.GetStringForCulture("Message.RunningInAnotherSession", "tr-TR", "\n");
-        foreach (var culture in SupportedCultures.All)
-        {
-            var text = PrintBridgeLocalizer.GetStringForCulture("Message.RunningInAnotherSession", culture, "\n");
-
-            Assert.NotEqual("Message.RunningInAnotherSession", text);
-            Assert.Contains("Print Bridge", text);
-            Assert.Contains("Windows", text);
-            Assert.Contains("\n\n", text);
-            if (culture != "tr-TR")
-                Assert.NotEqual(turkish, text);
-        }
-    }
-
     private static bool Exists(string name)
     {
         if (!Mutex.TryOpenExisting(name, out var mutex))
@@ -244,13 +173,9 @@ public sealed class SingleInstanceGuardTests
     private static void AssertCannotBeOpened(string name) =>
         Assert.Throws<UnauthorizedAccessException>(() => Mutex.OpenExisting(name).Dispose());
 
-    private sealed record LockNames(string Instance, string Engine)
+    private sealed record LockNames(string Instance)
     {
-        public static LockNames Create()
-        {
-            var id = Guid.NewGuid().ToString("N");
-            return new LockNames($@"Local\WaslaPbTest.Instance.{id}", $@"Local\WaslaPbTest.Engine.{id}");
-        }
+        public static LockNames Create() => new($@"Local\WaslaPbTest.Instance.{Guid.NewGuid():N}");
     }
 
     /// <summary>One launch: acquires on a thread of its own and keeps the result until <see cref="Exit"/>.</summary>
@@ -264,7 +189,7 @@ public sealed class SingleInstanceGuardTests
         {
             _thread = new Thread(() =>
             {
-                var guard = SingleInstanceGuard.TryAcquire(names.Instance, names.Engine, out var outcome);
+                var guard = SingleInstanceGuard.TryAcquire(names.Instance, out var outcome);
                 Outcome = outcome;
                 HeldGuard = guard is not null;
                 _decided.Set();

@@ -52,9 +52,10 @@ public sealed record ShellPrinterView(string? Name, string State, string Label, 
 
 /// <param name="LastContact">Formatted time of the last successful server contact, or null.</param>
 /// <param name="LastPrint">Formatted time of the last successful print, or null.</param>
-public sealed record ShellActivityView(string? LastContact, string? LastPrint, int JobsToday, int FailedToday);
+/// <param name="NeedsCheck">Receipts whose paper outcome is unknown and that wait for the user's check (WAS-61).</param>
+public sealed record ShellActivityView(string? LastContact, string? LastPrint, int JobsToday, int FailedToday, int NeedsCheck);
 
-/// <param name="Status"><c>pending</c>, <c>printing</c>, <c>printed</c>, <c>failed</c> or <c>skipped</c>.</param>
+/// <param name="Status"><c>pending</c>, <c>printing</c>, <c>printed</c>, <c>failed</c>, <c>skipped</c> or <c>uncertain</c>.</param>
 public sealed record ShellJobView(string Status, string StatusLabel, string Order, string TypeLabel, string Time);
 
 /// <summary>Which actions make sense right now, decided by the host from engine and settings state.</summary>

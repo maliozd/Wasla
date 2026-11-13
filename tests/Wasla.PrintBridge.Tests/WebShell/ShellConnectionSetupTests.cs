@@ -481,6 +481,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
             new PrintBridgeSetupHttpClientFactory(),
             loggers.CreateLogger<WaslaPrintBridgeClient>(),
             "1.0.0.0");
+        var history = new LocalPrintJobHistoryStore(loggers.CreateLogger<LocalPrintJobHistoryStore>());
         var runtime = new PrintBridgeRuntime(
             client,
             new ReceiptFormatter(),
@@ -488,10 +489,20 @@ public sealed class ShellConnectionSetupTests : IDisposable
             holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, holder, loggers.CreateLogger<PrintBridgeDeviceMetadataSync>()),
-            new LocalPrintJobHistoryStore(loggers.CreateLogger<LocalPrintJobHistoryStore>()),
+            history,
             new AppVersionInfo(typeof(ShellConnectionSetupTests).Assembly),
             loggers.CreateLogger<PrintBridgeRuntime>());
-        var setup = new ShellConnectionSetup(runtime, holder, _localizer, loggers.CreateLogger("Shell"), lifetime?.Token ?? CancellationToken.None, timeout);
+        // WAS-61: the dialog talks to the engine the service runs; here that engine runs in this process.
+        var trust = Wasla.PrintBridge.Setup.PrintBridgeServerTrustPolicy.ForTests("localhost");
+        var engine = new Wasla.PrintBridge.Hosting.PrintBridgeEngineHost(
+            runtime,
+            holder,
+            store,
+            new Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator(client, store, holder, runtime, trust, loggers.CreateLogger<Wasla.PrintBridge.Setup.PrintBridgeAutoSetupCoordinator>()),
+            trust,
+            history,
+            loggers.CreateLogger<Wasla.PrintBridge.Hosting.PrintBridgeEngineHost>());
+        var setup = new ShellConnectionSetup(engine, holder, _localizer, loggers.CreateLogger("Shell"), lifetime?.Token ?? CancellationToken.None, timeout);
         return new Harness(runtime, setup, store, holder, http, document.PrintBridge.InstallationId);
     }
 

@@ -56,7 +56,7 @@ public sealed class TrayExitTests : IDisposable
         });
 
     [Fact]
-    public Task TheApplication_LogsToItsDailyWaslaPrintBridgeFile() =>
+    public Task TheAppAndTheService_LogToTheirOwnDailyFiles() =>
         _host.RunAsync(available: false, async (tray, localizer) =>
         {
             var exited = ThreadExited(tray);
@@ -64,14 +64,23 @@ public sealed class TrayExitTests : IDisposable
             Click(tray, localizer["Tray.Exit"]);
 
             await exited.WaitAsync(Timeout);
-            var log = Assert.Single(Directory.GetFiles(PrintBridgePaths.ProgramDataLogDirectory));
-            Assert.Matches(@"^wasla-print-bridge-\d{8}\.log$", Path.GetFileName(log));
-            using var reader = new StreamReader(new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
-            Assert.Contains("Print Bridge exit requested.", reader.ReadToEnd(), StringComparison.Ordinal);
-        });
+            // WAS-61: the app logs per user (here under the test's data root); the service in its data folder.
+            var appLog = Assert.Single(Directory.GetFiles(PrintBridgePaths.AppLogDirectory));
+            Assert.Matches(@"^wasla-print-bridge-app-\d{8}\.log$", Path.GetFileName(appLog));
+            Assert.Contains("Print Bridge app close requested.", ReadShared(appLog), StringComparison.Ordinal);
+            var serviceLog = Assert.Single(Directory.GetFiles(PrintBridgePaths.ProgramDataLogDirectory));
+            Assert.Matches(@"^wasla-print-bridge-\d{8}\.log$", Path.GetFileName(serviceLog));
+            Assert.Contains("Print Bridge polling", ReadShared(serviceLog), StringComparison.Ordinal);
+        }, configure: ListenToTheFakeServer);
+
+    private static string ReadShared(string path)
+    {
+        using var reader = new StreamReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+        return reader.ReadToEnd();
+    }
 
     [Fact]
-    public Task ExitWithTheRuntimeNoticeOpen_WhileListening_DisposesItAfterTheEngineStopped() =>
+    public Task ExitWithTheRuntimeNoticeOpen_WhileListening_DisposesIt_AndPrintingContinues() =>
         _host.RunAsync(available: false, async (tray, localizer) =>
         {
             Click(tray, localizer["Tray.Open"]);
@@ -86,8 +95,9 @@ public sealed class TrayExitTests : IDisposable
             Assert.True(notice.IsDisposed);
             Assert.Null(tray.RuntimeNoticeForTests);
             Assert.Equal(
-                ["shutdown-started", "runtime-stopped", "runtime-notice-disposed", "tray-icon-disposed", "services-disposed", "thread-exited"],
+                ["shutdown-started", "ui-hidden", "runtime-notice-disposed", "tray-icon-disposed", "services-disposed", "thread-exited"],
                 tray.ShutdownStepsForTests);
+            Assert.True(_host.Runtime.IsRunning);
             Assert.DoesNotContain(_server.Requests, r => r.EndsWith("/mark-failed", StringComparison.Ordinal));
         }, configure: ListenToTheFakeServer);
 

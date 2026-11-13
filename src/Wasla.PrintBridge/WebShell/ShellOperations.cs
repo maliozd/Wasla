@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Services;
@@ -71,7 +72,7 @@ public sealed class ShellOperations
     private readonly IShellOperationalSettings _operationalSettings;
     private readonly IShellNativeActions _native;
     private readonly ShellHistory _history;
-    private readonly PrintBridgeSettingsHolder _settings;
+    private readonly IPrintBridgeSettingsView _settings;
     private readonly PrintBridgeLocalizer _localizer;
     private readonly ILogger _logger;
     private readonly TimeSpan _timeout;
@@ -85,7 +86,7 @@ public sealed class ShellOperations
         IShellOperationalSettings operationalSettings,
         IShellNativeActions native,
         ShellHistory history,
-        PrintBridgeSettingsHolder settings,
+        IPrintBridgeSettingsView settings,
         PrintBridgeLocalizer localizer,
         ILogger logger,
         TimeSpan? timeout = null)
@@ -183,15 +184,17 @@ public sealed class ShellOperations
                 if (_engine.IsRunning)
                     return (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.Started"]);
 
-                var token = _settings.Connection.AgentToken;
-                if (PrintBridgePollingGate.RequiresReconnectBeforeStart(token, _engine.GetStatus().LastIssue))
+                if (PrintBridgePollingGate.RequiresReconnectBeforeStart(_settings.HasSavedToken, _engine.GetStatus().LastIssue))
                     return (ShellOperationOutcome.Rejected, _localizer["Message.ReconnectFromWebToContinue"]);
 
-                _engine.Start();
+                using var cts = new CancellationTokenSource(_timeout);
+                await _engine.StartAsync(cts.Token).ConfigureAwait(true);
                 return (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.Started"]);
             }
 
             case ShellCommandType.EngineStop:
+                // The explicit Stop (WAS-61): printing stays stopped, also after the service restarts, until Start.
+                // Closing the app is not a stop.
                 if (_engine.IsRunning)
                     await _engine.StopAsync().ConfigureAwait(true);
                 return (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.Stopped"]);
@@ -223,9 +226,11 @@ public sealed class ShellOperations
                 if (change.TestMode && !_settings.Bridge.DryRun && !await _native.ConfirmEnableTestModeAsync().ConfigureAwait(true))
                     return (ShellOperationOutcome.Cancelled, _localizer["Shell.Op.TestModeCancelled"]);
 
-                return _operationalSettings.TrySave(change, out var errorKey)
+                using var cts = new CancellationTokenSource(_timeout);
+                var errorKey = await _operationalSettings.SaveAsync(change, cts.Token).ConfigureAwait(true);
+                return errorKey is null
                     ? (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.SettingsSaved"])
-                    : (ShellOperationOutcome.Rejected, _localizer[errorKey ?? "Shell.Op.Failed"]);
+                    : (ShellOperationOutcome.Rejected, _localizer[errorKey]);
             }
 
             case ShellCommandType.PrintersRefresh:
@@ -247,9 +252,11 @@ public sealed class ShellOperations
                 if (!_printers.IsInstalled(name))
                     return (ShellOperationOutcome.Rejected, _localizer["Shell.Printer.NotInstalled"]);
 
-                return _printerSettings.TrySavePrinter(name, out var errorKey)
+                using var save = new CancellationTokenSource(_timeout);
+                var errorKey = await _printerSettings.SavePrinterAsync(name, save.Token).ConfigureAwait(true);
+                return errorKey is null
                     ? (ShellOperationOutcome.Succeeded, _localizer["Shell.Op.PrinterSaved"])
-                    : (ShellOperationOutcome.Rejected, _localizer[errorKey ?? "Shell.Op.Failed"]);
+                    : (ShellOperationOutcome.Rejected, _localizer[errorKey]);
             }
 
             case ShellCommandType.PrinterTestPrint:
@@ -270,6 +277,17 @@ public sealed class ShellOperations
                 // A success without a message key must not fall through to the generic "reprint failed" text.
                 var messageKey = string.IsNullOrWhiteSpace(result.MessageKey) ? "Reprint.Created" : result.MessageKey;
                 return (ShellOperationOutcome.Succeeded, _localizer.GetReprintMessage(messageKey));
+            }
+
+            case ShellCommandType.HistoryResolve:
+            {
+                var jobId = _history.Resolve(command.HistoryItemRef!);
+                if (jobId is null)
+                    return (ShellOperationOutcome.Rejected, _localizer["History.Uncertain.NotResolvable"]);
+
+                using var cts = new CancellationTokenSource(_timeout);
+                await _engine.ResolveUncertainJobAsync(jobId.Value, command.Printed!.Value, cts.Token).ConfigureAwait(true);
+                return (ShellOperationOutcome.Succeeded, _localizer[command.Printed.Value ? "Shell.Op.ResolvedPrinted" : "Shell.Op.ResolvedNotPrinted"]);
             }
 
             default:
@@ -328,6 +346,7 @@ public sealed class ShellOperations
             => _localizer.GetReprintMessage(localized.ResourceKey),
         LocalizedApplicationException localized => _localizer.GetString(localized.ResourceKey, localized.Args),
         OperationCanceledException => _localizer["Shell.Op.TimedOut"],
+        PrintBridgeEngineBusyException => _localizer["Shell.Op.Busy"],
         _ => _localizer["Shell.Op.Failed"]
     };
 
@@ -342,7 +361,7 @@ public sealed class ShellOperations
         ShellCommandType.PrintersRefresh => Group.PrintersRefresh,
         ShellCommandType.PrinterSave => Group.PrinterSave,
         ShellCommandType.PrinterTestPrint => Group.TestPrint,
-        ShellCommandType.HistoryReprint => Group.Reprint,
+        ShellCommandType.HistoryReprint or ShellCommandType.HistoryResolve => Group.Reprint,
         ShellCommandType.ConnectionOpenSetup => Group.ConnectionSetup,
         ShellCommandType.SettingsSave => Group.SettingsSave,
         _ => null

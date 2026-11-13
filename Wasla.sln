@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasla.PrintBridge.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasla.PrintBridge.Core", "src\Wasla.PrintBridge.Core\Wasla.PrintBridge.Core.csproj", "{0B2D9A25-0477-4022-82BD-A3E6ADDC4B09}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wasla.PrintBridge.Service", "src\Wasla.PrintBridge.Service\Wasla.PrintBridge.Service.csproj", "{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,18 @@ Global
 		{0B2D9A25-0477-4022-82BD-A3E6ADDC4B09}.Release|x64.Build.0 = Release|Any CPU
 		{0B2D9A25-0477-4022-82BD-A3E6ADDC4B09}.Release|x86.ActiveCfg = Release|Any CPU
 		{0B2D9A25-0477-4022-82BD-A3E6ADDC4B09}.Release|x86.Build.0 = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|x64.Build.0 = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|x64.ActiveCfg = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|x64.Build.0 = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -201,5 +215,6 @@ Global
 		{F519E966-17E9-4A59-AD41-0B3D144C21DF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{FCD36AFF-4037-4765-A4AD-D207E67AD599} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{0B2D9A25-0477-4022-82BD-A3E6ADDC4B09} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{EC68D96D-6FB8-46E4-AF9C-82C8381EC4FF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

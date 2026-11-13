@@ -283,17 +283,21 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
             await bridge.StartAndSettleAsync(server);
             await bridge.Runtime.StopAsync().WaitAsync(Wait, Ct);
 
-            // Three attempts, then the loop records the connection problem; the job is never reported failed.
+            // Three attempts, then the loop records the connection problem; the job is never reported failed. WAS-61: the
+            // journal keeps it as printed; within this run it is reported again only after the journal's retry interval.
             Assert.Equal(1, printer.Copies);
             Assert.Equal(["mark-printing", "mark-printed", "mark-printed", "mark-printed"], server.Attempted(jobId));
             Assert.Equal(JobState.Printing, server.State(jobId));
             Assert.Equal(LocalPrintJobStatus.Printed, bridge.History.FindByJobId(jobId)?.Status);
+            Assert.Equal(PrintJournalStage.Printed, Assert.Single(new PrintBridgeJobJournal(NullLogger<PrintBridgeJobJournal>.Instance).Entries).Stage);
         }
 
-        // Without a lease the server does not offer the job again, so nothing is printed twice.
+        // Without a lease the server does not offer the job again, so nothing is printed twice. WAS-61: the restarted
+        // engine reports the printed job again once, in its first cycle, and then waits for the retry interval.
         using var restarted = Bridge.Create(server, printer);
         await restarted.StartAndSettleAsync(server);
         Assert.Equal(1, printer.Copies);
+        Assert.Equal(["mark-printing", "mark-printed", "mark-printed", "mark-printed", "mark-printed"], server.Attempted(jobId));
         Assert.DoesNotContain("mark-failed", server.Attempted(jobId));
     }
 
@@ -321,6 +325,189 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
         Assert.DoesNotContain("mark-failed", server.Attempted(jobId));
         Assert.Equal(LocalPrintJobStatus.Printed, bridge.History.FindByJobId(jobId)?.Status);
     }
+
+    // WAS-61: the print journal. A process that was killed (crash, power loss, a service stop that outlasted its grace
+    // period) leaves the stage its claimed job reached; the next start settles it without printing it again.
+
+    [Fact]
+    public async Task AJobPrintedButNotReportedBeforeACrash_IsReportedPrintedAtTheNextStart_AndNeverPrintedAgain()
+    {
+        var server = new FakePrintServer();
+        var jobId = server.AddClaimedJob();
+        Journal().Record(jobId, PrintJournalStage.Printed, SavedConnection);
+        var printer = new RecordingPrinter();
+
+        using var restarted = Bridge.Create(server, printer);
+        await restarted.StartAndSettleAsync(server);
+
+        Assert.Equal(0, printer.Copies);
+        Assert.Equal(JobState.Printed, server.State(jobId));
+        Assert.Equal(["mark-printed"], server.Received(jobId));
+        Assert.Empty(Journal().Entries);
+    }
+
+    [Fact]
+    public async Task AJobClaimedButNotPrintedBeforeACrash_IsReportedFailedAtTheNextStart_SoWaslaCanPrintItAgain()
+    {
+        var server = new FakePrintServer();
+        var jobId = server.AddClaimedJob();
+        Journal().Record(jobId, PrintJournalStage.NotPrinted, SavedConnection);
+        var printer = new RecordingPrinter();
+
+        using var restarted = Bridge.Create(server, printer);
+        await restarted.StartAndSettleAsync(server);
+
+        Assert.Equal(0, printer.Copies);
+        Assert.Equal(JobState.Failed, server.State(jobId));
+        Assert.Equal(["mark-failed"], server.Received(jobId));
+        Assert.Empty(Journal().Entries);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AJobInterruptedWhileItWasSentToThePrinter_WaitsVisiblyForTheUsersCheck_AndIsNeverPrintedAgain(bool itPrinted)
+    {
+        var server = new FakePrintServer();
+        var jobId = server.AddClaimedJob();
+        Journal().Record(jobId, PrintJournalStage.Submitting, SavedConnection);
+        var printer = new RecordingPrinter();
+
+        using var restarted = Bridge.Create(server, printer);
+        await restarted.StartAndSettleAsync(server);
+
+        // Whether paper came out is unknown: printing again could print it twice, and neither report would be the truth.
+        // It is neither discarded nor left silent: it waits, visibly, for the user's check.
+        Assert.Equal(0, printer.Copies);
+        Assert.Equal(JobState.Printing, server.State(jobId));
+        Assert.Empty(server.Attempted(jobId));
+        Assert.Equal(PrintJournalStage.Uncertain, Assert.Single(Journal().Entries).Stage);
+        Assert.Equal(LocalPrintJobStatus.Uncertain, restarted.History.FindByJobId(jobId)?.Status);
+        Assert.Equal(1, restarted.Runtime.GetStatus().UncertainJobsCount);
+
+        // Later cycles leave it alone; only the user's answer is reported.
+        await server.NextPoll().WaitAsync(Wait, Ct);
+        Assert.Empty(server.Attempted(jobId));
+
+        await restarted.Runtime.ResolveUncertainJobAsync(jobId, itPrinted, Ct);
+
+        Assert.Equal(0, printer.Copies);
+        Assert.Equal([itPrinted ? "mark-printed" : "mark-failed"], server.Received(jobId));
+        Assert.Equal(itPrinted ? JobState.Printed : JobState.Failed, server.State(jobId));
+        Assert.Equal(itPrinted ? LocalPrintJobStatus.Printed : LocalPrintJobStatus.Failed, restarted.History.FindByJobId(jobId)?.Status);
+        Assert.Empty(Journal().Entries);
+        Assert.Equal(0, restarted.Runtime.GetStatus().UncertainJobsCount);
+    }
+
+    [Fact]
+    public async Task AnUncertainJobOfAReplacedConnection_StaysVisible_ButIsResolvedInWasla()
+    {
+        var server = new FakePrintServer();
+        var jobId = server.AddClaimedJob();
+        Journal().Record(jobId, PrintJournalStage.Submitting, new Wasla.PrintBridge.Options.WaslaOptions
+        {
+            ServerUrl = ServerUrl,
+            AgentToken = "an-earlier-token-not-a-real-credential"
+        });
+
+        using var restarted = Bridge.Create(server, new RecordingPrinter());
+        await restarted.StartAndSettleAsync(server);
+
+        Assert.Empty(server.Attempted(jobId));
+        var record = restarted.History.FindByJobId(jobId);
+        Assert.Equal(LocalPrintJobStatus.Uncertain, record?.Status);
+        Assert.Equal(PrintBridgeRuntime.UncertainResolveInWaslaNote, record?.StatusNote);
+        var refused = await Assert.ThrowsAsync<LocalizedApplicationException>(() => restarted.Runtime.ResolveUncertainJobAsync(jobId, true, Ct));
+        Assert.Equal("History.Uncertain.NotResolvable", refused.ResourceKey);
+        Assert.Empty(server.Attempted(jobId));
+    }
+
+    [Fact]
+    public async Task APrintedReportThatFailedEveryRetry_IsReportedAgainAfterTheJournalInterval_WithoutARestart()
+    {
+        var server = new FakePrintServer { FailPrintedReports = 3 };
+        var jobId = server.AddJob(copies: 1);
+        var printer = new RecordingPrinter();
+        using var bridge = Bridge.Create(server, printer);
+        bridge.Runtime.PrintedReportRetryDelays = [TimeSpan.Zero, TimeSpan.Zero];
+        bridge.Runtime.JournalRetryInterval = TimeSpan.Zero;
+
+        bridge.Runtime.Start();
+        await WaitUntilAsync(() => server.State(jobId) == JobState.Printed);
+        await bridge.Runtime.StopAsync().WaitAsync(Wait, Ct);
+
+        // Three failed attempts in the job's own cycle, then one accepted from the journal in a later cycle.
+        Assert.Equal(1, printer.Copies);
+        Assert.Equal(["mark-printing", "mark-printed", "mark-printed", "mark-printed", "mark-printed"], server.Attempted(jobId));
+        Assert.DoesNotContain("mark-failed", server.Attempted(jobId));
+        Assert.Empty(Journal().Entries);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        var until = DateTime.UtcNow + Wait;
+        while (!condition())
+        {
+            if (DateTime.UtcNow > until)
+                throw new TimeoutException("The condition was not met in time.");
+            await Task.Delay(25, Ct);
+        }
+    }
+
+    [Fact]
+    public async Task AnInterruptedJobOfAReplacedConnection_IsNeverReportedWithTheNewToken()
+    {
+        var server = new FakePrintServer();
+        var jobId = server.AddClaimedJob();
+        Journal().Record(jobId, PrintJournalStage.Printed, new Wasla.PrintBridge.Options.WaslaOptions
+        {
+            ServerUrl = ServerUrl,
+            AgentToken = "an-earlier-token-not-a-real-credential"
+        });
+        var printer = new RecordingPrinter();
+
+        using var restarted = Bridge.Create(server, printer);
+        await restarted.StartAndSettleAsync(server);
+
+        Assert.Empty(server.Attempted(jobId));
+        Assert.Equal(JobState.Printing, server.State(jobId));
+        Assert.Empty(Journal().Entries);
+    }
+
+    [Fact]
+    public async Task TheJournal_FollowsEachStageOfAJob_AndIsEmptyOnceItIsReported()
+    {
+        var report = new Gate();
+        var server = new FakePrintServer { HoldPrintedReport = report };
+        var jobId = server.AddJob(copies: 1);
+        var copy = new Gate();
+        var printer = new RecordingPrinter { HoldFirstCopy = copy };
+        using var bridge = Bridge.Create(server, printer);
+        bridge.Runtime.Start();
+
+        await copy.Entered.Task.WaitAsync(Wait, Ct);
+        Assert.Equal(PrintJournalStage.Submitting, Assert.Single(Journal().Entries).Stage);
+        copy.Open();
+
+        await report.Entered.Task.WaitAsync(Wait, Ct);
+        var printed = Assert.Single(Journal().Entries);
+        Assert.Equal(PrintJournalStage.Printed, printed.Stage);
+        Assert.Equal(jobId, printed.JobId);
+        // The journal names the connection by a fingerprint; the token itself is never written to it.
+        Assert.DoesNotContain(FakeToken, File.ReadAllText(PrintBridgePaths.JournalPath), StringComparison.Ordinal);
+        report.Open();
+
+        await bridge.Runtime.StopAsync().WaitAsync(Wait, Ct);
+        AssertPrintedOnceAndConfirmed(server, printer, bridge, jobId, copies: 1);
+        Assert.Empty(Journal().Entries);
+        Assert.False(File.Exists(PrintBridgePaths.JournalPath));
+    }
+
+    private static Wasla.PrintBridge.Options.WaslaOptions SavedConnection =>
+        new() { ServerUrl = ServerUrl, AgentToken = FakeToken };
+
+    /// <summary>A fresh reader of the journal file, as the next process would have.</summary>
+    private static PrintBridgeJobJournal Journal() => new(NullLogger<PrintBridgeJobJournal>.Instance);
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -459,6 +646,15 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
             var jobId = Guid.NewGuid();
             lock (_sync)
                 _jobs[jobId] = (JobState.Pending, copies);
+            return jobId;
+        }
+
+        /// <summary>A job this device claimed before it was interrupted: the server has it in Printing.</summary>
+        public Guid AddClaimedJob()
+        {
+            var jobId = Guid.NewGuid();
+            lock (_sync)
+                _jobs[jobId] = (JobState.Printing, 1);
             return jobId;
         }
 
