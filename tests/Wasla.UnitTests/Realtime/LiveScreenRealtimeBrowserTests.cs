@@ -28,10 +28,14 @@ public sealed class LiveScreenRealtimeBrowserTests
     private static Guid Tenant => TenantVisualWebHost.TenantId;
 
     // Counts snapshot reads, the snapshots shown and SignalR connections built, before any page script runs. Each read is
-    // also logged (bounded, no order data): when it started and ended, its HTTP status or why it failed, and the live
-    // invalidation's counters at its start, which say why it started (see ReadsSinceAsync).
+    // also logged (bounded, no order data): when it started, when the page had its whole answer or the request failed,
+    // its HTTP status or why it failed, and the live invalidation's counters at its start, which say why it started (see
+    // ReadsSinceAsync). __liveReadsUnderWay counts the reads whose answer the page has not finished reading. The Live
+    // Screen renders an answer and starts the follow-up queued during it in the continuations of that body read, before
+    // any later task, so a read is over for the page once it leaves this count (see ReadsSettled).
     private const string Instrumentation = """
         window.__liveDataReads = 0;
+        window.__liveReadsUnderWay = 0;
         window.__liveReadLog = [];
         window.__liveRendered = 0;
         window.__connectionsBuilt = 0;
@@ -41,6 +45,7 @@ public sealed class LiveScreenRealtimeBrowserTests
           window.fetch = function (input) {
             if (String(input && input.url || input).indexOf('/orders/live-data') < 0) return fetch.apply(this, arguments);
             window.__liveDataReads++;
+            window.__liveReadsUnderWay++;
             const live = window.WaslaOrders && window.WaslaOrders.liveInvalidation;
             const counters = live ? live.stats() : null;
             const read = {
@@ -48,13 +53,27 @@ public sealed class LiveScreenRealtimeBrowserTests
               requested: counters ? counters.reads : 0, connects: counters ? counters.connectReads : 0
             };
             if (window.__liveReadLog.length < 500) window.__liveReadLog.push(read);
-            return fetch.apply(this, arguments).then(function (response) {
+            const finish = function (result) {
+              if (read.end !== null) return;
               read.end = Math.round(performance.now());
-              read.result = String(response.status);
+              read.result = result;
+              window.__liveReadsUnderWay--;
+            };
+            const failure = function (error) { return error && error.name === 'AbortError' ? 'aborted' : 'failed'; };
+            return fetch.apply(this, arguments).then(function (response) {
+              const text = response.text;
+              response.text = function () {
+                return text.apply(this, arguments).then(function (body) {
+                  finish(String(response.status));
+                  return body;
+                }, function (error) {
+                  finish(failure(error));
+                  throw error;
+                });
+              };
               return response;
             }, function (error) {
-              read.end = Math.round(performance.now());
-              read.result = error && error.name === 'AbortError' ? 'aborted' : 'failed';
+              finish(failure(error));
               throw error;
             });
           };
@@ -112,7 +131,7 @@ public sealed class LiveScreenRealtimeBrowserTests
 
         // Duplicates of a version the snapshot already shows: no read asked for, and never announced again. Reads already
         // under way (a coalesced follow-up) settle first. The page's own counters say when all ten have arrived.
-        await WaitForNoReadsAsync(browser, ct);
+        await WaitForReadsToSettleAsync(browser, host, ct);
         var received = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().notifications", ct);
         var requested = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
         for (var i = 0; i < 10; i++)
@@ -127,14 +146,19 @@ public sealed class LiveScreenRealtimeBrowserTests
         // for are counted; the coordinator's own poll or a retry after a failed read may fall into the same minutes on a
         // stalled machine (WAS-204) and is the safety net, not the burst. The Live Screen announces the new orders of one
         // snapshot with one sound and notification, so a burst costs at most one announcement per read, not per event.
+        // Counted once all five notifications have arrived, no read is under way or waiting to be asked for: a slow read
+        // with a follow-up queued during it is still counted in full.
         var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        received = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().notifications", ct);
         var burst = new List<Guid>();
         for (var i = 0; i < 5; i++)
             burst.Add(await InsertNewOrderAsync(host, $"RT-BURST-{i}", ct));
         foreach (var id in burst)
             await AnnounceAsync(host, id, ct);
         Assert.True(await browser.WaitForAsync(string.Join(" && ", burst.Select(CardShown)), Push, ct), "The burst of new orders did not appear.");
-        await WaitForNoReadsAsync(browser, ct);
+        Assert.True(await browser.WaitForAsync($"window.WaslaOrders.liveInvalidation.stats().notifications >= {received + 5}", Push, ct),
+            "The burst's notifications did not all reach the page.");
+        await WaitForReadsToSettleAsync(browser, host, ct);
         var reads = await ReadsSinceAsync(browser, readsBefore, ct);
         var timeline = await DescribeAsync(browser, reads, ct);
         var burstReads = reads.Count(r => r.Cause == ReadCause.Notification);
@@ -151,6 +175,51 @@ public sealed class LiveScreenRealtimeBrowserTests
             $"The approved order did not change on screen. {host.ServerErrors}");
         Assert.Equal(notifications, await browser.EvaluateAsync<int>("window.__notifications", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__connectionsBuilt", ct));
+        Assert.Null(host.ServerErrors);
+    }
+
+    [Fact]
+    public async Task ReadsSettle_OnlyAfterASlowReadAndTheFollowUpQueuedDuringItAreHandled()
+    {
+        // WAS-204: a burst is counted once its reads have settled. A read still being answered, with a follow-up queued
+        // during it, keeps that state open for longer than a quiet period in which no other read starts.
+        var ct = TestContext.Current.CancellationToken;
+        await using var host = await StartHostAsync();
+        await using var browser = await OpenLiveScreenAsync(host, "en-US", signInAs: null, ct);
+        Assert.True(await browser.EvaluateAsync<bool>(RecordLiveEvents, ct));
+        await WaitForReadsToSettleAsync(browser, host, ct);
+        var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        var requested = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
+
+        var slow = host.HoldNextRequest("GET", "/orders/live-data");
+        var first = await InsertNewOrderAsync(host, "RT-SLOW-1", ct);
+        await AnnounceAsync(host, first, ct);
+        await slow.Reached.WaitAsync(Push, ct);
+        var second = await InsertNewOrderAsync(host, "RT-SLOW-2", ct);
+        await AnnounceAsync(host, second, ct);
+        // The invalidation asks for a second read (at least a second after the first); the coordinator queues it as the
+        // held read's follow-up, so no request starts.
+        Assert.True(await browser.WaitForAsync(
+            $"window.WaslaOrders.liveInvalidation.stats().reads === {requested + 2} && window.WaslaOrders.liveInvalidation.stats().pendingRead === false", Push, ct),
+            "The second notification's read was not asked for while the first read was held.");
+        Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+        // Longer than the 1.5 seconds without a new read that the earlier wait took for settled: still not settled.
+        Assert.False(await browser.WaitForAsync(ReadsSettled, TimeSpan.FromSeconds(2), ct), "Reads counted as settled while a read was under way.");
+        Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
+
+        // The held read is answered; the queued follow-up starts while that answer is handled, and is held as well.
+        var followUp = host.HoldNextRequest("GET", "/orders/live-data");
+        slow.Release();
+        await followUp.Reached.WaitAsync(Push, ct);
+        Assert.False(await browser.EvaluateAsync<bool>(ReadsSettled, ct), "Reads counted as settled while the follow-up was under way.");
+        followUp.Release();
+        await WaitForReadsToSettleAsync(browser, host, ct);
+
+        var reads = await ReadsSinceAsync(browser, readsBefore, ct);
+        var timeline = await DescribeAsync(browser, reads, ct);
+        Assert.True(reads.Count == 2 && reads.All(r => r.Cause == ReadCause.Notification && r.Read.Result == "200"), timeline);
+        Assert.True(MostAtOnce(reads) == 1, timeline);
+        Assert.True(await browser.EvaluateAsync<bool>($"{CardShown(first)} && {CardShown(second)}", ct), timeline);
         Assert.Null(host.ServerErrors);
     }
 
@@ -515,22 +584,24 @@ public sealed class LiveScreenRealtimeBrowserTests
     }
 
     /// <summary>
-    /// Waits until no snapshot read has started for 1.5 seconds (well under the 30-second connected poll) and returns the
-    /// read count; a slow machine may still finish a coalesced follow-up read after the card it waited for appeared.
+    /// Every snapshot read the page started has been answered and handled (or has failed), and the live invalidation has
+    /// no read waiting to be asked for. A follow-up queued during a read starts while that read's answer is handled, so it
+    /// is under way by then; nothing but a new notification or the coordinator's own poll or retry timer starts a read
+    /// afterwards. It needs no quiet period: a slow read keeps it false however long no other read starts.
     /// </summary>
-    private static async Task<int> WaitForNoReadsAsync(HeadlessChromium browser, CancellationToken ct)
-    {
-        var reads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
-        for (var attempt = 0; attempt < 10; attempt++)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(1.5), ct);
-            var now = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
-            if (now == reads)
-                return now;
-            reads = now;
-        }
+    private const string ReadsSettled =
+        "window.__liveReadsUnderWay === 0 && !!window.WaslaOrders.liveInvalidation && window.WaslaOrders.liveInvalidation.stats().pendingRead === false";
 
-        throw new TimeoutException("Live Screen snapshot reads did not settle.");
+    /// <summary>
+    /// Waits for <see cref="ReadsSettled"/>. The bound only stops a test whose reads never settle; on a stalled machine a
+    /// read may wait for its 15-second timeout.
+    /// </summary>
+    private static async Task WaitForReadsToSettleAsync(HeadlessChromium browser, TenantVisualWebHost host, CancellationToken ct)
+    {
+        if (await browser.WaitForAsync(ReadsSettled, TimeSpan.FromMinutes(3), ct))
+            return;
+        var reads = await ReadsSinceAsync(browser, 0, ct);
+        throw new TimeoutException($"Live Screen snapshot reads did not settle. {await DescribeAsync(browser, reads, ct)} {host.ServerErrors}");
     }
 
     // Logs (bounded, no order data) when each OrderChanged notification arrived, with its version, and each change of

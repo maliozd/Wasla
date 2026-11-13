@@ -408,8 +408,11 @@ endpoint.
   stored after the read under way was handled read by the follow-up; a snapshot endpoint that does not answer for
   150 seconds makes six reads through the coordinator's timeout and backoff, with or without notifications). The burst
   check in `LiveScreenRealtimeBrowserTests.cs` therefore counts only the reads the invalidation asked for, from its
-  `stats()` counters at each read's start; polls and retries are the safety net. Its failure message lists every read
-  (start, end, cause, HTTP status or abort), the notifications' arrival times and versions, and the connection states.
+  `stats()` counters at each read's start; polls and retries are the safety net. It counts once all five notifications
+  have arrived, every read the page started has been answered and handled (or has failed) and no read is waiting to be
+  asked for, not after a quiet period: `ReadsSettle_OnlyAfterASlowReadAndTheFollowUpQueuedDuringItAreHandled` holds a
+  read with a follow-up queued during it for longer than such a period. Its failure message lists every read (start,
+  end, cause, HTTP status or abort), the notifications' arrival times and versions, and the connection states.
 - WAS-25: `RealtimeLoadTests.cs` (lightweight .NET SignalR clients over WebSockets against the real Web pipeline:
   many tabs across tenants and roles under concurrent bursts through the hub and the internal channel, each tab
   receiving exactly its own tenant's streams; reconnect storms; revocation and demotion during a storm; a client that
