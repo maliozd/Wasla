@@ -27,17 +27,36 @@ public sealed class LiveScreenRealtimeBrowserTests
     private static readonly TimeSpan Push = TimeSpan.FromSeconds(5);
     private static Guid Tenant => TenantVisualWebHost.TenantId;
 
-    // Counts snapshot reads, the snapshots shown and SignalR connections built, before any page script runs.
+    // Counts snapshot reads, the snapshots shown and SignalR connections built, before any page script runs. Each read is
+    // also logged (bounded, no order data): when it started and ended, its HTTP status or why it failed, and the live
+    // invalidation's counters at its start, which say why it started (see ReadsSinceAsync).
     private const string Instrumentation = """
         window.__liveDataReads = 0;
+        window.__liveReadLog = [];
         window.__liveRendered = 0;
         window.__connectionsBuilt = 0;
         document.addEventListener('wasla:live-rendered', function () { window.__liveRendered++; });
         (function () {
           const fetch = window.fetch;
           window.fetch = function (input) {
-            if (String(input && input.url || input).indexOf('/orders/live-data') >= 0) window.__liveDataReads++;
-            return fetch.apply(this, arguments);
+            if (String(input && input.url || input).indexOf('/orders/live-data') < 0) return fetch.apply(this, arguments);
+            window.__liveDataReads++;
+            const live = window.WaslaOrders && window.WaslaOrders.liveInvalidation;
+            const counters = live ? live.stats() : null;
+            const read = {
+              at: Math.round(performance.now()), end: null, result: 'pending',
+              requested: counters ? counters.reads : 0, connects: counters ? counters.connectReads : 0
+            };
+            if (window.__liveReadLog.length < 500) window.__liveReadLog.push(read);
+            return fetch.apply(this, arguments).then(function (response) {
+              read.end = Math.round(performance.now());
+              read.result = String(response.status);
+              return response;
+            }, function (error) {
+              read.end = Math.round(performance.now());
+              read.result = error && error.name === 'AbortError' ? 'aborted' : 'failed';
+              throw error;
+            });
           };
           let client;
           Object.defineProperty(window, 'signalR', {
@@ -83,6 +102,7 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.Equal(direction, await browser.EvaluateAsync<string>("document.documentElement.getAttribute('dir')", ct));
         Assert.Equal(30000, await browser.EvaluateAsync<int>("window.WaslaOrders.liveStore.pollingIntervalMs()", ct));
         Assert.True(await browser.EvaluateAsync<bool>(CountNotifications, ct));
+        Assert.True(await browser.EvaluateAsync<bool>(RecordLiveEvents, ct));
 
         // A new order, stored and then announced as ingestion does after its commit.
         var orderId = await InsertNewOrderAsync(host, "RT-NEW-1", ct);
@@ -90,30 +110,38 @@ public sealed class LiveScreenRealtimeBrowserTests
         Assert.True(await browser.WaitForAsync(CardShown(orderId), Push, ct), $"The new order did not appear without polling. {host.ServerErrors}");
         Assert.True(await browser.WaitForAsync("window.__notifications === 1", TimeSpan.FromSeconds(3), ct), "The new order was not announced once.");
 
-        // Duplicates of a version the snapshot already shows: no read at all, and never announced again. Reads already
-        // under way (a coalesced follow-up) settle first, so only reads caused by the duplicates are counted.
-        var readsBefore = await WaitForNoReadsAsync(browser, ct);
+        // Duplicates of a version the snapshot already shows: no read asked for, and never announced again. Reads already
+        // under way (a coalesced follow-up) settle first. The page's own counters say when all ten have arrived.
+        await WaitForNoReadsAsync(browser, ct);
+        var received = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().notifications", ct);
+        var requested = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
         for (var i = 0; i < 10; i++)
             await AnnounceAsync(host, orderId, ct);
-        await Task.Delay(TimeSpan.FromSeconds(2.5), ct);
-        Assert.Equal(0, await browser.EvaluateAsync<int>("window.__liveDataReads", ct) - readsBefore);
+        Assert.True(await browser.WaitForAsync($"window.WaslaOrders.liveInvalidation.stats().notifications >= {received + 10}", Push, ct),
+            "The duplicate notifications did not reach the page.");
+        Assert.Equal(0, await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct) - requested);
+        Assert.False(await browser.EvaluateAsync<bool>("window.WaslaOrders.liveInvalidation.stats().pendingRead", ct));
         Assert.Equal(1, await browser.EvaluateAsync<int>("window.__notifications", ct));
 
-        // A burst of newer versions (several orders arriving together): read together. The Live Screen announces the new
-        // orders of one snapshot with one sound and notification, so a burst costs one announcement per read, not per
-        // event.
-        readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        // A burst of newer versions (several orders arriving together): read together. Only the reads the burst asked
+        // for are counted; the coordinator's own poll or a retry after a failed read may fall into the same minutes on a
+        // stalled machine (WAS-204) and is the safety net, not the burst. The Live Screen announces the new orders of one
+        // snapshot with one sound and notification, so a burst costs at most one announcement per read, not per event.
+        var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
         var burst = new List<Guid>();
         for (var i = 0; i < 5; i++)
             burst.Add(await InsertNewOrderAsync(host, $"RT-BURST-{i}", ct));
         foreach (var id in burst)
             await AnnounceAsync(host, id, ct);
         Assert.True(await browser.WaitForAsync(string.Join(" && ", burst.Select(CardShown)), Push, ct), "The burst of new orders did not appear.");
-        await Task.Delay(TimeSpan.FromSeconds(1.5), ct);
-        var burstReads = await browser.EvaluateAsync<int>("window.__liveDataReads", ct) - readsBefore;
-        Assert.InRange(burstReads, 1, 3);
+        await WaitForNoReadsAsync(browser, ct);
+        var reads = await ReadsSinceAsync(browser, readsBefore, ct);
+        var timeline = await DescribeAsync(browser, reads, ct);
+        var burstReads = reads.Count(r => r.Cause == ReadCause.Notification);
+        Assert.True(burstReads is >= 1 and <= 3, $"The burst of 5 notifications caused {burstReads} reads. {timeline}");
+        Assert.True(MostAtOnce(reads) == 1, $"Snapshot reads overlapped. {timeline}");
         var notifications = await browser.EvaluateAsync<int>("window.__notifications", ct);
-        Assert.InRange(notifications, 2, 1 + burstReads);
+        Assert.True(notifications >= 2 && notifications <= 1 + reads.Count, $"{notifications - 1} announcements for the burst. {timeline}");
 
         // A lifecycle action through the real action service (it announces after its save).
         using (var scope = host.Services.CreateScope())
@@ -503,6 +531,68 @@ public sealed class LiveScreenRealtimeBrowserTests
         }
 
         throw new TimeoutException("Live Screen snapshot reads did not settle.");
+    }
+
+    // Logs (bounded, no order data) when each OrderChanged notification arrived, with its version, and each change of
+    // the live connection's state, for the failure messages of the read counts.
+    private const string RecordLiveEvents = """
+        (() => {
+          const realtime = window.WaslaRealtime.get();
+          window.__liveEvents = [];
+          const note = function (entry) { if (window.__liveEvents.length < 500) window.__liveEvents.push(entry); };
+          realtime.on('OrderChanged', function (message) { note({ at: Math.round(performance.now()), version: Number(message && message.version) }); });
+          realtime.onState(function (info) { note({ at: Math.round(performance.now()), state: String(info && info.state) }); });
+          return true;
+        })()
+        """;
+
+    private enum ReadCause
+    {
+        /// <summary>The live invalidation asked for a read (a notification, or a follow-up it asked for during a read).</summary>
+        Notification,
+        /// <summary>A (re)connect of the live connection read the snapshot.</summary>
+        Connect,
+        /// <summary>The coordinator's own poll, or its retry after a failed or timed-out read: the safety net.</summary>
+        SafetyNet
+    }
+
+    private sealed record LoggedRead(double At, double? End, string Result, int Requested, int Connects);
+
+    private sealed record ClassifiedRead(LoggedRead Read, ReadCause Cause);
+
+    /// <summary>
+    /// The snapshot reads started since the page had made <paramref name="from"/>, each with why it started. The live
+    /// invalidation counts every read it asks for (<c>stats().reads</c>, the reconnect reads also in <c>connectReads</c>)
+    /// before the request, so a read that starts after either counter grew was asked for by it. A read it asked for while
+    /// another was under way runs as that read's follow-up, and is counted as asked for. Any other read is the
+    /// coordinator's own poll or retry.
+    /// </summary>
+    private static async Task<IReadOnlyList<ClassifiedRead>> ReadsSinceAsync(HeadlessChromium browser, int from, CancellationToken ct)
+    {
+        var log = JsonSerializer.Deserialize<List<LoggedRead>>(
+            await browser.EvaluateAsync<string>("JSON.stringify(window.__liveReadLog)", ct), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var started = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
+        Assert.True(log.Count == started, $"The read log has {log.Count} of {started} reads.");
+        return log
+            .Select((read, i) => new ClassifiedRead(read, i == 0 || read.Connects > log[i - 1].Connects
+                ? ReadCause.Connect
+                : read.Requested > log[i - 1].Requested ? ReadCause.Notification : ReadCause.SafetyNet))
+            .Skip(from)
+            .ToList();
+    }
+
+    /// <summary>The most snapshot reads under way at the same moment; the coordinator runs one at a time.</summary>
+    private static int MostAtOnce(IReadOnlyList<ClassifiedRead> reads) =>
+        reads.Count == 0 ? 0 : reads.Max(r => reads.Count(o => o.Read.At <= r.Read.At && (o.Read.End is null || o.Read.End > r.Read.At)));
+
+    /// <summary>The reads, the notifications and connection states since the first of them, and the invalidation's counters.</summary>
+    private static async Task<string> DescribeAsync(HeadlessChromium browser, IReadOnlyList<ClassifiedRead> reads, CancellationToken ct)
+    {
+        var since = reads.Count > 0 ? reads[0].Read.At - 5000 : 0;
+        var events = await browser.EvaluateAsync<string>($"JSON.stringify((window.__liveEvents || []).filter(function (e) {{ return e.at >= {since.ToString(System.Globalization.CultureInfo.InvariantCulture)}; }}))", ct);
+        var counters = await browser.EvaluateAsync<string>("JSON.stringify(window.WaslaOrders.liveInvalidation.stats())", ct);
+        var lines = reads.Select(r => $"{r.Read.At:0}-{(r.Read.End is { } end ? end.ToString("0", System.Globalization.CultureInfo.InvariantCulture) : "…")} ms {r.Cause} {r.Read.Result}");
+        return $"Reads: [{string.Join("; ", lines)}]. Events (ms, version or state): {events}. Invalidation: {counters}.";
     }
 
     private static string CardShown(Guid orderId) => $"!!document.querySelector('#ordersLiveScreenHost [data-order-id=\"{orderId}\"]')";

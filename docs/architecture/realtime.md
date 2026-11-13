@@ -403,6 +403,13 @@ endpoint.
   all distinct, never outside a transaction, carried by the snapshot) and `LiveScreenRealtimeBrowserTests.cs` (headless Chromium in English and Arabic: push without polling, one
   announcement per new order through a burst, lifecycle action, disconnected fallback, reconnect, back/forward-cache
   restore with one connection, order training, a Kitchen screen).
+- WAS-204: `live-screen-burst-reads.test.js` (the invalidation driving the real coordinator on a manual clock:
+  notifications before a read, during a slow one and around its answer read together, one request at a time, a change
+  stored after the read under way was handled read by the follow-up; a snapshot endpoint that does not answer for
+  150 seconds makes six reads through the coordinator's timeout and backoff, with or without notifications). The burst
+  check in `LiveScreenRealtimeBrowserTests.cs` therefore counts only the reads the invalidation asked for, from its
+  `stats()` counters at each read's start; polls and retries are the safety net. Its failure message lists every read
+  (start, end, cause, HTTP status or abort), the notifications' arrival times and versions, and the connection states.
 - WAS-25: `RealtimeLoadTests.cs` (lightweight .NET SignalR clients over WebSockets against the real Web pipeline:
   many tabs across tenants and roles under concurrent bursts through the hub and the internal channel, each tab
   receiving exactly its own tenant's streams; reconnect storms; revocation and demotion during a storm; a client that
