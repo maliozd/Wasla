@@ -1604,10 +1604,11 @@
   margin-block: 4px 8px;
 }
 
+/* The receipt's total (28 px, the owner's choice: a little quieter than 32 px, still the receipt's largest figure). */
 .su-receipt__amount {
   color: var(--su-text);
   font-family: var(--su-font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
   line-height: 1.12;
   letter-spacing: -0.03em;
