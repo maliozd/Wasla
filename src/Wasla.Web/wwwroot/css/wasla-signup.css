@@ -2257,6 +2257,11 @@
   gap: 20px;
 }
 
+/* The code field's wrapper takes no row while the field is hidden (a verified number opened again). */
+.su-phone-stack > div:has(> [data-su-code-field][hidden]) {
+  display: none;
+}
+
 .su-phone-stack > .su-actions {
   margin-block-start: 4px;
 }
