@@ -411,8 +411,12 @@ endpoint.
   `stats()` counters at each read's start; polls and retries are the safety net. It counts once all five notifications
   have arrived, every read the page started has been answered and handled (or has failed) and no read is waiting to be
   asked for, not after a quiet period: `ReadsSettle_OnlyAfterASlowReadAndTheFollowUpQueuedDuringItAreHandled` holds a
-  read with a follow-up queued during it for longer than such a period. Its failure message lists every read (start,
-  end, cause, HTTP status or abort), the notifications' arrival times and versions, and the connection states.
+  read with a follow-up queued during it, and then the follow-up, each for longer than such a period, and checks on the
+  page's own clock that the reads never count as settled meanwhile. It waits for the queued follow-up on the page's
+  clock as well: the test process, with the test web host in it, can be paused on a loaded CI runner, and a wait timed
+  there reported a page that had already queued the follow-up as not having done so. Its failure messages list every
+  read (start, end, cause, HTTP status or abort), the notifications' arrival times and versions, the test's steps, and
+  the connection states.
 - WAS-25: `RealtimeLoadTests.cs` (lightweight .NET SignalR clients over WebSockets against the real Web pipeline:
   many tabs across tenants and roles under concurrent bursts through the hub and the internal channel, each tab
   receiving exactly its own tenant's streams; reconnect storms; revocation and demotion during a storm; a client that

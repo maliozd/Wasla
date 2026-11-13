@@ -190,28 +190,42 @@ public sealed class LiveScreenRealtimeBrowserTests
         await WaitForReadsToSettleAsync(browser, host, ct);
         var readsBefore = await browser.EvaluateAsync<int>("window.__liveDataReads", ct);
         var requested = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().reads", ct);
+        var received = await browser.EvaluateAsync<int>("window.WaslaOrders.liveInvalidation.stats().notifications", ct);
+        async Task<string> TimelineAsync() =>
+            $"Asked for before: {requested}, received before: {received}. {await DescribeAsync(browser, await ReadsSinceAsync(browser, readsBefore, ct), ct)}";
 
         var slow = host.HoldNextRequest("GET", "/orders/live-data");
         var first = await InsertNewOrderAsync(host, "RT-SLOW-1", ct);
+        await MarkAsync(browser, "announce 1", ct);
         await AnnounceAsync(host, first, ct);
         await slow.Reached.WaitAsync(Push, ct);
+        await MarkAsync(browser, "held", ct);
         var second = await InsertNewOrderAsync(host, "RT-SLOW-2", ct);
+        await MarkAsync(browser, "announce 2", ct);
         await AnnounceAsync(host, second, ct);
-        // The invalidation asks for a second read (at least a second after the first); the coordinator queues it as the
-        // held read's follow-up, so no request starts.
-        Assert.True(await browser.WaitForAsync(
-            $"window.WaslaOrders.liveInvalidation.stats().reads === {requested + 2} && window.WaslaOrders.liveInvalidation.stats().pendingRead === false", Push, ct),
-            "The second notification's read was not asked for while the first read was held.");
+        // The second notification arrives and the invalidation asks for its read (at least a second after the first); the
+        // coordinator queues it as the held read's follow-up, so no request starts. Waited for on the page's clock, then
+        // checked exactly: the counters only grow, so the wait cannot miss a state that held only briefly.
+        if (!await BecomesTrueOnPageClockAsync(browser,
+            $"window.WaslaOrders.liveInvalidation.stats().notifications >= {received + 2} && window.WaslaOrders.liveInvalidation.stats().reads >= {requested + 2} && window.WaslaOrders.liveInvalidation.stats().pendingRead === false",
+            Push, ct))
+            Assert.Fail($"The second notification's read was not asked for while the first read was held. {await TimelineAsync()}");
+        Assert.True(
+            await browser.EvaluateAsync<bool>($"(() => {{ const s = window.WaslaOrders.liveInvalidation.stats(); return s.notifications === {received + 2} && s.reads === {requested + 2}; }})()", ct),
+            $"Other notifications or reads than the two announced. {await TimelineAsync()}");
         Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
-        // Longer than the 1.5 seconds without a new read that the earlier wait took for settled: still not settled.
-        Assert.False(await browser.WaitForAsync(ReadsSettled, TimeSpan.FromSeconds(2), ct), "Reads counted as settled while a read was under way.");
+        // Longer than the 1.5 seconds without a new read that the earlier wait took for settled: never settled meanwhile.
+        Assert.False(await BecomesTrueOnPageClockAsync(browser, ReadsSettled, TimeSpan.FromSeconds(2), ct),
+            $"Reads counted as settled while a read was under way with a follow-up queued. {await TimelineAsync()}");
         Assert.Equal(readsBefore + 1, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
 
         // The held read is answered; the queued follow-up starts while that answer is handled, and is held as well.
         var followUp = host.HoldNextRequest("GET", "/orders/live-data");
         slow.Release();
         await followUp.Reached.WaitAsync(Push, ct);
-        Assert.False(await browser.EvaluateAsync<bool>(ReadsSettled, ct), "Reads counted as settled while the follow-up was under way.");
+        Assert.False(await BecomesTrueOnPageClockAsync(browser, ReadsSettled, TimeSpan.FromSeconds(2), ct),
+            $"Reads counted as settled while the follow-up was under way. {await TimelineAsync()}");
+        Assert.Equal(readsBefore + 2, await browser.EvaluateAsync<int>("window.__liveDataReads", ct));
         followUp.Release();
         await WaitForReadsToSettleAsync(browser, host, ct);
 
@@ -616,6 +630,31 @@ public sealed class LiveScreenRealtimeBrowserTests
           return true;
         })()
         """;
+
+    /// <summary>
+    /// Whether <paramref name="condition"/> holds on the page within <paramref name="timeout"/>, measured on the page's own
+    /// clock and checked every 20 ms there, the last time at the deadline. <see cref="HeadlessChromium.WaitForAsync"/>
+    /// measures its timeout in the test process and does not check again after it: when that process (and the test web
+    /// host in it) is paused for longer than the timeout, as on a loaded CI runner, it reports false for a page that met
+    /// the condition during the pause (WAS-204). The browser is another process, so this wait measures what the page did.
+    /// </summary>
+    private static Task<bool> BecomesTrueOnPageClockAsync(HeadlessChromium browser, string condition, TimeSpan timeout, CancellationToken ct) =>
+        browser.EvaluateAsync<bool>($$"""
+            new Promise(function (resolve) {
+              const deadline = performance.now() + {{timeout.TotalMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture)}};
+              (function check() {
+                let met = false;
+                try { met = !!({{condition}}); } catch (e) { met = false; }
+                if (met) resolve(true);
+                else if (performance.now() >= deadline) resolve(false);
+                else setTimeout(check, 20);
+              })();
+            })
+            """, ct);
+
+    /// <summary>Adds a step of the test to the page's event log (after <see cref="RecordLiveEvents"/>), on the page's clock.</summary>
+    private static Task MarkAsync(HeadlessChromium browser, string step, CancellationToken ct) =>
+        browser.EvaluateAsync<bool>($"(window.__liveEvents.length < 500 && window.__liveEvents.push({{ at: Math.round(performance.now()), step: {JsonSerializer.Serialize(step)} }}), true)", ct);
 
     private enum ReadCause
     {
