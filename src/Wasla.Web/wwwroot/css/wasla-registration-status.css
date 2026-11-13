@@ -181,6 +181,9 @@
 
 .su-status-page .su-notice {
   margin-block-end: 32px;
+  /* Status pages only: the notice text starts on the progress steps' text line (28 px marker + 16 px gap = 44 px):
+     14 px padding, the 18 px icon and the 12 px gap. Signup form notices keep their 20 px. */
+  padding-inline-start: 14px;
 }
 
 /* A notice right under the heading (the rate-limit page) keeps the lead's distance. */
@@ -229,8 +232,11 @@
   color: var(--su-text);
 }
 
+/* The text of a quiet action lines up with the column's edge; its 12 px padding and hover area reach into the gutter,
+   like the contact disclosure's row. */
 .su-status__actions .su-btn--quiet {
   padding-inline: 12px;
+  margin-inline-start: -12px;
 }
 
 /* ---------- Sections and label/value rows (checkout summary, card, contact details) ---------- */
@@ -324,7 +330,7 @@
 /* ---------- Contact details: one full-width disclosure row under a hairline, then a label/value grid ---------- */
 
 .su-status-contact {
-  margin-block-start: 40px;
+  margin-block-start: 32px;
   border-block-start: 1px solid var(--su-border);
 }
 
