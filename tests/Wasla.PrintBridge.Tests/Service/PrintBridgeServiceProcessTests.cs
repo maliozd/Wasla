@@ -110,6 +110,35 @@ public sealed class PrintBridgeServiceProcessTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASavedPrinterTheServiceCannotSee_IsNeverPrintedTo_AndIsReportedMissing()
+    {
+        // As after an upgrade from a version that printed as the signed-in user to a printer only that user had: the
+        // service does not list it. Test mode is off, so the service would print if it started; the printer does not exist
+        // anywhere, so nothing can reach paper.
+        const string unseen = @"\\wasla-print-server.invalid\Receipt";
+        const string declined = "Printing was not started at service start. Reason=Error.PrinterUnavailable";
+        Configure(document =>
+        {
+            document.PrintBridge.PrinterName = unseen;
+            document.PrintBridge.DryRun = false;
+        });
+        var job = _server.AddJob();
+        StartService();
+        var app = Connect();
+        await app.Connected.WaitAsync(Wait, Ct);
+
+        await WaitUntilAsync(() => CountLogLines(declined) >= 1);
+        await WaitUntilAsync(() => app.GetStatus().PrinterName == unseen);
+        Assert.False(app.IsRunning);
+        Assert.Equal(PrinterHealthStatus.NotFound, app.GetStatus().PrinterHealthStatus);
+        Assert.DoesNotContain(await app.ListPrintersAsync(Ct), p => string.Equals(p, unseen, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("Shell.Printer.NotInstalled", await app.SavePrinterAsync(unseen, Ct));
+        await Task.Delay(TimeSpan.FromSeconds(3), Ct);
+        Assert.Equal("Pending", _server.State(job));
+        Assert.Equal(1, CountLogLines(declined));
+    }
+
+    [Fact]
     public async Task ASecondServiceProcessOnTheSameFolder_StartsNoEngine_UntilTheFirstIsGone()
     {
         Configure();
@@ -158,11 +187,12 @@ public sealed class PrintBridgeServiceProcessTests : IAsyncDisposable
         }
     }
 
-    private void Configure()
+    private void Configure(Action<PrintBridgeSettingsStore.AppSettingsDocument>? customize = null)
     {
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
         TrayExitTests.ListenToTheFakeServer(document, _server.Url);
+        customize?.Invoke(document);
         store.Save(document);
     }
 

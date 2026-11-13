@@ -1,6 +1,8 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -12,10 +14,12 @@ using Microsoft.Win32.SafeHandles;
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Ipc;
+using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.ServiceClient;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Tests.WebShell;
+using Wasla.PrintBridge.WebShell;
 
 namespace Wasla.PrintBridge.Tests.Service;
 
@@ -25,7 +29,11 @@ namespace Wasla.PrintBridge.Tests.Service;
 /// actions) on a data folder under ProgramData that an older Print Bridge left: inherited (permissive) access rules, a
 /// paired settings file with its device token and print history. The production client talks to it with the production
 /// server check (the pipe's server must be the process the Service Control Manager runs for the service). The engine
-/// listens to a local fake server with a fake token in test mode: nothing is printed on paper.
+/// listens to a local fake server with a fake token: nothing is printed on paper.
+///
+/// Two tests, so that a printer environment problem cannot hide the service, permission and recovery results: one for
+/// the Service Control Manager, the data folder's rules, the virtual account, the pipe's users and recovery (test mode);
+/// one for the printers the service can use, with a disposable machine printer it really prints to.
 ///
 /// Registering a service changes the machine, so this runs only on GitHub-hosted runners (disposable, elevated) and skips
 /// everywhere else, like <see cref="SetupInstanceCrossAccountTests"/>; a skip fails CI there. The instance has its own
@@ -47,7 +55,7 @@ public sealed class PrintBridgeWindowsServiceTests : IAsyncDisposable
     private IDisposable? _rootScope;
     private TrayFakeServer? _server;
     private bool _registered;
-    private string? _printerShare;
+    private string? _machinePrinter;
     private bool _debugMode;
 
     public PrintBridgeWindowsServiceTests()
@@ -75,10 +83,12 @@ public sealed class PrintBridgeWindowsServiceTests : IAsyncDisposable
             Sc("delete", _name);
         }
 
-        if (_printerShare is not null)
+        if (_machinePrinter is not null)
         {
-            PowerShell($"Remove-Printer -Name '\\\\{Environment.MachineName}\\{_printerShare}' -ErrorAction SilentlyContinue; " +
-                       "Set-Printer -Name 'Microsoft Print to PDF' -Shared $false -ErrorAction SilentlyContinue");
+            // The port is in use until the spooler has deleted the printer; the runner is disposable, so a port left
+            // behind is harmless.
+            PowerShell($"Remove-Printer -Name '{_machinePrinter}' -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; " +
+                       $"Remove-PrinterPort -Name '{_machinePrinter}' -ErrorAction SilentlyContinue");
         }
 
         _server?.Dispose();
@@ -295,18 +305,7 @@ public sealed class PrintBridgeWindowsServiceTests : IAsyncDisposable
         await WaitUntilAsync(() => waiting.IsRunning, "the service takes over once the other engine is gone");
         _evidence.Add("engine lock held elsewhere: no job claimed; released: the service started printing");
 
-        // ---- 10. A printer added only to this user's profile is not the service's.
-        _printerShare = "WaslaPbTest" + _id;
-        var userOnly = $@"\\{Environment.MachineName}\{_printerShare}";
-        var added = PowerShell(
-            $"Set-Printer -Name 'Microsoft Print to PDF' -Shared $true -ShareName '{_printerShare}'; Add-Printer -ConnectionName '{userOnly}'");
-        Assert.True(added.ExitCode == 0, "Adding a per-user printer connection: " + added.Output);
-        Assert.Contains(System.Drawing.Printing.PrinterSettings.InstalledPrinters.Cast<string>(), p => string.Equals(p, userOnly, StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(await waiting.ListPrintersAsync(Ct), p => string.Equals(p, userOnly, StringComparison.OrdinalIgnoreCase));
-        Assert.Equal("Shell.Printer.NotInstalled", await waiting.SavePrinterAsync(userOnly, Ct));
-        _evidence.Add($"per-user printer connection {userOnly}: listed for the user, not for the service; saving it is refused (Shell.Printer.NotInstalled)");
-
-        // ---- 11. Administrators keep access, and the rollback command gives the folder back to ProgramData's rules.
+        // ---- 10. Administrators keep access, and the rollback command gives the folder back to ProgramData's rules.
         Sc("stop", _name);
         WaitForStatus(ServiceControllerStatus.Stopped);
         Assert.Contains(TrayFakeServer.Token, File.ReadAllText(SettingsPath), StringComparison.Ordinal);
@@ -315,6 +314,113 @@ public sealed class PrintBridgeWindowsServiceTests : IAsyncDisposable
         Assert.False(new DirectoryInfo(DataRoot).GetAccessControl().AreAccessRulesProtected);
         Assert.True(Grants(new FileInfo(SettingsPath).GetAccessControl(), Users, FileSystemRights.ReadData));
         _evidence.Add("administrator: settings readable after securing; icacls /reset /T restores ProgramData's inherited rules (rollback)");
+    }
+
+    /// <summary>
+    /// The printers the real service can use, with a disposable machine printer: Windows' in-box "Generic / Text Only"
+    /// driver on a standard TCP/IP port that sends RAW to 127.0.0.1, where this test receives what a network receipt
+    /// printer on port 9100 would. Test mode is off: the service really prints, through the Windows spooler.
+    ///
+    /// A printer that only one Windows user has (a connection to another computer's shared printer, kept in that user's
+    /// profile) cannot be created on a single GitHub-hosted runner. Windows refuses a connection to a printer the computer
+    /// shares itself, under any of its names (error 123 by its name or address, 1801 by localhost or 127.0.0.1, also with
+    /// DisableLoopbackCheck, the File and Printer Sharing firewall rules or RPC over named pipes), and "Microsoft Print to
+    /// PDF" cannot be shared at all (3022). So this test covers the service's side of that boundary with a saved printer
+    /// the service cannot see, and the app's message from the real status with this user's printer list substituted. A
+    /// real per-user connection needs two computers and remains for WAS-28.
+    /// </summary>
+    [Fact]
+    public async Task TheRealService_PrintsToAMachinePrinterInSession0_AndNeverToAPrinterItCannotSee()
+    {
+        SetupInstanceCrossAccountTests.SkipUnlessDisposableRunner();
+        Assert.True(IsElevated(), "The GitHub-hosted runner is elevated; registering a service and a printer needs it.");
+        _evidence.Add($"runner: {Environment.MachineName}, elevated, session {Process.GetCurrentProcess().SessionId}");
+
+        // ---- 1. A paired installation from before WAS-61 whose saved printer the service cannot see (as a printer
+        // connection in the signed-in user's profile), test mode off; registered, secured and started as the installer
+        // does.
+        const string unseen = @"\\wasla-print-server.invalid\Receipt";
+        _server = new TrayFakeServer();
+        Directory.CreateDirectory(DataRoot);
+        _rootScope = PrintBridgePaths.UseRootForTests(DataRoot);
+        var store = new PrintBridgeSettingsStore();
+        var document = store.Load();
+        TrayExitTests.ListenToTheFakeServer(document, _server.Url);
+        document.PrintBridge.PrinterName = unseen;
+        document.PrintBridge.DryRun = false;
+        store.Save(document);
+
+        var exe = InstallServiceBinaries();
+        Register(exe);
+        var serviceSid = (SecurityIdentifier)new NTAccount("NT SERVICE", _name).Translate(typeof(SecurityIdentifier));
+        GrantReadAndExecute(Path.Combine(_install, "bin"), serviceSid);
+        var secured = Run(exe, "secure-data", "--service-name", _name, "--data-root", DataRoot);
+        Assert.True(secured.ExitCode == 0, secured.Output);
+        var job = _server.AddJob();
+        Sc("start", _name);
+        WaitForStatus(ServiceControllerStatus.Running);
+        var app = Connect();
+        await app.Connected.WaitAsync(Wait, Ct);
+
+        // ---- 2. The service does not print to a printer it cannot see: it does not start printing, reports the printer
+        // missing, does not list it and refuses to save it. The waiting job is not claimed.
+        const string declined = "Printing was not started at service start. Reason=Error.PrinterUnavailable";
+        await WaitUntilAsync(() => CountLogLines(declined) >= 1, "the service declines to start printing");
+        await WaitUntilAsync(() => app.GetStatus().PrinterName == unseen, "the app receives the service's state");
+        var status = app.GetStatus();
+        Assert.False(app.IsRunning);
+        Assert.Equal(PrinterHealthStatus.NotFound, status.PrinterHealthStatus);
+        Assert.DoesNotContain(await app.ListPrintersAsync(Ct), p => string.Equals(p, unseen, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("Shell.Printer.NotInstalled", await app.SavePrinterAsync(unseen, Ct));
+        await Task.Delay(TimeSpan.FromSeconds(3), Ct);
+        Assert.Equal("Pending", _server.State(job));
+        Assert.Equal(1, CountLogLines(declined));
+
+        // The app's message for that printer, built from the status the real service sent. Whether this Windows user has
+        // the printer is substituted (a real per-user connection cannot be created on one computer, above); the real
+        // probe asks this user's Windows, finds the printer nowhere and keeps the plain "not found".
+        var culture = WebShellTestSupport.Culture(SupportedCultures.English);
+        var localizer = new PrintBridgeLocalizer(culture);
+        var userHasIt = new ShellSnapshotFactory(localizer, culture, installedForThisUser: name => string.Equals(name, unseen, StringComparison.OrdinalIgnoreCase)).Create(status);
+        var userLacksIt = new ShellSnapshotFactory(localizer, culture, installedForThisUser: UserPrinterProbe.IsInstalledForThisUser).Create(status);
+        Assert.Equal(localizer["Shell.Printer.UserOnly"], userHasIt.Printer.Label);
+        Assert.Equal(localizer.GetPrinterHealthStatus(PrinterHealthStatus.NotFound), userLacksIt.Printer.Label);
+        _evidence.Add($"saved printer {unseen} the service cannot see: printing not started (Error.PrinterUnavailable), status NotFound, not in the service's list, saving refused (Shell.Printer.NotInstalled), job {job:N} left Pending");
+        _evidence.Add($"app message from that real status, this user's printer list substituted: \"{userHasIt.Printer.Label}\"; with the real probe (not installed for this user either): \"{userLacksIt.Printer.Label}\"");
+
+        // ---- 3. An administrator installs a receipt printer for the computer while the service runs: "Generic / Text
+        // Only" on a standard TCP/IP port sending RAW to 127.0.0.1, where this test listens. The service lists it, it can be
+        // saved, and printing starts.
+        using var receiver = new RawPrinterReceiver();
+        var printer = "WaslaPbTest_" + _id;
+        _machinePrinter = printer;
+        var installed = PowerShell(
+            "Add-PrinterDriver -Name 'Generic / Text Only' -ErrorAction Stop; " +
+            $"Add-PrinterPort -Name '{printer}' -PrinterHostAddress '127.0.0.1' -PortNumber {receiver.Port} -ErrorAction Stop; " +
+            $"Add-Printer -Name '{printer}' -DriverName 'Generic / Text Only' -PortName '{printer}' -ErrorAction Stop");
+        Assert.True(installed.ExitCode == 0, "Installing the machine printer: " + installed.Output);
+        var servicePrinters = await app.ListPrintersAsync(Ct);
+        Assert.Contains(servicePrinters, p => string.Equals(p, printer, StringComparison.OrdinalIgnoreCase));
+        Assert.Null(await app.SavePrinterAsync(printer, Ct));
+        await app.StartAsync(Ct);
+        await WaitUntilAsync(
+            () => app.IsRunning && app.GetStatus().PrinterHealthStatus == PrinterHealthStatus.Ready,
+            "printing starts with the machine printer");
+        _evidence.Add($"machine printer {printer} (Generic / Text Only, TCP/IP RAW to 127.0.0.1:{receiver.Port}) installed while the service ran: in the service's list ({string.Join(", ", servicePrinters)}), saved, printing started");
+
+        // ---- 4. The waiting job is printed by the service, as its virtual account in session 0, through the Windows
+        // spooler to that port, once, and reported printed.
+        await _server.JobFinished(job).WaitAsync(Wait, Ct);
+        Assert.Equal(["mark-printing", "mark-printed"], _server.ReportsFor(job));
+        await WaitUntilAsync(
+            () => receiver.Received.Any(r => r.Contains("QA-5901", StringComparison.Ordinal)),
+            "the receipt reaches the printer's port");
+        await Task.Delay(TimeSpan.FromSeconds(3), Ct);
+        var receipts = receiver.Received.Where(r => r.Contains("QA-5901", StringComparison.Ordinal)).ToArray();
+        Assert.Single(receipts);
+        Assert.Equal(0, CountLogLines("DryRun: no physical print was sent."));
+        var servicePid = ServiceControlManagerVerifier.QueryServiceProcessId(_name)!.Value;
+        _evidence.Add($"job {job:N} printed by pid {servicePid} (session {Process.GetProcessById((int)servicePid).SessionId}, NT SERVICE\\{_name}) through the spooler: the port received one receipt of {Encoding.UTF8.GetByteCount(receipts[0])} bytes with the order code; reported mark-printing, mark-printed");
     }
 
     private string InstallServiceBinaries()
@@ -524,6 +630,69 @@ public sealed class PrintBridgeWindowsServiceTests : IAsyncDisposable
             if (DateTime.UtcNow > until)
                 throw new System.TimeoutException($"Not reached in time: {what}.");
             await Task.Delay(100, Ct);
+        }
+    }
+
+    /// <summary>
+    /// A loopback TCP listener that keeps what each connection sends, as a network receipt printer receives a RAW job from
+    /// the spooler's standard TCP/IP port.
+    /// </summary>
+    private sealed class RawPrinterReceiver : IDisposable
+    {
+        private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
+        private readonly CancellationTokenSource _stop = new();
+        private readonly List<string> _received = [];
+        private readonly Task _accepting;
+
+        public RawPrinterReceiver()
+        {
+            _listener.Start();
+            Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
+            _accepting = AcceptAsync();
+        }
+
+        public int Port { get; }
+
+        public IReadOnlyList<string> Received
+        {
+            get
+            {
+                lock (_received)
+                    return [.. _received];
+            }
+        }
+
+        public void Dispose()
+        {
+            _stop.Cancel();
+            _listener.Stop();
+            try
+            {
+                _accepting.Wait(TimeSpan.FromSeconds(5));
+            }
+            catch (AggregateException)
+            {
+            }
+
+            _stop.Dispose();
+        }
+
+        private async Task AcceptAsync()
+        {
+            try
+            {
+                while (true)
+                {
+                    using var client = await _listener.AcceptTcpClientAsync(_stop.Token);
+                    using var buffer = new MemoryStream();
+                    await client.GetStream().CopyToAsync(buffer, _stop.Token);
+                    lock (_received)
+                        _received.Add(Encoding.UTF8.GetString(buffer.ToArray()));
+                }
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException or SocketException or IOException)
+            {
+            }
         }
     }
 
