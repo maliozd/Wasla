@@ -19,10 +19,11 @@
   --su-action: #b94f2a;
   --su-action-hover: #9e4122;
   --su-action-soft: #fbe9df;
-  /* Hover background of the page's secondary actions (Edit, back, change number, Show / Hide, retry, resend): warm
-     stone gray, the owner's choice. Only the background changes; their text and icons keep their own colour (the action
-     orange #b94f2a on it is about 5.9:1). */
-  --su-secondary-hover: #eeebe6;
+  /* Hover background of the page's secondary actions (Edit, back, change number, Show / Hide, retry, resend): the same
+     token as the public header's "Sign in" hover (.wm-nav__link:hover, --wm-surface-muted from .wasla-landing, the
+     page's body), the owner's choice. Only the background changes; their text and icons keep their own colour (the
+     action orange #b94f2a on it is about 6:1). */
+  --su-secondary-hover: var(--wm-surface-muted, #f4f0e9);
   --su-selected: #fdf4ee;
   --su-danger: #b4232c;
   --su-danger-soft: #f6e2e1;
