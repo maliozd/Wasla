@@ -514,7 +514,7 @@ public sealed class PrintBridgeController : BaseController
             return NotFound();
 
         var fileName = Path.GetFileName(packagePath);
-        return PhysicalFile(packagePath, "application/zip", fileName);
+        return PhysicalFile(packagePath, PrintBridgePackagePaths.GetContentType(fileName), fileName);
     }
 
     private PrintBridgePageViewModel BuildPageViewModel(

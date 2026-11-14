@@ -114,16 +114,16 @@ public sealed partial class PrintBridgeFirstInstallTests
         var folder = Directory.CreateTempSubdirectory("wasla-print-bridge-download-");
         try
         {
-            var package = Path.Combine(folder.FullName, "Wasla.PrintBridge-win-x64.zip");
+            var package = Path.Combine(folder.FullName, "Wasla.PrintBridge-Setup-x64.exe");
             File.WriteAllText(package, "stand-in");
 
             var file = Assert.IsType<PhysicalFileResult>(Controller(Owner, packagePath: package).DownloadPackage());
 
             Assert.Equal(package, file.FileName);
-            Assert.Equal("application/zip", file.ContentType);
-            Assert.Equal("Wasla.PrintBridge-win-x64.zip", file.FileDownloadName);
+            Assert.Equal("application/vnd.microsoft.portable-executable", file.ContentType);
+            Assert.Equal("Wasla.PrintBridge-Setup-x64.exe", file.FileDownloadName);
             Assert.Empty(_devices.ListedTenants);
-            Assert.IsType<NotFoundResult>(Controller(Owner, packagePath: Path.Combine(folder.FullName, "missing.zip")).DownloadPackage());
+            Assert.IsType<NotFoundResult>(Controller(Owner, packagePath: Path.Combine(folder.FullName, "missing.exe")).DownloadPackage());
         }
         finally
         {
@@ -187,8 +187,11 @@ public sealed partial class PrintBridgeFirstInstallTests
         foreach (var fake in new[] { "pbDownloadBtn", "disabled", "PackageDownloadUrl", "<a " })
             Assert.DoesNotContain(fake, missing, StringComparison.Ordinal);
 
-        // Step 2 confirms preparation; step 3 holds both connection choices and nothing earlier does.
+        // Step 2 runs the setup (WAS-62) and confirms it; step 3 holds both connection choices and nothing earlier does.
         var prepare = Section(markup, "id=\"pbStepPrepare\"", "</li>\n\n");
+        Assert.Equal(
+            ["@L[\"PrintBridge.FirstInstall.Prepare.RunSetup\", Model.PackageFileName]", "@L[\"PrintBridge.FirstInstall.Prepare.Runtime\"]", "@L[\"PrintBridge.FirstInstall.Prepare.Run\"]"],
+            Regex.Matches(prepare, @"<li>(@L\[[^<]+)</li>").Select(m => m.Groups[1].Value));
         Assert.Contains("<button type=\"button\" class=\"btn btn-primary\" id=\"pbPreparedBtn\" aria-controls=\"pbStepConnect\">@L[\"PrintBridge.FirstInstall.Prepare.Done\"]</button>", prepare, StringComparison.Ordinal);
         var connect = Section(markup, "id=\"pbStepConnect\"", "id=\"pbStepPrinter\"");
         foreach (var control in new[] { "id=\"pbAutoOpenBtn\"", "id=\"pbChooseManualBtn\"", "_PrintBridgeAutoStatus" })
@@ -228,12 +231,15 @@ public sealed partial class PrintBridgeFirstInstallTests
     {
         var ignore = File.ReadAllLines(Path.Combine(Root(), ".gitignore")).Select(line => line.Trim()).ToArray();
 
-        // The release script's output folder and the Web app's default download folder are both ignored.
+        // The release script's output folder and the Web app's default download folder are both ignored (WAS-62: the
+        // setup EXE, the MSI and the support ZIP).
         Assert.Contains("artifacts/", ignore);
-        Assert.Contains("src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/*.zip", ignore);
+        foreach (var extension in new[] { "exe", "msi", "zip" })
+            Assert.Contains($"src/Wasla.Web/wwwroot/downloads/wasla-print-bridge/*.{extension}", ignore);
         Assert.Equal("downloads/wasla-print-bridge", Wasla.Web.PrintBridge.PrintBridgePackagePaths.DefaultRelativeFolder);
         var script = Read("scripts", "release", "package-print-bridge.ps1");
-        Assert.Contains("'artifacts\\print-bridge\\Wasla.PrintBridge-win-x64.zip'", script, StringComparison.Ordinal);
+        Assert.Contains("'artifacts\\print-bridge'", script, StringComparison.Ordinal);
+        Assert.Contains("$setupName = 'Wasla.PrintBridge-Setup-x64.exe'", script, StringComparison.Ordinal);
         Assert.Contains("'src\\Wasla.Web\\wwwroot\\downloads\\wasla-print-bridge'", script, StringComparison.Ordinal);
     }
 
@@ -258,7 +264,7 @@ public sealed partial class PrintBridgeFirstInstallTests
     }
 
     [Fact]
-    public void Help_FollowsDownloadExtractRunChooseConnectionThenTest()
+    public void Help_FollowsDownloadInstallOpenChooseConnectionThenTest()
     {
         var help = Read("src", "Wasla.Web", "Areas", "Tenant", "Views", "Help", "Index.cshtml");
         var article = Section(help, "<article id=\"help-print-bridge\"", "</article>");
@@ -270,10 +276,14 @@ public sealed partial class PrintBridgeFirstInstallTests
         Assert.Contains("@L[\"Help.PrintBridge.Step4\", L[\"PrintBridge.FirstInstall.Connect.Automatic.Button\"].Value]", article, StringComparison.Ordinal);
         Assert.Contains("@L[\"Help.PrintBridge.Step6\", L[\"Help.PrintBridgeDevices.Title\"].Value]", article, StringComparison.Ordinal);
 
-        Assert.Contains("download the Windows application package (ZIP)", english["Help.PrintBridge.Step1"], StringComparison.Ordinal);
-        Assert.Contains("Extract the ZIP file", english["Help.PrintBridge.Step2"], StringComparison.Ordinal);
-        Assert.Contains("Run Wasla.PrintBridge.exe once", english["Help.PrintBridge.Step3"], StringComparison.Ordinal);
-        Assert.Contains(".NET 8 Desktop Runtime", english["Help.PrintBridge.Step3"], StringComparison.Ordinal);
+        // WAS-62: download the setup, run it (administrator permission; it installs the WebView2 Runtime if missing), open
+        // the app. Nothing to extract, no separate .NET runtime.
+        Assert.Contains("download Print Bridge setup", english["Help.PrintBridge.Step1"], StringComparison.Ordinal);
+        Assert.Contains("Run the setup file", english["Help.PrintBridge.Step2"], StringComparison.Ordinal);
+        Assert.Contains("administrator permission", english["Help.PrintBridge.Step2"], StringComparison.Ordinal);
+        Assert.Contains("Microsoft Edge WebView2 Runtime", english["Help.PrintBridge.Step2"], StringComparison.Ordinal);
+        Assert.Contains("open Wasla Print Bridge", english["Help.PrintBridge.Step3"], StringComparison.Ordinal);
+        Assert.Contains("Start menu", english["Help.PrintBridge.Step3"], StringComparison.Ordinal);
         Assert.Contains("choose how to connect: \"{0}\"", english["Help.PrintBridge.Step4"], StringComparison.Ordinal);
         Assert.Contains("connect manually", english["Help.PrintBridge.Step4"], StringComparison.Ordinal);
         Assert.Contains("\"Print test receipt\"", english["Help.PrintBridge.Step5"], StringComparison.Ordinal);
@@ -281,7 +291,7 @@ public sealed partial class PrintBridgeFirstInstallTests
     }
 
     [Fact]
-    public void SetupCopy_CallsItAWindowsApplicationPackage_NotAPortableInstaller()
+    public void SetupCopy_OffersTheSetup_NotAPortablePackage()
     {
         var sources = new[]
         {
@@ -292,15 +302,22 @@ public sealed partial class PrintBridgeFirstInstallTests
         };
         var used = sources.SelectMany(s => Regex.Matches(s, "L\\[\"([A-Za-z0-9_.]+)\"").Select(m => m.Groups[1].Value)).Distinct().ToArray();
 
+        // WAS-62: the restaurant flow is the setup EXE. The ZIP, extracting it and a separate .NET runtime are gone from
+        // every text these pages show, in every language.
         foreach (var culture in Cultures)
         {
             var resources = Load(culture);
             foreach (var key in used.Where(resources.ContainsKey))
+            {
                 Assert.DoesNotMatch(new Regex("portable|taşınabilir|المحمولة|портатив", RegexOptions.IgnoreCase), resources[key]);
+                Assert.DoesNotContain("ZIP", resources[key], StringComparison.Ordinal);
+                Assert.DoesNotContain(".NET 8", resources[key], StringComparison.Ordinal);
+            }
+
+            Assert.Equal("Wasla.PrintBridge-Setup-x64.exe", resources["PrintBridge.PackagePlaceholderFileName"]);
         }
 
-        Assert.Contains("Windows application package", Load(".en-US")["PrintBridge.FirstInstall.Download.Title"], StringComparison.Ordinal);
-        Assert.Equal("Wasla.PrintBridge-win-x64.zip", Load(".en-US")["PrintBridge.PackagePlaceholderFileName"]);
+        Assert.Equal("Download Print Bridge setup", Load(".en-US")["PrintBridge.FirstInstall.Download.Title"]);
     }
 
     // Localization -----------------------------------------------------------------------------------
@@ -341,9 +358,11 @@ public sealed partial class PrintBridgeFirstInstallTests
         foreach (var key in new[] { "PrintBridge.FirstInstall.Printer.Body", "Help.PrintBridge.Step5" })
         foreach (var label in new[] { desktop["Shell.Tab.Printer"], desktop["Button.SavePrinter"], desktop["Button.TestPrinter"] })
             Assert.Contains(label, copy[key], StringComparison.Ordinal);
-        Assert.Contains("Wasla.PrintBridge.exe", copy["PrintBridge.FirstInstall.Prepare.Run"], StringComparison.Ordinal);
-        Assert.Contains(".NET 8 Desktop Runtime", copy["PrintBridge.FirstInstall.Prepare.Runtime"], StringComparison.Ordinal);
-        Assert.Contains("ZIP", copy["PrintBridge.FirstInstall.Download.Requirement"], StringComparison.Ordinal);
+        // The setup step names the downloaded file ({0}) and the runtime it installs; the last step names setup's own
+        // Launch button, which is in English (the setup's window is not localized yet).
+        Assert.Contains("{0}", copy["PrintBridge.FirstInstall.Prepare.RunSetup"], StringComparison.Ordinal);
+        Assert.Contains("Microsoft Edge WebView2 Runtime", copy["PrintBridge.FirstInstall.Prepare.Runtime"], StringComparison.Ordinal);
+        Assert.Contains("Launch", copy["PrintBridge.FirstInstall.Prepare.Run"], StringComparison.Ordinal);
         Assert.Contains("Windows 10", copy["PrintBridge.FirstInstall.Download.Requirement"], StringComparison.Ordinal);
     }
 

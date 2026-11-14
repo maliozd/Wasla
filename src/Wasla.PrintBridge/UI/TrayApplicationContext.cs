@@ -54,6 +54,9 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private readonly IWebView2RuntimeProbe _webViewRuntimeProbe;
 
+    /// <summary>The setup that installed Print Bridge, whose repair installs the WebView2 Runtime (WAS-62); may be none.</summary>
+    private readonly IPrintBridgeInstalledSetup _installedSetup;
+
     private readonly IPrinterCatalog _printerCatalog;
 
     /// <summary>Cancelled on Exit, so a connection change still in progress is abandoned instead of half-applied.</summary>
@@ -85,15 +88,28 @@ public sealed class TrayApplicationContext : ApplicationContext
     private WebView2RuntimeNotice? _runtimeNotice;
 
     public TrayApplicationContext(PrintBridgeUiServices services)
-        : this(services, new WebView2RuntimeProbe())
+        : this(
+            services,
+            new WebView2RuntimeProbe(),
+            new PrintBridgeInstalledSetup(services.Loggers.CreateLogger("Wasla.PrintBridge.Setup")))
     {
     }
 
-    /// <summary>For tests: a runtime probe that can report the WebView2 Runtime as missing.</summary>
+    /// <summary>For tests: a runtime probe that can report the WebView2 Runtime as missing; no installed setup.</summary>
     internal TrayApplicationContext(PrintBridgeUiServices services, IWebView2RuntimeProbe webViewRuntimeProbe)
+        : this(services, webViewRuntimeProbe, PrintBridgeInstalledSetup.None)
+    {
+    }
+
+    /// <summary>For tests: a runtime probe and the installed setup the runtime notice repairs with.</summary>
+    internal TrayApplicationContext(
+        PrintBridgeUiServices services,
+        IWebView2RuntimeProbe webViewRuntimeProbe,
+        IPrintBridgeInstalledSetup installedSetup)
     {
         _services = services;
         _webViewRuntimeProbe = webViewRuntimeProbe;
+        _installedSetup = installedSetup;
         _engine = services.Engine;
         _localizer = services.Localizer;
         _cultureService = services.Culture;
@@ -275,12 +291,18 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         if (_runtimeNotice is not { IsDisposed: false } notice)
         {
+            // Installed by the setup: its repair installs the runtime. Otherwise (a development or support copy) the text
+            // says to run the setup.
+            var canRepair = _installedSetup.CanRepair;
             notice = new WebView2RuntimeNotice(
                 _localizer["RuntimeNotice.Title"],
-                _localizer["RuntimeNotice.Message"],
+                _localizer[canRepair ? "RuntimeNotice.MessageRepair" : "RuntimeNotice.Message"],
                 _localizer["RuntimeNotice.Close"],
                 _cultureService.IsRightToLeft,
-                ShellWindowTheme.IsWindowsAppDarkModeEnabled());
+                ShellWindowTheme.IsWindowsAppDarkModeEnabled(),
+                canRepair
+                    ? (_localizer["RuntimeNotice.Repair"], _installedSetup.StartRepair, _localizer["RuntimeNotice.RepairFailed"])
+                    : null);
             notice.FormClosed += OnRuntimeNoticeClosed;
             _runtimeNotice = notice;
             RuntimeNoticeCreatedForTests?.Invoke(notice);

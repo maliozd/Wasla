@@ -1,0 +1,32 @@
+<Project>
+
+	<!--
+		Code signing of the MSI and the setup EXE (WAS-62), only for a signed release build (PrintBridgeSigned, see
+		Directory.Build.props). The WiX SDK calls these targets: it signs the MSI after linking, and for the setup EXE it detaches
+		the Burn engine, has it signed, reattaches it and has the whole bundle signed, so both signatures are valid.
+		The certificate is chosen by its thumbprint in the build machine's certificate store; signtool comes from the Windows SDK.
+		scripts/release/package-print-bridge.ps1 passes all three values. Nothing secret is in this repository.
+	-->
+	<PropertyGroup Condition="'$(PrintBridgeSigned)' == 'true'">
+		<!-- The cabinet is embedded in the MSI, so the MSI signature covers it. -->
+		<SignOutputCabs>false</SignOutputCabs>
+		<_WaslaSignCommand>&quot;$(WaslaSignToolPath)&quot; sign /sha1 $(WaslaSigningCertificateThumbprint) /fd SHA256 /tr &quot;$(WaslaSigningTimestampUrl)&quot; /td SHA256 /d &quot;$(PrintBridgeProductName)&quot;</_WaslaSignCommand>
+	</PropertyGroup>
+
+	<Target Name="WaslaRequireSignTool" BeforeTargets="Build" Condition="'$(PrintBridgeSigned)' == 'true' and !Exists('$(WaslaSignToolPath)')">
+		<Error Text="A signed Print Bridge build needs WaslaSignToolPath (signtool.exe from the Windows SDK); '$(WaslaSignToolPath)' does not exist." />
+	</Target>
+
+	<Target Name="SignMsi" Condition="'$(PrintBridgeSigned)' == 'true'">
+		<Exec Command="$(_WaslaSignCommand) &quot;%(SignMsi.FullPath)&quot;" />
+	</Target>
+
+	<Target Name="SignBundleEngine" Condition="'$(PrintBridgeSigned)' == 'true'">
+		<Exec Command="$(_WaslaSignCommand) &quot;%(SignBundleEngine.FullPath)&quot;" />
+	</Target>
+
+	<Target Name="SignBundle" Condition="'$(PrintBridgeSigned)' == 'true'">
+		<Exec Command="$(_WaslaSignCommand) &quot;%(SignBundle.FullPath)&quot;" />
+	</Target>
+
+</Project>

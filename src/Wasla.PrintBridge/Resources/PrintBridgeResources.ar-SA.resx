@@ -811,10 +811,19 @@
     <value>مطلوب WebView2 Runtime</value>
   </data>
   <data name="RuntimeNotice.Message" xml:space="preserve">
-    <value>تحتاج نافذة Print Bridge إلى Microsoft Edge WebView2 Runtime، وهو غير مثبت أو لا يمكن استخدامه على هذا الكمبيوتر. تستمر طباعة الإيصالات في الخلفية. ثبّت Microsoft Edge WebView2 Runtime أو أصلحه، ثم أعد تشغيل Print Bridge.</value>
+    <value>تحتاج نافذة Print Bridge إلى Microsoft Edge WebView2 Runtime، وهو غير مثبت أو لا يمكن استخدامه على هذا الكمبيوتر. تستمر طباعة الإيصالات في الخلفية. شغّل برنامج إعداد Wasla Print Bridge (نزّله من صفحة Print Bridge في Wasla)، فهو يثبّت هذا المكوّن. ثم افتح Print Bridge مرة أخرى.</value>
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>إغلاق</value>
+  </data>
+  <data name="RuntimeNotice.MessageRepair" xml:space="preserve">
+    <value>تحتاج نافذة Print Bridge إلى Microsoft Edge WebView2 Runtime، وهو غير مثبت أو لا يمكن استخدامه على هذا الكمبيوتر. تستمر طباعة الإيصالات في الخلفية. اختر «إصلاح» لتشغيل برنامج إعداد Wasla Print Bridge مرة أخرى، فهو يثبّت هذا المكوّن. يتطلب ذلك إذن المسؤول واتصالًا بالإنترنت. ثم افتح Print Bridge مرة أخرى.</value>
+  </data>
+  <data name="RuntimeNotice.Repair" xml:space="preserve">
+    <value>إصلاح</value>
+  </data>
+  <data name="RuntimeNotice.RepairFailed" xml:space="preserve">
+    <value>تعذّر بدء برنامج الإعداد. في إعدادات Windows &gt; التطبيقات &gt; التطبيقات المثبتة، اختر «تعديل» لـ Wasla Print Bridge ثم «إصلاح»، أو شغّل برنامج إعداد Wasla Print Bridge مرة أخرى. تستمر طباعة الإيصالات في الخلفية.</value>
   </data>
   <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
     <value>خدمة Print Bridge لا تعمل</value>
