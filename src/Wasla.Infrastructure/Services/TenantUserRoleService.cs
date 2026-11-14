@@ -1,9 +1,9 @@
-using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Persistence;
 using Wasla.Infrastructure.Persistence.Tenant;
 
 namespace Wasla.Infrastructure.Services;
@@ -277,7 +277,7 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
     }
 
     private static Task<IDbContextTransaction> BeginAsync(TenantDbContext db, CancellationToken ct) =>
-        db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        SerializableTransaction.BeginAsync(db.Database, ct);
 
     /// <summary>
     /// The actor must still be an active Owner (the role of the <c>CanManageTenantUsers</c> policy) with the security

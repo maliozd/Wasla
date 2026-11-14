@@ -1,10 +1,10 @@
-﻿using System.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Persistence;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
 using Wasla.Infrastructure.Realtime;
@@ -100,8 +100,7 @@ public sealed class PrintJobHistoryService : IPrintJobHistoryService
 
         // Same serializable guard the first-receipt path uses, so concurrent reprint requests
         // cannot both pass the active-job check and queue two receipts for one order.
-        await using var tx = await db.Database
-            .BeginTransactionAsync(IsolationLevel.Serializable, ct)
+        await using var tx = await SerializableTransaction.BeginAsync(db.Database, ct)
             .ConfigureAwait(false);
 
         var source = await db.PrintJobs

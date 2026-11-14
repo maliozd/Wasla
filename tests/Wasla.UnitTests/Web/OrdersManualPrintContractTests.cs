@@ -220,7 +220,8 @@ public sealed class OrdersManualPrintContractTests
 
         foreach (var source in new[] { history, creation })
         {
-            Assert.Contains("IsolationLevel.Serializable", source, StringComparison.Ordinal);
+            // Serializable through the helper that hands the pooled session back at read committed (WAS-206).
+            Assert.Contains("SerializableTransaction.BeginAsync(db.Database, ct)", source, StringComparison.Ordinal);
             Assert.Contains("PrintJobStatus.Pending || ", source, StringComparison.Ordinal);
         }
 

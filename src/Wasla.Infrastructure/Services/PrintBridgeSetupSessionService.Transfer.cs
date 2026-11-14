@@ -1,8 +1,8 @@
-using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Central;
+using Wasla.Infrastructure.Persistence;
 using Wasla.Infrastructure.Security;
 
 namespace Wasla.Infrastructure.Services;
@@ -241,7 +241,7 @@ public sealed partial class PrintBridgeSetupSessionService
         var sourceTokenHash = PrintBridgeTokenHasher.HashToken(request.SourceDeviceToken);
         var newTokenHash = PrintBridgeTokenHasher.HashToken(request.NewDeviceToken!);
 
-        await using var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
+        await using var tx = await SerializableTransaction.BeginAsync(_centralDb.Database, ct)
             .ConfigureAwait(false);
         try
         {

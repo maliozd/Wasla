@@ -1,8 +1,8 @@
-using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Domain.Entities.Central;
+using Wasla.Infrastructure.Persistence;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Security;
 
@@ -361,7 +361,7 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         string? failedReason = null;
         var installationId = clientInfo.InstallationId!.Value;
 
-        await using (var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
+        await using (var tx = await SerializableTransaction.BeginAsync(_centralDb.Database, ct)
             .ConfigureAwait(false))
         {
             try
@@ -618,7 +618,7 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         Guid installationId,
         CancellationToken ct)
     {
-        await using var tx = await _centralDb.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct)
+        await using var tx = await SerializableTransaction.BeginAsync(_centralDb.Database, ct)
             .ConfigureAwait(false);
 
         var appLockResult = await _tenantLock.AcquireInstallationLockAsync(installationId, ct)
