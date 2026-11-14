@@ -140,8 +140,8 @@ public sealed class ShellBridgeTests : IDisposable
 
     [Theory]
     [InlineData("not json")]
-    [InlineData("""{"version":3,"type":"host.exec","payload":{"method":"Exit"}}""")]
-    [InlineData("""{"version":3,"type":"ui.ready","payload":{},"extra":1}""")]
+    [InlineData("""{"version":4,"type":"host.exec","payload":{"method":"Exit"}}""")]
+    [InlineData("""{"version":4,"type":"ui.ready","payload":{},"extra":1}""")]
     public void MalformedOrUnknownMessages_AreRejectedWithoutEffect(string raw)
     {
         Assert.Equal(ShellMessageOutcome.Rejected, _bridge.HandleWebMessage(ShellDocument, raw));
@@ -179,7 +179,9 @@ public sealed class ShellBridgeTests : IDisposable
     public void AfterDispose_EngineEventsAndPageMessagesAreIgnored()
     {
         _bridge.HandleWebMessage(ShellDocument, Command("ui.ready"));
+        // As the window does when it closes: the bridge and the update part (WAS-63) both let go of the engine.
         _bridge.Dispose();
+        _rig.ShellUpdates.Dispose();
 
         _source.Raise();
         _bridge.Refresh();

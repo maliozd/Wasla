@@ -124,28 +124,60 @@ public sealed class PrintBridgeUpdateStateStore
     /// <summary>The download in progress of <paramref name="version"/>; renamed to <see cref="StagedSetupPath"/> when complete.</summary>
     public static string PartialSetupPath(Version version) => StagedSetupPath(version) + ".partial";
 
-    /// <summary>The record, or null when there is none or it is unreadable (an unreadable one is set aside and logged).</summary>
+    /// <summary>How often, and how long apart, a record in use by another process is read again.</summary>
+    internal static int ReadAttempts { get; set; } = 10;
+
+    internal static TimeSpan ReadRetry { get; set; } = TimeSpan.FromMilliseconds(50);
+
+    /// <summary>
+    /// The record, or null when there is none or it cannot be used. A record whose content is damaged or of another form is
+    /// set aside and logged. A file another process keeps in use (a write in progress, an antivirus scan) is read again a
+    /// few times, and if it stays in use it is left as it is: being in use is not damage.
+    /// </summary>
     public PrintBridgeUpdateRecord? Load()
     {
         var path = PrintBridgePaths.UpdateStatePath;
-        try
+        for (var attempt = 1; ; attempt++)
         {
-            if (!File.Exists(path))
+            try
+            {
+                string text;
+                // Shared for writing and deleting, so reading never keeps the service from replacing the file.
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                using (var reader = new StreamReader(stream))
+                    text = reader.ReadToEnd();
+
+                var record = JsonSerializer.Deserialize<PrintBridgeUpdateRecord>(text, JsonOptions);
+                if (record is not null
+                    && record.SchemaVersion == PrintBridgeUpdateRecord.CurrentSchemaVersion
+                    && record.AttemptId != Guid.Empty
+                    && PrintBridgeReleaseVersion.TryParse(record.FromVersion, out _)
+                    && PrintBridgeReleaseVersion.TryParse(record.ToVersion, out _))
+                    return record;
+
+                _logger.LogWarning("The update state has an unknown form; it is set aside.");
+                break;
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
                 return null;
+            }
+            catch (Exception ex) when (ex is JsonException or NotSupportedException)
+            {
+                _logger.LogWarning(ex, "The update state could not be read; it is set aside.");
+                break;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt < ReadAttempts)
+                {
+                    Thread.Sleep(ReadRetry);
+                    continue;
+                }
 
-            var record = JsonSerializer.Deserialize<PrintBridgeUpdateRecord>(File.ReadAllText(path), JsonOptions);
-            if (record is not null
-                && record.SchemaVersion == PrintBridgeUpdateRecord.CurrentSchemaVersion
-                && record.AttemptId != Guid.Empty
-                && PrintBridgeReleaseVersion.TryParse(record.FromVersion, out _)
-                && PrintBridgeReleaseVersion.TryParse(record.ToVersion, out _))
-                return record;
-
-            _logger.LogWarning("The update state has an unknown form; it is set aside.");
-        }
-        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or NotSupportedException)
-        {
-            _logger.LogWarning(ex, "The update state could not be read; it is set aside.");
+                _logger.LogWarning(ex, "The update state is in use and could not be read; it is left as it is.");
+                return null;
+            }
         }
 
         TrySetAside(path);
@@ -159,13 +191,17 @@ public sealed class PrintBridgeUpdateStateStore
         PrintBridgeSettingsStore.WriteJsonAtomically(PrintBridgePaths.UpdateStatePath, JsonSerializer.Serialize(record, JsonOptions));
     }
 
-    /// <summary>Deletes the staged and partial setup files of every version (they are re-downloaded when needed).</summary>
-    public void DeleteStagedFiles()
+    /// <summary>
+    /// Deletes the staged and partial setup files of every version (they are re-downloaded when needed). Returns false when
+    /// one is left: a setup that is still running from it keeps it in use.
+    /// </summary>
+    public bool DeleteStagedFiles()
     {
+        var left = false;
         try
         {
             if (!Directory.Exists(PrintBridgePaths.UpdatesDirectory))
-                return;
+                return true;
 
             foreach (var file in Directory.EnumerateFiles(PrintBridgePaths.UpdatesDirectory, "Wasla.PrintBridge-Setup-x64-*"))
             {
@@ -175,14 +211,18 @@ public sealed class PrintBridgeUpdateStateStore
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    _logger.LogWarning(ex, "A staged update file could not be deleted.");
+                    left = true;
+                    _logger.LogDebug(ex, "A staged update file is in use and was not deleted yet.");
                 }
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "The updates folder could not be read.");
+            return false;
         }
+
+        return !left;
     }
 
     private static void TrySetAside(string path)

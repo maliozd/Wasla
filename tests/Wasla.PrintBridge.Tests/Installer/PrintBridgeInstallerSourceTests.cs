@@ -72,6 +72,47 @@ public sealed class PrintBridgeInstallerSourceTests
             Assert.Equal("NOT REMOVE~=\"ALL\"", (string?)sequence[action].Attribute("Condition"));
         Assert.Equal("StopServices", (string?)sequence["CloseApps"].Attribute("Before"));
         Assert.Equal("afterInstallInitialize", (string?)package.Descendants(Wix + "MajorUpgrade").Single().Attribute("Schedule"));
+
+        // The apps only, not their process trees: a setup the app started (update or Repair, WAS-63) is the app's child.
+        Assert.Equal("\"[System64Folder]taskkill.exe\" /F /IM Wasla.PrintBridge.exe", commands["CloseApps"]);
+    }
+
+    /// <summary>
+    /// WAS-63: the service just started must be healthy before the installation commits, or Windows Installer restores the
+    /// previous version; the rollback hook CI uses is WiX's own, off unless the setup is told otherwise; and the service
+    /// recognizes its commit by the MSI's upgrade code.
+    /// </summary>
+    [Fact]
+    public void TheNewServiceIsCheckedInsideTheTransaction_TheRollbackHookIsOff_AndTheServiceKnowsTheUpgradeCode()
+    {
+        var package = Load("installer", "print-bridge", "Package", "Package.wxs");
+        var commands = package.Descendants(Wix + "SetProperty").ToDictionary(p => (string)p.Attribute("Id")!, p => (string)p.Attribute("Value")!);
+        Assert.Equal("\"[#ServiceExe]\" health-check", commands["CheckServiceHealth"]);
+        Assert.True(Wasla.PrintBridge.Hosting.PrintBridgeServiceOptions.TryParse(["health-check"], out var options, out _));
+        Assert.True(options!.HealthCheckOnly);
+
+        var action = package.Descendants(Wix + "CustomAction").Single(a => (string?)a.Attribute("Id") == "CheckServiceHealth");
+        Assert.Equal("WixQuietExec", (string?)action.Attribute("DllEntry"));
+        Assert.Equal("deferred", (string?)action.Attribute("Execute"));
+        Assert.Equal("no", (string?)action.Attribute("Impersonate"));
+        Assert.Equal("check", (string?)action.Attribute("Return"));
+        var check = package.Descendants(Wix + "InstallExecuteSequence").Single().Elements(Wix + "Custom")
+            .Single(c => (string?)c.Attribute("Action") == "CheckServiceHealth");
+        Assert.Equal("StartServices", (string?)check.Attribute("After"));
+        Assert.Equal("NOT REMOVE~=\"ALL\"", (string?)check.Attribute("Condition"));
+
+        XNamespace util = "http://wixtoolset.org/schemas/v4/wxs/util";
+        Assert.Single(package.Descendants(util + "FailWhenDeferred"));
+        var bundle = Load("installer", "print-bridge", "Bundle", "Bundle.wxs");
+        var hook = bundle.Descendants(Wix + "Variable").Single(v => (string?)v.Attribute("Name") == "FailWhenDeferred");
+        Assert.Equal("0", (string?)hook.Attribute("Value"));
+        Assert.Contains(bundle.Descendants(Wix + "MsiProperty"),
+            p => (string?)p.Attribute("Name") == "WIXFAILWHENDEFERRED" && (string?)p.Attribute("Value") == "[FailWhenDeferred]");
+
+        Assert.Equal(
+            Wasla.PrintBridge.Updates.PrintBridgeInstalledProduct.MsiUpgradeCode.Trim('{', '}'),
+            (string?)package.Descendants(Wix + "Package").Single().Attribute("UpgradeCode"),
+            ignoreCase: true);
     }
 
     [Fact]

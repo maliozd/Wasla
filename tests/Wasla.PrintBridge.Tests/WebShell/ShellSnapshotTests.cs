@@ -112,7 +112,8 @@ public sealed class ShellSnapshotTests : IDisposable
             typeof(ShellActivityView), typeof(ShellJobView), typeof(ShellLanguageOption), typeof(ShellHostMessage<ShellSnapshot>),
             typeof(ShellEngineView), typeof(ShellActionsView), typeof(ShellBusyState), typeof(ShellDiagnosticsView),
             typeof(ShellHistoryPage), typeof(ShellHistoryItem), typeof(ShellHistoryResult), typeof(ShellOperationResultView),
-            typeof(ShellOperationalView), typeof(ShellSecondsSetting), typeof(ShellNavigateView)
+            typeof(ShellOperationalView), typeof(ShellSecondsSetting), typeof(ShellNavigateView), typeof(ShellUpdateView),
+            typeof(ShellUpdateActionsView), typeof(ShellUpdateBusyView)
         };
 
         foreach (var property in types.SelectMany(t => t.GetProperties()))

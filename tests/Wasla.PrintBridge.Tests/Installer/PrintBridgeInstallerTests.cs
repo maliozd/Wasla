@@ -16,6 +16,7 @@ using Wasla.PrintBridge.ServiceClient;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.Tests.WebShell;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.Tests.Installer;
 
@@ -33,7 +34,7 @@ namespace Wasla.PrintBridge.Tests.Installer;
 /// </para>
 /// </summary>
 [Collection(PrintBridgeDataRootCollection.Name)]
-public sealed class PrintBridgeInstallerTests : IAsyncDisposable
+public sealed partial class PrintBridgeInstallerTests : IAsyncDisposable
 {
     private const string ServiceName = PrintBridgePaths.ServiceName;
     private const string MsiUpgradeCode = "{2DAEE4A2-EF79-45BD-B403-602FFC1E737E}";
@@ -358,10 +359,11 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
     // ---- Setup and checks -------------------------------------------------------------------------------------------
 
-    private sealed record BuiltSetup(string Path, string Version, string Msi, string Sha256, string ProductCode, string UpgradeCode);
+    private sealed record BuiltSetup(string Path, string Version, string Msi, string Sha256, string ProductCode, string UpgradeCode, PrintBridgePublisher? Publisher);
 
     private static string Describe(BuiltSetup built) =>
-        $"{built.Version}: {built.Path}, sha256 {built.Sha256}; setup EXE {built.Version}; MSI {built.Version} ProductCode {built.ProductCode} UpgradeCode {built.UpgradeCode}; program files {built.Version}.0";
+        $"{built.Version}: {built.Path}, sha256 {built.Sha256}; setup EXE {built.Version}; MSI {built.Version} ProductCode {built.ProductCode} UpgradeCode {built.UpgradeCode}; program files {built.Version}.0; " +
+        (built.Publisher is { } publisher ? $"signed by {publisher.Subject} (test certificate)" : "unsigned");
 
     private static (BuiltSetup Setup, BuiltSetup Upgrade) ReadBuiltSetups()
     {
@@ -373,6 +375,8 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         Assert.NotEqual(setup.ProductCode, upgrade.ProductCode);
         Assert.Equal(MsiUpgradeCode, setup.UpgradeCode);
         Assert.Equal(MsiUpgradeCode, upgrade.UpgradeCode);
+        Assert.True(setup.Publisher is null ? upgrade.Publisher is null : upgrade.Publisher?.IsSameAs(setup.Publisher) == true,
+            "The two setups are both unsigned or both signed by one publisher.");
         return (setup, upgrade);
     }
 
@@ -420,7 +424,17 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         var sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         Assert.Equal(setupEntry.GetProperty("sha256").GetString(), sha256);
         Assert.Equal(new FileInfo(path).Length, setupEntry.GetProperty("bytes").GetInt64());
-        Assert.False(root.GetProperty("signed").GetBoolean(), "CI builds are unsigned development builds.");
+
+        // CI builds are signed with a throwaway certificate only the runner trusts (WAS-63, update tests); a local build the
+        // variables name may be unsigned. A test never installs a release build. What the metadata says is what Windows sees.
+        var signed = root.GetProperty("signed").GetBoolean();
+        var signature = PrintBridgeAuthenticode.Verify(path, out var publisher);
+        Assert.Equal(signed ? PrintBridgeSignatureStatus.Valid : PrintBridgeSignatureStatus.NotSigned, signature);
+        if (signed)
+        {
+            Assert.True(root.GetProperty("testSigned").GetBoolean(), "Tests install test-signed or unsigned development builds, never a release.");
+            Assert.Equal(publisher!.Subject, root.GetProperty("publisher").GetString());
+        }
 
         // The versions Burn and Windows Installer read, from the files themselves.
         Assert.Equal(version, FileVersionInfo.GetVersionInfo(path).ProductVersion);
@@ -436,7 +450,7 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         Assert.Equal(version, msiMetadata.GetProperty("productVersion").GetString());
         Assert.Equal(productCode, msiMetadata.GetProperty("productCode").GetString());
         Assert.Equal(upgradeCode, msiMetadata.GetProperty("upgradeCode").GetString());
-        return new BuiltSetup(path, version, msi, sha256, productCode, upgradeCode);
+        return new BuiltSetup(path, version, msi, sha256, productCode, upgradeCode, publisher);
     }
 
     /// <summary>The first column of the first row of a query on an MSI, opened read-only.</summary>
@@ -522,7 +536,7 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         Assert.Equal(seeded.Marker, File.ReadAllText(Path.Combine(_dataRoot, "installer-test-marker.txt")));
     }
 
-    private void AssertInstalled(string version)
+    private void AssertInstalled(string version, bool startsAtSignIn = true)
     {
         foreach (var exe in new[] { AppExe, ServiceExe })
         {
@@ -540,7 +554,12 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
         using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
         using (var run = machine.OpenSubKey(RunKey))
-            Assert.Equal($"\"{AppExe}\" {PrintBridgeSignInStart.Argument}", run?.GetValue(RunValue) as string, ignoreCase: true);
+        {
+            if (startsAtSignIn)
+                Assert.Equal($"\"{AppExe}\" {PrintBridgeSignInStart.Argument}", run?.GetValue(RunValue) as string, ignoreCase: true);
+            else
+                Assert.Null(run?.GetValue(RunValue));
+        }
         using (var handler = machine.OpenSubKey(HandlerCommandKey))
             Assert.Equal($"\"{AppExe}\" \"%1\"", handler?.GetValue(string.Empty) as string, ignoreCase: true);
 
@@ -713,6 +732,20 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         {
             Marshal.FinalReleaseComObject(shell);
         }
+    }
+
+    private static bool UsersCanWrite(string path)
+    {
+        var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+        const FileSystemRights write = FileSystemRights.WriteData | FileSystemRights.AppendData | FileSystemRights.Delete
+            | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+        var security = Directory.Exists(path) ? (FileSystemSecurity)new DirectoryInfo(path).GetAccessControl() : new FileInfo(path).GetAccessControl();
+        return security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+            .Cast<FileSystemAccessRule>()
+            .Any(r => r.AccessControlType == AccessControlType.Allow
+                      && (users.Equals(r.IdentityReference) || new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null).Equals(r.IdentityReference)
+                          || new SecurityIdentifier(WellKnownSidType.WorldSid, null).Equals(r.IdentityReference))
+                      && (r.FileSystemRights & write) != 0);
     }
 
     private static bool UsersCanRead(string path)

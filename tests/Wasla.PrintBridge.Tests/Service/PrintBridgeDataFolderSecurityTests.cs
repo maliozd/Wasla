@@ -97,6 +97,54 @@ public sealed class PrintBridgeDataFolderSecurityTests : IDisposable
         Assert.NotNull(PrintBridgeDataFolderSecurity.Verify(_root, otherService));
     }
 
+    [Fact]
+    public void AnUpdatesFolderLocalUsersMayOnlyRead_IsSafe()
+    {
+        // WAS-63: the app (the signed-in user) starts the setup the service verified there; reading it is all it needs.
+        CreateProtected();
+        var updates = CreateUpdatesFolder(FileSystemRights.ReadAndExecute);
+        File.WriteAllBytes(Path.Combine(updates, "Wasla.PrintBridge-Setup-x64-1.0.1.exe"), [1, 2, 3]);
+
+        Assert.Null(PrintBridgeDataFolderSecurity.Verify(_root, _service));
+    }
+
+    [Fact]
+    public void AnUpdatesFolderLocalUsersMayChange_IsNotSafe()
+    {
+        // Anyone who may write there could replace the verified setup before it runs.
+        CreateProtected();
+        CreateUpdatesFolder(FileSystemRights.ReadAndExecute | FileSystemRights.CreateFiles);
+
+        Assert.Contains("may change the updates folder", PrintBridgeDataFolderSecurity.Verify(_root, _service), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AStagedSetupLocalUsersMayChange_IsNotSafe()
+    {
+        CreateProtected();
+        var setup = Path.Combine(CreateUpdatesFolder(FileSystemRights.ReadAndExecute), "Wasla.PrintBridge-Setup-x64-1.0.1.exe");
+        File.WriteAllBytes(setup, [1, 2, 3]);
+        var security = new FileInfo(setup).GetAccessControl();
+        security.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.Write, AccessControlType.Allow));
+        new FileInfo(setup).SetAccessControl(security);
+
+        Assert.Contains("may change a file in the updates folder", PrintBridgeDataFolderSecurity.Verify(_root, _service), StringComparison.Ordinal);
+    }
+
+    private string CreateUpdatesFolder(FileSystemRights users)
+    {
+        var updates = Directory.CreateDirectory(Path.Combine(_root, "updates"));
+        var security = updates.GetAccessControl();
+        security.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+            users,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.None,
+            AccessControlType.Allow));
+        updates.SetAccessControl(security);
+        return updates.FullName;
+    }
+
     private void CreateProtected(params FileSystemAccessRule[] extra)
     {
         var info = Directory.CreateDirectory(_root);

@@ -36,6 +36,9 @@
     <!-- StartAtSignIn=0 on the command line installs without starting the app at users' sign-in (the MSI's START_AT_SIGN_IN). -->
     <Variable Name="StartAtSignIn" Type="numeric" Value="1" bal:Overridable="yes" />
 
+    <!-- FailWhenDeferred=1 on the command line makes the MSI fail at its end and roll back (WAS-63 rollback tests only). -->
+    <Variable Name="FailWhenDeferred" Type="numeric" Value="0" bal:Overridable="yes" />
+
     <!-- The per-machine runtime's version, as Microsoft documents its detection (the 32-bit registry view on 64-bit Windows). -->
     <util:RegistrySearch Id="WebView2RuntimeSearch"
                          Root="HKLM"
@@ -58,6 +61,7 @@
 
       <MsiPackage Id="PrintBridge" SourceFile="$(var.MsiPath)" Vital="yes">
         <MsiProperty Name="START_AT_SIGN_IN" Value="[StartAtSignIn]" />
+        <MsiProperty Name="WIXFAILWHENDEFERRED" Value="[FailWhenDeferred]" />
       </MsiPackage>
     </Chain>
 

@@ -29,6 +29,14 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
     /// </summary>
     internal static TimeSpan CommitIdleLimit { get; set; } = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// How often a staged setup still in use is deleted again, and for how long: the setup that ran from it (Burn's
+    /// original process) keeps its file in use until it exits, after the installation has committed or rolled back.
+    /// </summary>
+    internal static TimeSpan CleanupRetryInterval { get; set; } = TimeSpan.FromSeconds(5);
+
+    internal static TimeSpan CleanupLimit { get; set; } = TimeSpan.FromMinutes(10);
+
     private readonly object _sync = new();
     private readonly PrintBridgeUpdateStateStore _store;
     private readonly Version _installedVersion;
@@ -43,6 +51,8 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
     private CancellationTokenSource? _attempt;
     private Task _attemptTask = Task.CompletedTask;
     private Task _commitTask = Task.CompletedTask;
+    private CancellationTokenSource? _cleanup;
+    private Task _cleanupTask = Task.CompletedTask;
     private IDisposable? _lease;
     private Timer? _expiry;
     private int? _downloadPercent;
@@ -124,13 +134,17 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
 
         var record = _store.Load();
         if (record is null)
+        {
+            // A staged file without a record (an unreadable record was set aside) belongs to no attempt.
+            DeleteStagedFilesSoon();
             return true;
+        }
 
         switch (record.Stage)
         {
             case PrintBridgeUpdateStage.Downloading or PrintBridgeUpdateStage.Verifying or PrintBridgeUpdateStage.WaitingForPrinting:
                 _logger.LogWarning("An update to {Version} was interrupted at {Stage}; it is dropped.", record.ToVersion, record.Stage);
-                _store.DeleteStagedFiles();
+                DeleteStagedFilesSoon();
                 Record(record.Finish(PrintBridgeUpdateStage.Failed, PrintBridgeUpdateFailure.Interrupted));
                 return true;
 
@@ -154,7 +168,8 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
                     return false;
                 }
 
-                _store.DeleteStagedFiles();
+                // After a rollback the setup that ran from the file may still be finishing: it is deleted once free.
+                DeleteStagedFilesSoon();
                 if (from == _installedVersion)
                 {
                     _logger.LogWarning(
@@ -176,6 +191,8 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
                 return true;
 
             default:
+                // A finished attempt is shown as it ended; a file left beside it belongs to no attempt.
+                DeleteStagedFilesSoon();
                 lock (_sync)
                     _record = record;
                 return true;
@@ -253,6 +270,7 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
 
             _record = record;
             _downloadPercent = 0;
+            _cleanup?.Cancel();
             _attempt?.Dispose();
             _attempt = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
             var token = _attempt.Token;
@@ -283,7 +301,7 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
             _lease = null;
             _expiry?.Dispose();
             _expiry = null;
-            _record = current.Finish(PrintBridgeUpdateStage.Cancelled, reason);
+            Publish(current.Finish(PrintBridgeUpdateStage.Cancelled, reason));
             running = _attemptTask;
         }
 
@@ -298,11 +316,7 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
         }
 
         lease?.Dispose();
-        _store.DeleteStagedFiles();
-        PrintBridgeUpdateRecord? cancelled;
-        lock (_sync)
-            cancelled = _record;
-        TrySave(cancelled);
+        DeleteStagedFilesSoon();
         _logger.LogInformation("The update attempt was cancelled{Reason}; printing is no longer paused for it.", reason is null ? string.Empty : $" ({reason})");
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -336,7 +350,7 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
         if (expiry is not null)
             await expiry.DisposeAsync().ConfigureAwait(false);
 
-        foreach (var task in new[] { _attemptTask, _commitTask })
+        foreach (var task in new[] { _attemptTask, _commitTask, _cleanupTask })
         {
             try
             {
@@ -503,18 +517,73 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
             }
         }
 
-        PrintBridgeUpdateRecord? finished;
         lock (_sync)
         {
             _awaitingCommit = false;
-            finished = _record?.Finish(outcome, failure);
-            _record = finished;
+            if (_record is { } awaiting)
+                Publish(awaiting.Finish(outcome, failure));
         }
 
-        TrySave(finished);
-        _store.DeleteStagedFiles();
+        DeleteStagedFilesSoon();
         Changed?.Invoke(this, EventArgs.Empty);
         activate();
+    }
+
+    /// <summary>
+    /// Deletes the staged files now and, if one is still in use, again every <see cref="CleanupRetryInterval"/> for up to
+    /// <see cref="CleanupLimit"/>. A new attempt or the service's stop ends the retries; the next start deletes what is left.
+    /// </summary>
+    private void DeleteStagedFilesSoon()
+    {
+        CancellationToken token;
+        lock (_sync)
+        {
+            _cleanup?.Cancel();
+            _cleanup?.Dispose();
+            _cleanup = null;
+            if (_store.DeleteStagedFiles())
+                return;
+
+            _cleanup = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+            token = _cleanup.Token;
+            var previous = _cleanupTask;
+            _cleanupTask = Task.Run(async () =>
+            {
+                await previous.ConfigureAwait(false);
+                await RetryAsync(token).ConfigureAwait(false);
+            });
+        }
+
+        async Task RetryAsync(CancellationToken ct)
+        {
+            var until = DateTime.UtcNow + CleanupLimit;
+            while (DateTime.UtcNow < until)
+            {
+                try
+                {
+                    await Task.Delay(CleanupRetryInterval, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                // Every cleanup starts after an attempt finished; under the lock a new attempt starts (and cancels this), so
+                // nothing of a new attempt is deleted here.
+                lock (_sync)
+                {
+                    if (ct.IsCancellationRequested || _record is { IsFinished: false } || _awaitingCommit)
+                        return;
+                    if (_store.DeleteStagedFiles())
+                    {
+                        _logger.LogInformation("The staged update setup was deleted once it was no longer in use.");
+                        return;
+                    }
+                }
+            }
+
+            _logger.LogWarning("A staged update setup is still in use after {Minutes} min; it is deleted at the next start.", CleanupLimit.TotalMinutes);
+        }
     }
 
     private void ScheduleExpiry(Guid attemptId)
@@ -548,16 +617,13 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
 
     private void Fail(PrintBridgeUpdateRecord record, PrintBridgeUpdateFailure failure)
     {
-        PrintBridgeUpdateRecord? failed;
         lock (_sync)
         {
             if (_record is not { IsFinished: false } current || current.AttemptId != record.AttemptId)
                 return;
-            failed = current.Finish(PrintBridgeUpdateStage.Failed, failure);
-            _record = failed;
+            Publish(current.Finish(PrintBridgeUpdateStage.Failed, failure));
         }
 
-        TrySave(failed);
         _logger.LogWarning("The update to {Version} failed: {Failure}.", record.ToVersion, failure);
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -566,15 +632,22 @@ internal sealed class PrintBridgeUpdateCoordinator : IAsyncDisposable
     private void Record(PrintBridgeUpdateRecord record)
     {
         lock (_sync)
-            _record = record;
-        TrySave(record);
+            Publish(record);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private void TrySave(PrintBridgeUpdateRecord? record)
+    /// <summary>
+    /// Makes <paramref name="record"/> the current one, written first: the state the app sees is never ahead of the file a
+    /// restart reads. Called under the lock. A failed write is logged; the record still applies to this run.
+    /// </summary>
+    private void Publish(PrintBridgeUpdateRecord record)
     {
-        if (record is null)
-            return;
+        TrySave(record);
+        _record = record;
+    }
+
+    private void TrySave(PrintBridgeUpdateRecord record)
+    {
         try
         {
             _store.Save(record);

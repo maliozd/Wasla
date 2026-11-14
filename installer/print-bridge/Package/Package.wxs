@@ -134,8 +134,13 @@
       <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="Wasla Print Bridge" Type="string" Value="&quot;[INSTALLFOLDER]Wasla.PrintBridge.exe&quot; --startup" KeyPath="yes" />
     </Component>
 
-    <!-- Deferred, as LocalSystem: these act for the whole computer. Nothing in these command lines is secret. -->
-    <SetProperty Id="CloseApps" Value="&quot;[System64Folder]taskkill.exe&quot; /F /T /IM Wasla.PrintBridge.exe" Before="CloseApps" Sequence="execute" />
+    <!--
+      Deferred, as LocalSystem: these act for the whole computer. Nothing in these command lines is secret.
+      CloseApps ends the app processes only, never their children (no /T): the setup itself may be one, started by the app
+      for an update or a repair (WAS-63), and ending it would abort this installation. The app's WebView2 processes end
+      with their host.
+    -->
+    <SetProperty Id="CloseApps" Value="&quot;[System64Folder]taskkill.exe&quot; /F /IM Wasla.PrintBridge.exe" Before="CloseApps" Sequence="execute" />
     <CustomAction Id="CloseApps" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore" />
 
     <SetProperty Id="ConfigureServicePrivileges" Value="&quot;[System64Folder]sc.exe&quot; privs WaslaPrintBridge SeChangeNotifyPrivilege" Before="ConfigureServicePrivileges" Sequence="execute" />
@@ -150,12 +155,28 @@
     <SetProperty Id="SecureDataFolder" Value="&quot;[#ServiceExe]&quot; secure-data" Before="SecureDataFolder" Sequence="execute" />
     <CustomAction Id="SecureDataFolder" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
 
+    <!--
+      WAS-63: the service just started must be healthy, inside this transaction: it answers on its pipe with this build's
+      IPC protocol, is this version, and its data folder is protected. Otherwise the installation fails and Windows
+      Installer restores the previous version (an update) or nothing (a first installation). Needs no network or printer.
+    -->
+    <SetProperty Id="CheckServiceHealth" Value="&quot;[#ServiceExe]&quot; health-check" Before="CheckServiceHealth" Sequence="execute" />
+    <CustomAction Id="CheckServiceHealth" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <!--
+      Rollback test hook (WiX's documented FailWhenDeferred): WIXFAILWHENDEFERRED=1 (the setup's FailWhenDeferred=1) makes
+      the installation fail at its end so Windows Installer rolls it back. It installs nothing and bypasses no check; CI uses
+      it to prove that a failed update restores the previous version.
+    -->
+    <util:FailWhenDeferred />
+
     <InstallExecuteSequence>
       <Custom Action="CloseApps" Before="StopServices" />
       <Custom Action="ConfigureServicePrivileges" After="InstallServices" Condition="NOT REMOVE~=&quot;ALL&quot;" />
       <Custom Action="ConfigureServiceRecovery" After="ConfigureServicePrivileges" Condition="NOT REMOVE~=&quot;ALL&quot;" />
       <Custom Action="ConfigureServiceRecoveryOnError" After="ConfigureServiceRecovery" Condition="NOT REMOVE~=&quot;ALL&quot;" />
       <Custom Action="SecureDataFolder" After="ConfigureServiceRecoveryOnError" Condition="NOT REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="CheckServiceHealth" After="StartServices" Condition="NOT REMOVE~=&quot;ALL&quot;" />
     </InstallExecuteSequence>
 
   </Package>

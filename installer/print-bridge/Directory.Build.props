@@ -28,6 +28,8 @@
 		<PrintBridgeSigned Condition="'$(PrintBridgeSigned)' == ''">false</PrintBridgeSigned>
 		<PrintBridgeProductName>Wasla Print Bridge</PrintBridgeProductName>
 		<PrintBridgeProductName Condition="'$(PrintBridgeSigned)' != 'true'">Wasla Print Bridge (unsigned development build)</PrintBridgeProductName>
+		<!-- Signed with a throwaway test certificate (CI's update tests, WAS-63): signed like a release, never one. -->
+		<PrintBridgeProductName Condition="'$(PrintBridgeSigned)' == 'true' and '$(PrintBridgeTestSigned)' == 'true'">Wasla Print Bridge (test-signed development build)</PrintBridgeProductName>
 		<SignOutput Condition="'$(PrintBridgeSigned)' == 'true'">true</SignOutput>
 	</PropertyGroup>
 

@@ -47,6 +47,11 @@
 .PARAMETER CopyToWebDownload
     Copy the setup EXE to src\Wasla.Web\wwwroot\downloads\wasla-print-bridge\ for testing the Web download locally.
 
+.PARAMETER TestSigning
+    The signing certificate is a throwaway test certificate (CI's update tests, WAS-63): the build is signed exactly as a
+    release is, but its product name says "(test-signed development build)" and its metadata says so. Such a build is not
+    for restaurants; only a computer that trusts that test certificate accepts it.
+
 .EXAMPLE
     .\scripts\release\package-print-bridge.ps1
 
@@ -61,7 +66,8 @@ param(
     [string] $SigningCertificateThumbprint = $env:WASLA_SIGNING_CERT_THUMBPRINT,
     [string] $TimestampUrl = $env:WASLA_SIGNING_TIMESTAMP_URL,
     [switch] $SkipSupportZip,
-    [switch] $CopyToWebDownload
+    [switch] $CopyToWebDownload,
+    [switch] $TestSigning
 )
 
 $ErrorActionPreference = 'Stop'
@@ -166,7 +172,10 @@ if ($signed) {
         Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
     if (-not $signTool) { throw 'signtool.exe (Windows SDK) was not found; it is needed to sign.' }
 }
-$distribution = if ($signed) { 'Signed release build.' } else { 'Unsigned development build: not for restaurants.' }
+if ($TestSigning -and -not $signed) { throw '-TestSigning needs a signing certificate thumbprint and a timestamp URL.' }
+$distribution = if ($TestSigning) { 'Test-signed development build: not for restaurants.' }
+                elseif ($signed) { 'Signed release build.' }
+                else { 'Unsigned development build: not for restaurants.' }
 
 Write-Host "Wasla Print Bridge $Version ($distribution)"
 # A provided bootstrapper is read before the output folder is replaced: it may be the copy an earlier build left there.
@@ -243,6 +252,7 @@ $wixProperties = @('--no-incremental', "-p:PrintBridgeVersion=$Version", '-c', '
 if ($signed) {
     $wixProperties += @("-p:WaslaSigningCertificateThumbprint=$SigningCertificateThumbprint", "-p:WaslaSigningTimestampUrl=$TimestampUrl",
         "-p:WaslaSignToolPath=$signTool")
+    if ($TestSigning) { $wixProperties += '-p:PrintBridgeTestSigned=true' }
 }
 $msiOut = Join-Path $work 'msi'
 Invoke-Checked 'build the MSI' 'dotnet' (@('build', $packageProject, "-p:PrintBridgePublishDir=$publishDir", "-p:OutputPath=$msiOut") + $wixProperties)
@@ -272,6 +282,23 @@ if ($msiIdentity.productVersion -ne $Version -or $bundleVersion -ne $Version -or
         "$($msiIdentity.upgradeCode), program files $($fileVersions -join ' / '), setup EXE $bundleVersion.")
 }
 Write-Host "MSI $($msiIdentity.productVersion) (ProductCode $($msiIdentity.productCode), UpgradeCode $($msiIdentity.upgradeCode)); setup EXE $bundleVersion"
+
+# A signed build is checked as Windows will check it: every file the script and WiX signed has a valid signature by the
+# given certificate (WAS-63; an update is accepted only from the publisher that signed the installation).
+if ($signed) {
+    $signedFiles = @($builtSetup, $builtMsi) + @(Get-ChildItem -LiteralPath $publishDir -File |
+        Where-Object { $_.Name -like 'Wasla.*' -and $_.Extension -in '.exe', '.dll' } | Select-Object -ExpandProperty FullName)
+    $publisher = $null
+    foreach ($file in $signedFiles) {
+        $fileSignature = Get-AuthenticodeSignature -LiteralPath $file
+        if ($fileSignature.Status -ne 'Valid' -or $fileSignature.SignerCertificate.Thumbprint -ne $SigningCertificateThumbprint.ToUpperInvariant() -or
+            $null -eq $fileSignature.TimeStamperCertificate) {
+            throw "$([IO.Path]::GetFileName($file)) is not validly signed and timestamped by the given certificate (status $($fileSignature.Status))."
+        }
+        $publisher = $fileSignature.SignerCertificate.Subject
+    }
+    Write-Host "Signatures verified: $($signedFiles.Count) files, signer $publisher"
+}
 
 Copy-Item -LiteralPath $builtSetup -Destination (Join-Path $OutputDirectory $setupName)
 Copy-Item -LiteralPath $builtMsi -Destination (Join-Path $OutputDirectory $msiName)
@@ -318,9 +345,13 @@ foreach ($name in $roles.Keys) {
 $commit = & git -C $repoRoot rev-parse HEAD 2>$null
 $localChanges = [bool](& git -C $repoRoot status --porcelain 2>$null)
 $metadata = [ordered]@{
+    # The release description the Wasla server reads to offer updates (WAS-63, docs/integrations/print-bridge-updates.md).
+    schemaVersion = 1
     product = 'Wasla Print Bridge'
     version = $Version
     signed = $signed
+    testSigned = [bool]$TestSigning
+    publisher = $(if ($signed) { $publisher } else { $null })
     distribution = $distribution
     commit = $(if ($commit) { "$commit".Trim() } else { $null })
     commitHasLocalChanges = $localChanges

@@ -69,26 +69,35 @@ when the metadata says `signed: true`; the client still verifies everything itse
    pauses during the installation, that Windows asks for administrator permission, that Print Bridge closes and that
    the setup opens.
 3. **Prepare** (`update.prepare`, one attempt at a time for the whole computer; a second one is refused):
-   the service downloads to `updates\<version>.partial` while hashing, refuses anything larger than described, renames
-   the finished file, and verifies it (trust model above).
+   the service first asks the server again (the release must still be the version the user confirmed), downloads to
+   `updates\Wasla.PrintBridge-Setup-x64-<version>.exe.partial`, refuses anything larger or smaller than described,
+   renames the finished file, and verifies it (trust model above) while holding it open against writers.
 4. **Gate.** The service then takes the engine's connection-change lease (`IPrintBridgeConnectionGuard`): it is granted
-   only when no job is between its claim and its last report, and while it is held no job is claimed, the journal is not
-   settled and a pending move is not finished. It waits for that up to 2 minutes; a job is never cancelled, failed or
-   cut short to make room, and if it does not finish in time the attempt fails with "printing is in progress".
-   The attempt is written as `Ready`.
+   only when no job is between its claim and its last report and no journal entry is being reported again, and while it
+   is held no job is claimed, no journal entry is settled, and no setup link or pending move is applied. It waits for
+   that up to 2 minutes; a job is never cancelled, failed or cut short to make room, and if it does not finish in time
+   the attempt fails with "printing is in progress". The attempt is written as `Ready`.
 5. **Install.** The app verifies the staged setup again and starts it (unelevated; the setup asks for administrator
    permission). The setup closes every Print Bridge app, stops the service, removes the installed version and installs
    the new one in one Windows Installer transaction, starts the new service and runs the health check (below).
-6. **Commit.** The new service finds the attempt `Ready` at start and keeps the gate. Once no Windows Installer
-   transaction is running (`Global\_MSIExecute` is free) and Windows Installer reports its own version as installed, it
-   records `Succeeded`, releases the gate and prints again, unless the user had stopped printing.
+6. **Commit.** The new service finds the attempt `Ready` at start and does not start its engine. Once no Windows
+   Installer transaction is running (`Global\_MSIExecute` is free) and Windows Installer reports its own version as
+   installed (the related product of the MSI's upgrade code), it records `Succeeded`, deletes the staged setup and starts
+   printing, unless the user had stopped printing. If no installation runs and Windows Installer reports another
+   version for 30 seconds, it records `Failed` (`unexpectedVersion`) and prints anyway, so a damaged registration never
+   keeps a restaurant from printing.
 7. **Result.** The app (started by the setup's **Launch**, the Start menu or the next sign-in) shows "Updated to X", or
    "The update was not installed; X is still installed" with **Try again**.
 
 If the setup ends without installing (the user cancelled it or the UAC prompt), the app that started it cancels the
 attempt and printing resumes at once. If no app does (it was closed), the gate expires 15 minutes after `Ready` while the
 installed version is still running. A setup started after that stops the service as any installation does, which WAS-61
-already makes safe.
+already makes safe. The app disconnecting before `Ready` cancels the attempt; after `Ready` it does not (the setup
+closes the app on purpose).
+
+The staged setup is deleted after the commit, a rollback, a cancel or an expiry. The setup that ran from it keeps the
+file in use until it exits, so the service tries again every 5 seconds for up to 10 minutes, and otherwise at its next
+start.
 
 ## Printing safety
 
@@ -107,9 +116,12 @@ already makes safe.
 The MSI runs `Wasla.PrintBridge.Service.exe health-check` as LocalSystem right after it started the service, inside the
 installation transaction (deferred, `Return="check"`, not on uninstall). It passes only when the service:
 
-- answers on its pipe within 60 seconds with IPC protocol 2;
+- is the process the Service Control Manager reports for `WaslaPrintBridge` (checked on the pipe before anything is
+  sent);
+- answers within 60 seconds with IPC protocol 2;
 - reports the version of the executable that was just installed;
-- has its data folder protected, and its settings and journal loaded (not set aside as unreadable).
+- serves its engine: its data folder is protected (`DataFolderNotSecured` fails at once); an engine held by an older
+  portable app still counts as healthy, as WAS-61 reports it.
 
 Any other answer, or none, fails the installation and Windows Installer rolls everything back. The check needs neither
 the internet, a connection nor a printer, so a first installation passes it too.
@@ -141,7 +153,10 @@ At every service start, before printing starts:
 | `Ready` | the target version | Keep the gate until the commit (above), then `Succeeded` |
 | `Ready` | the previous version | The setup did not run, was cancelled or rolled back: gate released, `NotApplied` |
 | `Ready` | another version | Gate released, `Failed` (`unexpectedVersion`); logged |
-| `Succeeded`, `Failed`, `NotApplied`, `Cancelled` | any | Kept to show the result once; no gate |
+| `Succeeded`, `Failed`, `NotApplied`, `Cancelled` | any | Kept and shown until the next attempt; no gate |
+| No record, or an unreadable one (set aside as `update-state.json.corrupt-*`) | any | No attempt; no gate |
+
+In every row but the second, a staged or partial setup left in `updates\` is deleted (retried while in use, above).
 
 Failure behavior at each point:
 
@@ -153,7 +168,7 @@ Failure behavior at each point:
 | Printing does not finish within 2 minutes | No gate, `Failed` (`printingInProgress`); try again later |
 | Setup cancelled, UAC refused | The app cancels; or the gate expires after 15 minutes |
 | Installation fails, health check fails | Windows Installer rolls back; the previous service starts and records `NotApplied` |
-| Interrupted installation or rollback (power loss) | Windows Installer completes the rollback when it next runs; the service then reconciles as above |
+| Interrupted installation or rollback (power loss) | Windows Installer rolls back the unfinished transaction when it next runs (the setup again, or Repair); the service then reconciles as above. If the new version starts on an uncommitted installation with no installer running, it prints after 30 seconds and records `unexpectedVersion`. Not tested: no real power loss or reboot is simulated |
 
 What is tested where is listed under [Verification](#verification). An interruption or reboot in tests is a service stop
 or process kill and restart; a real machine reboot or power loss is not tested.
@@ -169,12 +184,19 @@ normal update never shows this.
 | Command | Payload | Answer |
 |---------|---------|--------|
 | `update.check` | `{}` | `{"installed","available"}` (`available` null when there is nothing newer) or a refusal |
-| `update.prepare` | `{"version"}` | `{}` at once; progress and the result arrive in `state` |
-| `update.cancel` | `{}` | `{}` |
-| `service.health` | `{}` | `{"version","dataFolderProtected","settingsLoaded","journalLoaded"}`; used by `health-check` |
+| `update.prepare` | `{"version"}` | `{"attemptId"}` at once; progress and the result arrive in `state` |
+| `update.cancel` | `{"attemptId"}` | `{}`; nothing changes when that attempt is finished or awaits its commit |
+| `service.health` | `{}` | `{"version","availability"}`; used by `health-check` |
 
-The `state` gains `update`: the stage, the from and to version, download progress, a failure reason code and resource
-key, and, only while `Ready`, the staged setup's path, size and SHA-256 for the app's own check.
+Refusals are localized keys: `Update.Error.NotSigned` (unsigned installation), `NotReady`, `NotNewer`,
+`InvalidRelease` and `Storage`, and `busy` for a second attempt. While printing is paused for an update (from
+`WaitingForPrinting` until the commit), commands that change the connection, settings or printing (Start, Stop, a
+setup link, a printer or settings save, the language, resolving an uncertain receipt) are refused with
+`Update.Error.InProgress`; reading state, history and printers works.
+
+The `state` gains `update`: the installed version, whether updates are supported (a signed installation), and the
+current or last attempt: its id, stage, from and to version, download percent, failure code and, only while `Ready`
+(not while the new version awaits its commit), the staged setup's path, size and SHA-256 for the app's own check.
 
 ## Permissions
 
@@ -193,4 +215,16 @@ key, and, only while `Ready`, the staged setup's path, size and SHA-256 for the 
 
 ## Verification
 
-Filled in as the work lands; see the PR for exact runs.
+Exact runs, totals and evidence lines are in the WAS-63 pull request.
+
+| What | Where | How |
+|------|-------|-----|
+| Install, update, health check and commit, and a failed update rolled back, with the real setups | `PrintBridgeInstallerTests.AConfirmedUpdate_…` (CI, disposable elevated runner only) | This commit's test-signed setup and the next build: discovery from a fake server, a tampered download refused, the pause waiting for a claimed receipt, the staged file's access rules, `FailWhenDeferred=1` rolled back to the installed version (registration, data and the receipt held by the pause intact; the new version never contacted the server), then a committed update keeping the data, the user's Stop and `StartAtSignIn=0`. The failure is induced; no machine reboot |
+| Reconciliation table, gate, expiry, cancel, disconnect, concurrent prepares, interrupted download, every refusal | `PrintBridgeUpdateCoordinatorTests` | Production engine, pipe and client in one process; fake server and fake Windows Installer; real Authenticode on a Microsoft-signed file of the .NET runtime (the installation is given Microsoft's publisher). A "restart" builds a new service on the same folder |
+| Health check | `PrintBridgeServiceProcessTests`, `PrintBridgeInstallerSourceTests` | The built executable against a console service process; the custom action's place in the MSI |
+| `updates\` rules | `PrintBridgeDataFolderSecurityTests` | Readable by users is safe; writable by users is not |
+| Release versions, description and record | `PrintBridgeReleaseTests` in both test projects | Contract rules; the Web catalog and endpoints |
+| App flow and languages | WebShell tests | Confirmation, progress, recovery texts in TR, EN, AR and RU, Arabic right to left |
+
+Not tested: a real machine reboot or power loss during an installation or rollback, physical printers and client
+Windows editions (WAS-28), and a production-signed release (no certificate exists yet).

@@ -187,6 +187,53 @@ public sealed class PrintBridgeServiceProcessTests : IAsyncDisposable
         }
     }
 
+    [Fact]
+    public async Task TheHealthCheck_PassesForTheRunningService_AndFailsWhenNoServiceAnswers()
+    {
+        // WAS-63: what the installer runs right after it started the service. With no service on this folder it fails.
+        var timeout = Wasla.PrintBridge.Hosting.PrintBridgeHealthCheck.Timeout;
+        Wasla.PrintBridge.Hosting.PrintBridgeHealthCheck.Timeout = TimeSpan.FromSeconds(3);
+        try
+        {
+            Assert.True(Wasla.PrintBridge.Hosting.PrintBridgeServiceOptions.TryParse(["health-check"], out var options, out _));
+            using var output = new StringWriter();
+            using var error = new StringWriter();
+            Assert.Equal(1, Wasla.PrintBridge.Hosting.PrintBridgeHealthCheck.Run(options!, output, error));
+            Assert.StartsWith("Wasla Print Bridge health check failed:", error.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Wasla.PrintBridge.Hosting.PrintBridgeHealthCheck.Timeout = timeout;
+        }
+
+        // The built executable against the running service process (a console run: the pipe's owner is checked as this
+        // user; the Service Control Manager check of an installed service runs in PrintBridgeInstallerTests on CI).
+        Configure();
+        StartService();
+        var app = Connect();
+        await app.Connected.WaitAsync(Wait, Ct);
+
+        var check = new ProcessStartInfo(ServiceBuildOutput.Executable)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            WorkingDirectory = ServiceBuildOutput.Directory
+        };
+        foreach (var arg in new[] { "health-check", "--data-root", _dataRoot.Path })
+            check.ArgumentList.Add(arg);
+        check.Environment.Remove(PrintBridgePaths.DevelopmentDataRootVariable);
+        using var process = Process.Start(check)!;
+        var stdout = process.StandardOutput.ReadToEndAsync(Ct);
+        var stderr = process.StandardError.ReadToEndAsync(Ct);
+        await process.WaitForExitAsync(Ct).WaitAsync(Wait, Ct);
+
+        Assert.True(process.ExitCode == 0, $"exit {process.ExitCode}: {await stderr}");
+        Assert.Contains("is running and healthy", await stdout, StringComparison.Ordinal);
+        Assert.DoesNotContain(TrayFakeServer.Token, await stdout + await stderr, StringComparison.Ordinal);
+    }
+
     private void Configure(Action<PrintBridgeSettingsStore.AppSettingsDocument>? customize = null)
     {
         var store = new PrintBridgeSettingsStore();

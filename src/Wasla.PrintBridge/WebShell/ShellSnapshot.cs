@@ -22,8 +22,107 @@ public sealed record ShellSnapshot(
     ShellDiagnosticsView Diagnostics,
     bool DryRun,
     ShellOperationalView Operational,
+    ShellUpdateView Update,
     IReadOnlyList<ShellLanguageOption> Languages,
     IReadOnlyDictionary<string, string> Strings);
+
+/// <summary>
+/// Updates (WAS-63) as the page shows them in Settings: the installed version, where the current or last attempt is, in
+/// the user's words, and what may be done now. Built by <see cref="ShellUpdates"/> from the service's update state and the
+/// host's own part (its last check, the setup it opened). Technical failure codes stay in the app log.
+/// </summary>
+/// <param name="Stage">One of <see cref="ShellUpdateStages"/>.</param>
+/// <param name="Label">What the section says now, localized and formatted; empty when there is nothing to say.</param>
+/// <param name="AvailableVersion">The newer version the host's last check found in this session, or null.</param>
+/// <param name="TargetVersion">The version of the current or last attempt, or null.</param>
+/// <param name="DownloadPercent">0–100 while downloading, otherwise null.</param>
+/// <param name="Progress">The download percentage formatted for the language, while downloading.</param>
+/// <param name="Failure">One of <see cref="ShellUpdateFailures"/> when <paramref name="Stage"/> is <c>failed</c>, otherwise null.</param>
+public sealed record ShellUpdateView(
+    string InstalledVersion,
+    bool Supported,
+    string Stage,
+    string Label,
+    string? AvailableVersion,
+    string? TargetVersion,
+    int? DownloadPercent,
+    string? Progress,
+    string? Failure,
+    ShellUpdateActionsView Actions,
+    ShellUpdateBusyView Busy);
+
+/// <summary>Which update commands the page may offer now.</summary>
+public sealed record ShellUpdateActionsView(bool Check, bool Start, bool Cancel)
+{
+    public static readonly ShellUpdateActionsView None = new(false, false, false);
+}
+
+/// <summary>Update commands running in the host (the confirmation of <c>update.start</c> included).</summary>
+public sealed record ShellUpdateBusyView(bool Check, bool Start, bool Cancel)
+{
+    public static readonly ShellUpdateBusyView Idle = new(false, false, false);
+}
+
+public static class ShellUpdateStages
+{
+    /// <summary>The service cannot be reached, so its update state is unknown.</summary>
+    public const string Unavailable = "unavailable";
+
+    /// <summary>This installation is not validly signed (every development build): it cannot update itself.</summary>
+    public const string Unsupported = "unsupported";
+
+    public const string Idle = "idle";
+    public const string Checking = "checking";
+    public const string UpToDate = "upToDate";
+    public const string Available = "available";
+    public const string Downloading = "downloading";
+    public const string Verifying = "verifying";
+    public const string WaitingForPrinting = "waitingForPrinting";
+
+    /// <summary>The verified setup waits and printing is paused, but this app did not start the attempt (it may cancel it).</summary>
+    public const string Ready = "ready";
+
+    /// <summary>This app checks the staged setup once more and opens it.</summary>
+    public const string Opening = "opening";
+
+    /// <summary>The setup this app opened is running.</summary>
+    public const string SetupOpen = "setupOpen";
+
+    /// <summary>The new version waits for Windows Installer's commit; it can no longer be cancelled.</summary>
+    public const string Installing = "installing";
+
+    public const string Succeeded = "succeeded";
+    public const string NotApplied = "notApplied";
+    public const string Cancelled = "cancelled";
+    public const string Failed = "failed";
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        Unavailable, Unsupported, Idle, Checking, UpToDate, Available, Downloading, Verifying, WaitingForPrinting, Ready, Opening,
+        SetupOpen, Installing, Succeeded, NotApplied, Cancelled, Failed
+    ];
+}
+
+/// <summary>Update failures grouped by what the user can do about them.</summary>
+public static class ShellUpdateFailures
+{
+    public const string Download = "download";
+
+    /// <summary>Size, SHA-256, signature, publisher or version did not match: the file was deleted and never run.</summary>
+    public const string Verification = "verification";
+
+    public const string PrintingInProgress = "printingInProgress";
+    public const string Interrupted = "interrupted";
+    public const string Expired = "expired";
+    public const string Storage = "storage";
+    public const string UnexpectedVersion = "unexpectedVersion";
+
+    /// <summary>The verified setup could not be started.</summary>
+    public const string Setup = "setup";
+
+    public static readonly IReadOnlyList<string> All =
+        [Download, Verification, PrintingInProgress, Interrupted, Expired, Storage, UnexpectedVersion, Setup];
+}
 
 /// <summary>
 /// The saved operational settings, which are also the values the engine uses (it reads them for every poll and job),

@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.UI;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.WebShell;
 
@@ -22,6 +23,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
 
     private readonly WebView2 _webView;
     private readonly ShellBridge _bridge;
+    private readonly ShellUpdates _updates;
     private readonly ShellConnectionSetup _connectionSetup;
     private readonly PrintBridgeLocalizer _localizer;
     private readonly PrintBridgeCultureService _cultureService;
@@ -36,6 +38,9 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     private Task? _initialization;
     private bool _unavailableRaised;
 
+    /// <param name="updates">The service's update state and commands (WAS-63); <see cref="ShellUpdates.None"/> when there are none.</param>
+    /// <param name="setupLauncher">Starts the verified setup; tests replace it.</param>
+    /// <param name="setupVerifier">Checks the staged setup before it starts; tests replace it.</param>
     public PrintBridgeShellForm(
         IPrintBridgeEngine engine,
         IPrintBridgeSettingsView settings,
@@ -47,7 +52,10 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         PrintBridgeCultureService cultureService,
         IShellLanguageSwitcher languageSwitcher,
         string? webView2Version,
-        ILogger logger)
+        ILogger logger,
+        IPrintBridgeUpdates updates,
+        IShellSetupLauncher? setupLauncher = null,
+        IShellSetupVerifier? setupVerifier = null)
     {
         _connectionSetup = connectionSetup;
         _localizer = localizer;
@@ -76,10 +84,28 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
         Controls.Add(_webView);
 
         var history = new ShellHistory(engine, localizer, cultureService);
-        var operations = new ShellOperations(engine, printers, printerSettings, operationalSettings, this, history, settings, localizer, logger);
+        _updates = new ShellUpdates(
+            updates,
+            engine,
+            this,
+            setupLauncher ?? ShellSetupLauncher.Instance,
+            setupVerifier ?? ShellSetupVerifier.Instance,
+            localizer,
+            cultureService,
+            logger);
+        var operations = new ShellOperations(
+            engine, printers, printerSettings, operationalSettings, this, history, settings, localizer, logger, updates: _updates);
         _bridge = new ShellBridge(
             engine,
-            new ShellSnapshotFactory(localizer, cultureService, settings, printers, () => operations.Busy, webView2Version, UserPrinterProbe.IsInstalledForThisUser),
+            new ShellSnapshotFactory(
+                localizer,
+                cultureService,
+                settings,
+                printers,
+                () => operations.Busy,
+                webView2Version,
+                UserPrinterProbe.IsInstalledForThisUser,
+                operations.UpdateView),
             this,
             languageSwitcher,
             cultureService,
@@ -108,6 +134,8 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
     internal CoreWebView2? CoreWebView2ForTests => _webView.CoreWebView2;
 
     internal ShellBridge BridgeForTests => _bridge;
+
+    internal ShellUpdates UpdatesForTests => _updates;
 
     internal Task? InitializationForTests => _initialization;
 
@@ -201,6 +229,16 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
                     _localizer,
                     _cultureService.IsRightToLeft,
                     _useDarkPalette);
+                return RunDialog(dialog, () => dialog.DialogResult == DialogResult.OK);
+            },
+            whenUnavailable: false);
+
+    /// <summary>Asks before an update starts (WAS-63). Tracked like the connection dialog, so exiting the app cancels it.</summary>
+    public Task<bool> ConfirmUpdateAsync(string installedVersion, string newVersion) =>
+        ShowModalAsync(
+            () =>
+            {
+                using var dialog = ShellConfirmDialog.ForUpdate(installedVersion, newVersion, _localizer, _cultureService.IsRightToLeft, _useDarkPalette);
                 return RunDialog(dialog, () => dialog.DialogResult == DialogResult.OK);
             },
             whenUnavailable: false);
@@ -312,6 +350,7 @@ internal sealed class PrintBridgeShellForm : Form, IShellHost, IShellNativeActio
             _refreshTimer.Stop();
             _refreshTimer.Dispose();
             _bridge.Dispose();
+            _updates.Dispose();
             _webView.Dispose();
         }
 

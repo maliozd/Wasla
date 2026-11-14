@@ -5,6 +5,7 @@ using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Updates;
 using Wasla.PrintBridge.WebShell;
 using static Wasla.PrintBridge.Tests.WebShell.WebShellTestSupport;
 
@@ -113,19 +114,19 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
 
             // An unknown field, a non-string message, an unknown type and an oversized message change nothing.
             await EvalAsync(core, """
-                chrome.webview.postMessage('{"version":3,"type":"language.change","payload":{"culture":"en-US","tab":"settings"}}');
-                chrome.webview.postMessage('{"version":3,"type":"host.exec","payload":{"method":"Exit"}}');
-                chrome.webview.postMessage({ version: 3, type: 'language.change', payload: { culture: 'en-US' } });
+                chrome.webview.postMessage('{"version":4,"type":"language.change","payload":{"culture":"en-US","tab":"settings"}}');
+                chrome.webview.postMessage('{"version":4,"type":"host.exec","payload":{"method":"Exit"}}');
+                chrome.webview.postMessage({ version: 4, type: 'language.change', payload: { culture: 'en-US' } });
                 chrome.webview.postMessage('x'.repeat(5000));
                 'sent'
                 """);
             await EvalAsync(core, "new Promise(r => setTimeout(() => r('waited'), 500))");
             Assert.Equal(SupportedCultures.Turkish, culture.CurrentCulture.Name);
 
-            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"language.change","payload":{"culture":"en-US"}}'); 'sent'""");
+            await EvalAsync(core, """chrome.webview.postMessage('{"version":4,"type":"language.change","payload":{"culture":"en-US"}}'); 'sent'""");
             await WaitUntilAsync(() => Task.FromResult(culture.CurrentCulture.Name == "en-US"));
 
-            await EvalAsync(core, """chrome.webview.postMessage('{"version":3,"type":"ui.ready","payload":{}}'); 'sent'""");
+            await EvalAsync(core, """chrome.webview.postMessage('{"version":4,"type":"ui.ready","payload":{}}'); 'sent'""");
             await WaitUntilAsync(() => Task.FromResult(form.BridgeForTests.SentSnapshotCount > sentBefore));
             Assert.Equal("0", await EvalAsync(core, "String(localStorage.length + sessionStorage.length + document.cookie.length)"));
         });
@@ -399,6 +400,101 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             Assert.Single(System.Windows.Forms.Application.OpenForms.OfType<PrintBridgeShellForm>());
         });
 
+    /// <summary>
+    /// WAS-63 in the real page, in Arabic: the section mirrors, a check offers the newer version, the start asks in a
+    /// mirrored native dialog the page cannot answer (declining changes nothing), the download shows an accessible progress
+    /// bar without horizontal scrolling at 320 CSS px, and a failure is announced as an alert without its technical code.
+    /// </summary>
+    [Fact]
+    public Task Updates_InArabic_CheckConfirmProgressAndFailure_ComeFromTheHost() =>
+        RunShellAsync(async (form, core, _) =>
+        {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            var updates = CurrentUpdates!;
+            await EvalAsync(core, "const s = document.getElementById('language'); s.value = 'ar-SA'; s.dispatchEvent(new Event('change')); 'changed'");
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.documentElement.dir") == "rtl");
+            await EvalAsync(core, "document.getElementById('tab-settings').click(); 'opened'");
+
+            Assert.Equal(FakeUpdates.Installed, await EvalAsync(core, "document.getElementById('update-installed').textContent"));
+            Assert.Equal(localizer["Shell.Update.Title"], await EvalAsync(core, "document.getElementById('update-title').textContent"));
+            Assert.Equal("""[true,false,true,true]""", await EvalAsync(core, UpdateVisibilityScript));
+            Assert.Equal("rtl", await EvalAsync(core, "getComputedStyle(document.getElementById('update-card')).direction"));
+
+            await EvalAsync(core, "document.getElementById('update-check').click(); 'checked'");
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('update-status').textContent")
+                                             == localizer.GetString("Shell.Update.Status.Available", FakeUpdates.Newer));
+            Assert.Matches(@"\p{IsArabic}", await EvalAsync(core, "document.getElementById('update-status').textContent"));
+            Assert.Equal("""[false,false,false,true]""", await EvalAsync(core, UpdateVisibilityScript));
+            Assert.Equal(localizer["Shell.Update.Start"], await EvalAsync(core, "document.getElementById('update-start').textContent"));
+
+            // The page cannot confirm: the host asks in a native, mirrored dialog owned by the app window.
+            await EvalAsync(core, "document.getElementById('update-start').focus(); document.getElementById('update-start').click(); 'asked'");
+            var declined = await WaitForOpenFormAsync<ShellConfirmDialog>();
+            Assert.Same(form, declined.Owner);
+            Assert.Equal(localizer["Shell.Update.ConfirmTitle"], declined.Text);
+            Assert.Equal(RightToLeft.Yes, declined.RightToLeft);
+            Assert.True(declined.RightToLeftLayout);
+            Assert.Equal([FakeUpdates.Installed, FakeUpdates.Newer], declined.DetailValues.Select(v => v.Text));
+            Assert.All(declined.DetailValues, v => Assert.Equal(RightToLeft.No, v.RightToLeft));
+            Assert.Same(declined.Cancel, declined.CancelButton);
+            declined.Cancel.PerformClick();
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.getElementById('update-start').getAttribute('aria-busy'))") == "null");
+            Assert.Empty(updates.Prepared);
+
+            await EvalAsync(core, "document.getElementById('update-start').click(); 'asked again'");
+            var confirmed = await WaitForOpenFormAsync<ShellConfirmDialog>();
+            confirmed.Confirm.PerformClick();
+            await WaitUntilAsync(() => Task.FromResult(updates.Prepared.Count == 1));
+            Assert.Equal([FakeUpdates.Newer], updates.Prepared);
+
+            updates.Current = FakeUpdates.Attempt(updates.NextAttempt, PrintBridgeUpdateStage.Downloading, percent: 40);
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.getElementById('update-progress-row').hidden)") == "false");
+            Assert.Equal("40", await EvalAsync(core, "String(document.getElementById('update-progress').value)"));
+            Assert.Equal(localizer["Shell.Update.Progress"], await EvalAsync(core, "document.getElementById('update-progress').getAttribute('aria-label')"));
+            Assert.Contains("40", await EvalAsync(core, "document.getElementById('update-progress').getAttribute('aria-valuetext')"));
+            Assert.Equal("""[false,true,true,false]""", await EvalAsync(core, UpdateVisibilityScript));
+            // The focused start button went away; focus stays in the section, on the cancel button.
+            Assert.Equal("update-cancel", await EvalAsync(core, "document.activeElement.id"));
+
+            await core.CallDevToolsProtocolMethodAsync(
+                "Emulation.setDeviceMetricsOverride",
+                JsonSerializer.Serialize(new { width = 320, height = 420, deviceScaleFactor = 1, mobile = false }));
+            await WaitUntilAsync(async () => await EvalAsync(core, "String(document.documentElement.clientWidth)") == "320");
+            // The section wraps inside the content area; nothing in it runs past the card or the card past the content.
+            var offenders = await EvalAsync(core, """
+                (() => {
+                  const main = document.querySelector('.pb-main');
+                  const area = main.getBoundingClientRect();
+                  const card = document.getElementById('update-card').getBoundingClientRect();
+                  const out = [];
+                  if (main.scrollWidth > main.clientWidth) out.push('content scrolls');
+                  if (card.left < area.left - 1 || card.right > area.right + 1) out.push('update-card');
+                  for (const el of document.querySelectorAll('#update-card *')) {
+                    if (el.closest('[hidden]')) continue;
+                    const r = el.getBoundingClientRect();
+                    if (r.width === 0 || r.height === 0) continue;
+                    if (r.left < card.left - 1 || r.right > card.right + 1) out.push(el.id || el.className || el.tagName);
+                  }
+                  return JSON.stringify(out);
+                })()
+                """);
+            Assert.True(offenders == "[]", offenders);
+            await core.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
+
+            updates.Current = FakeUpdates.Attempt(updates.NextAttempt, PrintBridgeUpdateStage.Failed, PrintBridgeUpdateFailure.HashMismatch);
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('alert').textContent") == localizer["Shell.Update.Failure.Verification"]);
+            Assert.Equal("danger", await EvalAsync(core, "document.getElementById('update-status').getAttribute('data-tone')"));
+            Assert.Equal(localizer["Shell.Update.Retry"], await EvalAsync(core, "document.getElementById('update-start').textContent"));
+            var html = await EvalAsync(core, "document.documentElement.outerHTML");
+            foreach (var code in new[] { "HashMismatch", "hashMismatch", FakeUpdates.SetupSha256, "update-state", "Setup-x64" })
+                Assert.DoesNotContain(code, html, StringComparison.Ordinal);
+            Assert.Empty(CurrentLauncher!.Started());
+        });
+
+    /// <summary>Whether the status text and the check, start and cancel buttons are hidden, in that order.</summary>
+    private const string UpdateVisibilityScript =
+        "JSON.stringify(['update-status', 'update-check', 'update-start', 'update-cancel'].map(id => document.getElementById(id).hidden))";
+
     private const string NewTypedToken = "typed-in-the-dialog-not-a-real-credential";
 
     private static async Task<T> WaitForOpenFormAsync<T>()
@@ -478,6 +574,13 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
     [ThreadStatic]
     private static PrintBridgeSettingsHolder? CurrentSettings;
 
+    /// <summary>The update state of the window under test (WAS-63), and the setup it would start.</summary>
+    [ThreadStatic]
+    private static FakeUpdates? CurrentUpdates;
+
+    [ThreadStatic]
+    private static FakeSetupLauncher? CurrentLauncher;
+
     private Task RunShellAsync(Func<PrintBridgeShellForm, CoreWebView2, FakeStatusSource, Task> body, string savedToken = SentinelToken)
     {
         if (!new WebView2RuntimeProbe().Probe().IsAvailable)
@@ -502,6 +605,10 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                     CurrentSettings = settings;
                     var store = new PrintBridgeSettingsStore();
                     var localizer = new PrintBridgeLocalizer(culture);
+                    var updates = new FakeUpdates(source);
+                    CurrentUpdates = updates;
+                    var launcher = new FakeSetupLauncher();
+                    CurrentLauncher = launcher;
                     using var form = new PrintBridgeShellForm(
                         source,
                         settings,
@@ -513,7 +620,10 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                         culture,
                         new FakeLanguageSwitcher(culture),
                         "154.0.4258.53",
-                        NullLogger.Instance)
+                        NullLogger.Instance,
+                        updates,
+                        launcher,
+                        new FakeSetupVerifier())
                     {
                         StartPosition = FormStartPosition.Manual,
                         Location = new Point(-32000, -32000),

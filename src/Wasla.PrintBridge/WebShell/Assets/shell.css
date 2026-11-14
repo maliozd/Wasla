@@ -766,6 +766,50 @@ dd {
   user-select: text;
 }
 
+/* Updates (WAS-63): one status line in the stage's colour (the text always says the same), a download bar and the actions. */
+
+.pb-update-status {
+  color: var(--pb-tone, var(--wasla-text));
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pb-update-status:focus {
+  outline: none;
+}
+
+.pb-card-title[tabindex="-1"]:focus {
+  outline: none;
+}
+
+.pb-progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wasla-space-2);
+}
+
+.pb-progress {
+  flex: 1 1 8rem;
+  min-inline-size: 0;
+  block-size: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wasla-surface-muted);
+  overflow: hidden;
+  appearance: none;
+}
+
+.pb-progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: var(--wasla-surface-muted);
+}
+
+.pb-progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--wasla-accent);
+  transition: inline-size var(--wasla-transition);
+}
+
 /* History */
 
 .pb-table-wrap {
@@ -946,6 +990,20 @@ tr[data-status="skipped"] .pb-row-detail {
   }
 
   .pb-switch:checked::before {
+    background: Highlight;
+  }
+
+  .pb-progress {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .pb-progress::-webkit-progress-bar {
+    background: Canvas;
+  }
+
+  .pb-progress::-webkit-progress-value {
     background: Highlight;
   }
 }

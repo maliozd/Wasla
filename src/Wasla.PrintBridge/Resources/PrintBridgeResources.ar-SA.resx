@@ -897,4 +897,136 @@
   <data name="Shell.Printer.UserOnly" xml:space="preserve">
     <value>هذه الطابعة مثبتة لحساب Windows الخاص بك فقط، لذلك لا تستطيع خدمة Print Bridge استخدامها. يجب أن يثبّتها المسؤول لجميع المستخدمين.</value>
   </data>
+  <data name="Shell.Update.Title" xml:space="preserve">
+    <value>التحديثات</value>
+  </data>
+  <data name="Shell.Update.Help" xml:space="preserve">
+    <value>لا يُثبَّت الإصدار الجديد إلا عندما تبدأه أنت. تتوقف الطباعة مؤقتًا أثناء التثبيت، ويطلب Windows إذن المسؤول.</value>
+  </data>
+  <data name="Shell.Update.Installed" xml:space="preserve">
+    <value>الإصدار المثبّت</value>
+  </data>
+  <data name="Shell.Update.Progress" xml:space="preserve">
+    <value>تقدّم التنزيل</value>
+  </data>
+  <data name="Shell.Update.Check" xml:space="preserve">
+    <value>التحقق من التحديثات</value>
+  </data>
+  <data name="Shell.Update.Start" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+  <data name="Shell.Update.Retry" xml:space="preserve">
+    <value>حاول مرة أخرى</value>
+  </data>
+  <data name="Shell.Update.Cancel" xml:space="preserve">
+    <value>إلغاء التحديث</value>
+  </data>
+  <data name="Shell.Update.Status.Unavailable" xml:space="preserve">
+    <value>يمكن التحقق من التحديثات عند الوصول إلى خدمة Print Bridge.</value>
+  </data>
+  <data name="Shell.Update.Status.Unsupported" xml:space="preserve">
+    <value>تأتي التحديثات مع إصدارات Print Bridge الموقّعة. هذه النسخة إصدار تطوير، لذلك لا يمكنها تحديث نفسها.</value>
+  </data>
+  <data name="Shell.Update.Status.Checking" xml:space="preserve">
+    <value>جارٍ التحقق من التحديثات…</value>
+  </data>
+  <data name="Shell.Update.Status.UpToDate" xml:space="preserve">
+    <value>Print Bridge محدّث.</value>
+  </data>
+  <data name="Shell.Update.Status.Available" xml:space="preserve">
+    <value>الإصدار {0} متاح.</value>
+  </data>
+  <data name="Shell.Update.Status.Downloading" xml:space="preserve">
+    <value>جارٍ تنزيل الإصدار {0}. تستمر الطباعة في أثناء ذلك.</value>
+  </data>
+  <data name="Shell.Update.Status.Verifying" xml:space="preserve">
+    <value>جارٍ فحص الملف الذي تم تنزيله. تستمر الطباعة في أثناء ذلك.</value>
+  </data>
+  <data name="Shell.Update.Status.WaitingForPrinting" xml:space="preserve">
+    <value>بانتظار انتهاء الطباعة الجارية. بعدها تتوقف الطباعة مؤقتًا حتى ينتهي الإعداد.</value>
+  </data>
+  <data name="Shell.Update.Status.Ready" xml:space="preserve">
+    <value>الإصدار {0} جاهز للتثبيت. الطباعة متوقفة مؤقتًا حتى يعمل الإعداد أو يُلغى التحديث.</value>
+  </data>
+  <data name="Shell.Update.Status.Opening" xml:space="preserve">
+    <value>جارٍ فتح الإعداد. الطباعة متوقفة مؤقتًا حتى ينتهي الإعداد.</value>
+  </data>
+  <data name="Shell.Update.Status.SetupOpen" xml:space="preserve">
+    <value>الإعداد مفتوح: اتبع خطواته، وسيطلب Windows إذن المسؤول. للإلغاء أغلق نافذة الإعداد.</value>
+  </data>
+  <data name="Shell.Update.Status.Installing" xml:space="preserve">
+    <value>جارٍ تثبيت الإصدار {0}؛ لم يعد بالإمكان إلغاؤه. تُستأنف الطباعة تلقائيًا عند انتهاء الإعداد.</value>
+  </data>
+  <data name="Shell.Update.Status.Succeeded" xml:space="preserve">
+    <value>تم التحديث إلى الإصدار {0}.</value>
+  </data>
+  <data name="Shell.Update.Status.NotApplied" xml:space="preserve">
+    <value>لم يُثبَّت التحديث. لا يزال الإصدار {0} مثبّتًا والطباعة مستمرة.</value>
+  </data>
+  <data name="Shell.Update.Status.Cancelled" xml:space="preserve">
+    <value>أُلغي التحديث. لم يُثبَّت أي شيء والطباعة مستمرة.</value>
+  </data>
+  <data name="Shell.Update.Failure.Download" xml:space="preserve">
+    <value>تعذر تنزيل التحديث. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Update.Failure.Verification" xml:space="preserve">
+    <value>تعذر التحقق من الملف الذي تم تنزيله فحُذف. لم يُثبَّت أي شيء.</value>
+  </data>
+  <data name="Shell.Update.Failure.PrintingInProgress" xml:space="preserve">
+    <value>كان إيصال لا يزال قيد الطباعة، لذلك لم يبدأ التحديث. حاول مرة أخرى بعد قليل.</value>
+  </data>
+  <data name="Shell.Update.Failure.Interrupted" xml:space="preserve">
+    <value>توقف التحديث لأن Print Bridge أُعيد تشغيله. لم يُثبَّت أي شيء؛ حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Update.Failure.Expired" xml:space="preserve">
+    <value>لم يُشغَّل الإعداد في الوقت المحدد. أُلغي التحديث والطباعة مستمرة.</value>
+  </data>
+  <data name="Shell.Update.Failure.Storage" xml:space="preserve">
+    <value>تعذر حفظ التحديث على هذا الكمبيوتر. لم يُثبَّت أي شيء؛ حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.Update.Failure.UnexpectedVersion" xml:space="preserve">
+    <value>يعمل إصدار غير متوقع بعد التحديث. تواصل مع دعم Wasla.</value>
+  </data>
+  <data name="Shell.Update.Failure.Setup" xml:space="preserve">
+    <value>تعذر فتح الإعداد. لم يُثبَّت أي شيء والطباعة مستمرة.</value>
+  </data>
+  <data name="Shell.Update.Started" xml:space="preserve">
+    <value>بدأ التحديث إلى الإصدار {0}.</value>
+  </data>
+  <data name="Shell.Update.CheckFirst" xml:space="preserve">
+    <value>تحقق من التحديثات أولًا.</value>
+  </data>
+  <data name="Shell.Update.NothingToCancel" xml:space="preserve">
+    <value>لا يوجد تحديث لإلغائه.</value>
+  </data>
+  <data name="Shell.Update.ConfirmTitle" xml:space="preserve">
+    <value>هل تريد تحديث Print Bridge؟</value>
+  </data>
+  <data name="Shell.Update.ConfirmMessage" xml:space="preserve">
+    <value>تتوقف الطباعة مؤقتًا أثناء تثبيت الإصدار الجديد. سيُفتح الإعداد ويطلب Windows إذن المسؤول، ثم يُغلق Print Bridge. تُستأنف الطباعة تلقائيًا عند انتهاء الإعداد.</value>
+  </data>
+  <data name="Shell.Update.Confirm" xml:space="preserve">
+    <value>بدء التحديث</value>
+  </data>
+  <data name="Shell.Update.NewVersion" xml:space="preserve">
+    <value>الإصدار الجديد</value>
+  </data>
+  <data name="Update.Error.NotSigned" xml:space="preserve">
+    <value>تأتي التحديثات مع إصدارات Print Bridge الموقّعة. لا يمكن لهذه النسخة تحديث نفسها.</value>
+  </data>
+  <data name="Update.Error.NotReady" xml:space="preserve">
+    <value>Print Bridge ليس جاهزًا بعد. حاول مرة أخرى بعد قليل.</value>
+  </data>
+  <data name="Update.Error.InvalidRelease" xml:space="preserve">
+    <value>تعذرت قراءة الإصدار الذي يصفه خادم Wasla. حاول مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="Update.Error.NotNewer" xml:space="preserve">
+    <value>هذا الإصدار ليس أحدث من الإصدار المثبّت.</value>
+  </data>
+  <data name="Update.Error.Storage" xml:space="preserve">
+    <value>تعذر حفظ التحديث على هذا الكمبيوتر. حاول مرة أخرى، وإذا استمرت المشكلة فتواصل مع دعم Wasla.</value>
+  </data>
+  <data name="Update.Error.InProgress" xml:space="preserve">
+    <value>لا يمكن تنفيذ ذلك أثناء تحديث Print Bridge. حاول مرة أخرى بعد انتهاء التحديث أو إلغائه.</value>
+  </data>
 </root>

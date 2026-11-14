@@ -212,6 +212,25 @@
           <p class="pb-help" data-i18n="Shell.Settings.ThemeFollowsWindows"></p>
         </div>
 
+        <!-- Updates (WAS-63): the host decides every text and action; the page never names a version to install. -->
+        <div class="pb-card" id="update-card" data-stage="">
+          <h2 class="pb-card-title" id="update-title" tabindex="-1" data-i18n="Shell.Update.Title"></h2>
+          <p class="pb-help" data-i18n="Shell.Update.Help"></p>
+          <dl class="pb-facts" aria-labelledby="update-title">
+            <div><dt data-i18n="Shell.Update.Installed"></dt><dd class="pb-number" id="update-installed"></dd></div>
+          </dl>
+          <p class="pb-update-status" id="update-status" tabindex="-1" hidden></p>
+          <div class="pb-progress-row" id="update-progress-row" hidden>
+            <progress class="pb-progress" id="update-progress" max="100" value="0" data-i18n-label="Shell.Update.Progress"></progress>
+            <span class="pb-help pb-number" id="update-percent" aria-hidden="true"></span>
+          </div>
+          <div class="pb-card-actions" id="update-actions">
+            <button type="button" class="pb-button" id="update-check" data-update="check" data-busy="updateCheck" data-i18n="Shell.Update.Check" hidden></button>
+            <button type="button" class="pb-button pb-button--primary" id="update-start" data-update="start" data-busy="updateStart" data-i18n="Shell.Update.Start" hidden></button>
+            <button type="button" class="pb-button" id="update-cancel" data-update="cancel" data-busy="updateCancel" data-i18n="Shell.Update.Cancel" hidden></button>
+          </div>
+        </div>
+
         <div class="pb-card">
           <h2 class="pb-card-title" id="diagnostics-title" data-i18n="Shell.Diagnostics.Title"></h2>
           <dl class="pb-facts" aria-labelledby="diagnostics-title">

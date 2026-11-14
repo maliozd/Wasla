@@ -477,37 +477,39 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     /// (<see cref="ResolveUncertainJobAsync"/>). The first cycle after a start settles every entry; later cycles retry an
     /// entry whose report failed for a network or server reason only after <see cref="JournalRetryInterval"/>. A failing
     /// report never stops polling. Runs on the loop, so no job of this engine is active meanwhile.
+    /// <para>
+    /// Settling an entry finishes the job it belongs to, so it counts as a job in progress (<see cref="TryBeginJob"/>): none
+    /// starts while a connection change or an update's pause (WAS-63) holds the engine, and both wait for one that runs.
+    /// </para>
     /// </summary>
     private async Task ResumeJournalAsync(PollingLoop loop, WaslaOptions connection, bool firstCycle)
     {
         var now = DateTime.UtcNow;
         foreach (var entry in _journal.Entries)
         {
-            lock (_sync)
-            {
-                if (loop.StopRequested || _connectionChanges > 0 || !IsSavedConnection(connection))
-                    return;
-            }
-
-            if (!entry.BelongsTo(connection))
-            {
-                // The token that claimed it is gone, and WAS-58 forbids reporting with another one: Wasla keeps the job in
-                // Printing, where it is resolved. An uncertain job stays visible locally, without the resolve action.
-                _logger.LogWarning(
-                    "A job claimed with an earlier connection was not reported; that connection was replaced. JobId={JobId}, Stage={Stage}",
-                    entry.JobId,
-                    entry.Stage);
-                _journal.Remove(entry.JobId);
-                if (entry.Stage is PrintJournalStage.Uncertain or PrintJournalStage.Submitting)
-                    RecordUncertain(entry.JobId, resolvableHere: false);
+            var belongs = entry.BelongsTo(connection);
+            if (belongs && (entry.Stage == PrintJournalStage.Uncertain || (!firstCycle && now - entry.UpdatedAtUtc < JournalRetryInterval)))
                 continue;
-            }
 
-            if (entry.Stage == PrintJournalStage.Uncertain || (!firstCycle && now - entry.UpdatedAtUtc < JournalRetryInterval))
-                continue;
+            if (!TryBeginJob(loop, connection))
+                return;
 
             try
             {
+                if (!belongs)
+                {
+                    // The token that claimed it is gone, and WAS-58 forbids reporting with another one: Wasla keeps the job
+                    // in Printing, where it is resolved. An uncertain job stays visible locally, without the resolve action.
+                    _logger.LogWarning(
+                        "A job claimed with an earlier connection was not reported; that connection was replaced. JobId={JobId}, Stage={Stage}",
+                        entry.JobId,
+                        entry.Stage);
+                    _journal.Remove(entry.JobId);
+                    if (entry.Stage is PrintJournalStage.Uncertain or PrintJournalStage.Submitting)
+                        RecordUncertain(entry.JobId, resolvableHere: false);
+                    continue;
+                }
+
                 await SettleJournalEntryAsync(entry, connection).ConfigureAwait(false);
             }
             catch (PrintBridgeConnectionException ex) when (IsTransient(ex))
@@ -521,6 +523,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
                     entry.JobId,
                     entry.Stage);
                 return;
+            }
+            finally
+            {
+                EndJob();
             }
         }
     }

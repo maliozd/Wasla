@@ -25,9 +25,13 @@
     'printer.testPrint': 'testPrint',
     'history.reprint': 'reprint',
     'history.resolve': 'reprint',
-    'settings.save': 'settingsSave'
+    'settings.save': 'settingsSave',
+    'update.check': 'updateCheck',
+    'update.start': 'updateStart',
+    'update.cancel': 'updateCancel'
   };
   var OPS_INPUTS = { idle: 'ops-idle', busy: 'ops-busy', error: 'ops-error' };
+  var UPDATE_BUTTONS = { check: 'update-check', start: 'update-start', cancel: 'update-cancel' };
 
   var lastSequence = 0;
   var current = null;
@@ -77,7 +81,7 @@
   }
 
   function isBusy(group) {
-    return Boolean(pending[group]) || model.flag(current, 'busy', group);
+    return Boolean(pending[group]) || model.hostBusy(current, group);
   }
 
   // ---- rendering ---------------------------------------------------------------------------------------
@@ -256,6 +260,65 @@
     setText(byId('diag-last-error'), d.lastIssue || model.text(snapshot, 'Shell.Diagnostics.None'));
     setText(byId('diag-printer'), d.printerName + ' · ' + d.printerLabel);
     setText(byId('diag-test-mode'), d.testModeLabel);
+    renderUpdate(snapshot);
+  }
+
+  // ---- updates (WAS-63) ----------------------------------------------------------------------------------
+
+  /** The update section: host text and progress; the buttons follow in renderUpdateButtons. */
+  function renderUpdate(snapshot) {
+    var u = snapshot.update;
+    byId('update-card').setAttribute('data-stage', u.stage);
+    setText(byId('update-installed'), u.installedVersion);
+    var status = byId('update-status');
+    setText(status, u.label);
+    status.hidden = u.label === '';
+    status.setAttribute('data-tone', model.updateTone(u.stage));
+
+    var downloading = u.stage === 'downloading' && u.downloadPercent !== null;
+    byId('update-progress-row').hidden = !downloading;
+    var progress = byId('update-progress');
+    if (downloading) {
+      progress.value = u.downloadPercent;
+      progress.setAttribute('aria-valuetext', u.progress || '');
+      setText(byId('update-percent'), u.progress || '');
+    }
+
+    var start = byId(UPDATE_BUTTONS.start);
+    var startKey = model.updateStartLabelKey(snapshot);
+    start.setAttribute('data-i18n', startKey);
+    setText(start, model.text(snapshot, startKey));
+  }
+
+  /**
+   * Shows only the update buttons the host offers (plus one whose request is still running) and keeps keyboard focus in
+   * the section when the focused button goes away: on the next button shown, otherwise on the status text.
+   */
+  function renderUpdateButtons() {
+    var focused = document.activeElement;
+    var lostFocus = false;
+    Object.keys(UPDATE_BUTTONS).forEach(function (name) {
+      var button = byId(UPDATE_BUTTONS[name]);
+      var group = BUSY_FOR_COMMAND['update.' + name];
+      var control = model.updateControl(current, name, Boolean(pending[group]));
+      if (control.hidden && button === focused) {
+        lostFocus = true;
+      }
+      button.hidden = control.hidden;
+      button.setAttribute('aria-disabled', control.disabled ? 'true' : 'false');
+      if (control.busy) {
+        button.setAttribute('aria-busy', 'true');
+        button.setAttribute('aria-describedby', 'busy-hint');
+      } else {
+        button.removeAttribute('aria-busy');
+        button.removeAttribute('aria-describedby');
+      }
+    });
+    if (lostFocus) {
+      var next = document.querySelector('#update-actions button:not([hidden])');
+      var status = byId('update-status');
+      (next || (status.hidden ? byId('update-title') : status)).focus();
+    }
   }
 
   // ---- operational settings ------------------------------------------------------------------------------
@@ -357,6 +420,7 @@
         button.removeAttribute('aria-describedby');
       }
     }
+    renderUpdateButtons();
   }
 
   function renderSnapshot(snapshot, previous) {
@@ -376,6 +440,10 @@
     byId('app').setAttribute('aria-busy', 'false');
     if (model.shouldAnnounce(previous, snapshot)) {
       setText(byId('announcer'), model.announcement(snapshot));
+    }
+    var update = model.updateAnnouncement(previous, snapshot);
+    if (update) {
+      setText(byId(update.assertive ? 'alert' : 'announcer'), update.text);
     }
     if (activeTab === 'history' && model.historyChanged(previous, snapshot)) {
       queryHistory();
@@ -727,6 +795,16 @@
       byId('ops-test-mode').focus();
     });
     byId('toast-close').addEventListener('click', function () { byId('toast').hidden = true; });
+
+    // Updates: each button sends only its command; the host decides the version, asks in a native dialog and answers.
+    Object.keys(UPDATE_BUTTONS).forEach(function (name) {
+      byId(UPDATE_BUTTONS[name]).addEventListener('click', function (event) {
+        if (event.currentTarget.getAttribute('aria-disabled') === 'true') {
+          return;
+        }
+        sendTracked('update.' + name);
+      });
+    });
 
     ['language', 'settings-language'].forEach(function (id) {
       byId(id).addEventListener('change', function (event) {

@@ -15,14 +15,15 @@ Wasla.PrintBridge.exe (per Windows user, per session; WinExe)
   tray, WebView2 app window, native dialogs (connection, confirmations), runtime notice,
   wasla-printbridge:// handler, per-user single instance and setup-link forwarding (WAS-92),
   localization (TR, EN, AR, RU)
-        │  named pipe \\.\pipe\WaslaPrintBridge.Service, protocol version 1
+        │  named pipe \\.\pipe\WaslaPrintBridge.Service, protocol version 2 (WAS-63)
         │  (PrintBridgeServiceClient → PrintBridgeIpcServer)
         ▼
 Wasla.PrintBridge.Service.exe (Windows Service "WaslaPrintBridge", NT SERVICE\WaslaPrintBridge)
   the only engine: PrintBridgeEngineHost → PrintBridgeRuntime (poll, claim, print, report),
   WaslaPrintBridgeClient, settings and device token, print history, job journal,
   setup links and moves (PrintBridgeAutoSetupCoordinator), pending-move recovery,
-  printer discovery and printing (winspool), machine-wide engine lock
+  printer discovery and printing (winspool), machine-wide engine lock,
+  update download, verification and pause (WAS-63, print-bridge-updates.md)
 ```
 
 | Executable | Project | Owns | Never does |
@@ -80,10 +81,11 @@ Before WAS-61 the folder inherited the ProgramData defaults: every local user co
 |------|-------|--------|
 | `C:\ProgramData\Wasla\PrintBridge` (and everything below, inherited) | `BUILTIN\Administrators` | `SYSTEM` Full, `BUILTIN\Administrators` Full, `NT SERVICE\WaslaPrintBridge` Modify; inheritance from ProgramData removed |
 | `...\logs` | `BUILTIN\Administrators` | as above, plus `BUILTIN\Users` Read & execute (Settings → Diagnostics → **Open log folder**) |
+| `...\updates` (WAS-63) | `BUILTIN\Administrators` | as above, plus `BUILTIN\Users` Read & execute: the app starts the setup the service verified there ([print-bridge-updates.md](print-bridge-updates.md)) |
 
 `Wasla.PrintBridge.Service.exe secure-data` applies exactly this (as an administrator): it creates the folders, sets the owner, replaces the folder's access rules, and resets every existing file and subfolder to inherit them, so access a user had through `CREATOR OWNER` is removed. It is idempotent.
 
-At every start the service checks the folder before it reads anything (`PrintBridgeDataFolderSecurity.Verify`): the owner must be `SYSTEM`, `Administrators` or the service, inheritance must be off, and no other account may have any access to the folder itself. If the check fails, the engine does not start; the app shows "The data folder of Print Bridge is not protected" and the log says which rule failed. Debug builds running against `WASLA_PRINTBRIDGE_DATA_ROOT` skip the check (that folder belongs to the developer).
+At every start the service checks the folder before it reads anything (`PrintBridgeDataFolderSecurity.Verify`): the owner must be `SYSTEM`, `Administrators` or the service, inheritance must be off, and no other account may have any access to the folder itself. In `updates\` (and its files) no account but those three may have any right to change, add or delete. If the check fails, the engine does not start; the app shows "The data folder of Print Bridge is not protected" and the log says which rule failed. Debug builds running against `WASLA_PRINTBRIDGE_DATA_ROOT` skip the check (that folder belongs to the developer).
 
 Secrets: the device token was never encrypted at rest. No version of Print Bridge used DPAPI or any other per-user protection (`git log -S ProtectedData` and `-S DataProtectionScope` over the Print Bridge projects find nothing); `appsettings.json` and `pending-connection-change.json` hold their secrets as plain JSON values, protected only by the folder's permissions, which were too wide. It stays a plain value in `appsettings.json`, now readable only by `SYSTEM`, administrators and the service. Machine-scope DPAPI would add nothing against another local account that can read the file, and user-scope DPAPI under the virtual account would bind the token to that account's profile and break a rollback. The token never leaves the service except to the Wasla server in `X-PrintBridge-Token`: no IPC response, event, log line or error carries it.
 
@@ -93,7 +95,7 @@ Secrets: the device token was never encrypted at rest. No version of Print Bridg
 |-----------|--------|
 | Service started before `secure-data` | The service runs, refuses to start its engine, logs the rule that failed, and the app shows "The data folder of Print Bridge is not protected" (`DataFolderNotSecured`). No request is sent with the token. |
 | `secure-data` by a standard user | Refused (access denied); the folder's rules are unchanged. |
-| `secure-data` by an administrator | Owner Administrators, inheritance removed, SYSTEM/Administrators full, service Modify, `logs` also readable by Users; existing files reset to inherit. |
+| `secure-data` by an administrator | Owner Administrators, inheritance removed, SYSTEM/Administrators full, service Modify, `logs` and `updates` also readable by Users; existing files reset to inherit. |
 | `secure-data` again | No change (idempotent). |
 | The service account cannot read the folder's rules | Treated as unsafe (fail closed), never as safe. |
 | A standard user afterwards | Cannot read `appsettings.json` (the token); can read the service log. |
@@ -105,8 +107,12 @@ Logs: the service writes `logs\wasla-print-bridge-<yyyyMMdd>.log`; the app write
 ## Command line and endpoints
 
 ```text
-Wasla.PrintBridge.Service.exe [secure-data] [--service-name <name>] [--data-root <absolute path>]
+Wasla.PrintBridge.Service.exe [secure-data | health-check] [--service-name <name>] [--data-root <absolute path>]
 ```
+
+`health-check` (WAS-63) asks the running service of that folder whether it is healthy and is this executable's version,
+then exits: 0 healthy, 1 not (the reason on standard error). The installer runs it as LocalSystem right after it started
+the service, inside its transaction ([print-bridge-updates.md](print-bridge-updates.md#health-check)).
 
 | Data folder | Pipe | Engine lock |
 |-------------|------|-------------|
@@ -125,7 +131,7 @@ Exactly one engine may poll and print per computer:
 
 A process that holds `Global\WaslaPrintBridge` without being Print Bridge keeps the service from printing (denial of service), never from being safe: no second engine runs. That needs a local logon, and the service log names the condition.
 
-## IPC contract (protocol version 1)
+## IPC contract (protocol version 2)
 
 Transport: one named pipe, `\\.\pipe\WaslaPrintBridge.Service`, byte mode, overlapped, up to 8 simultaneous clients. Each message is a frame: a 4-byte little-endian length followed by that many bytes of UTF-8 JSON.
 
@@ -151,7 +157,7 @@ This replaces WAS-92's "not prevented" case for the engine: a squatter can no lo
 
 ### Handshake and version
 
-The first frame from the app is `{"type":"hello","protocol":1,"client":"<app version>"}`. The service answers `{"type":"welcome","protocol":1,"service":"<service version>"}` and then a `state` event, or `{"type":"error","code":"incompatible_protocol","min":1,"max":1}` and closes the pipe. The app then shows "Print Bridge app and service versions do not match" (`RuntimeIssue.ServiceIncompatible`) and asks again every 30 seconds, so an update of either side is picked up. A future protocol version may change any message; a service that supports several versions announces its range in `min` and `max`.
+The first frame from the app is `{"type":"hello","protocol":2,"client":"<app version>"}`. The service answers `{"type":"welcome","protocol":2,"service":"<service version>"}` and then a `state` event, or `{"type":"error","code":"incompatible_protocol","min":2,"max":2}` and closes the pipe. Protocol 1 (WAS-61, WAS-62) had no update commands or state; WAS-63 made it 2 and the service accepts only 2, because the parser rejects unknown fields. The app then shows "Print Bridge app and service versions do not match" (`RuntimeIssue.ServiceIncompatible`) and asks again every 30 seconds, so an update of either side is picked up. A future protocol version may change any message; a service that supports several versions announces its range in `min` and `max`.
 
 ### Messages
 
@@ -176,6 +182,13 @@ Request: `{"type":"request","id":"<id>","command":"<command>","payload":{…}}`.
 | `history.resolve` | `{"jobId","printed"}` | `{}`; the user's check of a receipt whose paper outcome is unknown (below) |
 | `setup.apply` | `{"link"}` | `{"outcome"}` (`PrintBridgeAutoSetupOutcome`) |
 | `setup.consentAnswer` | `{"consentId","approved"}` | `{}` |
+| `update.check` | `{}` | `{"installed","available"}` (WAS-63) |
+| `update.prepare` | `{"version"}` | `{"attemptId"}`; progress in `state` |
+| `update.cancel` | `{"attemptId"}` | `{}` |
+| `service.health` | `{}` | `{"version","availability"}`; read-only, used by `health-check` |
+
+While printing is paused for an update, the commands that change the connection, settings or printing are refused with
+`Update.Error.InProgress` ([print-bridge-updates.md](print-bridge-updates.md#ipc-protocol-2)).
 
 | Event | Payload |
 |-------|---------|
@@ -183,7 +196,7 @@ Request: `{"type":"request","id":"<id>","command":"<command>","payload":{…}}`.
 | `setup.consent` | `{"consentId","currentTenantName","currentServer","targetTenantName","targetServer"}`, only to the client whose `setup.apply` asked |
 | `setup.background` | `{"outcome"}` when a pending move finished without a link being open |
 
-The state: `availability` (`active`, `starting`, `engineHeldElsewhere`, `dataFolderNotSecured`), the engine status (running, connection, last issue as code + resource key + numeric arguments, printer health, today's counts, the 50 most recent jobs without error text, the server-assigned device name, the service version) and the saved settings without secrets (`serverUrl`, `hasSavedToken`, printer, test mode, poll intervals, language, `printerUsable`, `stoppedByUser`). History rows carry a failure category (`printer`, `server`, `other`) instead of error text.
+The state: `availability` (`active`, `starting`, `engineHeldElsewhere`, `dataFolderNotSecured`), the engine status (running, connection, last issue as code + resource key + numeric arguments, printer health, today's counts, the 50 most recent jobs without error text, the server-assigned device name, the service version) and the saved settings without secrets (`serverUrl`, `hasSavedToken`, printer, test mode, poll intervals, language, `printerUsable`, `stoppedByUser`), and `update` (WAS-63: installed version, whether updates are supported, the current or last attempt). History rows carry a failure category (`printer`, `server`, `other`) instead of error text.
 
 `connection.check` is the only message that carries a credential, from the app to the service, once; the service keeps the verified candidate for 5 minutes under a random `verificationId` bound to that client, and `connection.apply` refers to it. `keepSavedToken` checks the saved token without the app ever knowing it.
 
@@ -195,7 +208,7 @@ The app connects at start and again after any disconnect: after 0.5 s, then doub
 
 | Event | What happens |
 |-------|--------------|
-| Service starts | Checks the data folder → starts the pipe → takes the engine lock (or waits) → loads settings, history and the journal → recovers the journal (below) → finishes a pending move → starts printing when a connection and a printer are saved and printing was not stopped by the user |
+| Service starts | Checks the data folder → starts the pipe → takes the engine lock (or waits) → loads settings, history and the journal → reconciles an update attempt (WAS-63; the new version of an update not yet committed by Windows Installer waits here, starting nothing) → recovers the journal (below) → finishes a pending move → starts printing when a connection and a printer are saved and printing was not stopped by the user |
 | App starts | Takes its per-user instance lock (WAS-92), registers the protocol handler, connects to the service. Without a saved connection it opens the app window on Overview, as before |
 | App window closed | Hidden to the tray, as before |
 | Tray **Close app** (was Exit) | Closes the app only. Printing and acknowledgements continue in the service. A move confirmation still open is closed as a refusal; a command already sent finishes in the service |
@@ -211,21 +224,21 @@ A job claimed by the engine but not yet reported is in `print-journal.json` (ato
 
 | Stage | Written | Means |
 |-------|---------|-------|
-| `Claimed` | after `mark-printing` succeeded | The receipt has not been handed to Windows yet |
+| `NotPrinted` | after `mark-printing` succeeded, and again when Windows refused the receipt | The receipt was not printed |
 | `Submitting` | right before the spooler call (or the test-mode file write) | Windows may or may not have printed it |
 | `Uncertain` | when a later start finds `Submitting` | Waiting for the user's check (never removed on its own) |
-| `PrintedUnreported` | after the spooler accepted the receipt | Printed; `mark-printed` not yet confirmed |
+| `Printed` | after the spooler accepted the receipt | Printed; `mark-printed` not yet confirmed |
 | (removed) | after `mark-printed` or `mark-failed` was answered | Finished |
 
 At the next engine start (after a crash, a kill, a stop that outlasted its 10-second grace, or a power loss after the write), before the first poll:
 
 | Stage found | Action | Why |
 |-------------|--------|-----|
-| `Claimed` | `mark-failed` ("Print Bridge stopped before printing this receipt") to the server that claimed it | Nothing was printed; the job becomes Failed and can be printed again from Wasla |
+| `NotPrinted` | `mark-failed` ("Print Bridge stopped before printing this receipt") to the server that claimed it | Nothing was printed; the job becomes Failed and can be printed again from Wasla |
 | `Submitting` | Becomes `Uncertain`: never printed again, never reported on its own. The app counts it on Overview ("Receipts to check") and shows it in History as "Needs checking" with **It printed** / **It did not print** (each confirmed inline). The answer is reported with the claiming connection: printed → `mark-printed`; not printed → `mark-failed`, so Wasla can print it again | Whether paper came out is unknown: printing it again could print it twice, and either report would be a guess. Only the person at the printer knows |
-| `PrintedUnreported` | `mark-printed` repeated, as the WAS-56 retries do (a repeat is answered `skipped`) | Printed once; only the report was missing |
+| `Printed` | `mark-printed` repeated, as the WAS-56 retries do (a repeat is answered `skipped`) | Printed once; only the report was missing |
 
-The journal is settled before new jobs are claimed. The first cycle after a start (service start, Start, a new connection) settles every entry at once; later cycles repeat an entry whose report failed only after one minute (`JournalRetryInterval`), so a report that failed while the service kept running is still finished without a restart. An entry is reported only when the saved server URL and token still match its fingerprint; after a connection change it is dropped with a warning (the old token is gone, and WAS-58 forbids reporting with another one). An uncertain job of a replaced connection stays visible in History, without the two actions, saying to check it in the Wasla panel. A report that fails for a network or server reason (unreachable, 5xx, a redirect) stays in the journal and is tried again on the next cycle; the cycle still polls, so a failing report endpoint never stops printing. Physical printing is never claimed to be exactly-once: spooler acceptance is not paper, and a crash inside the spooler call is reported as unknown.
+The journal is settled before new jobs are claimed. The first cycle after a start (service start, Start, a new connection) settles every entry at once; later cycles repeat an entry whose report failed only after one minute (`JournalRetryInterval`), so a report that failed while the service kept running is still finished without a restart. An entry is reported only when the saved server URL and token still match its fingerprint; after a connection change it is dropped with a warning (the old token is gone, and WAS-58 forbids reporting with another one). An uncertain job of a replaced connection stays visible in History, without the two actions, saying to check it in the Wasla panel. A report that fails for a network or server reason (unreachable, 5xx, a redirect) stays in the journal and is tried again on the next cycle; the cycle still polls, so a failing report endpoint never stops printing. Settling an entry counts as a job in progress (WAS-63): it does not start while a connection change or an update's pause holds the engine, and both wait for one that runs. Physical printing is never claimed to be exactly-once: spooler acceptance is not paper, and a crash inside the spooler call is reported as unknown.
 
 ## Installer handoff (WAS-62)
 
@@ -256,7 +269,7 @@ Rules for the installer:
 - Run `secure-data` after `sc create` (the account must exist) and before `sc start`; on an update run it again.
 - Start the tray app at sign-in for every user: the setup's `HKLM\Software\Microsoft\Windows\CurrentVersion\Run` entry passes `--startup`, so a second start in the same session ends quietly. The app does not read `Ui.StartWithWindows`; startup is the installer's.
 - Uninstall: stop and delete the service, close the app, remove the files. Keep `C:\ProgramData\Wasla\PrintBridge` unless the user asks to remove the pairing (it holds the token, the installation id and history).
-- Updates (WAS-63) replace both executables together: the app and the service must speak the same protocol version, and a mismatch is shown, never guessed around.
+- Updates (WAS-63, [print-bridge-updates.md](print-bridge-updates.md)) are the same setup run as a major upgrade, after the service paused printing; they replace both executables together: the app and the service must speak the same protocol version, and a mismatch is shown, never guessed around. After the service is started the MSI runs `health-check`; a failure rolls the installation back.
 
 ## Developer validation
 

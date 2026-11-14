@@ -897,4 +897,136 @@
   <data name="Shell.Printer.UserOnly" xml:space="preserve">
     <value>Bu yazıcı yalnızca Windows hesabınıza kurulu, bu yüzden Print Bridge hizmeti onu kullanamıyor. Bir yöneticinin yazıcıyı tüm kullanıcılar için kurması gerekir.</value>
   </data>
+  <data name="Shell.Update.Title" xml:space="preserve">
+    <value>Güncellemeler</value>
+  </data>
+  <data name="Shell.Update.Help" xml:space="preserve">
+    <value>Yeni sürüm yalnızca siz başlatınca kurulur. Kurulurken yazdırma duraklatılır ve Windows yönetici izni ister.</value>
+  </data>
+  <data name="Shell.Update.Installed" xml:space="preserve">
+    <value>Kurulu sürüm</value>
+  </data>
+  <data name="Shell.Update.Progress" xml:space="preserve">
+    <value>İndirme ilerlemesi</value>
+  </data>
+  <data name="Shell.Update.Check" xml:space="preserve">
+    <value>Güncellemeleri denetle</value>
+  </data>
+  <data name="Shell.Update.Start" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="Shell.Update.Retry" xml:space="preserve">
+    <value>Tekrar dene</value>
+  </data>
+  <data name="Shell.Update.Cancel" xml:space="preserve">
+    <value>Güncellemeyi iptal et</value>
+  </data>
+  <data name="Shell.Update.Status.Unavailable" xml:space="preserve">
+    <value>Güncellemeler, Print Bridge hizmetine ulaşılınca denetlenebilir.</value>
+  </data>
+  <data name="Shell.Update.Status.Unsupported" xml:space="preserve">
+    <value>Güncellemeler imzalı Print Bridge sürümleriyle gelir. Bu kopya bir geliştirme derlemesi olduğu için kendini güncelleyemez.</value>
+  </data>
+  <data name="Shell.Update.Status.Checking" xml:space="preserve">
+    <value>Güncellemeler denetleniyor…</value>
+  </data>
+  <data name="Shell.Update.Status.UpToDate" xml:space="preserve">
+    <value>Print Bridge güncel.</value>
+  </data>
+  <data name="Shell.Update.Status.Available" xml:space="preserve">
+    <value>{0} sürümü kullanılabilir.</value>
+  </data>
+  <data name="Shell.Update.Status.Downloading" xml:space="preserve">
+    <value>{0} sürümü indiriliyor. Bu sırada yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Status.Verifying" xml:space="preserve">
+    <value>İndirilen dosya denetleniyor. Bu sırada yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Status.WaitingForPrinting" xml:space="preserve">
+    <value>Süren yazdırmanın bitmesi bekleniyor. Ardından yazdırma, kurulum bitene kadar duraklatılır.</value>
+  </data>
+  <data name="Shell.Update.Status.Ready" xml:space="preserve">
+    <value>{0} sürümü kurulmaya hazır. Yazdırma, kurulum çalışana veya güncelleme iptal edilene kadar duraklatıldı.</value>
+  </data>
+  <data name="Shell.Update.Status.Opening" xml:space="preserve">
+    <value>Kurulum açılıyor. Yazdırma, kurulum bitene kadar duraklatıldı.</value>
+  </data>
+  <data name="Shell.Update.Status.SetupOpen" xml:space="preserve">
+    <value>Kurulum açık: adımlarını izleyin, Windows yönetici izni ister. Vazgeçmek için kurulum penceresini kapatın.</value>
+  </data>
+  <data name="Shell.Update.Status.Installing" xml:space="preserve">
+    <value>{0} sürümü kuruluyor; artık iptal edilemez. Kurulum bitince yazdırma kendiliğinden sürer.</value>
+  </data>
+  <data name="Shell.Update.Status.Succeeded" xml:space="preserve">
+    <value>{0} sürümüne güncellendi.</value>
+  </data>
+  <data name="Shell.Update.Status.NotApplied" xml:space="preserve">
+    <value>Güncelleme kurulmadı. {0} sürümü kurulu kalmaya devam ediyor ve yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Status.Cancelled" xml:space="preserve">
+    <value>Güncelleme iptal edildi. Hiçbir şey kurulmadı ve yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Failure.Download" xml:space="preserve">
+    <value>Güncelleme indirilemedi. İnternet bağlantısını kontrol edip tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Update.Failure.Verification" xml:space="preserve">
+    <value>İndirilen dosya doğrulanamadı ve silindi. Hiçbir şey kurulmadı.</value>
+  </data>
+  <data name="Shell.Update.Failure.PrintingInProgress" xml:space="preserve">
+    <value>Bir fiş hâlâ yazdırılıyordu, bu yüzden güncelleme başlamadı. Biraz sonra tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Update.Failure.Interrupted" xml:space="preserve">
+    <value>Güncelleme yarıda kaldı, çünkü Print Bridge yeniden başladı. Hiçbir şey kurulmadı; tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Update.Failure.Expired" xml:space="preserve">
+    <value>Kurulum zamanında çalıştırılmadı. Güncelleme iptal edildi ve yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Failure.Storage" xml:space="preserve">
+    <value>Güncelleme bu bilgisayara kaydedilemedi. Hiçbir şey kurulmadı; tekrar deneyin.</value>
+  </data>
+  <data name="Shell.Update.Failure.UnexpectedVersion" xml:space="preserve">
+    <value>Güncellemeden sonra beklenmeyen bir sürüm çalışıyor. Wasla destek ekibine başvurun.</value>
+  </data>
+  <data name="Shell.Update.Failure.Setup" xml:space="preserve">
+    <value>Kurulum açılamadı. Hiçbir şey kurulmadı ve yazdırma sürüyor.</value>
+  </data>
+  <data name="Shell.Update.Started" xml:space="preserve">
+    <value>{0} sürümüne güncelleme başladı.</value>
+  </data>
+  <data name="Shell.Update.CheckFirst" xml:space="preserve">
+    <value>Önce güncellemeleri denetleyin.</value>
+  </data>
+  <data name="Shell.Update.NothingToCancel" xml:space="preserve">
+    <value>İptal edilecek bir güncelleme yok.</value>
+  </data>
+  <data name="Shell.Update.ConfirmTitle" xml:space="preserve">
+    <value>Print Bridge güncellensin mi?</value>
+  </data>
+  <data name="Shell.Update.ConfirmMessage" xml:space="preserve">
+    <value>Yeni sürüm kurulurken yazdırma duraklatılır. Kurulum açılır, Windows yönetici izni ister ve Print Bridge kapanır. Kurulum bitince yazdırma kendiliğinden sürer.</value>
+  </data>
+  <data name="Shell.Update.Confirm" xml:space="preserve">
+    <value>Güncellemeyi başlat</value>
+  </data>
+  <data name="Shell.Update.NewVersion" xml:space="preserve">
+    <value>Yeni sürüm</value>
+  </data>
+  <data name="Update.Error.NotSigned" xml:space="preserve">
+    <value>Güncellemeler imzalı Print Bridge sürümleriyle gelir. Bu kopya kendini güncelleyemez.</value>
+  </data>
+  <data name="Update.Error.NotReady" xml:space="preserve">
+    <value>Print Bridge henüz hazır değil. Biraz sonra tekrar deneyin.</value>
+  </data>
+  <data name="Update.Error.InvalidRelease" xml:space="preserve">
+    <value>Wasla sunucusunun bildirdiği sürüm okunamadı. Daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="Update.Error.NotNewer" xml:space="preserve">
+    <value>Bu sürüm kurulu sürümden yeni değil.</value>
+  </data>
+  <data name="Update.Error.Storage" xml:space="preserve">
+    <value>Güncelleme bu bilgisayara kaydedilemedi. Tekrar deneyin; sorun sürerse Wasla destek ekibine başvurun.</value>
+  </data>
+  <data name="Update.Error.InProgress" xml:space="preserve">
+    <value>Print Bridge bir güncelleme yaparken bu yapılamaz. Güncelleme bitince veya iptal edilince tekrar deneyin.</value>
+  </data>
 </root>

@@ -239,18 +239,18 @@ public sealed class ShellBridgeCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"version":3,"type":"logs.openFolder","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","path":"C:\\Windows"}}""")]
-    [InlineData("""{"version":3,"type":"logs.openFolder","payload":{"path":"C:\\Windows"}}""")]
-    [InlineData("""{"version":3,"type":"connection.openSetup","payload":{"serverUrl":"https://evil.example"}}""")]
-    [InlineData("""{"version":3,"type":"connection.openSetup","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"pb_x"}}""")]
+    [InlineData("""{"version":4,"type":"logs.openFolder","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","path":"C:\\Windows"}}""")]
+    [InlineData("""{"version":4,"type":"logs.openFolder","payload":{"path":"C:\\Windows"}}""")]
+    [InlineData("""{"version":4,"type":"connection.openSetup","payload":{"serverUrl":"https://evil.example"}}""")]
+    [InlineData("""{"version":4,"type":"connection.openSetup","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"pb_x"}}""")]
     [InlineData("""{"version":2,"type":"connection.openSetup","payload":{}}""")]
-    [InlineData("""{"version":3,"type":"settings.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"Wasla:AgentToken","value":"pb_x"}}""")]
-    [InlineData("""{"version":3,"type":"connection.reset","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"pb_x"}}""")]
-    [InlineData("""{"version":3,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
-    [InlineData("""{"version":3,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","jobId":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
-    [InlineData("""{"version":3,"type":"printer.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","name":"POS-58","port":"LPT1"}}""")]
-    [InlineData("""{"version":3,"type":"printer.testPrint","payload":{}}""")]
-    [InlineData("""{"version":3,"type":"engine.start","payload":{"requestId":"short"}}""")]
+    [InlineData("""{"version":4,"type":"settings.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"Wasla:AgentToken","value":"pb_x"}}""")]
+    [InlineData("""{"version":4,"type":"connection.reset","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","token":"pb_x"}}""")]
+    [InlineData("""{"version":4,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","itemRef":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
+    [InlineData("""{"version":4,"type":"history.reprint","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","jobId":"4b6f0c8e-1f8a-4f5e-9d9e-0f3a9c000001"}}""")]
+    [InlineData("""{"version":4,"type":"printer.save","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","name":"POS-58","port":"LPT1"}}""")]
+    [InlineData("""{"version":4,"type":"printer.testPrint","payload":{}}""")]
+    [InlineData("""{"version":4,"type":"engine.start","payload":{"requestId":"short"}}""")]
     public void CommandsCarryingPathsUrlsCredentialsOrRawIds_AreRejectedWithoutEffect(string raw)
     {
         var sentBefore = _rig.Host.Sent.Count;
