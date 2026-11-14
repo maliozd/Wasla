@@ -214,6 +214,12 @@ Current implementation:
 - Web and API call `AesSecretManager.ValidateMasterKeyOrThrow()` at startup
 - Do not log plaintext connection strings, decrypted secrets, or the master key
 
+### Serializable transactions and pooled sessions (WAS-206)
+
+SQL Server keeps a session's isolation level after the transaction that set it. The connection pool's reset (`sp_reset_connection`) clears temporary tables and `SET` options such as `LOCK_TIMEOUT`, but not the isolation level. Measured on LocalDB 2025 (17.0.4025) with Microsoft.Data.SqlClient 5.1.5 (Web, Worker, Api) and 5.2.1 (CLI, tests): after a serializable transaction ended by commit, rollback, disposal, an exception or a cancelled command, the pooled session went back at `Serializable`. The next request's ordinary EF reads and single-statement `SaveChanges` on it then ran serializable and held key-range locks, until that session's next explicit transaction (`BeginTransactionAsync()` without a level runs read committed).
+
+Every serializable transaction therefore begins with `SerializableTransaction.BeginAsync` (`src/Wasla.Infrastructure/Persistence/SerializableTransaction.cs`). It sets the session back to read committed inside the transaction, right before it commits or rolls back, also when it is disposed without a commit. What the transaction read before that keeps serializable protection until it ends. The users are the receipt and reprint jobs, tenant user changes, and Print Bridge setups and moves. `SerializableTransactionSqlServerTests` covers it on SQL Server, and `SerializableTransactionContractTests` keeps other code from asking for `IsolationLevel.Serializable`.
+
 ## Provisioning, deletion, and reset boundaries
 
 ### Allowed provisioning paths

@@ -1,10 +1,10 @@
-﻿using System.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Persistence;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Printing;
 using Wasla.Infrastructure.Realtime;
@@ -84,8 +84,7 @@ public sealed class ReceiptPrintJobService : IReceiptPrintJobService
 
         await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
-        await using var tx = await db.Database
-            .BeginTransactionAsync(IsolationLevel.Serializable, ct)
+        await using var tx = await SerializableTransaction.BeginAsync(db.Database, ct)
             .ConfigureAwait(false);
 
         var hasActiveJob = await db.PrintJobs
