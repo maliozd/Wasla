@@ -29,8 +29,9 @@ public sealed class WebView2RuntimeProbe : IWebView2RuntimeProbe
     }
 
     /// <summary>
-    /// For tests: look for the runtime in this folder only, as <c>WEBVIEW2_BROWSER_EXECUTABLE_FOLDER</c> makes the app do,
-    /// so a missing runtime can be shown on a computer that has one.
+    /// For tests: look for the runtime in this folder only, as WebView2's BrowserExecutableFolder policy (or, in an app that
+    /// is not elevated, <c>WEBVIEW2_BROWSER_EXECUTABLE_FOLDER</c>) makes the app do, so a missing runtime can be shown on a
+    /// computer that has one.
     /// </summary>
     internal WebView2RuntimeProbe(string browserExecutableFolder)
     {

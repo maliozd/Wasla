@@ -91,8 +91,8 @@ public sealed class PrintBridgeInstalledSetupTests : IDisposable
     [Fact]
     public void WithAnEmptyRuntimeFolder_TheProbeReportsTheRuntimeMissing()
     {
-        // What WEBVIEW2_BROWSER_EXECUTABLE_FOLDER does for the installed app in PrintBridgeInstallerTests: a folder without a
-        // runtime counts as no runtime, whatever this computer has installed.
+        // What the BrowserExecutableFolder policy does for the installed app in PrintBridgeInstallerTests: a folder without
+        // a runtime counts as no runtime, whatever this computer has installed.
         var empty = Directory.CreateDirectory(Path.Combine(_cache.FullName, "no-webview2-runtime"));
 
         var availability = new WebView2RuntimeProbe(empty.FullName).Probe();

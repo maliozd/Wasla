@@ -41,12 +41,16 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
     private const string RunValue = "Wasla Print Bridge";
     private const string HandlerCommandKey = @"Software\Classes\wasla-printbridge\shell\open\command";
     private const string UserHandlerKey = @"Software\Classes\wasla-printbridge";
+    private const string WebView2FolderPolicyKey = @"SOFTWARE\Policies\Microsoft\Edge\WebView2\BrowserExecutableFolder";
+    private const string AppExeName = "Wasla.PrintBridge.exe";
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan SetupTimeout = TimeSpan.FromMinutes(15);
 
     private readonly List<string> _evidence = [];
     private readonly List<Process> _apps = [];
     private readonly List<PrintBridgeServiceClient> _clients = [];
+    private readonly List<string> _createdPolicyKeys = [];
+    private bool _webView2PolicySet;
     private readonly string _installFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Wasla", "Print Bridge");
     private readonly string _dataRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Wasla", "PrintBridge");
     private readonly string _logs;
@@ -91,6 +95,7 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         {
             // The installed app's own log (per user) goes with the installer logs.
             CopyLogs(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wasla", "PrintBridge", "logs"), "app-logs");
+            Cleanup("remove the WebView2 folder policy", RemoveWebView2Policy);
 
             // Whatever a failed step left: the product (through its own cached setup or the MSI), then the service.
             Cleanup("uninstall the setup", () =>
@@ -277,14 +282,17 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         first.Kill(entireProcessTree: true);
         await first.WaitForExitAsync(Ct);
 
-        // ---- 2. The installed app without a usable WebView2 Runtime (a runtime folder without a runtime, as
-        // WEBVIEW2_BROWSER_EXECUTABLE_FOLDER makes it look): a setup link opens the runtime notice, which offers Repair
-        // because the setup installed this computer. The service prints meanwhile.
+        // ---- 2. The installed app without a usable WebView2 Runtime: a setup link opens the runtime notice, which offers
+        // Repair because the setup installed this computer, and the service prints meanwhile. The runner has the runtime,
+        // so WebView2's per-app machine policy points Wasla.PrintBridge.exe (only) at a folder without a runtime. Not
+        // WEBVIEW2_BROWSER_EXECUTABLE_FOLDER: this test runs elevated, so the app it starts does too, and WebView2 ignores
+        // WEBVIEW2_* environment variables in an elevated app (it honors HKLM policy). With that variable the app opened its
+        // normal window on the installed runtime instead (WAS-62 CI).
         var noRuntime = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "wasla-pb-no-webview2-" + Guid.NewGuid().ToString("N")[..8]));
+        PointWebView2AtFolder(noRuntime.FullName);
         var link = "wasla-printbridge://setup?server=" + Uri.EscapeDataString("https://wasla.invalid") + "&code=notarealsetupcode000000000001";
         var start = new ProcessStartInfo(AppExe) { UseShellExecute = false, WorkingDirectory = _installFolder };
         start.ArgumentList.Add(link);
-        start.Environment["WEBVIEW2_BROWSER_EXECUTABLE_FOLDER"] = noRuntime.FullName;
         var noticeApp = Process.Start(start)!;
         _apps.Add(noticeApp);
 
@@ -325,8 +333,11 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
         await PrintsOnceAsync("while the runtime notice is shown");
         Assert.True(IsWindowVisible(notice), "The notice stays open while the service prints.");
+        Assert.Equal([noticeApp.Id], AppProcesses().Select(p => p.Id));
+        Assert.Equal([(int)servicePid], Process.GetProcessesByName("Wasla.PrintBridge.Service").Select(p => p.Id));
+        Assert.NotEqual(PrintBridgeRuntimeIssueCode.EngineHeldElsewhere, client.GetStatus().LastIssue?.Code);
         AssertDataKept(seeded, "with the notice");
-        _evidence.Add($"no usable WebView2 Runtime (empty runtime folder for the app process): a setup link opens \"{shown["RuntimeNotice.Title"]}\" with \"{shown["RuntimeNotice.Repair"]}\", \"{shown["RuntimeNotice.Close"]}\" and the repair text; the Installed Apps entry points at the cached setup under Package Cache; a job printed once while the notice was open");
+        _evidence.Add($"no usable WebView2 Runtime (BrowserExecutableFolder policy for Wasla.PrintBridge.exe -> an empty folder; the app runs {(IsElevated(noticeApp) ? "elevated" : "not elevated")}): a setup link opens \"{shown["RuntimeNotice.Title"]}\" with \"{shown["RuntimeNotice.Repair"]}\", \"{shown["RuntimeNotice.Close"]}\" and the repair text; the Installed Apps entry points at the cached setup under Package Cache; a job printed once while the notice was open; one app (pid {noticeApp.Id}), one service engine (pid {servicePid}), not held elsewhere");
     }
 
     /// <summary>
@@ -790,6 +801,49 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         return found;
     }
 
+    /// <summary>
+    /// WebView2's BrowserExecutableFolder machine policy (HKLM, value name = the executable's file name) for
+    /// Wasla.PrintBridge.exe only: that app looks for the runtime in <paramref name="folder"/> alone, elevated or not. Other
+    /// WebView2 hosts (the test host's own WebView2 tests) are not affected. Cleanup removes the value and any key it
+    /// created; a value the runner already had for this app is never replaced.
+    /// </summary>
+    private void PointWebView2AtFolder(string folder)
+    {
+        using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        var path = string.Empty;
+        foreach (var part in WebView2FolderPolicyKey.Split('\\'))
+        {
+            path = path.Length == 0 ? part : path + "\\" + part;
+            using var existing = machine.OpenSubKey(path);
+            if (existing is null)
+                _createdPolicyKeys.Insert(0, path);
+        }
+
+        using var key = machine.CreateSubKey(WebView2FolderPolicyKey);
+        Assert.Null(key.GetValue(AppExeName));
+        key.SetValue(AppExeName, folder, RegistryValueKind.String);
+        _webView2PolicySet = true;
+    }
+
+    private void RemoveWebView2Policy()
+    {
+        using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+        if (_webView2PolicySet)
+        {
+            using var key = machine.OpenSubKey(WebView2FolderPolicyKey, writable: true);
+            key?.DeleteValue(AppExeName, throwOnMissingValue: false);
+        }
+
+        foreach (var created in _createdPolicyKeys)
+        {
+            bool empty;
+            using (var key = machine.OpenSubKey(created))
+                empty = key is not null && key.ValueCount == 0 && key.SubKeyCount == 0;
+            if (empty)
+                machine.DeleteSubKey(created, throwOnMissingSubKey: false);
+        }
+    }
+
     /// <summary>The started app's state, and every Print Bridge app's visible windows, for a failure's evidence.</summary>
     private static string DescribeAppProcesses(Process started)
     {
@@ -865,6 +919,13 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
     {
         using var identity = WindowsIdentity.GetCurrent();
         return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    /// <summary>Whether a process's token has the Administrators group enabled (an elevated process).</summary>
+    private static bool IsElevated(Process process)
+    {
+        using var identity = TokenOf(process);
+        return identity is not null && new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
     private static SecurityIdentifier? ProcessUser(int processId)
