@@ -201,7 +201,8 @@ jobs:
           Export-Certificate -Cert $certificate -FilePath $public | Out-Null
           Import-Certificate -FilePath $public -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
           Write-Host "Test signing certificate $($certificate.Thumbprint): $($certificate.Subject), trusted in LocalMachine Root on this runner"
-          $signing = @('-SigningCertificateThumbprint', $certificate.Thumbprint, '-TimestampUrl', 'http://timestamp.digicert.com', '-TestSigning')
+          # A hashtable: splatting an array passes its items by position, so '-TestSigning' would be a value, not a switch.
+          $signing = @{ SigningCertificateThumbprint = $certificate.Thumbprint; TimestampUrl = 'http://timestamp.digicert.com'; TestSigning = $true }
 
           ./scripts/release/package-print-bridge.ps1 -OutputDirectory artifacts/print-bridge @signing
           $current = (Get-Content artifacts/print-bridge/Wasla.PrintBridge-package.json -Raw | ConvertFrom-Json).version

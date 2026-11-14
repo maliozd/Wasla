@@ -57,8 +57,12 @@
 
 .EXAMPLE
     .\scripts\release\package-print-bridge.ps1 -SigningCertificateThumbprint 0123...CDEF -TimestampUrl http://timestamp.example.com
+
+.NOTES
+    Every parameter is named: a value given by position (for example an array splat, whose items are positional) is
+    refused instead of landing in -Version or a path.
 #>
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $false)]
 param(
     [string] $Version,
     [string] $OutputDirectory,
