@@ -82,7 +82,9 @@ $supportZipName = 'Wasla.PrintBridge-win-x64-support.zip'
 $metadataName = 'Wasla.PrintBridge-package.json'
 
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot 'artifacts\print-bridge' }
-$OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+# A relative path is relative to the PowerShell location, as for every cmdlet here (.NET would use the process directory,
+# which can be another folder).
+$OutputDirectory = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDirectory)
 $work = Join-Path $OutputDirectory 'build'
 $publishDir = Join-Path $work 'publish\win-x64'
 
@@ -95,6 +97,51 @@ function Invoke-Checked([string] $what, [string] $file, [string[]] $arguments) {
 function Get-Sha256([string] $path) {
     return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
+
+# Reads one value from an MSI database, read-only (Windows Installer's own API, the same in Windows PowerShell and pwsh).
+Add-Type -Namespace WaslaBuild -Name MsiDatabase -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("msi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+private static extern uint MsiOpenDatabase(string path, System.IntPtr persist, out System.IntPtr database);
+[System.Runtime.InteropServices.DllImport("msi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+private static extern uint MsiDatabaseOpenView(System.IntPtr database, string query, out System.IntPtr view);
+[System.Runtime.InteropServices.DllImport("msi.dll")]
+private static extern uint MsiViewExecute(System.IntPtr view, System.IntPtr record);
+[System.Runtime.InteropServices.DllImport("msi.dll")]
+private static extern uint MsiViewFetch(System.IntPtr view, out System.IntPtr record);
+[System.Runtime.InteropServices.DllImport("msi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+private static extern uint MsiRecordGetString(System.IntPtr record, uint field, System.Text.StringBuilder value, ref uint length);
+[System.Runtime.InteropServices.DllImport("msi.dll")]
+private static extern uint MsiCloseHandle(System.IntPtr handle);
+
+public static string Query(string path, string query)
+{
+    System.IntPtr database, view, record;
+    uint error = MsiOpenDatabase(path, System.IntPtr.Zero, out database);
+    if (error != 0) throw new System.InvalidOperationException("MsiOpenDatabase failed: " + error);
+    try
+    {
+        error = MsiDatabaseOpenView(database, query, out view);
+        if (error != 0) throw new System.InvalidOperationException("MsiDatabaseOpenView failed: " + error);
+        try
+        {
+            error = MsiViewExecute(view, System.IntPtr.Zero);
+            if (error != 0) throw new System.InvalidOperationException("MsiViewExecute failed: " + error);
+            if (MsiViewFetch(view, out record) != 0) return null;
+            try
+            {
+                uint length = 512;
+                var value = new System.Text.StringBuilder((int)length);
+                error = MsiRecordGetString(record, 1, value, ref length);
+                if (error != 0) throw new System.InvalidOperationException("MsiRecordGetString failed: " + error);
+                return value.ToString();
+            }
+            finally { MsiCloseHandle(record); }
+        }
+        finally { MsiCloseHandle(view); }
+    }
+    finally { MsiCloseHandle(database); }
+}
+'@
 
 # ---- Version ------------------------------------------------------------------------------------------------------
 if (-not $Version) {
@@ -189,7 +236,10 @@ if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notm
 }
 
 # ---- 3. The MSI and the setup EXE (WiX) ------------------------------------------------------------------------------
-$wixProperties = @("-p:PrintBridgeVersion=$Version", '-c', 'Release', '--nologo')
+# Always a full rebuild (--no-incremental): WiX's incremental build compares only source files and the files the previous
+# build bound, not the version, product name or publish folder passed here, so a second build with another version would
+# copy the previous build's MSI and setup EXE unchanged (WAS-62: the CI's upgrade setup was the 1.0.0 one).
+$wixProperties = @('--no-incremental', "-p:PrintBridgeVersion=$Version", '-c', 'Release', '--nologo')
 if ($signed) {
     $wixProperties += @("-p:WaslaSigningCertificateThumbprint=$SigningCertificateThumbprint", "-p:WaslaSigningTimestampUrl=$TimestampUrl",
         "-p:WaslaSignToolPath=$signTool")
@@ -204,6 +254,24 @@ Invoke-Checked 'build the setup EXE' 'dotnet' (@('build', $bundleProject, "-p:Pr
     "-p:WebView2BootstrapperPath=$bootstrapper", "-p:OutputPath=$bundleOut") + $wixProperties)
 $builtSetup = Join-Path $bundleOut $setupName
 if (-not (Test-Path -LiteralPath $builtSetup)) { throw "The setup EXE was not built: $builtSetup" }
+
+# What Windows Installer and Burn will see: this version in the MSI, in both executables it installs and in the setup EXE,
+# and the MSI's fixed upgrade code. Anything else (a stale build, a version that did not reach WiX) stops the build.
+$expectedUpgradeCode = [regex]::Match((Get-Content -LiteralPath (Join-Path $repoRoot 'installer\print-bridge\Package\Package.wxs') -Raw),
+    '<Package\b[^>]*\bUpgradeCode="([^"]+)"').Groups[1].Value
+$msiIdentity = [ordered]@{
+    productVersion = [WaslaBuild.MsiDatabase]::Query($builtMsi, "SELECT ``Value`` FROM ``Property`` WHERE ``Property`` = 'ProductVersion'")
+    productCode = [WaslaBuild.MsiDatabase]::Query($builtMsi, "SELECT ``Value`` FROM ``Property`` WHERE ``Property`` = 'ProductCode'")
+    upgradeCode = [WaslaBuild.MsiDatabase]::Query($builtMsi, "SELECT ``Value`` FROM ``Property`` WHERE ``Property`` = 'UpgradeCode'")
+}
+$fileVersions = @('AppExe', 'ServiceExe') | ForEach-Object { [WaslaBuild.MsiDatabase]::Query($builtMsi, "SELECT ``Version`` FROM ``File`` WHERE ``File`` = '$_'") }
+$bundleVersion = (Get-Item -LiteralPath $builtSetup).VersionInfo.ProductVersion
+if ($msiIdentity.productVersion -ne $Version -or $bundleVersion -ne $Version -or ($fileVersions | Where-Object { $_ -ne "$Version.0" }) -or
+    -not $expectedUpgradeCode -or $msiIdentity.upgradeCode -ne "{$expectedUpgradeCode}" -or $msiIdentity.productCode -notmatch '^\{[0-9A-F-]{36}\}$') {
+    throw ("The built installers are not version ${Version}: MSI ProductVersion $($msiIdentity.productVersion), UpgradeCode " +
+        "$($msiIdentity.upgradeCode), program files $($fileVersions -join ' / '), setup EXE $bundleVersion.")
+}
+Write-Host "MSI $($msiIdentity.productVersion) (ProductCode $($msiIdentity.productCode), UpgradeCode $($msiIdentity.upgradeCode)); setup EXE $bundleVersion"
 
 Copy-Item -LiteralPath $builtSetup -Destination (Join-Path $OutputDirectory $setupName)
 Copy-Item -LiteralPath $builtMsi -Destination (Join-Path $OutputDirectory $msiName)
@@ -257,6 +325,8 @@ $metadata = [ordered]@{
     commit = $(if ($commit) { "$commit".Trim() } else { $null })
     commitHasLocalChanges = $localChanges
     builtAtUtc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+    setupVersion = $bundleVersion
+    msi = $msiIdentity
     files = $files
     webView2Bootstrapper = [ordered]@{
         source = $(if ($WebView2BootstrapperPath) { 'provided' } else { $webView2Url })

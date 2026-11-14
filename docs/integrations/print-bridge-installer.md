@@ -24,8 +24,14 @@ discovery, controlled updates and rollback are WAS-63; physical receipt printers
 | `Wasla.PrintBridge-Setup-x64.exe` | Restaurants (the Web download) | WiX Burn setup: the WebView2 Runtime bootstrapper when needed, then the MSI |
 | `Wasla.PrintBridge-x64.msi` | Administrators who deploy MSIs | The app, the service, their registration. It does not install the WebView2 Runtime |
 | `Wasla.PrintBridge-win-x64-support.zip` | Development and support recovery only | The same program files, unpacked, and a README. Not an installation: the service has to be registered by hand ([print-bridge-service.md](print-bridge-service.md#installer-handoff-was-62)) |
-| `Wasla.PrintBridge-package.json` | Release records | Product, version, signed or not, commit (and whether it had local changes), build time, size and SHA-256 of each file, the WebView2 bootstrapper's SHA-256 and signer |
+| `Wasla.PrintBridge-package.json` | Release records | Product, version, signed or not, commit (and whether it had local changes), build time, the setup EXE's version, the MSI's `ProductVersion`, `ProductCode` and `UpgradeCode`, size and SHA-256 of each file, the WebView2 bootstrapper's SHA-256 and signer |
 | `SHA256SUMS.txt` | Verification | SHA-256 of each file (`sha256sum` format) |
+
+Each run rebuilds the MSI and the setup EXE from scratch (`dotnet build --no-incremental`). WiX's incremental build checks
+only the source files and the files the previous build bound, not the version or publish folder passed to it, so a second
+build with another version once produced a byte-identical copy of the first (WAS-62). The script then reads the built
+files and stops unless the setup EXE, the MSI and the two executables in it carry the requested version and the MSI has
+its upgrade code.
 
 ## Technology and version decisions
 
@@ -158,7 +164,7 @@ printer.
 | Unit | `PrintBridgeProtocolRegistrarTests` (who owns the handler), `PrintBridgeInstalledSetupTests` (finding and starting the installed setup, a missing runtime folder, the sign-in argument), `TrayRuntimeNoticeTests` (Repair offered, started, its failure; printing continues; TR/EN/AR/RU, Arabic mirrored) |
 | Source contract | `PrintBridgeInstallerSourceTests`: upgrade code, minimum runtime version, service registration and the WAS-61 `sc.exe` settings, the order of the custom actions, the Run entry and handler, no desktop shortcut or data folder, one version, one WiX release, the accepted EULA |
 | Web | `PrintBridgePackageWebRootTests`, `PrintBridgeFirstInstallTests` (the route, its media type, 404, the installer copy in five resource files) |
-| Real installer (GitHub-hosted runner, elevated, disposable; CI only) | `PrintBridgeInstallerTests` install this commit's setup EXE over a pre-installer data folder, repair, upgrade to a build with the next build number, refuse the older setup and MSI, and uninstall; then the sign-in start, one app per session, one engine and the runtime notice of the installed app while the service prints. CI builds both setups (`Build Print Bridge installers`) and uploads only their metadata; each step's result is in the TRX output |
+| Real installer (GitHub-hosted runner, elevated, disposable; CI only) | `PrintBridgeInstallerTests` first check, from the files, that the two setups are different builds with their own versions (setup EXE, MSI, program files), different product codes and one upgrade code; then they install this commit's setup EXE over a pre-installer data folder, repair, upgrade to a build with the next build number, refuse the older setup and MSI, and uninstall; then the sign-in start, one app per session, one engine and the runtime notice of the installed app while the service prints. CI builds both setups (`Build Print Bridge installers`) and uploads only their metadata; each step's result is in the TRX output |
 
 Not verified: a signed build (no certificate exists yet); Windows 10; a computer without the WebView2 Runtime downloading
 it through the bootstrapper (the runners have the runtime, so the CI install finds it present; the missing case is checked

@@ -89,6 +89,9 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
         if (_touchedMachine)
         {
+            // The installed app's own log (per user) goes with the installer logs.
+            CopyLogs(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Wasla", "PrintBridge", "logs"), "app-logs");
+
             // Whatever a failed step left: the product (through its own cached setup or the MSI), then the service.
             Cleanup("uninstall the setup", () =>
             {
@@ -107,7 +110,9 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
             });
             Cleanup("remove the per-user handler", () => Registry.CurrentUser.DeleteSubKeyTree(UserHandlerKey, throwOnMissingSubKey: false));
 
-            // The data folder this test created (the uninstall keeps it), then the runner's own copy back, if it had one.
+            // The service's log, then the data folder this test created (the uninstall keeps it), then the runner's own copy
+            // back, if it had one.
+            CopyLogs(Path.Combine(_dataRoot, "logs"), "service-logs");
             try
             {
                 if (Directory.Exists(_dataRoot))
@@ -204,6 +209,10 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         var upgradedApp = StartAppAtSignIn();
         var upgradeLog = Path.Combine(_logs, "3-upgrade.log");
         Assert.Equal(0, RunSetup(upgrade.Path, "/quiet", "/norestart", "/log", upgradeLog));
+        // Burn ran the newer setup and installed its MSI (a new product code), rather than finding the installed one again.
+        var upgradeBundleLog = File.ReadAllText(upgradeLog);
+        Assert.Contains($"Variable: WixBundleVersion = {upgrade.Version}", upgradeBundleLog, StringComparison.Ordinal);
+        Assert.Contains("Applying execute package: PrintBridge, action: Install", upgradeBundleLog, StringComparison.Ordinal);
         Assert.True(upgradedApp.WaitForExit(TimeSpan.FromSeconds(30)), "The upgrade closes the running app.");
         AssertInstalled(upgrade.Version);
         var upgradedPid = await WaitForServiceAsync();
@@ -214,7 +223,7 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         var installAt = msiLog.IndexOf(": InstallFiles.", StringComparison.Ordinal);
         Assert.True(removeAt >= 0 && installAt > removeAt, "The upgrade removes the installed version before it writes new files.");
         await PrintsOnceAsync("after upgrade");
-        _evidence.Add($"upgrade {setup.Version} -> {upgrade.Version}: exit 0; running app closed; RemoveExistingProducts before InstallFiles in the MSI log; app and service files {upgrade.Version}; one Installed Apps entry and one MSI product; service pid {repairedPid} -> {upgradedPid}; data kept; a job printed once");
+        _evidence.Add($"upgrade {setup.Version} -> {upgrade.Version}: exit 0; Burn {upgrade.Version} installed MSI {upgrade.ProductCode}; running app closed; RemoveExistingProducts before InstallFiles in the MSI log; app and service files {upgrade.Version}; one Installed Apps entry and one MSI product; service pid {repairedPid} -> {upgradedPid}; data kept; a job printed once");
 
         // ---- 6. The older setup is refused, and nothing changes.
         var downgrade = RunSetup(setup.Path, "/quiet", "/norestart", "/log", Path.Combine(_logs, "4-downgrade.log"));
@@ -283,19 +292,28 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         var languages = new[] { "", ".tr-TR", ".en-US", ".ar-SA", ".ru-RU" }.Select(LoadResources).ToArray();
         IntPtr notice = IntPtr.Zero;
         Dictionary<string, string>? shown = null;
-        await WaitUntilAsync(() =>
+        try
         {
-            foreach (var language in languages)
+            await WaitUntilAsync(() =>
             {
-                if ((notice = FindWindow(noticeApp.Id, language["RuntimeNotice.Title"])) != IntPtr.Zero)
+                foreach (var language in languages)
                 {
-                    shown = language;
-                    return true;
+                    if ((notice = FindWindow(noticeApp.Id, language["RuntimeNotice.Title"])) != IntPtr.Zero)
+                    {
+                        shown = language;
+                        return true;
+                    }
                 }
-            }
 
-            return false;
-        }, "the runtime notice");
+                return false;
+            }, "the runtime notice");
+        }
+        catch (System.TimeoutException)
+        {
+            // What the app did instead (its log and the service's are copied next to the installer logs).
+            _evidence.Add("diagnostic: " + DescribeAppProcesses(noticeApp));
+            throw;
+        }
         var texts = ChildTexts(notice);
         Assert.Contains(shown!["RuntimeNotice.Repair"], texts);
         Assert.Contains(shown["RuntimeNotice.Close"], texts);
@@ -311,17 +329,47 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         _evidence.Add($"no usable WebView2 Runtime (empty runtime folder for the app process): a setup link opens \"{shown["RuntimeNotice.Title"]}\" with \"{shown["RuntimeNotice.Repair"]}\", \"{shown["RuntimeNotice.Close"]}\" and the repair text; the Installed Apps entry points at the cached setup under Package Cache; a job printed once while the notice was open");
     }
 
+    /// <summary>
+    /// The two setups the lifecycle test installs are two real builds: different files, each with its own version in the
+    /// setup EXE, in the MSI and in the program files it carries, different MSI product codes and one upgrade code. Reads
+    /// the files themselves, not only their metadata (WAS-62: a second WiX build once copied the first one's output, and
+    /// the "upgrade" was the installed 1.0.0 setup again). Changes nothing on the machine, so it also runs on a developer
+    /// computer when the two variables name local builds.
+    /// </summary>
+    [Fact]
+    public void TheTwoBuiltSetups_AreDifferentBuilds_WithTheirOwnVersions_AndOneUpgradeCode()
+    {
+        if (Environment.GetEnvironmentVariable("WASLA_PRINT_BRIDGE_SETUP") is null)
+            SetupInstanceCrossAccountTests.SkipUnlessDisposableRunner();
+        var (setup, upgrade) = ReadBuiltSetups();
+        TestContext.Current.TestOutputHelper?.WriteLine($"setup:   {Describe(setup)}{Environment.NewLine}upgrade: {Describe(upgrade)}");
+    }
+
     // ---- Setup and checks -------------------------------------------------------------------------------------------
 
-    private sealed record BuiltSetup(string Path, string Version, string Msi, string Sha256);
+    private sealed record BuiltSetup(string Path, string Version, string Msi, string Sha256, string ProductCode, string UpgradeCode);
+
+    private static string Describe(BuiltSetup built) =>
+        $"{built.Version}: {built.Path}, sha256 {built.Sha256}; setup EXE {built.Version}; MSI {built.Version} ProductCode {built.ProductCode} UpgradeCode {built.UpgradeCode}; program files {built.Version}.0";
+
+    private static (BuiltSetup Setup, BuiltSetup Upgrade) ReadBuiltSetups()
+    {
+        var setup = Built("WASLA_PRINT_BRIDGE_SETUP");
+        var upgrade = Built("WASLA_PRINT_BRIDGE_UPGRADE_SETUP");
+        Assert.False(string.Equals(setup.Path, upgrade.Path, StringComparison.OrdinalIgnoreCase), "The two setups are two files.");
+        Assert.True(Version.Parse(upgrade.Version) > Version.Parse(setup.Version), "The upgrade setup must be newer.");
+        Assert.NotEqual(setup.Sha256, upgrade.Sha256);
+        Assert.NotEqual(setup.ProductCode, upgrade.ProductCode);
+        Assert.Equal(MsiUpgradeCode, setup.UpgradeCode);
+        Assert.Equal(MsiUpgradeCode, upgrade.UpgradeCode);
+        return (setup, upgrade);
+    }
 
     private (BuiltSetup Setup, BuiltSetup Upgrade) Prepare()
     {
         SetupInstanceCrossAccountTests.SkipUnlessDisposableRunner();
         Assert.True(IsElevated(), "The GitHub-hosted runner is elevated; installing needs it.");
-        var setup = Built("WASLA_PRINT_BRIDGE_SETUP");
-        var upgrade = Built("WASLA_PRINT_BRIDGE_UPGRADE_SETUP");
-        Assert.True(Version.Parse(upgrade.Version) > Version.Parse(setup.Version), "The upgrade setup must be newer.");
+        var (setup, upgrade) = ReadBuiltSetups();
 
         // A clean machine for this product: nothing installed, no service; the runner's own data folder, if any, aside.
         Assert.Empty(RelatedProducts());
@@ -336,27 +384,82 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
             Directory.Move(_dataRoot, _dataBackup);
         }
 
-        _evidence.Add($"runner: {Environment.MachineName}, elevated, session {Process.GetCurrentProcess().SessionId}; setup {setup.Version} ({setup.Sha256[..12]}…), upgrade {upgrade.Version} ({upgrade.Sha256[..12]}…), both matching their metadata");
+        _evidence.Add($"runner: {Environment.MachineName}, elevated, session {Process.GetCurrentProcess().SessionId}");
+        _evidence.Add($"  setup   {Describe(setup)}");
+        _evidence.Add($"  upgrade {Describe(upgrade)}");
         return (setup, upgrade);
     }
 
-    /// <summary>A setup the CI job built, with its version and SHA-256 checked against the build's metadata.</summary>
+    /// <summary>
+    /// A setup the CI job built: its version read from the setup EXE and from the MSI next to it (and the version of the
+    /// two executables the MSI installs), its SHA-256, product code and upgrade code, each checked against the build's
+    /// metadata.
+    /// </summary>
     private static BuiltSetup Built(string variable)
     {
-        var path = Environment.GetEnvironmentVariable(variable);
-        Assert.False(string.IsNullOrWhiteSpace(path), $"{variable} must name the setup EXE the CI job built.");
+        var configured = Environment.GetEnvironmentVariable(variable);
+        Assert.False(string.IsNullOrWhiteSpace(configured), $"{variable} must name the setup EXE the CI job built.");
+        var path = System.IO.Path.GetFullPath(configured!);
         Assert.True(File.Exists(path), $"{variable}: {path} does not exist.");
         var folder = System.IO.Path.GetDirectoryName(path)!;
         using var metadata = JsonDocument.Parse(File.ReadAllText(System.IO.Path.Combine(folder, "Wasla.PrintBridge-package.json")));
         var root = metadata.RootElement;
+        var version = root.GetProperty("version").GetString()!;
         var setupEntry = root.GetProperty("files").EnumerateArray().Single(f => f.GetProperty("role").GetString() == "setup");
         var sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
         Assert.Equal(setupEntry.GetProperty("sha256").GetString(), sha256);
         Assert.Equal(new FileInfo(path).Length, setupEntry.GetProperty("bytes").GetInt64());
         Assert.False(root.GetProperty("signed").GetBoolean(), "CI builds are unsigned development builds.");
+
+        // The versions Burn and Windows Installer read, from the files themselves.
+        Assert.Equal(version, FileVersionInfo.GetVersionInfo(path).ProductVersion);
         var msi = System.IO.Path.Combine(folder, "Wasla.PrintBridge-x64.msi");
         Assert.True(File.Exists(msi));
-        return new BuiltSetup(path, root.GetProperty("version").GetString()!, msi, sha256);
+        Assert.Equal(version, MsiValue(msi, "SELECT `Value` FROM `Property` WHERE `Property` = 'ProductVersion'"));
+        foreach (var file in new[] { "AppExe", "ServiceExe" })
+            Assert.Equal(version + ".0", MsiValue(msi, $"SELECT `Version` FROM `File` WHERE `File` = '{file}'"));
+        var productCode = MsiValue(msi, "SELECT `Value` FROM `Property` WHERE `Property` = 'ProductCode'");
+        var upgradeCode = MsiValue(msi, "SELECT `Value` FROM `Property` WHERE `Property` = 'UpgradeCode'");
+        Assert.Equal(version, root.GetProperty("setupVersion").GetString());
+        var msiMetadata = root.GetProperty("msi");
+        Assert.Equal(version, msiMetadata.GetProperty("productVersion").GetString());
+        Assert.Equal(productCode, msiMetadata.GetProperty("productCode").GetString());
+        Assert.Equal(upgradeCode, msiMetadata.GetProperty("upgradeCode").GetString());
+        return new BuiltSetup(path, version, msi, sha256, productCode, upgradeCode);
+    }
+
+    /// <summary>The first column of the first row of a query on an MSI, opened read-only.</summary>
+    private static string MsiValue(string msi, string query)
+    {
+        Assert.Equal(0u, MsiOpenDatabase(msi, IntPtr.Zero, out var database));
+        try
+        {
+            Assert.Equal(0u, MsiDatabaseOpenView(database, query, out var view));
+            try
+            {
+                Assert.Equal(0u, MsiViewExecute(view, IntPtr.Zero));
+                Assert.True(MsiViewFetch(view, out var record) == 0, $"No row: {query}");
+                try
+                {
+                    uint length = 512;
+                    var value = new StringBuilder((int)length);
+                    Assert.Equal(0u, MsiRecordGetString(record, 1, value, ref length));
+                    return value.ToString();
+                }
+                finally
+                {
+                    MsiCloseHandle(record);
+                }
+            }
+            finally
+            {
+                MsiCloseHandle(view);
+            }
+        }
+        finally
+        {
+            MsiCloseHandle(database);
+        }
     }
 
     private sealed record Seeded(Guid InstallationId, Guid HistoryJob, Guid UncertainJob, string Marker);
@@ -687,6 +790,59 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         return found;
     }
 
+    /// <summary>The started app's state, and every Print Bridge app's visible windows, for a failure's evidence.</summary>
+    private static string DescribeAppProcesses(Process started)
+    {
+        var parts = new List<string>
+        {
+            started.HasExited
+                ? $"the started app (pid {started.Id}) exited with code {started.ExitCode}"
+                : $"the started app (pid {started.Id}) is running"
+        };
+        foreach (var app in Process.GetProcessesByName("Wasla.PrintBridge"))
+        {
+            using (app)
+                parts.Add($"app pid {app.Id}, session {app.SessionId}, visible windows [{string.Join(", ", VisibleWindowTitles(app.Id).Select(t => $"\"{t}\""))}]");
+        }
+
+        parts.Add($"{Process.GetProcessesByName("msedgewebview2").Length} msedgewebview2 processes");
+        return string.Join("; ", parts);
+    }
+
+    private static List<string> VisibleWindowTitles(int processId)
+    {
+        var titles = new List<string>();
+        EnumWindows((window, _) =>
+        {
+            GetWindowThreadProcessId(window, out var owner);
+            if (owner == processId && IsWindowVisible(window))
+                titles.Add(WindowText(window));
+            return true;
+        }, IntPtr.Zero);
+        return titles;
+    }
+
+    /// <summary>Copies a log folder next to the installer logs (uploaded by CI); open log files are read shared.</summary>
+    private void CopyLogs(string folder, string name)
+    {
+        try
+        {
+            if (!Directory.Exists(folder))
+                return;
+            var target = Directory.CreateDirectory(Path.Combine(_logs, name));
+            foreach (var file in Directory.GetFiles(folder))
+            {
+                using var source = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var copy = File.Create(Path.Combine(target.FullName, Path.GetFileName(file)));
+                source.CopyTo(copy);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _evidence.Add($"cleanup: {name} not copied ({ex.GetType().Name})");
+        }
+    }
+
     private static List<string> ChildTexts(IntPtr window)
     {
         var texts = new List<string>();
@@ -785,6 +941,24 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
     [DllImport("msi.dll", CharSet = CharSet.Unicode)]
     private static extern uint MsiGetProductInfo(string product, string property, StringBuilder value, ref uint length);
+
+    [DllImport("msi.dll", CharSet = CharSet.Unicode)]
+    private static extern uint MsiOpenDatabase(string path, IntPtr persist, out IntPtr database);
+
+    [DllImport("msi.dll", CharSet = CharSet.Unicode)]
+    private static extern uint MsiDatabaseOpenView(IntPtr database, string query, out IntPtr view);
+
+    [DllImport("msi.dll")]
+    private static extern uint MsiViewExecute(IntPtr view, IntPtr record);
+
+    [DllImport("msi.dll")]
+    private static extern uint MsiViewFetch(IntPtr view, out IntPtr record);
+
+    [DllImport("msi.dll", CharSet = CharSet.Unicode)]
+    private static extern uint MsiRecordGetString(IntPtr record, uint field, StringBuilder value, ref uint length);
+
+    [DllImport("msi.dll")]
+    private static extern uint MsiCloseHandle(IntPtr handle);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr OpenProcess(uint desiredAccess, bool inheritHandle, uint processId);
