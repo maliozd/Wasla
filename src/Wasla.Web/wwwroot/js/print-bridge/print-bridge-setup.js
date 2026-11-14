@@ -509,7 +509,7 @@
             });
         }
 
-        // The browser cannot tell when the ZIP is extracted or the app has started, so the user confirms it.
+        // The browser cannot tell when setup has finished or the app has started, so the user confirms it.
         var prepared = document.getElementById("pbPreparedBtn");
         if (prepared) prepared.addEventListener("click", showConnectionChoice);
 

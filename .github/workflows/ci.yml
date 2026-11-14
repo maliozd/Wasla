@@ -182,6 +182,27 @@ jobs:
             --blame-hang-dump-type none `
             @filter
 
+      # WAS-62: this commit's Print Bridge setup EXE and MSI, and a build of the same commit with the next build number
+      # for the upgrade test. Unsigned development builds: PrintBridgeInstallerTests install, repair, upgrade and uninstall
+      # them on this disposable runner. Only their version and SHA-256 metadata is uploaded, never the installers.
+      - name: Build Print Bridge installers
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          ./scripts/release/package-print-bridge.ps1 -OutputDirectory artifacts/print-bridge
+          $current = (Get-Content artifacts/print-bridge/Wasla.PrintBridge-package.json -Raw | ConvertFrom-Json).version
+          $parts = $current.Split('.')
+          $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
+          ./scripts/release/package-print-bridge.ps1 -Version $next -OutputDirectory artifacts/print-bridge-upgrade -SkipSupportZip `
+            -WebView2BootstrapperPath artifacts/print-bridge/build/MicrosoftEdgeWebview2Setup.exe
+          $root = (Get-Location).Path
+          @(
+            "WASLA_PRINT_BRIDGE_SETUP=$root\artifacts\print-bridge\Wasla.PrintBridge-Setup-x64.exe",
+            "WASLA_PRINT_BRIDGE_UPGRADE_SETUP=$root\artifacts\print-bridge-upgrade\Wasla.PrintBridge-Setup-x64.exe",
+            "WASLA_PRINT_BRIDGE_INSTALLER_LOGS=$root\artifacts\test-results\print-bridge-installer"
+          ) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Print Bridge setups: $current and $next (unsigned development builds)"
+
       # Runs after a unit-test failure too, so one run reports both suites.
       - name: Run Wasla.PrintBridge.Tests (${{ env.TEST_SCOPE }})
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
@@ -223,6 +244,20 @@ jobs:
         with:
           name: dotnet-test-results
           path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+      # Version, signing state and SHA-256 of the installers the tests used; the installers themselves are not uploaded.
+      - name: Upload Print Bridge installer metadata
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: print-bridge-installer-metadata
+          path: |
+            artifacts/print-bridge/Wasla.PrintBridge-package.json
+            artifacts/print-bridge/SHA256SUMS.txt
+            artifacts/print-bridge-upgrade/Wasla.PrintBridge-package.json
+            artifacts/print-bridge-upgrade/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 14
 

@@ -1,0 +1,34 @@
+<Project>
+
+	<!--
+		Shared settings of the Print Bridge installer projects (WAS-62): the MSI (Package/) and the setup EXE that chains the
+		WebView2 Runtime bootstrapper and the MSI (Bundle/). Both are built by scripts/release/package-print-bridge.ps1, which
+		publishes the app and the service first; they are not part of Wasla.sln. See docs/integrations/print-bridge-installer.md.
+	-->
+	<Import Project="..\..\src\Wasla.PrintBridge.Version.props" />
+
+	<PropertyGroup>
+		<!--
+			WiX Toolset v7 is distributed under the Open Source Maintenance Fee EULA, and it does not build until that EULA is
+			accepted. Wasla's owner accepted it for this repository (WAS-62, 2026-11-13).
+		-->
+		<AcceptEula>wix7</AcceptEula>
+		<InstallerPlatform>x64</InstallerPlatform>
+		<Platform>x64</Platform>
+		<Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+		<!-- Warnings are errors: a skipped or ambiguous installer rule must not pass silently. -->
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+		<!--
+			A build is a signed release only when a code-signing certificate is named (its SHA-1 thumbprint in the build machine's
+			certificate store) together with a timestamp server. Everything else is an unsigned development build, and its product
+			name says so in the setup window and in Installed Apps. No certificate, password or key is part of this repository.
+		-->
+		<PrintBridgeSigned Condition="'$(WaslaSigningCertificateThumbprint)' != '' and '$(WaslaSigningTimestampUrl)' != ''">true</PrintBridgeSigned>
+		<PrintBridgeSigned Condition="'$(PrintBridgeSigned)' == ''">false</PrintBridgeSigned>
+		<PrintBridgeProductName>Wasla Print Bridge</PrintBridgeProductName>
+		<PrintBridgeProductName Condition="'$(PrintBridgeSigned)' != 'true'">Wasla Print Bridge (unsigned development build)</PrintBridgeProductName>
+		<SignOutput Condition="'$(PrintBridgeSigned)' == 'true'">true</SignOutput>
+	</PropertyGroup>
+
+</Project>

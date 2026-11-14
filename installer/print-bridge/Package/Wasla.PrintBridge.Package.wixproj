@@ -1,0 +1,31 @@
+<Project Sdk="WixToolset.Sdk/7.0.1">
+
+	<!--
+		The Print Bridge MSI (WAS-62). Built by scripts/release/package-print-bridge.ps1 after it published the app and the
+		service into one folder (PrintBridgePublishDir); it is not part of Wasla.sln.
+	-->
+	<PropertyGroup>
+		<OutputType>Package</OutputType>
+		<OutputName>Wasla.PrintBridge-x64</OutputName>
+		<DefineConstants>Version=$(PrintBridgeVersion);ProductName=$(PrintBridgeProductName);PublishDir=$(PrintBridgePublishDir)</DefineConstants>
+		<!--
+			Suppressed validation rules, each deliberate:
+			- ICE61 flags MajorUpgrade/@AllowSameVersionUpgrades: a rebuilt or re-signed build of the installed version replaces
+			  it. Without it the two would install side by side, and the second would fail on the existing service.
+			- ICE43 and ICE57 are per-user rules (a shortcut in a user's profile needs an HKCU key path). This package is
+			  per-machine (ALLUSERS=1): the shortcut is in the all-users Start menu and belongs to the installed executable's
+			  component. PrintBridgeInstallerTests checks that the shortcut is created and removed.
+		-->
+		<SuppressIces>ICE61;ICE43;ICE57</SuppressIces>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="WixToolset.Util.wixext" Version="7.0.1" />
+	</ItemGroup>
+
+	<Target Name="WaslaRequirePublishDir" BeforeTargets="Build;CoreCompile">
+		<Error Condition="'$(PrintBridgePublishDir)' == '' or !Exists('$(PrintBridgePublishDir)\Wasla.PrintBridge.exe') or !Exists('$(PrintBridgePublishDir)\Wasla.PrintBridge.Service.exe')"
+		       Text="PrintBridgePublishDir must name the folder with the published Wasla.PrintBridge.exe and Wasla.PrintBridge.Service.exe. Build with scripts/release/package-print-bridge.ps1." />
+	</Target>
+
+</Project>

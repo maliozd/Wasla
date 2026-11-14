@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wasla.PrintBridge-Setup-x64.exe (WAS-62): the file restaurants download and run. It needs administrator rights (the
+  service and Program Files are per computer) and asks for them through Windows.
+
+  Chain:
+  1. Microsoft Edge WebView2 Runtime (Evergreen), only when this computer has no per-machine runtime of at least the
+     version the app window needs (WebView2RuntimeProbe.MinimumRuntimeVersion). Microsoft's bootstrapper is embedded and
+     downloads the runtime, so this step needs the internet. It is not vital: if it fails (offline, proxy), Print Bridge is
+     still installed and prints; its app window shows the runtime notice, whose Repair button runs this setup again.
+     The runtime is never removed by this setup (Permanent): Windows and other applications share it.
+  2. The Print Bridge MSI (Package/). A newer setup replaces an older one (major upgrade); an older setup is refused.
+
+  Launch on the last page starts the app as the signed-in user, not elevated (the setup's own window runs unelevated;
+  only Burn's engine is elevated). Installed apps lists it with its version; Modify offers Repair and Uninstall.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Bundle Name="$(var.ProductName)"
+          Manufacturer="Wasla"
+          Version="$(var.Version)"
+          UpgradeCode="0CAF4165-E129-4DB9-A1DF-C719CFE65AF5">
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="hyperlinkLicense"
+                                              LicenseUrl=""
+                                              SuppressOptionsUI="yes"
+                                              ShowVersion="yes"
+                                              LaunchTarget="[ProgramFiles64Folder]Wasla\Print Bridge\Wasla.PrintBridge.exe" />
+    </BootstrapperApplication>
+
+    <bal:Condition Message="Wasla Print Bridge needs 64-bit Windows 10 or Windows 11." Condition="VersionNT64 AND VersionNT &gt;= v10.0" />
+
+    <!-- StartAtSignIn=0 on the command line installs without starting the app at users' sign-in (the MSI's START_AT_SIGN_IN). -->
+    <Variable Name="StartAtSignIn" Type="numeric" Value="1" bal:Overridable="yes" />
+
+    <!-- The per-machine runtime's version, as Microsoft documents its detection (the 32-bit registry view on 64-bit Windows). -->
+    <util:RegistrySearch Id="WebView2RuntimeSearch"
+                         Root="HKLM"
+                         Key="SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+                         Value="pv"
+                         Bitness="always32"
+                         Result="value"
+                         Variable="WebView2RuntimeVersion" />
+
+    <Chain>
+      <ExePackage Id="WebView2Runtime"
+                  DisplayName="Microsoft Edge WebView2 Runtime"
+                  SourceFile="$(var.WebView2Bootstrapper)"
+                  Name="MicrosoftEdgeWebview2Setup.exe"
+                  PerMachine="yes"
+                  Permanent="yes"
+                  Vital="no"
+                  InstallArguments="/silent /install"
+                  DetectCondition="WebView2RuntimeVersion AND WebView2RuntimeVersion &gt;= v$(var.WebView2MinimumVersion)" />
+
+      <MsiPackage Id="PrintBridge" SourceFile="$(var.MsiPath)" Vital="yes">
+        <MsiProperty Name="START_AT_SIGN_IN" Value="[StartAtSignIn]" />
+      </MsiPackage>
+    </Chain>
+
+  </Bundle>
+</Wix>

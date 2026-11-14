@@ -19,6 +19,7 @@ namespace Wasla.UnitTests.Printing;
 public sealed class PrintBridgePackageWebRootTests : IDisposable
 {
     private const string PackageFileName = PrintBridgePackagePaths.DefaultPackageFileName;
+    private const string SetupContentType = "application/vnd.microsoft.portable-executable";
     private const string DownloadUrl = "/print-bridge/download/package";
     private const string PackagePathKey = "Wasla:PrintBridgeDownload:PackagePath";
 
@@ -64,8 +65,8 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         Assert.Equal(package, PrintBridgePackagePaths.ResolvePackagePath(Configuration(), environment));
         Assert.True(PrintBridgePackagePaths.PackageExists(Configuration(), environment));
 
-        var renamed = Configuration(("Wasla:PrintBridgeDownload:PackageFileName", " Custom.zip "));
-        Assert.Equal(Path.Combine(folder, "Custom.zip"), PrintBridgePackagePaths.ResolvePackagePath(renamed, environment));
+        var renamed = Configuration(("Wasla:PrintBridgeDownload:PackageFileName", " Custom.exe "));
+        Assert.Equal(Path.Combine(folder, "Custom.exe"), PrintBridgePackagePaths.ResolvePackagePath(renamed, environment));
         Assert.False(PrintBridgePackagePaths.PackageExists(renamed, environment));
     }
 
@@ -89,7 +90,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
 
         Assert.False(PrintBridgePackagePaths.PackageExists(Configuration(), Environment(_temp.FullName)));
         Assert.False(PrintBridgePackagePaths.PackageExists(
-            Configuration((PackagePathKey, Path.Combine(_temp.FullName, "missing.zip"))), Environment(webRoot: null)));
+            Configuration((PackagePathKey, Path.Combine(_temp.FullName, "missing.exe"))), Environment(webRoot: null)));
     }
 
     // Download action --------------------------------------------------------------------------------
@@ -103,8 +104,25 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         var file = Assert.IsType<PhysicalFileResult>(DownloadController(Configuration(), Environment(webRoot)).DownloadPackage());
 
         Assert.Equal(package, file.FileName);
-        Assert.Equal("application/zip", file.ContentType);
+        Assert.Equal(SetupContentType, file.ContentType);
         Assert.Equal(PackageFileName, file.FileDownloadName);
+    }
+
+    [Fact]
+    public void TheDefaultPackage_IsTheSetupExe()
+    {
+        // WAS-62: restaurants download the installer; the support ZIP is never the default.
+        Assert.Equal("Wasla.PrintBridge-Setup-x64.exe", PackageFileName);
+    }
+
+    [Theory]
+    [InlineData("Wasla.PrintBridge-Setup-x64.exe", SetupContentType)]
+    [InlineData("WASLA.PRINTBRIDGE-SETUP-X64.EXE", SetupContentType)]
+    [InlineData("Wasla.PrintBridge-win-x64-support.zip", "application/zip")]
+    [InlineData("Wasla.PrintBridge-x64.msi", "application/octet-stream")]
+    public void TheDownloadsMediaType_FollowsTheConfiguredFile(string fileName, string contentType)
+    {
+        Assert.Equal(contentType, PrintBridgePackagePaths.GetContentType(fileName));
     }
 
     [Theory]
@@ -141,7 +159,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         var body = await download.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, download.StatusCode);
-        Assert.NotEqual("application/zip", download.Content.Headers.ContentType?.MediaType);
+        Assert.NotEqual(SetupContentType, download.Content.Headers.ContentType?.MediaType);
         AssertNoPathDisclosure(body);
         Assert.DoesNotContain("wasla-print-bridge", body, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("PackagePath", body, StringComparison.OrdinalIgnoreCase);
@@ -168,7 +186,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         var download = await owner.GetAsync(DownloadUrl);
 
         Assert.Equal(HttpStatusCode.OK, download.StatusCode);
-        Assert.Equal("application/zip", download.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(SetupContentType, download.Content.Headers.ContentType?.MediaType);
         Assert.Equal(PackageFileName, download.Content.Headers.ContentDisposition?.FileNameStar ?? download.Content.Headers.ContentDisposition?.FileName?.Trim('"'));
         Assert.Equal(await File.ReadAllBytesAsync(package, TestContext.Current.CancellationToken),
             await download.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken));
@@ -199,7 +217,7 @@ public sealed class PrintBridgePackageWebRootTests : IDisposable
         using var replay = owner.ReplayTo(host.BaseAddress, TenantSessionWebHost.BetaHost);
         var crossTenant = await replay.GetAsync(DownloadUrl);
         Assert.NotEqual(HttpStatusCode.OK, crossTenant.StatusCode);
-        Assert.NotEqual("application/zip", crossTenant.Content.Headers.ContentType?.MediaType);
+        Assert.NotEqual(SetupContentType, crossTenant.Content.Headers.ContentType?.MediaType);
     }
 
     // Helpers ----------------------------------------------------------------------------------------

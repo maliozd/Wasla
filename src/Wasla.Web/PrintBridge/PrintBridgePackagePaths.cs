@@ -1,9 +1,21 @@
 ﻿namespace Wasla.Web.PrintBridge;
 
+/// <summary>
+/// The Print Bridge file the setup page offers through <c>GET /print-bridge/download/package</c>. Since WAS-62 it is the
+/// setup EXE built by <c>scripts/release/package-print-bridge.ps1</c>; the support ZIP is never offered to restaurants.
+/// </summary>
 public static class PrintBridgePackagePaths
 {
-    public const string DefaultPackageFileName = "Wasla.PrintBridge-win-x64.zip";
+    public const string DefaultPackageFileName = "Wasla.PrintBridge-Setup-x64.exe";
     public const string DefaultRelativeFolder = "downloads/wasla-print-bridge";
+
+    /// <summary>The download's media type, by the configured file's extension (an EXE, or a ZIP for development and support).</summary>
+    public static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    {
+        ".exe" => "application/vnd.microsoft.portable-executable",
+        ".zip" => "application/zip",
+        _ => "application/octet-stream"
+    };
 
     public static string GetPackageFileName(IConfiguration configuration) =>
         string.IsNullOrWhiteSpace(configuration["Wasla:PrintBridgeDownload:PackageFileName"])

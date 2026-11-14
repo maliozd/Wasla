@@ -1,6 +1,7 @@
 using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Localization;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Setup;
 using Wasla.PrintBridge.UI;
 using Wasla.PrintBridge.WebShell;
 using static Wasla.PrintBridge.Tests.WebShell.ShellTrayRoutingTests;
@@ -76,6 +77,8 @@ public sealed class TrayRuntimeNoticeTests : IDisposable
             Assert.Null(tray.ShellFormForTests);
             Assert.False(_host.Runtime.IsRunning);
 
+            // Not installed by the setup (a development or support copy): no Repair, the text says to run the setup.
+            Assert.Null(notice.RepairButton);
             // Enter and Escape both close it through its one button; a closed notice is gone.
             Assert.Same(notice.CloseButton, notice.AcceptButton);
             Assert.Same(notice.CloseButton, notice.CancelButton);
@@ -180,7 +183,89 @@ public sealed class TrayRuntimeNoticeTests : IDisposable
             Assert.Null(tray.ShellFormForTests);
         }, configure: Listen);
 
+    [Fact]
+    public Task OnAComputerTheSetupInstalled_TheNoticeOffersRepair_WhichStartsTheSetup_WhilePrintingContinues()
+    {
+        var setup = new FakeInstalledSetup(starts: true);
+        return _host.RunAsync(available: false, async (tray, localizer) =>
+        {
+            await _server.NextPoll().WaitAsync(Timeout);
+            Click(tray, localizer["Tray.Open"]);
+            var notice = await WaitForNoticeAsync(tray);
+
+            Assert.Equal(localizer["RuntimeNotice.MessageRepair"], notice.Message.Text);
+            Assert.Equal(localizer["RuntimeNotice.MessageRepair"], notice.AccessibleDescription);
+            Assert.Contains("Microsoft Edge WebView2 Runtime", notice.Message.Text, StringComparison.Ordinal);
+            Assert.NotNull(notice.RepairButton);
+            Assert.Equal(localizer["RuntimeNotice.Repair"], notice.RepairButton!.Text);
+            // Enter repairs, Escape closes.
+            Assert.Same(notice.RepairButton, notice.AcceptButton);
+            Assert.Same(notice.CloseButton, notice.CancelButton);
+
+            // The service prints while the notice is shown.
+            var jobId = _server.AddJob();
+            await _server.JobFinished(jobId).WaitAsync(Timeout);
+            Assert.Equal(["mark-printing", "mark-printed"], _server.ReportsFor(jobId));
+            Assert.Equal(0, setup.Started);
+
+            notice.RepairButton.PerformClick();
+            Assert.Equal(1, setup.Started);
+            Assert.True(notice.IsDisposed);
+            Assert.Null(tray.RuntimeNoticeForTests);
+            Assert.True(_host.Runtime.IsRunning);
+        }, configure: Listen, installedSetup: setup);
+    }
+
+    [Fact]
+    public Task WhenTheInstalledSetupCannotStart_TheNoticeStaysOpen_AndSaysWhereToRepair()
+    {
+        var setup = new FakeInstalledSetup(starts: false);
+        return _host.RunAsync(available: false, async (tray, localizer) =>
+        {
+            var notice = await WaitForNoticeAsync(tray);
+            notice.RepairButton!.PerformClick();
+
+            Assert.Equal(1, setup.Started);
+            Assert.False(notice.IsDisposed);
+            Assert.True(notice.Visible);
+            Assert.Equal(localizer["RuntimeNotice.RepairFailed"], notice.Message.Text);
+            Assert.Equal(localizer["RuntimeNotice.RepairFailed"], notice.AccessibleDescription);
+        }, installedSetup: setup);
+    }
+
+    [Theory]
+    [InlineData(SupportedCultures.Turkish, false, "Onar")]
+    [InlineData(SupportedCultures.English, false, "Repair")]
+    [InlineData(SupportedCultures.Arabic, true, "إصلاح")]
+    [InlineData(SupportedCultures.Russian, false, "Восстановить")]
+    public Task TheRepairOffer_IsLocalized_AndMirroredForArabic(string culture, bool rightToLeft, string repair) =>
+        _host.RunAsync(available: false, async (tray, localizer) =>
+        {
+            var notice = await WaitForNoticeAsync(tray);
+            Assert.Equal(repair, notice.RepairButton!.Text);
+            Assert.Equal(localizer["RuntimeNotice.MessageRepair"], notice.Message.Text);
+            Assert.NotEqual(localizer["RuntimeNotice.Message"], localizer["RuntimeNotice.MessageRepair"]);
+            Assert.Equal(rightToLeft ? RightToLeft.Yes : RightToLeft.No, notice.RightToLeft);
+            Assert.Equal(rightToLeft, notice.RightToLeftLayout);
+        }, configure: document => document.Ui.Language = culture, installedSetup: new FakeInstalledSetup(starts: true));
+
     private void Listen(PrintBridgeSettingsStore.AppSettingsDocument document) => ListenToTheFakeServer(document, _server.Url);
+
+    /// <summary>The installed setup, without starting anything: counts the repairs asked for.</summary>
+    private sealed class FakeInstalledSetup(bool starts) : IPrintBridgeInstalledSetup
+    {
+        private int _started;
+
+        public int Started => Volatile.Read(ref _started);
+
+        public bool CanRepair => true;
+
+        public bool StartRepair()
+        {
+            Interlocked.Increment(ref _started);
+            return starts;
+        }
+    }
 
     private static string PrintBridgeSetupLink(string serverUrl) =>
         $"wasla-printbridge://setup?server={Uri.EscapeDataString(serverUrl)}&code=setupcodenotarealcredential01";

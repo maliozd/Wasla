@@ -11,18 +11,38 @@ public interface IWebView2RuntimeProbe
 
 /// <summary>
 /// Detects an installed Evergreen WebView2 Runtime. The app window needs it; without it the tray shows
-/// <see cref="WebView2RuntimeNotice"/> and keeps printing. Delivering the runtime with the installer belongs to WAS-55.
+/// <see cref="WebView2RuntimeNotice"/> and keeps printing. The setup EXE installs the runtime when it is missing or older
+/// than <see cref="MinimumRuntimeVersion"/>, and its repair does again (WAS-62).
 /// </summary>
 public sealed class WebView2RuntimeProbe : IWebView2RuntimeProbe
 {
-    /// <summary>Oldest runtime the shell is allowed to use (December 2023 stable channel).</summary>
+    /// <summary>
+    /// Oldest runtime the shell is allowed to use (December 2023 stable channel). The setup EXE's detection uses the same
+    /// version (installer/print-bridge/Bundle, checked by PrintBridgeInstallerSourceTests).
+    /// </summary>
     public const string MinimumRuntimeVersion = "120.0.2210.55";
+
+    private readonly string? _browserExecutableFolder;
+
+    public WebView2RuntimeProbe()
+    {
+    }
+
+    /// <summary>
+    /// For tests: look for the runtime in this folder only, as WebView2's BrowserExecutableFolder policy (or, in an app that
+    /// is not elevated, <c>WEBVIEW2_BROWSER_EXECUTABLE_FOLDER</c>) makes the app do, so a missing runtime can be shown on a
+    /// computer that has one.
+    /// </summary>
+    internal WebView2RuntimeProbe(string browserExecutableFolder)
+    {
+        _browserExecutableFolder = browserExecutableFolder;
+    }
 
     public WebView2RuntimeAvailability Probe()
     {
         try
         {
-            var version = CoreWebView2Environment.GetAvailableBrowserVersionString();
+            var version = CoreWebView2Environment.GetAvailableBrowserVersionString(_browserExecutableFolder);
             if (string.IsNullOrWhiteSpace(version))
                 return new WebView2RuntimeAvailability(false, null);
 

@@ -53,13 +53,15 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
 
     /// <param name="available">Whether the WebView2 Runtime counts as usable. True needs a real runtime (skipped otherwise).</param>
     /// <param name="afterAppExit">Runs once the app has exited and before the service stops: what the service still does.</param>
+    /// <param name="installedSetup">The setup the runtime notice repairs with (WAS-62); none by default.</param>
     public Task RunAsync(
         bool available,
         Func<TrayApplicationContext, PrintBridgeLocalizer, Task> body,
         bool failShellStartup = false,
         TrayExit exit = TrayExit.BeforeTheTestEnds,
         Action<PrintBridgeSettingsStore.AppSettingsDocument>? configure = null,
-        Func<Task>? afterAppExit = null)
+        Func<Task>? afterAppExit = null,
+        IPrintBridgeInstalledSetup? installedSetup = null)
     {
         if (available && !new WebView2RuntimeProbe().Probe().IsAvailable)
             Assert.Skip("No usable WebView2 Runtime is installed on this machine.");
@@ -93,7 +95,7 @@ internal sealed class TrayTestHost(IsolatedDataRoot dataRoot)
                     await client.Connected.WaitAsync(Timeout);
 
                     var services = PrintBridgeUiServices.ForEngine(client);
-                    tray = new TrayApplicationContext(services, new FixedProbe(available));
+                    tray = new TrayApplicationContext(services, new FixedProbe(available), installedSetup ?? PrintBridgeInstalledSetup.None);
                     // No icon or balloon on the desktop; the menu is driven directly.
                     tray.TrayIconForTests.Visible = false;
                     // Every window opens off-screen; the tests check what opens, not where. These hooks run before a

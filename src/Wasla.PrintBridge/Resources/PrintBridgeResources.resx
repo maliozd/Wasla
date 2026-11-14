@@ -811,10 +811,19 @@
     <value>WebView2 Runtime gerekli</value>
   </data>
   <data name="RuntimeNotice.Message" xml:space="preserve">
-    <value>Print Bridge penceresi Microsoft Edge WebView2 Runtime gerektirir; bu bilgisayarda yüklü değil ya da kullanılamıyor. Fiş yazdırma arka planda devam ediyor. Microsoft Edge WebView2 Runtime'ı yükleyin veya onarın, ardından Print Bridge'i yeniden başlatın.</value>
+    <value>Print Bridge penceresi Microsoft Edge WebView2 Runtime gerektirir; bu bilgisayarda yüklü değil ya da kullanılamıyor. Fiş yazdırma arka planda devam ediyor. Wasla Print Bridge kurulumunu çalıştırın (Wasla'daki Print Bridge sayfasından indirebilirsiniz); kurulum bu bileşeni yükler. Ardından Print Bridge'i yeniden açın.</value>
   </data>
   <data name="RuntimeNotice.Close" xml:space="preserve">
     <value>Kapat</value>
+  </data>
+  <data name="RuntimeNotice.MessageRepair" xml:space="preserve">
+    <value>Print Bridge penceresi Microsoft Edge WebView2 Runtime gerektirir; bu bilgisayarda yüklü değil ya da kullanılamıyor. Fiş yazdırma arka planda devam ediyor. Wasla Print Bridge kurulumunu yeniden çalıştırmak için Onar'ı seçin; kurulum bu bileşeni yükler. Yönetici izni ve internet bağlantısı gerekir. Ardından Print Bridge'i yeniden açın.</value>
+  </data>
+  <data name="RuntimeNotice.Repair" xml:space="preserve">
+    <value>Onar</value>
+  </data>
+  <data name="RuntimeNotice.RepairFailed" xml:space="preserve">
+    <value>Kurulum başlatılamadı. Windows Ayarlar &gt; Uygulamalar &gt; Yüklü uygulamalar bölümünde Wasla Print Bridge için Değiştir'i, ardından Onar'ı seçin veya Wasla Print Bridge kurulumunu yeniden çalıştırın. Fiş yazdırma arka planda devam ediyor.</value>
   </data>
   <data name="RuntimeIssue.ServiceUnavailable.Title" xml:space="preserve">
     <value>Print Bridge hizmeti çalışmıyor</value>

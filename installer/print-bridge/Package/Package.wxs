@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wasla Print Bridge MSI (WAS-62): installation identity, repair, major upgrade and uninstall of the app and the service.
+  Restaurants run the setup EXE (Bundle/), which installs the Microsoft Edge WebView2 Runtime first when it is missing.
+  The service registration follows docs/integrations/print-bridge-service.md (WAS-61); this package is its installer.
+
+  What it owns, and so removes on uninstall:
+  - C:\Program Files\Wasla\Print Bridge: the self-contained app, the service and shell-ui\ (writable by administrators only).
+  - The Windows Service WaslaPrintBridge: NT SERVICE\WaslaPrintBridge, automatic start, depends on Spooler,
+    SeChangeNotifyPrivilege only, restart after 5, 10 and 60 seconds (failure count reset after one day), also when it
+    exits with an error.
+  - The machine-wide wasla-printbridge:// handler (HKLM\Software\Classes) and the Start menu shortcut (no desktop shortcut).
+  - The app's start at sign-in for every user (HKLM Run), in its own feature: START_AT_SIGN_IN=0 leaves it out.
+  What it never owns: C:\ProgramData\Wasla\PrintBridge (pairing, device token, settings, history, journal, a pending move).
+  The service's secure-data command protects that folder at every install, repair and upgrade, and changes no content;
+  uninstall leaves it in place.
+
+  Order (InstallExecuteSequence):
+  1. A major upgrade removes the installed version first, inside this transaction (RemoveExistingProducts right after
+     InstallInitialize): its app processes are closed and its service is stopped and deleted before any new file is
+     written, and a failure rolls back to it. An older app and the newer service, or the reverse, never run together.
+  2. Every Print Bridge app process (every user and session, also a pre-WAS-61 portable copy that still runs its own
+     engine) is ended before the service stops and files change (CloseApps). Ending the app is safe: printing is the
+     service's (WAS-61). Users get the app back at their next sign-in, or from Launch at the end of the setup EXE.
+  3. Files, service registration, its recovery settings and privileges (sc.exe, as WAS-61 documents them; WiX advises
+     against MSI's own service configuration tables), secure-data, then the service is started.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="$(var.ProductName)"
+           Manufacturer="Wasla"
+           Version="$(var.Version)"
+           UpgradeCode="2DAEE4A2-EF79-45BD-B403-602FFC1E737E"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Language="1033">
+
+    <SummaryInformation Description="$(var.ProductName)" Manufacturer="Wasla" />
+
+    <!-- The same version again replaces the installed one (a rebuilt or re-signed build) instead of installing beside it. -->
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Wasla Print Bridge is already installed. Setup does not install an older version." />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Launch Condition="VersionNT64" Message="Wasla Print Bridge needs 64-bit Windows 10 or Windows 11." />
+
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <!-- 1 (default): the app starts at every user's sign-in. 0: it does not (an administrator's choice for the computer). -->
+    <Property Id="START_AT_SIGN_IN" Value="1" Secure="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="WaslaFolder" Name="Wasla">
+        <Directory Id="INSTALLFOLDER" Name="Print Bridge" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="PrintBridge" Title="Wasla Print Bridge" AllowAbsent="no" Level="1">
+      <ComponentGroupRef Id="PublishedFiles" />
+      <ComponentRef Id="AppExecutable" />
+      <ComponentRef Id="ServiceExecutable" />
+      <ComponentRef Id="SetupLinkHandler" />
+    </Feature>
+
+    <Feature Id="StartAtSignIn" Title="Start the Print Bridge app when a user signs in" Level="1">
+      <Level Value="0" Condition="START_AT_SIGN_IN = &quot;0&quot;" />
+      <ComponentRef Id="RunAtSignIn" />
+    </Feature>
+
+    <!-- Everything the self-contained publish produced, except the two executables, which have components of their own. -->
+    <ComponentGroup Id="PublishedFiles" Directory="INSTALLFOLDER" Source="$(var.PublishDir)">
+      <Files Include="**">
+        <Exclude Files="Wasla.PrintBridge.exe" />
+        <Exclude Files="Wasla.PrintBridge.Service.exe" />
+      </Files>
+    </ComponentGroup>
+
+    <!-- Start menu only; no desktop shortcut. The shortcut belongs to the executable it starts. -->
+    <Component Id="AppExecutable" Directory="INSTALLFOLDER">
+      <File Id="AppExe" Source="$(var.PublishDir)\Wasla.PrintBridge.exe" KeyPath="yes">
+        <Shortcut Id="AppStartMenuShortcut"
+                  Directory="ProgramMenuFolder"
+                  Name="Wasla Print Bridge"
+                  Description="Receipt printing for Wasla on this computer"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Advertise="no" />
+      </File>
+    </Component>
+
+    <Component Id="ServiceExecutable" Directory="INSTALLFOLDER">
+      <File Id="ServiceExe" Source="$(var.PublishDir)\Wasla.PrintBridge.Service.exe" KeyPath="yes" />
+      <ServiceInstall Id="WaslaPrintBridgeService"
+                      Name="WaslaPrintBridge"
+                      DisplayName="Wasla Print Bridge"
+                      Description="Prints Wasla receipts on this computer."
+                      Type="ownProcess"
+                      Start="auto"
+                      ErrorControl="normal"
+                      Account="NT SERVICE\WaslaPrintBridge"
+                      Vital="yes">
+        <ServiceDependency Id="Spooler" />
+      </ServiceInstall>
+      <ServiceControl Id="WaslaPrintBridgeControl" Name="WaslaPrintBridge" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
+    </Component>
+
+    <!--
+      wasla-printbridge:// for every user of the computer. The browser passes the link as the only argument; the app
+      accepts nothing but a wasla-printbridge:// link there and hands it only to this user's own app (WAS-92) or to the
+      verified service (WAS-61). The installed app stops writing its per-user copy under HKCU, which would hide this one,
+      and removes the one an earlier Print Bridge wrote. ForceDeleteOnUninstall removes the whole key.
+    -->
+    <Component Id="SetupLinkHandler" Directory="INSTALLFOLDER">
+      <RegistryKey Root="HKLM" Key="Software\Classes\wasla-printbridge" ForceDeleteOnUninstall="yes">
+        <RegistryValue Type="string" Value="URL:Wasla Print Bridge Protocol" KeyPath="yes" />
+        <RegistryValue Name="URL Protocol" Type="string" Value="" />
+        <RegistryKey Key="DefaultIcon">
+          <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]Wasla.PrintBridge.exe&quot;,0" />
+        </RegistryKey>
+        <RegistryKey Key="shell\open\command">
+          <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]Wasla.PrintBridge.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </RegistryKey>
+    </Component>
+
+    <!--
+      The app at every interactive sign-in, in the user's own session and without elevation (Explorer starts it). The
+      service never starts the app. A second start in the same session finds the user's instance lock and, with its startup argument,
+      exits quietly (WAS-92, PrintBridgeSignInStart), so a user never has two app instances in one session and sees no
+      "already running" message at sign-in. Each user can still turn it off in Settings > Apps > Startup.
+    -->
+    <Component Id="RunAtSignIn" Directory="INSTALLFOLDER">
+      <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="Wasla Print Bridge" Type="string" Value="&quot;[INSTALLFOLDER]Wasla.PrintBridge.exe&quot; --startup" KeyPath="yes" />
+    </Component>
+
+    <!-- Deferred, as LocalSystem: these act for the whole computer. Nothing in these command lines is secret. -->
+    <SetProperty Id="CloseApps" Value="&quot;[System64Folder]taskkill.exe&quot; /F /T /IM Wasla.PrintBridge.exe" Before="CloseApps" Sequence="execute" />
+    <CustomAction Id="CloseApps" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <SetProperty Id="ConfigureServicePrivileges" Value="&quot;[System64Folder]sc.exe&quot; privs WaslaPrintBridge SeChangeNotifyPrivilege" Before="ConfigureServicePrivileges" Sequence="execute" />
+    <CustomAction Id="ConfigureServicePrivileges" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <SetProperty Id="ConfigureServiceRecovery" Value="&quot;[System64Folder]sc.exe&quot; failure WaslaPrintBridge reset= 86400 actions= restart/5000/restart/10000/restart/60000" Before="ConfigureServiceRecovery" Sequence="execute" />
+    <CustomAction Id="ConfigureServiceRecovery" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <SetProperty Id="ConfigureServiceRecoveryOnError" Value="&quot;[System64Folder]sc.exe&quot; failureflag WaslaPrintBridge 1" Before="ConfigureServiceRecoveryOnError" Sequence="execute" />
+    <CustomAction Id="ConfigureServiceRecoveryOnError" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <SetProperty Id="SecureDataFolder" Value="&quot;[#ServiceExe]&quot; secure-data" Before="SecureDataFolder" Sequence="execute" />
+    <CustomAction Id="SecureDataFolder" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom Action="CloseApps" Before="StopServices" />
+      <Custom Action="ConfigureServicePrivileges" After="InstallServices" Condition="NOT REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="ConfigureServiceRecovery" After="ConfigureServicePrivileges" Condition="NOT REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="ConfigureServiceRecoveryOnError" After="ConfigureServiceRecovery" Condition="NOT REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="SecureDataFolder" After="ConfigureServiceRecoveryOnError" Condition="NOT REMOVE~=&quot;ALL&quot;" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>
