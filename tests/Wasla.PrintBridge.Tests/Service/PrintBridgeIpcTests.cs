@@ -29,7 +29,7 @@ public sealed class PrintBridgeIpcTests : IAsyncDisposable
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(20);
 
     private readonly string _pipeName = "WaslaPbTest." + Guid.NewGuid().ToString("N");
-    private readonly PrintBridgeServiceBackend _backend = new();
+    private readonly PrintBridgeServiceBackend _backend = new(Updates.TestUpdates.Coordinator());
     private readonly FakeStatusSource _engine = new();
     private readonly CapturingLoggerFactory _logs = new();
     private readonly List<IAsyncDisposable> _disposables = [];
@@ -64,7 +64,8 @@ public sealed class PrintBridgeIpcTests : IAsyncDisposable
 
     [Theory]
     [InlineData(0)]
-    [InlineData(2)]
+    [InlineData(1)] // WAS-61's protocol: an app from before WAS-63 is told that the versions do not match
+    [InlineData(3)]
     [InlineData(99)]
     public async Task AnotherProtocolVersion_IsRefused_WithTheSupportedRange_AndTheConnectionCloses(int protocol)
     {

@@ -16,6 +16,9 @@ public static class PrintBridgeAppServices
     /// <summary>The named <see cref="HttpClient"/> of <see cref="WaslaPrintBridgeClient"/> for device requests.</summary>
     internal const string DeviceApiClientName = "PrintBridgeApi";
 
+    /// <summary>The named <see cref="HttpClient"/> for setup downloads (WAS-63).</summary>
+    internal const string DownloadClientName = "PrintBridgeDownload";
+
     private static readonly object LoggingSync = new();
     private static string? _loggingDirectory;
 
@@ -134,18 +137,27 @@ public static class PrintBridgeAppServices
             // The factory logs request headers at Trace, values included. The service's logger filters that category to
             // Warning, but a lowered level must still never write the device token.
             .RedactLoggedHeaders(static _ => true);
+        // Setup downloads (WAS-63): the same rules (the device token, no redirect, redacted headers) without the 30-second
+        // total timeout; WaslaPrintBridgeClient ends a download that stalls.
+        services.AddHttpClient(DownloadClientName, client =>
+            {
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+            .RedactLoggedHeaders(static _ => true);
         services.AddSingleton<PrintBridgeSetupHttpClientFactory>();
 
         services.AddSingleton(sp =>
         {
-            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient(DeviceApiClientName);
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
             var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger<WaslaPrintBridgeClient>();
             return new WaslaPrintBridgeClient(
-                http,
+                factory.CreateClient(DeviceApiClientName),
                 sp.GetRequiredService<PrintBridgeSettingsHolder>(),
                 sp.GetRequiredService<PrintBridgeSetupHttpClientFactory>(),
                 logger,
-                appVersion.HeaderValue);
+                appVersion.HeaderValue,
+                factory.CreateClient(DownloadClientName));
         });
     }
 

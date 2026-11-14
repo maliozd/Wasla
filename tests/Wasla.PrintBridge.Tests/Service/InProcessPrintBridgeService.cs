@@ -5,6 +5,8 @@ using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Ipc;
 using Wasla.PrintBridge.ServiceClient;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Tests.Updates;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.Tests.Service;
 
@@ -46,14 +48,16 @@ internal sealed class InProcessPrintBridgeService : IAsyncDisposable
     public string PipeName { get; }
 
     /// <param name="activate">False keeps the service as it is before it took the engine lock.</param>
+    /// <param name="updates">The update coordinator (WAS-63); by default an unsigned installation's, as every test build is.</param>
     public static async Task<InProcessPrintBridgeService> StartAsync(
         Action<IServiceCollection>? configure = null,
         bool activate = true,
-        IPrintBridgeIpcClientAuthorizer? authorizer = null)
+        IPrintBridgeIpcClientAuthorizer? authorizer = null,
+        PrintBridgeUpdateCoordinator? updates = null)
     {
         var services = PrintBridgeAppServices.Build(configure);
         var engine = services.GetRequiredService<PrintBridgeEngineHost>();
-        var backend = new PrintBridgeServiceBackend();
+        var backend = new PrintBridgeServiceBackend(updates ?? TestUpdates.Coordinator());
         var pipeName = "WaslaPbTest." + Guid.NewGuid().ToString("N");
         var server = new PrintBridgeIpcServer(
             pipeName,
@@ -69,11 +73,15 @@ internal sealed class InProcessPrintBridgeService : IAsyncDisposable
         return service;
     }
 
-    /// <summary>What the service does once it holds the engine lock.</summary>
+    /// <summary>
+    /// What the service does once it holds the engine lock: the engine serves clients, an update attempt left by a previous
+    /// run is reconciled (WAS-63), and printing starts, or waits for an update's commit.
+    /// </summary>
     public void Activate()
     {
         Backend.Activate(Engine);
-        Engine.Activate();
+        if (Backend.Updates.Reconcile(Engine, Services.GetRequiredService<WaslaPrintBridgeClient>(), Engine.Activate))
+            Engine.Activate();
     }
 
     /// <summary>A started production client of this service. The caller disposes it.</summary>
@@ -92,6 +100,7 @@ internal sealed class InProcessPrintBridgeService : IAsyncDisposable
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
             return;
 
+        await Backend.Updates.DisposeAsync();
         Backend.Deactivate();
         await Engine.ShutdownAsync();
         try

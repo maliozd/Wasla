@@ -339,6 +339,41 @@ public sealed class PrintBridgeEngineHost : IPrintBridgeEngine, IAsyncDisposable
             or PrintBridgeAutoSetupOutcome.SavedButUnverified
             or PrintBridgeAutoSetupOutcome.PreviousChangeCompleted;
 
+    /// <summary>How often <see cref="TryBeginUpdateAsync"/> looks again while a job or a setup is in progress.</summary>
+    internal static TimeSpan UpdateGatePollInterval { get; set; } = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Pauses printing for an update (WAS-63): waits until no print job is between its claim and its last report and no setup
+    /// link or pending move is running, then holds both until the returned lease is disposed. While it is held nothing is
+    /// claimed, no journal entry is settled and no move or setup link is applied; the decision is the engine's own lock
+    /// (<see cref="PrintBridgeRuntime.TryBeginConnectionChange"/>), so a job cannot start between "idle" and "paused". A job
+    /// in progress is never cut short: without that moment within <paramref name="wait"/>, null.
+    /// </summary>
+    public async Task<IDisposable?> TryBeginUpdateAsync(TimeSpan wait, CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow + wait;
+        while (true)
+        {
+            if (await _setupGate.WaitAsync(0, ct).ConfigureAwait(false))
+            {
+                var lease = _runtime.TryBeginConnectionChange();
+                if (lease is not null)
+                {
+                    _logger.LogInformation("Printing is paused for an update.");
+                    RaiseStatusChanged();
+                    return new UpdateLease(this, lease);
+                }
+
+                _setupGate.Release();
+            }
+
+            if (DateTime.UtcNow >= deadline)
+                return null;
+
+            await Task.Delay(UpdateGatePollInterval, ct).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>The service is stopping: abandons setup work and stops printing (WAS-56 grace) without marking a user stop.</summary>
     public async Task ShutdownAsync()
     {
@@ -360,6 +395,26 @@ public sealed class PrintBridgeEngineHost : IPrintBridgeEngine, IAsyncDisposable
         await ShutdownAsync().ConfigureAwait(false);
         _runtime.StatusChanged -= OnRuntimeStatusChanged;
         _lifetime.Dispose();
+    }
+
+    /// <summary>The update's pause (<see cref="TryBeginUpdateAsync"/>): disposing it resumes claims, journal settling and moves.</summary>
+    private sealed class UpdateLease(PrintBridgeEngineHost host, IDisposable runtimeLease) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+                return;
+
+            runtimeLease.Dispose();
+            host._setupGate.Release();
+            host._logger.LogInformation("Printing is no longer paused for an update.");
+            // A move confirmed before the update is finished now rather than at its next retry.
+            if (host._store.PendingConnectionChangeExists())
+                host.StartPendingConnectionChangeLoop();
+            host.RaiseStatusChanged();
+        }
     }
 
     private async Task VerifyAndResumeAsync()

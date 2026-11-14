@@ -43,7 +43,25 @@ public enum IpcAvailability
 
 // State (service → app).
 
-public sealed record IpcState(IpcAvailability Availability, IpcStatus? Status, IpcSettings? Settings);
+public sealed record IpcState(IpcAvailability Availability, IpcStatus? Status, IpcSettings? Settings, IpcUpdate Update);
+
+/// <summary>
+/// Updates (WAS-63): the installed version, whether this installation can update itself (it is validly signed), and the
+/// current or last attempt. The staged setup's path, size and SHA-256 are present only while it is
+/// <see cref="Updates.PrintBridgeUpdateStage.Ready"/>, for the app's own check before it starts the setup.
+/// </summary>
+public sealed record IpcUpdate(
+    string InstalledVersion,
+    bool Supported,
+    Guid? AttemptId,
+    Updates.PrintBridgeUpdateStage? Stage,
+    string? FromVersion,
+    string? ToVersion,
+    int? DownloadPercent,
+    Updates.PrintBridgeUpdateFailure? Failure,
+    string? StagedSetupPath,
+    long? SetupBytes,
+    string? SetupSha256);
 
 public sealed record IpcIssue(PrintBridgeRuntimeIssueCode Code, string? Key, string[] Args);
 
@@ -122,6 +140,10 @@ public sealed record IpcSetupApplyPayload(string Link);
 
 public sealed record IpcSetupConsentAnswerPayload(string ConsentId, bool Approved);
 
+public sealed record IpcUpdatePreparePayload(string Version);
+
+public sealed record IpcUpdateCancelPayload(Guid AttemptId);
+
 // Response payloads (service → app).
 
 public sealed record IpcHealth(string TenantName, string DeviceName, DateTime ServerTimeUtc);
@@ -139,6 +161,14 @@ public sealed record IpcHistoryResult(int Total, int Page, IpcJob[] Rows);
 public sealed record IpcReprintResult(bool Success, string MessageKey, Guid? NewPrintJobId);
 
 public sealed record IpcSetupApplyResult(Setup.PrintBridgeAutoSetupOutcome Outcome);
+
+/// <param name="Available">The newer release the server offers, or null when there is none.</param>
+public sealed record IpcUpdateCheckResult(string Installed, string? Available);
+
+public sealed record IpcUpdatePrepareResult(Guid AttemptId);
+
+/// <summary>What <c>Wasla.PrintBridge.Service.exe health-check</c> asks the running service after an installation (WAS-63).</summary>
+public sealed record IpcServiceHealth(string Version, IpcAvailability Availability);
 
 // Event payloads (service → app).
 
@@ -199,6 +229,8 @@ public static class PrintBridgeIpcMapping
                                       && p.Link.StartsWith("wasla-printbridge://", StringComparison.OrdinalIgnoreCase)
                                       && !HasControlCharacters(p.Link),
             IpcSetupConsentAnswerPayload p => p.ConsentId is not null && PrintBridgeIpcProtocol.OpaqueIdPattern().IsMatch(p.ConsentId),
+            IpcUpdatePreparePayload p => Updates.PrintBridgeReleaseVersion.TryParse(p.Version, out _),
+            IpcUpdateCancelPayload p => p.AttemptId != Guid.Empty,
             _ => false
         };
 

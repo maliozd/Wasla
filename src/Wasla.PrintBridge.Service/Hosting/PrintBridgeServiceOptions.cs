@@ -18,11 +18,18 @@ internal sealed record PrintBridgeServiceOptions(
     string ServiceName,
     string? DataRoot)
 {
+    /// <summary>
+    /// <c>health-check</c> (WAS-63): asks the running service whether it is healthy and is this executable's version, then
+    /// exits (0 healthy). The installer runs it right after it started the service, inside its transaction.
+    /// </summary>
+    public bool HealthCheckOnly { get; init; }
+
     public static bool TryParse(IReadOnlyList<string> args, out PrintBridgeServiceOptions? options, out string? error)
     {
         options = null;
         error = null;
         var secureData = false;
+        var healthCheck = false;
         var serviceName = PrintBridgeServiceEndpoint.ProductionServiceName;
         string? dataRoot = null;
 
@@ -34,6 +41,9 @@ internal sealed record PrintBridgeServiceOptions(
                 case "secure-data" when i == 0:
                     secureData = true;
                     break;
+                case "health-check" when i == 0:
+                    healthCheck = true;
+                    break;
                 case "--service-name" when i + 1 < args.Count && IsServiceName(args[i + 1]):
                     serviceName = args[++i];
                     break;
@@ -41,12 +51,12 @@ internal sealed record PrintBridgeServiceOptions(
                     dataRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(args[++i]));
                     break;
                 default:
-                    error = "Usage: Wasla.PrintBridge.Service.exe [secure-data] [--service-name <name>] [--data-root <absolute path>]";
+                    error = "Usage: Wasla.PrintBridge.Service.exe [secure-data | health-check] [--service-name <name>] [--data-root <absolute path>]";
                     return false;
             }
         }
 
-        options = new PrintBridgeServiceOptions(secureData, serviceName, dataRoot);
+        options = new PrintBridgeServiceOptions(secureData, serviceName, dataRoot) { HealthCheckOnly = healthCheck };
         return true;
     }
 

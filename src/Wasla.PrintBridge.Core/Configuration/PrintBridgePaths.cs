@@ -102,6 +102,18 @@ public static class PrintBridgePaths
     public static string PendingConnectionChangePath =>
         Path.Combine(ProgramDataRoot, "pending-connection-change.json");
 
+    /// <summary>
+    /// Updates (WAS-63): the setup the service downloaded and verified, and the durable state of the current attempt.
+    /// Local users may read and run what is in it (the app starts the setup) but not change it; <c>secure-data</c> sets
+    /// that up. Never holds a token.
+    /// </summary>
+    public static string UpdatesDirectory =>
+        Path.Combine(ProgramDataRoot, "updates");
+
+    /// <summary>The durable state of the current or last update attempt (WAS-63); see <c>PrintBridgeUpdateStateStore</c>.</summary>
+    public static string UpdateStatePath =>
+        Path.Combine(UpdatesDirectory, "update-state.json");
+
     public static void EnsureProgramDataDirectories()
     {
         Directory.CreateDirectory(ProgramDataRoot);
