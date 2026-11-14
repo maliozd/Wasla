@@ -921,11 +921,37 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
         return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
-    /// <summary>Whether a process's token has the Administrators group enabled (an elevated process).</summary>
+    /// <summary>
+    /// Whether a process runs elevated: its token's TokenElevation, which needs only TOKEN_QUERY. (WindowsPrincipal.IsInRole
+    /// cannot be used on such a token: it duplicates the token first, which needs TOKEN_DUPLICATE.) A failure throws.
+    /// </summary>
     private static bool IsElevated(Process process)
     {
-        using var identity = TokenOf(process);
-        return identity is not null && new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+        const uint processQueryLimitedInformation = 0x1000;
+        const uint tokenQuery = 0x0008;
+        const int tokenElevation = 20;
+        var handle = OpenProcess(processQueryLimitedInformation, false, (uint)process.Id);
+        if (handle == IntPtr.Zero)
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        try
+        {
+            if (!OpenProcessToken(handle, tokenQuery, out var token))
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+            try
+            {
+                if (!GetTokenInformation(token, tokenElevation, out var elevated, sizeof(int), out _))
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                return elevated != 0;
+            }
+            finally
+            {
+                CloseHandle(token);
+            }
+        }
+        finally
+        {
+            CloseHandle(handle);
+        }
     }
 
     private static SecurityIdentifier? ProcessUser(int processId)
@@ -1026,6 +1052,9 @@ public sealed class PrintBridgeInstallerTests : IAsyncDisposable
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool OpenProcessToken(IntPtr processHandle, uint desiredAccess, out IntPtr tokenHandle);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool GetTokenInformation(IntPtr token, int tokenInformationClass, out int tokenInformation, int tokenInformationLength, out int returnLength);
 
     [DllImport("kernel32.dll")]
     private static extern bool CloseHandle(IntPtr handle);
