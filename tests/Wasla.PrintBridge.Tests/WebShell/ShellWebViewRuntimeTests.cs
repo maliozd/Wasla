@@ -237,13 +237,21 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             Assert.Equal("light dark", await EvalAsync(core, "document.querySelector('meta[name=\"color-scheme\"]').content"));
         });
 
-    [Fact]
-    public Task MinimumWindow_And200PercentZoom_NeedNoHorizontalScrolling() =>
-        RunShellAsync(async (form, core, _) =>
+    [Theory]
+    [InlineData("tr-TR", "ltr")]
+    [InlineData("en-US", "ltr")]
+    [InlineData("ar-SA", "rtl")]
+    [InlineData("ru-RU", "ltr")]
+    public Task MinimumWindow_And200PercentZoom_NeedNoHorizontalScrolling(string culture, string direction) =>
+        RunShellAsync(async (form, core, source) =>
         {
+            var localizer = new PrintBridgeLocalizer(CurrentCultureService!);
+            await EvalAsync(core, $"(() => {{ const s = document.getElementById('language'); s.value = '{culture}'; s.dispatchEvent(new Event('change')); return 'changed'; }})()");
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.documentElement.lang + ' ' + document.documentElement.dir") == $"{culture} {direction}");
+
             form.Size = form.MinimumSize;
             await WaitUntilAsync(async () => int.Parse(await EvalAsync(core, "String(document.documentElement.clientWidth)") ?? "0") < 440);
-            await AssertNoHorizontalOverflowOnEveryTabAsync(core);
+            await AssertNoHorizontalOverflowOnEveryTabAsync(core, culture);
 
             // 200 % zoom of the default window, and the 320 CSS px reflow width.
             foreach (var width in new[] { 380, 320 })
@@ -252,7 +260,18 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                     "Emulation.setDeviceMetricsOverride",
                     JsonSerializer.Serialize(new { width, height = 290, deviceScaleFactor = 2, mobile = false }));
                 await WaitUntilAsync(async () => await EvalAsync(core, "String(document.documentElement.clientWidth)") == width.ToString());
-                await AssertNoHorizontalOverflowOnEveryTabAsync(core);
+                await AssertNoHorizontalOverflowOnEveryTabAsync(core, $"{culture} {width}px");
+            }
+
+            // The status pill is the header text whose width changes, so every connection state is checked at 320 CSS px.
+            // Its label is shown in full; only a blocking-issue title longer than the pill's cap ends in an ellipsis.
+            foreach (var (titleKey, status, fullLabel) in HeaderStatuses)
+            {
+                var label = localizer[titleKey];
+                source.Set(status);
+                await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('status-pill-label').textContent") == label);
+                var offenders = await HorizontalOverflowOffendersAsync(core, fullLabel);
+                Assert.True(offenders == "[]", $"{culture} 320px, {titleKey} \"{label}\": {offenders}");
             }
 
             await core.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
@@ -517,30 +536,72 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
         $"document.getElementById('panel-{selected}').hidden, document.getElementById('panel-{previous}').hidden, " +
         $"document.getElementById('tab-{previous}').tabIndex])";
 
-    private static async Task AssertNoHorizontalOverflowOnEveryTabAsync(CoreWebView2 core)
+    /// <summary>Header labels in every connection state: the title's resource key, the status, and whether it must show in full.</summary>
+    private static (string TitleKey, PrintBridgeRuntimeStatus Status, bool FullLabel)[] HeaderStatuses =>
+    [
+        ("Shell.Connection.Connecting", Status(BridgeServerConnectionStatus.Disconnected), true),
+        ("Status.Offline", Status(BridgeServerConnectionStatus.Error, new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ServerUnreachable)), true),
+        ("ConnectionStatus.NotConfigured", Status(BridgeServerConnectionStatus.NotConfigured, isRunning: false), true),
+        ("ConnectionStatus.Stopped", Status(BridgeServerConnectionStatus.Stopped, isRunning: false), true),
+        ("ConnectionStatus.Error", Status(BridgeServerConnectionStatus.Error), true),
+        // One of the longest titles. The pill caps it at 14rem with an ellipsis (English and Russian); the overview shows it in full.
+        ("RuntimeIssue.ServiceUnavailable.Title", Status(BridgeServerConnectionStatus.Error, new PrintBridgeRuntimeIssue(PrintBridgeRuntimeIssueCode.ServiceUnavailable)), false),
+        ("Status.Online", Status(), true)
+    ];
+
+    private static async Task AssertNoHorizontalOverflowOnEveryTabAsync(CoreWebView2 core, string context)
     {
         foreach (var tab in new[] { "overview", "printer", "history", "settings" })
         {
             await EvalAsync(core, $"document.getElementById('tab-{tab}').click(); 'shown'");
-            // Content may wrap but never overflow the viewport. The tab strip and the history table scroll
-            // inside their own containers, which reflow rules allow for two-dimensional data.
-            var offenders = await EvalAsync(core, """
-                (() => {
-                  const width = document.documentElement.clientWidth;
-                  const out = [];
-                  if (document.documentElement.scrollWidth > width) out.push('document');
-                  for (const el of document.querySelectorAll('#app *')) {
-                    if (el.closest('[hidden], .pb-visually-hidden, .pb-table-wrap, .pb-tabs')) continue;
-                    const r = el.getBoundingClientRect();
-                    if (r.width === 0 || r.height === 0) continue;
-                    if (r.right > width + 1 || r.left < -1) out.push(el.id || el.className || el.tagName);
-                  }
-                  return JSON.stringify(out.slice(0, 8));
-                })()
-                """);
-            Assert.True(offenders == "[]", $"{tab}: {offenders}");
+            var offenders = await HorizontalOverflowOffendersAsync(core, fullLabel: true);
+            Assert.True(offenders == "[]", $"{context}, {tab}: {offenders}");
         }
     }
+
+    /// <summary>
+    /// Content may wrap but never overflow the viewport. The tab strip and the history table scroll inside their
+    /// own containers, which reflow rules allow for two-dimensional data. In the header (logo, connection status,
+    /// language) nothing overlaps, the logo stays inside its box, the language list keeps its natural width and the
+    /// status label is not cut unless <paramref name="fullLabel"/> is false.
+    /// </summary>
+    private static Task<string?> HorizontalOverflowOffendersAsync(CoreWebView2 core, bool fullLabel) =>
+        EvalAsync(core, $$"""
+            (() => {
+              const fullLabel = {{(fullLabel ? "true" : "false")}};
+              const width = document.documentElement.clientWidth;
+              const name = el => el.id || el.className || el.tagName;
+              const box = el => el.getBoundingClientRect();
+              const out = [];
+              if (document.documentElement.scrollWidth > width) out.push('document');
+              for (const el of document.querySelectorAll('#app *')) {
+                if (el.closest('[hidden], .pb-visually-hidden, .pb-table-wrap, .pb-tabs')) continue;
+                const r = box(el);
+                if (r.width === 0 || r.height === 0) continue;
+                if (r.right > width + 1 || r.left < -1) out.push(name(el));
+              }
+
+              const header = document.querySelector('.pb-header');
+              const parts = [...header.children];
+              const overlaps = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+              parts.forEach((a, i) => parts.slice(i + 1).forEach(b => { if (overlaps(box(a), box(b))) out.push('overlap ' + name(a) + ' / ' + name(b)); }));
+              const logo = box(document.querySelector('.pb-brand-logo'));
+              const brand = box(document.querySelector('.pb-brand'));
+              if (logo.left < brand.left - 0.5 || logo.right > brand.right + 0.5) out.push('logo outside its box');
+              const label = document.getElementById('status-pill-label');
+              if (fullLabel && label.scrollWidth > label.clientWidth) out.push('status label cut: ' + label.textContent);
+              const language = document.getElementById('language');
+              const natural = language.cloneNode(true);
+              natural.removeAttribute('id');
+              natural.style.position = 'absolute';
+              natural.style.visibility = 'hidden';
+              header.append(natural);
+              const naturalWidth = box(natural).width;
+              natural.remove();
+              if (box(language).width < naturalWidth - 0.5) out.push('language list squeezed');
+              return JSON.stringify(out.slice(0, 8));
+            })()
+            """);
 
     /// <summary>A real key press through the browser input pipeline, not a synthetic DOM event.</summary>
     private static async Task PressAsync(CoreWebView2 core, string key)
