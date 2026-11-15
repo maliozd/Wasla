@@ -17,11 +17,47 @@ namespace Wasla.Infrastructure.Services;
 /// </para>
 /// <para>
 /// The price is a scan of the device table, which can wait for another tenant's uncommitted device row until it commits.
-/// These reads run only during setups, moves and the Web panel's device create and reactivate.
+/// These reads run only during setups, moves and the Web panel's device create and reactivate. Measured on SQL Server 2025
+/// (WAS-205): about 43 pages per 1,000 device rows, 1 ms at 3,900 devices and 4.5 ms at 39,000.
+/// </para>
+/// <para>
+/// The frequent reads (device authentication on every poll, the devices page, setup status and Central Admin) use two
+/// statements instead (WAS-205): the ids from one index alone (<see cref="IdByTokenHashAsync"/>,
+/// <see cref="ManageableIdsAsync(CentralDbContext, Guid, CancellationToken)"/>), then the rows by key alone
+/// (<see cref="ByIds"/>). Neither statement holds an index key while it waits for a row, so a writer can only make them
+/// wait. The second statement's rows are as of after the first: callers check the token, tenant and removal again on them.
 /// </para>
 /// </summary>
 internal static class PrintBridgeDeviceRowReads
 {
+    /// <summary>The id of the device with this token hash, from <c>IX_PrintBridgeDevices_TokenHash</c> alone; empty if none.</summary>
+    public static Task<Guid> IdByTokenHashAsync(CentralDbContext centralDb, string tokenHash, CancellationToken ct) =>
+        centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .Where(d => d.TokenHash == tokenHash)
+            .Select(d => d.Id)
+            .FirstOrDefaultAsync(ct);
+
+    /// <summary>The ids of a tenant's devices that are not removed, from <c>IX_PrintBridgeDevices_TenantId_RemovedAtUtc</c> alone.</summary>
+    public static Task<List<Guid>> ManageableIdsAsync(CentralDbContext centralDb, Guid tenantId, CancellationToken ct) =>
+        centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .Where(d => d.TenantId == tenantId && d.RemovedAtUtc == null)
+            .Select(d => d.Id)
+            .ToListAsync(ct);
+
+    /// <summary>The ids of these tenants' devices that are not removed, from <c>IX_PrintBridgeDevices_TenantId_RemovedAtUtc</c> alone.</summary>
+    public static Task<List<Guid>> ManageableIdsAsync(CentralDbContext centralDb, IReadOnlyCollection<Guid> tenantIds, CancellationToken ct) =>
+        centralDb.PrintBridgeDevices
+            .AsNoTracking()
+            .Where(d => tenantIds.Contains(d.TenantId) && d.RemovedAtUtc == null)
+            .Select(d => d.Id)
+            .ToListAsync(ct);
+
+    /// <summary>Devices by key alone. Filter only by key here: another predicate can bring a secondary index back.</summary>
+    public static IQueryable<PrintBridgeDevice> ByIds(CentralDbContext centralDb, IReadOnlyCollection<Guid> ids) =>
+        centralDb.PrintBridgeDevices.Where(d => ids.Contains(d.Id));
+
     public static IQueryable<PrintBridgeDevice> ByInstallation(CentralDbContext centralDb, Guid installationId) =>
         centralDb.Database.IsSqlServer()
             ? centralDb.PrintBridgeDevices.FromSql(

@@ -44,10 +44,18 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
             return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.InvalidToken);
         }
 
-        var device = await _centralDb.PrintBridgeDevices
-            .Include(d => d.Tenant)
-            .FirstOrDefaultAsync(d => d.TokenHash == tokenHash, ct)
-            .ConfigureAwait(false);
+        // Two statements (WAS-205): the id from the token index alone, then the row by key. One statement that sought the
+        // token and looked up the row held the index key while it waited for a row that a token revocation or a removal had
+        // locked, and lost the deadlock to it. A token replaced in between no longer belongs to the row.
+        var deviceId = await PrintBridgeDeviceRowReads.IdByTokenHashAsync(_centralDb, tokenHash, ct).ConfigureAwait(false);
+        var device = deviceId == Guid.Empty
+            ? null
+            : await _centralDb.PrintBridgeDevices
+                .Include(d => d.Tenant)
+                .FirstOrDefaultAsync(d => d.Id == deviceId, ct)
+                .ConfigureAwait(false);
+        if (device is not null && !string.Equals(device.TokenHash, tokenHash, StringComparison.Ordinal))
+            device = null;
 
         if (device is null)
         {

@@ -110,9 +110,10 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, overview.Status);
         Assert.Equal(HttpStatusCode.OK, list.Status);
         Assert.Empty(_tenants.Opened);
-        // Overview: 4 aggregate queries + the existing attention list. List: count + page + device counts.
+        // Overview: 4 aggregate queries + the existing attention list. List: count + page + the page's device ids and their
+        // rows by key (WAS-205).
         Assert.Equal(5, overviewCommands.Count(sql => !IsSessionValidation(sql)));
-        Assert.Equal(3, listCommands.Count(sql => !IsSessionValidation(sql)));
+        Assert.Equal(4, listCommands.Count(sql => !IsSessionValidation(sql)));
         // Plus the per-request Central Admin session revalidation.
         Assert.Equal(1, overviewCommands.Count(IsSessionValidation));
         Assert.Equal(1, listCommands.Count(IsSessionValidation));

@@ -192,8 +192,9 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
         var small = await CountedAsync(service => service.GetTenantListAsync(Query(pageSize: 10), CancellationToken.None));
         var large = await CountedAsync(service => service.GetTenantListAsync(Query(pageSize: 100), CancellationToken.None));
 
-        Assert.Equal(3, small.Commands);
-        Assert.Equal(3, large.Commands);
+        // Count, page, then the page's device ids and their rows by key (WAS-205), whatever the page size.
+        Assert.Equal(4, small.Commands);
+        Assert.Equal(4, large.Commands);
         Assert.Equal(60, large.Result.Items.Count);
         Assert.All(large.SqlText, sql => Assert.DoesNotContain("EncryptedConnectionString", sql, StringComparison.Ordinal));
         Assert.All(large.SqlText, sql => Assert.DoesNotContain("TokenHash", sql, StringComparison.Ordinal));

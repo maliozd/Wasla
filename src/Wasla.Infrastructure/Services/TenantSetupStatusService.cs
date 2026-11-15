@@ -210,14 +210,18 @@ public sealed class TenantSetupStatusService : ITenantSetupStatusService
     {
         try
         {
-            var rows = await _central.PrintBridgeDevices
-                .AsNoTracking()
-                .Where(device => device.TenantId == tenantId && device.RemovedAtUtc == null)
-                .Select(device => new { device.IsActive, device.LastSeenAt })
-                .ToListAsync(ct)
-                .ConfigureAwait(false);
+            // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads.
+            var ids = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_central, tenantId, ct).ConfigureAwait(false);
+            var rows = ids.Count == 0
+                ? []
+                : await PrintBridgeDeviceRowReads.ByIds(_central, ids)
+                    .AsNoTracking()
+                    .Select(device => new { device.TenantId, device.RemovedAtUtc, device.IsActive, device.LastSeenAt })
+                    .ToListAsync(ct)
+                    .ConfigureAwait(false);
 
             var devices = rows
+                .Where(row => row.TenantId == tenantId && row.RemovedAtUtc is null)
                 .Select(row => new PrintingDeviceFact(row.IsActive, row.LastSeenAt))
                 .ToArray();
 

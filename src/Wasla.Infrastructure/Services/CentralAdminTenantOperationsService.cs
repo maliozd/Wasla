@@ -161,15 +161,20 @@ public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOpe
         {
             var ids = pageRows.Select(row => row.Id).ToList();
             var onlineSince = now - PrintBridgeConnectionStatusCalculator.ConnectedThreshold;
-            var grouped = await _db.PrintBridgeDevices
-                .AsNoTracking()
-                .Where(d => ids.Contains(d.TenantId) && d.RemovedAtUtc == null && d.IsActive)
-                .GroupBy(d => d.TenantId)
-                .Select(g => new { TenantId = g.Key, Active = g.Count(), Online = g.Count(d => d.LastSeenAt >= onlineSince) })
-                .ToListAsync(ct)
-                .ConfigureAwait(false);
-            foreach (var group in grouped)
-                deviceCounts[group.TenantId] = (group.Active, group.Online);
+            // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads.
+            var deviceIds = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_db, ids, ct).ConfigureAwait(false);
+            var deviceRows = deviceIds.Count == 0
+                ? []
+                : await PrintBridgeDeviceRowReads.ByIds(_db, deviceIds)
+                    .AsNoTracking()
+                    .Select(d => new { d.TenantId, d.RemovedAtUtc, d.IsActive, d.LastSeenAt })
+                    .ToListAsync(ct)
+                    .ConfigureAwait(false);
+            var pageTenants = ids.ToHashSet();
+            foreach (var group in deviceRows
+                         .Where(d => pageTenants.Contains(d.TenantId) && d.RemovedAtUtc is null && d.IsActive)
+                         .GroupBy(d => d.TenantId))
+                deviceCounts[group.Key] = (group.Count(), group.Count(d => d.LastSeenAt >= onlineSince));
         }
 
         var items = pageRows
@@ -257,16 +262,23 @@ public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOpe
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        var devices = await _db.PrintBridgeDevices
-            .AsNoTracking()
-            .Where(d => d.TenantId == tenant.Id && d.RemovedAtUtc == null)
-            .OrderByDescending(d => d.IsActive)
-            .ThenBy(d => d.Name)
-            .ThenBy(d => d.Id)
+        // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads. Ordered by the server, then
+        // filtered and cut here, so a device removed in between does not take a place.
+        var deviceIds = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_db, tenant.Id, ct).ConfigureAwait(false);
+        var deviceRows = deviceIds.Count == 0
+            ? []
+            : await PrintBridgeDeviceRowReads.ByIds(_db, deviceIds)
+                .AsNoTracking()
+                .OrderByDescending(d => d.IsActive)
+                .ThenBy(d => d.Name)
+                .ThenBy(d => d.Id)
+                .Select(d => new { d.TenantId, d.RemovedAtUtc, d.Name, d.IsActive, d.LastSeenAt, d.AppVersion })
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+        var devices = deviceRows
+            .Where(d => d.TenantId == tenant.Id && d.RemovedAtUtc is null)
             .Take(MaxDevicesPerTenant)
-            .Select(d => new { d.Name, d.IsActive, d.LastSeenAt, d.AppVersion })
-            .ToListAsync(ct)
-            .ConfigureAwait(false);
+            .ToList();
 
         return new TenantOperationsDetail(
             tenant.Id,
