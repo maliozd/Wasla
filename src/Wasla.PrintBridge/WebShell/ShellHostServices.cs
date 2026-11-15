@@ -50,6 +50,12 @@ public interface IShellNativeActions
     /// <summary>Asks for explicit confirmation in a native dialog before test mode stops paper printing.</summary>
     Task<bool> ConfirmEnableTestModeAsync();
 
+    /// <summary>
+    /// Asks in a native dialog before an update starts (WAS-63): it names both versions and says that printing pauses while
+    /// it installs, that Windows asks for administrator permission, and that Print Bridge closes and the setup opens.
+    /// </summary>
+    Task<bool> ConfirmUpdateAsync(string installedVersion, string newVersion);
+
     /// <summary>Opens the known log folder in File Explorer; false when it does not exist yet.</summary>
     bool OpenLogFolder();
 }

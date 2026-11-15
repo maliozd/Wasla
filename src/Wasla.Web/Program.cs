@@ -80,6 +80,8 @@ builder.Services.AddScoped<ITenantNavigationAuthorizationService, TenantNavigati
 // Post-login destination: a safe ReturnUrl the user may open, otherwise the role's landing page (WAS-113).
 builder.Services.AddWaslaTenantLandingPages();
 builder.Services.AddScoped<IGuidedSetupCoordinator, GuidedSetupCoordinator>();
+// Print Bridge updates (WAS-63): the release offered to devices is the downloadable setup and its metadata.
+builder.Services.AddSingleton<Wasla.Web.PrintBridge.PrintBridgeReleaseCatalog>();
 // Report exports (WAS-184): one export at a time per user, a few at once per process.
 builder.Services.AddWaslaReportExports();
 

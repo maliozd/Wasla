@@ -108,7 +108,11 @@ internal sealed class PrintBridgeServiceWorker : BackgroundService
             engineServices = _buildEngine();
             engine = engineServices.GetRequiredService<PrintBridgeEngineHost>();
             _backend.Activate(engine);
-            engine.Activate();
+            // An update attempt left by the previous run is reconciled before anything prints (WAS-63). The new version of
+            // an update not yet committed by Windows Installer stays inactive until the commit.
+            var activatedEngine = engine;
+            if (_backend.Updates.Reconcile(engine, engineServices.GetRequiredService<WaslaPrintBridgeClient>(), () => activatedEngine.Activate()))
+                engine.Activate();
 
             await WaitForStopAsync(stoppingToken).ConfigureAwait(false);
         }
@@ -122,6 +126,8 @@ internal sealed class PrintBridgeServiceWorker : BackgroundService
         finally
         {
             _logger.LogInformation("Wasla Print Bridge service stopping.");
+            // Update work ends first, so a commit cannot start printing while the engine stops; its state stays on disk.
+            await _backend.Updates.DisposeAsync().ConfigureAwait(false);
             _backend.Deactivate();
             if (engine is not null)
                 await engine.ShutdownAsync().ConfigureAwait(false);

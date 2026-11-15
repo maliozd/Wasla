@@ -8,9 +8,9 @@ internal readonly record struct ShellConfirmDetail(string Label, string Value, b
 
 /// <summary>
 /// A native confirmation in the app's design, for actions the page must not be able to confirm by itself
-/// (resetting the connection, turning test mode on, moving to another restaurant from a setup link). Cancel has the
-/// initial focus and answers Escape, and closing the window cancels too, so an accidental Enter never confirms a
-/// harmful action.
+/// (resetting the connection, turning test mode on, moving to another restaurant from a setup link, starting an update).
+/// Cancel has the initial focus and answers Escape, and closing the window cancels too, so an accidental Enter never
+/// confirms a harmful action.
 /// </summary>
 internal sealed class ShellConfirmDialog : Form
 {
@@ -24,7 +24,8 @@ internal sealed class ShellConfirmDialog : Form
         string cancelText,
         bool rightToLeft,
         bool dark,
-        IReadOnlyList<ShellConfirmDetail>? details = null)
+        IReadOnlyList<ShellConfirmDetail>? details = null,
+        ShellButtonKind confirmKind = ShellButtonKind.Danger)
     {
         _dark = dark;
         var palette = ShellPalette.For(dark);
@@ -86,7 +87,7 @@ internal sealed class ShellConfirmDialog : Form
         if (details is { Count: > 0 })
             layout.Controls.Add(BuildDetails(details, palette));
 
-        Confirm = new ShellDialogButton(ShellButtonKind.Danger, palette) { Text = confirmText, DialogResult = DialogResult.OK };
+        Confirm = new ShellDialogButton(confirmKind, palette) { Text = confirmText, DialogResult = DialogResult.OK };
         Cancel = new ShellDialogButton(ShellButtonKind.Secondary, palette) { Text = cancelText, DialogResult = DialogResult.Cancel, Margin = Padding.Empty };
         var buttons = new FlowLayoutPanel
         {
@@ -154,6 +155,29 @@ internal sealed class ShellConfirmDialog : Form
                 new(localizer["Auto.Transfer.NewServer"], request.TargetServer, LeftToRight: true)
             ]);
     }
+
+    /// <summary>
+    /// The confirmation before an update (WAS-63): the installed and the new version, and what happens next. It defaults to
+    /// Cancel like every confirmation; the confirm button is the primary action, since nothing is lost by updating.
+    /// </summary>
+    public static ShellConfirmDialog ForUpdate(
+        string installedVersion,
+        string newVersion,
+        PrintBridgeLocalizer localizer,
+        bool rightToLeft,
+        bool dark) =>
+        new(
+            localizer["Shell.Update.ConfirmTitle"],
+            localizer["Shell.Update.ConfirmMessage"],
+            localizer["Shell.Update.Confirm"],
+            localizer["Shell.Action.Cancel"],
+            rightToLeft,
+            dark,
+            [
+                new(localizer["Shell.Update.Installed"], installedVersion, LeftToRight: true),
+                new(localizer["Shell.Update.NewVersion"], newVersion, LeftToRight: true)
+            ],
+            ShellButtonKind.Primary);
 
     protected override void OnHandleCreated(EventArgs e)
     {

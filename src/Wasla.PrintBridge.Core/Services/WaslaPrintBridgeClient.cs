@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
 using Wasla.PrintBridge.Setup;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.Services;
 
@@ -43,24 +44,146 @@ public sealed class WaslaPrintBridgeClient
         "installation_registered_to_another_tenant"
     ];
 
+    /// <summary>A setup download that receives nothing for this long has stalled (WAS-63).</summary>
+    internal static TimeSpan DownloadStallTimeout { get; set; } = TimeSpan.FromSeconds(60);
+
     private readonly HttpClient _http;
+    private readonly HttpClient? _downloadHttp;
     private readonly PrintBridgeSettingsHolder _holder;
     private readonly PrintBridgeSetupHttpClientFactory _setupHttpClientFactory;
     private readonly ILogger<WaslaPrintBridgeClient> _logger;
     private readonly string _appVersion;
 
+    /// <param name="downloadHttp">
+    /// The client for setup downloads (WAS-63): configured like <paramref name="http"/> (no redirects, redacted headers) but
+    /// without its 30-second total timeout; a stalled download is ended by <see cref="DownloadStallTimeout"/>. Without it the
+    /// client cannot download a release.
+    /// </param>
     public WaslaPrintBridgeClient(
         HttpClient http,
         PrintBridgeSettingsHolder holder,
         PrintBridgeSetupHttpClientFactory setupHttpClientFactory,
         ILogger<WaslaPrintBridgeClient> logger,
-        string appVersion)
+        string appVersion,
+        HttpClient? downloadHttp = null)
     {
         _http = http;
+        _downloadHttp = downloadHttp;
         _holder = holder;
         _setupHttpClientFactory = setupHttpClientFactory;
         _logger = logger;
         _appVersion = appVersion;
+    }
+
+    /// <summary>
+    /// The release the Wasla server offers to this device (WAS-63, schema 1), or null when it offers none (204, or a server
+    /// without releases, 404). A description that is incomplete, out of range or of another schema throws
+    /// <see cref="InvalidDataException"/>; the server and network fail as every device request does
+    /// (<see cref="PrintBridgeConnectionException"/>).
+    /// </summary>
+    public async Task<PrintBridgeRelease?> GetLatestReleaseAsync(CancellationToken ct)
+    {
+        const string path = "api/print-bridge/releases/latest";
+        HttpResponseMessage response;
+        try
+        {
+            response = await SendAsync(HttpMethod.Get, path, ct).ConfigureAwait(false);
+        }
+        catch (PrintBridgeConnectionException ex) when (ex.StatusCode == 404)
+        {
+            return null;
+        }
+
+        using (response)
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+
+            PrintBridgeReleaseResponse? payload;
+            try
+            {
+                payload = await response.Content.ReadFromJsonAsync<PrintBridgeReleaseResponse>(JsonOptions, ct).ConfigureAwait(false);
+            }
+            catch (JsonException)
+            {
+                payload = null;
+            }
+
+            return (payload is null
+                       ? null
+                       : PrintBridgeRelease.TryCreate(
+                           payload.SchemaVersion,
+                           payload.Version,
+                           payload.Setup?.FileName,
+                           payload.Setup?.Bytes ?? 0,
+                           payload.Setup?.Sha256))
+                   ?? throw new InvalidDataException("The release description is not valid.");
+        }
+    }
+
+    /// <summary>
+    /// Writes the setup of <paramref name="release"/> to <paramref name="destination"/> (WAS-63): never more than its described
+    /// size (a longer or shorter answer throws <see cref="InvalidDataException"/>), with the device token and no redirect.
+    /// The server and network fail as <see cref="PrintBridgeConnectionException"/>, as does a download that stalls.
+    /// </summary>
+    public async Task DownloadReleaseSetupAsync(
+        PrintBridgeRelease release,
+        Stream destination,
+        IProgress<long>? progress,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(release);
+        ArgumentNullException.ThrowIfNull(destination);
+        var http = _downloadHttp ?? throw new InvalidOperationException("This client has no download client.");
+        var path = $"api/print-bridge/releases/{PrintBridgeReleaseVersion.Format(release.Version)}/setup";
+        var serverUrl = _holder.Snapshot().Connection.ServerUrl.TrimEnd('/');
+
+        using var request = CreateRequest(HttpMethod.Get, BuildAbsoluteUrl(path));
+        using var response = await SendPreparedAsync(path, request, ct, connection: null, http, HttpCompletionOption.ResponseHeadersRead)
+            .ConfigureAwait(false);
+        if (response.Content.Headers.ContentLength is { } announced && announced != release.SetupBytes)
+            throw new InvalidDataException("The setup's size is not the described size.");
+
+        await using var body = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        var buffer = new byte[81920];
+        long total = 0;
+        while (true)
+        {
+            // Only the network side is the server's failure; a write to the destination fails as itself (storage).
+            var read = await ReadDownloadAsync(body, buffer, path, serverUrl, ct).ConfigureAwait(false);
+            if (read == 0)
+                break;
+
+            total += read;
+            if (total > release.SetupBytes)
+                throw new InvalidDataException("The setup is larger than the described size.");
+
+            await destination.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+            progress?.Report(total);
+        }
+
+        if (total != release.SetupBytes)
+            throw new InvalidDataException("The setup is smaller than the described size.");
+    }
+
+    private async Task<int> ReadDownloadAsync(Stream body, byte[] buffer, string path, string serverUrl, CancellationToken ct)
+    {
+        using var stall = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        stall.CancelAfter(DownloadStallTimeout);
+        try
+        {
+            return await body.ReadAsync(buffer, stall.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogWarning("The setup download stalled. ServerUrl={ServerUrl}, Path={Path}", serverUrl, path);
+            throw PrintBridgeConnectionException.ServerUnavailable(path, serverUrl, ex);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException)
+        {
+            _logger.LogWarning(ex, "The setup download failed. ServerUrl={ServerUrl}, Path={Path}", serverUrl, path);
+            throw PrintBridgeConnectionException.ServerUnavailable(path, serverUrl, ex);
+        }
     }
 
     public Task<PrintBridgeHealthResult> TestHealthAsync(CancellationToken ct) => ReadHealthAsync(connection: null, ct);
@@ -489,7 +612,9 @@ public sealed class WaslaPrintBridgeClient
         string relativePath,
         HttpRequestMessage request,
         CancellationToken ct,
-        WaslaOptions? connection = null)
+        WaslaOptions? connection = null,
+        HttpClient? client = null,
+        HttpCompletionOption completion = HttpCompletionOption.ResponseContentRead)
     {
         var target = connection ?? _holder.Snapshot().Connection;
         var serverUrl = target.ServerUrl.TrimEnd('/');
@@ -497,7 +622,7 @@ public sealed class WaslaPrintBridgeClient
         HttpResponseMessage response;
         try
         {
-            response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+            response = await (client ?? _http).SendAsync(request, completion, ct).ConfigureAwait(false);
         }
         catch (HttpRequestException ex) when (IsSslFailure(ex))
         {
@@ -726,6 +851,10 @@ public sealed class WaslaPrintBridgeClient
         [property: JsonPropertyName("jobs")] List<PendingPrintJobDto> Jobs);
 
     private sealed record PrintJobActionResponse(bool Success, bool Skipped, string Result);
+
+    private sealed record PrintBridgeReleaseResponse(int SchemaVersion, string? Version, PrintBridgeReleaseSetupResponse? Setup);
+
+    private sealed record PrintBridgeReleaseSetupResponse(string? FileName, long Bytes, string? Sha256);
 
     private sealed record PrintBridgeHealthResponse(
         bool Success,

@@ -13,12 +13,16 @@ namespace Wasla.PrintBridge.Ipc;
 /// </summary>
 public static partial class PrintBridgeIpcProtocol
 {
-    /// <summary>The protocol this build speaks. A change to any message's meaning raises it.</summary>
-    public const int Version = 1;
+    /// <summary>
+    /// The protocol this build speaks. A change to any message's meaning raises it. 2 (WAS-63) added the update commands,
+    /// <c>service.health</c> and the state's <c>update</c>; version 1 clients would reject that state, so the service accepts
+    /// only 2 and a version 1 app is told that the versions do not match.
+    /// </summary>
+    public const int Version = 2;
 
     /// <summary>The oldest and newest versions this service accepts (only <see cref="Version"/> for now).</summary>
-    public const int MinSupportedVersion = 1;
-    public const int MaxSupportedVersion = 1;
+    public const int MinSupportedVersion = 2;
+    public const int MaxSupportedVersion = 2;
 
     public const int MaxClientFrameBytes = 16 * 1024;
     public const int MaxServiceFrameBytes = 1024 * 1024;
@@ -53,12 +57,26 @@ public static partial class PrintBridgeIpcProtocol
     public const string HistoryResolve = "history.resolve";
     public const string SetupApply = "setup.apply";
     public const string SetupConsentAnswer = "setup.consentAnswer";
+    public const string UpdateCheck = "update.check";
+    public const string UpdatePrepare = "update.prepare";
+    public const string UpdateCancel = "update.cancel";
+    public const string ServiceHealth = "service.health";
 
     public static readonly IReadOnlySet<string> Commands = new HashSet<string>(StringComparer.Ordinal)
     {
         StateGet, EngineStart, EngineStop, ConnectionTest, ConnectionCheck, ConnectionApply, ConnectionReset, PrinterTest,
         PrintersList, PrinterSave, SettingsSave, LanguageSave, HistoryQuery, HistoryReprint, HistoryResolve, SetupApply,
-        SetupConsentAnswer
+        SetupConsentAnswer, UpdateCheck, UpdatePrepare, UpdateCancel, ServiceHealth
+    };
+
+    /// <summary>
+    /// Commands that change the connection, the settings or printing. Refused while printing is paused for an update
+    /// (WAS-63), so neither the version being replaced nor the one being committed writes anything the other must read.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ChangingCommands = new HashSet<string>(StringComparer.Ordinal)
+    {
+        EngineStart, EngineStop, ConnectionApply, ConnectionReset, PrinterTest, PrinterSave, SettingsSave, LanguageSave,
+        HistoryResolve, SetupApply
     };
 
     // Events.

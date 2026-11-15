@@ -37,11 +37,20 @@ internal sealed class TrayFakeServer : IDisposable
     /// <summary>Every request that reached the server: method and path, without the query.</summary>
     public ConcurrentQueue<string> Requests { get; } = new();
 
+    /// <summary>Every request with the Print Bridge version that sent it (its <c>X-PrintBridge-Version</c> header, a.b.c.d).</summary>
+    public ConcurrentQueue<(string Version, string Request)> VersionedRequests { get; } = new();
+
     /// <summary>When set, the claim (mark-printing) is processed and then its answer is held until the gate opens.</summary>
     public TrayGate? HoldClaimAnswer { get; set; }
 
     /// <summary>When set, every printed report is held and then refused without being processed (WAS-61 recovery tests).</summary>
     public TrayGate? DropPrintedReports { get; set; }
+
+    /// <summary>The release this server offers (WAS-63); null answers 204 No Content, as the Wasla server without a release.</summary>
+    public TrayFakeRelease? Release { get; set; }
+
+    /// <summary>When set, a setup download sends half of the file, then waits until the gate opens.</summary>
+    public TrayGate? HoldSetupDownload { get; set; }
 
     public Guid AddJob()
     {
@@ -82,6 +91,7 @@ internal sealed class TrayFakeServer : IDisposable
     {
         HoldClaimAnswer?.Open();
         DropPrintedReports?.Open();
+        HoldSetupDownload?.Open();
         _listener.Close();
         try
         {
@@ -114,6 +124,7 @@ internal sealed class TrayFakeServer : IDisposable
     {
         var path = context.Request.Url!.AbsolutePath.Trim('/');
         Requests.Enqueue($"{context.Request.HttpMethod} {path}");
+        VersionedRequests.Enqueue((context.Request.Headers["X-PrintBridge-Version"] ?? string.Empty, $"{context.Request.HttpMethod} {path}"));
         try
         {
             if (context.Request.Headers["X-PrintBridge-Token"] != Token)
@@ -133,6 +144,37 @@ internal sealed class TrayFakeServer : IDisposable
             if (path == "api/print-bridge/health")
             {
                 Write(context, HttpStatusCode.OK, new { success = true, tenantName = "QA", deviceName = "QA Kasa", serverTimeUtc = DateTime.UtcNow });
+                return;
+            }
+
+            // WAS-63: the release description and its setup, as Wasla.Web's PrintBridgeApiController serves them.
+            if (path == "api/print-bridge/releases/latest")
+            {
+                if (Release is not { } offered)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.NoContent;
+                    context.Response.Close();
+                    return;
+                }
+
+                Write(context, HttpStatusCode.OK, new
+                {
+                    schemaVersion = 1,
+                    version = offered.Version,
+                    setup = new { fileName = "Wasla.PrintBridge-Setup-x64.exe", bytes = offered.DescribedBytes, sha256 = offered.DescribedSha256 }
+                });
+                return;
+            }
+
+            if (path.StartsWith("api/print-bridge/releases/", StringComparison.Ordinal) && path.EndsWith("/setup", StringComparison.Ordinal))
+            {
+                if (Release is not { } offered || path != $"api/print-bridge/releases/{offered.Version}/setup")
+                {
+                    Write(context, HttpStatusCode.NotFound, new { error = "not_found" });
+                    return;
+                }
+
+                await SendSetupAsync(context, offered.Served);
                 return;
             }
 
@@ -243,6 +285,24 @@ internal sealed class TrayFakeServer : IDisposable
         context.Response.Close();
     }
 
+    private async Task SendSetupAsync(HttpListenerContext context, byte[] setup)
+    {
+        context.Response.StatusCode = (int)HttpStatusCode.OK;
+        context.Response.ContentType = "application/octet-stream";
+        context.Response.ContentLength64 = setup.Length;
+        var half = setup.Length / 2;
+        await context.Response.OutputStream.WriteAsync(setup.AsMemory(0, half));
+        await context.Response.OutputStream.FlushAsync();
+        if (HoldSetupDownload is { } hold)
+        {
+            hold.Entered.TrySetResult();
+            await hold.Opened.Task;
+        }
+
+        await context.Response.OutputStream.WriteAsync(setup.AsMemory(half));
+        context.Response.Close();
+    }
+
     private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private static int FreePort()
@@ -253,6 +313,25 @@ internal sealed class TrayFakeServer : IDisposable
         probe.Stop();
         return port;
     }
+}
+
+/// <summary>
+/// A release the fake server offers (WAS-63): <see cref="Version"/> and its setup. The description is that of
+/// <see cref="Setup"/> unless overridden; <see cref="Served"/> is what the download sends (another file, to test tampering).
+/// </summary>
+internal sealed record TrayFakeRelease(string Version, byte[] Setup)
+{
+    public long? Bytes { get; init; }
+
+    public string? Sha256 { get; init; }
+
+    public byte[]? ServedSetup { get; init; }
+
+    public long DescribedBytes => Bytes ?? Setup.LongLength;
+
+    public string DescribedSha256 => Sha256 ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Setup)).ToLowerInvariant();
+
+    public byte[] Served => ServedSetup ?? Setup;
 }
 
 /// <summary>Holds a step after it started until the test opens it.</summary>

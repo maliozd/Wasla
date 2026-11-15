@@ -2,8 +2,9 @@
 
 > **Distribution.** Builds from this repository are **unsigned development builds** unless the release pipeline signs them
 > (below). Their product name says "(unsigned development build)" in the setup window and in Installed Apps, and their
-> metadata says `"signed": false`. Do not give an unsigned build to a restaurant. Nothing in this repository publishes,
-> deploys or distributes an installer.
+> metadata says `"signed": false`. CI signs its builds with a throwaway certificate only its runner trusts (WAS-63): their
+> name says "(test-signed development build)" and their metadata `"testSigned": true`. Give neither to a restaurant.
+> Nothing in this repository publishes, deploys or distributes an installer.
 
 ## Purpose and scope
 
@@ -13,7 +14,8 @@ signed, and how the Web setup page offers them.
 
 The service the installer registers, its account, the data folder's permissions and the app/service IPC are WAS-61's
 ([print-bridge-service.md](print-bridge-service.md)). The app itself is in [print-bridge.md](print-bridge.md). Update
-discovery, controlled updates and rollback are WAS-63; physical receipt printers and clean-machine certification are WAS-28.
+discovery, controlled updates and rollback are WAS-63 ([print-bridge-updates.md](print-bridge-updates.md)); physical
+receipt printers and clean-machine certification are WAS-28.
 
 ## Artifacts
 
@@ -24,7 +26,7 @@ discovery, controlled updates and rollback are WAS-63; physical receipt printers
 | `Wasla.PrintBridge-Setup-x64.exe` | Restaurants (the Web download) | WiX Burn setup: the WebView2 Runtime bootstrapper when needed, then the MSI |
 | `Wasla.PrintBridge-x64.msi` | Administrators who deploy MSIs | The app, the service, their registration. It does not install the WebView2 Runtime |
 | `Wasla.PrintBridge-win-x64-support.zip` | Development and support recovery only | The same program files, unpacked, and a README. Not an installation: the service has to be registered by hand ([print-bridge-service.md](print-bridge-service.md#installer-handoff-was-62)) |
-| `Wasla.PrintBridge-package.json` | Release records | Product, version, signed or not, commit (and whether it had local changes), build time, the setup EXE's version, the MSI's `ProductVersion`, `ProductCode` and `UpgradeCode`, size and SHA-256 of each file, the WebView2 bootstrapper's SHA-256 and signer |
+| `Wasla.PrintBridge-package.json` | Release records, and the release description the Wasla server offers to installed Print Bridges (WAS-63, `schemaVersion` 1) | Schema version, product, version, signed or not, test-signed or not, the publisher (signer subject), commit (and whether it had local changes), build time, the setup EXE's version, the MSI's `ProductVersion`, `ProductCode` and `UpgradeCode`, size and SHA-256 of each file, the WebView2 bootstrapper's SHA-256 and signer |
 | `SHA256SUMS.txt` | Verification | SHA-256 of each file (`sha256sum` format) |
 
 Each run rebuilds the MSI and the setup EXE from scratch (`dotnet build --no-incremental`). WiX's incremental build checks
@@ -68,8 +70,12 @@ the Run entry, in that user's session and without elevation. `--startup` makes a
 running in this session end quietly instead of saying "already running" (`PrintBridgeSignInStart`); the per-user,
 per-session instance lock (WAS-92) decides. So there is one engine per computer (the service) and at most one app per user
 and session. A user can turn the start off in Settings → Apps → Startup; an administrator can install without it
-(`StartAtSignIn=0` for the setup EXE, `START_AT_SIGN_IN=0` for the MSI). On the last page of an interactive install,
-**Launch** starts the app as the signed-in user, not elevated.
+(`StartAtSignIn=0` for the setup EXE, `START_AT_SIGN_IN=0` for the MSI) or with it (`1`). Without either, a first
+installation starts the app at sign-in and a newer version keeps the installed one's choice: off when the installed
+version has no Run entry, on otherwise (WAS-63). Windows Installer does not keep it by itself: `MigrateFeatureStates`
+carries over only the features the installed version has, and the setup used to pass `1` by default, so until WAS-63's
+CI found it an update turned the start on again. On the last page of an interactive install, **Launch** starts the app
+as the signed-in user, not elevated.
 
 **Setup links.** The installed app writes no per-user handler: one under `HKCU\Software\Classes` would hide the computer's
 handler from that user and outlive an uninstall. At its first start it removes a per-user handler an earlier (portable)
@@ -82,13 +88,22 @@ Install, repair and upgrade (MSI `InstallExecuteSequence`):
 
 1. A major upgrade removes the installed version first, inside the same transaction (`RemoveExistingProducts` right after
    `InstallInitialize`): its app processes are ended and its service is stopped and deleted before a new file is written.
-   A failure rolls back to the installed version.
+   A failure rolls back to the installed version. Windows Installer then creates the service again from its basic
+   registration; the installed version's own rollback actions (on its uninstallation, between `StopServices` and
+   `DeleteServices`) apply its privileges and recovery settings again before it starts (WAS-63,
+   [print-bridge-updates.md](print-bridge-updates.md#rollback-and-the-downgrade-rule)).
 2. Every `Wasla.PrintBridge.exe` (every user and session, also a pre-WAS-61 portable copy that still runs its own engine)
-   is ended (`taskkill /F /T`, as LocalSystem). Ending the app is safe: printing is the service's (WAS-61). A pre-WAS-61
+   is ended (`taskkill /F`, as LocalSystem), without its child processes: the setup itself may be one, started by the app
+   for an update or a Repair, and ending it would abort the installation (WAS-63; WAS-62 used `/T`). The app's WebView2
+   processes end with their host. Ending the app is safe: printing is the service's (WAS-61). A pre-WAS-61
    portable copy in the middle of a receipt can leave that job in Printing (it had no journal); it is never printed twice.
 3. The service is stopped (Windows waits for its graceful stop: a claimed job is finished, WAS-56).
 4. Files, registry entries and the shortcut; the service is registered; its privileges and recovery settings; `secure-data`.
 5. The service is started.
+6. `Wasla.PrintBridge.Service.exe health-check` as LocalSystem (WAS-63): the service must answer on its pipe within 60
+   seconds with this build's IPC protocol and version, its data folder protected. Otherwise the installation fails and
+   Windows Installer rolls everything back: an upgrade restores the installed version, a first installation leaves
+   nothing ([print-bridge-updates.md](print-bridge-updates.md#health-check)).
 
 So an older app and a newer service (or the reverse) never run together. Users get the app back at their next sign-in, or
 from Launch at the end of the setup.
@@ -96,7 +111,7 @@ from Launch at the end of the setup.
 | Action | Result |
 |--------|--------|
 | Repair (Installed Apps → Modify → Repair, `setup.exe /repair`, or the runtime notice's Repair) | Missing or damaged program files restored, service registration and data folder permissions applied again, the WebView2 Runtime installed when missing or too old. Data unchanged |
-| Upgrade (a newer setup) | As above, new version. Data unchanged |
+| Upgrade (a newer setup, or an update the app prepared, WAS-63) | As above, new version, after its health check. Data unchanged; the computer's choice of start at sign-in is kept unless the setup is given `StartAtSignIn` (the installed Run entry decides, above; CI checks an update of an installation without it) |
 | The same version again | Replaces the installed one (a rebuilt or re-signed build), never installs beside it |
 | Downgrade (an older setup or MSI) | Refused before anything changes ("A newer version of Wasla Print Bridge is already installed.") |
 | Uninstall (Installed Apps, `setup.exe /uninstall`) | Apps ended; service stopped and deleted; program folder, shortcut, Run entry and the `wasla-printbridge` handler removed; Installed Apps entry removed |
@@ -136,6 +151,9 @@ The app window needs the Microsoft Edge WebView2 Runtime (Evergreen) **120.0.221
 .\scripts\release\package-print-bridge.ps1 -CopyToWebDownload     # also copy the setup to the Web download folder (local testing)
 ```
 
+`-CopyToWebDownload` copies the setup only. To let installed Print Bridges find it as an update (WAS-63), the server also
+needs `Wasla.PrintBridge-package.json` beside it, and offers it only when that says `"signed": true`.
+
 Needs the .NET SDK, network access for NuGet (WiX packages) and Microsoft's bootstrapper (or `-WebView2BootstrapperPath`).
 
 **Signing inputs stay outside the repository.** A signed release build needs a code-signing certificate in the build
@@ -143,8 +161,15 @@ machine's certificate store, named by its SHA-1 thumbprint, and a timestamp serv
 `-TimestampUrl`, or `WASLA_SIGNING_CERT_THUMBPRINT` and `WASLA_SIGNING_TIMESTAMP_URL`. The script then signs Wasla's own
 executables and libraries (Microsoft's runtime files are already signed), the MSI, the setup EXE's engine (detached and
 reattached by the WiX SDK) and the setup EXE, with SHA-256 and an RFC 3161 timestamp, using `signtool` from the Windows SDK.
-No certificate, key, password or PFX is part of this repository or its CI. Until a release pipeline holds such a
-certificate, every build is an unsigned development build, and Windows SmartScreen warns about it.
+After signing, the script checks every file it signed as Windows will: a valid Authenticode signature by that
+certificate, with a timestamp; anything else stops the build. No certificate, key, password or PFX is part of this
+repository. Until a release pipeline holds such a certificate, every build is an unsigned development build, and Windows
+SmartScreen warns about it.
+
+`-TestSigning` (CI only, WAS-63): the certificate is a throwaway one. CI creates a self-signed code-signing certificate in
+the runner's user store (private key not exportable), trusts it in that runner's `LocalMachine\Root` only, and builds both
+setups with it, so the update tests run with real signatures. Such a build says "(test-signed development build)" and
+`"testSigned": true`; no other computer trusts it.
 
 ## Web download
 
@@ -164,9 +189,10 @@ printer.
 | Unit | `PrintBridgeProtocolRegistrarTests` (who owns the handler), `PrintBridgeInstalledSetupTests` (finding and starting the installed setup, a missing runtime folder, the sign-in argument), `TrayRuntimeNoticeTests` (Repair offered, started, its failure; printing continues; TR/EN/AR/RU, Arabic mirrored) |
 | Source contract | `PrintBridgeInstallerSourceTests`: upgrade code, minimum runtime version, service registration and the WAS-61 `sc.exe` settings, the order of the custom actions, the Run entry and handler, no desktop shortcut or data folder, one version, one WiX release, the accepted EULA |
 | Web | `PrintBridgePackageWebRootTests`, `PrintBridgeFirstInstallTests` (the route, its media type, 404, the installer copy in five resource files) |
-| Real installer (GitHub-hosted runner, elevated, disposable; CI only) | `PrintBridgeInstallerTests` first check, from the files, that the two setups are different builds with their own versions (setup EXE, MSI, program files), different product codes and one upgrade code; then they install this commit's setup EXE over a pre-installer data folder, repair, upgrade to a build with the next build number, refuse the older setup and MSI, and uninstall; then the sign-in start, one app per session, one engine and the runtime notice of the installed app while the service prints. The runner has the WebView2 Runtime, so the notice test points `Wasla.PrintBridge.exe` (only) at an empty folder with WebView2's `BrowserExecutableFolder` machine policy, removed afterwards: the test, and so the app it starts, runs elevated, and WebView2 ignores `WEBVIEW2_*` environment variables in an elevated app. CI builds both setups (`Build Print Bridge installers`) and uploads only their metadata; each step's result is in the TRX output |
+| Updates (WAS-63) | `PrintBridgeInstallerTests.AConfirmedUpdate_…` on the same runner: an update prepared by the installed service, a rollback through `FailWhenDeferred=1` (the bundle variable passed to WiX's `WIXFAILWHENDEFERRED`, off by default, changing nothing else) and a committed update; see [print-bridge-updates.md](print-bridge-updates.md#verification) |
+| Real installer (GitHub-hosted runner, elevated, disposable; CI only) | `PrintBridgeInstallerTests` first check, from the files, that the two setups are different builds with their own versions (setup EXE, MSI, program files), different product codes and one upgrade code; then they install this commit's setup EXE over a pre-installer data folder, repair, upgrade to a build with the next build number, refuse the older setup and MSI, and uninstall; then the sign-in start, one app per session, one engine and the runtime notice of the installed app while the service prints. The runner has the WebView2 Runtime, so the notice test points `Wasla.PrintBridge.exe` (only) at an empty folder with WebView2's `BrowserExecutableFolder` machine policy, removed afterwards: the test, and so the app it starts, runs elevated, and WebView2 ignores `WEBVIEW2_*` environment variables in an elevated app. CI builds both setups (`Build Print Bridge installers`, test-signed since WAS-63) and uploads only their metadata; each step's result is in the TRX output |
 
-Not verified: a signed build (no certificate exists yet); Windows 10; a computer without the WebView2 Runtime downloading
+Not verified: a build signed with a real code-signing certificate (none exists yet; CI's builds are test-signed); Windows 10; a computer without the WebView2 Runtime downloading
 it through the bootstrapper (the runners have the runtime, so the CI install finds it present; the missing case is checked
 in the app and by the setup's detection condition); a real interactive sign-in starting the app through Explorer (the test
 runs the Run entry's command line as the runner's user, elevated); several users signed in at once; a physical receipt
@@ -176,5 +202,6 @@ printer (WAS-28); an upgrade from a pre-WAS-61 portable app that is printing at 
 
 - The setup's own window (WiX's standard bootstrapper application) is English only: Wasla's guidance names its "Launch"
   button in English. Localized setup pages (TR, AR, RU) need translated theme files: a follow-up.
-- No update discovery or rollback (WAS-63): an upgrade is a newer setup run by someone with administrator rights.
+- Updates (WAS-63) need a signed installation: an unsigned development build cannot update itself; a newer setup run
+  by hand still upgrades it.
 - The MSI alone does not install the WebView2 Runtime; administrators who deploy the MSI deploy the runtime themselves.

@@ -429,6 +429,23 @@ internal sealed class FakeNativeActions : IShellNativeActions
         return Task.FromResult(ConfirmTestMode);
     }
 
+    /// <summary>Every update confirmation asked: the installed and the new version it named.</summary>
+    public List<(string Installed, string New)> UpdateConfirmations { get; } = [];
+
+    public bool ConfirmUpdate { get; set; } = true;
+
+    /// <summary>When set, the update confirmation stays open until this gate completes.</summary>
+    public TaskCompletionSource? UpdateConfirmGate { get; set; }
+
+    public async Task<bool> ConfirmUpdateAsync(string installedVersion, string newVersion)
+    {
+        lock (UpdateConfirmations)
+            UpdateConfirmations.Add((installedVersion, newVersion));
+        if (UpdateConfirmGate is { } gate)
+            await gate.Task;
+        return ConfirmUpdate;
+    }
+
     public bool OpenLogFolder()
     {
         LogFolderRequests++;
@@ -501,6 +518,198 @@ internal sealed class FakePrinterSettings : IShellPrinterSettings
     }
 }
 
+/// <summary>
+/// The service's update state and commands as a test controls them (WAS-63). Setting <see cref="Current"/> raises the
+/// engine's state event, as a new service state does.
+/// </summary>
+internal sealed class FakeUpdates(FakeStatusSource engine) : Wasla.PrintBridge.Updates.IPrintBridgeUpdates
+{
+    public const string Installed = "1.0.0";
+    public const string Newer = "1.0.1";
+
+    public const long SetupBytes = 61_234_567;
+    public const string SetupSha256 = "0f3a9c0000000000000000000000000000000000000000000000000000000001";
+
+    private Wasla.PrintBridge.Ipc.IpcUpdate? _current = Idle();
+    private int _checkCalls;
+
+    public Wasla.PrintBridge.Ipc.IpcUpdate? CurrentUpdate => Volatile.Read(ref _current);
+
+    /// <summary>Sets the update state and announces it like the service client does.</summary>
+    public Wasla.PrintBridge.Ipc.IpcUpdate? Current
+    {
+        get => CurrentUpdate;
+        set
+        {
+            Volatile.Write(ref _current, value);
+            engine.Raise();
+        }
+    }
+
+    public int CheckCalls => Volatile.Read(ref _checkCalls);
+
+    /// <summary>What the service answers to a check: the newer version, or null for none.</summary>
+    public string? Available { get; set; } = Newer;
+
+    public Exception? CheckFailure { get; set; }
+
+    public Exception? PrepareFailure { get; set; }
+
+    /// <summary>When set, preparing waits for this gate.</summary>
+    public TaskCompletionSource? PrepareGate { get; set; }
+
+    public Guid NextAttempt { get; set; } = Guid.NewGuid();
+
+    public List<string> Prepared { get; } = [];
+
+    public List<Guid> Cancelled { get; } = [];
+
+    public Exception? CancelFailure { get; set; }
+
+    /// <summary>Runs on a cancel, like the service recording the cancelled attempt.</summary>
+    public Action<Guid>? OnCancel { get; set; }
+
+    public async Task<Wasla.PrintBridge.Ipc.IpcUpdateCheckResult> CheckForUpdateAsync(CancellationToken ct)
+    {
+        Interlocked.Increment(ref _checkCalls);
+        await Task.Yield();
+        if (CheckFailure is not null)
+            throw CheckFailure;
+        return new Wasla.PrintBridge.Ipc.IpcUpdateCheckResult(Installed, Available);
+    }
+
+    public async Task<Guid> PrepareUpdateAsync(string version, CancellationToken ct)
+    {
+        lock (Prepared)
+            Prepared.Add(version);
+        if (PrepareGate is { } gate)
+            await gate.Task.WaitAsync(ct);
+        if (PrepareFailure is not null)
+            throw PrepareFailure;
+        return NextAttempt;
+    }
+
+    public Task CancelUpdateAsync(Guid attemptId, CancellationToken ct)
+    {
+        lock (Cancelled)
+            Cancelled.Add(attemptId);
+        if (CancelFailure is not null)
+            return Task.FromException(CancelFailure);
+        OnCancel?.Invoke(attemptId);
+        return Task.CompletedTask;
+    }
+
+    public Guid[] CancelledSoFar()
+    {
+        lock (Cancelled)
+            return Cancelled.ToArray();
+    }
+
+    public static Wasla.PrintBridge.Ipc.IpcUpdate Idle(bool supported = true, string installed = Installed) =>
+        new(installed, supported, null, null, null, null, null, null, null, null, null);
+
+    /// <summary>
+    /// An attempt at <paramref name="stage"/>. A ready one carries its staged setup (in the updates folder) unless
+    /// <paramref name="stagedPath"/> is null, which is the new version waiting for Windows Installer's commit.
+    /// </summary>
+    public static Wasla.PrintBridge.Ipc.IpcUpdate Attempt(
+        Guid attemptId,
+        Wasla.PrintBridge.Updates.PrintBridgeUpdateStage stage,
+        Wasla.PrintBridge.Updates.PrintBridgeUpdateFailure? failure = null,
+        int? percent = null,
+        string? stagedPath = "",
+        string installed = Installed,
+        string to = Newer)
+    {
+        var staged = stage == Wasla.PrintBridge.Updates.PrintBridgeUpdateStage.Ready && stagedPath is not null;
+        return new(
+            installed,
+            true,
+            attemptId,
+            stage,
+            Installed,
+            to,
+            percent,
+            failure,
+            staged ? (stagedPath!.Length == 0 ? StagedPath(to) : stagedPath) : null,
+            staged ? SetupBytes : null,
+            staged ? SetupSha256 : null);
+    }
+
+    /// <summary>Where the service stages a setup: the updates folder of the current data root.</summary>
+    public static string StagedPath(string version = Newer) =>
+        Path.Combine(Wasla.PrintBridge.Configuration.PrintBridgePaths.UpdatesDirectory, $"Wasla.PrintBridge-Setup-x64-{version}.exe");
+}
+
+/// <summary>Starts nothing: records the setups the app would have opened and lets the test decide when they exit.</summary>
+internal sealed class FakeSetupLauncher : IShellSetupLauncher
+{
+    private readonly TaskCompletionSource _exit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private readonly List<string> _started = [];
+
+    /// <summary>Thrown instead of starting, like a setup that cannot start or a refused permission prompt.</summary>
+    public Exception? Failure { get; set; }
+
+    /// <summary>When false, the start returns no exit to wait for.</summary>
+    public bool Observable { get; set; } = true;
+
+    public Task? Start(string path)
+    {
+        lock (_started)
+            _started.Add(path);
+        if (Failure is not null)
+            throw Failure;
+        return Observable ? _exit.Task : null;
+    }
+
+    public string[] Started()
+    {
+        lock (_started)
+            return _started.ToArray();
+    }
+
+    /// <summary>The setup's process ends.</summary>
+    public void Exit() => _exit.TrySetResult();
+}
+
+/// <summary>Answers the app's check of the staged setup as the test says, and records what it was asked.</summary>
+internal sealed class FakeSetupVerifier : IShellSetupVerifier
+{
+    public static readonly Wasla.PrintBridge.Updates.PrintBridgePublisher Publisher =
+        new(new System.Security.Cryptography.X509Certificates.X500DistinguishedName("CN=Wasla Test Publisher, O=Wasla Test"));
+
+    private readonly List<(string Path, Wasla.PrintBridge.Updates.PrintBridgeRelease Release, Version AppVersion)> _checked = [];
+
+    /// <summary>Null is an app that is not validly signed.</summary>
+    public Wasla.PrintBridge.Updates.PrintBridgePublisher? AppSigner { get; set; } = Publisher;
+
+    public Wasla.PrintBridge.Updates.PrintBridgeSetupVerification Outcome { get; set; } = Wasla.PrintBridge.Updates.PrintBridgeSetupVerification.Verified;
+
+    /// <summary>When set, the check waits for it, like a slow signature check.</summary>
+    public ManualResetEventSlim? Gate { get; set; }
+
+    public Wasla.PrintBridge.Updates.PrintBridgePublisher? AppPublisher() => AppSigner;
+
+    public Wasla.PrintBridge.Updates.PrintBridgeSetupVerification Verify(
+        string path,
+        Wasla.PrintBridge.Updates.PrintBridgeRelease release,
+        Wasla.PrintBridge.Updates.PrintBridgePublisher appPublisher,
+        Version appVersion)
+    {
+        lock (_checked)
+            _checked.Add((path, release, appVersion));
+        Gate?.Wait(TimeSpan.FromSeconds(30));
+        return Outcome;
+    }
+
+    public (string Path, Wasla.PrintBridge.Updates.PrintBridgeRelease Release, Version AppVersion)[] Checked()
+    {
+        lock (_checked)
+            return _checked.ToArray();
+    }
+}
+
 /// <summary>A complete bridge wired to fakes, as the shell window wires it to the real engine.</summary>
 internal sealed class ShellTestRig : IDisposable
 {
@@ -511,6 +720,17 @@ internal sealed class ShellTestRig : IDisposable
         var localizer = new PrintBridgeLocalizer(culture);
         Languages = new FakeLanguageSwitcher(culture);
         History = new ShellHistory(Engine, localizer, culture);
+        Updates = new FakeUpdates(Engine);
+        ShellUpdates = new ShellUpdates(
+            Updates,
+            Engine,
+            Native,
+            Launcher,
+            Verifier,
+            localizer,
+            culture,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance,
+            new Version(1, 0, 0));
         Operations = new ShellOperations(
             Engine,
             Catalog,
@@ -521,8 +741,9 @@ internal sealed class ShellTestRig : IDisposable
             Settings,
             localizer,
             Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance,
-            TimeSpan.FromSeconds(10));
-        Factory = new ShellSnapshotFactory(localizer, culture, Settings, Catalog, () => Operations.Busy, "154.0.4258.53");
+            TimeSpan.FromSeconds(10),
+            ShellUpdates);
+        Factory = new ShellSnapshotFactory(localizer, culture, Settings, Catalog, () => Operations.Busy, "154.0.4258.53", update: Operations.UpdateView);
         Bridge = new ShellBridge(
             Engine,
             Factory,
@@ -544,6 +765,10 @@ internal sealed class ShellTestRig : IDisposable
     public FakeOperationalSettings OperationalSettings { get; } = new();
     public FakeLanguageSwitcher Languages { get; }
     public ShellHistory History { get; }
+    public FakeUpdates Updates { get; }
+    public FakeSetupLauncher Launcher { get; } = new();
+    public FakeSetupVerifier Verifier { get; } = new();
+    public ShellUpdates ShellUpdates { get; }
     public ShellOperations Operations { get; }
     public ShellSnapshotFactory Factory { get; }
     public ShellBridge Bridge { get; }
@@ -567,7 +792,11 @@ internal sealed class ShellTestRig : IDisposable
 
     public System.Text.Json.JsonElement LastSnapshot() => Messages(ShellMessageContract.SnapshotUpdated)[^1].GetProperty("payload");
 
-    public void Dispose() => Bridge.Dispose();
+    public void Dispose()
+    {
+        Bridge.Dispose();
+        ShellUpdates.Dispose();
+    }
 }
 
 /// <summary>Records what the bridge sends; queued UI actions run only when <see cref="RunQueued"/> is called.</summary>

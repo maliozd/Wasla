@@ -6,15 +6,16 @@ using Wasla.PrintBridge.Models;
 namespace Wasla.PrintBridge.WebShell;
 
 /// <summary>
-/// Version 3 of the message contract between the WebView2 page and the desktop host (WAS-57; version 2 was
-/// WAS-54). Every message is a JSON object <c>{ "version": 3, "type": "...", "payload": { ... } }</c>.
+/// Version 4 of the message contract between the WebView2 page and the desktop host (WAS-63 added the update commands
+/// and the snapshot's <c>update</c>; version 3 was WAS-57, version 2 WAS-54). Every message is a JSON object
+/// <c>{ "version": 4, "type": "...", "payload": { ... } }</c>.
 /// The page may only send the commands in <see cref="CommandTypes"/>; the host only sends
 /// <see cref="SnapshotUpdated"/>, <see cref="OperationResult"/>, <see cref="HistoryResult"/> and
 /// <see cref="UiNavigate"/>.
 /// </summary>
 public static partial class ShellMessageContract
 {
-    public const int Version = 3;
+    public const int Version = 4;
 
     /// <summary>Upper bound for one inbound message, in UTF-16 characters, checked before parsing.</summary>
     public const int MaxInboundMessageLength = 1024;
@@ -47,6 +48,9 @@ public static partial class ShellMessageContract
     public const string HistoryResolve = "history.resolve";
     public const string LogsOpenFolder = "logs.openFolder";
     public const string SettingsSave = "settings.save";
+    public const string UpdateCheck = "update.check";
+    public const string UpdateStart = "update.start";
+    public const string UpdateCancel = "update.cancel";
 
     public const string SnapshotUpdated = "snapshot.updated";
     public const string OperationResult = "operation.result";
@@ -119,7 +123,12 @@ public static partial class ShellMessageContract
                 new("idlePollSeconds", FieldKind.IdlePollSeconds, Required: true),
                 new("busyPollSeconds", FieldKind.BusyPollSeconds, Required: true),
                 new("errorPollSeconds", FieldKind.ErrorPollSeconds, Required: true)
-            ])
+            ]),
+            // WAS-63: only a request id. The version to install is the one the host's last check found and the setup is the
+            // one the service staged; the page never names a version, a path or an attempt.
+            [UpdateCheck] = new(ShellCommandType.UpdateCheck, [RequestIdField]),
+            [UpdateStart] = new(ShellCommandType.UpdateStart, [RequestIdField]),
+            [UpdateCancel] = new(ShellCommandType.UpdateCancel, [RequestIdField])
         };
 
     public static readonly IReadOnlyList<string> CommandTypes = Commands.Keys.ToArray();
@@ -157,7 +166,10 @@ public enum ShellCommandType
     HistoryReprint,
     HistoryResolve,
     LogsOpenFolder,
-    SettingsSave
+    SettingsSave,
+    UpdateCheck,
+    UpdateStart,
+    UpdateCancel
 }
 
 /// <summary>A validated command from the page. Only the fields its type allows are ever set.</summary>

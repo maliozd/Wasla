@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "type": "snapshot.updated",
   "sequence": 1,
   "payload": {
@@ -90,6 +90,27 @@
         "min": 1,
         "max": 300,
         "rangeLabel": "1–300 sn"
+      }
+    },
+    "update": {
+      "installedVersion": "1.0.0",
+      "supported": true,
+      "stage": "idle",
+      "label": "",
+      "availableVersion": null,
+      "targetVersion": null,
+      "downloadPercent": null,
+      "progress": null,
+      "failure": null,
+      "actions": {
+        "check": true,
+        "start": false,
+        "cancel": false
+      },
+      "busy": {
+        "check": false,
+        "start": false,
+        "cancel": false
       }
     },
     "languages": [
@@ -201,7 +222,15 @@
       "Shell.Diagnostics.Engine": "Dinleme durumu",
       "Shell.Diagnostics.LastError": "Son hata",
       "Shell.Diagnostics.None": "Yok",
-      "Shell.Toast.Dismiss": "Kapat"
+      "Shell.Toast.Dismiss": "Kapat",
+      "Shell.Update.Title": "Güncellemeler",
+      "Shell.Update.Help": "Yeni sürüm yalnızca siz başlatınca kurulur. Kurulurken yazdırma duraklatılır ve Windows yönetici izni ister.",
+      "Shell.Update.Installed": "Kurulu sürüm",
+      "Shell.Update.Progress": "İndirme ilerlemesi",
+      "Shell.Update.Check": "Güncellemeleri denetle",
+      "Shell.Update.Start": "Güncelle",
+      "Shell.Update.Retry": "Tekrar dene",
+      "Shell.Update.Cancel": "Güncellemeyi iptal et"
     }
   }
 }

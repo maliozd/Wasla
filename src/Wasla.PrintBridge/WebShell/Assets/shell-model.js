@@ -1,5 +1,5 @@
 /*
- * Wasla Print Bridge desktop app: message contract (version 3) and pure view helpers.
+ * Wasla Print Bridge desktop app: message contract (version 4) and pure view helpers.
  * No DOM access here, so the same file runs in WebView2 and under `node --test`.
  * The page only renders host messages; it never derives or simulates connection, engine or print state,
  * and it never treats a command as successful until the host answers.
@@ -15,7 +15,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = 3;
+  var VERSION = 4;
   var SNAPSHOT_UPDATED = 'snapshot.updated';
   var OPERATION_RESULT = 'operation.result';
   var HISTORY_RESULT = 'history.result';
@@ -38,7 +38,11 @@
     'history.reprint': ['requestId', 'itemRef'],
     'history.resolve': ['requestId', 'itemRef', 'printed'],
     'logs.openFolder': ['requestId'],
-    'settings.save': ['requestId', 'testMode', 'idlePollSeconds', 'busyPollSeconds', 'errorPollSeconds']
+    'settings.save': ['requestId', 'testMode', 'idlePollSeconds', 'busyPollSeconds', 'errorPollSeconds'],
+    // WAS-63: the host installs the version its own last check found; the page never names a version or a path.
+    'update.check': ['requestId'],
+    'update.start': ['requestId'],
+    'update.cancel': ['requestId']
   };
   var OPTIONAL_FIELDS = { search: true };
   // The host's envelope for seconds fields (ShellMessageContract.MinSecondsField/MaxSecondsField); the real ranges
@@ -56,6 +60,15 @@
     'connectionSetup', 'settingsSave'];
   var TABS = ['overview', 'printer', 'history', 'settings'];
   var OPERATIONAL_FIELDS = ['idle', 'busy', 'error'];
+  // Mirrors ShellUpdateStages and ShellUpdateFailures on the host.
+  var UPDATE_STAGES = ['unavailable', 'unsupported', 'idle', 'checking', 'upToDate', 'available', 'downloading', 'verifying',
+    'waitingForPrinting', 'ready', 'opening', 'setupOpen', 'installing', 'succeeded', 'notApplied', 'cancelled', 'failed'];
+  var UPDATE_FAILURES = ['download', 'verification', 'printingInProgress', 'interrupted', 'expired', 'storage',
+    'unexpectedVersion', 'setup'];
+  var UPDATE_ACTIONS = ['check', 'start', 'cancel'];
+  // The page's busy groups of the update commands -> the flag in snapshot.update.busy.
+  var UPDATE_BUSY = { updateCheck: 'check', updateStart: 'start', updateCancel: 'cancel' };
+  var UPDATE_RETRY_STAGES = ['failed', 'notApplied', 'cancelled'];
   var WHOLE_NUMBER = /^\d{1,6}$/;
 
   var REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9-]{7,63}$/;
@@ -138,6 +151,22 @@
       && isSecondsSetting(value.errorPoll);
   }
 
+  function isUpdate(value) {
+    return isObject(value)
+      && isString(value.installedVersion)
+      && typeof value.supported === 'boolean'
+      && UPDATE_STAGES.indexOf(value.stage) >= 0
+      && isString(value.label)
+      && isOptionalString(value.availableVersion)
+      && isOptionalString(value.targetVersion)
+      && (value.downloadPercent === null || (isCount(value.downloadPercent) && value.downloadPercent <= 100))
+      && isOptionalString(value.progress)
+      // A failure group comes exactly with the failed stage.
+      && (value.stage === 'failed' ? UPDATE_FAILURES.indexOf(value.failure) >= 0 : value.failure === null)
+      && isFlagMap(value.actions, UPDATE_ACTIONS)
+      && isFlagMap(value.busy, UPDATE_ACTIONS);
+  }
+
   function isSnapshot(value) {
     return isObject(value)
       && isString(value.culture)
@@ -168,6 +197,7 @@
       && isDiagnostics(value.diagnostics)
       && typeof value.dryRun === 'boolean'
       && isOperational(value.operational)
+      && isUpdate(value.update)
       && isLanguageList(value.languages)
       && isStringMap(value.strings);
   }
@@ -302,6 +332,65 @@
 
   function flag(snapshot, group, name) {
     return Boolean(snapshot && snapshot[group] && snapshot[group][name] === true);
+  }
+
+  /** Whether the host reports a busy group: the update commands report theirs in snapshot.update.busy. */
+  function hostBusy(snapshot, group) {
+    if (Object.prototype.hasOwnProperty.call(UPDATE_BUSY, group)) {
+      return Boolean(snapshot && snapshot.update && snapshot.update.busy[UPDATE_BUSY[group]] === true);
+    }
+    return flag(snapshot, 'busy', group);
+  }
+
+  /**
+   * One update button (check, start or cancel). It is shown while the host offers it, and stays shown, inactive and
+   * busy, while its request is still running (pending in the page or busy in the host), so focus is not lost mid-request.
+   */
+  function updateControl(snapshot, name, pending) {
+    var group = 'update' + name.charAt(0).toUpperCase() + name.slice(1);
+    var offered = flag(snapshot && snapshot.update, 'actions', name);
+    var busy = pending === true || hostBusy(snapshot, group);
+    return { hidden: !offered && !busy, disabled: !offered || busy, busy: busy };
+  }
+
+  /** After a failed or unapplied attempt the start button says "Try again". */
+  function updateStartLabelKey(snapshot) {
+    return UPDATE_RETRY_STAGES.indexOf(snapshot.update.stage) >= 0 ? 'Shell.Update.Retry' : 'Shell.Update.Start';
+  }
+
+  function updateTone(stage) {
+    if (stage === 'failed') {
+      return 'danger';
+    }
+    if (stage === 'succeeded' || stage === 'upToDate') {
+      return 'success';
+    }
+    if (stage === 'notApplied' || stage === 'cancelled' || stage === 'installing' || stage === 'ready' || stage === 'opening'
+      || stage === 'setupOpen') {
+      return 'warning';
+    }
+    if (stage === 'checking' || stage === 'available' || stage === 'downloading' || stage === 'verifying'
+      || stage === 'waitingForPrinting') {
+      return 'info';
+    }
+    return 'neutral';
+  }
+
+  /**
+   * What to announce when the update section changes: its text, politely for progress and results, as an alert for a
+   * failure. Download percentages are not announced (the progress bar carries them), nor is the first render or a
+   * language change.
+   */
+  function updateAnnouncement(previous, next) {
+    if (!previous || !next || previous.culture !== next.culture) {
+      return null;
+    }
+    var a = previous.update;
+    var b = next.update;
+    if ((a.stage === b.stage && a.label === b.label) || b.label === '') {
+      return null;
+    }
+    return { text: b.label, assertive: b.stage === 'failed' };
   }
 
   /**
@@ -477,6 +566,8 @@
     VERSION: VERSION,
     COMMANDS: Object.keys(COMMANDS),
     CONNECTION_STATES: CONNECTION_STATES.slice(),
+    UPDATE_STAGES: UPDATE_STAGES.slice(),
+    UPDATE_FAILURES: UPDATE_FAILURES.slice(),
     TABS: TABS.slice(),
     readHostMessage: readHostMessage,
     createCommand: createCommand,
@@ -495,6 +586,11 @@
     outcomeTone: outcomeTone,
     printerTone: printerTone,
     jobTone: jobTone,
+    hostBusy: hostBusy,
+    updateControl: updateControl,
+    updateStartLabelKey: updateStartLabelKey,
+    updateTone: updateTone,
+    updateAnnouncement: updateAnnouncement,
     flag: flag,
     text: text,
     orDash: orDash

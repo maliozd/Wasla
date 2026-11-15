@@ -49,7 +49,7 @@ public sealed class PrintBridgeInstallerSourceTests
 
         // The same sc.exe settings as the WAS-61 handoff commands.
         var handoff = File.ReadAllText(PathOf("docs", "integrations", "print-bridge-service.md"));
-        var commands = package.Descendants(Wix + "SetProperty").ToDictionary(p => (string)p.Attribute("Id")!, p => (string)p.Attribute("Value")!);
+        var commands = Commands(package);
         foreach (var (action, arguments) in new[]
                  {
                      ("ConfigureServicePrivileges", "privs WaslaPrintBridge SeChangeNotifyPrivilege"),
@@ -72,6 +72,119 @@ public sealed class PrintBridgeInstallerSourceTests
             Assert.Equal("NOT REMOVE~=\"ALL\"", (string?)sequence[action].Attribute("Condition"));
         Assert.Equal("StopServices", (string?)sequence["CloseApps"].Attribute("Before"));
         Assert.Equal("afterInstallInitialize", (string?)package.Descendants(Wix + "MajorUpgrade").Single().Attribute("Schedule"));
+
+        // The apps only, not their process trees: a setup the app started (update or Repair, WAS-63) is the app's child.
+        Assert.Equal("\"[System64Folder]taskkill.exe\" /F /IM Wasla.PrintBridge.exe", commands["CloseApps"]);
+    }
+
+    /// <summary>
+    /// WAS-63: a failed update rolls back the installed version's removal, and Windows Installer creates the deleted service
+    /// again from its basic registration only. The same sc.exe settings are applied again in that rollback: rollback
+    /// actions of the uninstallation, after StopServices and before DeleteServices, so they run once the service exists
+    /// again and before Windows Installer starts it. CI proves the effect with the real setups
+    /// (<see cref="PrintBridgeInstallerTests"/>, the rolled-back update).
+    /// </summary>
+    [Fact]
+    public void AFailedUpdate_RestoresTheServicesPrivilegesAndRecoverySettings_BeforeTheRestoredServiceStarts()
+    {
+        var package = Load("installer", "print-bridge", "Package", "Package.wxs");
+        var commands = Commands(package);
+        var actions = package.Descendants(Wix + "CustomAction").ToDictionary(a => (string)a.Attribute("Id")!, a => a);
+        var sequence = package.Descendants(Wix + "InstallExecuteSequence").Single().Elements(Wix + "Custom")
+            .ToDictionary(c => (string)c.Attribute("Action")!, c => c);
+
+        var previous = "StopServices";
+        foreach (var setting in new[] { "Privileges", "Recovery", "RecoveryOnError" })
+        {
+            var restore = $"RestoreService{setting}";
+            Assert.Equal(commands[$"ConfigureService{setting}"], commands[restore]);
+            Assert.Equal("WixQuietExec", (string?)actions[restore].Attribute("DllEntry"));
+            Assert.Equal("rollback", (string?)actions[restore].Attribute("Execute"));
+            Assert.Equal("no", (string?)actions[restore].Attribute("Impersonate"));
+            Assert.Equal(previous, (string?)sequence[restore].Attribute("After"));
+            Assert.Null(sequence[restore].Attribute("Before"));
+            Assert.Equal("REMOVE~=\"ALL\"", (string?)sequence[restore].Attribute("Condition"));
+            previous = restore;
+        }
+    }
+
+    /// <summary>
+    /// WAS-63: an update keeps the computer's start at sign-in. The setup passes START_AT_SIGN_IN only when it is given
+    /// one; otherwise an update without the Run entry keeps it off, and a first installation (or one with it) turns it on.
+    /// </summary>
+    [Fact]
+    public void AnUpdateKeepsTheStartAtSignInChoice_UnlessTheSetupIsGivenOne()
+    {
+        var bundle = Load("installer", "print-bridge", "Bundle", "Bundle.wxs");
+        var variable = bundle.Descendants(Wix + "Variable").Single(v => (string?)v.Attribute("Name") == "StartAtSignIn");
+        Assert.Null(variable.Attribute("Value"));
+        Assert.Contains(bundle.Descendants(Wix + "MsiProperty"),
+            p => (string?)p.Attribute("Name") == "START_AT_SIGN_IN" && (string?)p.Attribute("Value") == "[StartAtSignIn]");
+
+        var package = Load("installer", "print-bridge", "Package", "Package.wxs");
+        var property = package.Descendants(Wix + "Property").Single(p => (string?)p.Attribute("Id") == "START_AT_SIGN_IN");
+        Assert.Null(property.Attribute("Value"));
+        Assert.Equal("yes", (string?)property.Attribute("Secure"));
+
+        // The search reads the Run entry the StartAtSignIn feature installs, in the 64-bit registry view.
+        var run = package.Descendants(Wix + "RegistryValue").Single(v => (string?)v.Attribute("Key") == @"Software\Microsoft\Windows\CurrentVersion\Run");
+        var search = package.Descendants(Wix + "Property").Single(p => (string?)p.Attribute("Id") == "INSTALLED_RUN_ENTRY").Element(Wix + "RegistrySearch")!;
+        Assert.Equal((string?)run.Attribute("Root"), (string?)search.Attribute("Root"));
+        Assert.Equal((string?)run.Attribute("Key"), (string?)search.Attribute("Key"));
+        Assert.Equal((string?)run.Attribute("Name"), (string?)search.Attribute("Name"));
+        Assert.Equal("always64", (string?)search.Attribute("Bitness"));
+        Assert.Equal("RunAtSignIn", (string?)run.Parent!.Attribute("Id"));
+
+        var set = package.Descendants(Wix + "SetProperty").Where(p => (string?)p.Attribute("Id") == "START_AT_SIGN_IN").ToArray();
+        Assert.Equal(2, set.Length);
+        Assert.Equal(("KeepStartAtSignInOff", "0", "AppSearch", "both", "NOT START_AT_SIGN_IN AND WIX_UPGRADE_DETECTED AND NOT INSTALLED_RUN_ENTRY"), Describe(set[0]));
+        Assert.Equal(("StartAtSignInByDefault", "1", "KeepStartAtSignInOff", "both", "NOT START_AT_SIGN_IN"), Describe(set[1]));
+
+        var feature = package.Descendants(Wix + "Feature").Single(f => (string?)f.Attribute("Id") == "StartAtSignIn");
+        Assert.Equal("START_AT_SIGN_IN = \"0\"", (string?)feature.Element(Wix + "Level")?.Attribute("Condition"));
+        Assert.Equal("0", (string?)feature.Element(Wix + "Level")?.Attribute("Value"));
+        Assert.Equal("RunAtSignIn", (string?)feature.Element(Wix + "ComponentRef")?.Attribute("Id"));
+
+        static (string?, string?, string?, string?, string?) Describe(XElement p) =>
+            ((string?)p.Attribute("Action"), (string?)p.Attribute("Value"), (string?)p.Attribute("After"), (string?)p.Attribute("Sequence"), (string?)p.Attribute("Condition"));
+    }
+
+    /// <summary>
+    /// WAS-63: the service just started must be healthy before the installation commits, or Windows Installer restores the
+    /// previous version; the rollback hook CI uses is WiX's own, off unless the setup is told otherwise; and the service
+    /// recognizes its commit by the MSI's upgrade code.
+    /// </summary>
+    [Fact]
+    public void TheNewServiceIsCheckedInsideTheTransaction_TheRollbackHookIsOff_AndTheServiceKnowsTheUpgradeCode()
+    {
+        var package = Load("installer", "print-bridge", "Package", "Package.wxs");
+        var commands = Commands(package);
+        Assert.Equal("\"[#ServiceExe]\" health-check", commands["CheckServiceHealth"]);
+        Assert.True(Wasla.PrintBridge.Hosting.PrintBridgeServiceOptions.TryParse(["health-check"], out var options, out _));
+        Assert.True(options!.HealthCheckOnly);
+
+        var action = package.Descendants(Wix + "CustomAction").Single(a => (string?)a.Attribute("Id") == "CheckServiceHealth");
+        Assert.Equal("WixQuietExec", (string?)action.Attribute("DllEntry"));
+        Assert.Equal("deferred", (string?)action.Attribute("Execute"));
+        Assert.Equal("no", (string?)action.Attribute("Impersonate"));
+        Assert.Equal("check", (string?)action.Attribute("Return"));
+        var check = package.Descendants(Wix + "InstallExecuteSequence").Single().Elements(Wix + "Custom")
+            .Single(c => (string?)c.Attribute("Action") == "CheckServiceHealth");
+        Assert.Equal("StartServices", (string?)check.Attribute("After"));
+        Assert.Equal("NOT REMOVE~=\"ALL\"", (string?)check.Attribute("Condition"));
+
+        XNamespace util = "http://wixtoolset.org/schemas/v4/wxs/util";
+        Assert.Single(package.Descendants(util + "FailWhenDeferred"));
+        var bundle = Load("installer", "print-bridge", "Bundle", "Bundle.wxs");
+        var hook = bundle.Descendants(Wix + "Variable").Single(v => (string?)v.Attribute("Name") == "FailWhenDeferred");
+        Assert.Equal("0", (string?)hook.Attribute("Value"));
+        Assert.Contains(bundle.Descendants(Wix + "MsiProperty"),
+            p => (string?)p.Attribute("Name") == "WIXFAILWHENDEFERRED" && (string?)p.Attribute("Value") == "[FailWhenDeferred]");
+
+        Assert.Equal(
+            Wasla.PrintBridge.Updates.PrintBridgeInstalledProduct.MsiUpgradeCode.Trim('{', '}'),
+            (string?)package.Descendants(Wix + "Package").Single().Attribute("UpgradeCode"),
+            ignoreCase: true);
     }
 
     [Fact]
@@ -119,6 +232,12 @@ public sealed class PrintBridgeInstallerSourceTests
     }
 
     private static XDocument Load(params string[] parts) => XDocument.Load(PathOf(parts));
+
+    /// <summary>Each deferred or rollback action's command line: the SetProperty named after it (no Action of its own).</summary>
+    private static Dictionary<string, string> Commands(XDocument package) =>
+        package.Descendants(Wix + "SetProperty")
+            .Where(p => p.Attribute("Action") is null)
+            .ToDictionary(p => (string)p.Attribute("Id")!, p => (string)p.Attribute("Value")!);
 
     private static string PathOf(params string[] parts) => Path.Combine([Root, .. parts]);
 }

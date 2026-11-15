@@ -150,10 +150,17 @@ public sealed class ShellHostServicesTests : IDisposable
     public void NativeActions_TakeNothingFromThePage()
     {
         // No path, URL, token or file name can travel from the renderer into a privileged action, and the
-        // connection dialog returns only a result with a localized message.
-        Assert.All(typeof(IShellNativeActions).GetMethods(), m => Assert.Empty(m.GetParameters()));
+        // connection dialog returns only a result with a localized message. The update confirmation (WAS-63) names two
+        // versions, which come from the host's last check and the service; the page's update.start carries only a request id.
+        Assert.All(
+            typeof(IShellNativeActions).GetMethods().Where(m => m.Name != nameof(IShellNativeActions.ConfirmUpdateAsync)),
+            m => Assert.Empty(m.GetParameters()));
         Assert.Equal(
-            ["ConfirmConnectionResetAsync", "ConfirmEnableTestModeAsync", "OpenLogFolder", "RunConnectionSetupAsync"],
+            [("installedVersion", typeof(string)), ("newVersion", typeof(string))],
+            typeof(IShellNativeActions).GetMethod(nameof(IShellNativeActions.ConfirmUpdateAsync))!.GetParameters().Select(p => (p.Name!, p.ParameterType)));
+        Assert.Equal(["requestId"], ShellMessageContract.Commands[ShellMessageContract.UpdateStart].Fields.Select(f => f.Name));
+        Assert.Equal(
+            ["ConfirmConnectionResetAsync", "ConfirmEnableTestModeAsync", "ConfirmUpdateAsync", "OpenLogFolder", "RunConnectionSetupAsync"],
             typeof(IShellNativeActions).GetMethods().Select(m => m.Name).Order());
         Assert.Equal(
             ["Field", "IsConnected", "Message", "Outcome"],

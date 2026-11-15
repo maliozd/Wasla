@@ -7,11 +7,17 @@ namespace Wasla.PrintBridge.Hosting;
 /// The access rules of the service's data folder (WAS-61). The service trusts what is in the folder (the server URL and
 /// device token, a pending move, the journal), so only SYSTEM, administrators and the service may write it, and only they
 /// may read the settings and the token. The <c>logs</c> subfolder is also readable by local users, for Settings →
-/// Diagnostics → Open log folder.
+/// Diagnostics → Open log folder, and so is <c>updates</c> (WAS-63): the app starts the setup the service verified there,
+/// and no one else may change it.
 /// </summary>
 internal static class PrintBridgeDataFolderSecurity
 {
     private const string LogsFolderName = "logs";
+    private const string UpdatesFolderName = "updates";
+
+    private const FileSystemRights WriteRights = FileSystemRights.WriteData | FileSystemRights.AppendData
+        | FileSystemRights.WriteExtendedAttributes | FileSystemRights.WriteAttributes | FileSystemRights.Delete
+        | FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
 
     private static readonly SecurityIdentifier LocalSystem = new(WellKnownSidType.LocalSystemSid, null);
     private static readonly SecurityIdentifier Administrators = new(WellKnownSidType.BuiltinAdministratorsSid, null);
@@ -26,6 +32,7 @@ internal static class PrintBridgeDataFolderSecurity
     {
         var rootInfo = Directory.CreateDirectory(root);
         var logsInfo = Directory.CreateDirectory(Path.Combine(root, LogsFolderName));
+        var updatesInfo = Directory.CreateDirectory(Path.Combine(root, UpdatesFolderName));
 
         var rootSecurity = new DirectorySecurity();
         rootSecurity.SetOwner(Administrators);
@@ -53,16 +60,19 @@ internal static class PrintBridgeDataFolderSecurity
             }
         }
 
-        var logsSecurity = new DirectorySecurity();
-        logsSecurity.SetOwner(Administrators);
-        logsSecurity.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
-        logsSecurity.AddAccessRule(new FileSystemAccessRule(
-            Users,
-            FileSystemRights.ReadAndExecute,
-            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-            PropagationFlags.None,
-            AccessControlType.Allow));
-        logsInfo.SetAccessControl(logsSecurity);
+        foreach (var readable in new[] { logsInfo, updatesInfo })
+        {
+            var readableSecurity = new DirectorySecurity();
+            readableSecurity.SetOwner(Administrators);
+            readableSecurity.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
+            readableSecurity.AddAccessRule(new FileSystemAccessRule(
+                Users,
+                FileSystemRights.ReadAndExecute,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+            readable.SetAccessControl(readableSecurity);
+        }
     }
 
     /// <summary>
@@ -107,7 +117,34 @@ internal static class PrintBridgeDataFolderSecurity
                 return "an account other than SYSTEM, Administrators or the service has access to a file in the data folder";
         }
 
+        // The update state and the staged setup (WAS-63) may be read by local users, never changed.
+        var updates = new DirectoryInfo(Path.Combine(root, UpdatesFolderName));
+        if (updates.Exists)
+        {
+            if (!OnlyTrustedMayWrite(updates.GetAccessControl(AccessControlSections.Access), service))
+                return "an account other than SYSTEM, Administrators or the service may change the updates folder";
+            foreach (var file in updates.EnumerateFiles())
+            {
+                if (!OnlyTrustedMayWrite(file.GetAccessControl(AccessControlSections.Access), service))
+                    return "an account other than SYSTEM, Administrators or the service may change a file in the updates folder";
+            }
+        }
+
         return null;
+    }
+
+    private static bool OnlyTrustedMayWrite(FileSystemSecurity security, SecurityIdentifier service)
+    {
+        foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier)))
+        {
+            if (rule.AccessControlType != AccessControlType.Allow || (rule.FileSystemRights & WriteRights) == 0)
+                continue;
+
+            if (rule.IdentityReference is not SecurityIdentifier sid || !IsTrusted(sid, service))
+                return false;
+        }
+
+        return true;
     }
 
     private static bool OnlyTrustedMayAccess(FileSystemSecurity security, SecurityIdentifier service)

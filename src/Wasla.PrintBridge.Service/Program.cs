@@ -9,6 +9,7 @@ using Wasla.PrintBridge.Configuration;
 using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Ipc;
 using Wasla.PrintBridge.Services;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge;
 
@@ -37,6 +38,9 @@ internal static class Program
         if (options.SecureDataOnly)
             return SecureData(options);
 
+        if (options.HealthCheckOnly)
+            return PrintBridgeHealthCheck.Run(options, Console.Out, Console.Error);
+
         var isService = WindowsServiceHelpers.IsWindowsService();
         if (!isService && options.DataRoot is null && !PrintBridgePaths.IsIsolatedDevelopmentRoot)
         {
@@ -55,6 +59,13 @@ internal static class Program
             // The engine waits up to 10 s for a claimed job (WAS-56); stopping must not be cut shorter than that.
             builder.Services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(20));
             builder.Services.AddSingleton(options);
+            builder.Services.AddSingleton(sp => new PrintBridgeUpdateCoordinator(
+                new PrintBridgeUpdateStateStore(sp.GetRequiredService<ILogger<PrintBridgeUpdateStateStore>>()),
+                PrintBridgeReleaseVersion.Of(typeof(Program).Assembly),
+                // The trust anchor of updates (WAS-63): the publisher that signed this service. None for an unsigned build.
+                PrintBridgeAuthenticode.OfRunningExecutable(),
+                new PrintBridgeInstalledProduct(),
+                sp.GetRequiredService<ILogger<PrintBridgeUpdateCoordinator>>()));
             builder.Services.AddSingleton<PrintBridgeServiceBackend>();
             builder.Services.AddSingleton<IPrintBridgeIpcClientAuthorizer, WindowsTokenClientAuthorizer>();
             builder.Services.AddSingleton(sp => new PrintBridgeIpcServer(

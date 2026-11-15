@@ -20,7 +20,7 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void AcceptsCommandWithoutPayload()
     {
-        Assert.True(ShellMessageParser.TryParse("""{"version":3,"type":"ui.ready"}""", out var command, out _));
+        Assert.True(ShellMessageParser.TryParse("""{"version":4,"type":"ui.ready"}""", out var command, out _));
         Assert.Equal(ShellCommandType.UiReady, command!.Type);
     }
 
@@ -47,7 +47,7 @@ public sealed class ShellMessageParserTests
                 "ui.ready", "snapshot.request", "language.change",
                 "engine.start", "engine.stop", "connection.test", "connection.openSetup", "connection.reset",
                 "printers.refresh", "printer.save", "printer.testPrint", "history.query", "history.reprint", "history.resolve",
-                "logs.openFolder", "settings.save"
+                "logs.openFolder", "settings.save", "update.check", "update.start", "update.cancel"
             ],
             ShellMessageContract.CommandTypes);
         Assert.Equal(ShellMessageContract.CommandTypes.Count, Enum.GetValues<ShellCommandType>().Length);
@@ -62,6 +62,9 @@ public sealed class ShellMessageParserTests
     [InlineData("printers.refresh", ShellCommandType.PrintersRefresh)]
     [InlineData("printer.testPrint", ShellCommandType.PrinterTestPrint)]
     [InlineData("logs.openFolder", ShellCommandType.LogsOpenFolder)]
+    [InlineData("update.check", ShellCommandType.UpdateCheck)]
+    [InlineData("update.start", ShellCommandType.UpdateStart)]
+    [InlineData("update.cancel", ShellCommandType.UpdateCancel)]
     public void AcceptsTrackedCommandsWithOnlyARequestId(string type, ShellCommandType expected)
     {
         const string requestId = "a1b2c3d4-0000-4000-8000-000000000001";
@@ -191,6 +194,18 @@ public sealed class ShellMessageParserTests
     [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15,"serverUrl":"https://evil.example"}""")]
     [InlineData("settings.save", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","key":"Wasla:AgentToken","value":"x"}""")]
     [InlineData("settings.save", """{"testMode":false,"idlePollSeconds":5,"busyPollSeconds":1,"errorPollSeconds":15}""")]
+    // Updates (WAS-63): a request id and nothing else. The page never names a version, a setup path or an attempt.
+    [InlineData("update.check", "{}")]
+    [InlineData("update.check", """{"requestId":"short"}""")]
+    [InlineData("update.check", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","channel":"beta"}""")]
+    [InlineData("update.start", "{}")]
+    [InlineData("update.start", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","version":"9.9.9"}""")]
+    [InlineData("update.start", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","path":"C:\\Users\\Public\\setup.exe"}""")]
+    [InlineData("update.start", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","arguments":"/quiet"}""")]
+    [InlineData("update.start", """{"version":"9.9.9"}""")]
+    [InlineData("update.cancel", "{}")]
+    [InlineData("update.cancel", """{"requestId":"a1b2c3d4-0000-4000-8000-000000000001","attemptId":"0f3a9c00-0000-4000-8000-000000000001"}""")]
+    [InlineData("update.cancel", """{"requestId":42}""")]
     public void RejectsInvalidCommandPayloads(string type, string payload)
     {
         Assert.False(ShellMessageParser.TryParse(Command(type, payload), out var command, out var rejection));
@@ -207,6 +222,10 @@ public sealed class ShellMessageParserTests
     [InlineData("ui.ready ")]
     [InlineData("snapshot.updated")]
     [InlineData("")]
+    // The service's own commands are not page commands.
+    [InlineData("update.prepare")]
+    [InlineData("update.install")]
+    [InlineData("Update.Check")]
     public void RejectsUnknownTypes(string type)
     {
         Assert.False(ShellMessageParser.TryParse(Command(type), out var command, out var rejection));
@@ -216,23 +235,25 @@ public sealed class ShellMessageParserTests
     }
 
     [Theory]
-    [InlineData("""{"version":3,"type":42}""", ShellMessageRejection.UnknownType)]
-    [InlineData("""{"version":3}""", ShellMessageRejection.UnknownType)]
+    [InlineData("""{"version":4,"type":42}""", ShellMessageRejection.UnknownType)]
+    [InlineData("""{"version":4}""", ShellMessageRejection.UnknownType)]
     [InlineData("""{"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     // Version 2 (WAS-54) is no longer accepted: its connection.openSetup had no request id and no settings.save.
     [InlineData("""{"version":2,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
-    [InlineData("""{"version":4,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
+    [InlineData("""{"version":3,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
+    [InlineData("""{"version":3,"type":"update.check","payload":{"requestId":"a1b2c3d4-0000-4000-8000-000000000001"}}""", ShellMessageRejection.UnsupportedVersion)]
+    [InlineData("""{"version":5,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":1,"type":"ui.ready","payload":{}}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":"1","type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
     [InlineData("""{"version":1.5,"type":"ui.ready"}""", ShellMessageRejection.UnsupportedVersion)]
-    [InlineData("""{"version":3,"type":"ui.ready","method":"Exit"}""", ShellMessageRejection.UnexpectedProperty)]
-    [InlineData("""{"version":3,"type":"ui.ready","Type":"x"}""", ShellMessageRejection.UnexpectedProperty)]
-    [InlineData("""{"version":3,"type":"ui.ready","type":"snapshot.request"}""", ShellMessageRejection.DuplicateProperty)]
-    [InlineData("""{"version":3,"version":3,"type":"ui.ready"}""", ShellMessageRejection.DuplicateProperty)]
-    [InlineData("""{"version":3,"type":"ui.ready","payload":[]}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":3,"type":"ui.ready","payload":"x"}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":3,"type":"ui.ready","payload":{"force":true}}""", ShellMessageRejection.InvalidPayload)]
-    [InlineData("""{"version":3,"type":"snapshot.request","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":4,"type":"ui.ready","method":"Exit"}""", ShellMessageRejection.UnexpectedProperty)]
+    [InlineData("""{"version":4,"type":"ui.ready","Type":"x"}""", ShellMessageRejection.UnexpectedProperty)]
+    [InlineData("""{"version":4,"type":"ui.ready","type":"snapshot.request"}""", ShellMessageRejection.DuplicateProperty)]
+    [InlineData("""{"version":4,"version":4,"type":"ui.ready"}""", ShellMessageRejection.DuplicateProperty)]
+    [InlineData("""{"version":4,"type":"ui.ready","payload":[]}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":4,"type":"ui.ready","payload":"x"}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":4,"type":"ui.ready","payload":{"force":true}}""", ShellMessageRejection.InvalidPayload)]
+    [InlineData("""{"version":4,"type":"snapshot.request","payload":{"tab":"settings"}}""", ShellMessageRejection.InvalidPayload)]
     public void RejectsMalformedEnvelopes(string raw, ShellMessageRejection expected)
     {
         Assert.False(ShellMessageParser.TryParse(raw, out var command, out var rejection));
@@ -261,16 +282,16 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void RejectsLanguageChangeWithoutPayload()
     {
-        Assert.False(ShellMessageParser.TryParse("""{"version":3,"type":"language.change"}""", out _, out var rejection));
+        Assert.False(ShellMessageParser.TryParse("""{"version":4,"type":"language.change"}""", out _, out var rejection));
         Assert.Equal(ShellMessageRejection.InvalidPayload, rejection);
     }
 
     [Theory]
     [InlineData("not json")]
     [InlineData("{")]
-    [InlineData("""{"version":3,"type":"ui.ready",}""")]
+    [InlineData("""{"version":4,"type":"ui.ready",}""")]
     [InlineData("""{"version":1 /* c */,"type":"ui.ready"}""")]
-    [InlineData("""{"version":3,"type":"ui.ready"} trailing""")]
+    [InlineData("""{"version":4,"type":"ui.ready"} trailing""")]
     [InlineData("""{'version':1,'type':'ui.ready'}""")]
     public void RejectsMalformedJson(string raw)
     {
@@ -281,7 +302,7 @@ public sealed class ShellMessageParserTests
     [Fact]
     public void RejectsDeeplyNestedPayloadsAsMalformed()
     {
-        var raw = """{"version":3,"type":"ui.ready","payload":{"a":{"b":{"c":{"d":1}}}}}""";
+        var raw = """{"version":4,"type":"ui.ready","payload":{"a":{"b":{"c":{"d":1}}}}}""";
 
         Assert.False(ShellMessageParser.TryParse(raw, out _, out var rejection));
         Assert.Equal(ShellMessageRejection.MalformedJson, rejection);

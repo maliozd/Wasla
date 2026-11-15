@@ -14,15 +14,52 @@ public sealed class PrintBridgeApiController : ControllerBase
     private readonly IPrintBridgeJobService _jobs;
     private readonly IPrintJobHistoryService _history;
     private readonly IPrintBridgeDeviceManagementService _devices;
+    private readonly PrintBridgeReleaseCatalog _releases;
 
     public PrintBridgeApiController(
         IPrintBridgeJobService jobs,
         IPrintJobHistoryService history,
-        IPrintBridgeDeviceManagementService devices)
+        IPrintBridgeDeviceManagementService devices,
+        PrintBridgeReleaseCatalog releases)
     {
         _jobs = jobs;
         _history = history;
         _devices = devices;
+        _releases = releases;
+    }
+
+    /// <summary>
+    /// The Print Bridge release offered to this device (WAS-63, schema 1), or 204 when there is none: the setup the Web
+    /// download serves, described by its release metadata. A device token is required, as for every device request.
+    /// </summary>
+    [HttpGet("releases/latest")]
+    public IActionResult LatestRelease()
+    {
+        if (PrintBridgeContext.Get(HttpContext) is null)
+            return Unauthorized();
+
+        var release = _releases.GetCurrent();
+        if (release is null)
+            return NoContent();
+
+        return Ok(new PrintBridgeReleaseResponse(
+            PrintBridgeReleaseCatalog.SchemaVersion,
+            release.Version,
+            new PrintBridgeReleaseSetupResponse(release.FileName, release.Bytes, release.Sha256)));
+    }
+
+    /// <summary>The setup of <paramref name="version"/> when it is the release currently offered (WAS-63); otherwise 404.</summary>
+    [HttpGet("releases/{version}/setup")]
+    public IActionResult ReleaseSetup(string version)
+    {
+        if (PrintBridgeContext.Get(HttpContext) is null)
+            return Unauthorized();
+
+        var release = _releases.GetCurrent();
+        if (release is null || !string.Equals(release.Version, version, StringComparison.Ordinal))
+            return NotFound();
+
+        return PhysicalFile(release.SetupPath, PrintBridgePackagePaths.GetContentType(release.FileName));
     }
 
     [HttpGet("health")]

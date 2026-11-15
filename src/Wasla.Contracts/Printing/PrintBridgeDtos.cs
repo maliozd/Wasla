@@ -28,6 +28,22 @@ public sealed record ReprintPrintJobResponse(
     string MessageKey,
     Guid? NewPrintJobId);
 
+// --- Updates (WAS-63) ---
+
+/// <summary>
+/// The Print Bridge release the server offers to a device (<c>GET api/print-bridge/releases/latest</c>, schema 1). It names
+/// the setup's size and SHA-256; the setup's own Authenticode signature decides whether a device runs it.
+/// </summary>
+public sealed record PrintBridgeReleaseResponse(
+    int SchemaVersion,
+    string Version,
+    PrintBridgeReleaseSetupResponse Setup);
+
+public sealed record PrintBridgeReleaseSetupResponse(
+    string FileName,
+    long Bytes,
+    string Sha256);
+
 // --- Automatic setup (browser-to-application wasla-printbridge:// flow) ---
 
 /// <summary>Desktop app exchanges the one-time setup code (single use) for its configuration.</summary>

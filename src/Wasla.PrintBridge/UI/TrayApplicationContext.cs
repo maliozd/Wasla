@@ -260,7 +260,9 @@ public sealed class TrayApplicationContext : ApplicationContext
             _cultureService,
             new PrintBridgeLanguageService(_engine, _cultureService, loggers.CreateLogger<PrintBridgeLanguageService>()),
             _webViewRuntimeProbe.Probe().Version,
-            logger);
+            logger,
+            // WAS-63: the service client reports the update state; an engine without one shows updates as unavailable.
+            _engine as Wasla.PrintBridge.Updates.IPrintBridgeUpdates ?? ShellUpdates.None);
         _shellForm.ShellUnavailable += OnShellUnavailable;
         ShellFormCreatedForTests?.Invoke(_shellForm);
         return _shellForm;

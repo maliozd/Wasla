@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Wasla.PrintBridge.Hosting;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.Ipc;
 
@@ -26,7 +27,9 @@ internal sealed class PrintBridgeIpcConnection
         PrintBridgeIpcProtocol.PrintersList,
         PrintBridgeIpcProtocol.HistoryQuery,
         PrintBridgeIpcProtocol.ConnectionCheck,
-        PrintBridgeIpcProtocol.SetupConsentAnswer
+        PrintBridgeIpcProtocol.SetupConsentAnswer,
+        PrintBridgeIpcProtocol.UpdateCheck,
+        PrintBridgeIpcProtocol.ServiceHealth
     };
 
     private readonly NamedPipeServerStream _pipe;
@@ -37,6 +40,9 @@ internal sealed class PrintBridgeIpcConnection
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly ConcurrentDictionary<string, TaskCompletionSource<bool>> _consents = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, PrintBridgeConnectionVerification> _verifications = new(StringComparer.Ordinal);
+
+    /// <summary>Update attempts this app started (WAS-63); one not yet ready is cancelled when it disconnects.</summary>
+    private readonly ConcurrentDictionary<Guid, byte> _updateAttempts = new();
     private CancellationTokenSource _closing = new();
     private PrintBridgeIpcClientIdentity? _client;
     private int _inFlight;
@@ -122,6 +128,9 @@ internal sealed class PrintBridgeIpcConnection
             // A move confirmation still open in this app is a refusal (WAS-59: closing the app abandons it).
             foreach (var consent in _consents.Values)
                 consent.TrySetResult(false);
+            // An update this app started and that is not ready yet ends with it (a ready one waits for its setup).
+            foreach (var attemptId in _updateAttempts.Keys)
+                _ = _backend.Updates.ConnectionClosedAsync(attemptId);
             if (_client is not null)
                 _logger.LogInformation("Print Bridge app disconnected. User={UserSid}, Session={SessionId}", _client.User.Value, _client.SessionId);
         }
@@ -257,6 +266,37 @@ internal sealed class PrintBridgeIpcConnection
             consent.TrySetResult(answer.Approved);
             return new IpcEmptyPayload();
         }
+
+        switch (request.Command)
+        {
+            case PrintBridgeIpcProtocol.ServiceHealth:
+                Payload<IpcEmptyPayload>(request);
+                return new IpcServiceHealth(PrintBridgeReleaseVersion.Format(_backend.Updates.InstalledVersion), _backend.Availability);
+
+            case PrintBridgeIpcProtocol.UpdateCheck:
+                Payload<IpcEmptyPayload>(request);
+                return await _backend.Updates.CheckAsync(ct).ConfigureAwait(false);
+
+            case PrintBridgeIpcProtocol.UpdatePrepare:
+            {
+                var prepare = Payload<IpcUpdatePreparePayload>(request);
+                PrintBridgeReleaseVersion.TryParse(prepare.Version, out var version);
+                var attemptId = _backend.Updates.Prepare(version);
+                _updateAttempts[attemptId] = 0;
+                return new IpcUpdatePrepareResult(attemptId);
+            }
+
+            case PrintBridgeIpcProtocol.UpdateCancel:
+            {
+                var cancel = Payload<IpcUpdateCancelPayload>(request);
+                await _backend.Updates.CancelAsync(cancel.AttemptId).ConfigureAwait(false);
+                return new IpcEmptyPayload();
+            }
+        }
+
+        // While printing is paused for an update nothing that the replaced or the committed version must read is changed.
+        if (PrintBridgeIpcProtocol.ChangingCommands.Contains(request.Command) && _backend.Updates.PausesChanges)
+            throw new LocalizedApplicationException("Update.Error.InProgress");
 
         var engine = _backend.Engine ?? throw new NotActiveException(PrintBridgeServiceBackend.IssueFor(_backend.Availability));
 

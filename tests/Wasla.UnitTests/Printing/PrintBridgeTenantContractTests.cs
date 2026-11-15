@@ -62,7 +62,7 @@ public sealed class PrintBridgeTenantContractTests
     {
         var http = new DefaultHttpContext();
         WebPrintBridgeContext.Set(http, Device);
-        var controller = new Wasla.Web.Controllers.PrintBridgeApiController(null!, null!, null!)
+        var controller = new Wasla.Web.Controllers.PrintBridgeApiController(null!, null!, null!, null!)
         {
             ControllerContext = new ControllerContext { HttpContext = http }
         };

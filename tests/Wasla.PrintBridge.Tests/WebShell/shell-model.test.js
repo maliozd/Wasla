@@ -26,7 +26,7 @@ function snapshot(overrides) {
 
 function operationMessage(payload, sequence) {
   return {
-    version: 3,
+    version: 4,
     type: 'operation.result',
     sequence: sequence || 2,
     payload: Object.assign({ requestId: REQUEST_ID, operation: 'printer.testPrint', outcome: 'succeeded', message: 'Test çıktısı gönderildi.' }, payload)
@@ -35,7 +35,7 @@ function operationMessage(payload, sequence) {
 
 function historyMessage(history, sequence) {
   return {
-    version: 3,
+    version: 4,
     type: 'history.result',
     sequence: sequence || 3,
     payload: {
@@ -101,8 +101,10 @@ test('rejects other versions, types and envelopes', () => {
     [],
     message((m) => { m.version = 1; }),
     message((m) => { m.version = 2; }),
-    message((m) => { m.version = 4; }),
-    message((m) => { m.version = '3'; }),
+    // Version 3 had no update section and no update commands (WAS-63 raised it to 4).
+    message((m) => { m.version = 3; }),
+    message((m) => { m.version = 5; }),
+    message((m) => { m.version = '4'; }),
     message((m) => { m.type = 'snapshot.request'; }),
     message((m) => { m.type = 'eval'; }),
     message((m) => { m.sequence = '2'; }),
@@ -181,40 +183,40 @@ test('accepts every connection state the host can send and an empty last job', (
 });
 
 test('creates only allowlisted, versioned commands with their allowed fields', () => {
-  assert.deepEqual(JSON.parse(model.createCommand('ui.ready')), { version: 3, type: 'ui.ready', payload: {} });
-  assert.deepEqual(JSON.parse(model.createCommand('snapshot.request', { tab: 'settings' })), { version: 3, type: 'snapshot.request', payload: {} });
+  assert.deepEqual(JSON.parse(model.createCommand('ui.ready')), { version: 4, type: 'ui.ready', payload: {} });
+  assert.deepEqual(JSON.parse(model.createCommand('snapshot.request', { tab: 'settings' })), { version: 4, type: 'snapshot.request', payload: {} });
   assert.deepEqual(
     JSON.parse(model.createCommand('language.change', { culture: 'ar-SA', extra: 'ignored' })),
-    { version: 3, type: 'language.change', payload: { culture: 'ar-SA' } });
+    { version: 4, type: 'language.change', payload: { culture: 'ar-SA' } });
   assert.deepEqual(
     JSON.parse(model.createCommand('printer.save', { requestId: REQUEST_ID, name: 'POS-58', path: 'C:\\x' })),
-    { version: 3, type: 'printer.save', payload: { requestId: REQUEST_ID, name: 'POS-58' } });
+    { version: 4, type: 'printer.save', payload: { requestId: REQUEST_ID, name: 'POS-58' } });
   assert.deepEqual(
     JSON.parse(model.createCommand('history.query', { requestId: REQUEST_ID, range: 'last7Days', page: 2, search: '' })),
-    { version: 3, type: 'history.query', payload: { requestId: REQUEST_ID, range: 'last7Days', page: 2 } });
+    { version: 4, type: 'history.query', payload: { requestId: REQUEST_ID, range: 'last7Days', page: 2 } });
   assert.deepEqual(
     JSON.parse(model.createCommand('history.reprint', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', jobId: 'x' })),
-    { version: 3, type: 'history.reprint', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' } });
+    { version: 4, type: 'history.reprint', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' } });
   assert.deepEqual(model.COMMANDS, [
     'ui.ready', 'snapshot.request', 'language.change',
     'engine.start', 'engine.stop', 'connection.test', 'connection.openSetup', 'connection.reset',
     'printers.refresh', 'printer.save', 'printer.testPrint', 'history.query', 'history.reprint', 'history.resolve',
-    'logs.openFolder', 'settings.save'
+    'logs.openFolder', 'settings.save', 'update.check', 'update.start', 'update.cancel'
   ]);
   // WAS-61: the user's check of a receipt whose paper outcome is unknown; printed must be a boolean, false included.
   assert.deepEqual(
     JSON.parse(model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: false, jobId: 'x' })),
-    { version: 3, type: 'history.resolve', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: false } });
+    { version: 4, type: 'history.resolve', payload: { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: false } });
   assert.throws(() => model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef', printed: 'yes' }), /invalid printed/);
   assert.throws(() => model.createCommand('history.resolve', { requestId: REQUEST_ID, itemRef: 'h0123456789abcdef' }), /requires printed/);
   assert.deepEqual(
     JSON.parse(model.createCommand('connection.openSetup', { requestId: REQUEST_ID, serverUrl: 'https://x.test' })),
-    { version: 3, type: 'connection.openSetup', payload: { requestId: REQUEST_ID } });
+    { version: 4, type: 'connection.openSetup', payload: { requestId: REQUEST_ID } });
   assert.deepEqual(
     JSON.parse(model.createCommand('settings.save', {
       requestId: REQUEST_ID, testMode: false, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15, maxJobsPerPoll: 10
     })),
-    { version: 3, type: 'settings.save', payload: { requestId: REQUEST_ID, testMode: false, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15 } });
+    { version: 4, type: 'settings.save', payload: { requestId: REQUEST_ID, testMode: false, idlePollSeconds: 5, busyPollSeconds: 1, errorPollSeconds: 15 } });
 });
 
 test('settings.save carries only typed whole numbers and a boolean', () => {
@@ -235,7 +237,7 @@ test('settings.save carries only typed whole numbers and a boolean', () => {
 });
 
 test('accepts tab requests from the host only for known tabs', () => {
-  const navigate = (tab, sequence) => ({ version: 3, type: 'ui.navigate', sequence: sequence || 4, payload: { tab } });
+  const navigate = (tab, sequence) => ({ version: 4, type: 'ui.navigate', sequence: sequence || 4, payload: { tab } });
 
   assert.deepEqual(model.readHostMessage(navigate('history'), 1), { kind: 'navigate', sequence: 4, payload: { tab: 'history' } });
   for (const tab of ['overview', 'printer', 'settings']) {
@@ -380,6 +382,133 @@ test('falls back to the localized dash, never to a raw key', () => {
   assert.equal(model.orDash(s, 'POS-58'), 'POS-58');
   assert.equal(model.text(s, 'Missing.Key'), '');
   assert.equal(model.text(s, 'Settings.Language'), 'Dil');
+});
+
+// ---- updates (WAS-63) -------------------------------------------------------------------------------------
+
+function withUpdate(update) {
+  return snapshot((p) => { Object.assign(p.update, update); });
+}
+
+test('accepts every update stage the host can send, and a failure group only with the failed stage', () => {
+  assert.deepEqual(model.UPDATE_STAGES, [
+    'unavailable', 'unsupported', 'idle', 'checking', 'upToDate', 'available', 'downloading', 'verifying',
+    'waitingForPrinting', 'ready', 'opening', 'setupOpen', 'installing', 'succeeded', 'notApplied', 'cancelled', 'failed'
+  ]);
+  for (const stage of model.UPDATE_STAGES.filter((s) => s !== 'failed')) {
+    assert.notEqual(model.readHostMessage(message((m) => { m.payload.update.stage = stage; m.payload.update.label = 'x'; }), 0), null, stage);
+  }
+  for (const failure of model.UPDATE_FAILURES) {
+    assert.notEqual(model.readHostMessage(message((m) => { Object.assign(m.payload.update, { stage: 'failed', failure, label: 'x' }); }), 0), null, failure);
+  }
+  assert.notEqual(model.readHostMessage(message((m) => {
+    Object.assign(m.payload.update, { stage: 'downloading', downloadPercent: 100, progress: '100%', targetVersion: '1.0.1', availableVersion: '1.0.1' });
+  }), 0), null);
+});
+
+test('rejects update sections the page cannot render truthfully', () => {
+  const cases = [
+    (u) => { delete u.installedVersion; },
+    (u) => { u.supported = 'true'; },
+    (u) => { u.stage = 'installed'; },
+    (u) => { u.stage = 'Downloading'; },
+    (u) => { u.label = null; },
+    (u) => { u.availableVersion = 101; },
+    (u) => { u.downloadPercent = 101; },
+    (u) => { u.downloadPercent = -1; },
+    (u) => { u.downloadPercent = 4.5; },
+    (u) => { u.downloadPercent = '40'; },
+    (u) => { u.progress = 40; },
+    // A failure code, or a failure group without the failed stage, or the failed stage without its group.
+    (u) => { u.stage = 'failed'; u.failure = 'hashMismatch'; },
+    (u) => { u.stage = 'failed'; u.failure = 'HashMismatch'; },
+    (u) => { u.stage = 'failed'; u.failure = null; },
+    (u) => { u.failure = 'download'; },
+    (u) => { delete u.actions.cancel; },
+    (u) => { u.actions.start = 1; },
+    (u) => { delete u.busy.check; },
+    (u) => { u.busy = null; }
+  ];
+  for (const mutate of cases) {
+    assert.equal(model.readHostMessage(message((m) => mutate(m.payload.update)), 0), null, mutate.toString());
+  }
+  assert.equal(model.readHostMessage(message((m) => { delete m.payload.update; }), 0), null);
+});
+
+test('update commands carry only a request id: the page never names a version, a path or an attempt', () => {
+  for (const type of ['update.check', 'update.start', 'update.cancel']) {
+    assert.deepEqual(
+      JSON.parse(model.createCommand(type, { requestId: REQUEST_ID, version: '9.9.9', path: 'C:\\setup.exe', attemptId: 'x', arguments: '/quiet' })),
+      { version: 4, type, payload: { requestId: REQUEST_ID } });
+    assert.throws(() => model.createCommand(type), /requires requestId/);
+    assert.throws(() => model.createCommand(type, { requestId: 'x' }), /invalid requestId/);
+  }
+  assert.throws(() => model.createCommand('update.prepare', { requestId: REQUEST_ID }), /Unsupported/);
+  for (const operation of ['update.check', 'update.start', 'update.cancel']) {
+    for (const outcome of ['succeeded', 'failed', 'busy', 'rejected', 'cancelled']) {
+      assert.notEqual(model.readHostMessage(operationMessage({ operation, outcome, message: '' }), 1), null, operation + ' ' + outcome);
+    }
+  }
+});
+
+test('update buttons are shown when the host offers them, and stay while their request runs', () => {
+  const idle = snapshot();
+  assert.deepEqual(model.updateControl(idle, 'check', false), { hidden: false, disabled: false, busy: false });
+  assert.deepEqual(model.updateControl(idle, 'start', false), { hidden: true, disabled: true, busy: false });
+  assert.deepEqual(model.updateControl(idle, 'cancel', false), { hidden: true, disabled: true, busy: false });
+
+  // Clicked: the page waits for the host's answer; the host then reports its own busy flag.
+  assert.deepEqual(model.updateControl(idle, 'check', true), { hidden: false, disabled: true, busy: true });
+  const checking = withUpdate({ stage: 'checking', label: 'Checking', actions: { check: false, start: false, cancel: false }, busy: { check: true, start: false, cancel: false } });
+  assert.deepEqual(model.updateControl(checking, 'check', false), { hidden: false, disabled: true, busy: true });
+  assert.equal(model.hostBusy(checking, 'updateCheck'), true);
+  assert.equal(model.hostBusy(checking, 'updateStart'), false);
+  assert.equal(model.hostBusy(checking, 'engine'), false);
+
+  const downloading = withUpdate({ stage: 'downloading', downloadPercent: 40, progress: '40%', actions: { check: false, start: false, cancel: true } });
+  assert.deepEqual(model.updateControl(downloading, 'cancel', false), { hidden: false, disabled: false, busy: false });
+  assert.deepEqual(model.updateControl(downloading, 'start', false), { hidden: true, disabled: true, busy: false });
+
+  // An unsigned (development) copy offers nothing at all.
+  const unsupported = withUpdate({ stage: 'unsupported', supported: false, actions: { check: false, start: false, cancel: false } });
+  for (const name of ['check', 'start', 'cancel']) {
+    assert.equal(model.updateControl(unsupported, name, false).hidden, true, name);
+  }
+});
+
+test('after a failed or unapplied attempt the start button says try again', () => {
+  for (const stage of ['failed', 'notApplied', 'cancelled']) {
+    assert.equal(model.updateStartLabelKey(withUpdate({ stage, failure: stage === 'failed' ? 'download' : null })), 'Shell.Update.Retry', stage);
+  }
+  for (const stage of ['available', 'idle', 'upToDate']) {
+    assert.equal(model.updateStartLabelKey(withUpdate({ stage })), 'Shell.Update.Start', stage);
+  }
+});
+
+test('update stages have a tone, and the text always says the same', () => {
+  assert.equal(model.updateTone('failed'), 'danger');
+  assert.equal(model.updateTone('succeeded'), 'success');
+  assert.equal(model.updateTone('upToDate'), 'success');
+  assert.equal(model.updateTone('notApplied'), 'warning');
+  assert.equal(model.updateTone('installing'), 'warning');
+  assert.equal(model.updateTone('downloading'), 'info');
+  assert.equal(model.updateTone('idle'), 'neutral');
+  assert.equal(model.updateTone('unsupported'), 'neutral');
+});
+
+test('update changes are announced politely, failures as an alert, never each percent', () => {
+  const idle = snapshot();
+  const downloading = withUpdate({ stage: 'downloading', label: 'Downloading version 1.0.1.', downloadPercent: 10, progress: '10%' });
+  const further = withUpdate({ stage: 'downloading', label: 'Downloading version 1.0.1.', downloadPercent: 55, progress: '55%' });
+  const failed = withUpdate({ stage: 'failed', failure: 'verification', label: 'The download could not be verified and was deleted.' });
+  const arabic = snapshot((p) => { p.culture = 'ar-SA'; Object.assign(p.update, { stage: 'failed', failure: 'download', label: 'x' }); });
+
+  assert.equal(model.updateAnnouncement(null, idle), null);
+  assert.deepEqual(model.updateAnnouncement(idle, downloading), { text: 'Downloading version 1.0.1.', assertive: false });
+  assert.equal(model.updateAnnouncement(downloading, further), null);
+  assert.deepEqual(model.updateAnnouncement(further, failed), { text: 'The download could not be verified and was deleted.', assertive: true });
+  assert.equal(model.updateAnnouncement(failed, idle), null);
+  assert.equal(model.updateAnnouncement(idle, arabic), null);
 });
 
 test('the model script uses no DOM, storage, network or dynamic code', () => {

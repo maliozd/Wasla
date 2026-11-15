@@ -104,7 +104,15 @@ public sealed class ShellSnapshotFactory
         "Shell.Diagnostics.Engine",
         "Shell.Diagnostics.LastError",
         "Shell.Diagnostics.None",
-        "Shell.Toast.Dismiss"
+        "Shell.Toast.Dismiss",
+        "Shell.Update.Title",
+        "Shell.Update.Help",
+        "Shell.Update.Installed",
+        "Shell.Update.Progress",
+        "Shell.Update.Check",
+        "Shell.Update.Start",
+        "Shell.Update.Retry",
+        "Shell.Update.Cancel"
     ];
 
     /// <summary>Resource keys this projection may emit as labels or details, in addition to <see cref="StringKeys"/>.</summary>
@@ -127,7 +135,8 @@ public sealed class ShellSnapshotFactory
         "Shell.Settings.TestModeOff",
         "Shell.Settings.Range",
         "Shell.Diagnostics.Unavailable",
-        "Shell.Device.Unknown"
+        "Shell.Device.Unknown",
+        .. ShellUpdates.ResourceKeys
     ];
 
     private readonly PrintBridgeLocalizer _localizer;
@@ -137,7 +146,9 @@ public sealed class ShellSnapshotFactory
     private readonly Func<ShellBusyState> _busy;
     private readonly string? _webView2Version;
     private readonly Func<string?, bool> _installedForThisUserOnly;
+    private readonly Func<ShellUpdateView> _update;
 
+    /// <param name="update">The update section (WAS-63); without it the section says updates are unavailable.</param>
     public ShellSnapshotFactory(
         PrintBridgeLocalizer localizer,
         PrintBridgeCultureService cultureService,
@@ -145,7 +156,8 @@ public sealed class ShellSnapshotFactory
         IPrinterCatalog? printers = null,
         Func<ShellBusyState>? busy = null,
         string? webView2Version = null,
-        Func<string?, bool>? installedForThisUser = null)
+        Func<string?, bool>? installedForThisUser = null,
+        Func<ShellUpdateView>? update = null)
     {
         _localizer = localizer;
         _cultureService = cultureService;
@@ -154,6 +166,7 @@ public sealed class ShellSnapshotFactory
         _busy = busy ?? (() => ShellBusyState.Idle);
         _webView2Version = webView2Version;
         _installedForThisUserOnly = installedForThisUser ?? (_ => false);
+        _update = update ?? (() => ShellUpdates.Unavailable(localizer, ShellUpdateBusyView.Idle));
     }
 
     public ShellSnapshot Create(PrintBridgeRuntimeStatus status)
@@ -204,6 +217,7 @@ public sealed class ShellSnapshotFactory
                 TestModeLabel: _localizer[status.DryRun ? "Shell.Settings.TestModeOn" : "Shell.Settings.TestModeOff"]),
             DryRun: status.DryRun,
             Operational: CreateOperational(status),
+            Update: _update(),
             Languages: SupportedCultures.All
                 .Select(c => new ShellLanguageOption(c, SupportedCultures.GetNativeName(c)))
                 .ToArray(),

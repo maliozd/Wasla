@@ -183,25 +183,40 @@ jobs:
             @filter
 
       # WAS-62: this commit's Print Bridge setup EXE and MSI, and a build of the same commit with the next build number
-      # for the upgrade test. Unsigned development builds: PrintBridgeInstallerTests install, repair, upgrade and uninstall
-      # them on this disposable runner. Only their version and SHA-256 metadata is uploaded, never the installers.
+      # for the upgrade test. PrintBridgeInstallerTests install, repair, upgrade, update (WAS-63) and uninstall them on this
+      # disposable runner. Only their version and SHA-256 metadata is uploaded, never the installers.
+      #
+      # WAS-63: an installation accepts an update only from the publisher that signed it, so both builds are signed, with
+      # a throwaway self-signed certificate made here: its private key never leaves this runner's user store, and only this
+      # runner trusts it (LocalMachine Root). The builds say "test-signed development build" in their product name and
+      # metadata. No Wasla certificate, password or secret is used. Timestamps come from DigiCert's public server.
       - name: Build Print Bridge installers
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: pwsh
         run: |
-          ./scripts/release/package-print-bridge.ps1 -OutputDirectory artifacts/print-bridge
+          $certificate = New-SelfSignedCertificate -Type CodeSigningCert -CertStoreLocation Cert:\CurrentUser\My `
+            -Subject 'CN=Wasla Print Bridge CI test signing (trusted on this runner only)' `
+            -KeyAlgorithm RSA -KeyLength 3072 -HashAlgorithm SHA256 -KeyExportPolicy NonExportable -NotAfter (Get-Date).AddDays(7)
+          $public = Join-Path $env:RUNNER_TEMP 'print-bridge-test-signing.cer'
+          Export-Certificate -Cert $certificate -FilePath $public | Out-Null
+          Import-Certificate -FilePath $public -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
+          Write-Host "Test signing certificate $($certificate.Thumbprint): $($certificate.Subject), trusted in LocalMachine Root on this runner"
+          # A hashtable: splatting an array passes its items by position, so '-TestSigning' would be a value, not a switch.
+          $signing = @{ SigningCertificateThumbprint = $certificate.Thumbprint; TimestampUrl = 'http://timestamp.digicert.com'; TestSigning = $true }
+
+          ./scripts/release/package-print-bridge.ps1 -OutputDirectory artifacts/print-bridge @signing
           $current = (Get-Content artifacts/print-bridge/Wasla.PrintBridge-package.json -Raw | ConvertFrom-Json).version
           $parts = $current.Split('.')
           $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
           ./scripts/release/package-print-bridge.ps1 -Version $next -OutputDirectory artifacts/print-bridge-upgrade -SkipSupportZip `
-            -WebView2BootstrapperPath artifacts/print-bridge/build/MicrosoftEdgeWebview2Setup.exe
+            -WebView2BootstrapperPath artifacts/print-bridge/build/MicrosoftEdgeWebview2Setup.exe @signing
           $root = (Get-Location).Path
           @(
             "WASLA_PRINT_BRIDGE_SETUP=$root\artifacts\print-bridge\Wasla.PrintBridge-Setup-x64.exe",
             "WASLA_PRINT_BRIDGE_UPGRADE_SETUP=$root\artifacts\print-bridge-upgrade\Wasla.PrintBridge-Setup-x64.exe",
             "WASLA_PRINT_BRIDGE_INSTALLER_LOGS=$root\artifacts\test-results\print-bridge-installer"
           ) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Print Bridge setups: $current and $next (unsigned development builds)"
+          Write-Host "Print Bridge setups: $current and $next (test-signed development builds)"
 
       # Runs after a unit-test failure too, so one run reports both suites.
       - name: Run Wasla.PrintBridge.Tests (${{ env.TEST_SCOPE }})

@@ -15,6 +15,15 @@ internal sealed class PrintBridgeServiceBackend
     private IpcAvailability _availability = IpcAvailability.Starting;
     private IPrintBridgeEngine? _engine;
 
+    public PrintBridgeServiceBackend(Updates.PrintBridgeUpdateCoordinator updates)
+    {
+        Updates = updates;
+        updates.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Updates (WAS-63): one coordinator for the whole service, available before the engine is.</summary>
+    public Updates.PrintBridgeUpdateCoordinator Updates { get; }
+
     /// <summary>Raised from any thread when the availability or the engine's state may have changed.</summary>
     public event EventHandler? Changed;
 
@@ -92,9 +101,10 @@ internal sealed class PrintBridgeServiceBackend
             engine = _availability == IpcAvailability.Active ? _engine : null;
         }
 
+        var update = Updates.Snapshot();
         return engine is null
-            ? new IpcState(availability, null, null)
-            : new IpcState(availability, PrintBridgeIpcMapping.ToWire(engine.GetStatus()), PrintBridgeIpcMapping.ToWire(engine.Settings));
+            ? new IpcState(availability, null, null, update)
+            : new IpcState(availability, PrintBridgeIpcMapping.ToWire(engine.GetStatus()), PrintBridgeIpcMapping.ToWire(engine.Settings), update);
     }
 
     /// <summary>The issue a client shows while the service cannot run its engine.</summary>

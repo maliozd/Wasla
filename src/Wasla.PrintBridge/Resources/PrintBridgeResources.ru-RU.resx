@@ -897,4 +897,136 @@
   <data name="Shell.Printer.UserOnly" xml:space="preserve">
     <value>Этот принтер установлен только для вашей учётной записи Windows, поэтому служба Print Bridge не может его использовать. Администратор должен установить его для всех пользователей.</value>
   </data>
+  <data name="Shell.Update.Title" xml:space="preserve">
+    <value>Обновления</value>
+  </data>
+  <data name="Shell.Update.Help" xml:space="preserve">
+    <value>Новая версия устанавливается только по вашей команде. Во время установки печать приостанавливается, а Windows запрашивает права администратора.</value>
+  </data>
+  <data name="Shell.Update.Installed" xml:space="preserve">
+    <value>Установленная версия</value>
+  </data>
+  <data name="Shell.Update.Progress" xml:space="preserve">
+    <value>Ход загрузки</value>
+  </data>
+  <data name="Shell.Update.Check" xml:space="preserve">
+    <value>Проверить обновления</value>
+  </data>
+  <data name="Shell.Update.Start" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="Shell.Update.Retry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="Shell.Update.Cancel" xml:space="preserve">
+    <value>Отменить обновление</value>
+  </data>
+  <data name="Shell.Update.Status.Unavailable" xml:space="preserve">
+    <value>Обновления можно проверить, когда служба Print Bridge доступна.</value>
+  </data>
+  <data name="Shell.Update.Status.Unsupported" xml:space="preserve">
+    <value>Обновления выходят в подписанных выпусках Print Bridge. Эта копия — сборка для разработки, поэтому она не может обновить себя.</value>
+  </data>
+  <data name="Shell.Update.Status.Checking" xml:space="preserve">
+    <value>Проверка обновлений…</value>
+  </data>
+  <data name="Shell.Update.Status.UpToDate" xml:space="preserve">
+    <value>Установлена последняя версия Print Bridge.</value>
+  </data>
+  <data name="Shell.Update.Status.Available" xml:space="preserve">
+    <value>Доступна версия {0}.</value>
+  </data>
+  <data name="Shell.Update.Status.Downloading" xml:space="preserve">
+    <value>Загрузка версии {0}. Печать тем временем продолжается.</value>
+  </data>
+  <data name="Shell.Update.Status.Verifying" xml:space="preserve">
+    <value>Проверка загруженного файла. Печать тем временем продолжается.</value>
+  </data>
+  <data name="Shell.Update.Status.WaitingForPrinting" xml:space="preserve">
+    <value>Ожидание окончания текущей печати. Затем печать приостановится до завершения установки.</value>
+  </data>
+  <data name="Shell.Update.Status.Ready" xml:space="preserve">
+    <value>Версия {0} готова к установке. Печать приостановлена, пока не запустится установщик или обновление не будет отменено.</value>
+  </data>
+  <data name="Shell.Update.Status.Opening" xml:space="preserve">
+    <value>Открывается установщик. Печать приостановлена до завершения установки.</value>
+  </data>
+  <data name="Shell.Update.Status.SetupOpen" xml:space="preserve">
+    <value>Установщик открыт: следуйте его шагам, Windows запросит права администратора. Чтобы отменить, закройте окно установщика.</value>
+  </data>
+  <data name="Shell.Update.Status.Installing" xml:space="preserve">
+    <value>Устанавливается версия {0}; отменить уже нельзя. Печать возобновится сама после установки.</value>
+  </data>
+  <data name="Shell.Update.Status.Succeeded" xml:space="preserve">
+    <value>Обновлено до версии {0}.</value>
+  </data>
+  <data name="Shell.Update.Status.NotApplied" xml:space="preserve">
+    <value>Обновление не установлено. Версия {0} по-прежнему установлена, печать продолжается.</value>
+  </data>
+  <data name="Shell.Update.Status.Cancelled" xml:space="preserve">
+    <value>Обновление отменено. Ничего не установлено, печать продолжается.</value>
+  </data>
+  <data name="Shell.Update.Failure.Download" xml:space="preserve">
+    <value>Не удалось загрузить обновление. Проверьте подключение к интернету и повторите попытку.</value>
+  </data>
+  <data name="Shell.Update.Failure.Verification" xml:space="preserve">
+    <value>Загруженный файл не прошёл проверку и удалён. Ничего не установлено.</value>
+  </data>
+  <data name="Shell.Update.Failure.PrintingInProgress" xml:space="preserve">
+    <value>Ещё печатался чек, поэтому обновление не началось. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="Shell.Update.Failure.Interrupted" xml:space="preserve">
+    <value>Обновление прервано, так как Print Bridge перезапустился. Ничего не установлено; повторите попытку.</value>
+  </data>
+  <data name="Shell.Update.Failure.Expired" xml:space="preserve">
+    <value>Установщик не был запущен вовремя. Обновление отменено, печать продолжается.</value>
+  </data>
+  <data name="Shell.Update.Failure.Storage" xml:space="preserve">
+    <value>Не удалось сохранить обновление на этом компьютере. Ничего не установлено; повторите попытку.</value>
+  </data>
+  <data name="Shell.Update.Failure.UnexpectedVersion" xml:space="preserve">
+    <value>После обновления работает неожиданная версия. Обратитесь в поддержку Wasla.</value>
+  </data>
+  <data name="Shell.Update.Failure.Setup" xml:space="preserve">
+    <value>Не удалось открыть установщик. Ничего не установлено, печать продолжается.</value>
+  </data>
+  <data name="Shell.Update.Started" xml:space="preserve">
+    <value>Обновление до версии {0} началось.</value>
+  </data>
+  <data name="Shell.Update.CheckFirst" xml:space="preserve">
+    <value>Сначала проверьте обновления.</value>
+  </data>
+  <data name="Shell.Update.NothingToCancel" xml:space="preserve">
+    <value>Нет обновления для отмены.</value>
+  </data>
+  <data name="Shell.Update.ConfirmTitle" xml:space="preserve">
+    <value>Обновить Print Bridge?</value>
+  </data>
+  <data name="Shell.Update.ConfirmMessage" xml:space="preserve">
+    <value>Во время установки новой версии печать приостанавливается. Откроется установщик, Windows запросит права администратора, и Print Bridge закроется. После установки печать возобновится сама.</value>
+  </data>
+  <data name="Shell.Update.Confirm" xml:space="preserve">
+    <value>Начать обновление</value>
+  </data>
+  <data name="Shell.Update.NewVersion" xml:space="preserve">
+    <value>Новая версия</value>
+  </data>
+  <data name="Update.Error.NotSigned" xml:space="preserve">
+    <value>Обновления выходят в подписанных выпусках Print Bridge. Эта копия не может обновить себя.</value>
+  </data>
+  <data name="Update.Error.NotReady" xml:space="preserve">
+    <value>Print Bridge ещё не готов. Повторите попытку чуть позже.</value>
+  </data>
+  <data name="Update.Error.InvalidRelease" xml:space="preserve">
+    <value>Не удалось прочитать описание выпуска с сервера Wasla. Повторите попытку позже.</value>
+  </data>
+  <data name="Update.Error.NotNewer" xml:space="preserve">
+    <value>Эта версия не новее установленной.</value>
+  </data>
+  <data name="Update.Error.Storage" xml:space="preserve">
+    <value>Не удалось сохранить обновление на этом компьютере. Повторите попытку; если проблема сохранится, обратитесь в поддержку Wasla.</value>
+  </data>
+  <data name="Update.Error.InProgress" xml:space="preserve">
+    <value>Это нельзя сделать, пока Print Bridge обновляется. Повторите попытку после завершения или отмены обновления.</value>
+  </data>
 </root>

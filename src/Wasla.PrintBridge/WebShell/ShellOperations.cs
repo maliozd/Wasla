@@ -61,10 +61,16 @@ public sealed class ShellOperations
         TestPrint,
         Reprint,
         ConnectionSetup,
-        SettingsSave
+        SettingsSave,
+        UpdateCheck,
+        UpdateStart,
+        UpdateCancel
     }
 
     private static readonly Group[] ConnectionGroups = [Group.Engine, Group.ConnectionTest, Group.ConnectionReset];
+
+    /// <summary>A check and a start (its confirmation and the request to prepare) never run at the same time.</summary>
+    private static readonly Group[] UpdateRequestGroups = [Group.UpdateCheck, Group.UpdateStart];
 
     private readonly IPrintBridgeEngine _engine;
     private readonly IPrinterCatalog _printers;
@@ -76,9 +82,11 @@ public sealed class ShellOperations
     private readonly PrintBridgeLocalizer _localizer;
     private readonly ILogger _logger;
     private readonly TimeSpan _timeout;
+    private readonly ShellUpdates? _updates;
     private readonly int[] _running = new int[Enum.GetValues<Group>().Length];
     private readonly RecentRequestIds _requestIds = new(capacity: 256);
 
+    /// <param name="updates">The app's part of updates (WAS-63); without it the update commands answer that updates are unavailable.</param>
     public ShellOperations(
         IPrintBridgeEngine engine,
         IPrinterCatalog printers,
@@ -89,7 +97,8 @@ public sealed class ShellOperations
         IPrintBridgeSettingsView settings,
         PrintBridgeLocalizer localizer,
         ILogger logger,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        ShellUpdates? updates = null)
     {
         _engine = engine;
         _printers = printers;
@@ -101,6 +110,9 @@ public sealed class ShellOperations
         _localizer = localizer;
         _logger = logger;
         _timeout = timeout ?? DefaultTimeout;
+        _updates = updates;
+        if (_updates is not null)
+            _updates.Changed += (_, _) => StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Raised from any thread when an operation starts or finishes.</summary>
@@ -116,6 +128,16 @@ public sealed class ShellOperations
         IsRunning(Group.Reprint),
         IsRunning(Group.ConnectionSetup),
         IsRunning(Group.SettingsSave));
+
+    /// <summary>The update commands running in the host; the page shows them in the update section.</summary>
+    public ShellUpdateBusyView UpdateBusy => new(
+        IsRunning(Group.UpdateCheck),
+        IsRunning(Group.UpdateStart),
+        IsRunning(Group.UpdateCancel));
+
+    /// <summary>The update section of the snapshot.</summary>
+    public ShellUpdateView UpdateView() =>
+        _updates?.CreateView(UpdateBusy) ?? ShellUpdates.Unavailable(_localizer, UpdateBusy);
 
     public static bool IsOperation(ShellCommandType type) => GroupFor(type) is not null || type == ShellCommandType.LogsOpenFolder;
 
@@ -153,7 +175,7 @@ public sealed class ShellOperations
             return OpenLogFolder(command);
 
         var group = GroupFor(command.Type)!.Value;
-        if (BlockedByConnectionSetup(group) || !TryEnter(group))
+        if (BlockedByConnectionSetup(group) || BlockedByUpdateRequest(group) || !TryEnter(group))
             return new ShellOperationResult(operation, command.RequestId, ShellOperationOutcome.Busy, _localizer["Shell.Op.Busy"]);
 
         try
@@ -290,6 +312,25 @@ public sealed class ShellOperations
                 return (ShellOperationOutcome.Succeeded, _localizer[command.Printed.Value ? "Shell.Op.ResolvedPrinted" : "Shell.Op.ResolvedNotPrinted"]);
             }
 
+            // WAS-63. The confirmation of a start has no time limit (like the connection dialog); the service calls do.
+            case ShellCommandType.UpdateCheck or ShellCommandType.UpdateStart or ShellCommandType.UpdateCancel when _updates is null:
+                return (ShellOperationOutcome.Rejected, _localizer["Shell.Update.Status.Unavailable"]);
+
+            case ShellCommandType.UpdateCheck:
+            {
+                using var cts = new CancellationTokenSource(_timeout);
+                return await _updates!.CheckAsync(cts.Token).ConfigureAwait(true);
+            }
+
+            case ShellCommandType.UpdateStart:
+                return await _updates!.StartAsync(_timeout).ConfigureAwait(true);
+
+            case ShellCommandType.UpdateCancel:
+            {
+                using var cts = new CancellationTokenSource(_timeout);
+                return await _updates!.CancelAsync(cts.Token).ConfigureAwait(true);
+            }
+
             default:
                 return (ShellOperationOutcome.Rejected, _localizer["Shell.Op.Failed"]);
         }
@@ -319,6 +360,9 @@ public sealed class ShellOperations
         group == Group.ConnectionSetup
             ? ConnectionGroups.Any(IsRunning)
             : ConnectionGroups.Contains(group) && IsRunning(Group.ConnectionSetup);
+
+    private bool BlockedByUpdateRequest(Group group) =>
+        UpdateRequestGroups.Contains(group) && UpdateRequestGroups.Any(other => other != group && IsRunning(other));
 
     private ShellOperationResult OpenLogFolder(ShellCommand command)
     {
@@ -364,6 +408,9 @@ public sealed class ShellOperations
         ShellCommandType.HistoryReprint or ShellCommandType.HistoryResolve => Group.Reprint,
         ShellCommandType.ConnectionOpenSetup => Group.ConnectionSetup,
         ShellCommandType.SettingsSave => Group.SettingsSave,
+        ShellCommandType.UpdateCheck => Group.UpdateCheck,
+        ShellCommandType.UpdateStart => Group.UpdateStart,
+        ShellCommandType.UpdateCancel => Group.UpdateCancel,
         _ => null
     };
 

@@ -10,6 +10,7 @@ using Wasla.PrintBridge.Models;
 using Wasla.PrintBridge.Options;
 using Wasla.PrintBridge.Services;
 using Wasla.PrintBridge.Setup;
+using Wasla.PrintBridge.Updates;
 
 namespace Wasla.PrintBridge.ServiceClient;
 
@@ -33,8 +34,10 @@ public enum PrintBridgeServiceConnectionState
 /// keeps the last state the service pushed, and reconnects after 0.5 s, doubling to 5 s (30 s after a version mismatch).
 /// While it is not connected, <see cref="GetStatus"/> reports <see cref="PrintBridgeRuntimeIssueCode.ServiceUnavailable"/>
 /// (or <see cref="PrintBridgeRuntimeIssueCode.ServiceIncompatible"/>) and every command fails with that text.
+/// It is also the app's view of updates (WAS-63, <see cref="IPrintBridgeUpdates"/>): the update state comes with every
+/// service state, so <see cref="StatusChanged"/> announces its changes too.
 /// </summary>
-public sealed class PrintBridgeServiceClient : IPrintBridgeEngine, IAsyncDisposable
+public sealed class PrintBridgeServiceClient : IPrintBridgeEngine, IPrintBridgeUpdates, IAsyncDisposable
 {
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan MinRetry = TimeSpan.FromMilliseconds(500);
@@ -239,6 +242,26 @@ public sealed class PrintBridgeServiceClient : IPrintBridgeEngine, IAsyncDisposa
                 _activeConsent = null;
         }
     }
+
+    /// <summary>The update state of the service's last state; null while the app is not connected to the service.</summary>
+    public IpcUpdate? CurrentUpdate
+    {
+        get
+        {
+            lock (_sync)
+                return _state == PrintBridgeServiceConnectionState.Connected ? _serviceState?.Update : null;
+        }
+    }
+
+    public async Task<IpcUpdateCheckResult> CheckForUpdateAsync(CancellationToken ct) =>
+        await SendAsync<IpcUpdateCheckResult>(PrintBridgeIpcProtocol.UpdateCheck, new IpcEmptyPayload(), ct).ConfigureAwait(false);
+
+    public async Task<Guid> PrepareUpdateAsync(string version, CancellationToken ct) =>
+        (await SendAsync<IpcUpdatePrepareResult>(PrintBridgeIpcProtocol.UpdatePrepare, new IpcUpdatePreparePayload(version), ct)
+            .ConfigureAwait(false)).AttemptId;
+
+    public async Task CancelUpdateAsync(Guid attemptId, CancellationToken ct) =>
+        await SendAsync<IpcEmptyPayload>(PrintBridgeIpcProtocol.UpdateCancel, new IpcUpdateCancelPayload(attemptId), ct).ConfigureAwait(false);
 
     public async ValueTask DisposeAsync()
     {
