@@ -128,8 +128,11 @@ dd {
 
 /* Shell grid */
 
+/* The one column never grows past the window. An implicit (auto) column takes the widest band's minimum width, so a
+   header that does not fit would widen the header, tabs, content and action bar together and scroll the page. */
 .pb-app {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   block-size: 100vh;
 }
@@ -140,10 +143,14 @@ dd {
 
 /* Header */
 
+/* When the connection status and the language list do not fit beside the logo (a long status label in a narrow
+   window), they move to a second row at the end instead of widening the page or being cut. */
 .pb-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wasla-space-3);
+  justify-content: flex-end;
+  gap: var(--wasla-space-2) var(--wasla-space-3);
   padding: var(--wasla-space-2) var(--pb-gutter);
   background: var(--pb-chrome);
 }
@@ -901,6 +908,11 @@ tr[data-status="skipped"] .pb-row-detail {
 @media (max-width: 36rem) {
   :root {
     --pb-gutter: var(--wasla-space-3);
+  }
+
+  /* Keeps the logo, the online status and the language list on one row at 320 CSS px in every language. */
+  .pb-header {
+    column-gap: var(--wasla-space-2);
   }
 
   .pb-col-optional {
