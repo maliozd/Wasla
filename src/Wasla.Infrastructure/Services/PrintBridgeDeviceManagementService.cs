@@ -32,13 +32,19 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
     {
         var now = DateTime.UtcNow;
 
-        var rows = await _centralDb.PrintBridgeDevices
+        // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads.
+        var ids = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_centralDb, tenantId, ct).ConfigureAwait(false);
+        if (ids.Count == 0)
+            return [];
+
+        var rows = await PrintBridgeDeviceRowReads.ByIds(_centralDb, ids)
             .AsNoTracking()
-            .WhereManageable(tenantId)
             .OrderByDescending(d => d.LastSeenAt ?? d.CreatedAt)
             .Select(d => new
             {
                 d.Id,
+                d.TenantId,
+                d.RemovedAtUtc,
                 d.Name,
                 d.IsActive,
                 d.LastSeenAt,
@@ -49,7 +55,7 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
-        return rows.Select(d => new PrintBridgeDeviceSummaryDto(
+        return rows.Where(d => d.TenantId == tenantId && d.RemovedAtUtc is null).Select(d => new PrintBridgeDeviceSummaryDto(
             d.Id,
             d.Name,
             d.IsActive,
@@ -64,13 +70,19 @@ public sealed class PrintBridgeDeviceManagementService : IPrintBridgeDeviceManag
 
     public async Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct)
     {
-        var activeCount = await _centralDb.PrintBridgeDevices
+        // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads. Display only: the setup
+        // paths count with PrintBridgeDeviceQuota under the tenant's lock.
+        var ids = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_centralDb, tenantId, ct).ConfigureAwait(false);
+        if (ids.Count == 0)
+            return BuildQuota(0);
+
+        var rows = await PrintBridgeDeviceRowReads.ByIds(_centralDb, ids)
             .AsNoTracking()
-            .WhereManageable(tenantId)
-            .CountAsync(d => d.IsActive, ct)
+            .Select(d => new { d.TenantId, d.RemovedAtUtc, d.IsActive })
+            .ToListAsync(ct)
             .ConfigureAwait(false);
 
-        return BuildQuota(activeCount);
+        return BuildQuota(rows.Count(d => d.TenantId == tenantId && d.RemovedAtUtc is null && d.IsActive));
     }
 
     public async Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(
