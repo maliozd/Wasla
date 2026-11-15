@@ -232,7 +232,7 @@ Exact runs, totals and evidence lines are in the WAS-63 pull request.
 | Health check | `PrintBridgeServiceProcessTests`, `PrintBridgeInstallerSourceTests` | The built executable against a console service process; the custom action's place in the MSI |
 | `updates\` rules | `PrintBridgeDataFolderSecurityTests` | Readable by users is safe; writable by users is not |
 | Release versions, description and record | `PrintBridgeReleaseTests` in both test projects | Contract rules; the Web catalog and endpoints |
-| App flow and languages | WebShell tests | Confirmation, progress, recovery texts in TR, EN, AR and RU, Arabic right to left |
+| App flow and languages | WebShell tests | Confirmation, progress, recovery texts in TR, EN, AR and RU, Arabic right to left. In the real WebView2 window at 320 CSS px, in all four languages, Settings → Updates in every state it shows (each attempt step, each result and failure text, and the app's own setup opening, open, closed and not opened): no sideways scrolling, nothing outside the card, cut or overlapping (`ShellWebViewRuntimeTests.MinimumWindow_…`) |
 
 Not tested: a real machine reboot or power loss during an installation or rollback, physical printers and client
 Windows editions (WAS-28), and a production-signed release (no certificate exists yet).

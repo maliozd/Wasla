@@ -274,8 +274,148 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                 Assert.True(offenders == "[]", $"{culture} 320px, {titleKey} \"{label}\": {offenders}");
             }
 
+            await AssertUpdatesFitInEveryStateAsync(core, localizer, $"{culture} 320px");
             await core.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
         });
+
+    /// <summary>
+    /// WAS-63: Settings → Updates in every state the host shows, as it shows them: before a check, on an unsigned
+    /// installation, up to date, available, each step of an attempt (downloading with its progress bar, verifying, waiting
+    /// for printing, ready, installing), each result (installed, not installed, cancelled and every failure text), and this
+    /// app's own attempt (opening the setup, the setup open, the setup closed, a setup that could not be opened). In each,
+    /// nothing scrolls the page sideways, leaves the window, the content or the card, is cut, or overlaps.
+    /// </summary>
+    private static async Task AssertUpdatesFitInEveryStateAsync(CoreWebView2 core, PrintBridgeLocalizer localizer, string context)
+    {
+        var updates = CurrentUpdates!;
+        var launcher = CurrentLauncher!;
+        var verifier = CurrentVerifier!;
+        var newer = FakeUpdates.Newer;
+        await EvalAsync(core, "document.getElementById('tab-settings').click(); 'shown'");
+
+        async Task FitsAsync(string what, string stage, string label)
+        {
+            await WaitUntilAsync(async () => await EvalAsync(core, "document.getElementById('update-card').dataset.stage + '|' + document.getElementById('update-status').textContent") == $"{stage}|{label}");
+            var page = await HorizontalOverflowOffendersAsync(core, fullLabel: true);
+            var card = await EvalAsync(core, UpdateCardOffendersScript);
+            Assert.True(page == "[]" && card == "[]", $"{context}, Updates {what} \"{label}\": page {page}, card {card}");
+        }
+
+        async Task CheckAsync(string? available)
+        {
+            updates.Available = available;
+            await EvalAsync(core, "document.getElementById('update-check').click(); 'checked'");
+        }
+
+        // The user confirms the update in the native dialog; the service prepares it and reports the verified setup ready.
+        async Task ConfirmAsync()
+        {
+            updates.NextAttempt = Guid.NewGuid();
+            var before = Prepared();
+            await EvalAsync(core, "document.getElementById('update-start').click(); 'asked'");
+            var dialog = await WaitForOpenFormAsync<ShellConfirmDialog>();
+            dialog.Confirm.PerformClick();
+            await WaitUntilAsync(() => Task.FromResult(Prepared() == before + 1));
+            updates.Current = FakeUpdates.Attempt(updates.NextAttempt, PrintBridgeUpdateStage.Ready);
+        }
+
+        int Prepared()
+        {
+            lock (updates.Prepared)
+                return updates.Prepared.Count;
+        }
+
+        await FitsAsync("before a check", ShellUpdateStages.Idle, string.Empty);
+        updates.Current = FakeUpdates.Idle(supported: false);
+        await FitsAsync("on an unsigned installation", ShellUpdateStages.Unsupported, localizer["Shell.Update.Status.Unsupported"]);
+        updates.Current = FakeUpdates.Idle();
+        await FitsAsync("before a check", ShellUpdateStages.Idle, string.Empty);
+        await CheckAsync(null);
+        await FitsAsync("up to date", ShellUpdateStages.UpToDate, localizer["Shell.Update.Status.UpToDate"]);
+        await CheckAsync(newer);
+        await FitsAsync("available", ShellUpdateStages.Available, localizer.GetString("Shell.Update.Status.Available", newer));
+
+        // An attempt as the service reports it (one this window did not start).
+        foreach (var (what, update, stage, label) in new (string, Wasla.PrintBridge.Ipc.IpcUpdate, string, string)[]
+                 {
+                     ("downloading", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Downloading, percent: 40), ShellUpdateStages.Downloading, localizer.GetString("Shell.Update.Status.Downloading", newer)),
+                     ("verifying", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Verifying), ShellUpdateStages.Verifying, localizer["Shell.Update.Status.Verifying"]),
+                     ("waiting for printing", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.WaitingForPrinting), ShellUpdateStages.WaitingForPrinting, localizer["Shell.Update.Status.WaitingForPrinting"]),
+                     ("ready", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Ready), ShellUpdateStages.Ready, localizer.GetString("Shell.Update.Status.Ready", newer)),
+                     ("installing", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Ready, stagedPath: null), ShellUpdateStages.Installing, localizer.GetString("Shell.Update.Status.Installing", newer)),
+                     ("installed", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Succeeded), ShellUpdateStages.Succeeded, localizer.GetString("Shell.Update.Status.Succeeded", newer)),
+                     ("not installed", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.NotApplied), ShellUpdateStages.NotApplied, localizer.GetString("Shell.Update.Status.NotApplied", FakeUpdates.Installed)),
+                     ("cancelled", FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Cancelled), ShellUpdateStages.Cancelled, localizer["Shell.Update.Status.Cancelled"])
+                 })
+        {
+            updates.Current = update;
+            await FitsAsync(what, stage, label);
+            Assert.Equal(stage == ShellUpdateStages.Downloading ? "false" : "true", await EvalAsync(core, "String(document.getElementById('update-progress-row').hidden)"));
+        }
+
+        foreach (var failure in Enum.GetValues<PrintBridgeUpdateFailure>())
+        {
+            updates.Current = FakeUpdates.Attempt(Guid.NewGuid(), PrintBridgeUpdateStage.Failed, failure);
+            await FitsAsync($"failed ({failure})", ShellUpdateStages.Failed, localizer[ShellUpdates.FailureKey(ShellUpdates.FailureGroup(failure))]);
+        }
+
+        // This window's own attempt: the app checks the setup (held), opens it, and the setup closes without installing;
+        // then a setup that cannot be opened. The fake service records each cancel, as the service does.
+        updates.OnCancel = id => updates.Current = FakeUpdates.Attempt(id, PrintBridgeUpdateStage.Cancelled);
+        using (var held = new ManualResetEventSlim(false))
+        {
+            verifier.Gate = held;
+            updates.Current = FakeUpdates.Idle();
+            await FitsAsync("available again", ShellUpdateStages.Available, localizer.GetString("Shell.Update.Status.Available", newer));
+            await ConfirmAsync();
+            await FitsAsync("opening its setup", ShellUpdateStages.Opening, localizer["Shell.Update.Status.Opening"]);
+            held.Set();
+            await FitsAsync("with its setup open", ShellUpdateStages.SetupOpen, localizer["Shell.Update.Status.SetupOpen"]);
+            launcher.Exit();
+            await FitsAsync("after its setup closed", ShellUpdateStages.NotApplied, localizer.GetString("Shell.Update.Status.NotApplied", FakeUpdates.Installed));
+            verifier.Gate = null;
+        }
+
+        launcher.Failure = new System.ComponentModel.Win32Exception(2);
+        updates.Current = FakeUpdates.Idle();
+        await FitsAsync("available again", ShellUpdateStages.Available, localizer.GetString("Shell.Update.Status.Available", newer));
+        await ConfirmAsync();
+        await FitsAsync("when its setup could not be opened", ShellUpdateStages.Failed, localizer["Shell.Update.Failure.Setup"]);
+    }
+
+    /// <summary>
+    /// The Updates card at the current width: the content area does not scroll sideways, the card stays inside it, every
+    /// visible element stays inside the card and shows all of its content (no word or button label wider than its box),
+    /// and the card's parts, its buttons and the progress bar and its percentage do not overlap.
+    /// </summary>
+    private const string UpdateCardOffendersScript = """
+        (() => {
+          const card = document.getElementById('update-card');
+          const main = document.querySelector('.pb-main');
+          const box = el => el.getBoundingClientRect();
+          const name = el => el.id || el.className || el.tagName;
+          const visible = el => !el.closest('[hidden]') && box(el).width > 0 && box(el).height > 0;
+          const out = [];
+          if (!visible(card)) return JSON.stringify(['card not shown']);
+          if (main.scrollWidth > main.clientWidth) out.push('content scrolls sideways');
+          const area = box(main), c = box(card);
+          if (c.left < area.left - 1 || c.right > area.right + 1) out.push('card outside the content');
+          for (const el of card.querySelectorAll('*')) {
+            if (!visible(el)) continue;
+            const r = box(el);
+            if (r.left < c.left - 1 || r.right > c.right + 1) out.push('outside the card: ' + name(el));
+            if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1) out.push('cut: ' + name(el));
+          }
+          const overlaps = list => list.forEach((a, i) => list.slice(i + 1).forEach(b => {
+            const p = box(a), q = box(b);
+            if (p.left < q.right - 0.5 && q.left < p.right - 0.5 && p.top < q.bottom - 0.5 && q.top < p.bottom - 0.5) out.push('overlap ' + name(a) + ' / ' + name(b));
+          }));
+          overlaps([...card.children].filter(visible));
+          overlaps([...document.querySelectorAll('#update-actions > button')].filter(visible));
+          overlaps([...document.querySelectorAll('#update-progress-row > *')].filter(visible));
+          return JSON.stringify(out.slice(0, 8));
+        })()
+        """;
 
     [Fact]
     public Task ConnectionSetup_OpensTheNativeDialog_AndThePageNeverSeesTheSecrets() =>
@@ -642,6 +782,9 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
     [ThreadStatic]
     private static FakeSetupLauncher? CurrentLauncher;
 
+    [ThreadStatic]
+    private static FakeSetupVerifier? CurrentVerifier;
+
     private Task RunShellAsync(Func<PrintBridgeShellForm, CoreWebView2, FakeStatusSource, Task> body, string savedToken = SentinelToken)
     {
         if (!new WebView2RuntimeProbe().Probe().IsAvailable)
@@ -670,6 +813,8 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                     CurrentUpdates = updates;
                     var launcher = new FakeSetupLauncher();
                     CurrentLauncher = launcher;
+                    var verifier = new FakeSetupVerifier();
+                    CurrentVerifier = verifier;
                     using var form = new PrintBridgeShellForm(
                         source,
                         settings,
@@ -684,7 +829,7 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
                         NullLogger.Instance,
                         updates,
                         launcher,
-                        new FakeSetupVerifier())
+                        verifier)
                     {
                         StartPosition = FormStartPosition.Manual,
                         Location = new Point(-32000, -32000),
