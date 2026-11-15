@@ -46,6 +46,8 @@ public sealed partial class PrintBridgeInstallerTests
         Assert.Equal(0, RunSetup(setup.Path, "/quiet", "/norestart", "StartAtSignIn=0", "/log", installLog));
         AssertInstalled(setup.Version, startsAtSignIn: false);
         var installedPid = await WaitForServiceAsync();
+        AssertServiceRegistration(serviceSid);
+        var installedConfiguration = ServiceConfiguration("installed");
         AssertHealthCheckPassed(installLog, setup.Version);
         var client = Connect();
         await client.Connected.WaitAsync(Wait, Ct);
@@ -106,6 +108,9 @@ public sealed partial class PrintBridgeInstallerTests
         Assert.Contains("Rollback", rolledBackMsi, StringComparison.Ordinal);
         AssertInstalled(setup.Version, startsAtSignIn: false);
         var restoredPid = await WaitForServiceAsync();
+        // Windows Installer creates the deleted service again from its basic registration; the rollback actions apply the
+        // privileges and recovery settings again before it starts. All of it must be as the installed version had it.
+        AssertServiceConfiguration(installedConfiguration, "installed", "rolled-back");
         AssertServiceRegistration(serviceSid);
         Assert.Null(PrintBridgeDataFolderSecurity.Verify(_dataRoot, serviceSid));
         client = Connect();
@@ -146,6 +151,7 @@ public sealed partial class PrintBridgeInstallerTests
         Assert.True(removeAt >= 0 && installAt > removeAt, "The update removes the installed version before it writes new files.");
         AssertInstalled(upgrade.Version, startsAtSignIn: false);
         var updatedPid = await WaitForServiceAsync();
+        AssertServiceConfiguration(installedConfiguration, "installed", "updated");
         AssertServiceRegistration(serviceSid);
         Assert.Null(PrintBridgeDataFolderSecurity.Verify(_dataRoot, serviceSid));
         client = Connect();
