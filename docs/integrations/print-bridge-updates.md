@@ -133,6 +133,14 @@ the internet, a connection nor a printer, so a first installation passes it too.
   transaction restores the previous files, service registration and start state and starts the previous service: a file
   that cannot be written, a service that does not start, a failed health check. The downgrade refusal is untouched
   because a rollback is not an installation of an older version.
+- **The restored service keeps its least privilege and recovery.** Windows Installer creates the deleted service again
+  from its basic registration only (account, start type, dependencies, description, permissions). The required
+  privilege (`SeChangeNotifyPrivilege` only) and the recovery actions are set with `sc.exe` (WAS-61, WAS-62), so until
+  WAS-63's CI found it the restored service started with every privilege of its account and no restarts. Each version's
+  MSI has rollback actions on its uninstallation, between `StopServices` and `DeleteServices`, that run the same
+  `sc.exe` commands again; in the rollback they run after the service exists again and before it starts. A version
+  restores its own settings, so this holds for an update from any version that has them, which every released setup does
+  (none was released before WAS-63).
 - **No newer data before the commit.** Until the commit the new version holds the gate: it claims nothing, settles no
   journal entry, finishes no pending move and writes no settings. It writes only its log and the update state. So a
   rolled-back update leaves the data folder as the previous version left it, and that version never reads data a newer
@@ -219,7 +227,7 @@ Exact runs, totals and evidence lines are in the WAS-63 pull request.
 
 | What | Where | How |
 |------|-------|-----|
-| Install, update, health check and commit, and a failed update rolled back, with the real setups | `PrintBridgeInstallerTests.AConfirmedUpdate_…` (CI, disposable elevated runner only) | This commit's test-signed setup and the next build: discovery from a fake server, a tampered download refused, the pause waiting for a claimed receipt, the staged file's access rules, `FailWhenDeferred=1` rolled back to the installed version (registration, data and the receipt held by the pause intact; the new version never contacted the server), then a committed update keeping the data, the user's Stop and `StartAtSignIn=0`. The failure is induced; no machine reboot |
+| Install, update, health check and commit, and a failed update rolled back, with the real setups | `PrintBridgeInstallerTests.AConfirmedUpdate_…` (CI, disposable elevated runner only) | This commit's test-signed setup and the next build: discovery from a fake server, a tampered download refused, the pause waiting for a claimed receipt, the staged file's access rules, `FailWhenDeferred=1` rolled back to the installed version (data and the receipt held by the pause intact; the new version never contacted the server; the service's whole configuration as `sc.exe` reports it, privileges and recovery included, identical to the installed one's), then a committed update keeping the data, the user's Stop, `StartAtSignIn=0` and that same service configuration. The failure is induced; no machine reboot |
 | Reconciliation table, gate, expiry, cancel, disconnect, concurrent prepares, interrupted download, every refusal | `PrintBridgeUpdateCoordinatorTests` | Production engine, pipe and client in one process; fake server and fake Windows Installer; real Authenticode on a Microsoft-signed file of the .NET runtime (the installation is given Microsoft's publisher). A "restart" builds a new service on the same folder |
 | Health check | `PrintBridgeServiceProcessTests`, `PrintBridgeInstallerSourceTests` | The built executable against a console service process; the custom action's place in the MSI |
 | `updates\` rules | `PrintBridgeDataFolderSecurityTests` | Readable by users is safe; writable by users is not |

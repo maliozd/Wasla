@@ -33,8 +33,12 @@
 
     <bal:Condition Message="Wasla Print Bridge needs 64-bit Windows 10 or Windows 11." Condition="VersionNT64 AND VersionNT &gt;= v10.0" />
 
-    <!-- StartAtSignIn=0 on the command line installs without starting the app at users' sign-in (the MSI's START_AT_SIGN_IN). -->
-    <Variable Name="StartAtSignIn" Type="numeric" Value="1" bal:Overridable="yes" />
+    <!--
+      StartAtSignIn=0 on the command line installs without starting the app at users' sign-in, StartAtSignIn=1 with it (the
+      MSI's START_AT_SIGN_IN). Not given, it stays empty: a first installation starts the app at sign-in and a newer
+      version keeps the installed one's choice (WAS-63; Package.wxs). A default of 1 here would turn it on at every update.
+    -->
+    <Variable Name="StartAtSignIn" bal:Overridable="yes" />
 
     <!-- FailWhenDeferred=1 on the command line makes the MSI fail at its end and roll back (WAS-63 rollback tests only). -->
     <Variable Name="FailWhenDeferred" Type="numeric" Value="0" bal:Overridable="yes" />

@@ -70,8 +70,12 @@ the Run entry, in that user's session and without elevation. `--startup` makes a
 running in this session end quietly instead of saying "already running" (`PrintBridgeSignInStart`); the per-user,
 per-session instance lock (WAS-92) decides. So there is one engine per computer (the service) and at most one app per user
 and session. A user can turn the start off in Settings → Apps → Startup; an administrator can install without it
-(`StartAtSignIn=0` for the setup EXE, `START_AT_SIGN_IN=0` for the MSI). On the last page of an interactive install,
-**Launch** starts the app as the signed-in user, not elevated.
+(`StartAtSignIn=0` for the setup EXE, `START_AT_SIGN_IN=0` for the MSI) or with it (`1`). Without either, a first
+installation starts the app at sign-in and a newer version keeps the installed one's choice: off when the installed
+version has no Run entry, on otherwise (WAS-63). Windows Installer does not keep it by itself: `MigrateFeatureStates`
+carries over only the features the installed version has, and the setup used to pass `1` by default, so until WAS-63's
+CI found it an update turned the start on again. On the last page of an interactive install, **Launch** starts the app
+as the signed-in user, not elevated.
 
 **Setup links.** The installed app writes no per-user handler: one under `HKCU\Software\Classes` would hide the computer's
 handler from that user and outlive an uninstall. At its first start it removes a per-user handler an earlier (portable)
@@ -84,7 +88,10 @@ Install, repair and upgrade (MSI `InstallExecuteSequence`):
 
 1. A major upgrade removes the installed version first, inside the same transaction (`RemoveExistingProducts` right after
    `InstallInitialize`): its app processes are ended and its service is stopped and deleted before a new file is written.
-   A failure rolls back to the installed version.
+   A failure rolls back to the installed version. Windows Installer then creates the service again from its basic
+   registration; the installed version's own rollback actions (on its uninstallation, between `StopServices` and
+   `DeleteServices`) apply its privileges and recovery settings again before it starts (WAS-63,
+   [print-bridge-updates.md](print-bridge-updates.md#rollback-and-the-downgrade-rule)).
 2. Every `Wasla.PrintBridge.exe` (every user and session, also a pre-WAS-61 portable copy that still runs its own engine)
    is ended (`taskkill /F`, as LocalSystem), without its child processes: the setup itself may be one, started by the app
    for an update or a Repair, and ending it would abort the installation (WAS-63; WAS-62 used `/T`). The app's WebView2
@@ -104,7 +111,7 @@ from Launch at the end of the setup.
 | Action | Result |
 |--------|--------|
 | Repair (Installed Apps → Modify → Repair, `setup.exe /repair`, or the runtime notice's Repair) | Missing or damaged program files restored, service registration and data folder permissions applied again, the WebView2 Runtime installed when missing or too old. Data unchanged |
-| Upgrade (a newer setup, or an update the app prepared, WAS-63) | As above, new version, after its health check. Data unchanged; the computer's choice of start at sign-in is kept (Windows Installer carries the `StartAtSignIn` feature's state over, checked by CI) |
+| Upgrade (a newer setup, or an update the app prepared, WAS-63) | As above, new version, after its health check. Data unchanged; the computer's choice of start at sign-in is kept unless the setup is given `StartAtSignIn` (the installed Run entry decides, above; CI checks an update of an installation without it) |
 | The same version again | Replaces the installed one (a rebuilt or re-signed build), never installs beside it |
 | Downgrade (an older setup or MSI) | Refused before anything changes ("A newer version of Wasla Print Bridge is already installed.") |
 | Uninstall (Installed Apps, `setup.exe /uninstall`) | Apps ended; service stopped and deleted; program folder, shortcut, Run entry and the `wasla-printbridge` handler removed; Installed Apps entry removed |

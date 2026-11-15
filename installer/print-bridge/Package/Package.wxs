@@ -48,8 +48,22 @@
     <Launch Condition="VersionNT64" Message="Wasla Print Bridge needs 64-bit Windows 10 or Windows 11." />
 
     <Property Id="ARPNOMODIFY" Value="1" />
-    <!-- 1 (default): the app starts at every user's sign-in. 0: it does not (an administrator's choice for the computer). -->
-    <Property Id="START_AT_SIGN_IN" Value="1" Secure="yes" />
+
+    <!--
+      START_AT_SIGN_IN: 1, the app starts at every user's sign-in; 0, it does not (an administrator's choice for the computer).
+      Not given (the setup EXE without StartAtSignIn, as an update the app prepared runs it): a first installation starts the
+      app at sign-in, and a newer version keeps the installed version's choice, which is whether its Run entry is there
+      (WAS-63). Windows Installer does not keep it by itself: MigrateFeatureStates carries over only the features the
+      installed version has, and the condition below left StartAtSignIn out of it, so the default would turn it on again.
+    -->
+    <Property Id="START_AT_SIGN_IN" Secure="yes" />
+    <Property Id="INSTALLED_RUN_ENTRY" Secure="yes">
+      <RegistrySearch Id="InstalledRunEntry" Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="Wasla Print Bridge" Type="raw" Bitness="always64" />
+    </Property>
+    <SetProperty Id="START_AT_SIGN_IN" Action="KeepStartAtSignInOff" Value="0" After="AppSearch" Sequence="both"
+                 Condition="NOT START_AT_SIGN_IN AND WIX_UPGRADE_DETECTED AND NOT INSTALLED_RUN_ENTRY" />
+    <SetProperty Id="START_AT_SIGN_IN" Action="StartAtSignInByDefault" Value="1" After="KeepStartAtSignInOff" Sequence="both"
+                 Condition="NOT START_AT_SIGN_IN" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="WaslaFolder" Name="Wasla">
@@ -152,6 +166,24 @@
     <SetProperty Id="ConfigureServiceRecoveryOnError" Value="&quot;[System64Folder]sc.exe&quot; failureflag WaslaPrintBridge 1" Before="ConfigureServiceRecoveryOnError" Sequence="execute" />
     <CustomAction Id="ConfigureServiceRecoveryOnError" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
 
+    <!--
+      WAS-63: when an update fails, Windows Installer rolls back its removal of the installed version and creates the
+      deleted service again from its basic registration only (account, start type, dependencies, description and
+      permissions). The privileges and recovery settings above are sc.exe's, not Windows Installer's, so the restored
+      service ran with every privilege of its account and without its restarts. These rollback actions apply them again
+      during that rollback: scheduled when this version is uninstalled (by an update's removal, or an ordinary uninstall
+      that fails), between StopServices and DeleteServices, they run right after the service is created again and before
+      Windows Installer starts it. Their commands are the ones above (PrintBridgeInstallerSourceTests compares them).
+    -->
+    <SetProperty Id="RestoreServicePrivileges" Value="&quot;[System64Folder]sc.exe&quot; privs WaslaPrintBridge SeChangeNotifyPrivilege" Before="RestoreServicePrivileges" Sequence="execute" />
+    <CustomAction Id="RestoreServicePrivileges" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
+    <SetProperty Id="RestoreServiceRecovery" Value="&quot;[System64Folder]sc.exe&quot; failure WaslaPrintBridge reset= 86400 actions= restart/5000/restart/10000/restart/60000" Before="RestoreServiceRecovery" Sequence="execute" />
+    <CustomAction Id="RestoreServiceRecovery" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
+    <SetProperty Id="RestoreServiceRecoveryOnError" Value="&quot;[System64Folder]sc.exe&quot; failureflag WaslaPrintBridge 1" Before="RestoreServiceRecoveryOnError" Sequence="execute" />
+    <CustomAction Id="RestoreServiceRecoveryOnError" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore" />
+
     <SetProperty Id="SecureDataFolder" Value="&quot;[#ServiceExe]&quot; secure-data" Before="SecureDataFolder" Sequence="execute" />
     <CustomAction Id="SecureDataFolder" BinaryRef="Wix4UtilCA_X64" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="check" />
 
@@ -172,6 +204,9 @@
 
     <InstallExecuteSequence>
       <Custom Action="CloseApps" Before="StopServices" />
+      <Custom Action="RestoreServicePrivileges" After="StopServices" Condition="REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="RestoreServiceRecovery" After="RestoreServicePrivileges" Condition="REMOVE~=&quot;ALL&quot;" />
+      <Custom Action="RestoreServiceRecoveryOnError" After="RestoreServiceRecovery" Condition="REMOVE~=&quot;ALL&quot;" />
       <Custom Action="ConfigureServicePrivileges" After="InstallServices" Condition="NOT REMOVE~=&quot;ALL&quot;" />
       <Custom Action="ConfigureServiceRecovery" After="ConfigureServicePrivileges" Condition="NOT REMOVE~=&quot;ALL&quot;" />
       <Custom Action="ConfigureServiceRecoveryOnError" After="ConfigureServiceRecovery" Condition="NOT REMOVE~=&quot;ALL&quot;" />
