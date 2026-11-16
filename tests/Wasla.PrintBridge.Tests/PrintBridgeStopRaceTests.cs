@@ -19,8 +19,8 @@ namespace Wasla.PrintBridge.Tests;
 [Collection(PrintBridgeDataRootCollection.Name)]
 public sealed class PrintBridgeStopRaceTests : IDisposable
 {
-    private const string ServerUrl = "http://print-bridge.test";
-    private const string FakeToken = "test-token-not-a-real-credential";
+    internal const string ServerUrl = "http://print-bridge.test";
+    internal const string FakeToken = "test-token-not-a-real-credential";
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(20);
 
     private readonly IsolatedDataRoot _dataRoot = new("wasla-pb-stop-tests");
@@ -503,11 +503,11 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
         Assert.False(File.Exists(PrintBridgePaths.JournalPath));
     }
 
-    private static Wasla.PrintBridge.Options.WaslaOptions SavedConnection =>
+    internal static Wasla.PrintBridge.Options.WaslaOptions SavedConnection =>
         new() { ServerUrl = ServerUrl, AgentToken = FakeToken };
 
     /// <summary>A fresh reader of the journal file, as the next process would have.</summary>
-    private static PrintBridgeJobJournal Journal() => new(NullLogger<PrintBridgeJobJournal>.Instance);
+    internal static PrintBridgeJobJournal Journal() => new(NullLogger<PrintBridgeJobJournal>.Instance);
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -532,9 +532,13 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
     }
 
     /// <summary>The engine with its settings, history and client, on the isolated data root.</summary>
-    private sealed record Bridge(PrintBridgeRuntime Runtime, LocalPrintJobHistoryStore History, HttpClient Http) : IDisposable
+    internal sealed record Bridge(PrintBridgeRuntime Runtime, LocalPrintJobHistoryStore History, HttpClient Http) : IDisposable
     {
-        public static Bridge Create(FakePrintServer server, RecordingPrinter printer)
+        public static Bridge Create(FakePrintServer server, RecordingPrinter printer) =>
+            Create(server, new RecordingPrinterSpooler(printer));
+
+        /// <summary>The engine with the given spooler boundary (WAS-216 scenarios script the Windows queue itself).</summary>
+        public static Bridge Create(FakePrintServer server, Wasla.PrintBridge.Printing.IPrintSpooler spooler)
         {
             var store = new PrintBridgeSettingsStore();
             var document = store.Load();
@@ -563,7 +567,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
             var runtime = new PrintBridgeRuntime(
                 client,
                 new ReceiptFormatter(),
-                printer,
+                spooler,
                 holder,
                 store,
                 new PrintBridgeDeviceMetadataSync(store, holder, NullLogger<PrintBridgeDeviceMetadataSync>.Instance),
@@ -590,7 +594,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
     }
 
     /// <summary>Holds a step after it started until the test opens it. Once opened it no longer holds.</summary>
-    private sealed class Gate
+    internal sealed class Gate
     {
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -599,7 +603,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
         public void Open() => Opened.TrySetResult();
     }
 
-    private enum JobState
+    internal enum JobState
     {
         Pending,
         Printing,
@@ -613,7 +617,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
     /// expected state. There is no lease: a job left in Printing is never offered again. As on a real connection, a
     /// request whose cancellation was requested before it was sent, or while it was held, is not processed.
     /// </summary>
-    private sealed class FakePrintServer : HttpMessageHandler
+    internal sealed class FakePrintServer : HttpMessageHandler
     {
         private readonly object _sync = new();
         private readonly Dictionary<Guid, (JobState State, int Copies)> _jobs = [];
@@ -777,7 +781,7 @@ public sealed class PrintBridgeStopRaceTests : IDisposable
     /// Records the copies the engine prints instead of printing. Like <see cref="WindowsReceiptPrinter"/>, it checks for
     /// cancellation before each copy, and a copy that has started (held by the gate) always completes or fails.
     /// </summary>
-    private sealed class RecordingPrinter : IReceiptPrinter
+    internal sealed class RecordingPrinter : ITestReceiptPrinter
     {
         private int _copies;
 

@@ -13,7 +13,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
     private readonly WaslaPrintBridgeClient _client;
     private readonly ReceiptFormatter _formatter;
-    private readonly IReceiptPrinter _printer;
+    private readonly IPrintSpooler _spooler;
     private readonly PrintBridgeSettingsHolder _holder;
     private readonly PrintBridgeSettingsStore _store;
     private readonly PrintBridgeDeviceMetadataSync _deviceMetadataSync;
@@ -36,10 +36,16 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     private int _jobsInProgress;
     private int _connectionChanges;
 
+    // WAS-216: the last printer availability Windows reported, read by GetStatus without a spooler call under _sync.
+    private readonly object _availabilitySync = new();
+    private (string Printer, PrinterAvailability Value, DateTime AtUtc)? _availability;
+    private (string Printer, Task Task)? _availabilityRefresh;
+    private PrinterAvailabilityState? _lastLoggedAvailability;
+
     public PrintBridgeRuntime(
         WaslaPrintBridgeClient client,
         ReceiptFormatter formatter,
-        IReceiptPrinter printer,
+        IPrintSpooler spooler,
         PrintBridgeSettingsHolder holder,
         PrintBridgeSettingsStore store,
         PrintBridgeDeviceMetadataSync deviceMetadataSync,
@@ -50,7 +56,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     {
         _client = client;
         _formatter = formatter;
-        _printer = printer;
+        _spooler = spooler;
         _holder = holder;
         _store = store;
         _deviceMetadataSync = deviceMetadataSync;
@@ -74,6 +80,27 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     /// <summary>Waits before repeating mark-printed after a server or network failure; one attempt more than delays.</summary>
     internal IReadOnlyList<TimeSpan> PrintedReportRetryDelays { get; set; } = [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)];
 
+    /// <summary>
+    /// WAS-216: how long a job's own cycle watches its Windows jobs leave the queue before it hands them to the journal,
+    /// which keeps watching on every later cycle. Bounded so a printer that holds a job does not hold the engine.
+    /// </summary>
+    internal TimeSpan SubmissionTrackingWindow { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>WAS-216: how often the queue is read while a job's own cycle watches it.</summary>
+    internal TimeSpan SubmissionTrackingInterval { get; set; } = TimeSpan.FromMilliseconds(200);
+
+    /// <summary>WAS-216: how old a printer availability may be before the status reads it again.</summary>
+    internal TimeSpan AvailabilityMaxAge { get; set; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>WAS-216: how long a status request waits for a fresh availability before it shows the last one known.</summary>
+    internal TimeSpan AvailabilityStatusWait { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>Local history note of a receipt Windows finished sending to the printer (WAS-216; not proof of paper).</summary>
+    public const string SentToPrinterNote = "Sent to the printer";
+
+    /// <summary>Local history note of a receipt whose Windows job is still in the print queue (WAS-216).</summary>
+    public const string InWindowsQueueNote = "In the Windows print queue";
+
     public bool IsRunning
     {
         get { lock (_sync) return _isRunning; }
@@ -81,6 +108,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
     public PrintBridgeRuntimeStatus GetStatus()
     {
+        // WAS-216: read before taking the lock; a slow spooler delays this status at most AvailabilityStatusWait and
+        // never holds the engine's lock.
+        var printerHealth = ResolvePrinterHealth(_holder.Snapshot().Bridge);
         lock (_sync)
         {
             var (current, bridge, _) = _holder.Snapshot();
@@ -126,7 +156,7 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
                     _isRunning,
                     isConnected,
                     _lastIssue),
-                PrinterHealthStatus = WindowsPrinterHealth.Resolve(bridge),
+                PrinterHealthStatus = printerHealth,
                 TrayIconState = trayIconState,
                 UncertainJobsCount = _historyStore.CountWithStatus(LocalPrintJobStatus.Uncertain)
             };
@@ -135,17 +165,27 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
     public void Start()
     {
+        if (IsRunning)
+            return;
+
+        var (current, bridge, _) = _holder.Snapshot();
+        if (!PrintBridgeSettingsValidator.TryValidatePrintingReadiness(current, bridge, out var errorKey))
+            throw new LocalizedApplicationException(errorKey!);
+
+        // Only a missing printer keeps listening from starting. An offline, paused or failing one starts it: jobs are not
+        // claimed until Windows reports it ready (WAS-216). Checked before the lock, which a spooler call never holds.
+        // A fresh read (not the status's bounded wait): starting is not a status request and must not guess. As before
+        // WAS-216, a saved printer that Windows does not have refuses the start, also in test mode.
+        if (!string.IsNullOrWhiteSpace(bridge.PrinterName)
+            && ReadAvailability(bridge.PrinterName.Trim()).State == PrinterAvailabilityState.NotFound)
+        {
+            throw new LocalizedApplicationException("Error.PrinterUnavailable");
+        }
+
         lock (_sync)
         {
             if (_isRunning)
                 return;
-
-            var (current, bridge, _) = _holder.Snapshot();
-            if (!PrintBridgeSettingsValidator.TryValidatePrintingReadiness(current, bridge, out var errorKey))
-                throw new LocalizedApplicationException(errorKey!);
-
-            if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out errorKey))
-                throw new LocalizedApplicationException(errorKey!);
 
             var loop = new PollingLoop();
             var previous = _lastLoopTask;
@@ -442,12 +482,112 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
         if (bridge.DryRun)
             throw new LocalizedApplicationException("Error.DryRunEnabled");
 
-        if (!PrintBridgeSettingsValidator.TryValidatePrinterAvailability(bridge, out var errorKey))
+        if (!PrintBridgeSettingsValidator.TryValidatePrinterSettings(bridge, out var errorKey))
             throw new LocalizedApplicationException(errorKey!);
+
+        var printerName = bridge.PrinterName.Trim();
+        var availability = await RefreshAvailabilityAsync(printerName).ConfigureAwait(false);
+        if (!availability.IsReady)
+            throw new LocalizedApplicationException("Error.PrinterUnavailable");
 
         var printedAt = DateTime.Now.ToString("G", Wasla.Application.Printing.GregorianCulture.For(TestPrintCulture()));
         var receipt = $"Wasla Print Bridge{Environment.NewLine}Test print{Environment.NewLine}{printedAt}";
-        await _printer.PrintAsync(bridge.PrinterName, receipt, 1, ct).ConfigureAwait(false);
+        var data = System.Text.Encoding.UTF8.GetBytes(receipt);
+        // A test print is not a Wasla job: it is handed to Windows once and not tracked or reported.
+        var result = await Task.Run(() => _spooler.Submit(printerName, "Wasla Test Print", data, static _ => { }), ct).ConfigureAwait(false);
+        if (result.Outcome != SpoolSubmitOutcome.Spooled)
+            throw new InvalidOperationException(result.Error ?? "Unable to write to printer.");
+    }
+
+    /// <summary>The selected printer's health for the status, from the cached availability (WAS-216).</summary>
+    private PrinterHealthStatus ResolvePrinterHealth(PrintBridgeOptions bridge)
+    {
+        if (bridge.DryRun)
+            return PrinterHealthStatus.DryRun;
+        if (string.IsNullOrWhiteSpace(bridge.PrinterName))
+            return PrinterHealthStatus.NotConfigured;
+
+        return CurrentAvailability(bridge.PrinterName.Trim()) is { } availability
+            ? ToHealth(availability)
+            // The first check of this printer has not answered within AvailabilityStatusWait: the spooler is not responding.
+            : PrinterHealthStatus.Error;
+    }
+
+    private static PrinterHealthStatus ToHealth(PrinterAvailability availability) => availability.State switch
+    {
+        PrinterAvailabilityState.Ready => PrinterHealthStatus.Ready,
+        PrinterAvailabilityState.NotFound => PrinterHealthStatus.NotFound,
+        PrinterAvailabilityState.Offline => PrinterHealthStatus.Offline,
+        PrinterAvailabilityState.Paused => PrinterHealthStatus.Paused,
+        _ => PrinterHealthStatus.Error
+    };
+
+    /// <summary>
+    /// The availability a status shows: the cached one while it is fresh; otherwise one refresh (shared by concurrent
+    /// callers) that the caller waits for at most <see cref="AvailabilityStatusWait"/>, falling back to the last one known.
+    /// </summary>
+    private PrinterAvailability? CurrentAvailability(string printerName)
+    {
+        Task refresh;
+        lock (_availabilitySync)
+        {
+            if (_availability is { } cached
+                && string.Equals(cached.Printer, printerName, StringComparison.OrdinalIgnoreCase)
+                && DateTime.UtcNow - cached.AtUtc < AvailabilityMaxAge)
+            {
+                return cached.Value;
+            }
+
+            if (_availabilityRefresh is { } running
+                && !running.Task.IsCompleted
+                && string.Equals(running.Printer, printerName, StringComparison.OrdinalIgnoreCase))
+            {
+                refresh = running.Task;
+            }
+            else
+            {
+                refresh = Task.Run(() => ReadAvailability(printerName));
+                _availabilityRefresh = (printerName, refresh);
+            }
+        }
+
+        try
+        {
+            refresh.Wait(AvailabilityStatusWait);
+        }
+        catch (AggregateException)
+        {
+            // ReadAvailability never throws; nothing to do.
+        }
+
+        lock (_availabilitySync)
+        {
+            return _availability is { } known && string.Equals(known.Printer, printerName, StringComparison.OrdinalIgnoreCase)
+                ? known.Value
+                : null;
+        }
+    }
+
+    /// <summary>A fresh availability for the engine's own decisions (claiming and submitting); updates the cache.</summary>
+    private Task<PrinterAvailability> RefreshAvailabilityAsync(string printerName) =>
+        Task.Run(() => ReadAvailability(printerName));
+
+    private PrinterAvailability ReadAvailability(string printerName)
+    {
+        PrinterAvailability value;
+        try
+        {
+            value = _spooler.GetAvailability(printerName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "The printer queue could not be read. PrinterName={PrinterName}", printerName);
+            value = new PrinterAvailability(PrinterAvailabilityState.Error);
+        }
+
+        lock (_availabilitySync)
+            _availability = (printerName, value, DateTime.UtcNow);
+        return value;
     }
 
     public void Dispose()
@@ -488,8 +628,15 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
         foreach (var entry in _journal.Entries)
         {
             var belongs = entry.BelongsTo(connection);
-            if (belongs && (entry.Stage == PrintJournalStage.Uncertain || (!firstCycle && now - entry.UpdatedAtUtc < JournalRetryInterval)))
+            // A receipt still in the Windows queue (WAS-216) is looked at on every cycle: it is a local check, and its
+            // report should follow soon after Windows finishes it.
+            var inWindowsQueue = entry is { Stage: PrintJournalStage.Submitting, Submission: not null };
+            if (belongs
+                && (entry.Stage == PrintJournalStage.Uncertain
+                    || (!firstCycle && !inWindowsQueue && now - entry.UpdatedAtUtc < JournalRetryInterval)))
+            {
                 continue;
+            }
 
             if (!TryBeginJob(loop, connection))
                 return;
@@ -514,14 +661,15 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
             }
             catch (PrintBridgeConnectionException ex) when (IsTransient(ex))
             {
-                // The server may have stored the report or not: the entry stays (its time renewed) and is reported again
-                // after the retry interval. New jobs are still polled.
-                _journal.Record(entry.JobId, entry.Stage, connection);
+                // The server may have stored the report or not: the entry stays (its time renewed, at the stage settling
+                // reached) and is reported again after the retry interval. New jobs are still polled.
+                var latest = _journal.Entries.FirstOrDefault(e => e.JobId == entry.JobId) ?? entry;
+                _journal.Record(latest.JobId, latest.Stage, connection, latest.Submission);
                 _logger.LogWarning(
                     ex,
                     "An interrupted job could not be reported yet; it is tried again later. JobId={JobId}, Stage={Stage}",
-                    entry.JobId,
-                    entry.Stage);
+                    latest.JobId,
+                    latest.Stage);
                 return;
             }
             finally
@@ -533,6 +681,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
     private async Task SettleJournalEntryAsync(PrintJournalEntry entry, WaslaOptions connection)
     {
+        if (entry is { Stage: PrintJournalStage.Submitting, Submission: { } submission })
+        {
+            await SettleSubmissionAsync(entry.JobId, connection, submission).ConfigureAwait(false);
+            return;
+        }
+
         switch (entry.Stage)
         {
             case PrintJournalStage.Submitting:
@@ -598,6 +752,116 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     public const string UncertainResolveInWaslaNote = "Resolve in Wasla";
 
     /// <summary>
+    /// WAS-216: a fresh look at the selected printer before polling. New jobs are claimed only when Windows reports no
+    /// problem; test mode prints to a file and is always ready. A change is logged once.
+    /// </summary>
+    private async Task<bool> IsPrinterReadyForNewJobsAsync(PrintBridgeOptions bridge)
+    {
+        if (bridge.DryRun || string.IsNullOrWhiteSpace(bridge.PrinterName))
+            return true;
+
+        var availability = await RefreshAvailabilityAsync(bridge.PrinterName.Trim()).ConfigureAwait(false);
+        if (_lastLoggedAvailability != availability.State)
+        {
+            _lastLoggedAvailability = availability.State;
+            if (availability.IsReady)
+            {
+                _logger.LogInformation("Windows reports the printer ready; new jobs are claimed again. PrinterName={PrinterName}", bridge.PrinterName);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Windows reports the printer unavailable; new jobs stay pending until it is ready. PrinterName={PrinterName}, State={State}, Status=0x{Status:X8}, Attributes=0x{Attributes:X8}, Win32Error={Win32Error}",
+                    bridge.PrinterName,
+                    availability.State,
+                    availability.Status,
+                    availability.Attributes,
+                    availability.Win32Error);
+            }
+        }
+
+        return availability.IsReady;
+    }
+
+    /// <summary>WAS-216: the job is shown as needing the user's check; its order details are kept.</summary>
+    private void MarkUncertainLocally(Guid jobId, string? reason)
+    {
+        lock (_sync)
+        {
+            var record = FindOrSeedRecentJob(jobId);
+            record.Status = LocalPrintJobStatus.Uncertain;
+            record.LastAttemptAtUtc = DateTime.UtcNow;
+            record.ErrorMessage = reason;
+            record.StatusNote = null;
+            PersistToHistory(record);
+        }
+
+        RaiseStatusChanged();
+    }
+
+    /// <summary>WAS-216: the job waits in the Windows print queue; shown once (and again after a restart).</summary>
+    private void ShowInWindowsQueue(Guid jobId)
+    {
+        lock (_sync)
+        {
+            var existing = _recentJobs.FirstOrDefault(j => j.JobId == jobId);
+            if (existing is { Status: LocalPrintJobStatus.Printing, StatusNote: InWindowsQueueNote })
+                return;
+        }
+
+        UpdateRecentJob(jobId, LocalPrintJobStatus.Printing, statusNote: InWindowsQueueNote);
+    }
+
+    /// <summary>The recent record of a job, or one rebuilt from history (a job of an earlier run). Called under <c>_sync</c>.</summary>
+    private LocalPrintJobRecord FindOrSeedRecentJob(Guid jobId)
+    {
+        var existing = _recentJobs.FirstOrDefault(j => j.JobId == jobId);
+        if (existing is not null)
+            return existing;
+
+        var stored = _historyStore.FindByJobId(jobId);
+        var record = stored is null
+            ? new LocalPrintJobRecord { JobId = jobId, CreatedAtUtc = DateTime.UtcNow, LastAttemptAtUtc = DateTime.UtcNow }
+            : CloneRecord(stored);
+        _recentJobs.Insert(0, record);
+        if (_recentJobs.Count > MaxRecentJobs)
+            _recentJobs.RemoveRange(MaxRecentJobs, _recentJobs.Count - MaxRecentJobs);
+        return record;
+    }
+
+    /// <summary>
+    /// WAS-216: whether a Windows job of this receipt can still print. Answers null when every job has left the queue,
+    /// otherwise the resource key that explains why the receipt cannot be called "not printed" yet.
+    /// </summary>
+    private string? CheckNothingLeftInQueue(PrintJournalSubmission submission)
+    {
+        foreach (var copy in submission.Copies)
+        {
+            if (copy.Outcome == PrintCopyOutcome.NotSubmitted)
+                continue;
+
+            if (copy.WindowsJobId is { } windowsJobId)
+            {
+                var observation = _spooler.Observe(submission.PrinterName, windowsJobId, copy.DocumentName);
+                if (observation.State == SpoolJobState.InQueue)
+                    return "History.Uncertain.StillQueued";
+                if (observation.State == SpoolJobState.Unknown)
+                    return "History.Uncertain.QueueNotChecked";
+            }
+            else
+            {
+                var lookup = _spooler.Find(submission.PrinterName, copy.DocumentName);
+                if (lookup.State == SpoolJobLookupState.Found)
+                    return "History.Uncertain.StillQueued";
+                if (lookup.State == SpoolJobLookupState.Unknown)
+                    return "History.Uncertain.QueueNotChecked";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The user checked the printer for a job whose paper outcome was unknown (WAS-61) and says whether it printed. The
     /// answer is reported with the connection that claimed the job, as any report (WAS-58): printed → <c>mark-printed</c>;
     /// not printed → <c>mark-failed</c>, so Wasla can print it again. Nothing is printed here. While it is reported, a
@@ -610,6 +874,26 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
         var connection = new WaslaOptions { ServerUrl = current.ServerUrl, AgentToken = current.AgentToken };
         if (entry is null || !entry.BelongsTo(connection))
             throw new LocalizedApplicationException("History.Uncertain.NotResolvable");
+
+        // WAS-216: "it did not print" lets Wasla print the receipt again. While one of its Windows jobs is still in the
+        // queue it can still print, and both would come out; so that answer waits until the queue no longer holds it.
+        // "It printed" creates nothing new and is always accepted.
+        if (!printed && entry.Submission is { } submission)
+        {
+            string? refusal;
+            try
+            {
+                refusal = await Task.Run(() => CheckNothingLeftInQueue(submission), ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogWarning(ex, "The Windows print queue could not be checked. JobId={JobId}", jobId);
+                refusal = "History.Uncertain.QueueNotChecked";
+            }
+
+            if (refusal is not null)
+                throw new LocalizedApplicationException(refusal);
+        }
 
         lock (_sync)
         {
@@ -715,8 +999,14 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
                 await ResumeJournalAsync(loop, connection, firstCycle).ConfigureAwait(false);
                 firstCycle = false;
 
-                var jobs = await _client.GetPendingJobsAsync(stoppingToken, connection).ConfigureAwait(false);
-                _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
+                // WAS-216: while Windows reports the printer unavailable, new jobs stay Pending on the server, where they
+                // are still printed later; claiming them now would only leave them waiting in Windows.
+                IReadOnlyList<WaslaPrintBridgeClient.PendingPrintJobDto> jobs = [];
+                if (await IsPrinterReadyForNewJobsAsync(bridge).ConfigureAwait(false))
+                {
+                    jobs = await _client.GetPendingJobsAsync(stoppingToken, connection).ConfigureAwait(false);
+                    _logger.LogInformation("Polling result: pending job count={Count}", jobs.Count);
+                }
 
                 if (jobs.Count > 0)
                 {
@@ -733,7 +1023,9 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
                             RegisterJobReceived(job);
                             // A job that is about to be claimed runs to its end without the loop's cancellation, and
                             // every one of its requests uses this cycle's connection.
-                            await ProcessJobAsync(job, connection).ConfigureAwait(false);
+                            // Stop only shortens how long its Windows jobs are watched here (WAS-216); the journal
+                            // keeps watching them.
+                            await ProcessJobAsync(job, connection, stoppingToken).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -842,7 +1134,10 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     /// Every request uses <paramref name="connection"/>, the connection that offered the job, so no report ever goes to a
     /// server or token the job was not claimed from (WAS-58).
     /// </summary>
-    private async Task ProcessJobAsync(WaslaPrintBridgeClient.PendingPrintJobDto job, WaslaOptions connection)
+    private async Task ProcessJobAsync(
+        WaslaPrintBridgeClient.PendingPrintJobDto job,
+        WaslaOptions connection,
+        CancellationToken stopTracking)
     {
         var ct = CancellationToken.None;
         _logger.LogInformation("Job claim attempted. JobId={JobId}, OrderId={OrderId}", job.Id, job.OrderId);
@@ -877,18 +1172,21 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
         _logger.LogInformation("Job claim succeeded. JobId={JobId}", job.Id);
         _journal.Record(job.Id, PrintJournalStage.NotPrinted, connection);
 
-        // Only the print itself (or, in test mode, writing the receipt) decides whether the job failed. Updating the status
-        // afterwards is outside, so nothing that happens after the receipt was printed can report it failed (WAS-56, WAS-59).
-        string printedNote;
+        // Only what happened to the receipt's data (or, in test mode, writing the receipt) decides its outcome. Updating
+        // the status afterwards is outside, so nothing after the receipt was sent can report it failed (WAS-56, WAS-59).
+        // WAS-216: once any copy may have reached the printer, it is never reported failed or sent again.
+        PrintJournalSubmission? submission = null;
+        string? failure = null;
+        var dryRunWritten = false;
         try
         {
             var (_, bridge, _) = _holder.Snapshot();
             var receipt = _formatter.Format(job.PayloadJson);
 
-            // From here until Windows answers, a crash leaves the paper outcome unknown: such a job is never printed again.
-            _journal.Record(job.Id, PrintJournalStage.Submitting, connection);
             if (bridge.DryRun)
             {
+                // From here until the file is written, a crash leaves the outcome unknown: such a job is never printed again.
+                _journal.Record(job.Id, PrintJournalStage.Submitting, connection);
                 // TEMPORARY: remove after the manual receipt-content verification.
                 var receiptDirectory = Path.Combine(PrintBridgePaths.ProgramDataLogDirectory, "test-receipts");
                 Directory.CreateDirectory(receiptDirectory);
@@ -898,67 +1196,352 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
                 _logger.LogInformation("DryRun receipt saved. Path={ReceiptPath}", receiptPath);
 
                 _logger.LogInformation("DryRun: no physical print was sent. JobId={JobId}", job.Id);
-                printedNote = "Dry run";
+                dryRunWritten = true;
             }
             else
             {
-                _logger.LogInformation(
-                    "Print send attempted. JobId={JobId}, PrinterName={PrinterName}, CopyCount={CopyCount}",
-                    job.Id,
-                    bridge.PrinterName,
-                    job.CopyCount);
-                await _printer.PrintAsync(bridge.PrinterName, receipt, job.CopyCount, ct).ConfigureAwait(false);
-                _logger.LogInformation(
-                    "Print job submitted to Windows queue. JobId={JobId}, PrinterName={PrinterName}, CharacterCount={CharacterCount}, CopyCount={CopyCount}",
-                    job.Id,
-                    bridge.PrinterName,
-                    receipt.Length,
-                    job.CopyCount);
-                printedNote = "Windows accepted the print job";
+                var printerName = bridge.PrinterName.Trim();
+                // Availability can change between the poll and this claim: checked again before anything is handed to Windows.
+                var availability = await RefreshAvailabilityAsync(printerName).ConfigureAwait(false);
+                if (!availability.IsReady)
+                {
+                    failure = $"Printer not available: {availability.State} (status 0x{availability.Status:X8}, attributes 0x{availability.Attributes:X8}).";
+                }
+                else
+                {
+                    _logger.LogInformation(
+                        "Print send attempted. JobId={JobId}, PrinterName={PrinterName}, CopyCount={CopyCount}",
+                        job.Id,
+                        printerName,
+                        job.CopyCount);
+                    (submission, failure) = await SubmitCopiesAsync(
+                        job.Id,
+                        connection,
+                        printerName,
+                        System.Text.Encoding.UTF8.GetBytes(receipt),
+                        job.CopyCount).ConfigureAwait(false);
+                }
             }
         }
         catch (Exception ex)
         {
-            // The receipt was not printed: this is a real failure, reported once.
-            _logger.LogWarning(ex, "Print failed. JobId={JobId}", job.Id);
-            _journal.Record(job.Id, PrintJournalStage.NotPrinted, connection);
-            UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, ex.Message);
+            failure = ex.Message;
+            // A copy recorded in the journal may have been handed to Windows: never a "not printed" guess then.
+            submission = _journal.Entries.FirstOrDefault(e => e.JobId == job.Id)?.Submission;
+            _logger.LogWarning(
+                ex,
+                "Print failed. JobId={JobId}, HandedToWindows={HandedToWindows}",
+                job.Id,
+                submission is not null);
+        }
 
-            try
-            {
-                var failed = await _client.MarkFailedAsync(job.Id, ex.Message, ct, connection).ConfigureAwait(false);
-                _logger.LogInformation(
-                    "mark-failed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
-                    job.Id,
-                    failed.Success,
-                    failed.Skipped,
-                    failed.Result);
-                _journal.Remove(job.Id);
-            }
-            catch (Exception markEx)
-            {
-                _logger.LogWarning(markEx, "Failed to mark job as failed. JobId={JobId}", job.Id);
-                throw;
-            }
-
+        if (dryRunWritten && failure is null)
+        {
+            // Reported outside the try above: a report that keeps failing never turns the written receipt into a failure.
+            await ReportSentAsync(job.Id, connection, live: true, note: "Dry run").ConfigureAwait(false);
             return;
         }
 
-        _journal.Record(job.Id, PrintJournalStage.Printed, connection);
-        UpdateRecentJob(job.Id, LocalPrintJobStatus.Printed, statusNote: printedNote);
+        if (submission is null)
+        {
+            await ReportNotPrintedAsync(job.Id, connection, failure ?? "Not printed.", live: true).ConfigureAwait(false);
+            return;
+        }
+
+        submission = await TrackSubmissionAsync(job.Id, connection, submission, stopTracking).ConfigureAwait(false);
+        await FinishSubmissionAsync(job.Id, connection, submission, failure, live: true).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// WAS-216: hands one RAW job per copy to Windows, in order, each recorded in the journal before it is created (its
+    /// unique document name) and again as soon as Windows returns its id, before any byte is written. A copy that fails
+    /// stops the rest. Returns the submission and the first failure's text. Never throws: whatever happened is in the
+    /// submission, so a copy that may have reached the printer is never mistaken for one that did not.
+    /// </summary>
+    private async Task<(PrintJournalSubmission Submission, string? Failure)> SubmitCopiesAsync(
+        Guid jobId,
+        WaslaOptions connection,
+        string printerName,
+        byte[] data,
+        int copyCount)
+    {
+        var copies = Math.Clamp(copyCount, 1, 3);
+        var submissionId = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
+        var submission = new PrintJournalSubmission(printerName, submissionId, copies, []);
+        string? failure = null;
+
+        for (var number = 1; number <= copies; number++)
+        {
+            var copy = new PrintJournalCopy(number, PrintJournalSubmission.DocumentName(submissionId, number, copies), DateTime.UtcNow);
+            submission = submission.With(copy);
+            // Intent first: a crash from here on is an interrupted copy, found again by its document name.
+            _journal.Record(jobId, PrintJournalStage.Submitting, connection, submission);
+
+            var started = submission;
+            SpoolSubmitResult result;
+            try
+            {
+                result = await Task.Run(() => _spooler.Submit(printerName, copy.DocumentName, data, windowsJobId =>
+                {
+                    started = started.With(copy with { WindowsJobId = windowsJobId });
+                    _journal.Record(jobId, PrintJournalStage.Submitting, connection, started);
+                })).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // The spooler boundary does not throw once a job exists; if it did anyway, a job with a known id may hold data.
+                var knownId = started.Copies.First(c => c.Number == number).WindowsJobId;
+                _logger.LogWarning(ex, "Handing a copy to Windows threw. JobId={JobId}, Copy={Copy}", jobId, number);
+                result = knownId is { } id
+                    ? SpoolSubmitResult.Incomplete(id, bytesWritten: -1, aborted: false, ex.Message)
+                    : SpoolSubmitResult.NotCreated(ex.Message);
+            }
+
+            copy = PrintSubmissionTracker.AfterSubmit(started.Copies.First(c => c.Number == number), result);
+            submission = started.With(copy);
+            _journal.Record(jobId, PrintJournalStage.Submitting, connection, submission);
+
+            if (result.Outcome == SpoolSubmitOutcome.Spooled)
+            {
+                _logger.LogInformation(
+                    "Copy handed to Windows. JobId={JobId}, Copy={Copy}/{Copies}, WindowsJobId={WindowsJobId}, Bytes={Bytes}",
+                    jobId,
+                    number,
+                    copies,
+                    result.JobId,
+                    result.BytesWritten);
+                continue;
+            }
+
+            failure = result.Error;
+            _logger.LogWarning(
+                "Copy not handed to Windows completely. JobId={JobId}, Copy={Copy}/{Copies}, Outcome={Outcome}, WindowsJobId={WindowsJobId}, BytesWritten={BytesWritten}, Aborted={Aborted}, Win32Error={Win32Error}, Error={Error}, CopyOutcome={CopyOutcome}",
+                jobId,
+                number,
+                copies,
+                result.Outcome,
+                result.JobId,
+                result.BytesWritten,
+                result.Aborted,
+                result.Win32Error,
+                result.Error,
+                copy.Outcome);
+            break;
+        }
+
+        return (submission, failure);
+    }
+
+    /// <summary>
+    /// WAS-216: watches the receipt's Windows jobs for at most <see cref="SubmissionTrackingWindow"/> (less when the loop
+    /// is stopped). Whatever is still undecided then stays in the journal, which later cycles keep watching.
+    /// </summary>
+    private async Task<PrintJournalSubmission> TrackSubmissionAsync(
+        Guid jobId,
+        WaslaOptions connection,
+        PrintJournalSubmission submission,
+        CancellationToken stopTracking)
+    {
+        var until = DateTime.UtcNow + SubmissionTrackingWindow;
+        while (true)
+        {
+            submission = await ObserveSubmissionAsync(jobId, connection, submission).ConfigureAwait(false);
+            if (PrintSubmissionTracker.Decide(submission) != PrintSubmissionVerdict.Waiting
+                || DateTime.UtcNow >= until
+                || stopTracking.IsCancellationRequested)
+            {
+                return submission;
+            }
+
+            try
+            {
+                await Task.Delay(SubmissionTrackingInterval, stopTracking).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return submission;
+            }
+        }
+    }
+
+    /// <summary>One look at every copy that is still in the queue, and at the printer; the journal follows any change.</summary>
+    private async Task<PrintJournalSubmission> ObserveSubmissionAsync(Guid jobId, WaslaOptions connection, PrintJournalSubmission submission)
+    {
+        var waiting = submission.Copies.Where(PrintSubmissionTracker.NeedsObservation).ToList();
+        if (waiting.Count == 0)
+            return submission;
+
+        List<(PrintJournalCopy Copy, SpoolJobObservation Observation)> observations;
+        PrinterAvailability printer;
+        try
+        {
+            (observations, printer) = await Task.Run(() =>
+            {
+                var seen = waiting
+                    .Select(c => (c, _spooler.Observe(submission.PrinterName, c.WindowsJobId!.Value, c.DocumentName)))
+                    .ToList();
+                return (seen, ReadAvailability(submission.PrinterName));
+            }).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Nothing is learned; the copies keep waiting.
+            _logger.LogWarning(ex, "The Windows print queue could not be read. JobId={JobId}", jobId);
+            return submission;
+        }
+
+        var changed = false;
+        foreach (var (copy, observation) in observations)
+        {
+            var next = PrintSubmissionTracker.Observe(copy, observation, printer);
+            if (next == copy)
+                continue;
+
+            changed = true;
+            submission = submission.With(next);
+            if (next.Outcome is not null)
+            {
+                _logger.LogInformation(
+                    "Windows job left the queue or ended. JobId={JobId}, Copy={Copy}, WindowsJobId={WindowsJobId}, Observation={Observation}, Status=0x{Status:X8}, Outcome={Outcome}, SeenPrinting={SeenPrinting}, SeenProblem={SeenProblem}, SeenDeleting={SeenDeleting}",
+                    jobId,
+                    next.Number,
+                    next.WindowsJobId,
+                    observation.State,
+                    observation.Status,
+                    next.Outcome,
+                    next.SeenPrinting,
+                    next.SeenProblem,
+                    next.SeenDeleting);
+            }
+        }
+
+        if (changed)
+            _journal.Record(jobId, PrintJournalStage.Submitting, connection, submission);
+        return submission;
+    }
+
+    /// <summary>
+    /// WAS-216: a receipt handed to Windows by an earlier cycle or run. A copy that run ended in the middle of may exist in
+    /// the queue (looked for by its document name when its id was never recorded) and may have printed in part.
+    /// </summary>
+    private async Task SettleSubmissionAsync(Guid jobId, WaslaOptions connection, PrintJournalSubmission submission)
+    {
+        var interrupted = submission.Copies.Where(PrintSubmissionTracker.WasInterrupted).ToList();
+        foreach (var copy in interrupted)
+        {
+            SpoolJobLookup? lookup = null;
+            if (copy.WindowsJobId is null)
+            {
+                try
+                {
+                    lookup = await Task.Run(() => _spooler.Find(submission.PrinterName, copy.DocumentName)).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "The Windows print queue could not be searched. JobId={JobId}", jobId);
+                }
+            }
+
+            var recovered = PrintSubmissionTracker.Recover(copy, lookup);
+            _logger.LogWarning(
+                "Print Bridge stopped while a copy was being handed to Windows; whether it printed is unknown. It is not printed again; it waits for the user's check. JobId={JobId}, Copy={Copy}, WindowsJobId={WindowsJobId}, Lookup={Lookup}",
+                jobId,
+                copy.Number,
+                recovered.WindowsJobId,
+                lookup?.State);
+            submission = submission.With(recovered);
+        }
+
+        if (interrupted.Count > 0)
+            _journal.Record(jobId, PrintJournalStage.Submitting, connection, submission);
+
+        submission = await ObserveSubmissionAsync(jobId, connection, submission).ConfigureAwait(false);
+        await FinishSubmissionAsync(jobId, connection, submission, failure: null, live: false).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// WAS-216: acts on what Windows' evidence says about the whole receipt. Sent → <c>mark-printed</c> (not proof of
+    /// paper); nothing submitted → <c>mark-failed</c>; unknown → waits for the user's check, never reported or printed
+    /// again on its own; still queued → stays in the journal and is shown as waiting in the Windows queue.
+    /// </summary>
+    private async Task FinishSubmissionAsync(
+        Guid jobId,
+        WaslaOptions connection,
+        PrintJournalSubmission submission,
+        string? failure,
+        bool live)
+    {
+        switch (PrintSubmissionTracker.Decide(submission))
+        {
+            case PrintSubmissionVerdict.Sent:
+                await ReportSentAsync(jobId, connection, live, SentToPrinterNote).ConfigureAwait(false);
+                break;
+
+            case PrintSubmissionVerdict.NotPrinted:
+                await ReportNotPrintedAsync(jobId, connection, failure ?? "Not printed.", live).ConfigureAwait(false);
+                break;
+
+            case PrintSubmissionVerdict.Uncertain:
+                _journal.Record(jobId, PrintJournalStage.Uncertain, connection, submission);
+                _logger.LogWarning(
+                    "Whether the receipt printed is unknown; it is not printed again and waits for the user's check. JobId={JobId}, Copies={Copies}",
+                    jobId,
+                    string.Join(", ", submission.Copies.OrderBy(c => c.Number).Select(c => $"{c.Number}:{c.Outcome?.ToString() ?? "Waiting"}")));
+                MarkUncertainLocally(jobId, failure);
+                break;
+
+            default:
+                // Still in the Windows queue: it may print later. The server keeps the job in Printing meanwhile.
+                ShowInWindowsQueue(jobId);
+                break;
+        }
+    }
+
+    /// <summary>Windows finished sending the receipt (or, in test mode, wrote it): <c>mark-printed</c>, repeated after a server or network failure.</summary>
+    private async Task ReportSentAsync(Guid jobId, WaslaOptions connection, bool live, string note)
+    {
+        _journal.Record(jobId, PrintJournalStage.Printed, connection);
+        UpdateRecentJob(jobId, LocalPrintJobStatus.Printed, statusNote: note);
 
         // If every attempt fails, the exception reaches the loop and the journal keeps the job for a later report.
-        var printed = await ReportPrintedAsync(job.Id, connection).ConfigureAwait(false);
-        _journal.Remove(job.Id);
+        var printed = live
+            ? await ReportPrintedAsync(jobId, connection).ConfigureAwait(false)
+            : await _client.MarkPrintedAsync(jobId, CancellationToken.None, connection).ConfigureAwait(false);
+        _journal.Remove(jobId);
         if (!printed.Success && !printed.Skipped)
-            UpdateRecentJob(job.Id, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
+            UpdateRecentJob(jobId, LocalPrintJobStatus.Failed, $"mark-printed: {printed.Result}");
 
         _logger.LogInformation(
             "mark-printed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
-            job.Id,
+            jobId,
             printed.Success,
             printed.Skipped,
             printed.Result);
+    }
+
+    /// <summary>No data of the receipt is in any Windows job: a real failure, reported once so Wasla can print it again.</summary>
+    private async Task ReportNotPrintedAsync(Guid jobId, WaslaOptions connection, string failure, bool live)
+    {
+        _logger.LogWarning("Receipt not printed. JobId={JobId}, Reason={Reason}", jobId, failure);
+        _journal.Record(jobId, PrintJournalStage.NotPrinted, connection);
+        UpdateRecentJob(jobId, LocalPrintJobStatus.Failed, failure);
+
+        try
+        {
+            var failed = await _client.MarkFailedAsync(jobId, failure, CancellationToken.None, connection).ConfigureAwait(false);
+            _logger.LogInformation(
+                "mark-failed result. JobId={JobId}, Success={Success}, Skipped={Skipped}, Result={Result}",
+                jobId,
+                failed.Success,
+                failed.Skipped,
+                failed.Result);
+            _journal.Remove(jobId);
+        }
+        catch (Exception markEx) when (live)
+        {
+            _logger.LogWarning(markEx, "Failed to mark job as failed. JobId={JobId}", jobId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -1016,36 +1599,19 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
     {
         lock (_sync)
         {
-            var index = _recentJobs.FindIndex(j => j.JobId == jobId);
-            if (index < 0)
-            {
-                _recentJobs.Insert(0, new LocalPrintJobRecord
-                {
-                    JobId = jobId,
-                    Status = status,
-                    CreatedAtUtc = DateTime.UtcNow,
-                    LastAttemptAtUtc = DateTime.UtcNow,
-                    ErrorMessage = errorMessage,
-                    StatusNote = statusNote
-                });
-            }
-            else
-            {
-                var existing = _recentJobs[index];
-                existing.Status = status;
-                existing.LastAttemptAtUtc = DateTime.UtcNow;
-                existing.ErrorMessage = errorMessage;
-                if (statusNote is not null)
-                    existing.StatusNote = statusNote;
-                if (status == LocalPrintJobStatus.Printed)
-                    existing.PrintedAtUtc = DateTime.UtcNow;
-            }
+            // A job of an earlier run (WAS-216: still in the Windows queue at a restart) keeps its order details.
+            var existing = FindOrSeedRecentJob(jobId);
+            existing.Status = status;
+            existing.LastAttemptAtUtc = DateTime.UtcNow;
+            existing.ErrorMessage = errorMessage;
+            if (statusNote is not null)
+                existing.StatusNote = statusNote;
+            else if (status != LocalPrintJobStatus.Printing && existing.StatusNote == InWindowsQueueNote)
+                existing.StatusNote = null;
+            if (status == LocalPrintJobStatus.Printed)
+                existing.PrintedAtUtc = DateTime.UtcNow;
 
-            if (_recentJobs.Count > MaxRecentJobs)
-                _recentJobs.RemoveRange(MaxRecentJobs, _recentJobs.Count - MaxRecentJobs);
-
-            var persisted = index >= 0 ? _recentJobs[index] : _recentJobs[0];
-            PersistToHistory(persisted);
+            PersistToHistory(existing);
         }
 
         RaiseStatusChanged();
@@ -1053,8 +1619,12 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
     private void PersistToHistory(LocalPrintJobRecord record)
     {
-        if (record.Status is LocalPrintJobStatus.Received or LocalPrintJobStatus.Printing)
+        // A job waiting in the Windows queue (WAS-216) is kept, so History shows it across a restart.
+        if (record.Status is LocalPrintJobStatus.Received
+            || (record.Status == LocalPrintJobStatus.Printing && record.StatusNote != InWindowsQueueNote))
+        {
             return;
+        }
 
         _historyStore.Record(CloneRecord(record));
     }

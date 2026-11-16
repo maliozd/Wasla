@@ -269,7 +269,9 @@ public sealed class PrintBridgeUpdateCoordinatorTests : IAsyncDisposable
         var cancelled = await WaitForStageAsync(updates, PrintBridgeUpdateStage.Cancelled);
 
         Assert.Equal(PrintBridgeUpdateFailure.Expired, cancelled.Failure);
-        Assert.Empty(StagedFiles());
+        // The stage is published before the staged setup is deleted (a few milliseconds later, once the attempt has
+        // ended and the pause is released); the deletion itself is still required.
+        await WaitUntilAsync(() => StagedFiles().Length == 0, () => "the expired attempt's staged setup is deleted");
         var job = _server.AddJob();
         await _server.JobFinished(job).WaitAsync(Wait, Ct);
     }

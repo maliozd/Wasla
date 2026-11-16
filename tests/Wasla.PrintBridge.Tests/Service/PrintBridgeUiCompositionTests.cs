@@ -27,7 +27,7 @@ public sealed class PrintBridgeUiCompositionTests : IDisposable
         typeof(PrintBridgeSettingsStore),
         typeof(LocalPrintJobHistoryStore),
         typeof(PrintBridgeJobJournal),
-        typeof(IReceiptPrinter),
+        typeof(IPrintSpooler),
         typeof(PrintBridgeAutoSetupCoordinator),
         typeof(IPrintBridgeConnectionGuard)
     ];

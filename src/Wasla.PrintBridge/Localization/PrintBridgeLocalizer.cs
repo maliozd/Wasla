@@ -153,6 +153,9 @@ public sealed class PrintBridgeLocalizer
         PrinterHealthStatus.NotConfigured => GetString("PrinterStatus.NotConfigured"),
         PrinterHealthStatus.NotFound => GetString("PrinterStatus.NotFound"),
         PrinterHealthStatus.DryRun => GetString("PrinterStatus.DryRun"),
+        PrinterHealthStatus.Offline => GetString("PrinterStatus.Offline"),
+        PrinterHealthStatus.Paused => GetString("PrinterStatus.Paused"),
+        PrinterHealthStatus.Error => GetString("PrinterStatus.Error"),
         _ => GetString("PrinterStatus.NotConfigured")
     };
 

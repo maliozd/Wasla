@@ -125,6 +125,8 @@ public sealed class ShellHistory
                     : "Shell.History.Uncertain"];
             case LocalPrintJobStatus.Printed when string.Equals(job.StatusNote, "Dry run", StringComparison.Ordinal):
                 return _localizer["Shell.History.DryRun"];
+            case LocalPrintJobStatus.Printing when string.Equals(job.StatusNote, PrintBridgeRuntime.InWindowsQueueNote, StringComparison.Ordinal):
+                return _localizer["Shell.History.InWindowsQueue"];
             default:
                 return null;
         }

@@ -136,7 +136,7 @@
     <value>В ожидании</value>
   </data>
   <data name="JobStatus.Printed" xml:space="preserve">
-    <value>Печатный</value>
+    <value>Отправлено на принтер</value>
   </data>
   <data name="JobStatus.Printing" xml:space="preserve">
     <value>Печать</value>
@@ -151,7 +151,7 @@
     <value>○ Ожидается</value>
   </data>
   <data name="JobStatusBadge.Printed" xml:space="preserve">
-    <value>✓ Печатный</value>
+    <value>✓ Отправлено на принтер</value>
   </data>
   <data name="JobStatusBadge.Printing" xml:space="preserve">
     <value>⏳ Печать</value>
@@ -385,7 +385,7 @@
     <value>Не найдено</value>
   </data>
   <data name="PrinterStatus.Ready" xml:space="preserve">
-    <value>Готовый</value>
+    <value>Проблем не обнаружено</value>
   </data>
   <data name="Reprint.AlreadyPending" xml:space="preserve">
     <value>Для этого заказа уже существует активное задание печати.</value>
@@ -862,7 +862,7 @@
     <value>Требует проверки</value>
   </data>
   <data name="Shell.History.Uncertain" xml:space="preserve">
-    <value>Print Bridge остановился, когда этот чек отправлялся на принтер, поэтому неизвестно, напечатан ли он. Проверьте принтер и выберите, что произошло. Если чек не напечатан, Wasla сможет напечатать его снова.</value>
+    <value>Неизвестно, напечатан ли этот чек: Print Bridge остановился во время его отправки, или Windows не завершила задание обычным образом. Проверьте принтер и выберите, что произошло. Если чек не напечатан, Wasla сможет напечатать его снова.</value>
   </data>
   <data name="Shell.History.UncertainInWasla" xml:space="preserve">
     <value>Неизвестно, напечатан ли этот чек, а подключение с тех пор изменилось. Проверьте чек этого заказа в панели Wasla.</value>
@@ -1028,5 +1028,23 @@
   </data>
   <data name="Update.Error.InProgress" xml:space="preserve">
     <value>Это нельзя сделать, пока Print Bridge обновляется. Повторите попытку после завершения или отмены обновления.</value>
+  </data>
+  <data name="PrinterStatus.Offline" xml:space="preserve">
+    <value>Не в сети</value>
+  </data>
+  <data name="PrinterStatus.Paused" xml:space="preserve">
+    <value>Приостановлен в Windows</value>
+  </data>
+  <data name="PrinterStatus.Error" xml:space="preserve">
+    <value>Сообщает о проблеме</value>
+  </data>
+  <data name="History.Uncertain.StillQueued" xml:space="preserve">
+    <value>Этот чек всё ещё в очереди печати Windows и может напечататься. Дождитесь, пока он покинет очередь (или удалите его оттуда), затем проверьте снова.</value>
+  </data>
+  <data name="History.Uncertain.QueueNotChecked" xml:space="preserve">
+    <value>Не удалось проверить очередь печати Windows. Повторите попытку.</value>
+  </data>
+  <data name="Shell.History.InWindowsQueue" xml:space="preserve">
+    <value>Ожидает в очереди печати Windows; может напечататься, когда принтер будет готов.</value>
   </data>
 </root>

@@ -452,7 +452,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         CancellationTokenSource? lifetime = null,
         RecordingLogs? logs = null,
         bool dryRun = true,
-        IReceiptPrinter? receiptPrinter = null)
+        ITestReceiptPrinter? receiptPrinter = null)
     {
         var store = new PrintBridgeSettingsStore();
         var document = store.Load();
@@ -485,7 +485,7 @@ public sealed class ShellConnectionSetupTests : IDisposable
         var runtime = new PrintBridgeRuntime(
             client,
             new ReceiptFormatter(),
-            receiptPrinter ?? new NoPrinter(),
+            new RecordingPrinterSpooler(receiptPrinter ?? new NoPrinter()),
             holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, holder, loggers.CreateLogger<PrintBridgeDeviceMetadataSync>()),
@@ -548,14 +548,14 @@ public sealed class ShellConnectionSetupTests : IDisposable
         }
     }
 
-    private sealed class NoPrinter : IReceiptPrinter
+    private sealed class NoPrinter : ITestReceiptPrinter
     {
         public Task PrintAsync(string printerName, string text, int copyCount, CancellationToken ct) =>
             throw new InvalidOperationException("These tests never print.");
     }
 
     /// <summary>Counts each print the engine sends instead of printing, and can hold one until opened.</summary>
-    private sealed class GatedPrinter : IReceiptPrinter
+    private sealed class GatedPrinter : ITestReceiptPrinter
     {
         private int _calls;
 

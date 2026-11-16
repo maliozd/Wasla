@@ -86,9 +86,13 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         await api.PolledAfterJobFinished.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await harness.Runtime.StopAsync();
 
-        var print = Assert.Single(harness.Printer.Calls);
-        Assert.Equal(harness.PrinterName, print.PrinterName);
-        Assert.Equal(2, print.CopyCount);
+        // One Windows job per copy (WAS-216 tracks each), all on the selected printer.
+        Assert.Equal(2, harness.Printer.Calls.Count);
+        Assert.All(harness.Printer.Calls, print =>
+        {
+            Assert.Equal(harness.PrinterName, print.PrinterName);
+            Assert.Equal(1, print.CopyCount);
+        });
         Assert.Equal(
             new[]
             {
@@ -260,7 +264,7 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         var runtime = new PrintBridgeRuntime(
             client,
             new ReceiptFormatter(),
-            printer,
+            new RecordingPrinterSpooler(printer),
             holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, holder, NullLogger<PrintBridgeDeviceMetadataSync>.Instance),
@@ -308,7 +312,7 @@ public sealed class PrintBridgeRuntimeEngineTests : IDisposable
         }
     }
 
-    private sealed class RecordingPrinter : IReceiptPrinter
+    private sealed class RecordingPrinter : ITestReceiptPrinter
     {
         public ConcurrentQueue<(string PrinterName, string Text, int CopyCount)> Calls { get; } = new();
 

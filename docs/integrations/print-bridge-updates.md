@@ -105,7 +105,10 @@ start.
   "idle" and "paused".
 - A job in progress finishes normally before the gate is granted. Entries the journal keeps across a restart stay as they
   are: `Printed` (the report is still owed) is reported by the new version after the commit; `Uncertain` waits for the
-  user's answer and is never printed again. Nothing is marked failed and nothing is discarded to allow an update.
+  user's answer and is never printed again. Nothing is marked failed and nothing is discarded to allow an update. A
+  receipt still in the Windows print queue (WAS-216, `Submitting` with its Windows jobs) stays there: the new version
+  keeps watching it, and a version without WAS-216 (a rolled-back update) reads it as interrupted and shows it as needing
+  a check, never printing it again.
 - The user's **Stop** (`PrintBridge.PrintingStoppedByUser`) is a setting the update never writes. After a successful,
   failed or interrupted update the service prints again exactly when it would have printed before it.
 - Physical printing stays at-least-once-or-uncertain, as WAS-61 defines it. An update adds no new way to print a receipt

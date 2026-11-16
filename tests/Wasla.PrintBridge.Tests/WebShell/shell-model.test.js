@@ -179,6 +179,8 @@ test('accepts every connection state the host can send and an empty last job', (
     assert.notEqual(model.readHostMessage(message((m) => { m.payload.connection.state = state; }), 0), null, state);
   }
   assert.notEqual(model.readHostMessage(message((m) => { m.payload.lastJob = null; m.payload.printer.name = null; m.payload.printer.installed = []; }), 0), null);
+  // WAS-216: an offline, paused or failing printer as Windows reports it.
+  assert.notEqual(model.readHostMessage(message((m) => { m.payload.printer.state = 'unavailable'; }), 0), null);
   assert.deepEqual(model.CONNECTION_STATES, ['online', 'connecting', 'offline', 'error', 'notConfigured', 'stopped']);
 });
 
@@ -362,6 +364,7 @@ test('status tones fall back to neutral and never stand alone', () => {
   assert.equal(model.printerTone('notFound'), 'danger');
   assert.equal(model.printerTone('notConfigured'), 'warning');
   assert.equal(model.printerTone('dryRun'), 'info');
+  assert.equal(model.printerTone('unavailable'), 'warning');
   assert.equal(model.printerTone('unknown'), 'neutral');
   assert.equal(model.jobTone('failed'), 'danger');
   assert.equal(model.jobTone('pending'), 'warning');

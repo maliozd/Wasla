@@ -17,6 +17,9 @@ public static class LocalPrintJobFailure
         "Unable to open printer",
         "Unable to start print",
         "Unable to write to printer",
+        "Unable to end print",
+        "Unable to finish print",
+        "Printer not available",
         "PrinterName is required"
     ];
 

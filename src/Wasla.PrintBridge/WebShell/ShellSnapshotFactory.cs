@@ -347,6 +347,8 @@ public sealed class ShellSnapshotFactory
         PrinterHealthStatus.Ready => "ready",
         PrinterHealthStatus.NotFound => "notFound",
         PrinterHealthStatus.DryRun => "dryRun",
+        // WAS-216: Windows reports the printer offline, paused or failing; the label says which.
+        PrinterHealthStatus.Offline or PrinterHealthStatus.Paused or PrinterHealthStatus.Error => "unavailable",
         _ => "notConfigured"
     };
 
