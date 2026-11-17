@@ -1,24 +1,9 @@
-# Claude Code instructions for Wasla
+@AGENTS.md
 
-Read `AGENTS.md` completely before investigating or changing this repository. Then read every rule referenced by it:
+# Claude Code notes
 
-- `.cursor/rules/00-wasla-core.mdc`
-- `.cursor/rules/10-architecture-boundaries.mdc`
-- `.cursor/rules/20-localization-ui.mdc`
-- `.cursor/rules/30-provider-worker.mdc`
+`AGENTS.md`, imported above, holds the project rules for every coding agent. This section adds only how Claude Code loads them.
 
-Those files are the shared source of repository rules. Do not restate or fork their detailed instructions in this file.
-
-Before a task:
-
-1. Inspect the relevant source, tests, and current Git state.
-2. Start with `docs/README.md` and read the task-specific canonical documents it links.
-3. Trace the current implementation across the affected layers before proposing a change.
-4. Call out any disagreement between code, canonical documentation, and historical files.
-5. Make the smallest coherent change within the requested scope and verify it according to `docs/operations/testing.md`.
-
-## Product boundary
-
-Wasla has two products: **Wasla Orders** and **Wasla POS**. This repository currently implements Wasla Orders. Wasla POS is a separate product and has no project or module in this solution yet.
-
-Do not reinterpret the Wasla Orders Live Screen as a POS interface. Shared infrastructure belongs in this repository only when the requested work establishes a real cross-product need.
+- Path-scoped rules live in `.claude/rules/`. Claude Code loads a rule when you read, write or edit a file its `paths` frontmatter matches. Before you create files in an area whose existing files you have not opened, read the matching rule.
+- Compaction drops path-scoped rules. They return only when you touch a matching file again.
+- The built-in Explore and Plan subagents do not load `CLAUDE.md` or `AGENTS.md`. When you delegate to them, put the rules the task depends on into the prompt.

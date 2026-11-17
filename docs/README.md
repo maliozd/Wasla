@@ -18,7 +18,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [architecture/realtime.md](architecture/realtime.md) | Live tenant notifications (SignalR hub, internal channel, browser fallback) |
 | [architecture/realtime-scale-out.md](architecture/realtime-scale-out.md) | Decision: one Web instance for live notifications; multi-instance topology and its triggers |
 | [architecture/signup-registration.md](architecture/signup-registration.md) | Registration drafts, the draft cookie and lifetimes, mandatory owner phone (SMS) verification, SMS sender modes, the signup draft JSON API, the submit boundary to `PendingRegistration` (WAS-192) |
-| [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb plan prices, subscription and payment records, states, invariants, iyzico mapping intent, open price decision |
+| [architecture/billing.md](architecture/billing.md) | Provider-neutral billing boundary, CentralDb plan prices, subscription and payment records, states, invariants, iyzico mapping intent, plans and packaging (no printer or device count limit, Enterprise), open price decision |
 | [orders/lifecycle.md](orders/lifecycle.md) | Statuses, operator actions, sync merge |
 | [orders/synchronization.md](orders/synchronization.md) | Worker, pagination, upsert |
 | [orders/live-screen.md](orders/live-screen.md) | Operational UI versus Orders |

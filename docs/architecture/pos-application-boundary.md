@@ -526,7 +526,7 @@ Guardrails:
 - ASP.NET Core MVC/Razor, Bootstrap 5 and vanilla JavaScript for the POS UI ([../frontend/architecture.md](../frontend/architecture.md)).
 - EF Core with SQLite at the Edge, and SQL Server for POS cloud databases.
 - WebView2 for the Terminal.
-- The repository's architecture boundary rules inside the POS projects ([10-architecture-boundaries.mdc](../../.cursor/rules/10-architecture-boundaries.mdc)), and its localization rules and cultures.
+- The repository's architecture boundary rules inside the POS projects ([AGENTS.md](../../AGENTS.md#6-architecture-boundaries)), and its localization rules and cultures.
 
 ## Later decisions
 

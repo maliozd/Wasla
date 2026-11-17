@@ -317,6 +317,8 @@ Today, one tenant corresponds to one independently operated restaurant location.
 
 That grouping is not implemented. No organization or business-account entity exists. Cross-location dashboards, billing, location switching, and reporting are not current functionality.
 
+Commercially, the planned multi-branch offering belongs to the Enterprise package ([billing.md](billing.md#plans-and-packaging), decision of 2026-11-17). It still needs technical discovery; this section records a direction, not a design.
+
 Do not model those locations by adding a second `PlatformConnection` for the same platform, and do not add `BranchId` onto orders, platform connections, print jobs, settings, or Live Screen.
 
 ## Current Branch record

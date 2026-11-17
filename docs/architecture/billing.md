@@ -27,7 +27,7 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 | `Tenant` | Linked once the registration is provisioned and names that tenant (`LinkTenantAsync`) |
 | `SubscriptionStatus` | The subscription state, extended with `Pending` (6) and `ReconciliationRequired` (7). `None` and `Trialing` stay tenant-level values that a billing subscription never holds |
 | `WaslaPlanCodes`, `Monthly`/`Yearly` | The plan and period vocabulary of signup, and the key of `BillingPlanPrices` |
-| `WaslaPlanCatalog` | Plan names, features, order, recommendation and device limits only. It holds no self-service price; Enterprise keeps its contact-sales "starting from" label |
+| `WaslaPlanCatalog` | Plan names, features, order and recommendation, and today also a device count and device-limit label per plan and Enterprise's contact-sales "starting from" label, both retired by [Plans and packaging](#plans-and-packaging). It holds no self-service price |
 | `TenantMembership` | Not reused for billing. It requires a tenant (none exists during checkout), it is deleted with the tenant (billing evidence must survive) and it has no environment, provider references or price snapshot. It keeps its current role |
 | `Tenant.SubscriptionStatus`, `Tenant.BillingPaymentStatus` | Unchanged. Provisioning sets `Trialing` and `Paid`; nothing reads them. Whether entitlement projects the billing state onto them is WAS-151 |
 
@@ -51,6 +51,26 @@ Source: `SubscriptionStatusTransitions`. Every other move, including any to `Non
 - **No single "current period".** Coverage is read from the payments, never from one stored period. So a paid period that starts in the future does not cover today, nor does one on the far side of an unpaid gap; and a later payment never hides an earlier period that still covers today (a period recorded out of order counts the same). `BillingSubscriptionView` carries every verified period that had not ended when it was read (`UnexpiredPaidPeriods`, `ReadAtUtc`), so a view evaluated a little later still sees an already-paid next period, and asking about a moment before `ReadAtUtc` is false.
 - **Payments.** A verified payment must match the subscription's price snapshot and needs a provider reference; recording one does not change the subscription row. A payment reported late, even after expiry, is still recorded as evidence.
 - **For WAS-151.** Entitlement asks `IsVerifiedActive` at the moment of the request (reading the view per request or within a short cache is fine: periods that had not ended are kept). Grace for `PastDue` or access until the end of a cancelled period are policy decisions WAS-151 adds on top, reading the same paid periods; they are not in this check.
+
+## Plans and packaging
+
+Product decision of 2026-11-17. It sets the target. The code still behaves as described under [Current behavior](#current-behavior), and the remaining code work is listed under [Known discrepancies](#known-discrepancies).
+
+### Approved target
+
+- **Packages.** The self-service plans (Starter, Pro, Pro+) and Enterprise, the highest package.
+- **No printer or device count limit.** No package limits how many printers or active Print Bridge devices a tenant uses, and packages are not distinguished by such counts. The 1 / 3 / 10 / unlimited device tiers are retired.
+- **Protections stay.** Device registration, device-token authentication, revocation, tenant isolation and abuse protections remain required. They are not commercial limits and are not removed with them.
+- **Enterprise.** Includes the planned multi-branch offering, with custom pricing and manual onboarding. It has no public price and no "starting from" amount, and no self-service signup or checkout. Enquiries go through contact and sales.
+- **Multi-branch is planned, not built.** A tenant is one restaurant location and nothing groups tenants ([tenancy.md](tenancy.md#future-multi-location-direction)). The offering needs technical discovery before it is designed. Until it is built, documentation and product text do not present it as operational.
+
+### Current behavior
+
+- **Device limit.** Every tenant, whatever its plan, may have at most 3 active Print Bridge devices (`PrintBridgeDeviceLimits.AllowedActiveDeviceCount`); the plan is not read. Where it is checked: [print-bridge.md](../integrations/print-bridge.md#device-identity).
+- **Device tiers.** `WaslaPlanCatalog` still gives each plan an included device count (Starter 1, Pro 3, Pro+ 10, Enterprise none) and a device-limit label, which the marketing pricing cards and the signup plan summary show. The counts are text only; nothing enforces them.
+- **Printers.** Each Print Bridge installation prints to one selected printer (`PrintBridgeOptions.PrinterName`). There is no separate printer count, so today the number of printers is bounded only through the device limit.
+- **Enterprise price.** The Enterprise card and the signup summary show a "starting from" label (`Pricing.Plan.Enterprise.Price` with `IsStartingFromPrice`; "Starting from 2,500 TL / month" in en-US).
+- **Enterprise enquiries.** Signup refuses Enterprise (`Signup.EnterpriseContactOnly`), and its card links to the contact page. While the marketing site is in coming-soon mode (`Wasla:MarketingSite:FullSiteEnabled` is `false`), neither the pricing cards nor `/contact` are published.
 
 ## Plan prices
 
@@ -219,6 +239,11 @@ Once entered, every public page shows them without a code change. The Developmen
 ## Known discrepancies
 
 - **Tenant status fields.** `Tenant.SubscriptionStatus` and `Tenant.BillingPaymentStatus` are written at provisioning (`Trialing`, `Paid`) and never read. They are not the billing source of truth.
+- **Device count limit and tiers.** The code still applies what [Plans and packaging](#plans-and-packaging) retires. This is follow-up work; the decision itself changed no code.
+  - Enforcement: `PrintBridgeDeviceLimits.AllowedActiveDeviceCount`, counted by `PrintBridgeDeviceQuota`, in `PrintBridgeSetupSessionService.CreateAndBindNewDeviceAsync` (new-device exchange), `CheckDestinationAsync` in `PrintBridgeSetupSessionService.Transfer` (move) and `PrintBridgeDeviceManagementService` `CreateDeviceInternalAsync` and `SetDeviceActiveAsync` (Web panel create and reactivate). The `TODO` in `PrintBridgeDeviceLimits` plans per-plan enforcement, which the decision replaces.
+  - Refusals and texts: the `device_limit_reached` reply of `PrintBridgeSetupApiController`, `PrintBridgeController`'s handling of `PrintBridgeDeviceLimitReachedException`, the quota on the Devices page (`PrintBridge.DeviceLimitNote`, `PrintBridge.DeviceLimitReached` and `PrintBridge.DeviceLimitExceededWarning`, which also promise a paid add-on) and Print Bridge's `Auto.DeviceLimitReached`.
+  - Tiers and price: `WaslaPlanDefinition.IncludedPrintBridgeDevices`, `DeviceLimitKey` and `IsStartingFromPrice`, the `Pricing.Plan.*.DeviceLimit` and device-count feature strings, and `Pricing.Plan.Enterprise.Price`.
+  - Open: whether abuse protection needs a technical ceiling in place of the commercial count.
 
 ## Tests
 

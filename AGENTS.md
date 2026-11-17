@@ -24,21 +24,30 @@ Report unrelated problems as separate findings.
 
 ## 2. Instruction sources and precedence
 
-Before starting work, read:
+Before starting work, read `docs/README.md` and the task-specific canonical
+documents it links.
 
-- `.cursor/rules/00-wasla-core.mdc`
-- `.cursor/rules/10-architecture-boundaries.mdc`
-- `.cursor/rules/20-localization-ui.mdc`
-- `.cursor/rules/30-provider-worker.mdc`
+Rules that matter only for some paths live in `.claude/rules/*.md`. The `paths`
+frontmatter of each file lists the files it governs:
 
-These files are the shared source of detailed project rules.
-Do not create divergent copies of the same rules in multiple places.
+- `.claude/rules/web-ui.md`: Wasla.Web views, scripts, styles, resources and controllers.
+- `.claude/rules/print-bridge.md`: the Print Bridge projects, the installer and their tests.
+- `.claude/rules/providers-worker.md`: provider clients and mocks, provider
+  configuration, Worker, and order synchronization.
+
+Claude Code loads a path rule when it reads, writes, or edits a matching file.
+Other agents read the matching rule before changing those paths.
+
+Every rule has one authoritative place: this file for repository-wide rules, a
+path rule for detail that matters only in its paths. Do not copy a rule into a
+second file.
 
 Apply instructions in this order:
 
 1. The user's explicit instructions for the current task.
 2. Applicable directory-specific AGENTS.md instructions.
-3. This file and the project rules it references.
+3. This file and the path rules in `.claude/rules/`. A path rule adds detail for
+   its paths and must not contradict this file.
 4. Explanatory documentation, historical reports, and code comments.
 
 This order does not override the working environment's higher-priority security
@@ -80,7 +89,8 @@ When the user wants to review a draft before it is added to the project:
 
 When the user requests code changes:
 
-- Inspect the existing implementation and relevant tests first.
+- Inspect the existing implementation across the affected layers, and the
+  relevant tests, first.
 - Prefer the smallest coherent change.
 - Reuse existing services, result types, and shared components.
 - Do not create a second parallel implementation of the same functionality.
@@ -174,6 +184,29 @@ CustomerAddress to Tenant terminology.
   automatic-printing setting.
 - Do not combine these concepts into one setting or business rule.
 
+### 5.4 Terminology and the clean break
+
+`docs/product/terminology.md` owns the canonical names and the clean-break policy.
+
+- New code, configuration, documentation, and tests use `Wasla` product naming
+  and `Tenant` for tenant concepts. Restaurant-facing and Central Admin UI says
+  "Restaurant" in the localized form of the current culture.
+- `Customer` names only the person who places an order (section 5.2).
+- Settings and options use the current canonical property names.
+- Do not reintroduce the former product name or tenant-meaning Customer names
+  in any form: literal, fragmented, encoded, behind a character class, or
+  reconstructed at runtime.
+- Add no compatibility layer for retired names: no aliases, fallback keys, dual
+  reads or writes, redirects for retired routes, old cookie names or paths,
+  classic Print Bridge fallback, or compatibility commands.
+- Clean-break tests assert the canonical surface positively. Write no negative
+  tests that name retired identifiers and no test-file allowlists.
+- Retired names that still exist are removed by their owning clean-break issue,
+  not during unrelated work.
+- The historical migration files listed in the terminology document are the
+  only exception. Do not edit them, do not add files to that list, and do not
+  generate migrations that contain retired names.
+
 ## 6. Architecture boundaries
 
 ### Wasla.Web
@@ -194,26 +227,51 @@ Rules:
 - Do not use Contracts DTOs as MVC ViewModels.
 - Do not use EF entities as Razor models.
 - Do not move business rules into Razor or JavaScript.
+- Do not use Infrastructure persistence types: DbContexts, entity
+  configurations, migrations, repositories, or EF queries.
 
 Program.cs is the composition-root exception for Infrastructure DI registration.
+The exception does not extend to controllers, views, middleware, or page logic.
+
+Outside Program.cs, Web may reference only these non-persistence Infrastructure
+types:
+
+- Configuration options (`Wasla.Infrastructure.Options`, such as
+  `TenantOnboardingOptions` and `SignupOptions`).
+- Authentication rate limiting (`Wasla.Infrastructure.Security.RateLimiting`).
+- Realtime plumbing and metrics (`Wasla.Infrastructure.Realtime`).
+- The tenant diagnostic context (`Wasla.Infrastructure.Diagnostics`) and the
+  tenant host-miss cache (`TenantHostMissCache`, `TenantHostLookup`).
+- Security helpers without data access of their own
+  (`TenantRolePolicyRegistration`, `TenantSessionCookieEvents`).
+
+Anything that reads or writes data reaches Web through Application interfaces.
+Web UI detail is in `.claude/rules/web-ui.md`.
 
 ### Wasla.Application
 
 - Use cases, interfaces, commands, queries, and results.
 - May depend on Domain.
 - Must not depend on Web or Infrastructure implementation details.
+- Defines the interfaces that Infrastructure implements.
 - Do not leak Razor-specific presentation state into reusable contracts.
 - Do not expose EF Core types to Web.
+- Provisioning belongs in Application and Infrastructure services orchestrated
+  by the CLI, never in controllers or middleware.
 
 ### Wasla.Infrastructure
 
-- EF Core, persistence, and migrations.
-- Platform clients.
-- Encryption, secret management, and email.
+- EF Core, DbContexts (`CentralDbContext`, `TenantDbContext`), persistence, and
+  migrations.
+- Provider (platform) API clients.
+- Encryption, secret management, SMTP, and email.
 - Application interface implementations.
 - Data access and external-system integrations.
 
-Do not add a dependency on Web.
+May reference Application and Domain. Do not add a dependency on Web.
+
+EF Core migration commands use `Wasla.Cli` as the startup project. Do not add
+EF tooling packages to `Wasla.Web`. See `docs/operations/migrations.md`.
 
 ### Wasla.Domain
 
@@ -223,14 +281,26 @@ Do not add a dependency on Web.
 
 ### Other projects
 
-- Wasla.Contracts: API request/response contracts.
+- Wasla.Contracts: API request/response contracts only. Not MVC ViewModels or
+  Razor page models.
 - Wasla.Worker: background synchronization.
-- Wasla.PrintBridge: Windows device and printing operations.
-- Wasla.Cli: provisioning, migrations, and maintenance tools.
+- Wasla.PrintBridge: the per-user Print Bridge tray app (WebView2 window,
+  dialogs). It holds no print engine.
+- Wasla.PrintBridge.Core: the Print Bridge engine library (polling, claiming,
+  Windows printing, the device API client).
+- Wasla.PrintBridge.Service: the Windows Service that runs the Print Bridge
+  engine.
+- `installer/`: the Print Bridge MSI and setup EXE (WiX).
+- Wasla.Cli: provisioning, migrations, maintenance tools, and the EF startup
+  project.
 - Wasla.Api: JSON and integration endpoints.
 
 When Web and API expose the same authorized operation, their security and
 business rules must not contradict each other.
+
+If a requested change crosses these boundaries, stop and explain the boundary
+issue, propose the minimal correct Application/Infrastructure/Web shape, and do
+not implement a shortcut that makes Web depend on EF or provider clients.
 
 ## 7. Tenant isolation and authorization
 
@@ -239,9 +309,19 @@ Wasla uses a database-per-tenant model:
 - CentralDb: tenant registry, memberships, provisioning, and central information.
 - TenantDb: the restaurant's operational data.
 
+Host roles (`docs/architecture/tenancy.md`): marketing `wasla.tr` and
+`www.wasla.tr` (Development `localhost`, `wasla.local`, `www.wasla.local`),
+application entry `app.wasla.tr` (Development `app.wasla.local`), and tenants
+`{slug}.app.wasla.tr` (Development `{slug}.app.wasla.local`). The domains come
+from configuration.
+
 Rules:
 
-- Obtain tenant context from the existing server-side resolution mechanism.
+- Obtain tenant context from the existing server-side resolution mechanism:
+  `TenantResolutionMiddleware` in Web and Api, the `TenantId` claim, and the
+  `CurrentTenant` HttpContext item.
+- Classify hosts with `WaslaHostClassifier`. Never match tenant hosts with
+  `Contains`, a loose `EndsWith`, or unvalidated splitting.
 - Do not trust a tenant identifier from a request body, query string, or route alone.
 - Preserve consistency between the authenticated user and tenant context.
 - Validate resource access within the relevant tenant.
@@ -294,13 +374,17 @@ Additional rules:
 - Do not make real provider calls in Mock mode.
 - Do not present unsupported provider behavior in Real mode as a successful operation.
 - Do not reorganize existing mode or provider configuration outside the task scope.
+- Do not change provider behavior unless the task is about providers.
+
+Provider and Worker implementation detail is in `.claude/rules/providers-worker.md`.
 
 ### Synchronization
 
 - One tenant's failure must not stop synchronization for other tenants.
 - Worker must skip a tenant whose sync setting is disabled.
 - Existing orders must remain visible when sync is disabled.
-- Do not start or stop Worker OS processes or services from Web.
+- Web never starts or stops OS processes, Windows services, systemd units, or
+  containers, the Worker's included.
 - Do not delete and recreate the parent Order row.
 - Preserve Order Id and CreatedAt.
 - Preserve the existing Platform + ExternalOrderId idempotency contract.
@@ -318,7 +402,8 @@ Additional rules:
 
 ## 10. Order lifecycle and concurrency
 
-Order statuses represent actual restaurant operations.
+Order statuses represent actual restaurant operations. Do not change order
+lifecycle behavior unless the task explicitly asks for it.
 
 When changing related code, consider:
 
@@ -385,6 +470,8 @@ Use Cancelled only according to the existing business rules.
 - Do not change existing polling defaults outside the task scope.
 - Do not affect other devices during setup or identity reset.
 
+Print Bridge client detail is in `.claude/rules/print-bridge.md`.
+
 ### Live status updates
 
 Refer to `docs/architecture/realtime.md`.
@@ -404,7 +491,12 @@ Do not extend SignalR or add alternative polling scope without a user request.
 - Registration, payment success, and provisioning are separate states.
 - Successful payment does not mean the tenant is ready to use.
 - Tenant resolution must not create databases or trigger provisioning.
-- Provisioning must use the authorized existing service/CLI flow.
+- Provisioning must use the authorized existing service/CLI flow, and only for
+  a registration whose payment succeeded.
+- A registration whose payment succeeded is never shown as an unknown tenant:
+  its tenant host shows the registration status until the tenant exists.
+- The business email is optional: empty or whitespace is valid, and a non-empty
+  value is validated. The owner email is required.
 - Do not mark a registration Provisioned by merely changing its status field.
 - A retry must not accidentally duplicate an existing tenant or database.
 - Assess how interrupted provisioning resumes.
@@ -414,6 +506,10 @@ Do not extend SignalR or add alternative polling scope without a user request.
 - Check simulation-endpoint exposure when assessing production readiness.
 - Verify in code whether plan, membership, and device limits are enforced.
 - A feature shown on the pricing page is not necessarily implemented in the backend.
+- Packaging is decided in `docs/architecture/billing.md` (Plans and packaging):
+  no package limits printers or active Print Bridge devices, and Enterprise has
+  no public price. Do not add per-plan count limits or count tiers. The code
+  that still enforces a device count is listed there as follow-up work.
 
 ## 13. User experience and localization
 
@@ -450,7 +546,12 @@ The default/fallback culture is Turkish.
 - Use SharedResource in Web.
 - Use existing localization resources in Print Bridge.
 - Pass JavaScript messages through localized configuration.
-- Update the language resources required for the touched surface.
+- Every new user-facing string gets a value in every supported culture,
+  `ru-RU` included. Russian is a supported application and receipt language,
+  and resource tests in Web and Print Bridge enforce culture parity. The
+  resource-file details are in `.claude/rules/web-ui.md` and
+  `.claude/rules/print-bridge.md`.
+- Do not duplicate a resource key with slightly different wording for the same concept.
 - Check Arabic RTL behavior.
 - Do not translate user input or database values.
 - Do not report incomplete translation coverage as full support.
@@ -476,13 +577,40 @@ At the start of work, inspect:
 - `git branch --show-current`
 - `git status --short`
 
+`git branch --show-current` is the source of truth for the active branch. A
+session or conversation name is not.
+
+### Branch policy
+
+- `master` is the stable branch. Never work on it directly.
+- `dev` is the integration branch. Work reaches it through pull requests from
+  task branches.
+- Feature and issue work happens on an assigned feature or task branch, or in an
+  isolated worktree.
+- If the session already has an assigned task branch, keep using it instead of
+  creating another one. Worktree branches created by Claude Desktop (`claude/*`)
+  are valid working branches; do not reject them because they are not `dev`.
+- Do not develop features directly on `dev`. Change `dev` directly only for a
+  small maintenance change the user explicitly asks to make there.
+- Create or check out a branch only when the user or the task assignment asks
+  for it. If the work needs a branch and none is assigned, ask before changing
+  files.
+- Bring newer `dev` changes into a task branch by merging `dev` into it. Do not
+  rebase or force-push.
+- Never merge a pull request or branch, and never deploy, without explicit user
+  approval. A pull request from `dev` into `master` waits for a green `dev` CI
+  run (see `docs/operations/testing.md`).
+
+### Workspace safety
+
 - Preserve the user's existing uncommitted files.
 - Distinguish your changes from pre-existing changes.
-- Determine branch policy from the Cursor core rules and the user's explicit instructions.
 - Do not switch branches for a read-only review.
-- Do not create or check out a branch unless requested.
-- Do not commit, push, or merge unless explicitly requested.
+- Do not commit or push unless explicitly requested.
+- When asked to commit, show the changed files, confirm they belong to the
+  task, and keep commits small and focused.
 - Do not reset, restore, clean, stash, delete, or overwrite without user authorization.
+- Remove scratch files and temporary scripts before presenting the final diff.
 - Do not stop unrelated running processes.
 - If stopping a process is necessary, verify its identity and that it belongs
   to this project first.
@@ -492,12 +620,15 @@ Do not include in commits:
 - Real secrets or credentials.
 - Local certificates.
 - User-specific configuration.
-- Build outputs or temporary files.
+- Build outputs, generated files, temporary scripts, or scratch files.
 - Test databases or real customer data.
 
 ## 16. Testing and verification standard
 
-Choose tests appropriate to the risk of the change.
+Choose tests appropriate to the risk of the change. After a code change, build
+what changed and run the verification `docs/operations/testing.md` requires for
+that kind of change. A documentation-only change needs a link check of the
+edited Markdown and `git diff --check`, not a product build.
 Do not replace behavioral tests with tests that merely repeat source text.
 
 When full solution verification is required:
@@ -507,12 +638,23 @@ When full solution verification is required:
     dotnet test tests/Wasla.PrintBridge.Tests/Wasla.PrintBridge.Tests.csproj
     git diff --check
 
+No documented workflow builds `Wasla.sln` on Linux. CI builds and tests .NET
+on Windows. The Linux release (`deploy/linux/publish-release.ps1`) and the
+`linux-pdf` check publish single projects that do not reference Print Bridge.
+If you build the solution on Linux anyway, for example in a cloud session, the
+.NET SDK stops at the Windows Forms Print Bridge projects (`net8.0-windows`)
+unless you pass `-p:EnableWindowsTargeting=true`. Their tests still run only on
+Windows, so such a build does not replace the Windows verification above.
+
 Additional principles:
 
 - Use --no-build only when a successful build exists for the current source.
 - Do not report tests of old binaries as current verification after a failed build.
+- Do not change the database schema, or add or reset migrations, unless the
+  task explicitly asks for it.
 - Assess relevant migration status when the schema changes.
 - Do not apply migrations without user authorization.
+- Do not add temporary test scripts to production code.
 - Run tests with isolated databases and fake credentials.
 - Do not leave persistent PrintJobs in a normal tenant.
 - Do not initiate real provider actions or physical printing without explicit scope.
@@ -567,6 +709,7 @@ After implementation, report:
 - Which files or behaviors were affected.
 - Verification performed and its results.
 - Checks not performed and concrete blockers.
+- For a failure: the exact project, file or class, configuration key, and error.
 - Remaining risks.
 - Whether a commit or push was performed.
 
@@ -579,7 +722,9 @@ After a read-only review:
 
 ## 19. Maintaining this document
 
-- Keep durable business rules and working principles here.
+- Keep durable business rules and working principles here, and detail that
+  matters only for some paths in `.claude/rules/` (section 2). A rule lives in
+  one place.
 - Do not turn the active branch, temporary HEAD, daily test count, or phase
   progress into permanent instructions.
 - Keep temporary work status and roadmaps in separate documents.
