@@ -109,21 +109,30 @@ public enum SpoolSubmitOutcome
     Incomplete
 }
 
-/// <summary>How far one submission got. <see cref="Aborted"/>: Windows accepted AbortPrinter for the unfinished job.</summary>
+/// <summary>
+/// How far one submission got. <see cref="BytesWritten"/>: the bytes Windows reported taken, including any a failing
+/// WritePrinter call reported. <see cref="Aborted"/>: Windows accepted AbortPrinter for the unfinished job.
+/// <see cref="WriteUncertain"/>: a WritePrinter call failed or reported an impossible count, so Windows may have taken
+/// or passed on data it did not report.
+/// </summary>
 public sealed record SpoolSubmitResult(
     SpoolSubmitOutcome Outcome,
     int JobId,
     long BytesWritten,
     bool Aborted,
     string? Error,
-    int Win32Error = 0)
+    int Win32Error = 0,
+    bool WriteUncertain = false)
 {
+    /// <summary>Whether any of this job's data may exist in Windows or the printer. Only a job without it cannot print.</summary>
+    public bool MayHaveData => BytesWritten > 0 || WriteUncertain;
+
     public static SpoolSubmitResult Spooled(int jobId, long bytesWritten) => new(SpoolSubmitOutcome.Spooled, jobId, bytesWritten, false, null);
 
     public static SpoolSubmitResult NotCreated(string error, int win32Error = 0) => new(SpoolSubmitOutcome.NotCreated, 0, 0, false, error, win32Error);
 
-    public static SpoolSubmitResult Incomplete(int jobId, long bytesWritten, bool aborted, string error, int win32Error = 0) =>
-        new(SpoolSubmitOutcome.Incomplete, jobId, bytesWritten, aborted, error, win32Error);
+    public static SpoolSubmitResult Incomplete(int jobId, long bytesWritten, bool aborted, string error, int win32Error = 0, bool writeUncertain = false) =>
+        new(SpoolSubmitOutcome.Incomplete, jobId, bytesWritten, aborted, error, win32Error, writeUncertain);
 }
 
 public enum SpoolJobState

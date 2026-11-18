@@ -38,11 +38,12 @@ public static class PrintSubmissionTracker
         {
             SpoolSubmitOutcome.Spooled => copy with { WindowsJobId = result.JobId, Spooled = true },
             SpoolSubmitOutcome.NotCreated => copy with { WindowsJobId = null, Outcome = PrintCopyOutcome.NotSubmitted },
-            // A job that failed after it existed holds no data only when nothing was written and Windows deleted it.
+            // A job that failed after it existed holds no data only when Windows took none (no byte reported, no failed or
+            // implausible write that may have passed data on) and deleted it.
             _ => copy with
             {
                 WindowsJobId = result.JobId,
-                Outcome = result.BytesWritten == 0 && result.Aborted ? PrintCopyOutcome.NotSubmitted : PrintCopyOutcome.MaybePrinted
+                Outcome = !result.MayHaveData && result.Aborted ? PrintCopyOutcome.NotSubmitted : PrintCopyOutcome.MaybePrinted
             }
         };
 

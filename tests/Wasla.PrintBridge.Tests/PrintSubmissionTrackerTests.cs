@@ -41,20 +41,29 @@ public sealed class PrintSubmissionTrackerTests
     }
 
     [Theory]
-    [InlineData(SpoolSubmitOutcome.Spooled, 300L, false, null)]
-    [InlineData(SpoolSubmitOutcome.NotCreated, 0L, false, PrintCopyOutcome.NotSubmitted)]
-    [InlineData(SpoolSubmitOutcome.Incomplete, 0L, true, PrintCopyOutcome.NotSubmitted)]
-    [InlineData(SpoolSubmitOutcome.Incomplete, 0L, false, PrintCopyOutcome.MaybePrinted)]
-    [InlineData(SpoolSubmitOutcome.Incomplete, 1L, true, PrintCopyOutcome.MaybePrinted)]
-    [InlineData(SpoolSubmitOutcome.Incomplete, 300L, false, PrintCopyOutcome.MaybePrinted)]
+    [InlineData(SpoolSubmitOutcome.Spooled, 300L, false, false, null)]
+    [InlineData(SpoolSubmitOutcome.NotCreated, 0L, false, false, PrintCopyOutcome.NotSubmitted)]
+    [InlineData(SpoolSubmitOutcome.Incomplete, 0L, true, false, PrintCopyOutcome.NotSubmitted)]
+    [InlineData(SpoolSubmitOutcome.Incomplete, 0L, false, false, PrintCopyOutcome.MaybePrinted)]
+    [InlineData(SpoolSubmitOutcome.Incomplete, 1L, true, false, PrintCopyOutcome.MaybePrinted)]
+    [InlineData(SpoolSubmitOutcome.Incomplete, 300L, false, false, PrintCopyOutcome.MaybePrinted)]
+    // A WritePrinter call failed: no byte reported and the job deleted, yet it may have passed data on.
+    [InlineData(SpoolSubmitOutcome.Incomplete, 0L, true, true, PrintCopyOutcome.MaybePrinted)]
     public void ASubmissionsResult_NeverCallsACopyWithPossibleDataNotSubmitted(
         SpoolSubmitOutcome outcome,
         long bytesWritten,
         bool aborted,
+        bool writeUncertain,
         PrintCopyOutcome? expected)
     {
         var started = Queued with { WindowsJobId = null, Spooled = false };
-        var result = new SpoolSubmitResult(outcome, outcome == SpoolSubmitOutcome.NotCreated ? 0 : 12, bytesWritten, aborted, "error");
+        var result = new SpoolSubmitResult(
+            outcome,
+            outcome == SpoolSubmitOutcome.NotCreated ? 0 : 12,
+            bytesWritten,
+            aborted,
+            "error",
+            WriteUncertain: writeUncertain);
 
         var copy = PrintSubmissionTracker.AfterSubmit(started, result);
 

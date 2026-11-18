@@ -1315,13 +1315,14 @@ public sealed class PrintBridgeRuntime : IDisposable, IPrintBridgeStatusSource, 
 
             failure = result.Error;
             _logger.LogWarning(
-                "Copy not handed to Windows completely. JobId={JobId}, Copy={Copy}/{Copies}, Outcome={Outcome}, WindowsJobId={WindowsJobId}, BytesWritten={BytesWritten}, Aborted={Aborted}, Win32Error={Win32Error}, Error={Error}, CopyOutcome={CopyOutcome}",
+                "Copy not handed to Windows completely. JobId={JobId}, Copy={Copy}/{Copies}, Outcome={Outcome}, WindowsJobId={WindowsJobId}, BytesWritten={BytesWritten}, WriteUncertain={WriteUncertain}, Aborted={Aborted}, Win32Error={Win32Error}, Error={Error}, CopyOutcome={CopyOutcome}",
                 jobId,
                 number,
                 copies,
                 result.Outcome,
                 result.JobId,
                 result.BytesWritten,
+                result.WriteUncertain,
                 result.Aborted,
                 result.Win32Error,
                 result.Error,
