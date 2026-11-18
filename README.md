@@ -99,4 +99,4 @@ Key starting points:
 
 ## Coding agents
 
-Read `AGENTS.md` before changing the repository. It points to the shared rules in `.cursor/rules/` and defines tenant isolation, architecture, provider, order, printing, localization, testing, and Git constraints. Claude Code also starts from `CLAUDE.md`.
+Read `AGENTS.md` before changing the repository. It holds the project rules for every coding agent: tenant isolation, architecture, provider, order, printing, localization, testing, and Git constraints. Rules that apply only to some paths are in `.claude/rules/`; the `paths` frontmatter of each file lists the files it covers. Claude Code loads `AGENTS.md` through `CLAUDE.md` and loads the path rules automatically. Other agents read the matching rule before changing those paths.

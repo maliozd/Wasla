@@ -400,7 +400,7 @@ The POS uses the Wasla visual direction (warm operational minimalism, foundation
 
 **Localization:**
 
-- TR (default), EN, AR, RU for every POS string, including the Terminal app, setup console and printed documents. Resource keys go under a POS prefix. There is no hardcoded copy in Razor or JavaScript, and JavaScript messages are passed from Razor, as in Wasla Orders ([20-localization-ui.mdc](../../.cursor/rules/20-localization-ui.mdc)).
+- TR (default), EN, AR, RU for every POS string, including the Terminal app, setup console and printed documents. Resource keys go under a POS prefix. There is no hardcoded copy in Razor or JavaScript, and JavaScript messages are passed from Razor, as in Wasla Orders ([AGENTS.md](../../AGENTS.md#13-user-experience-and-localization)).
 - Arabic is right to left: mirrored zones, logical CSS properties, and amounts and check numbers kept left to right inside right-to-left text.
 - Amounts are in TRY with `₺`, through the culture's number format, never the culture's own currency. Dates are Gregorian in every culture, as in Orders (WAS-44 for amounts, WAS-130 for dates).
 - Product, category and modifier names are restaurant data and are not translated.
