@@ -28,7 +28,7 @@ internal static class TestEngineHost
         var runtime = new PrintBridgeRuntime(
             client,
             new ReceiptFormatter(),
-            new NoReceiptPrinter(),
+            new RecordingPrinterSpooler(new NoReceiptPrinter()),
             holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, holder, NullLogger<PrintBridgeDeviceMetadataSync>.Instance),
@@ -48,7 +48,7 @@ internal static class TestEngineHost
             () => listed);
     }
 
-    private sealed class NoReceiptPrinter : IReceiptPrinter
+    private sealed class NoReceiptPrinter : ITestReceiptPrinter
     {
         public Task PrintAsync(string printerName, string text, int copyCount, CancellationToken ct) =>
             throw new InvalidOperationException("These tests never print.");

@@ -14,15 +14,23 @@ public enum PrintJournalStage
     /// <summary>Claimed by this engine; the receipt was not handed to Windows, or Windows refused it. It was not printed.</summary>
     NotPrinted,
 
-    /// <summary>Being handed to the spooler (or, in test mode, written to a file). Whether paper came out is unknown.</summary>
+    /// <summary>
+    /// Being handed to the spooler (or, in test mode, written to a file), or (WAS-216, with <see cref="PrintJournalEntry.Submission"/>)
+    /// handed over and still in the Windows queue. Whether paper came out is not known yet. A version without WAS-216
+    /// reads it as an interrupted submission and makes it <see cref="Uncertain"/>, never printing it again.
+    /// </summary>
     Submitting,
 
-    /// <summary>Windows accepted the receipt; the server has not confirmed <c>mark-printed</c> yet.</summary>
+    /// <summary>
+    /// Windows finished sending every copy to the printer (WAS-216: the jobs left the queue; before WAS-216, the spooler
+    /// accepted them); the server has not confirmed <c>mark-printed</c> yet. Not proof that paper came out.
+    /// </summary>
     Printed,
 
     /// <summary>
-    /// Found <see cref="Submitting"/> after a restart: whether paper came out is unknown. Never printed again and never
-    /// reported on its own; it waits for the user's check (printed or not), which is then reported.
+    /// Whether paper came out is unknown: an interrupted submission, a job that failed after data was written, a job
+    /// removed from the Windows queue, or copies only partly sent. Never printed again and never reported on its own; it
+    /// waits for the user's check (printed or not), which is then reported.
     /// </summary>
     Uncertain
 }
@@ -38,9 +46,57 @@ public sealed record PrintJournalEntry(
     string TokenFingerprint,
     DateTime UpdatedAtUtc)
 {
+    /// <summary>The Windows jobs of this receipt (WAS-216); null before the receipt is handed to Windows, and in older journals.</summary>
+    public PrintJournalSubmission? Submission { get; init; }
+
     public bool BelongsTo(WaslaOptions connection) =>
         string.Equals(ServerUrl, connection.ServerUrl, StringComparison.Ordinal)
         && string.Equals(TokenFingerprint, PrintBridgeJobJournal.Fingerprint(connection.AgentToken), StringComparison.Ordinal);
+}
+
+/// <summary>
+/// How a receipt was handed to Windows (WAS-216): one RAW job per copy, each with a document name that is unique to this
+/// submission, so a job is recognised as this receipt's even after a restart and never confused with a reused job id.
+/// </summary>
+public sealed record PrintJournalSubmission(
+    string PrinterName,
+    string SubmissionId,
+    int CopyCount,
+    IReadOnlyList<PrintJournalCopy> Copies)
+{
+    public PrintJournalSubmission With(PrintJournalCopy copy) =>
+        this with { Copies = [.. Copies.Where(c => c.Number != copy.Number), copy] };
+
+    public static string DocumentName(string submissionId, int number, int copyCount) =>
+        $"Wasla Receipt {submissionId} {number}/{copyCount}";
+}
+
+/// <summary>
+/// One copy's Windows job. <see cref="WindowsJobId"/> is null until StartDocPrinter returned it; <see cref="Spooled"/>
+/// once every byte was written and the job finished. The Seen flags remember what Windows reported while it was queued.
+/// </summary>
+public sealed record PrintJournalCopy(
+    int Number,
+    string DocumentName,
+    DateTime StartedAtUtc,
+    int? WindowsJobId = null,
+    bool Spooled = false,
+    bool SeenProblem = false,
+    bool SeenPrinting = false,
+    bool SeenDeleting = false,
+    PrintCopyOutcome? Outcome = null);
+
+/// <summary>What became of one copy, as far as Windows can tell.</summary>
+public enum PrintCopyOutcome
+{
+    /// <summary>Windows finished sending it to the printer. Not proof that paper came out.</summary>
+    Sent,
+
+    /// <summary>No Windows job holds any of its data: it cannot print.</summary>
+    NotSubmitted,
+
+    /// <summary>Some or all of its data may have reached the printer, but Windows did not finish it normally.</summary>
+    MaybePrinted
 }
 
 /// <summary>
@@ -87,7 +143,7 @@ public sealed class PrintBridgeJobJournal
         }
     }
 
-    public void Record(Guid jobId, PrintJournalStage stage, WaslaOptions connection)
+    public void Record(Guid jobId, PrintJournalStage stage, WaslaOptions connection, PrintJournalSubmission? submission = null)
     {
         lock (_sync)
         {
@@ -98,7 +154,10 @@ public sealed class PrintBridgeJobJournal
                 stage,
                 connection.ServerUrl,
                 Fingerprint(connection.AgentToken),
-                DateTime.UtcNow));
+                DateTime.UtcNow)
+            {
+                Submission = submission
+            });
             if (entries.Count > MaxEntries)
                 entries.RemoveRange(0, entries.Count - MaxEntries);
             Save(entries);

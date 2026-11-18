@@ -136,7 +136,7 @@
     <value>Bekliyor</value>
   </data>
   <data name="JobStatus.Printed" xml:space="preserve">
-    <value>Yazdırıldı</value>
+    <value>Yazıcıya gönderildi</value>
   </data>
   <data name="JobStatus.Printing" xml:space="preserve">
     <value>Yazdırılıyor</value>
@@ -151,7 +151,7 @@
     <value>○ Bekliyor</value>
   </data>
   <data name="JobStatusBadge.Printed" xml:space="preserve">
-    <value>✓ Yazdırıldı</value>
+    <value>✓ Yazıcıya gönderildi</value>
   </data>
   <data name="JobStatusBadge.Printing" xml:space="preserve">
     <value>⏳ Yazdırılıyor</value>
@@ -385,7 +385,7 @@
     <value>Bulunamadı</value>
   </data>
   <data name="PrinterStatus.Ready" xml:space="preserve">
-    <value>Hazır</value>
+    <value>Sorun bildirilmedi</value>
   </data>
   <data name="Reprint.AlreadyPending" xml:space="preserve">
     <value>Bu sipariş için zaten bekleyen bir yazdırma işi var.</value>
@@ -862,7 +862,7 @@
     <value>Kontrol gerekiyor</value>
   </data>
   <data name="Shell.History.Uncertain" xml:space="preserve">
-    <value>Print Bridge bu fiş yazıcıya gönderilirken durdu; basılıp basılmadığı bilinmiyor. Yazıcıyı kontrol edin ve ne olduğunu seçin. Basılmadıysa Wasla fişi yeniden yazdırabilir.</value>
+    <value>Bu fişin basılıp basılmadığı bilinmiyor: Print Bridge fişi yazıcıya gönderirken durdu ya da Windows işi normal şekilde bitirmedi. Yazıcıyı kontrol edin ve ne olduğunu seçin. Basılmadıysa Wasla fişi yeniden yazdırabilir.</value>
   </data>
   <data name="Shell.History.UncertainInWasla" xml:space="preserve">
     <value>Bu fişin basılıp basılmadığı bilinmiyor ve bağlantı o zamandan beri değişti. Bu siparişin fişini Wasla panelinde kontrol edin.</value>
@@ -1028,5 +1028,23 @@
   </data>
   <data name="Update.Error.InProgress" xml:space="preserve">
     <value>Print Bridge bir güncelleme yaparken bu yapılamaz. Güncelleme bitince veya iptal edilince tekrar deneyin.</value>
+  </data>
+  <data name="PrinterStatus.Offline" xml:space="preserve">
+    <value>Çevrimdışı</value>
+  </data>
+  <data name="PrinterStatus.Paused" xml:space="preserve">
+    <value>Windows'ta duraklatıldı</value>
+  </data>
+  <data name="PrinterStatus.Error" xml:space="preserve">
+    <value>Sorun bildiriyor</value>
+  </data>
+  <data name="History.Uncertain.StillQueued" xml:space="preserve">
+    <value>Bu fiş hâlâ Windows yazdırma kuyruğunda ve yazdırılabilir. Kuyruktan çıkmasını bekleyin (veya oradan kaldırın), sonra yeniden kontrol edin.</value>
+  </data>
+  <data name="History.Uncertain.QueueNotChecked" xml:space="preserve">
+    <value>Windows yazdırma kuyruğu kontrol edilemedi. Yeniden deneyin.</value>
+  </data>
+  <data name="Shell.History.InWindowsQueue" xml:space="preserve">
+    <value>Windows yazdırma kuyruğunda bekliyor; yazıcı hazır olduğunda yazdırılabilir.</value>
   </data>
 </root>

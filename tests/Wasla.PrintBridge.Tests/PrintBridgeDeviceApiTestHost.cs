@@ -150,7 +150,7 @@ internal sealed class DeviceApiEngine : IDisposable
         var runtime = new PrintBridgeRuntime(
             app.Client,
             new ReceiptFormatter(),
-            printer,
+            new RecordingPrinterSpooler(printer),
             app.Holder,
             store,
             new PrintBridgeDeviceMetadataSync(store, app.Holder, loggers.CreateLogger<PrintBridgeDeviceMetadataSync>()),
@@ -179,7 +179,7 @@ internal sealed class DeviceApiEngine : IDisposable
 }
 
 /// <summary>Records every print instead of printing; throws <see cref="Failure"/> when it is set.</summary>
-internal sealed class DeviceApiPrinter : IReceiptPrinter
+internal sealed class DeviceApiPrinter : ITestReceiptPrinter
 {
     public ConcurrentQueue<(string PrinterName, int CopyCount)> Calls { get; } = new();
 

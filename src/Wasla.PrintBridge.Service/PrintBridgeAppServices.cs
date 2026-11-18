@@ -93,13 +93,13 @@ public static class PrintBridgeAppServices
         if (!OperatingSystem.IsWindows())
             throw new PlatformNotSupportedException("Wasla Print Bridge requires Windows.");
 
-        services.AddSingleton<IReceiptPrinter, WindowsReceiptPrinter>();
+        services.AddSingleton<IPrintSpooler, WindowsPrintSpooler>();
         AddWaslaApiClient(services, appVersion);
         services.AddSingleton<PrintBridgeDeviceMetadataSync>();
         services.AddSingleton(sp => new PrintBridgeRuntime(
             sp.GetRequiredService<WaslaPrintBridgeClient>(),
             sp.GetRequiredService<ReceiptFormatter>(),
-            sp.GetRequiredService<IReceiptPrinter>(),
+            sp.GetRequiredService<IPrintSpooler>(),
             sp.GetRequiredService<PrintBridgeSettingsHolder>(),
             sp.GetRequiredService<PrintBridgeSettingsStore>(),
             sp.GetRequiredService<PrintBridgeDeviceMetadataSync>(),

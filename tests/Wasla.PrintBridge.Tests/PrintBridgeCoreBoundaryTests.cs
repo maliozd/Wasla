@@ -48,7 +48,7 @@ public sealed class PrintBridgeCoreBoundaryTests
                      typeof(PrintBridgeSettingsHolder),
                      typeof(PrintBridgeSettingsValidator),
                      typeof(LocalPrintJobHistoryStore),
-                     typeof(Printing.WindowsReceiptPrinter),
+                     typeof(Printing.WindowsPrintSpooler),
                      typeof(Setup.PrintBridgeProtocolUri),
                      typeof(PrintBridgePaths)
                  })

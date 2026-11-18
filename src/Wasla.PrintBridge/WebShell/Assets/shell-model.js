@@ -51,7 +51,7 @@
 
   var CONNECTION_STATES = ['online', 'connecting', 'offline', 'error', 'notConfigured', 'stopped'];
   var ENGINE_STATES = ['running', 'stopped'];
-  var PRINTER_STATES = ['ready', 'notConfigured', 'notFound', 'dryRun'];
+  var PRINTER_STATES = ['ready', 'notConfigured', 'notFound', 'dryRun', 'unavailable'];
   var JOB_STATUSES = ['pending', 'printing', 'printed', 'failed', 'skipped', 'uncertain'];
   var OUTCOMES = ['succeeded', 'failed', 'busy', 'duplicate', 'rejected', 'cancelled'];
   var HISTORY_RANGES = ['today', 'last7Days', 'last30Days'];
@@ -535,7 +535,7 @@
 
   /** Status colour family; every badge also carries its text label, so colour is never the only signal. */
   function printerTone(state) {
-    return { ready: 'success', dryRun: 'info', notConfigured: 'warning', notFound: 'danger' }[state] || 'neutral';
+    return { ready: 'success', dryRun: 'info', notConfigured: 'warning', notFound: 'danger', unavailable: 'warning' }[state] || 'neutral';
   }
 
   function jobTone(status) {

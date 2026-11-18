@@ -395,7 +395,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
             var runtime = new PrintBridgeRuntime(
                 client,
                 new ReceiptFormatter(),
-                printer,
+                new RecordingPrinterSpooler(printer),
                 holder,
                 store,
                 new PrintBridgeDeviceMetadataSync(store, holder, loggers.CreateLogger<PrintBridgeDeviceMetadataSync>()),
@@ -717,7 +717,7 @@ public sealed class PrintBridgeSetupLinkGuardTests : IDisposable
     }
 
     /// <summary>Counts the copies the engine prints instead of printing, and can hold one print until opened.</summary>
-    private sealed class RecordingPrinter : IReceiptPrinter
+    private sealed class RecordingPrinter : ITestReceiptPrinter
     {
         private int _copies;
         private int _prints;

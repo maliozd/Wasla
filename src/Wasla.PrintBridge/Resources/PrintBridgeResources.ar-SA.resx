@@ -136,7 +136,7 @@
     <value>قيد الانتظار</value>
   </data>
   <data name="JobStatus.Printed" xml:space="preserve">
-    <value>تمت الطباعة</value>
+    <value>أُرسل إلى الطابعة</value>
   </data>
   <data name="JobStatus.Printing" xml:space="preserve">
     <value>يطبع</value>
@@ -151,7 +151,7 @@
     <value>○ قيد الانتظار</value>
   </data>
   <data name="JobStatusBadge.Printed" xml:space="preserve">
-    <value>✓ تمت الطباعة</value>
+    <value>✓ أُرسل إلى الطابعة</value>
   </data>
   <data name="JobStatusBadge.Printing" xml:space="preserve">
     <value>⏳ يطبع</value>
@@ -385,7 +385,7 @@
     <value>غير موجودة</value>
   </data>
   <data name="PrinterStatus.Ready" xml:space="preserve">
-    <value>جاهزة</value>
+    <value>لا توجد مشكلة مُبلَّغ عنها</value>
   </data>
   <data name="Reprint.AlreadyPending" xml:space="preserve">
     <value>يوجد بالفعل مهمة طباعة معلقة لهذا الطلب.</value>
@@ -862,7 +862,7 @@
     <value>يحتاج إلى تحقق</value>
   </data>
   <data name="Shell.History.Uncertain" xml:space="preserve">
-    <value>توقف Print Bridge أثناء إرسال هذا الإيصال إلى الطابعة، لذلك لا يُعرف ما إذا كان قد طُبع. تحقق من الطابعة واختر ما حدث. إذا لم يُطبع، يمكن لـ Wasla طباعته مرة أخرى.</value>
+    <value>لا يُعرف ما إذا كان هذا الإيصال قد طُبع: توقف Print Bridge أثناء إرساله، أو لم يُنهِ Windows المهمة بشكل طبيعي. تحقق من الطابعة واختر ما حدث. إذا لم يُطبع، يمكن لـ Wasla طباعته مرة أخرى.</value>
   </data>
   <data name="Shell.History.UncertainInWasla" xml:space="preserve">
     <value>لا يُعرف ما إذا كان هذا الإيصال قد طُبع، وقد تغيّر الاتصال منذ ذلك الحين. تحقق من إيصال هذا الطلب في لوحة Wasla.</value>
@@ -1028,5 +1028,23 @@
   </data>
   <data name="Update.Error.InProgress" xml:space="preserve">
     <value>لا يمكن تنفيذ ذلك أثناء تحديث Print Bridge. حاول مرة أخرى بعد انتهاء التحديث أو إلغائه.</value>
+  </data>
+  <data name="PrinterStatus.Offline" xml:space="preserve">
+    <value>غير متصلة</value>
+  </data>
+  <data name="PrinterStatus.Paused" xml:space="preserve">
+    <value>متوقفة مؤقتًا في Windows</value>
+  </data>
+  <data name="PrinterStatus.Error" xml:space="preserve">
+    <value>تُبلغ عن مشكلة</value>
+  </data>
+  <data name="History.Uncertain.StillQueued" xml:space="preserve">
+    <value>لا يزال هذا الإيصال في قائمة انتظار الطباعة في Windows وقد تتم طباعته. انتظر حتى يخرج من القائمة (أو احذفه منها)، ثم تحقق مرة أخرى.</value>
+  </data>
+  <data name="History.Uncertain.QueueNotChecked" xml:space="preserve">
+    <value>تعذّر التحقق من قائمة انتظار الطباعة في Windows. حاول مرة أخرى.</value>
+  </data>
+  <data name="Shell.History.InWindowsQueue" xml:space="preserve">
+    <value>ينتظر في قائمة انتظار الطباعة في Windows؛ قد تتم طباعته عندما تصبح الطابعة جاهزة.</value>
   </data>
 </root>
