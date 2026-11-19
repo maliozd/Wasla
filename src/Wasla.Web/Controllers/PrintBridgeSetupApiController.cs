@@ -26,7 +26,6 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
     internal const string InvalidSetupCodeError = "invalid_or_expired_setup_code";
     internal const string SourceRejectedError = "source_credential_rejected";
     internal const string PrintingInProgressError = "printing_in_progress";
-    internal const string DeviceLimitReachedError = "device_limit_reached";
     internal const string InstallationConflictError = "installation_conflict";
     internal const string DestinationDeviceDisabledError = "destination_device_disabled";
     internal const string SameTenantError = "same_tenant";
@@ -184,7 +183,6 @@ public sealed class PrintBridgeSetupApiController : ControllerBase
             PrintBridgeTransferOutcome.SourceRejected =>
                 StatusCode(StatusCodes.Status401Unauthorized, new { error = SourceRejectedError }),
             PrintBridgeTransferOutcome.PrintingInProgress => Conflict(new { error = PrintingInProgressError }),
-            PrintBridgeTransferOutcome.DeviceLimitReached => Conflict(new { error = DeviceLimitReachedError }),
             PrintBridgeTransferOutcome.InstallationConflict => Conflict(new { error = InstallationConflictError }),
             PrintBridgeTransferOutcome.DestinationDeviceDisabled => Conflict(new { error = DestinationDeviceDisabledError }),
             PrintBridgeTransferOutcome.SameTenant => Conflict(new { error = SameTenantError }),

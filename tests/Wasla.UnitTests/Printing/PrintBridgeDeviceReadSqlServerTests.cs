@@ -83,20 +83,6 @@ public sealed class PrintBridgeDeviceReadSqlServerTests(PrintBridgeDeviceReadDat
     }
 
     [Fact]
-    public async Task TheDevicesPageQuota_WhileADeviceIsRemoved_WaitsAndCountsTheOthers()
-    {
-        var device = await fixture.DeviceAsync(Siblings);
-
-        var quota = await _race.ReadDuringTwoStepDeviceWriteAsync(
-            device.Id,
-            db => ChangeAsync(db, device.Id, removed: true),
-            readFrom: null,
-            db => Manage(db).GetDeviceQuotaAsync(device.Tenant, CancellationToken.None));
-
-        Assert.Equal(Siblings, quota.ActiveDeviceCount);
-    }
-
-    [Fact]
     public async Task TheSetupStatus_WhileADeviceIsRemoved_WaitsAndReadsThePrintingFacts()
     {
         // The setup status turns a failed read into "printing unknown" and logs it, so a lost deadlock shows in the log.
@@ -122,10 +108,12 @@ public sealed class PrintBridgeDeviceReadSqlServerTests(PrintBridgeDeviceReadDat
             device.Id,
             db => ChangeAsync(db, device.Id, removed: true),
             readFrom: null,
-            db => new CentralAdminTenantOperationsService(db, TimeProvider.System).GetTenantDetailAsync(device.Tenant, CancellationToken.None));
+            db => new CentralAdminTenantOperationsService(db, TimeProvider.System).GetTenantDetailAsync(device.Tenant, 1, CancellationToken.None));
 
         Assert.NotNull(detail);
-        Assert.Equal(Siblings, detail.PrintBridgeDevices.Count);
+        Assert.Equal(Siblings, detail.PrintBridgeDevices.Items.Count);
+        Assert.Equal(Siblings, detail.PrintBridgeDeviceCounts.Total);
+        Assert.Equal(Siblings, detail.PrintBridgeDeviceCounts.Active);
     }
 
     [Fact]

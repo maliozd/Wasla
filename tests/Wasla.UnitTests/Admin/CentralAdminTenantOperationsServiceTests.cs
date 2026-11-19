@@ -285,7 +285,7 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
         _central.AddDevice(a.Id, "A removed", true, Now, removedAt: Now);
         _central.AddDevice(b.Id, "B kitchen", true, Now);
 
-        var detail = await Service().GetTenantDetailAsync(a.Id, CancellationToken.None);
+        var detail = await Service().GetTenantDetailAsync(a.Id, 1, CancellationToken.None);
 
         Assert.NotNull(detail);
         Assert.Equal(a.Id, detail.Id);
@@ -293,9 +293,10 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
         Assert.Equal(TenantMigrationRecord.Failed, detail.MigrationRecord);
         Assert.Equal("Pro", detail.Membership!.PlanCode);
         Assert.Equal(registration.Id, detail.Registration!.Id);
-        var device = Assert.Single(detail.PrintBridgeDevices);
+        var device = Assert.Single(detail.PrintBridgeDevices.Items);
         Assert.Equal("A kitchen", device.Name);
         Assert.Equal(PrintBridgeConnectionStatus.Connected, device.ConnectionStatus);
+        Assert.Equal(new TenantPrintBridgeDeviceCounts(Total: 1, Active: 1, Online: 1, ActiveNeverConnected: 0), detail.PrintBridgeDeviceCounts);
 
         var json = JsonSerializer.Serialize(detail);
         foreach (var secret in SecretMarkers.All)
@@ -309,8 +310,8 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
         var tenant = _central.AddTenant("a");
         var registration = _central.AddRegistration("a", PendingRegistrationStatus.Provisioned, tenant.Id);
 
-        Assert.Null(await Service().GetTenantDetailAsync(Guid.NewGuid(), CancellationToken.None));
-        Assert.Null(await Service().GetTenantDetailAsync(registration.Id, CancellationToken.None));
+        Assert.Null(await Service().GetTenantDetailAsync(Guid.NewGuid(), 1, CancellationToken.None));
+        Assert.Null(await Service().GetTenantDetailAsync(registration.Id, 1, CancellationToken.None));
     }
 
     [Fact]
@@ -318,9 +319,66 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
     {
         var tenant = _central.AddTenant("half", encryptedConnectionString: string.Empty);
 
-        var detail = await Service().GetTenantDetailAsync(tenant.Id, CancellationToken.None);
+        var detail = await Service().GetTenantDetailAsync(tenant.Id, 1, CancellationToken.None);
 
         Assert.False(detail!.DatabaseConfigured);
+    }
+
+    [Fact]
+    public async Task Detail_PagesThroughAllDevices_BeyondFifty_WithCountsOverAllOfThem()
+    {
+        // 120 devices of one restaurant: more than one page, and more than the 50 the page once cut the list at. The only
+        // online device sorts onto the last page (inactive devices come after the active ones), so the counts must not
+        // come from the page shown.
+        var tenant = _central.AddTenant("many");
+        for (var i = 0; i < 100; i++)
+            _central.AddDevice(tenant.Id, $"Active {i:000}", true, Now.AddHours(-1));
+        for (var i = 0; i < 19; i++)
+            _central.AddDevice(tenant.Id, $"Passive {i:000}", false, null);
+        _central.AddDevice(tenant.Id, "Zz online", true, Now.AddSeconds(-5));
+        _central.AddDevice(tenant.Id, "Removed", true, Now, removedAt: Now);
+        var other = _central.AddTenant("other");
+        _central.AddDevice(other.Id, "Other restaurant", true, Now);
+
+        var pages = new List<TenantPrintBridgeDevicePage>();
+        for (var page = 1; page <= 3; page++)
+            pages.Add((await Service().GetTenantDetailAsync(tenant.Id, page, CancellationToken.None))!.PrintBridgeDevices);
+
+        Assert.Equal(new[] { 50, 50, 20 }, pages.Select(p => p.Items.Count));
+        Assert.All(pages, p => Assert.Equal((120, 3), (p.TotalCount, p.TotalPages)));
+        Assert.Equal((101, 120), (pages[2].FirstItemNumber, pages[2].LastItemNumber));
+        var names = pages.SelectMany(p => p.Items).Select(d => d.Name).ToList();
+        Assert.Equal(120, names.Distinct().Count());
+        Assert.DoesNotContain("Removed", names);
+        Assert.DoesNotContain("Other restaurant", names);
+        Assert.True(pages[0].Items.All(d => d.IsActive) && pages[2].Items.Take(1).All(d => d.IsActive));
+        Assert.Equal("Zz online", pages[2].Items[0].Name);
+
+        var detail = await Service().GetTenantDetailAsync(tenant.Id, 3, CancellationToken.None);
+        Assert.Equal(new TenantPrintBridgeDeviceCounts(Total: 120, Active: 101, Online: 1, ActiveNeverConnected: 0), detail!.PrintBridgeDeviceCounts);
+
+        // A page that does not exist shows the nearest one.
+        Assert.Equal(3, (await Service().GetTenantDetailAsync(tenant.Id, 99, CancellationToken.None))!.PrintBridgeDevices.Page);
+        Assert.Equal(1, (await Service().GetTenantDetailAsync(tenant.Id, -4, CancellationToken.None))!.PrintBridgeDevices.Page);
+    }
+
+    [Fact]
+    public async Task Detail_ReadsOneBoundedPageOfDevices_WhateverTheirNumber()
+    {
+        var few = _central.AddTenant("few");
+        _central.AddDevice(few.Id, "Kitchen", true, Now);
+        var many = _central.AddTenant("many");
+        for (var i = 0; i < 120; i++)
+            _central.AddDevice(many.Id, $"Station {i:000}", true, Now);
+
+        var small = await CountedAsync(service => service.GetTenantDetailAsync(few.Id, 1, CancellationToken.None));
+        var large = await CountedAsync(service => service.GetTenantDetailAsync(many.Id, 1, CancellationToken.None));
+
+        // The same statements for one device or 120: the page's rows are cut by the server, the counts are one row.
+        Assert.Equal(small.Commands, large.Commands);
+        Assert.Equal(TenantPrintBridgeDevicePage.PageSize, large.Result!.PrintBridgeDevices.Items.Count);
+        Assert.Contains(large.SqlText, sql => sql.Contains("OFFSET", StringComparison.OrdinalIgnoreCase) || sql.Contains("LIMIT", StringComparison.OrdinalIgnoreCase));
+        Assert.All(large.SqlText, sql => Assert.DoesNotContain("TokenHash", sql, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -332,7 +390,7 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Service().GetTenantListAsync(Query(), cts.Token));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Service().GetOverviewAsync(cts.Token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Service().GetTenantDetailAsync(Guid.NewGuid(), cts.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Service().GetTenantDetailAsync(Guid.NewGuid(), 1, cts.Token));
     }
 
     // Helpers ----------------------------------------------------------------------------------------

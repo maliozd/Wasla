@@ -12,7 +12,10 @@ namespace Wasla.Infrastructure.Services;
 /// </summary>
 public interface IPrintBridgeSetupTenantLock
 {
-    /// <summary>Serializes device creation, quota checks and session endings within one tenant.</summary>
+    /// <summary>
+    /// Serializes the device writes of one tenant (the setup exchange, a move, the Web panel's create and reactivate)
+    /// with its setup session endings and the development tenant reset. It enforces no device count.
+    /// </summary>
     Task<int> AcquireNewDeviceExchangeLockAsync(Guid tenantId, CancellationToken ct);
 
     /// <summary>

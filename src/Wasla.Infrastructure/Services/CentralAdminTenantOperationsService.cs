@@ -17,7 +17,6 @@ namespace Wasla.Infrastructure.Services;
 public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOperationsService
 {
     private const int RecentTenantCount = 5;
-    private const int MaxDevicesPerTenant = 50;
 
     private readonly CentralDbContext _db;
     private readonly TimeProvider _time;
@@ -203,7 +202,7 @@ public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOpe
         return new TenantListPage(applied, items, totalCount, registryIsEmpty);
     }
 
-    public async Task<TenantOperationsDetail?> GetTenantDetailAsync(Guid tenantId, CancellationToken ct)
+    public async Task<TenantOperationsDetail?> GetTenantDetailAsync(Guid tenantId, int devicePage, CancellationToken ct)
     {
         var now = _time.GetUtcNow().UtcDateTime;
 
@@ -262,23 +261,8 @@ public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOpe
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
-        // The ids from an index, then the rows by key (WAS-205): see PrintBridgeDeviceRowReads. Ordered by the server, then
-        // filtered and cut here, so a device removed in between does not take a place.
-        var deviceIds = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_db, tenant.Id, ct).ConfigureAwait(false);
-        var deviceRows = deviceIds.Count == 0
-            ? []
-            : await PrintBridgeDeviceRowReads.ByIds(_db, deviceIds)
-                .AsNoTracking()
-                .OrderByDescending(d => d.IsActive)
-                .ThenBy(d => d.Name)
-                .ThenBy(d => d.Id)
-                .Select(d => new { d.TenantId, d.RemovedAtUtc, d.Name, d.IsActive, d.LastSeenAt, d.AppVersion })
-                .ToListAsync(ct)
-                .ConfigureAwait(false);
-        var devices = deviceRows
-            .Where(d => d.TenantId == tenant.Id && d.RemovedAtUtc is null)
-            .Take(MaxDevicesPerTenant)
-            .ToList();
+        var (devicePageResult, deviceCounts) = await ReadPrintBridgeDevicesAsync(tenant.Id, devicePage, now, ct)
+            .ConfigureAwait(false);
 
         return new TenantOperationsDetail(
             tenant.Id,
@@ -294,15 +278,64 @@ public sealed class CentralAdminTenantOperationsService : ICentralAdminTenantOpe
             tenant.LastMigrationAt,
             membership,
             registration,
-            devices
-                .Select(d => new TenantPrintBridgeDeviceSummary(
-                    d.Name,
-                    d.IsActive,
-                    d.LastSeenAt,
-                    d.AppVersion,
-                    PrintBridgeConnectionStatusCalculator.Calculate(d.IsActive, d.LastSeenAt, now)))
-                .ToList(),
+            devicePageResult,
+            deviceCounts,
             now);
+    }
+
+    /// <summary>
+    /// One page of the tenant's devices and the counts over all of them, in three bounded statements. The ids come from an
+    /// index, then the rows by key (WAS-205, see <see cref="PrintBridgeDeviceRowReads"/>): the page's rows ordered and cut
+    /// by the server, and the counts as one aggregate row. The page and the counts check the tenant and removal again on
+    /// the rows, so a device removed after the ids were read is left out (the page may then show one row fewer).
+    /// </summary>
+    private async Task<(TenantPrintBridgeDevicePage Page, TenantPrintBridgeDeviceCounts Counts)> ReadPrintBridgeDevicesAsync(
+        Guid tenantId,
+        int requestedPage,
+        DateTime now,
+        CancellationToken ct)
+    {
+        var deviceIds = await PrintBridgeDeviceRowReads.ManageableIdsAsync(_db, tenantId, ct).ConfigureAwait(false);
+        if (deviceIds.Count == 0)
+            return (TenantPrintBridgeDevicePage.Empty, TenantPrintBridgeDeviceCounts.None);
+
+        var page = TenantPrintBridgeDevicePage.Clamp(requestedPage, deviceIds.Count);
+        var pageRows = await PrintBridgeDeviceRowReads.ByIds(_db, deviceIds)
+            .AsNoTracking()
+            .OrderByDescending(d => d.IsActive)
+            .ThenBy(d => d.Name)
+            .ThenBy(d => d.Id)
+            .Skip((page - 1) * TenantPrintBridgeDevicePage.PageSize)
+            .Take(TenantPrintBridgeDevicePage.PageSize)
+            .Select(d => new { d.TenantId, d.RemovedAtUtc, d.Name, d.IsActive, d.LastSeenAt, d.AppVersion })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var items = pageRows
+            .Where(d => d.TenantId == tenantId && d.RemovedAtUtc is null)
+            .Select(d => new TenantPrintBridgeDeviceSummary(
+                d.Name,
+                d.IsActive,
+                d.LastSeenAt,
+                d.AppVersion,
+                PrintBridgeConnectionStatusCalculator.Calculate(d.IsActive, d.LastSeenAt, now)))
+            .ToList();
+
+        // Online is the calculator's Connected: active and seen within the threshold, as of the same moment as the page.
+        var onlineSince = now - PrintBridgeConnectionStatusCalculator.ConnectedThreshold;
+        var counts = await PrintBridgeDeviceRowReads.ByIds(_db, deviceIds)
+            .AsNoTracking()
+            .GroupBy(_ => 1)
+            .Select(g => new TenantPrintBridgeDeviceCounts(
+                g.Count(d => d.TenantId == tenantId && d.RemovedAtUtc == null),
+                g.Count(d => d.TenantId == tenantId && d.RemovedAtUtc == null && d.IsActive),
+                g.Count(d => d.TenantId == tenantId && d.RemovedAtUtc == null && d.IsActive
+                    && d.LastSeenAt != null && d.LastSeenAt >= onlineSince),
+                g.Count(d => d.TenantId == tenantId && d.RemovedAtUtc == null && d.IsActive && d.LastSeenAt == null)))
+            .FirstOrDefaultAsync(ct)
+            .ConfigureAwait(false);
+
+        return (new TenantPrintBridgeDevicePage(items, page, deviceIds.Count), counts ?? TenantPrintBridgeDeviceCounts.None);
     }
 
     private static IQueryable<TenantRow> ApplyFilters(IQueryable<TenantRow> rows, TenantListQuery query)

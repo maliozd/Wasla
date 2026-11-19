@@ -62,10 +62,9 @@ public sealed class PrintBridgeDevicesSnapshotTests
 
         Assert.Equal(own.Id, Assert.Single(snapshot.Devices).Id);
         Assert.DoesNotContain(snapshot.Devices, d => d.Name == "Other restaurant");
-        Assert.Equal(1, snapshot.Quota.ConnectedDeviceCount);
-        Assert.Equal("Kitchen", snapshot.Quota.LastConnectedDeviceName);
+        Assert.Equal(1, snapshot.Summary.ConnectedDeviceCount);
+        Assert.Equal("Kitchen", snapshot.Summary.LastConnectedDeviceName);
         Assert.All(_devices.ListedTenants, tenant => Assert.Equal(_tenant, tenant));
-        Assert.All(_devices.QuotaTenants, tenant => Assert.Equal(_tenant, tenant));
     }
 
     [Theory]
@@ -90,7 +89,7 @@ public sealed class PrintBridgeDevicesSnapshotTests
         var row = root.GetProperty("devices")[0];
 
         Assert.Equal("2026-10-01T08:49:00Z", row.GetProperty("lastSeenAtUtc").GetString());
-        Assert.Equal("2026-10-01T08:49:00Z", root.GetProperty("quota").GetProperty("latestLastSeenAtUtc").GetString());
+        Assert.Equal("2026-10-01T08:49:00Z", root.GetProperty("summary").GetProperty("latestLastSeenAtUtc").GetString());
         Assert.Equal("2026-10-01T08:49:30Z", root.GetProperty("serverTimeUtc").GetString());
         Assert.Equal(JsonValueKind.Null, root.GetProperty("devices")[1].GetProperty("lastSeenAtUtc").ValueKind);
     }
@@ -120,18 +119,32 @@ public sealed class PrintBridgeDevicesSnapshotTests
 
         Assert.Equal(new[] { "Connected", "RecentlySeen", "Inactive", "NeverConnected" }, snapshot.Devices.Select(d => d.ConnectionStatus));
         Assert.Equal(new[] { true, false, false, false }, snapshot.Devices.Select(d => d.IsConnected));
-        Assert.Equal(1, snapshot.Quota.ConnectedDeviceCount);
-        Assert.Equal(Now.AddSeconds(-5), snapshot.Quota.LatestLastSeenAtUtc);
-        Assert.Equal("Old", snapshot.Quota.LastConnectedDeviceName);
-        Assert.Equal(3, snapshot.Quota.ActiveDeviceCount);
-        Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, snapshot.Quota.AllowedActiveDeviceCount);
+        Assert.Equal(1, snapshot.Summary.ConnectedDeviceCount);
+        Assert.Equal(Now.AddSeconds(-5), snapshot.Summary.LatestLastSeenAtUtc);
+        Assert.Equal("Old", snapshot.Summary.LastConnectedDeviceName);
+        Assert.Equal(3, snapshot.Summary.ActiveDeviceCount);
         Assert.All(snapshot.Devices, d => Assert.Equal($"/print-bridge/devices/{d.Id}", d.DetailsUrl));
 
         var empty = Create([]);
         Assert.Empty(empty.Devices);
-        Assert.Equal(0, empty.Quota.ConnectedDeviceCount);
-        Assert.Null(empty.Quota.LatestLastSeenAtUtc);
-        Assert.Null(empty.Quota.LastConnectedDeviceName);
+        Assert.Equal(0, empty.Summary.ConnectedDeviceCount);
+        Assert.Null(empty.Summary.LatestLastSeenAtUtc);
+        Assert.Null(empty.Summary.LastConnectedDeviceName);
+    }
+
+    [Fact]
+    public void The_summary_holds_operational_counts_only_and_no_device_limit()
+    {
+        // Five active devices: more than the retired limit of three, and nothing says the tenant is over a limit.
+        var snapshot = Create(Enumerable.Range(1, 5).Select(i => Summary($"Station {i}", lastSeenAtUtc: Now.AddSeconds(-i))).ToList());
+
+        Assert.Equal(5, snapshot.Summary.ActiveDeviceCount);
+        Assert.Equal(5, snapshot.Summary.ConnectedDeviceCount);
+        using var json = Json(snapshot);
+        Assert.Equal(
+            new[] { "activeDeviceCount", "connectedDeviceCount", "lastConnectedDeviceName", "latestLastSeenAtUtc" },
+            Keys(json.RootElement.GetProperty("summary")).Order(StringComparer.Ordinal));
+        Assert.False(json.RootElement.TryGetProperty("quota", out _));
     }
 
     [Fact]
@@ -148,9 +161,9 @@ public sealed class PrintBridgeDevicesSnapshotTests
         using var refreshedJson = Json(refreshed);
         Assert.Equal(Keys(initialJson.RootElement), Keys(refreshedJson.RootElement));
         Assert.Equal(Keys(initialJson.RootElement.GetProperty("devices")[0]), Keys(refreshedJson.RootElement.GetProperty("devices")[0]));
-        Assert.Equal(Keys(initialJson.RootElement.GetProperty("quota")), Keys(refreshedJson.RootElement.GetProperty("quota")));
+        Assert.Equal(Keys(initialJson.RootElement.GetProperty("summary")), Keys(refreshedJson.RootElement.GetProperty("summary")));
         Assert.Equal(initial.Devices, refreshed.Devices);
-        Assert.Equal(initial.Quota, refreshed.Quota);
+        Assert.Equal(initial.Summary, refreshed.Summary);
     }
 
     [Fact]
@@ -171,7 +184,7 @@ public sealed class PrintBridgeDevicesSnapshotTests
         Assert.Equal(60, root.GetProperty("connectedThresholdSeconds").GetInt32());
         Assert.Subset(Keys(root).ToHashSet(), Keys(snapshot.RootElement).ToHashSet());
         Assert.Equal(Keys(snapshot.RootElement.GetProperty("devices")[0]), Keys(root.GetProperty("devices")[0]));
-        Assert.Equal(Keys(snapshot.RootElement.GetProperty("quota")), Keys(root.GetProperty("quota")));
+        Assert.Equal(Keys(snapshot.RootElement.GetProperty("summary")), Keys(root.GetProperty("summary")));
     }
 
     [Fact]
@@ -244,7 +257,6 @@ public sealed class PrintBridgeDevicesSnapshotTests
     private static PrintBridgeDeviceSnapshot Create(IReadOnlyList<PrintBridgeDeviceSummaryDto> devices, DateTime? utcNow = null) =>
         PrintBridgeDeviceSnapshot.Create(
             devices,
-            new PrintBridgeDeviceQuotaDto(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, devices.Count(d => d.IsActive), true, false),
             utcNow ?? Now,
             id => $"/print-bridge/devices/{id}");
 
@@ -273,7 +285,6 @@ public sealed class PrintBridgeDevicesSnapshotTests
         private readonly Dictionary<Guid, List<PrintBridgeDeviceSummaryDto>> _byTenant = new();
 
         public List<Guid> ListedTenants { get; } = new();
-        public List<Guid> QuotaTenants { get; } = new();
 
         public PrintBridgeDeviceSummaryDto Add(Guid tenantId, string name, bool isActive = true, DateTime? lastSeenAtUtc = null)
         {
@@ -292,14 +303,6 @@ public sealed class PrintBridgeDevicesSnapshotTests
             ListedTenants.Add(tenantId);
             return Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>(
                 _byTenant.TryGetValue(tenantId, out var devices) ? devices.ToArray() : []);
-        }
-
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct)
-        {
-            QuotaTenants.Add(tenantId);
-            var active = _byTenant.TryGetValue(tenantId, out var devices) ? devices.Count(d => d.IsActive) : 0;
-            return Task.FromResult(new PrintBridgeDeviceQuotaDto(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, active,
-                active < PrintBridgeDeviceLimits.AllowedActiveDeviceCount, active > PrintBridgeDeviceLimits.AllowedActiveDeviceCount));
         }
 
         public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct)

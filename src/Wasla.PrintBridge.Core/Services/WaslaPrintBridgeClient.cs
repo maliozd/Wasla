@@ -35,7 +35,6 @@ public sealed class WaslaPrintBridgeClient
         "invalid_or_expired_setup_code",
         "source_credential_rejected",
         "printing_in_progress",
-        "device_limit_reached",
         "installation_conflict",
         "destination_device_disabled",
         "same_tenant",
@@ -588,7 +587,6 @@ public sealed class WaslaPrintBridgeClient
             409 => errorCode switch
             {
                 "printing_in_progress" => SetupTransferReplyKind.PrintingInProgress,
-                "device_limit_reached" => SetupTransferReplyKind.DeviceLimitReached,
                 "installation_conflict" => SetupTransferReplyKind.InstallationConflict,
                 "destination_device_disabled" => SetupTransferReplyKind.DestinationDeviceDisabled,
                 "same_tenant" => SetupTransferReplyKind.SameTenant,
@@ -896,7 +894,6 @@ public sealed class WaslaPrintBridgeClient
         SourceRejected,
         InvalidOrExpired,
         PrintingInProgress,
-        DeviceLimitReached,
         InstallationConflict,
         DestinationDeviceDisabled,
 

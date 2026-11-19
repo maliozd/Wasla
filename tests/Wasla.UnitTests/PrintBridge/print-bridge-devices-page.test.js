@@ -34,20 +34,17 @@ function device(overrides = {}) {
   }, overrides);
 }
 
-function snapshot({ serverMs = T0 + 5000, devices = [device()], quota = {} } = {}) {
+function snapshot({ serverMs = T0 + 5000, devices = [device()], summary = {} } = {}) {
   const seen = devices.map((d) => Date.parse(d.lastSeenAtUtc || "")).filter((v) => !isNaN(v));
   const latest = seen.length ? Math.max(...seen) : null;
   return {
     devices,
-    quota: Object.assign({
-      allowedActiveDeviceCount: 3,
+    summary: Object.assign({
       activeDeviceCount: devices.filter((d) => d.isActive).length,
-      canCreateActiveDevice: true,
-      activeCountExceedsLimit: false,
       connectedDeviceCount: devices.filter((d) => d.connectionStatus === "Connected").length,
       latestLastSeenAtUtc: latest === null ? null : iso(latest),
       lastConnectedDeviceName: latest === null ? null : devices.find((d) => Date.parse(d.lastSeenAtUtc) === latest).name
-    }, quota),
+    }, summary),
     serverTimeUtc: iso(serverMs),
     connectedThresholdSeconds: 60,
     recentlySeenThresholdSeconds: 300
@@ -123,8 +120,8 @@ function page({ initial = snapshot(), clientOffsetMs = 0, culture = "tr-TR", vis
   const addTimer = (fn, ms, repeat) => { const id = nextId++; timers.push({ id, fn, at: clock.now + Math.max(0, ms || 0), ms, repeat }); return id; };
   const clearTimer = (id) => { const i = timers.findIndex((t) => t.id === id); if (i >= 0) timers.splice(i, 1); };
 
-  const ids = ["printBridgeDevicesPanel", "printBridgeSummaryActive", "printBridgeSummaryIncluded", "printBridgeSummaryLastDevice",
-    "printBridgeSummaryLastSeen", "printBridgeLimitExceededAlert", "printBridgeLimitReachedAlert", "printBridgeMessageHost",
+  const ids = ["printBridgeDevicesPanel", "printBridgeSummaryActive", "printBridgeSummaryOnline", "printBridgeSummaryLastDevice",
+    "printBridgeSummaryLastSeen", "printBridgeMessageHost",
     "printBridgeJobsPanel", "printBridgeRefreshJobsBtn", "printBridgeJobsPaused", "printBridgeDevicesPaused"];
   const els = Object.fromEntries(ids.map((id) => [id, el(id)]));
   els.printBridgeAntiForgery = Object.assign(el("printBridgeAntiForgery"), { querySelector: () => ({ value: "antiforgery" }) });
@@ -277,7 +274,7 @@ test("the initial state renders the rows and the summary cards in Turkey time an
   assert.ok(p.panel().includes("1.10.2026 11:49:30"), "08:49:30Z is 11:49:30 in Türkiye");
   assert.doesNotMatch(p.panel(), /AM|PM|08:49/);
   assert.equal(p.els.printBridgeSummaryActive.textContent, "1");
-  assert.equal(p.els.printBridgeSummaryIncluded.textContent, "3");
+  assert.equal(p.els.printBridgeSummaryOnline.textContent, "1");
   assert.equal(p.els.printBridgeSummaryLastDevice.textContent, "Kitchen");
   assert.equal(p.els.printBridgeSummaryLastSeen.textContent, "Last seen: " + expected("tr-TR", T0));
   assert.deepEqual(p.deviceRequests(), [], "the initial state needs no request");
@@ -431,7 +428,7 @@ test("missing, invalid or zone-less times show the placeholder and are never use
         device({ id: "b", name: "Garbage", lastSeenAtUtc: "not-a-date" }),
         device({ id: "c", name: "Zoneless", lastSeenAtUtc: "2026-10-01T08:49:30" })
       ],
-      quota: { latestLastSeenAtUtc: "2026-10-01T08:49:30", lastConnectedDeviceName: "Zoneless" }
+      summary: { latestLastSeenAtUtc: "2026-10-01T08:49:30", lastConnectedDeviceName: "Zoneless" }
     })
   });
 
@@ -708,4 +705,14 @@ test("while text is selected in the devices table, a changed snapshot waits and 
   assert.equal(p.els.printBridgeDevicesPanel.writes, writes + 1);
   assert.match(p.panel(), /Bar/);
   assert.equal(p.devicesPaused(), "");
+});
+
+test("the summary shows any number of active and online devices, with no limit", async () => {
+  const many = Array.from({ length: 7 }, (_, i) => device({ id: "dev-" + i, name: "Station " + i }));
+  const p = page({ initial: snapshot({ devices: many.concat([device({ id: "off", name: "Old", isActive: false, connectionStatus: "Inactive", isConnected: false })]) }) });
+
+  assert.equal(p.els.printBridgeSummaryActive.textContent, "7");
+  assert.equal(p.els.printBridgeSummaryOnline.textContent, "7");
+  assert.doesNotMatch(p.panel(), /limit/i);
+  assert.equal(p.els.printBridgeMessageHost.innerHTML, "");
 });

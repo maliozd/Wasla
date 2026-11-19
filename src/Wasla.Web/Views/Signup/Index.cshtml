@@ -29,8 +29,8 @@
     {
         if (plan.IsContactSales)
         {
-            var label = period == PlanPriceText.Yearly ? L["Signup.PlanPrice.Enterprise.Yearly"].Value : L[plan.ContactSalesPriceLabelKey!].Value;
-            return new { price = label, vat = (string?)null, amount = (string?)null, vatIncluded = (bool?)null };
+            // Custom pricing in both periods: a contact-sales plan has no public amount.
+            return new { price = L[plan.ContactSalesPriceLabelKey!].Value, vat = (string?)null, amount = (string?)null, vatIncluded = (bool?)null };
         }
 
         var quote = PlanPriceText.Find(Model.PlanPrices, plan.PlanCode, period);
@@ -58,7 +58,6 @@
             yearly = PeriodSummary(plan, PlanPriceText.Yearly),
             // A yearly saving is claimed only when the configured prices show one.
             yearlySaving = plan.IsContactSales ? null : PlanPriceText.YearlySaving(monthly, yearly, L),
-            deviceLimit = L[plan.DeviceLimitKey].Value,
             features = plan.FeatureKeys.Select(key => L[key].Value).ToArray(),
             isContactSales = plan.IsContactSales
         };
@@ -357,7 +356,6 @@
                                         <div class="su-plan__body">
                                             <label class="su-plan__name" for="@inputId">@summary.name</label>
                                             <span class="su-plan__description" id="@inputId-description">@summary.description</span>
-                                            <span class="su-plan__devices">@summary.deviceLimit</span>
                                         </div>
                                         <div class="su-plan__price" id="@inputId-price">
                                             @foreach (var period in new[] { PlanPriceText.Monthly, PlanPriceText.Yearly })

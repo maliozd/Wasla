@@ -79,7 +79,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
             Assert.DoesNotContain(Text("Billing.VatIncluded", culture), card, StringComparison.Ordinal);
         }
 
-        Assert.Contains(Text("Pricing.Plan.Enterprise.Price", culture), Card(home.Body, "Enterprise"), StringComparison.Ordinal);
+        Assert.Contains(Text("Pricing.ContactSales", culture), Card(home.Body, "Enterprise"), StringComparison.Ordinal);
 
         Assert.Equal(HttpStatusCode.OK, signup.Status);
         Assert.Contains("id=\"signupForm\"", signup.Body, StringComparison.Ordinal);
@@ -93,8 +93,50 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         }
 
         var enterprise = PlanSummary(signup.Body, "Enterprise");
-        Assert.Equal(Text("Pricing.Plan.Enterprise.Price", culture), Price(enterprise, "monthly"));
-        Assert.Equal(Text("Signup.PlanPrice.Enterprise.Yearly", culture), Price(enterprise, "yearly"));
+        Assert.Equal(Text("Pricing.ContactSales", culture), Price(enterprise, "monthly"));
+        Assert.Equal(Text("Pricing.ContactSales", culture), Price(enterprise, "yearly"));
+    }
+
+    /// <summary>
+    /// Packaging decision of 2026-11-17: no plan is described by a printer or Print Bridge device count, and Enterprise has
+    /// custom pricing with no public amount, on the pricing cards and in the signup plan summary, in every culture.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task ThePlans_ShowNoDeviceCountTier_AndEnterpriseShowsNoAmount(string culture)
+    {
+        await ScheduleAsync("Pro", "Monthly", 149000, vatIncluded: false, Today);
+
+        var home = await GetAsync("/", culture);
+        var signup = await GetAsync("/signup", culture);
+
+        Assert.Equal(HttpStatusCode.OK, home.Status);
+        Assert.Equal(HttpStatusCode.OK, signup.Status);
+        foreach (var plan in SelfServicePlans.Append("Enterprise"))
+        {
+            var card = Card(home.Body, plan);
+            Assert.DoesNotContain("Print Bridge", card, StringComparison.Ordinal);
+            Assert.DoesNotContain("bi-printer", card, StringComparison.Ordinal);
+
+            var summary = PlanSummary(signup.Body, plan);
+            Assert.False(summary.TryGetProperty("deviceLimit", out _), $"{plan} still names a device count");
+            Assert.All(summary.GetProperty("features").EnumerateArray(),
+                feature => Assert.DoesNotContain("Print Bridge", feature.GetString()!, StringComparison.Ordinal));
+        }
+
+        var enterpriseCard = Card(home.Body, "Enterprise");
+        var customPricing = Text("Pricing.ContactSales", culture);
+        var enterprisePrices = PlanPriceParagraph().Matches(enterpriseCard).Select(m => m.Groups["price"].Value.Trim()).ToList();
+        Assert.Equal([customPricing, customPricing], enterprisePrices);
+        Assert.DoesNotMatch(Digit(), customPricing);
+        var enterprise = PlanSummary(signup.Body, "Enterprise");
+        Assert.Equal((customPricing, customPricing), (Price(enterprise, "monthly"), Price(enterprise, "yearly")));
+        Assert.Equal(JsonValueKind.Null, enterprise.GetProperty("monthly").GetProperty("amount").ValueKind);
+        Assert.Equal(JsonValueKind.Null, enterprise.GetProperty("yearly").GetProperty("amount").ValueKind);
+
+        // The signup plan list (self-service plans only) has no device line either.
+        Assert.DoesNotContain("su-plan__devices", signup.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("wm-plan__devices", home.Body, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -191,7 +233,7 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, home.Status);
         var body = WebUtility.HtmlDecode(home.Body);
         Assert.Contains(Text("Billing.PriceNotSet", "tr-TR"), Card(home.Body, "Starter"), StringComparison.Ordinal);
-        Assert.Contains(Text("Pricing.Plan.Enterprise.Price", "tr-TR"), body, StringComparison.Ordinal);
+        Assert.Contains(Text("Pricing.ContactSales", "tr-TR"), body, StringComparison.Ordinal);
     }
 
     private async Task<Guid> ScheduleAsync(string plan, string period, long kurus, bool vatIncluded, DateOnly date)
@@ -287,6 +329,12 @@ public sealed partial class PublicPlanPricesRenderedTests : IAsyncLifetime
 
     [GeneratedRegex("<script type=\"application/json\" id=\"signupFormConfig\">(?<json>.*?)</script>", RegexOptions.Singleline)]
     private static partial Regex SignupConfig();
+
+    [GeneratedRegex("<p class=\"wm-plan__price\"[^>]*>(?<price>[^<]*)</p>")]
+    private static partial Regex PlanPriceParagraph();
+
+    [GeneratedRegex("[0-9\u0660-\u0669]")]
+    private static partial Regex Digit();
 
     private sealed class UnreachablePrices : IBillingPlanPriceReader
     {

@@ -267,11 +267,12 @@ public static class TenantOperationsGuidanceBuilder
         TenantOperationalHealth health,
         Action<TenantOperationsGuidanceCode, TenantOperationsGuidanceSeverity> add)
     {
-        var activeDevices = detail.PrintBridgeDevices.Where(device => device.IsActive).ToList();
-        var anyOnline = activeDevices.Any(device => device.ConnectionStatus == PrintBridgeConnectionStatus.Connected);
+        // Counts over all of the tenant's devices, not the page Central Admin shows.
+        var counts = detail.PrintBridgeDeviceCounts;
+        var anyOnline = counts.Online > 0;
         var autoReceiptOn = health.Automation?.AutoReceipt == AutomationState.Active;
 
-        if (activeDevices.Count == 0)
+        if (counts.Active == 0)
         {
             add(
                 autoReceiptOn
@@ -279,7 +280,7 @@ public static class TenantOperationsGuidanceBuilder
                     : TenantOperationsGuidanceCode.NoPrintBridgeDevice,
                 autoReceiptOn ? TenantOperationsGuidanceSeverity.Warning : TenantOperationsGuidanceSeverity.Info);
         }
-        else if (!anyOnline && activeDevices.Any(device => device.ConnectionStatus != PrintBridgeConnectionStatus.NeverConnected))
+        else if (!anyOnline && counts.Active > counts.ActiveNeverConnected)
         {
             add(TenantOperationsGuidanceCode.PrintBridgeOffline, TenantOperationsGuidanceSeverity.Warning);
         }

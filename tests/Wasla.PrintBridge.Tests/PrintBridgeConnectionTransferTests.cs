@@ -337,39 +337,46 @@ public sealed class PrintBridgeConnectionTransferTests : IDisposable
     }
 
     [Fact]
-    public async Task AFullRestaurant_IsReportedBeforeAsking_AndNothingChanges()
-    {
-        var (app, _, _) = await ConnectedToAAsync();
-        var code = await _backend.CreateSessionAsync(_backend.TenantB, UrlB);
-        for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount; i++)
-            await _backend.CreateDeviceAsync(_backend.TenantB, $"Bahçe {i}", Guid.NewGuid());
-        var consent = new Consent(approve: true);
-        var before = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
-
-        Assert.Equal(PrintBridgeAutoSetupOutcome.DeviceLimitReached, await app.Coordinator.ApplyAsync(Link(UrlB, code), consent.Ask, Ct));
-        Assert.Empty(consent.Requests);
-        Assert.Equal(before, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
-    }
-
-    [Fact]
-    public async Task ARestaurantThatFillsUpWhileTheUserDecides_RefusesTheMove_AndNothingChanges()
+    public async Task ARestaurantWithMoreThanThreeActiveDevices_AsksAndTakesTheMove()
     {
         var (app, tokenA, _) = await ConnectedToAAsync();
         var code = await _backend.CreateSessionAsync(_backend.TenantB, UrlB);
-        var before = File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath);
+        for (var i = 0; i < 4; i++)
+            await _backend.CreateDeviceAsync(_backend.TenantB, $"Bahçe {i}", Guid.NewGuid());
+        var consent = new Consent(approve: true);
+
+        var outcome = await app.Coordinator.ApplyAsync(Link(UrlB, code), consent.Ask, Ct);
+
+        Assert.Contains(outcome, new[] { PrintBridgeAutoSetupOutcome.Connected, PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing });
+        Assert.Single(consent.Requests);
+        var saved = app.Store.Load();
+        Assert.Equal(UrlB.TrimEnd('/'), saved.Wasla.ServerUrl);
+        Assert.False((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        var auth = await _backend.AuthenticateAsync(saved.Wasla.AgentToken, _installation);
+        Assert.True(auth.Succeeded);
+        Assert.Equal(_backend.TenantB, auth.Context!.TenantId);
+    }
+
+    [Fact]
+    public async Task DevicesAddedToTheRestaurantWhileTheUserDecides_DoNotStopTheMove()
+    {
+        var (app, tokenA, _) = await ConnectedToAAsync();
+        var code = await _backend.CreateSessionAsync(_backend.TenantB, UrlB);
         var consent = new Consent(approve: true)
         {
             WhileAsking = async () =>
             {
-                for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount; i++)
+                for (var i = 0; i < 4; i++)
                     await _backend.CreateDeviceAsync(_backend.TenantB, $"Bahçe {i}", Guid.NewGuid());
             }
         };
 
-        Assert.Equal(PrintBridgeAutoSetupOutcome.DeviceLimitReached, await app.Coordinator.ApplyAsync(Link(UrlB, code), consent.Ask, Ct));
-        Assert.Equal(before, File.ReadAllBytes(PrintBridgePaths.ProgramDataConfigPath));
+        var outcome = await app.Coordinator.ApplyAsync(Link(UrlB, code), consent.Ask, Ct);
+
+        Assert.Contains(outcome, new[] { PrintBridgeAutoSetupOutcome.Connected, PrintBridgeAutoSetupOutcome.ConnectedPrinterMissing });
         Assert.False(File.Exists(PrintBridgePaths.PendingConnectionChangePath));
-        Assert.True((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        Assert.False((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        Assert.True((await _backend.AuthenticateAsync(app.Store.Load().Wasla.AgentToken, _installation)).Succeeded);
     }
 
     [Fact]

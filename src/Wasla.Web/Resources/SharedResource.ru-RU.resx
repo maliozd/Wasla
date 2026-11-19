@@ -2256,23 +2256,11 @@
   <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
     <value>Не удалось обновить устройство.</value>
   </data>
-  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>Ваш текущий план включает активные устройства Print Bridge {0}. Дополнительные подключения будут доступны позже в качестве платного дополнения.</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
-    <value>Количество активных устройств превышает текущий предел. Пожалуйста, отключите дополнительные устройства.</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
-    <value>Ваш текущий план позволяет использовать активное устройство Print Bridge {0}.</value>
-  </data>
   <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
     <value>Устройств Print Bridge пока нет.</value>
   </data>
   <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
     <value>Чтобы начать, создайте устройство справа.</value>
-  </data>
-  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
-    <value>Деактивируйте дополнительные устройства, чтобы вернуть счетчик в пределы.</value>
   </data>
   <data name="PrintBridge.StatusOverview" xml:space="preserve">
     <value>Обзор состояния</value>
@@ -2294,9 +2282,6 @@
   </data>
   <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
     <value>Подключенные устройства: {0}</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
-    <value>Разрешено: {0}</value>
   </data>
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>Неактивный</value>
@@ -2625,21 +2610,6 @@
   <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
     <value>Замените AgentToken токеном, который вы создаете на странице «Устройства».</value>
   </data>
-  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
-    <value>Включенный лимит устройств</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
-    <value>В ваш план включено количество активных устройств Print Bridge, указанное ниже.</value>
-  </data>
-  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
-    <value>В комплекте: активные устройства {0}</value>
-  </data>
-  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
-    <value>Для дополнительных подключений принтера или устройства позже может потребоваться платное дополнение.</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
-    <value>{0} из используемых активных устройств {1}. Вы приближаетесь к пределу.</value>
-  </data>
   <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
     <value>Настройки автоматизации получения</value>
   </data>
@@ -2733,9 +2703,6 @@
   <data name="PrintBridge.ActiveDevices" xml:space="preserve">
     <value>Активные устройства</value>
   </data>
-  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
-    <value>Включенные устройства</value>
-  </data>
   <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
     <value>Последнее подключенное устройство</value>
   </data>
@@ -2744,9 +2711,6 @@
   </data>
   <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
     <value>Задания на печать сегодня</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
-    <value>В комплект входит до {0} активных устройств Print Bridge. Для дополнительных устройств позже может потребоваться платное дополнение.</value>
   </data>
   <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
     <value>Устройств Print Bridge пока нет.</value>
@@ -2883,9 +2847,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Для небольших ресторанов и первой установки</value>
   </data>
-  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
-    <value>1 активное устройство Print Bridge</value>
-  </data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve">
     <value>Базовая панель заказов</value>
   </data>
@@ -2896,9 +2857,6 @@
     <value>Основные настройки чека</value>
   </data>
   <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve">
-    <value>1 активное устройство Print Bridge</value>
-  </data>
-  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve">
     <value>История заказов</value>
   </data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve">
@@ -2906,9 +2864,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Для активных ресторанов</value>
-  </data>
-  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
-    <value>3 активных устройства Print Bridge</value>
   </data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve">
     <value>Все в Стартере</value>
@@ -2923,9 +2878,6 @@
     <value>Живая экспозиция кухни</value>
   </data>
   <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve">
-    <value>3 активных устройства Print Bridge</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve">
     <value>История заказов и отчеты</value>
   </data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve">
@@ -2934,22 +2886,13 @@
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Для оживленных ресторанов или крупных предприятий</value>
   </data>
-  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
-    <value>10 активных устройств Print Bridge</value>
-  </data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve">
     <value>Все в Про</value>
   </data>
   <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve">
-    <value>10 активных устройств Print Bridge</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve">
-    <value>Более гибкое использование устройства</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve">
     <value>Лучше подходит для нескольких станций</value>
   </data>
-  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve">
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve">
     <value>Приоритетная поддержка настройки</value>
   </data>
   <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve">
@@ -2958,28 +2901,19 @@
   <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve">
     <value>Для сетей и предприятий с индивидуальными требованиями</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve">
-    <value>От 2500 TL/мес.</value>
-  </data>
-  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve">
-    <value>Неограниченное количество/индивидуальные устройства Print Bridge</value>
-  </data>
   <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve">
     <value>Все в Про+</value>
   </data>
   <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve">
-    <value>Неограниченное количество/индивидуальные устройства Print Bridge</value>
-  </data>
-  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve">
     <value>Поддержка нескольких филиалов</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve">
     <value>Пользовательские интеграции</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve">
     <value>Индивидуальная настройка и поддержка</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve">
     <value>Таможенное соглашение и лимиты</value>
   </data>
   <data name="Signup.Title" xml:space="preserve">
@@ -2993,9 +2927,6 @@
   </data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve">
     <value>Пакет {0}</value>
-  </data>
-  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
-    <value>Индивидуальное предложение</value>
   </data>
   <data name="Signup.StepBusiness" xml:space="preserve">
     <value>Ресторан</value>
@@ -5351,4 +5282,7 @@
   <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
     <value>Обновить статус</value>
   </data>
+  <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Устройства онлайн</value></data>
+  <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Страницы устройств Print Bridge</value></data>
+  <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>Показаны устройства {0}–{1} из {2}</value></data>
 </root>

@@ -54,7 +54,7 @@ public sealed class PrintBridgeTransferServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Transfer_ToANewDevice_RetiresTheSource_KeepsItsRecord_AndFreesItsQuota()
+    public async Task Transfer_ToANewDevice_RetiresTheSource_KeepsItsRecord_AndLeavesTheActiveCount()
     {
         var (deviceA, tokenA) = await _backend.CreateDeviceAsync(TenantAId, "Anadolu kitchen", _installation);
         var code = await _backend.CreateSessionAsync(TenantBId, UrlB);
@@ -66,7 +66,7 @@ public sealed class PrintBridgeTransferServiceTests : IDisposable
         Assert.Equal(UrlB, result.ServerUrl);
         Assert.Equal(_installation, result.InstallationId);
 
-        // The source keeps its record (and A keeps its print history), retired with a time and out of the quota.
+        // The source keeps its record (and A keeps its print history), retired with a time and out of the active count.
         var source = await _backend.DeviceAsync(deviceA);
         Assert.NotNull(source.RemovedAtUtc);
         Assert.False(source.IsActive);
@@ -76,8 +76,7 @@ public sealed class PrintBridgeTransferServiceTests : IDisposable
         {
             var devicesA = _backend.Devices(db);
             Assert.Empty(await devicesA.ListDevicesAsync(TenantAId, CancellationToken.None));
-            Assert.Equal(0, (await devicesA.GetDeviceQuotaAsync(TenantAId, CancellationToken.None)).ActiveDeviceCount);
-            Assert.Equal(1, (await devicesA.GetDeviceQuotaAsync(TenantBId, CancellationToken.None)).ActiveDeviceCount);
+            Assert.Equal(1, (await devicesA.ListDevicesAsync(TenantBId, CancellationToken.None)).Count(d => d.IsActive));
         }
 
         // The old token stops working at once; the app-generated token now authenticates for B only.
@@ -100,7 +99,7 @@ public sealed class PrintBridgeTransferServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Transfer_ToAReconnectDevice_BindsThatDevice_AndKeepsTheDestinationQuota()
+    public async Task Transfer_ToAReconnectDevice_BindsThatDevice_AndKeepsTheDestinationActiveCount()
     {
         var (deviceA, tokenA) = await _backend.CreateDeviceAsync(TenantAId, "Kitchen PC", _installation);
         var (deviceB, _) = await _backend.CreateDeviceAsync(TenantBId, "Bahçe counter", installationId: null);
@@ -264,23 +263,23 @@ public sealed class PrintBridgeTransferServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Transfer_IntoAFullRestaurant_IsRefused_AndTheCodeStaysUsable()
+    public async Task Transfer_IntoARestaurantWithMoreThanThreeActiveDevices_MovesTheComputer()
     {
         var (_, tokenA) = await _backend.CreateDeviceAsync(TenantAId, "Kitchen PC", _installation);
         var code = await _backend.CreateSessionAsync(TenantBId, UrlB);
-        var full = new List<Guid>();
-        for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount; i++)
-            full.Add((await _backend.CreateDeviceAsync(TenantBId, $"Bahçe {i}", Guid.NewGuid())).DeviceId);
-        var before = await Snapshot();
+        for (var i = 0; i < 4; i++)
+            await _backend.CreateDeviceAsync(TenantBId, $"Bahçe {i}", Guid.NewGuid());
+        var request = Request(tokenA, code);
 
-        Assert.Equal(PrintBridgeTransferOutcome.DeviceLimitReached, (await PreviewAsync(Request(tokenA, code))).Outcome);
-        Assert.Equal(PrintBridgeTransferOutcome.DeviceLimitReached, (await TransferAsync(Request(tokenA, code))).Outcome);
-        Assert.Equal(before, await Snapshot());
+        Assert.Equal(PrintBridgeTransferOutcome.Ready, (await PreviewAsync(request)).Outcome);
+        Assert.Equal(PrintBridgeTransferOutcome.Ready, (await TransferAsync(request)).Outcome);
 
-        // B frees a place; the same link then works.
-        await using (var db = _backend.OpenDb())
-            await _backend.Devices(db).RemoveDeviceAsync(TenantBId, full[0], CancellationToken.None);
-        Assert.Equal(PrintBridgeTransferOutcome.Ready, (await TransferAsync(Request(tokenA, code))).Outcome);
+        var auth = await _backend.AuthenticateAsync(request.NewDeviceToken!, _installation);
+        Assert.True(auth.Succeeded);
+        Assert.Equal(TenantBId, auth.Context!.TenantId);
+        Assert.False((await _backend.AuthenticateAsync(tokenA, _installation)).Succeeded);
+        await using var db = _backend.OpenDb();
+        Assert.Equal(5, (await _backend.Devices(db).ListDevicesAsync(TenantBId, CancellationToken.None)).Count(d => d.IsActive));
     }
 
     [Fact]

@@ -139,14 +139,14 @@ public sealed class PricingPeriodTabsBrowserTests : IAsyncLifetime
                 ["Starter"] = (PerMonth(300m, culture), Text("Billing.VatIncluded", culture)),
                 ["Pro"] = (PerMonth(1234.50m, culture), Text("Billing.VatIncluded", culture)),
                 ["ProPlus"] = (notSet, null),
-                ["Enterprise"] = (Text("Pricing.Plan.Enterprise.Price", culture), null)
+                ["Enterprise"] = (Text("Pricing.ContactSales", culture), null)
             }
             : new()
             {
                 ["Starter"] = (PerYear(2750m, culture), Text("Billing.VatExcluded", culture)),
                 ["Pro"] = (notSet, null),
                 ["ProPlus"] = (notSet, null),
-                ["Enterprise"] = (Text("Signup.PlanPrice.Enterprise.Yearly", culture), null)
+                ["Enterprise"] = (Text("Pricing.ContactSales", culture), null)
             };
     }
 

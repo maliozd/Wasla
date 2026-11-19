@@ -36,12 +36,6 @@ public sealed record PrintBridgeDeviceDetailsDto(
     public bool IsConnected => ConnectionStatus == PrintBridgeConnectionStatus.Connected;
 }
 
-public sealed record PrintBridgeDeviceQuotaDto(
-    int AllowedActiveDeviceCount,
-    int ActiveDeviceCount,
-    bool CanCreateActiveDevice,
-    bool ActiveCountExceedsLimit);
-
 public sealed record RenamePrintBridgeDeviceResult(
     bool Success,
     string? ErrorKey = null);
@@ -77,8 +71,6 @@ public interface IPrintBridgeDeviceManagementService
         Guid tenantId,
         Guid deviceId,
         CancellationToken ct);
-
-    Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct);
 
     Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(
         Guid tenantId,

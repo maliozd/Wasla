@@ -402,7 +402,6 @@ internal sealed class PrintBridgeTransferHandler(PrintBridgeTransferBackend back
         {
             PrintBridgeTransferOutcome.SourceRejected => Answer(HttpStatusCode.Unauthorized, new { error = "source_credential_rejected" }),
             PrintBridgeTransferOutcome.PrintingInProgress => Answer(HttpStatusCode.Conflict, new { error = "printing_in_progress" }),
-            PrintBridgeTransferOutcome.DeviceLimitReached => Answer(HttpStatusCode.Conflict, new { error = "device_limit_reached" }),
             PrintBridgeTransferOutcome.InstallationConflict => Answer(HttpStatusCode.Conflict, new { error = "installation_conflict" }),
             PrintBridgeTransferOutcome.DestinationDeviceDisabled => Answer(HttpStatusCode.Conflict, new { error = "destination_device_disabled" }),
             PrintBridgeTransferOutcome.SameTenant => Answer(HttpStatusCode.Conflict, new { error = "same_tenant" }),

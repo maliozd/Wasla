@@ -17,8 +17,8 @@ namespace Wasla.Infrastructure.Services;
 /// </para>
 /// <para>
 /// The price is a scan of the device table, which can wait for another tenant's uncommitted device row until it commits.
-/// These reads run only during setups, moves and the Web panel's device create and reactivate. Measured on SQL Server 2025
-/// (WAS-205): about 43 pages per 1,000 device rows, 1 ms at 3,900 devices and 4.5 ms at 39,000.
+/// These reads run only during setups and moves. Measured on SQL Server 2025 (WAS-205): about 43 pages per 1,000 device
+/// rows, 1 ms at 3,900 devices and 4.5 ms at 39,000.
 /// </para>
 /// <para>
 /// The frequent reads (device authentication on every poll, the devices page, setup status and Central Admin) use two
@@ -62,12 +62,6 @@ internal static class PrintBridgeDeviceRowReads
         centralDb.Database.IsSqlServer()
             ? centralDb.PrintBridgeDevices.FromSql(
                 $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK, INDEX(1)) WHERE [InstallationId] = {installationId}")
-            : centralDb.PrintBridgeDevices;
-
-    public static IQueryable<PrintBridgeDevice> ByTenant(CentralDbContext centralDb, Guid tenantId) =>
-        centralDb.Database.IsSqlServer()
-            ? centralDb.PrintBridgeDevices.FromSql(
-                $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK, INDEX(1)) WHERE [TenantId] = {tenantId}")
             : centralDb.PrintBridgeDevices;
 
     public static IQueryable<PrintBridgeDevice> ByTokenHash(CentralDbContext centralDb, string tokenHash) =>

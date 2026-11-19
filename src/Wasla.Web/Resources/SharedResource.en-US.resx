@@ -2256,23 +2256,11 @@
   <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
     <value>Could not update device.</value>
   </data>
-  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>Your current plan includes {0} active Print Bridge devices. Additional connections will be available later as a paid add-on.</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
-    <value>Active device count exceeds the current limit. Please deactivate extra devices.</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
-    <value>Your current plan allows {0} active Print Bridge device.</value>
-  </data>
   <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
     <value>No Print Bridge devices yet.</value>
   </data>
   <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
     <value>Create a device on the right to get started.</value>
-  </data>
-  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
-    <value>Deactivate extra devices to bring the count back within the limit.</value>
   </data>
   <data name="PrintBridge.StatusOverview" xml:space="preserve">
     <value>Status overview</value>
@@ -2294,9 +2282,6 @@
   </data>
   <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
     <value>Connected devices: {0}</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
-    <value>Allowed: {0}</value>
   </data>
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>Inactive</value>
@@ -2625,21 +2610,6 @@
   <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
     <value>Replace AgentToken with the token you create on the Devices page.</value>
   </data>
-  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
-    <value>Included device limit</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
-    <value>Your plan includes the active Print Bridge device count shown below.</value>
-  </data>
-  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
-    <value>Included: {0} active devices</value>
-  </data>
-  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
-    <value>Additional printer or device connections may require a paid add-on later.</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
-    <value>{0} of {1} active devices in use. You are approaching the limit.</value>
-  </data>
   <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
     <value>Receipt automation settings</value>
   </data>
@@ -2733,9 +2703,6 @@
   <data name="PrintBridge.ActiveDevices" xml:space="preserve">
     <value>Active Devices</value>
   </data>
-  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
-    <value>Included Devices</value>
-  </data>
   <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
     <value>Last Connected Device</value>
   </data>
@@ -2744,9 +2711,6 @@
   </data>
   <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
     <value>Print Jobs Today</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
-    <value>Up to {0} active Print Bridge devices are included. Additional devices may require a paid add-on later.</value>
   </data>
   <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
     <value>No Print Bridge devices yet.</value>
@@ -2847,44 +2811,33 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>Prices are indicative. Real billing is not active yet.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>For small restaurants and first-time setup</value></data>
-  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 active Print Bridge device</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Basic order dashboard</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Supported platform connections</value></data>
   <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>Basic receipt settings</value></data>
-  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>1 active Print Bridge device</value></data>
-  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Order history</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>Order history</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>For active restaurants</value></data>
-  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Everything in Starter</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Automatic order synchronization</value></data>
   <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>Auto approve support where available</value></data>
   <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>Live kitchen display</value></data>
-  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 active Print Bridge devices</value></data>
-  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Order history and reports</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>Order history and reports</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>For busy restaurants or larger operations</value></data>
-  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Everything in Pro</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 active Print Bridge devices</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>More flexible device usage</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>Better fit for multiple stations</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>Priority setup support</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>Better fit for multiple stations</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>Priority setup support</value></data>
   <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
   <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>For chains and businesses with custom requirements</value></data>
-  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>Starting from 2,500 TL / month</value></data>
-  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>Unlimited / custom Print Bridge devices</value></data>
   <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>Everything in Pro+</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Unlimited / custom Print Bridge devices</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Multi-branch support</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Custom integrations</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Custom setup and support</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Custom agreement and limits</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Multi-branch support</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Custom integrations</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Custom setup and support</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Custom agreement and limits</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Create your Wasla account</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Connect your restaurant to online order platforms and manage everything in one place.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} package</value></data>
-  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Custom offer</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>Restaurant</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Owner account</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
@@ -4903,4 +4856,7 @@
   <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
     <value>Refresh status</value>
   </data>
+  <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Online Devices</value></data>
+  <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Print Bridge device pages</value></data>
+  <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>Showing {0}–{1} of {2} devices</value></data>
 </root>

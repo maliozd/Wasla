@@ -628,8 +628,6 @@ public sealed class TrayApplicationContext : ApplicationContext
                 new("Auto.Cancelled", MessageBoxIcon.Information, Saved: false, Connected: false),
             PrintBridgeAutoSetupOutcome.CurrentConnectionUnverified =>
                 new("Auto.CurrentConnectionUnverified", MessageBoxIcon.Warning, Saved: false, Connected: false),
-            PrintBridgeAutoSetupOutcome.DeviceLimitReached =>
-                new("Auto.DeviceLimitReached", MessageBoxIcon.Warning, Saved: false, Connected: false),
             PrintBridgeAutoSetupOutcome.InstallationConflict =>
                 new("Auto.InstallationConflict", MessageBoxIcon.Warning, Saved: false, Connected: false),
             PrintBridgeAutoSetupOutcome.ChangePending =>

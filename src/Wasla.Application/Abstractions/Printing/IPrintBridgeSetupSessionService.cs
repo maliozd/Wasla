@@ -145,9 +145,6 @@ public enum PrintBridgeTransferOutcome
     /// <summary>The source tenant still has a receipt job in Printing for this installation (WAS-58/56).</summary>
     PrintingInProgress,
 
-    /// <summary>The destination tenant has no room for another active device.</summary>
-    DeviceLimitReached,
-
     /// <summary>
     /// The installation is also registered to a device the move may not retire, or the destination device is bound to
     /// another installation.

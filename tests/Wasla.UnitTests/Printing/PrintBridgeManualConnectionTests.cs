@@ -135,18 +135,6 @@ public sealed partial class PrintBridgeManualConnectionTests
         Assert.Equal(TenantPolicies.CanManageDeviceSecurity, regenerate.GetCustomAttribute<AuthorizeAttribute>()!.Policy);
     }
 
-    [Fact]
-    public async Task ManualDevice_AtTheActiveDeviceLimit_ExplainsTheLimit_AndReturnsNoToken()
-    {
-        var controller = Controller(new RecordingDevices { AtLimit = true });
-
-        var result = Assert.IsType<BadRequestObjectResult>(await controller.CreateManualDevice(CancellationToken.None));
-
-        var json = JsonSerializer.Serialize(result.Value);
-        Assert.Contains("PrintBridge.DeviceLimitReached", json, StringComparison.Ordinal);
-        Assert.DoesNotContain("token", json, StringComparison.OrdinalIgnoreCase);
-    }
-
     [Theory]
     [InlineData(" https://panel.wasla.local ", "https://public.wasla.local/", "https://panel.wasla.local/")]
     [InlineData(null, "https://public.wasla.local", "https://public.wasla.local/")]
@@ -490,15 +478,12 @@ public sealed partial class PrintBridgeManualConnectionTests
 
     private sealed class RecordingDevices : IPrintBridgeDeviceManagementService
     {
-        public bool AtLimit { get; init; }
         public Guid CreatedId { get; } = Guid.NewGuid();
         public List<(Guid TenantId, string Name)> Created { get; } = new();
         public List<(Guid TenantId, Guid DeviceId)> Regenerated { get; } = new();
 
         public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid tenantId, string deviceName, CancellationToken ct)
         {
-            if (AtLimit)
-                throw new PrintBridgeDeviceLimitReachedException();
             Created.Add((tenantId, deviceName));
             return Task.FromResult(new GeneratePrintBridgeTokenResult(CreatedId, RawToken, "Print Bridge"));
         }
@@ -511,7 +496,6 @@ public sealed partial class PrintBridgeManualConnectionTests
 
         public Task<IReadOnlyList<PrintBridgeDeviceSummaryDto>> ListDevicesAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<IReadOnlyList<PrintBridgeDeviceSummaryDto>>([]);
         public Task<PrintBridgeDeviceDetailsDto?> GetDeviceDetailsAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct) => throw new NotSupportedException();
         public Task<RemovePrintBridgeDeviceResult> RemoveDeviceAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw new NotSupportedException();
         public Task<RenamePrintBridgeDeviceResult> UpdateDeviceNameAsync(Guid tenantId, Guid deviceId, string deviceName, CancellationToken ct) => throw new NotSupportedException();

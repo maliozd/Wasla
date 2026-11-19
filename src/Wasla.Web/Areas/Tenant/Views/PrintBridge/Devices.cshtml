@@ -20,9 +20,6 @@
         ordersActive = L["Orders.Active"].Value,
         ordersPassive = L["Orders.Passive"].Value,
         deviceUpdateFailed = L["PrintBridge.DeviceUpdateFailed"].Value,
-        deviceLimitReached = L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount].Value,
-        deviceLimitExceededWarning = L["PrintBridge.DeviceLimitExceededWarning"].Value,
-        deactivateExtraDevices = L["PrintBridge.DeactivateExtraDevices"].Value,
         noDevicesTitle = L["PrintBridge.NoDevicesTitle"].Value,
         noDevicesDescription = L["PrintBridge.NoDevicesDescription"].Value,
         setupNewDevice = L["PrintBridge.SetupNewDeviceAction"].Value,
@@ -111,19 +108,6 @@
     @Html.AntiForgeryToken()
 </form>
 
-<div class="alert alert-info small py-2 mb-3" role="note">
-    @L["PrintBridge.DeviceLimitNote", Model.AllowedActiveDeviceCount]
-</div>
-
-<div id="printBridgeLimitExceededAlert" class="alert alert-warning small py-2 mb-3 d-none" role="alert">
-    <div class="fw-semibold">@L["PrintBridge.DeviceLimitExceededWarning"]</div>
-    <div class="mt-1">@L["PrintBridge.DeactivateExtraDevices"]</div>
-</div>
-
-<div id="printBridgeLimitReachedAlert" class="alert alert-secondary small py-2 mb-3 d-none" role="alert">
-    @L["PrintBridge.DeviceLimitReached", Model.AllowedActiveDeviceCount]
-</div>
-
 <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
     <div class="col">
         <div class="wasla-print-bridge-stat">
@@ -133,8 +117,8 @@
     </div>
     <div class="col">
         <div class="wasla-print-bridge-stat">
-            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.IncludedDevices"]</div>
-            <div class="wasla-print-bridge-stat__value" id="printBridgeSummaryIncluded">@Model.AllowedActiveDeviceCount</div>
+            <div class="wasla-print-bridge-stat__label">@L["PrintBridge.OnlineDevices"]</div>
+            <div class="wasla-print-bridge-stat__value" id="printBridgeSummaryOnline">@Model.ConnectedDeviceCount</div>
         </div>
     </div>
     <div class="col">

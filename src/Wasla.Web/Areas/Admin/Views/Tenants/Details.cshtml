@@ -347,14 +347,14 @@
             <div class="col-12 col-xl-6">
                 <section class="card wasla-admin-card h-100" aria-labelledby="opsPrintBridgeHeading">
                     <div class="card-header"><h2 id="opsPrintBridgeHeading" class="h6 mb-0">@L["Admin.Ops.Section.PrintBridge"]</h2></div>
-                    @if (detail.PrintBridgeDevices.Count == 0)
+                    @if (detail.PrintBridgeDevices.Items.Count == 0)
                     {
                         <div class="card-body"><p class="small text-body-secondary mb-0">@L["Admin.Ops.PrintBridge.NoDevices"]</p></div>
                     }
                     else
                     {
                         <ul class="list-group list-group-flush">
-                            @foreach (var device in detail.PrintBridgeDevices)
+                            @foreach (var device in detail.PrintBridgeDevices.Items)
                             {
                                 <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
                                     <div class="min-w-0 small">
@@ -375,6 +375,37 @@
                                 </li>
                             }
                         </ul>
+                        @* A tenant may have any number of devices: they are shown one page at a time, never cut off. *@
+                        var devicePages = detail.PrintBridgeDevices;
+                        if (devicePages.TotalPages > 1)
+                        {
+                            <nav class="card-body border-top d-flex flex-wrap align-items-center justify-content-between gap-2 py-2" aria-label="@L["Admin.Ops.PrintBridge.Pagination"]">
+                                <span class="small text-body-secondary">@L["Admin.Ops.PrintBridge.Showing", devicePages.FirstItemNumber, devicePages.LastItemNumber, devicePages.TotalCount]</span>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item @(devicePages.Page == 1 ? "disabled" : "")">
+                                        @if (devicePages.Page == 1)
+                                        {
+                                            <span class="page-link"><i class="bi bi-chevron-left wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.PreviousPage"]</span></span>
+                                        }
+                                        else
+                                        {
+                                            <a class="page-link" rel="prev" href="@Url.Action("Details", new { id = detail.Id, devicesPage = devicePages.Page - 1 })#opsPrintBridgeHeading"><i class="bi bi-chevron-left wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.PreviousPage"]</span></a>
+                                        }
+                                    </li>
+                                    <li class="page-item active"><span class="page-link" aria-current="page" aria-label="@L["Admin.Ops.List.PageNumber", devicePages.Page]">@devicePages.Page / @devicePages.TotalPages</span></li>
+                                    <li class="page-item @(devicePages.Page == devicePages.TotalPages ? "disabled" : "")">
+                                        @if (devicePages.Page == devicePages.TotalPages)
+                                        {
+                                            <span class="page-link"><i class="bi bi-chevron-right wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.NextPage"]</span></span>
+                                        }
+                                        else
+                                        {
+                                            <a class="page-link" rel="next" href="@Url.Action("Details", new { id = detail.Id, devicesPage = devicePages.Page + 1 })#opsPrintBridgeHeading"><i class="bi bi-chevron-right wasla-admin-flip" aria-hidden="true"></i><span class="visually-hidden">@L["Admin.Ops.List.NextPage"]</span></a>
+                                        }
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
                     }
                     <div class="card-body border-top small">
                         @if (health.PrintJobs is { } jobs)

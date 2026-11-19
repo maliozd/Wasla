@@ -14,7 +14,7 @@ namespace Wasla.Web.Models.PrintBridge;
 /// </summary>
 public sealed record PrintBridgeDeviceSnapshot(
     IReadOnlyList<PrintBridgeDeviceSnapshotRow> Devices,
-    PrintBridgeDeviceSnapshotQuota Quota,
+    PrintBridgeDeviceSnapshotSummary Summary,
     DateTime ServerTimeUtc,
     int ConnectedThresholdSeconds,
     int RecentlySeenThresholdSeconds)
@@ -22,12 +22,11 @@ public sealed record PrintBridgeDeviceSnapshot(
     /// <summary>The same camelCase shape MVC uses for the JSON endpoints, for the page's inline initial state.</summary>
     public static JsonSerializerOptions JsonOptions { get; } = new(JsonSerializerDefaults.Web);
 
-    /// <param name="devices">The tenant-scoped device list; the caller never mixes tenants.</param>
+    /// <param name="devices">The tenant-scoped device list; the caller never mixes tenants. The summary counts come from it.</param>
     /// <param name="utcNow">The server's current UTC time.</param>
     /// <param name="detailsUrl">The device details link for an id.</param>
     public static PrintBridgeDeviceSnapshot Create(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> devices,
-        PrintBridgeDeviceQuotaDto quota,
         DateTime utcNow,
         Func<Guid, string> detailsUrl)
     {
@@ -54,11 +53,8 @@ public sealed record PrintBridgeDeviceSnapshot(
 
         return new PrintBridgeDeviceSnapshot(
             rows,
-            new PrintBridgeDeviceSnapshotQuota(
-                quota.AllowedActiveDeviceCount,
-                quota.ActiveDeviceCount,
-                quota.CanCreateActiveDevice,
-                quota.ActiveCountExceedsLimit,
+            new PrintBridgeDeviceSnapshotSummary(
+                rows.Count(d => d.IsActive),
                 rows.Count(d => d.ConnectionStatus == nameof(PrintBridgeConnectionStatus.Connected)),
                 lastConnected?.LastSeenAtUtc,
                 lastConnected?.Name),
@@ -95,12 +91,12 @@ public sealed record PrintBridgeDeviceSnapshotRow(
     string? AppVersion,
     string DetailsUrl);
 
-/// <summary>The device quota and the summary values derived from the same device list.</summary>
-public sealed record PrintBridgeDeviceSnapshotQuota(
-    int AllowedActiveDeviceCount,
+/// <summary>
+/// The operational counts of the same device list: active devices and devices online now. They describe the tenant's
+/// devices; no count is a limit (there is no device limit, decision of 2026-11-17).
+/// </summary>
+public sealed record PrintBridgeDeviceSnapshotSummary(
     int ActiveDeviceCount,
-    bool CanCreateActiveDevice,
-    bool ActiveCountExceedsLimit,
     int ConnectedDeviceCount,
     DateTime? LatestLastSeenAtUtc,
     string? LastConnectedDeviceName);

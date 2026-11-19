@@ -508,8 +508,8 @@ Do not extend SignalR or add alternative polling scope without a user request.
 - A feature shown on the pricing page is not necessarily implemented in the backend.
 - Packaging is decided in `docs/architecture/billing.md` (Plans and packaging):
   no package limits printers or active Print Bridge devices, and Enterprise has
-  no public price. Do not add per-plan count limits or count tiers. The code
-  that still enforces a device count is listed there as follow-up work.
+  no public price. Do not add per-plan count limits, count tiers or a numeric
+  device ceiling. Keep the device protections listed there.
 
 ## 13. User experience and localization
 

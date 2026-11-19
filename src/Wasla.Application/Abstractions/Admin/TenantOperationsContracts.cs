@@ -14,8 +14,12 @@ public interface ICentralAdminTenantOperationsService
 
     Task<TenantListPage> GetTenantListAsync(TenantListQuery query, CancellationToken ct);
 
-    /// <summary>The central record of one tenant, or null when no tenant has that id.</summary>
-    Task<TenantOperationsDetail?> GetTenantDetailAsync(Guid tenantId, CancellationToken ct);
+    /// <summary>
+    /// The central record of one tenant, or null when no tenant has that id. Its Print Bridge devices come one page of
+    /// <see cref="TenantPrintBridgeDevicePage.PageSize"/> at a time (<paramref name="devicePage"/>, 1-based, clamped to the
+    /// pages that exist); the device counts cover all of the tenant's devices.
+    /// </summary>
+    Task<TenantOperationsDetail?> GetTenantDetailAsync(Guid tenantId, int devicePage, CancellationToken ct);
 }
 
 /// <summary>
@@ -297,7 +301,8 @@ public sealed record TenantOperationsDetail(
     DateTime? LastMigrationAtUtc,
     TenantMembershipSummary? Membership,
     TenantRegistrationSummary? Registration,
-    IReadOnlyList<TenantPrintBridgeDeviceSummary> PrintBridgeDevices,
+    TenantPrintBridgeDevicePage PrintBridgeDevices,
+    TenantPrintBridgeDeviceCounts PrintBridgeDeviceCounts,
     DateTime ReadAtUtc);
 
 public sealed record TenantMembershipSummary(
@@ -315,6 +320,44 @@ public sealed record TenantRegistrationSummary(
     DateTime? PaymentSucceededAtUtc,
     DateTime? PaymentFailedAtUtc,
     DateTime? ProvisionedAtUtc);
+
+/// <summary>
+/// One page of a tenant's devices that are not removed, active first, then by name. A tenant may have any number of
+/// devices (there is no device limit), so Central Admin pages through them instead of cutting the list.
+/// </summary>
+/// <param name="TotalCount">The tenant's devices that are not removed, which the pages divide.</param>
+public sealed record TenantPrintBridgeDevicePage(
+    IReadOnlyList<TenantPrintBridgeDeviceSummary> Items,
+    int Page,
+    int TotalCount)
+{
+    /// <summary>Devices per page.</summary>
+    public const int PageSize = 50;
+
+    public static TenantPrintBridgeDevicePage Empty { get; } = new([], 1, 0);
+
+    public int TotalPages => TotalCount == 0 ? 1 : (TotalCount + PageSize - 1) / PageSize;
+
+    /// <summary>The 1-based position of the first item shown, or 0 when there is none.</summary>
+    public int FirstItemNumber => Items.Count == 0 ? 0 : ((Page - 1) * PageSize) + 1;
+
+    public int LastItemNumber => Items.Count == 0 ? 0 : FirstItemNumber + Items.Count - 1;
+
+    /// <summary>The page that exists for a requested one: at least 1 and at most the last page.</summary>
+    public static int Clamp(int requestedPage, int totalCount)
+    {
+        var totalPages = totalCount == 0 ? 1 : (totalCount + PageSize - 1) / PageSize;
+        return Math.Min(Math.Max(requestedPage, 1), totalPages);
+    }
+}
+
+/// <summary>Counts over all of a tenant's devices that are not removed, whatever page is shown.</summary>
+/// <param name="Online">Active devices whose last heartbeat is within the connected threshold.</param>
+/// <param name="ActiveNeverConnected">Active devices that have never sent a heartbeat.</param>
+public sealed record TenantPrintBridgeDeviceCounts(int Total, int Active, int Online, int ActiveNeverConnected)
+{
+    public static TenantPrintBridgeDeviceCounts None { get; } = new(0, 0, 0, 0);
+}
 
 /// <summary>Safe device metadata only: no token, token hash, installation id or IP address.</summary>
 public sealed record TenantPrintBridgeDeviceSummary(
