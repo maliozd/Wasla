@@ -17,12 +17,13 @@ namespace Wasla.Infrastructure.Services;
 /// </para>
 /// <para>
 /// The price is a scan of the device table, which can wait for another tenant's uncommitted device row until it commits.
-/// These reads run only during setups and moves. Measured on SQL Server 2025 (WAS-205): about 43 pages per 1,000 device
-/// rows, 1 ms at 3,900 devices and 4.5 ms at 39,000.
+/// These reads run only during setups and moves, and for Central Admin's tenant detail (<see cref="ByTenant"/>), which
+/// needs one bounded page and one aggregate of a tenant's devices without reading a list of their ids. Measured on SQL
+/// Server 2025 (WAS-205): about 43 pages per 1,000 device rows, 1 ms at 3,900 devices and 4.5 ms at 39,000.
 /// </para>
 /// <para>
-/// The frequent reads (device authentication on every poll, the devices page, setup status and Central Admin) use two
-/// statements instead (WAS-205): the ids from one index alone (<see cref="IdByTokenHashAsync"/>,
+/// The frequent reads (device authentication on every poll, the devices page, setup status and Central Admin's tenant
+/// list) use two statements instead (WAS-205): the ids from one index alone (<see cref="IdByTokenHashAsync"/>,
 /// <see cref="ManageableIdsAsync(CentralDbContext, Guid, CancellationToken)"/>), then the rows by key alone
 /// (<see cref="ByIds"/>). Neither statement holds an index key while it waits for a row, so a writer can only make them
 /// wait. The second statement's rows are as of after the first: callers check the token, tenant and removal again on them.
@@ -62,6 +63,16 @@ internal static class PrintBridgeDeviceRowReads
         centralDb.Database.IsSqlServer()
             ? centralDb.PrintBridgeDevices.FromSql(
                 $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK, INDEX(1)) WHERE [InstallationId] = {installationId}")
+            : centralDb.PrintBridgeDevices;
+
+    /// <summary>
+    /// A tenant's devices through the clustered index alone. Callers filter by tenant and removal again (on SQLite this is
+    /// the whole table) and let the server cut and aggregate, so only the rows they return leave the database.
+    /// </summary>
+    public static IQueryable<PrintBridgeDevice> ByTenant(CentralDbContext centralDb, Guid tenantId) =>
+        centralDb.Database.IsSqlServer()
+            ? centralDb.PrintBridgeDevices.FromSql(
+                $"SELECT * FROM [PrintBridgeDevices] WITH (READCOMMITTEDLOCK, INDEX(1)) WHERE [TenantId] = {tenantId}")
             : centralDb.PrintBridgeDevices;
 
     public static IQueryable<PrintBridgeDevice> ByTokenHash(CentralDbContext centralDb, string tokenHash) =>

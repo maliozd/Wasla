@@ -121,7 +121,7 @@ installation transaction (deferred, `Return="check"`, not on uninstall). It pass
 
 - is the process the Service Control Manager reports for `WaslaPrintBridge` (checked on the pipe before anything is
   sent);
-- answers within 60 seconds with IPC protocol 2;
+- answers within 60 seconds with this build's IPC protocol (`PrintBridgeIpcProtocol.Version`);
 - reports the version of the executable that was just installed;
 - serves its engine: its data folder is protected (`DataFolderNotSecured` fails at once); an engine held by an older
   portable app still counts as healthy, as WAS-61 reports it.
@@ -184,13 +184,15 @@ Failure behavior at each point:
 What is tested where is listed under [Verification](#verification). An interruption or reboot in tests is a service stop
 or process kill and restart; a real machine reboot or power loss is not tested.
 
-## IPC protocol 2
+## IPC protocol
 
-The update adds commands and a state field, and the WAS-61 parser rejects unknown fields, so the protocol becomes 2 and
-the service accepts only 2. An app of protocol 1 (an older app still open, or a portable copy) gets
+The update adds commands and a state field, and the WAS-61 parser rejects unknown fields, so WAS-63 raised the protocol
+to 2; removing the device-limit outcome raised it to 3 ([print-bridge-service.md](print-bridge-service.md#handshake-and-version)).
+The service accepts only its own version. An app of another version (an older app still open, or a portable copy) gets
 `incompatible_protocol` and shows "Print Bridge app and service versions do not match"; closing it and opening Print
-Bridge again from the Start menu fixes it. The setup closes every Print Bridge app before it replaces anything, so a
-normal update never shows this.
+Bridge again from the Start menu fixes it. The setup closes every Print Bridge app before it replaces anything, replaces
+the app and the service in the same installation, and its rollback restores both, so a normal update or a rolled-back
+one never shows this.
 
 | Command | Payload | Answer |
 |---------|---------|--------|

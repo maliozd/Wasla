@@ -363,22 +363,39 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Detail_ReadsOneBoundedPageOfDevices_WhateverTheirNumber()
+    public async Task Detail_ReadsOnePageOfDevicesAndOneRowOfCounts_AndSendsNoIdList_ForAThousandDevices()
     {
         var few = _central.AddTenant("few");
         _central.AddDevice(few.Id, "Kitchen", true, Now);
         var many = _central.AddTenant("many");
-        for (var i = 0; i < 120; i++)
-            _central.AddDevice(many.Id, $"Station {i:000}", true, Now);
+        _central.AddDevices(many.Id, 1000, Now);
 
-        var small = await CountedAsync(service => service.GetTenantDetailAsync(few.Id, 1, CancellationToken.None));
-        var large = await CountedAsync(service => service.GetTenantDetailAsync(many.Id, 1, CancellationToken.None));
+        var small = await RecordedDetailAsync(few.Id, page: 1);
+        var large = await RecordedDetailAsync(many.Id, page: 1);
+        var deep = await RecordedDetailAsync(many.Id, page: 7);
 
-        // The same statements for one device or 120: the page's rows are cut by the server, the counts are one row.
-        Assert.Equal(small.Commands, large.Commands);
-        Assert.Equal(TenantPrintBridgeDevicePage.PageSize, large.Result!.PrintBridgeDevices.Items.Count);
-        Assert.Contains(large.SqlText, sql => sql.Contains("OFFSET", StringComparison.OrdinalIgnoreCase) || sql.Contains("LIMIT", StringComparison.OrdinalIgnoreCase));
-        Assert.All(large.SqlText, sql => Assert.DoesNotContain("TokenHash", sql, StringComparison.Ordinal));
+        // Nothing that crosses the connection grows with the devices. One device or a thousand send the same statements
+        // with the same parameters (no list of device ids goes to the database), and each statement that reads devices
+        // brings back at most one page of rows or the one row of counts (EF's last read finds the end).
+        Assert.Equal(
+            small.Statements.Select(s => (s.Tag, s.ParameterCount, s.ParameterBytes)),
+            large.Statements.Select(s => (s.Tag, s.ParameterCount, s.ParameterBytes)));
+        foreach (var run in new[] { large, deep })
+        {
+            Assert.Equal(2, run.Statements.Count(s => s.ReadsDevices));
+            var page = Assert.Single(run.Statements, s => s.Tag == CentralAdminTenantOperationsService.DevicePageTag);
+            var counts = Assert.Single(run.Statements, s => s.Tag == CentralAdminTenantOperationsService.DeviceCountsTag);
+            Assert.True(page.ReadsDevices && counts.ReadsDevices);
+            Assert.InRange(page.Reads, TenantPrintBridgeDevicePage.PageSize, TenantPrintBridgeDevicePage.PageSize + 1);
+            Assert.InRange(counts.Reads, 1, 2);
+            Assert.All(run.Statements, s => Assert.DoesNotContain("json_each", s.Sql, StringComparison.OrdinalIgnoreCase));
+            Assert.All(run.Statements, s => Assert.DoesNotContain("TokenHash", s.Sql, StringComparison.Ordinal));
+        }
+
+        var devices = deep.Detail!.PrintBridgeDevices;
+        Assert.Equal((7, 20, 1000), (devices.Page, devices.TotalPages, devices.TotalCount));
+        Assert.Equal(("Bulk 0300", "Bulk 0349"), (devices.Items[0].Name, devices.Items[^1].Name));
+        Assert.Equal(new TenantPrintBridgeDeviceCounts(Total: 1000, Active: 1000, Online: 1000, ActiveNeverConnected: 0), deep.Detail.PrintBridgeDeviceCounts);
     }
 
     [Fact]
@@ -396,6 +413,14 @@ public sealed class CentralAdminTenantOperationsServiceTests : IDisposable
     // Helpers ----------------------------------------------------------------------------------------
 
     private CentralAdminTenantOperationsService Service(bool counted = false) => new(_central.CreateContext(counted), _time);
+
+    private async Task<(TenantOperationsDetail? Detail, IReadOnlyList<RecordedStatement> Statements)> RecordedDetailAsync(Guid tenantId, int page)
+    {
+        var recorder = new SqlStatementRecorder();
+        await using var db = _central.CreateContextWith(recorder);
+        var detail = await new CentralAdminTenantOperationsService(db, _time).GetTenantDetailAsync(tenantId, page, CancellationToken.None);
+        return (detail, recorder.Statements);
+    }
 
     private async Task<TenantListPage> ListAsync(TenantListQuery query) =>
         await Service().GetTenantListAsync(query, CancellationToken.None);

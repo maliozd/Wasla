@@ -15,7 +15,7 @@ Wasla.PrintBridge.exe (per Windows user, per session; WinExe)
   tray, WebView2 app window, native dialogs (connection, confirmations), runtime notice,
   wasla-printbridge:// handler, per-user single instance and setup-link forwarding (WAS-92),
   localization (TR, EN, AR, RU)
-        │  named pipe \\.\pipe\WaslaPrintBridge.Service, protocol version 2 (WAS-63)
+        │  named pipe \\.\pipe\WaslaPrintBridge.Service, protocol version 3
         │  (PrintBridgeServiceClient → PrintBridgeIpcServer)
         ▼
 Wasla.PrintBridge.Service.exe (Windows Service "WaslaPrintBridge", NT SERVICE\WaslaPrintBridge)
@@ -131,7 +131,7 @@ Exactly one engine may poll and print per computer:
 
 A process that holds `Global\WaslaPrintBridge` without being Print Bridge keeps the service from printing (denial of service), never from being safe: no second engine runs. That needs a local logon, and the service log names the condition.
 
-## IPC contract (protocol version 2)
+## IPC contract (protocol version 3)
 
 Transport: one named pipe, `\\.\pipe\WaslaPrintBridge.Service`, byte mode, overlapped, up to 8 simultaneous clients. Each message is a frame: a 4-byte little-endian length followed by that many bytes of UTF-8 JSON.
 
@@ -157,7 +157,7 @@ This replaces WAS-92's "not prevented" case for the engine: a squatter can no lo
 
 ### Handshake and version
 
-The first frame from the app is `{"type":"hello","protocol":2,"client":"<app version>"}`. The service answers `{"type":"welcome","protocol":2,"service":"<service version>"}` and then a `state` event, or `{"type":"error","code":"incompatible_protocol","min":2,"max":2}` and closes the pipe. Protocol 1 (WAS-61, WAS-62) had no update commands or state; WAS-63 made it 2 and the service accepts only 2, because the parser rejects unknown fields. The app then shows "Print Bridge app and service versions do not match" (`RuntimeIssue.ServiceIncompatible`) and asks again every 30 seconds, so an update of either side is picked up. A future protocol version may change any message; a service that supports several versions announces its range in `min` and `max`.
+The first frame from the app is `{"type":"hello","protocol":3,"client":"<app version>"}`. The service answers `{"type":"welcome","protocol":3,"service":"<service version>"}` and then a `state` event, or `{"type":"error","code":"incompatible_protocol","min":3,"max":3}` and closes the pipe. Protocol 1 (WAS-61, WAS-62) had no update commands or state; WAS-63 made it 2. Protocol 3 removed the device-limit outcome from `setup.apply` and `setup.background` (`PrintBridgeAutoSetupOutcome`, packaging decision of 2026-11-17): a version 2 service could still send it, and a version 3 app reads enum names strictly, so it would reject that message. A change to any message's meaning raises the version, and the service accepts only its own, because the parser rejects unknown fields and values. The setup closes every Print Bridge app and installs the app and the service together, and a rollback restores both ([print-bridge-updates.md](print-bridge-updates.md#ipc-protocol)), so an installed pair always matches; a mismatch needs an app the setup did not install, such as a portable copy. The app then shows "Print Bridge app and service versions do not match" (`RuntimeIssue.ServiceIncompatible`) and asks again every 30 seconds, so an update of either side is picked up. A future protocol version may change any message; a service that supports several versions announces its range in `min` and `max`.
 
 ### Messages
 
@@ -188,7 +188,7 @@ Request: `{"type":"request","id":"<id>","command":"<command>","payload":{…}}`.
 | `service.health` | `{}` | `{"version","availability"}`; read-only, used by `health-check` |
 
 While printing is paused for an update, the commands that change the connection, settings or printing are refused with
-`Update.Error.InProgress` ([print-bridge-updates.md](print-bridge-updates.md#ipc-protocol-2)).
+`Update.Error.InProgress` ([print-bridge-updates.md](print-bridge-updates.md#ipc-protocol)).
 
 | Event | Payload |
 |-------|---------|

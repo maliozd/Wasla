@@ -65,7 +65,8 @@ public sealed class PrintBridgeIpcTests : IAsyncDisposable
     [Theory]
     [InlineData(0)]
     [InlineData(1)] // WAS-61's protocol: an app from before WAS-63 is told that the versions do not match
-    [InlineData(3)]
+    [InlineData(2)] // WAS-63's protocol: an app from before the device-limit outcome was removed
+    [InlineData(4)]
     [InlineData(99)]
     public async Task AnotherProtocolVersion_IsRefused_WithTheSupportedRange_AndTheConnectionCloses(int protocol)
     {

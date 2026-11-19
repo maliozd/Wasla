@@ -15,14 +15,16 @@ public static partial class PrintBridgeIpcProtocol
 {
     /// <summary>
     /// The protocol this build speaks. A change to any message's meaning raises it. 2 (WAS-63) added the update commands,
-    /// <c>service.health</c> and the state's <c>update</c>; version 1 clients would reject that state, so the service accepts
-    /// only 2 and a version 1 app is told that the versions do not match.
+    /// <c>service.health</c> and the state's <c>update</c>; version 1 clients would reject that state. 3 removed the
+    /// device-limit outcome from <c>setup.apply</c> and the background setup event (packaging decision of 2026-11-17): a
+    /// version 2 service could still send it and a version 3 app's strict reader would reject the message, so the service
+    /// accepts only 3 and an app of another version is told that the versions do not match.
     /// </summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     /// <summary>The oldest and newest versions this service accepts (only <see cref="Version"/> for now).</summary>
-    public const int MinSupportedVersion = 2;
-    public const int MaxSupportedVersion = 2;
+    public const int MinSupportedVersion = 3;
+    public const int MaxSupportedVersion = 3;
 
     public const int MaxClientFrameBytes = 16 * 1024;
     public const int MaxServiceFrameBytes = 1024 * 1024;

@@ -9,6 +9,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Billing;
 
 namespace Wasla.UnitTests.Printing;
@@ -117,6 +118,51 @@ public sealed class PrintBridgeDeviceReadSqlServerTests(PrintBridgeDeviceReadDat
     }
 
     [Fact]
+    public async Task TheCentralAdminTenantDetail_ReturnsOnePageAndOneRowOfCounts_FromTheClusteredIndexAlone()
+    {
+        // 120 devices of one restaurant among the 3,900 of the others. The server cuts the page and aggregates the counts:
+        // the client receives at most one page of rows and one row of counts and sends no list of device ids. Neither
+        // statement reads a secondary index of the device table, so neither can hold an index key while it waits for a
+        // device row (WAS-203, WAS-205); the race above shows it waiting for a removal instead.
+        var device = await fixture.DeviceAsync(siblings: 119);
+        var recorder = new SqlStatementRecorder();
+        TenantOperationsDetail? detail;
+        await using (var db = fixture.Database.Open("Admin", recorder))
+            detail = await new CentralAdminTenantOperationsService(db, TimeProvider.System).GetTenantDetailAsync(device.Tenant, 2, Ct);
+
+        var devices = detail!.PrintBridgeDevices;
+        Assert.Equal((2, 3, 120, 50), (devices.Page, devices.TotalPages, devices.TotalCount, devices.Items.Count));
+        Assert.Equal((120, 120), (detail.PrintBridgeDeviceCounts.Total, detail.PrintBridgeDeviceCounts.Active));
+
+        var deviceStatements = recorder.Statements.Where(s => s.ReadsDevices).ToList();
+        Assert.Equal(
+            new[] { CentralAdminTenantOperationsService.DeviceCountsTag, CentralAdminTenantOperationsService.DevicePageTag },
+            deviceStatements.Select(s => s.Tag));
+        Assert.InRange(deviceStatements[0].Reads, 1, 2);
+        Assert.InRange(deviceStatements[1].Reads, TenantPrintBridgeDevicePage.PageSize, TenantPrintBridgeDevicePage.PageSize + 1);
+        Assert.All(deviceStatements, s =>
+        {
+            Assert.DoesNotContain("OPENJSON", s.Sql, StringComparison.OrdinalIgnoreCase);
+            Assert.InRange(s.ParameterCount, 1, 4);
+            Assert.InRange(s.ParameterBytes, 1, 200);
+        });
+
+        await using var inspector = fixture.Database.Open("Inspector");
+        var plans = new List<System.Xml.Linq.XDocument>();
+        foreach (var statement in deviceStatements)
+            plans.AddRange(await CachedPlansAsync(inspector, statement.Tag!));
+        Assert.All(plans, plan =>
+        {
+            var indexes = plan.Descendants(Showplan + "Object")
+                .Where(o => (string?)o.Attribute("Table") == "[PrintBridgeDevices]")
+                .Select(o => (string?)o.Attribute("Index"))
+                .Distinct();
+            Assert.Equal(new[] { "[PK_PrintBridgeDevices]" }, indexes);
+            Assert.DoesNotContain(plan.Descendants(Showplan + "IndexScan"), scan => (string?)scan.Attribute("Lookup") == "1");
+        });
+    }
+
+    [Fact]
     public async Task TheCentralAdminTenantList_WhileADeviceIsRemoved_WaitsAndCountsTheOthers()
     {
         var device = await fixture.DeviceAsync(Siblings);
@@ -140,6 +186,26 @@ public sealed class PrintBridgeDeviceReadSqlServerTests(PrintBridgeDeviceReadDat
         return removed
             ? db.Database.ExecuteSqlAsync($"UPDATE [PrintBridgeDevices] SET [RemovedAtUtc] = SYSUTCDATETIME(), [IsActive] = 0, [TokenHash] = {replacement} WHERE [Id] = {deviceId}", Ct)
             : db.Database.ExecuteSqlAsync($"UPDATE [PrintBridgeDevices] SET [TokenHash] = {replacement} WHERE [Id] = {deviceId}", Ct);
+    }
+
+    private static readonly System.Xml.Linq.XNamespace Showplan = "http://schemas.microsoft.com/sqlserver/2004/07/showplan";
+
+    // The cached plans of the statement carrying this query tag, compiled in this test database.
+    private static async Task<IReadOnlyList<System.Xml.Linq.XDocument>> CachedPlansAsync(CentralDbContext db, string tag)
+    {
+        var pattern = "%-- " + tag + "%";
+        var plans = await db.Database
+            .SqlQuery<string>($"""
+                SELECT CAST(p.query_plan AS nvarchar(max)) AS [Value]
+                FROM sys.dm_exec_query_stats s
+                CROSS APPLY sys.dm_exec_sql_text(s.sql_handle) t
+                CROSS APPLY sys.dm_exec_query_plan(s.plan_handle) p
+                CROSS APPLY (SELECT CAST(a.value AS int) AS dbid FROM sys.dm_exec_plan_attributes(s.plan_handle) a WHERE a.attribute = 'dbid') d
+                WHERE d.dbid = DB_ID() AND t.text LIKE {pattern} AND t.text NOT LIKE '%dm_exec_query_stats%'
+                """)
+            .ToListAsync(Ct);
+        Assert.NotEmpty(plans);
+        return plans.Distinct().Select(System.Xml.Linq.XDocument.Parse).ToList();
     }
 
     private static PrintBridgeDeviceManagementService Manage(CentralDbContext db) =>

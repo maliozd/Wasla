@@ -29,7 +29,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [integrations/print-bridge.md](integrations/print-bridge.md) | Desktop printing client |
 | [integrations/print-bridge-service.md](integrations/print-bridge-service.md) | Print Bridge Windows Service (WAS-61): process split, service identity, data folder permissions, IPC contract, lifecycle, print journal and crash recovery, installer handoff (WAS-62) |
 | [integrations/print-bridge-installer.md](integrations/print-bridge-installer.md) | Print Bridge installer (WAS-62): setup EXE and MSI (WiX v7), what they install, startup ownership, repair/upgrade/downgrade/uninstall order, data preservation, WebView2 Runtime and the notice's Repair, building and signing, the Web download |
-| [integrations/print-bridge-updates.md](integrations/print-bridge-updates.md) | Print Bridge updates (WAS-63): user-confirmed updates, trust model (hash, Authenticode, same publisher), release description, printing pause, health check, rollback and the downgrade rule, durable state and reconciliation, IPC protocol 2, external signing inputs |
+| [integrations/print-bridge-updates.md](integrations/print-bridge-updates.md) | Print Bridge updates (WAS-63): user-confirmed updates, trust model (hash, Authenticode, same publisher), release description, printing pause, health check, rollback and the downgrade rule, durable state and reconciliation, IPC protocol, external signing inputs |
 | [frontend/architecture.md](frontend/architecture.md) | Razor, Bootstrap, vanilla JS |
 | [frontend/design-system.md](frontend/design-system.md) | Tokens; `wasla-foundation.css` is the foundation |
 | [operations/local-development.md](operations/local-development.md) | Local runbook |
