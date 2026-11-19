@@ -81,12 +81,15 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
         var browser = await _host.BrowserAsync(culture, width, 900, mobile, ct);
         if (browser is null)
             Assert.Skip("No Chromium browser is installed.");
-        await browser.AddScriptBeforePageScriptsAsync(Instrument, ct);
-        await browser.NavigateAsync(new Uri(_host.BaseAddress, path), ct);
-        Assert.True(await browser.WaitForAsync(Settled, TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
-        if (!await browser.EvaluateAsync<bool>("!!window.bootstrap", ct))
-            Assert.Skip("Bootstrap could not be loaded from its CDN.");
-        return browser;
+        // The caller owns the browser only once this returns, so a failure or skip here disposes it.
+        return await browser.SetUpAsync(async started =>
+        {
+            await started.AddScriptBeforePageScriptsAsync(Instrument, ct);
+            await started.NavigateAsync(new Uri(_host.BaseAddress, path), ct);
+            Assert.True(await started.WaitForAsync(Settled, TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
+            if (!await started.EvaluateAsync<bool>("!!window.bootstrap", ct))
+                Assert.Skip("Bootstrap could not be loaded from its CDN.");
+        });
     }
 
     /// <summary>A real mouse click in the middle of the element.</summary>
@@ -286,6 +289,45 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
             $"The second keyboard export did not download. {_host.ServerErrors}");
         Assert.StartsWith("504b0304", await browser.EvaluateAsync<string>("window.__downloads[1].head", ct), StringComparison.Ordinal);
         Assert.Equal(2, await RequestsAsync(browser, ct));
+    }
+
+    [Fact]
+    public async Task AnOpeningThatFails_DisposesTheBrowserItStarted()
+    {
+        // WAS-218: the opening runs before the test's await using owns the browser. A browser it left behind (a page that
+        // did not render, a CDN skip) ran until the test process ended, and then outlived it.
+        if (!OperatingSystem.IsWindows())
+            Assert.Skip("The browser's processes are observed through Windows process handles.");
+        if (HeadlessChromium.FindExecutable() is null)
+            Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the real-browser export checks.");
+        var ct = TestContext.Current.CancellationToken;
+        var started = new List<(HeadlessChromium Browser, string Profile, List<BrowserProcessTree.ProcessWatch> Watches)>();
+        try
+        {
+            Exception? failure;
+            using (HeadlessChromium.ObserveStarts(browser =>
+                       started.Add((browser, browser.ProfilePath, [.. browser.TrackedProcesses().Select(BrowserProcessTree.Watch)]))))
+            {
+                // The Orders page renders, but it is not the report the opening waits for.
+                failure = await Record.ExceptionAsync(() => OpenAsync("tr-TR", 1280, false, "/orders", ct));
+            }
+
+            Assert.NotNull(failure);
+            var (_, profile, watches) = Assert.Single(started);
+            Assert.NotEmpty(watches);
+            // Cleanup waits until no process runs any more; Windows may finish tearing one down afterwards.
+            Assert.All(watches, watch => Assert.True(watch.HasStopped, $"{watch} still runs after the opening failed ({failure.GetType().Name})."));
+            Assert.False(Directory.Exists(profile), "The browser profile directory was not deleted after the opening failed.");
+        }
+        finally
+        {
+            foreach (var (browser, _, watches) in started)
+            {
+                foreach (var watch in watches)
+                    watch.Dispose();
+                await browser.DisposeAsync();
+            }
+        }
     }
 
     [Fact]
