@@ -4859,4 +4859,100 @@
   <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Online Devices</value></data>
   <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Print Bridge device pages</value></data>
   <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>Showing {0}–{1} of {2} devices</value></data>
+  <data name="Marketing.ComingSoonPage.BecomePilot" xml:space="preserve"><value>Become a pilot restaurant</value></data>
+  <data name="Marketing.ComingSoonPage.ContactUs" xml:space="preserve"><value>Contact us</value></data>
+  <data name="Pilot.MetaTitle" xml:space="preserve"><value>Become a pilot restaurant · Wasla</value></data>
+  <data name="Pilot.MetaTitleWithErrors" xml:space="preserve"><value>Error: Pilot restaurant application · Wasla</value></data>
+  <data name="Pilot.MetaTitleSent" xml:space="preserve"><value>Application received · Wasla</value></data>
+  <data name="Pilot.MetaDescription" xml:space="preserve"><value>Apply to be one of the first restaurants to use Wasla.</value></data>
+  <data name="Pilot.Eyebrow" xml:space="preserve"><value>Pilot application</value></data>
+  <data name="Pilot.Title" xml:space="preserve"><value>Become a pilot restaurant.</value></data>
+  <data name="Pilot.Lead" xml:space="preserve"><value>Apply to be one of the first restaurants to use Wasla. Our team reviews your application and contacts you to arrange a call.</value></data>
+  <data name="Pilot.StepsHeading" xml:space="preserve"><value>How it works</value></data>
+  <data name="Pilot.NextStepsHeading" xml:space="preserve"><value>Next steps</value></data>
+  <data name="Pilot.Step1.Title" xml:space="preserve"><value>Send your application</value></data>
+  <data name="Pilot.Step1.Text" xml:space="preserve"><value>Tell us about your restaurant and how to reach you.</value></data>
+  <data name="Pilot.Step1.DoneTitle" xml:space="preserve"><value>Application received</value></data>
+  <data name="Pilot.Step1.DoneText" xml:space="preserve"><value>Our team will review your application.</value></data>
+  <data name="Pilot.Step2.Title" xml:space="preserve"><value>We talk with you</value></data>
+  <data name="Pilot.Step2.Text" xml:space="preserve"><value>Our team reaches out by phone or email to talk about how your restaurant works.</value></data>
+  <data name="Pilot.Step3.Title" xml:space="preserve"><value>We plan the pilot together</value></data>
+  <data name="Pilot.Step3.Text" xml:space="preserve"><value>Taking part in the pilot is agreed together after the call.</value></data>
+  <data name="Pilot.Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Pilot.Form.Title" xml:space="preserve"><value>Application form</value></data>
+  <data name="Pilot.Form.RequiredHint" xml:space="preserve"><value>All fields except the note are required.</value></data>
+  <data name="Pilot.Form.RestaurantLegend" xml:space="preserve"><value>Restaurant</value></data>
+  <data name="Pilot.Form.ContactLegend" xml:space="preserve"><value>Contact</value></data>
+  <data name="Pilot.Form.RestaurantName" xml:space="preserve"><value>Restaurant name</value></data>
+  <data name="Pilot.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>e.g. Lezzet Ocakbaşı</value></data>
+  <data name="Pilot.Form.City" xml:space="preserve"><value>City</value></data>
+  <data name="Pilot.Form.CityPlaceholder" xml:space="preserve"><value>Choose a city</value></data>
+  <data name="Pilot.Form.ContactName" xml:space="preserve"><value>Contact person</value></data>
+  <data name="Pilot.Form.ContactNamePlaceholder" xml:space="preserve"><value>Your full name</value></data>
+  <data name="Pilot.Form.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Pilot.Form.PhoneHint" xml:space="preserve"><value>The number we can call you on to arrange the call.</value></data>
+  <data name="Pilot.Form.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Pilot.Form.EmailPlaceholder" xml:space="preserve"><value>name@yourrestaurant.com</value></data>
+  <data name="Pilot.Form.Note" xml:space="preserve"><value>Note (optional)</value></data>
+  <data name="Pilot.Form.NotePlaceholder" xml:space="preserve"><value>For example, the ordering platforms you use or good times to call you.</value></data>
+  <data name="Pilot.Form.PrivacyTitle" xml:space="preserve"><value>Your personal data</value></data>
+  <data name="Pilot.Form.PrivacyText" xml:space="preserve"><value>We process the information in this form to review your pilot application and to contact you.</value></data>
+  <data name="Pilot.Form.PrivacyLink" xml:space="preserve"><value>Pilot application privacy notice</value></data>
+  <data name="Pilot.Form.Submit" xml:space="preserve"><value>Send application</value></data>
+  <data name="Pilot.Form.Resubmit" xml:space="preserve"><value>Send again</value></data>
+  <data name="Pilot.Form.Sending" xml:space="preserve"><value>Sending…</value></data>
+  <data name="Pilot.Errors.Title" xml:space="preserve"><value>Your application was not sent. Please correct these fields:</value></data>
+  <data name="Pilot.Failed.Title" xml:space="preserve"><value>Your application could not be saved.</value></data>
+  <data name="Pilot.Failed.Body" xml:space="preserve"><value>Your details are still in the form. Please send it again in a little while; if the problem continues, email {0}.</value></data>
+  <data name="Pilot.TooManyAttempts" xml:space="preserve"><value>Too many applications were sent in a short time. Please try again later or email {0}.</value></data>
+  <data name="Pilot.Sent.Title" xml:space="preserve"><value>We have received your application.</value></data>
+  <data name="Pilot.Sent.Body" xml:space="preserve"><value>Thank you. Our team will review your application and contact you by phone or email to arrange a call.</value></data>
+  <data name="Pilot.Sent.InfoHeading" xml:space="preserve"><value>Good to know</value></data>
+  <data name="Pilot.Sent.NoAccount" xml:space="preserve"><value>This application does not open an account or a panel, and no payment is taken.</value></data>
+  <data name="Pilot.Sent.ChangeDetails" xml:space="preserve"><value>To change or add details, email {0}. There is no need to send the form again.</value></data>
+  <data name="Pilot.Sent.Home" xml:space="preserve"><value>Back to the homepage</value></data>
+  <data name="Validation.PilotCityRequired" xml:space="preserve"><value>Choose a city.</value></data>
+  <data name="Validation.PilotContactNameRequired" xml:space="preserve"><value>Enter the contact person’s full name.</value></data>
+  <data name="Validation.PilotPhoneRequired" xml:space="preserve"><value>Enter a phone number we can reach you on.</value></data>
+  <data name="Validation.PilotNoteTooLong" xml:space="preserve"><value>The note can be at most 2000 characters.</value></data>
+  <data name="PilotPrivacy.MetaTitle" xml:space="preserve"><value>Pilot application privacy notice · Wasla</value></data>
+  <data name="PilotPrivacy.MetaDescription" xml:space="preserve"><value>How the personal data you share in the pilot application form is processed.</value></data>
+  <data name="PilotPrivacy.Title" xml:space="preserve"><value>Pilot application privacy notice</value></data>
+  <data name="PilotPrivacy.Subtitle" xml:space="preserve"><value>Explains how the personal data you share in the pilot application form is processed.</value></data>
+  <data name="PilotPrivacy.Intro" xml:space="preserve"><value>This notice is given under article 10 of the Turkish Personal Data Protection Law No. 6698 (“KVKK”) and covers the personal data you share through the pilot application form. Sending the form is neither acceptance of a contract nor consent to marketing.</value></data>
+  <data name="PilotPrivacy.ControllerHeading" xml:space="preserve"><value>1. Data controller</value></data>
+  <data name="PilotPrivacy.ControllerName" xml:space="preserve"><value>Legal name</value></data>
+  <data name="PilotPrivacy.ControllerAddress" xml:space="preserve"><value>Address</value></data>
+  <data name="PilotPrivacy.ControllerContact" xml:space="preserve"><value>Contact</value></data>
+  <data name="PilotPrivacy.DataHeading" xml:space="preserve"><value>2. Which personal data we process</value></data>
+  <data name="PilotPrivacy.DataText" xml:space="preserve"><value>The restaurant name and city, the contact person’s full name, phone number and email address, and your optional note, as you enter them in the pilot application form. The date of the application and the language of the form are also recorded.</value></data>
+  <data name="PilotPrivacy.PurposesHeading" xml:space="preserve"><value>3. Why we process it</value></data>
+  <data name="PilotPrivacy.Purpose1" xml:space="preserve"><value>To review your pilot application.</value></data>
+  <data name="PilotPrivacy.Purpose2" xml:space="preserve"><value>To contact you by phone or email to arrange a call.</value></data>
+  <data name="PilotPrivacy.Purpose3" xml:space="preserve"><value>To plan the setup if taking part in the pilot is agreed together.</value></data>
+  <data name="PilotPrivacy.NoMarketing" xml:space="preserve"><value>This data is not used to send marketing messages.</value></data>
+  <data name="PilotPrivacy.LegalBasisHeading" xml:space="preserve"><value>4. How it is collected and the legal basis</value></data>
+  <data name="PilotPrivacy.CollectionText" xml:space="preserve"><value>Your data is collected electronically through this web form. Legal basis:</value></data>
+  <data name="PilotPrivacy.TransfersHeading" xml:space="preserve"><value>5. Who receives it</value></data>
+  <data name="PilotPrivacy.TransfersText" xml:space="preserve"><value>Authorised members of the Wasla team see your application. Service providers and transfers:</value></data>
+  <data name="PilotPrivacy.RetentionHeading" xml:space="preserve"><value>6. How long it is kept</value></data>
+  <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>You can send requests about your rights under article 11 of the KVKK through:</value></data>
+  <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[Not configured]</value></data>
+  <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>Draft privacy notice</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>The data controller and legal details are not configured yet. This draft is shown only in test environments; in Production the form and this page stay closed.</value></data>
+  <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>Back to the application form</value></data>
+  <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>Pilot application</value></data>
+  <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>Message type</value></data>
+  <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>Pilot applications</value></data>
+  <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>Contact messages</value></data>
+  <data name="Admin.ContactMessages.City" xml:space="preserve"><value>City</value></data>
+  <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>Note</value></data>
+  <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>No note was written.</value></data>
+  <data name="Admin.ContactMessages.Resend" xml:space="preserve"><value>Send notification again</value></data>
+  <data name="Admin.ContactMessages.ResendSent" xml:space="preserve"><value>The notification email was handed to the SMTP server.</value></data>
+  <data name="Admin.ContactMessages.ResendFailed" xml:space="preserve"><value>The notification email failed again. The message is still stored; check the SMTP settings and try again.</value></data>
+  <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>No notification was sent because email delivery is not configured (Email:Provider is not Smtp).</value></data>
+  <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>This message’s notification was already sent; it was not sent again.</value></data>
+  <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>A send for this message started moments ago; check its status again shortly.</value></data>
 </root>

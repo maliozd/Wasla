@@ -133,7 +133,9 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         {
             ["Platforms:ProviderMode"] = "Mock",
             // Never opened: CentralDbContext is replaced by SQLite below.
-            ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaSessionTests"
+            ["ConnectionStrings:CentralDb"] = "Server=(none);Database=WaslaSessionTests",
+            // The contact and pilot forms Program.cs registers; Email:Provider defaults to Log, so nothing is sent.
+            ["Wasla:Contact:RecipientEmail"] = "contact-inbox@wasla.test"
         });
         if (configuration is not null)
             builder.Configuration.AddInMemoryCollection(configuration);
@@ -196,6 +198,10 @@ internal sealed class TenantSessionWebHost : IAsyncDisposable
         services.AddWaslaTenantHostMissCache(builder.Configuration);
         // Wasla:MarketingSite as Program.cs binds it: without the test's configuration only the coming-soon page is published.
         services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
+        // The pilot application (WAS-217) and the contact messages it is stored with, as Program.cs registers them.
+        services.Configure<PilotApplicationOptions>(builder.Configuration.GetSection(PilotApplicationOptions.SectionName));
+        services.AddSingleton<PilotApplicationGate>();
+        services.AddWaslaContactMessages(builder.Configuration);
         // The live tenant hub, its notifier and (with Realtime:Internal) the loopback listener, as in Web Program.cs.
         services.AddWaslaRealtime(builder.Configuration);
         // Registration drafts with the fake SMS sender (WAS-192), as the signup page on this host needs them.

@@ -72,8 +72,10 @@ public sealed partial class ContactPageWebTests : IAsyncLifetime
             Assert.Contains($"for=\"{id}\"", page.Body);
         }
 
-        foreach (var topic in Enum.GetNames<ContactTopic>())
+        // The topics the form offers; a pilot application has its own form at /pilot (WAS-217).
+        foreach (var topic in Wasla.Web.Models.Marketing.ContactFormViewModel.Topics)
             Assert.Contains($"for=\"contact-topic-{topic}\"", page.Body);
+        Assert.DoesNotContain($"contact-topic-{ContactTopic.PilotApplication}", page.Body);
         Assert.Matches("class=\"wm-visually-hidden wm-contact-form__trap\" aria-hidden=\"true\"", page.Body);
         Assert.Matches("id=\"contact-website\"[^>]*tabindex=\"-1\"", page.Body);
         Assert.DoesNotContain("data-contact-state=\"sent\"", page.Body);
@@ -146,6 +148,20 @@ public sealed partial class ContactPageWebTests : IAsyncLifetime
         // What the visitor typed is kept, encoded.
         Assert.Contains("value=\"Lezzet &lt;b&gt;Ocak&lt;/b&gt;\"", page.Body);
         Assert.DoesNotContain("<b>Ocak</b>", page.Body);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Fact]
+    public async Task ThePilotTopic_CannotBeSentThroughTheContactForm()
+    {
+        var host = await StartAsync();
+        using var browser = Browser(host, "en-US");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.ContactPath);
+
+        var page = await browser.PostFormAsync(PublicSiteUrls.ContactPath, Form(token, ("Topic", "PilotApplication")));
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        Assert.Contains(Text("en-US", "Validation.ContactTopicInvalid"), WebUtility.HtmlDecode(page.Body), StringComparison.Ordinal);
         Assert.False(await AnyStoredAsync());
     }
 
@@ -299,5 +315,11 @@ public sealed partial class ContactPageWebTests : IAsyncLifetime
     {
         public Task<ContactMessageSubmitResult> SubmitAsync(ContactMessageRequest request, CancellationToken ct) =>
             throw new DbUpdateException("CentralDb is not reachable.");
+
+        public Task<PilotApplicationSubmitResult> SubmitPilotApplicationAsync(PilotApplicationRequest request, CancellationToken ct) =>
+            throw new NotSupportedException();
+
+        public Task<ContactNotificationResendResult> ResendNotificationAsync(Guid messageId, CancellationToken ct) =>
+            throw new NotSupportedException();
     }
 }

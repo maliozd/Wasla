@@ -14,4 +14,10 @@ public static class PublicLayoutViewData
     /// (<c>wm-site--coming-soon</c> on <c>body</c>).
     /// </summary>
     public const string ComingSoonPage = "PublicComingSoonPage";
+
+    /// <summary>
+    /// <c>true</c> on a page that draws its own header and footer, such as the pilot application (WAS-217): the layout
+    /// renders neither the shared public header nor the footer (<c>wm-site--standalone</c> on <c>body</c>).
+    /// </summary>
+    public const string StandalonePage = "PublicStandalonePage";
 }

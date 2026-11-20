@@ -1,8 +1,10 @@
 @model Wasla.Web.Areas.Admin.Models.AdminContactMessageListViewModel
 @using System.Globalization
 @using Wasla.Domain.Enums
+@using Wasla.Application.Abstractions.Contact
 @{
     ViewData["Title"] = L["Admin.ContactMessages.Title"].Value;
+    var kindSuffix = Model.KindQuery is null ? string.Empty : "&kind=" + Model.KindQuery;
 
     string StatusBadge(ContactMessageNotificationStatus s) => s switch
     {
@@ -20,6 +22,23 @@
     </div>
     <span class="text-muted small" data-contact-total="@Model.TotalCount">@L["Admin.ContactMessages.Total", Model.TotalCount]</span>
 </div>
+
+<nav class="mb-3" aria-label="@L["Admin.ContactMessages.FilterLabel"]">
+    <ul class="nav nav-pills small" data-contact-filter="@(Model.KindQuery ?? "all")">
+        @foreach (var (kind, key, filter) in new[]
+                  {
+                      ((string?)null, "Admin.ContactMessages.FilterAll", AdminContactMessageFilter.All),
+                      ("pilot", "Admin.ContactMessages.FilterPilot", AdminContactMessageFilter.PilotApplications),
+                      ("contact", "Admin.ContactMessages.FilterContact", AdminContactMessageFilter.ContactMessages)
+                  })
+        {
+            var active = Model.Filter == filter;
+            <li class="nav-item">
+                <a class="nav-link@(active ? " active" : string.Empty)" href="/admin/contact-messages@(kind is null ? string.Empty : "?kind=" + kind)" aria-current="@(active ? "page" : null)">@L[key]</a>
+            </li>
+        }
+    </ul>
+</nav>
 
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
@@ -70,7 +89,7 @@
     <nav class="d-flex align-items-center justify-content-between gap-2 mt-3" aria-label="@L["Admin.ContactMessages.Pagination"]">
         @if (Model.Page > 1)
         {
-            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page - 1)" rel="prev">@L["Admin.ContactMessages.Previous"]</a>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page - 1)@kindSuffix" rel="prev">@L["Admin.ContactMessages.Previous"]</a>
         }
         else
         {
@@ -79,7 +98,7 @@
         <span class="small text-muted">@L["Admin.ContactMessages.PageOf", Model.Page, Model.TotalPages]</span>
         @if (Model.Page < Model.TotalPages)
         {
-            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page + 1)" rel="next">@L["Admin.ContactMessages.Next"]</a>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages?page=@(Model.Page + 1)@kindSuffix" rel="next">@L["Admin.ContactMessages.Next"]</a>
         }
         else
         {

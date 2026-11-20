@@ -2,11 +2,23 @@ using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Abstractions.Contact;
 
-/// <summary>Contact messages for Central Admin, newest first. Read-only.</summary>
+/// <summary>Which stored messages a Central Admin list shows.</summary>
+public enum AdminContactMessageFilter
+{
+    All,
+
+    /// <summary>Pilot restaurant applications from <c>/pilot</c> only (WAS-217).</summary>
+    PilotApplications,
+
+    /// <summary>Contact form messages only.</summary>
+    ContactMessages
+}
+
+/// <summary>Contact messages and pilot applications for Central Admin, newest first.</summary>
 public interface ICentralAdminContactMessageService
 {
     /// <summary>The page of messages (1-based), at most <see cref="AdminContactMessagePaging.MaxPageSize"/> per page.</summary>
-    Task<AdminContactMessageListResult> GetListAsync(int page, int pageSize, CancellationToken ct);
+    Task<AdminContactMessageListResult> GetListAsync(int page, int pageSize, AdminContactMessageFilter filter, CancellationToken ct);
 
     Task<AdminContactMessageDetailDto?> GetDetailAsync(Guid id, CancellationToken ct);
 }
@@ -50,8 +62,18 @@ public sealed class AdminContactMessageDetailDto
     public string? Phone { get; init; }
     public ContactTopic Topic { get; init; }
     public string Message { get; init; } = string.Empty;
+
+    /// <summary>The plate code of a pilot application's province, or null.</summary>
+    public string? CityPlateCode { get; init; }
+
+    /// <summary>The province's name from the city catalog, or null when the catalog has no active province for the code.</summary>
+    public string? CityName { get; init; }
+
     public string? Culture { get; init; }
     public DateTime CreatedAtUtc { get; init; }
     public ContactMessageNotificationStatus NotificationStatus { get; init; }
     public DateTime? NotificationAttemptedAtUtc { get; init; }
+
+    /// <summary>Whether Central Admin may send the team notification again now (see <see cref="IContactMessageService.ResendNotificationAsync"/>).</summary>
+    public bool CanResendNotification { get; init; }
 }

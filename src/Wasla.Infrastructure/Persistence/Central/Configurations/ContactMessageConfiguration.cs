@@ -4,7 +4,10 @@ using Wasla.Domain.Entities.Central;
 
 namespace Wasla.Infrastructure.Persistence.Central.Configurations;
 
-/// <summary>Messages from the public contact form. Read by Central Admin newest first.</summary>
+/// <summary>
+/// Messages from the public contact form and pilot applications from <c>/pilot</c> (WAS-217). Read by Central Admin
+/// newest first, all together or one topic at a time.
+/// </summary>
 public sealed class ContactMessageConfiguration : IEntityTypeConfiguration<ContactMessage>
 {
     public void Configure(EntityTypeBuilder<ContactMessage> builder)
@@ -20,9 +23,13 @@ public sealed class ContactMessageConfiguration : IEntityTypeConfiguration<Conta
         builder.Property(x => x.Phone).HasMaxLength(ContactMessageLimits.PhoneDigits).IsUnicode(false);
         builder.Property(x => x.Topic).HasConversion<int>();
         builder.Property(x => x.Message).IsRequired().HasMaxLength(ContactMessageLimits.MessageMaxLength);
+        builder.Property(x => x.CityPlateCode).HasMaxLength(ContactMessageLimits.CityPlateCodeLength).IsUnicode(false);
         builder.Property(x => x.Culture).HasMaxLength(ContactMessageLimits.CultureMaxLength).IsUnicode(false);
         builder.Property(x => x.NotificationStatus).HasConversion<int>();
 
         builder.HasIndex(x => x.CreatedAtUtc).HasDatabaseName("IX_ContactMessages_CreatedAtUtc");
+
+        // The Central Admin list filtered to one topic (pilot applications or contact messages), newest first.
+        builder.HasIndex(x => new { x.Topic, x.CreatedAtUtc }).HasDatabaseName("IX_ContactMessages_Topic_CreatedAtUtc");
     }
 }

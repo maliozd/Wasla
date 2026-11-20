@@ -4934,6 +4934,685 @@
   }
 }
 
+/* ---------- Pilot restaurant application (WAS-217, Figma "WAS-217 · Pilot Başvuru · Claude Alternatifi") ----------
+   The page draws its own header (PublicLayoutViewData.StandalonePage). Below 992 px: a photo band with the logo, the
+   language switch and the heading, then the form, the steps and the footer. From 992 px: a sticky photo panel on the
+   inline start (600 px wide) with the steps, and the form beside it. The photo is decorative; a dark gradient keeps
+   every light text on it at 4.5:1 or more. */
+
+.wm-site--standalone main {
+  display: block;
+}
+
+.wm-pilot {
+  display: grid;
+  min-block-size: 100svh;
+  background: var(--wm-canvas);
+  color: var(--wm-text);
+}
+
+.wm-pilot__aside {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow: hidden;
+  padding: 20px var(--wm-gutter) 24px;
+  background: var(--wm-ink);
+  color: var(--wm-on-dark);
+}
+
+.wm-pilot__photo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.wm-pilot__photo img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  /* Phone band: the cashier's face and the order screen; the stand's maker mark stays out of the crop. */
+  object-position: 100% 30%;
+}
+
+.wm-pilot__photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(34, 29, 25, 0.42) 0%, rgba(34, 29, 25, 0.6) 30%, rgba(34, 29, 25, 0.78) 55%, rgba(34, 29, 25, 0.88) 100%);
+}
+
+.wm-pilot__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wm-pilot__brand {
+  display: inline-flex;
+  border-radius: 6px;
+}
+
+.wm-pilot__brand .wasla-logo--marketing {
+  height: 30px;
+  filter: brightness(0) invert(1);
+}
+
+.wm-pilot__lang .wm-lang__toggle {
+  min-height: 38px;
+  border: 1px solid var(--wm-border-strong);
+  border-radius: 999px;
+  background: var(--wm-white);
+  color: var(--wm-text);
+  font-size: 0.875rem;
+}
+
+.wm-pilot__aside .wm-pilot__lang .wm-lang__toggle {
+  border-color: rgba(255, 254, 250, 0.4);
+  background: rgba(34, 29, 25, 0.25);
+  color: var(--wm-on-dark);
+}
+
+.wm-pilot__aside .wm-pilot__lang .wm-lang__toggle:hover {
+  background: rgba(255, 254, 250, 0.1);
+  color: var(--wm-on-dark);
+}
+
+.wm-pilot__message {
+  display: grid;
+  gap: 40px;
+}
+
+.wm-pilot__heading {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding-block-start: 48px;
+}
+
+.wm-pilot__title {
+  margin: 0;
+  color: var(--wm-on-dark);
+  font-family: var(--wm-font-display);
+  font-size: clamp(2.25rem, 1.6rem + 2.6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.wm-pilot__lead {
+  max-inline-size: 34rem;
+  margin: 0;
+  color: var(--wm-on-dark-muted);
+  font-size: 1.0625rem;
+  line-height: 26px;
+}
+
+.wm-pilot__credit {
+  margin: 0;
+  color: var(--wm-on-dark-muted);
+  font-family: var(--wm-font-mono);
+  font-size: 0.6875rem;
+  line-height: 14px;
+}
+
+.wm-pilot__main {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 32px;
+  min-inline-size: 0;
+  padding: 32px var(--wm-gutter) 32px;
+}
+
+.wm-pilot__topbar {
+  display: none;
+}
+
+.wm-pilot__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 8px;
+  color: var(--wm-text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.wm-pilot__home:hover {
+  color: var(--wm-action);
+}
+
+.wm-pilot__content {
+  display: grid;
+  align-content: start;
+  gap: 40px;
+  inline-size: 100%;
+  max-inline-size: 640px;
+  min-inline-size: 0;
+}
+
+.wm-pilot__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding-block-start: 20px;
+  border-block-start: 1px solid var(--wm-border);
+  color: var(--wm-text-muted);
+  font-size: 0.9375rem;
+  line-height: 22px;
+}
+
+.wm-pilot__footer p {
+  margin: 0;
+}
+
+.wm-pilot__footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--wm-text-body);
+  text-decoration: none;
+}
+
+.wm-pilot__footer a:hover {
+  color: var(--wm-action);
+}
+
+/* Form */
+
+.wm-pilot-form {
+  display: grid;
+  gap: 32px;
+  min-inline-size: 0;
+}
+
+.wm-pilot-form__head {
+  display: grid;
+  gap: 8px;
+}
+
+.wm-pilot-form__title {
+  margin: 0;
+  font-family: var(--wm-font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: -0.01em;
+}
+
+.wm-pilot-form__hint,
+.wm-pilot-form__help {
+  margin: 0;
+  color: var(--wm-text-muted);
+  font-size: 0.9375rem;
+  line-height: 22px;
+}
+
+.wm-pilot-form__group {
+  display: grid;
+  gap: 16px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wm-pilot-form__legend {
+  float: none;
+  inline-size: auto;
+  margin: 0 0 16px;
+  padding: 0;
+  color: var(--wm-text);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.wm-pilot-form__row {
+  display: grid;
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.wm-select {
+  padding-inline-end: 40px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%234a433d' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6' d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  cursor: pointer;
+}
+
+[dir="rtl"] .wm-select {
+  background-position: left 14px center;
+}
+
+.wm-phone--invalid {
+  border-color: #a4202a;
+}
+
+.wm-pilot-summary,
+.wm-pilot-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 24px 18px 20px;
+  border: 1px solid rgba(164, 32, 42, 0.3);
+  border-radius: 12px;
+  background: #f6e0e0;
+  color: var(--wm-text-body);
+  font-size: 0.9375rem;
+  line-height: 22px;
+}
+
+.wm-pilot-summary > .bi,
+.wm-pilot-alert > .bi {
+  flex: none;
+  margin-block-start: 1px;
+  color: #a4202a;
+  font-size: 1.125rem;
+}
+
+.wm-pilot-alert--warning {
+  border-color: rgba(138, 90, 18, 0.35);
+  background: var(--wm-warning-soft);
+}
+
+.wm-pilot-alert--warning > .bi {
+  color: var(--wm-warning);
+}
+
+.wm-pilot-summary__title,
+.wm-pilot-alert__title {
+  margin: 0 0 6px;
+  color: var(--wm-text);
+  font-family: var(--wm-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.wm-pilot-alert__body {
+  margin: 0;
+}
+
+.wm-pilot-summary__list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wm-pilot-summary__list a,
+.wm-pilot-alert a {
+  color: #a4202a;
+}
+
+.wm-pilot-alert--warning a {
+  color: var(--wm-action);
+}
+
+.wm-pilot-privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 24px 18px 20px;
+  border: 1px solid var(--wm-border);
+  border-radius: 12px;
+  background: var(--wm-white);
+  color: var(--wm-text-body);
+  font-size: 0.9375rem;
+  line-height: 22px;
+}
+
+.wm-pilot-privacy > .bi {
+  flex: none;
+  color: var(--wm-text-body);
+  font-size: 1.125rem;
+}
+
+.wm-pilot-privacy p {
+  margin: 0;
+}
+
+.wm-pilot-privacy__title {
+  color: var(--wm-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.wm-pilot-privacy__body {
+  margin-block-start: 4px !important;
+}
+
+.wm-pilot-privacy__link {
+  display: inline-block;
+  margin-block-start: 8px;
+  color: var(--wm-action);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.wm-pilot-form__submit .wm-btn[aria-disabled="true"] {
+  opacity: 0.72;
+  cursor: progress;
+}
+
+/* Steps: "how it works" before sending, "next steps" after it. */
+
+.wm-pilot-steps {
+  display: grid;
+  gap: 20px;
+}
+
+.wm-pilot-steps__heading {
+  margin: 0;
+  font-family: var(--wm-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.wm-pilot-steps__list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wm-pilot-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.wm-pilot-step__marker {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 1.5px solid var(--wm-border-strong);
+  border-radius: 50%;
+  color: var(--wm-text-muted);
+  font-family: var(--wm-font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.wm-pilot-step--current .wm-pilot-step__marker {
+  border-color: var(--wm-action);
+  background: var(--wm-action);
+  color: #fff;
+}
+
+.wm-pilot-step--done .wm-pilot-step__marker {
+  border-color: var(--wm-success-soft);
+  background: var(--wm-success-soft);
+  color: var(--wm-success);
+}
+
+.wm-pilot-step__text {
+  display: grid;
+  gap: 4px;
+  padding-block-start: 4px;
+}
+
+.wm-pilot-step__title {
+  color: var(--wm-text);
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.wm-pilot-step--upcoming .wm-pilot-step__title {
+  color: var(--wm-text-body);
+}
+
+.wm-pilot-step__body {
+  color: var(--wm-text-muted);
+  font-size: 0.9375rem;
+  line-height: 22px;
+}
+
+.wm-pilot__aside .wm-pilot-steps__heading,
+.wm-pilot__aside .wm-pilot-step__title {
+  color: var(--wm-on-dark);
+}
+
+.wm-pilot__aside .wm-pilot-step--upcoming .wm-pilot-step__title,
+.wm-pilot__aside .wm-pilot-step__body {
+  color: var(--wm-on-dark-muted);
+}
+
+.wm-pilot__aside .wm-pilot-step__marker {
+  border-color: rgba(255, 254, 250, 0.45);
+  color: var(--wm-on-dark-muted);
+}
+
+.wm-pilot__aside .wm-pilot-step--current .wm-pilot-step__marker {
+  border-color: var(--wm-orange);
+  background: var(--wm-orange);
+  color: var(--wm-ink);
+}
+
+.wm-pilot__aside .wm-pilot-step--done .wm-pilot-step__marker {
+  border-color: var(--wm-on-dark);
+  background: var(--wm-on-dark);
+  color: var(--wm-ink);
+}
+
+.wm-pilot-steps--aside {
+  display: none;
+}
+
+/* Received */
+
+.wm-pilot-sent {
+  display: grid;
+  justify-items: start;
+  gap: 32px;
+}
+
+.wm-pilot-sent__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 50%;
+  background: var(--wm-success-soft);
+  color: var(--wm-success);
+  font-size: 1.75rem;
+}
+
+.wm-pilot-sent__message {
+  display: grid;
+  gap: 16px;
+}
+
+.wm-pilot-sent__title {
+  margin: 0;
+  font-family: var(--wm-font-display);
+  font-size: clamp(2.25rem, 1.8rem + 1.2vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.wm-pilot-sent__title:focus {
+  outline: none;
+}
+
+.wm-pilot-sent__body {
+  margin: 0;
+  color: var(--wm-text-body);
+  font-size: 1.0625rem;
+  line-height: 26px;
+}
+
+.wm-pilot-sent__info {
+  display: grid;
+  gap: 16px;
+  inline-size: 100%;
+  padding-block-start: 24px;
+  border-block-start: 1px solid var(--wm-border);
+}
+
+.wm-pilot-sent__info-title {
+  margin: 0;
+  font-family: var(--wm-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.wm-pilot-sent__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  color: var(--wm-text-body);
+  font-size: 1.0625rem;
+  line-height: 26px;
+}
+
+.wm-pilot-sent__row .bi {
+  flex: none;
+  margin-block-start: 3px;
+  font-size: 1.125rem;
+}
+
+.wm-pilot-sent__row a {
+  color: var(--wm-action);
+}
+
+/* Privacy notice facts that come from configuration; a missing one is marked while the notice is a draft. */
+
+.wm-pilot-facts {
+  display: grid;
+  gap: 4px 24px;
+  margin: 0;
+  color: var(--wm-text-body);
+  font-size: 1.0625rem;
+  line-height: 26px;
+}
+
+.wm-pilot-facts dt {
+  color: var(--wm-text);
+  font-weight: 600;
+}
+
+.wm-pilot-facts dd {
+  margin: 0 0 8px;
+}
+
+.wm-pilot-facts__missing {
+  color: var(--wm-warning);
+  font-weight: 600;
+}
+
+@media (max-width: 991.98px) {
+  /* After sending, the phone band keeps only the heading so the received message comes into view. */
+  .wm-pilot__lead--sent {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .wm-pilot-form__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wm-pilot-facts {
+    grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  }
+
+  .wm-pilot-facts dd {
+    margin-block-end: 0;
+  }
+}
+
+@media (min-width: 992px) {
+  .wm-pilot {
+    grid-template-columns: minmax(400px, 600px) minmax(0, 1fr);
+  }
+
+  .wm-pilot__aside {
+    position: sticky;
+    top: 0;
+    justify-content: space-between;
+    block-size: 100svh;
+    padding: 40px clamp(40px, 4vw, 64px);
+  }
+
+  .wm-pilot__photo {
+    inset: 0 0 auto 0;
+    block-size: min(640px, 70%);
+  }
+
+  .wm-pilot__photo img {
+    object-position: 53% 30%;
+  }
+
+  .wm-pilot__photo::after {
+    background: linear-gradient(180deg, rgba(34, 29, 25, 0.3) 0%, rgba(34, 29, 25, 0.18) 30%, rgba(34, 29, 25, 0.55) 60%, rgba(34, 29, 25, 0.88) 86%, var(--wm-ink) 100%);
+  }
+
+  .wm-pilot__brand .wasla-logo--marketing {
+    height: 42px;
+  }
+
+  .wm-pilot__lang--aside,
+  .wm-pilot-steps--below {
+    display: none;
+  }
+
+  .wm-pilot-steps--aside {
+    display: grid;
+  }
+
+  .wm-pilot__heading {
+    padding-block-start: 0;
+  }
+
+  /* The heading and steps sit low in the panel, under the photo's subject. */
+  .wm-pilot__message {
+    margin-block-start: auto;
+  }
+
+  .wm-pilot__lead {
+    color: var(--wm-on-dark);
+  }
+
+  .wm-pilot__main {
+    padding: 40px clamp(32px, 7vw, 100px) 48px;
+  }
+
+  .wm-pilot__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .wm-pilot__content {
+    padding-block-start: 32px;
+  }
+}
+
 /* ---------- Motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {

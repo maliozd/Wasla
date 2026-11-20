@@ -1,0 +1,309 @@
+@model Wasla.Web.Models.Marketing.PilotApplicationViewModel
+@using Microsoft.Extensions.Localization
+@using Wasla.Domain.Entities.Central
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@{
+    var modelState = ViewData.ModelState;
+    bool HasError(string field) => modelState.TryGetValue(field, out var entry) && entry.Errors.Count > 0;
+    string? FirstError(string field) => modelState.TryGetValue(field, out var entry) && entry.Errors.Count > 0 ? entry.Errors[0].ErrorMessage : null;
+    string IdOf(string field) => PilotApplicationViewModel.FieldOrder.First(f => f.Field == field).Id;
+    string? Described(string field, string? hintId = null)
+    {
+        var ids = new[] { hintId, HasError(field) ? $"{IdOf(field)}-error" : null }.Where(id => id is not null);
+        var value = string.Join(' ', ids);
+        return value.Length == 0 ? null : value;
+    }
+    string? Invalid(string field) => HasError(field) ? "true" : null;
+
+    var fieldErrors = PilotApplicationViewModel.FieldOrder
+        .Select(f => (f.Id, Message: FirstError(f.Field)))
+        .Where(e => e.Message is not null)
+        .ToList();
+    var formErrors = modelState.TryGetValue(string.Empty, out var formEntry) ? formEntry.Errors.Select(e => e.ErrorMessage).ToList() : [];
+    var hasFieldErrors = fieldErrors.Count > 0;
+
+    var title = Model.Sent
+        ? L["Pilot.MetaTitleSent"].Value
+        : hasFieldErrors ? L["Pilot.MetaTitleWithErrors"].Value : L["Pilot.MetaTitle"].Value;
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(title, L["Pilot.MetaDescription"].Value, PublicSiteUrls.PilotPath);
+    ViewData[PublicLayoutViewData.StandalonePage] = true;
+
+    var returnUrl = PublicSiteUrls.PilotPath;
+    var failedBody = L["Pilot.Failed.Body"].Value.Split("{0}", 2);
+    var changeDetails = L["Pilot.Sent.ChangeDetails"].Value.Split("{0}", 2);
+
+    // The three steps: before sending the first is current; after it, the first is done and the second is next.
+    var steps = new[]
+    {
+        (Number: "1", Title: Model.Sent ? "Pilot.Step1.DoneTitle" : "Pilot.Step1.Title", Text: Model.Sent ? "Pilot.Step1.DoneText" : "Pilot.Step1.Text", State: Model.Sent ? "done" : "current"),
+        (Number: "2", Title: "Pilot.Step2.Title", Text: "Pilot.Step2.Text", State: Model.Sent ? "current" : "upcoming"),
+        (Number: "3", Title: "Pilot.Step3.Title", Text: "Pilot.Step3.Text", State: "upcoming")
+    };
+    var stepsHeading = Model.Sent ? L["Pilot.NextStepsHeading"].Value : L["Pilot.StepsHeading"].Value;
+}
+@* Pilot restaurant application (WAS-217, Figma "WAS-217 · Pilot Başvuru · Claude Alternatifi": S3–S9). The page draws
+   its own header: a photo panel with the heading and the steps, and the form or the received state beside it. The
+   photo is decorative. No signup, payment or provisioning starts here. *@
+
+<div class="wm-pilot" data-pilot-state="@(Model.Sent ? "sent" : Model.SaveFailed ? "failed" : hasFieldErrors ? "invalid" : "form")">
+    <aside class="wm-pilot__aside wm-on-dark" aria-labelledby="pilot-title">
+        <div class="wm-pilot__photo" aria-hidden="true">
+            <img src="~/images/marketing/pilot-order-screen.jpg" alt="" width="1600" height="1067" fetchpriority="high" />
+        </div>
+        <div class="wm-pilot__bar">
+            <a class="wm-pilot__brand" href="/">
+                @await Html.PartialAsync("_WaslaLogo", new Wasla.Web.Models.Ui.WaslaLogoModel { CssClass = "wasla-logo--marketing" })
+            </a>
+            <div class="wm-pilot__lang wm-pilot__lang--aside">
+                @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-pilot-languages-aside", ShowLanguageName: true))
+            </div>
+        </div>
+        <div class="wm-pilot__message">
+            <div class="wm-pilot__heading">
+                <p class="wm-eyebrow wm-eyebrow--on-dark">@L["Pilot.Eyebrow"]</p>
+                <h1 class="wm-pilot__title" id="pilot-title">@L["Pilot.Title"]</h1>
+                <p class="wm-pilot__lead@(Model.Sent ? " wm-pilot__lead--sent" : string.Empty)">@L["Pilot.Lead"]</p>
+            </div>
+            <section class="wm-pilot-steps wm-pilot-steps--aside" aria-labelledby="pilot-steps-aside-title">
+                <h2 class="wm-pilot-steps__heading" id="pilot-steps-aside-title">@stepsHeading</h2>
+                <ol class="wm-pilot-steps__list">
+                    @foreach (var step in steps)
+                    {
+                        <li class="wm-pilot-step wm-pilot-step--@step.State" aria-current="@(step.State == "current" && !Model.Sent ? "step" : null)">
+                            <span class="wm-pilot-step__marker" aria-hidden="true">@if (step.State == "done") { <i class="bi bi-check-lg"></i> } else { @step.Number }</span>
+                            <span class="wm-pilot-step__text">
+                                <span class="wm-pilot-step__title">@L[step.Title]</span>
+                                <span class="wm-pilot-step__body">@L[step.Text]</span>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            </section>
+        </div>
+        <p class="wm-pilot__credit">@L["Marketing.PhotoCredit", "iMin Technology"]</p>
+    </aside>
+
+    <div class="wm-pilot__main">
+        <div class="wm-pilot__topbar">
+            <a class="wm-pilot__home" href="/"><i class="bi bi-arrow-left wm-flip-rtl" aria-hidden="true"></i>@L["Pilot.Home"]</a>
+            <div class="wm-pilot__lang wm-pilot__lang--main">
+                @await Html.PartialAsync("_PublicLanguageMenu", new PublicLanguageMenuModel(returnUrl, "wm-pilot-languages-main", ShowLanguageName: true))
+            </div>
+        </div>
+
+        <div class="wm-pilot__content">
+            @if (Model.Sent)
+            {
+                <section class="wm-pilot-sent" role="status" aria-labelledby="pilot-sent-title" data-pilot-sent>
+                    <span class="wm-pilot-sent__icon" aria-hidden="true"><i class="bi bi-check2-circle"></i></span>
+                    <div class="wm-pilot-sent__message">
+                        <h2 class="wm-pilot-sent__title" id="pilot-sent-title" tabindex="-1" data-wm-focus-on-load>@L["Pilot.Sent.Title"]</h2>
+                        <p class="wm-pilot-sent__body">@L["Pilot.Sent.Body"]</p>
+                    </div>
+                    <section class="wm-pilot-steps wm-pilot-steps--below" aria-labelledby="pilot-steps-below-title">
+                        <h3 class="wm-pilot-steps__heading" id="pilot-steps-below-title">@stepsHeading</h3>
+                        <ol class="wm-pilot-steps__list">
+                            @foreach (var step in steps)
+                            {
+                                <li class="wm-pilot-step wm-pilot-step--@step.State">
+                                    <span class="wm-pilot-step__marker" aria-hidden="true">@if (step.State == "done") { <i class="bi bi-check-lg"></i> } else { @step.Number }</span>
+                                    <span class="wm-pilot-step__text">
+                                        <span class="wm-pilot-step__title">@L[step.Title]</span>
+                                        <span class="wm-pilot-step__body">@L[step.Text]</span>
+                                    </span>
+                                </li>
+                            }
+                        </ol>
+                    </section>
+                    <div class="wm-pilot-sent__info">
+                        <h3 class="wm-pilot-sent__info-title">@L["Pilot.Sent.InfoHeading"]</h3>
+                        <p class="wm-pilot-sent__row"><i class="bi bi-info-circle" aria-hidden="true"></i><span>@L["Pilot.Sent.NoAccount"]</span></p>
+                        <p class="wm-pilot-sent__row"><i class="bi bi-envelope" aria-hidden="true"></i><span>@changeDetails[0]<a href="mailto:@PublicSiteUrls.ContactEmail" class="wm-ltr">@PublicSiteUrls.ContactEmail</a>@(changeDetails.Length > 1 ? changeDetails[1] : string.Empty)</span></p>
+                    </div>
+                    <div>
+                        <a class="wm-btn wm-btn--secondary" href="/">@L["Pilot.Sent.Home"] <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></a>
+                    </div>
+                </section>
+            }
+            else
+            {
+                <form class="wm-pilot-form" id="pilot-form" method="post" action="@PublicSiteUrls.PilotPath" aria-labelledby="pilot-form-title" novalidate
+                      data-wm-submit-once data-wm-sending-label="@L["Pilot.Form.Sending"]">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmissionId" value="@Model.SubmissionId" />
+                    <div class="wm-pilot-form__head">
+                        <h2 class="wm-pilot-form__title" id="pilot-form-title">@L["Pilot.Form.Title"]</h2>
+                        <p class="wm-pilot-form__hint" id="pilot-required-hint">@L["Pilot.Form.RequiredHint"]</p>
+                    </div>
+
+                    @if (hasFieldErrors)
+                    {
+                        <div class="wm-pilot-summary" id="pilot-error-summary" tabindex="-1" aria-labelledby="pilot-error-summary-title" data-wm-focus-on-load>
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                            <div>
+                                <h3 class="wm-pilot-summary__title" id="pilot-error-summary-title">@L["Pilot.Errors.Title"]</h3>
+                                <ul class="wm-pilot-summary__list">
+                                    @foreach (var error in fieldErrors)
+                                    {
+                                        <li><a href="#@error.Id">@error.Message</a></li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.SaveFailed)
+                    {
+                        <div class="wm-pilot-alert" id="pilot-failed" role="alert" tabindex="-1" data-pilot-failed data-wm-focus-on-load>
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                            <div>
+                                <p class="wm-pilot-alert__title">@L["Pilot.Failed.Title"]</p>
+                                <p class="wm-pilot-alert__body">@failedBody[0]<a href="mailto:@PublicSiteUrls.ContactEmail" class="wm-ltr">@PublicSiteUrls.ContactEmail</a>@(failedBody.Length > 1 ? failedBody[1] : string.Empty)</p>
+                            </div>
+                        </div>
+                    }
+                    else if (formErrors.Count > 0)
+                    {
+                        <div class="wm-pilot-alert" id="pilot-form-errors" role="alert" tabindex="-1" data-wm-focus-on-load>
+                            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                            <div>
+                                @foreach (var error in formErrors)
+                                {
+                                    <p class="wm-pilot-alert__body">@error</p>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <fieldset class="wm-pilot-form__group">
+                        <legend class="wm-pilot-form__legend">@L["Pilot.Form.RestaurantLegend"]</legend>
+                        <div class="wm-pilot-form__row">
+                            <div class="wm-form-field">
+                                <label class="wm-form-field__label" for="pilot-restaurant-name">@L["Pilot.Form.RestaurantName"]</label>
+                                <input class="wm-input" id="pilot-restaurant-name" name="RestaurantName" type="text" value="@Model.RestaurantName"
+                                       placeholder="@L["Pilot.Form.RestaurantNamePlaceholder"]" autocomplete="organization" required
+                                       maxlength="@ContactMessageLimits.RestaurantNameMaxLength" aria-invalid="@Invalid(nameof(Model.RestaurantName))"
+                                       aria-describedby="@Described(nameof(Model.RestaurantName))" />
+                                @if (HasError(nameof(Model.RestaurantName)))
+                                {
+                                    <span class="wm-form-field__error" id="pilot-restaurant-name-error">@FirstError(nameof(Model.RestaurantName))</span>
+                                }
+                            </div>
+                            <div class="wm-form-field">
+                                <label class="wm-form-field__label" for="pilot-city">@L["Pilot.Form.City"]</label>
+                                <select class="wm-input wm-select" id="pilot-city" name="CityPlateCode" required autocomplete="address-level1"
+                                        aria-invalid="@Invalid(nameof(Model.CityPlateCode))" aria-describedby="@Described(nameof(Model.CityPlateCode))">
+                                    <option value="" selected="@string.IsNullOrEmpty(Model.CityPlateCode)">@L["Pilot.Form.CityPlaceholder"]</option>
+                                    @foreach (var province in Model.Provinces)
+                                    {
+                                        <option value="@province.PlateCode" selected="@(province.PlateCode == Model.CityPlateCode?.Trim())">@province.Name</option>
+                                    }
+                                </select>
+                                @if (HasError(nameof(Model.CityPlateCode)))
+                                {
+                                    <span class="wm-form-field__error" id="pilot-city-error">@FirstError(nameof(Model.CityPlateCode))</span>
+                                }
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="wm-pilot-form__group">
+                        <legend class="wm-pilot-form__legend">@L["Pilot.Form.ContactLegend"]</legend>
+                        <div class="wm-form-field">
+                            <label class="wm-form-field__label" for="pilot-contact-name">@L["Pilot.Form.ContactName"]</label>
+                            <input class="wm-input" id="pilot-contact-name" name="ContactName" type="text" value="@Model.ContactName"
+                                   placeholder="@L["Pilot.Form.ContactNamePlaceholder"]" autocomplete="name" required
+                                   maxlength="@ContactMessageLimits.FullNameMaxLength" aria-invalid="@Invalid(nameof(Model.ContactName))"
+                                   aria-describedby="@Described(nameof(Model.ContactName))" />
+                            @if (HasError(nameof(Model.ContactName)))
+                            {
+                                <span class="wm-form-field__error" id="pilot-contact-name-error">@FirstError(nameof(Model.ContactName))</span>
+                            }
+                        </div>
+                        <div class="wm-pilot-form__row">
+                            <div class="wm-form-field">
+                                <label class="wm-form-field__label" for="pilot-phone">@L["Pilot.Form.Phone"]</label>
+                                <div class="wm-phone@(HasError(nameof(Model.Phone)) ? " wm-phone--invalid" : string.Empty)" dir="ltr">
+                                    <span class="wm-phone__prefix" aria-hidden="true">+90</span>
+                                    <input class="wm-input" id="pilot-phone" name="Phone" type="tel" inputmode="tel" value="@Model.Phone"
+                                           placeholder="532 123 45 67" autocomplete="tel-national" maxlength="32" required
+                                           aria-invalid="@Invalid(nameof(Model.Phone))" aria-describedby="@Described(nameof(Model.Phone), "pilot-phone-hint")" />
+                                </div>
+                                <span class="wm-pilot-form__help" id="pilot-phone-hint">@L["Pilot.Form.PhoneHint"]</span>
+                                @if (HasError(nameof(Model.Phone)))
+                                {
+                                    <span class="wm-form-field__error" id="pilot-phone-error">@FirstError(nameof(Model.Phone))</span>
+                                }
+                            </div>
+                            <div class="wm-form-field">
+                                <label class="wm-form-field__label" for="pilot-email">@L["Pilot.Form.Email"]</label>
+                                <input class="wm-input" id="pilot-email" name="Email" type="email" value="@Model.Email" dir="ltr"
+                                       placeholder="@L["Pilot.Form.EmailPlaceholder"]" autocomplete="email" required
+                                       maxlength="@ContactMessageLimits.EmailMaxLength" aria-invalid="@Invalid(nameof(Model.Email))"
+                                       aria-describedby="@Described(nameof(Model.Email))" />
+                                @if (HasError(nameof(Model.Email)))
+                                {
+                                    <span class="wm-form-field__error" id="pilot-email-error">@FirstError(nameof(Model.Email))</span>
+                                }
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="wm-form-field">
+                        <label class="wm-form-field__label" for="pilot-note">@L["Pilot.Form.Note"]</label>
+                        <textarea class="wm-textarea" id="pilot-note" name="Note" rows="5"
+                                  placeholder="@L["Pilot.Form.NotePlaceholder"]" maxlength="@ContactMessageLimits.MessageMaxLength"
+                                  aria-invalid="@Invalid(nameof(Model.Note))" aria-describedby="@Described(nameof(Model.Note))">@Model.Note</textarea>
+                        @if (HasError(nameof(Model.Note)))
+                        {
+                            <span class="wm-form-field__error" id="pilot-note-error">@FirstError(nameof(Model.Note))</span>
+                        }
+                    </div>
+
+                    @* The privacy notice, before anything is sent. Information, not consent: there is no checkbox. *@
+                    <div class="wm-pilot-privacy" id="pilot-privacy">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        <div>
+                            <p class="wm-pilot-privacy__title">@L["Pilot.Form.PrivacyTitle"]</p>
+                            <p class="wm-pilot-privacy__body">@L["Pilot.Form.PrivacyText"]</p>
+                            <a class="wm-pilot-privacy__link" href="@PublicSiteUrls.PilotPrivacyNoticePath" target="_blank" rel="noopener">@L["Pilot.Form.PrivacyLink"]<span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span> <i class="bi bi-arrow-up-right wm-flip-rtl" aria-hidden="true"></i></a>
+                        </div>
+                    </div>
+
+                    @* Left empty by people; hidden from sight, keyboard and assistive technology. *@
+                    <div class="wm-visually-hidden" aria-hidden="true">
+                        <label for="pilot-website">@L["Contact.Form.HoneypotLabel"]</label>
+                        <input type="text" id="pilot-website" name="Website" value="" tabindex="-1" autocomplete="off" />
+                    </div>
+
+                    <div class="wm-pilot-form__submit">
+                        <button class="wm-btn wm-btn--primary" type="submit" data-wm-submit-label>@(Model.SaveFailed ? L["Pilot.Form.Resubmit"] : L["Pilot.Form.Submit"]) <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i></button>
+                    </div>
+                </form>
+
+                <section class="wm-pilot-steps wm-pilot-steps--below" aria-labelledby="pilot-steps-below-title">
+                    <h2 class="wm-pilot-steps__heading" id="pilot-steps-below-title">@stepsHeading</h2>
+                    <ol class="wm-pilot-steps__list">
+                        @foreach (var step in steps)
+                        {
+                            <li class="wm-pilot-step wm-pilot-step--@step.State">
+                                <span class="wm-pilot-step__marker" aria-hidden="true">@step.Number</span>
+                                <span class="wm-pilot-step__text">
+                                    <span class="wm-pilot-step__title">@L[step.Title]</span>
+                                    <span class="wm-pilot-step__body">@L[step.Text]</span>
+                                </span>
+                            </li>
+                        }
+                    </ol>
+                </section>
+            }
+        </div>
+
+        <footer class="wm-pilot__footer">
+            <p>@L["Marketing.Footer.Copyright", DateTime.UtcNow.Year]</p>
+            <a href="mailto:@PublicSiteUrls.ContactEmail" class="wm-ltr">@PublicSiteUrls.ContactEmail</a>
+            <a href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer"><span class="wm-visually-hidden">Instagram: </span><span dir="ltr">@@@PublicSiteUrls.InstagramHandle</span><span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span></a>
+        </footer>
+    </div>
+</div>

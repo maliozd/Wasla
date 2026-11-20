@@ -12,4 +12,7 @@ public static class ContactMessageLimits
 
     public const int MessageMaxLength = 2000;
     public const int CultureMaxLength = 10;
+
+    /// <summary>A Turkish province as its two-digit plate code, <c>01</c> to <c>81</c> (pilot applications only).</summary>
+    public const int CityPlateCodeLength = 2;
 }

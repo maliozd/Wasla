@@ -36,6 +36,12 @@ public static class AuthenticationRateLimitPolicies
     public const string ContactSubmission = "contact-submission";
 
     /// <summary>
+    /// The anonymous pilot restaurant application, <c>POST /pilot</c> (WAS-217), which stores an application and sends
+    /// an email. Partitioned by client network.
+    /// </summary>
+    public const string PilotApplication = "pilot-application";
+
+    /// <summary>
     /// Registration draft writes (WAS-192): the section saves under <c>/signup/draft</c> and the owner phone change.
     /// Partitioned by client network.
     /// </summary>
@@ -82,6 +88,8 @@ public sealed class AuthenticationRateLimitOptions
 
     public AuthenticationRateLimitRule ContactSubmission { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromHours(1) };
 
+    public AuthenticationRateLimitRule PilotApplication { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromHours(1) };
+
     public AuthenticationRateLimitRule SignupDraftSave { get; set; } = new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(10) };
 
     public AuthenticationRateLimitRule SignupDraftCreation { get; set; } = new() { PermitLimit = 20, Window = TimeSpan.FromHours(1) };
@@ -100,6 +108,7 @@ public sealed class AuthenticationRateLimitOptions
         AuthenticationRateLimitPolicies.SignupSubmission => SignupSubmission,
         AuthenticationRateLimitPolicies.SignupCheckout => SignupCheckout,
         AuthenticationRateLimitPolicies.ContactSubmission => ContactSubmission,
+        AuthenticationRateLimitPolicies.PilotApplication => PilotApplication,
         AuthenticationRateLimitPolicies.SignupDraftSave => SignupDraftSave,
         AuthenticationRateLimitPolicies.SignupDraftCreation => SignupDraftCreation,
         AuthenticationRateLimitPolicies.SignupPhoneSend => SignupPhoneSend,
@@ -137,6 +146,7 @@ public sealed class AuthenticationRateLimitOptionsValidator : IValidateOptions<A
         Check(options.SignupSubmission, nameof(AuthenticationRateLimitOptions.SignupSubmission), failures);
         Check(options.SignupCheckout, nameof(AuthenticationRateLimitOptions.SignupCheckout), failures);
         Check(options.ContactSubmission, nameof(AuthenticationRateLimitOptions.ContactSubmission), failures);
+        Check(options.PilotApplication, nameof(AuthenticationRateLimitOptions.PilotApplication), failures);
         Check(options.SignupDraftSave, nameof(AuthenticationRateLimitOptions.SignupDraftSave), failures);
         Check(options.SignupDraftCreation, nameof(AuthenticationRateLimitOptions.SignupDraftCreation), failures);
         Check(options.SignupPhoneSend, nameof(AuthenticationRateLimitOptions.SignupPhoneSend), failures);
