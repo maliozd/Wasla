@@ -180,11 +180,16 @@ public sealed class SetupInstanceChannelTests
     [Fact]
     public async Task Listener_DropsAClientThatNeverFinishesItsMessage()
     {
-        using var listener = Listener.Start(readTimeout: TimeSpan.FromMilliseconds(300));
+        // Only the stalled client's read limit expires, when the test expires it. On a real clock the forwarding client
+        // also had to close within the limit, and a slow runner lost its link although TrySend reported it delivered.
+        var readLimits = new ManualReadLimits();
+        using var listener = Listener.Start(readLimits: readLimits);
 
         using var stalled = new NamedPipeClientStream(".", listener.PipeName, PipeDirection.Out, PipeOptions.CurrentUserOnly);
         stalled.Connect((int)ConnectTimeout.TotalMilliseconds);
         stalled.Write(Encoding.UTF8.GetBytes("wasla-printbridge://setup?server="));
+        (await readLimits.NextStartedAsync()).Expire();
+        await listener.Logs.WaitForAsync("did not finish its message in time");
 
         Assert.Equal(SetupForwardResult.Delivered, SetupInstanceChannel.TrySend(FakeLink, listener.PipeName, ConnectTimeout));
         Assert.Equal(FakeLink, await listener.NextAsync());
@@ -288,10 +293,10 @@ public sealed class SetupInstanceChannelTests
         private readonly ConcurrentQueue<string> _received = new();
         private readonly SemaphoreSlim _arrived = new(0);
 
-        private Listener(string pipeName, TimeSpan readTimeout)
+        private Listener(string pipeName, TimeProvider? readLimits)
         {
             PipeName = pipeName;
-            _channel = new SetupInstanceChannel(Logs, pipeName, readTimeout);
+            _channel = new SetupInstanceChannel(Logs, pipeName, TimeSpan.FromSeconds(5), readLimits);
             _channel.UriReceived += uri =>
             {
                 _received.Enqueue(uri);
@@ -306,8 +311,8 @@ public sealed class SetupInstanceChannelTests
 
         public IReadOnlyCollection<string> Received => _received.ToArray();
 
-        public static Listener Start(string? pipeName = null, TimeSpan? readTimeout = null) =>
-            new(pipeName ?? UniquePipeName(), readTimeout ?? TimeSpan.FromSeconds(5));
+        public static Listener Start(string? pipeName = null, TimeProvider? readLimits = null) =>
+            new(pipeName ?? UniquePipeName(), readLimits);
 
         public async Task<string> NextAsync()
         {
@@ -316,6 +321,54 @@ public sealed class SetupInstanceChannelTests
         }
 
         public void Dispose() => _channel.Dispose();
+    }
+
+    /// <summary>
+    /// Read limits that expire only when the test expires them. The listener starts one for each connection it reads.
+    /// </summary>
+    private sealed class ManualReadLimits : TimeProvider
+    {
+        private readonly ConcurrentQueue<ReadLimit> _started = new();
+        private readonly SemaphoreSlim _startedSignal = new(0);
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var limit = new ReadLimit(callback, state);
+            _started.Enqueue(limit);
+            _startedSignal.Release();
+            return limit;
+        }
+
+        /// <summary>The read limit of the next connection the listener reads, once the listener has started it.</summary>
+        public async Task<ReadLimit> NextStartedAsync()
+        {
+            Assert.True(
+                await _startedSignal.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken),
+                "The listener started no read limit.");
+            Assert.True(_started.TryDequeue(out var limit));
+            return limit;
+        }
+    }
+
+    private sealed class ReadLimit(TimerCallback callback, object? state) : ITimer
+    {
+        private int _disposed;
+
+        public void Expire()
+        {
+            Assert.Equal(0, Volatile.Read(ref _disposed));
+            callback(state);
+        }
+
+        public bool Change(TimeSpan dueTime, TimeSpan period) => Volatile.Read(ref _disposed) == 0;
+
+        public void Dispose() => Interlocked.Exchange(ref _disposed, 1);
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
     }
 
     internal sealed class CapturingLogger : ILogger
