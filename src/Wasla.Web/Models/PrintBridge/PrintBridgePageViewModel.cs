@@ -10,10 +10,10 @@ public sealed class PrintBridgePageViewModel
     public IReadOnlyList<PrintBridgeDeviceRowViewModel> Devices { get; set; } =
         Array.Empty<PrintBridgeDeviceRowViewModel>();
 
-    public int AllowedActiveDeviceCount { get; set; } = 3;
     public int ActiveDeviceCount { get; set; }
-    public bool CanCreateActiveDevice { get; set; } = true;
-    public bool ActiveCountExceedsLimit { get; set; }
+
+    /// <summary>Active devices that are online now (the connection status calculator's "Connected").</summary>
+    public int ConnectedDeviceCount { get; set; }
 
     public int PrintJobsTodayCount { get; set; }
 

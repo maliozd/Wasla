@@ -455,31 +455,59 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Exchange_NewDeviceMode_QuotaExceeded_ReturnsNullAndLeavesNoDevice()
+    public async Task Exchange_NewDeviceMode_BeyondThreeActiveDevices_CreatesAWorkingDevice()
     {
-        // Fill the device quota (allowed = 3; 1 already created in constructor).
-        await _devices.CreateDeviceAsync(_tenantId, "Device 2", CancellationToken.None);
-        await _devices.CreateDeviceAsync(_tenantId, "Device 3", CancellationToken.None);
+        // Four active devices already (one from the constructor): more than the retired limit of three.
+        for (var i = 2; i <= 4; i++)
+            await _devices.CreateDeviceAsync(_tenantId, $"Device {i}", CancellationToken.None);
 
-        var deviceCountBefore = await _db.PrintBridgeDevices
-            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+        for (var round = 1; round <= 3; round++)
+        {
+            var created = await _service.CreateSessionAsync(
+                _tenantId, PrintBridgeSetupMode.NewDevice,
+                null, ServerUrl, null,
+                confirmReplaceActiveToken: false, CancellationToken.None);
+            var clientInfo = new PrintBridgeSetupClientInfo($"Station {round}", "1.0.0", "POS-80", Guid.NewGuid());
 
-        var created = await _service.CreateSessionAsync(
-            _tenantId, PrintBridgeSetupMode.NewDevice,
-            null, ServerUrl, null,
+            var result = await _service.ExchangeAsync(created.Code, clientInfo, CancellationToken.None);
+
+            Assert.NotNull(result);
+            var status = await _service.GetStatusAsync(_tenantId, created.SessionId, CancellationToken.None);
+            Assert.NotEqual(PrintBridgeSetupSessionStatus.Failed, status!.Status);
+            var authenticated = await auth.AuthenticateAsync(
+                result!.DeviceToken,
+                new PrintBridgeClientInfo($"Station {round}", "1.0.0", "POS-80", "127.0.0.1", clientInfo.InstallationId),
+                CancellationToken.None);
+            Assert.NotNull(authenticated);
+            Assert.Equal(_tenantId, authenticated!.TenantId);
+        }
+
+        var active = await _db.PrintBridgeDevices
+            .CountAsync(d => d.TenantId == _tenantId && d.IsActive && d.RemovedAtUtc == null, TestContext.Current.CancellationToken);
+        Assert.Equal(7, active);
+    }
+
+    [Fact]
+    public async Task Exchange_NewDeviceMode_BeyondThreeActiveDevices_StillRefusesAnInstallationAlreadyRegistered()
+    {
+        for (var i = 2; i <= 4; i++)
+            await _devices.CreateDeviceAsync(_tenantId, $"Device {i}", CancellationToken.None);
+        var installationId = Guid.NewGuid();
+        var first = await _service.CreateSessionAsync(
+            _tenantId, PrintBridgeSetupMode.NewDevice, null, ServerUrl, null,
             confirmReplaceActiveToken: false, CancellationToken.None);
+        Assert.NotNull(await _service.ExchangeAsync(
+            first.Code, new PrintBridgeSetupClientInfo("Kitchen", "1.0.0", null, installationId), CancellationToken.None));
+        var countBefore = await _db.PrintBridgeDevices.CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
 
-        // Exchange is attempted when quota is already at the limit.
-        var result = await _service.ExchangeAsync(created.Code, EmptyClientInfo(), CancellationToken.None);
+        var second = await _service.CreateSessionAsync(
+            _tenantId, PrintBridgeSetupMode.NewDevice, null, ServerUrl, null,
+            confirmReplaceActiveToken: false, CancellationToken.None);
+        await Assert.ThrowsAsync<PrintBridgeSetupInstallationAlreadyRegisteredException>(() => _service.ExchangeAsync(
+            second.Code, new PrintBridgeSetupClientInfo("Kitchen again", "1.0.0", null, installationId), CancellationToken.None));
 
-        var deviceCountAfter = await _db.PrintBridgeDevices
-            .CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken);
-
-        Assert.Null(result);
-        Assert.Equal(deviceCountBefore, deviceCountAfter); // no device leaked
-
-        var status = await _service.GetStatusAsync(_tenantId, created.SessionId, CancellationToken.None);
-        Assert.Equal(PrintBridgeSetupSessionStatus.Failed, status!.Status);
+        Assert.Equal(countBefore, await _db.PrintBridgeDevices.CountAsync(d => d.TenantId == _tenantId, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -558,7 +586,7 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Exchange_NewDeviceMode_ConcurrentExchanges_DoNotExceedQuotaWithSqliteProvider()
+    public async Task Exchange_NewDeviceMode_ConcurrentExchanges_EachBindOneOwnDeviceWithSqliteProvider()
     {
         var databaseName = $"wasla_print_bridge_concurrency_{Guid.NewGuid():N}";
         var connectionString = $"Data Source={databaseName};Mode=Memory;Cache=Shared";
@@ -603,15 +631,24 @@ public sealed class PrintBridgeSetupSessionServiceTests : IDisposable
             ExchangeWithNewContextAsync(options, code1),
             ExchangeWithNewContextAsync(options, code2));
 
+        // No count limits the exchanges. SQLite may still refuse a writer that runs into the other's write; whatever
+        // succeeds created exactly one device of its own and bound only its own session (SQL Server's concurrent writers
+        // are covered by PrintBridgeDeviceConcurrencySqlServerTests).
         await using var verifyDb = new CentralDbContext(options);
-        var activeCount = await verifyDb.PrintBridgeDevices
-            .CountAsync(d => d.TenantId == tenantId && d.IsActive, TestContext.Current.CancellationToken);
-        var boundNewSessions = await verifyDb.PrintBridgeSetupSessions
-            .CountAsync(s => s.TenantId == tenantId && s.PrintBridgeDeviceId != null, TestContext.Current.CancellationToken);
+        var newDevices = await verifyDb.PrintBridgeDevices
+            .Where(d => d.TenantId == tenantId && d.InstallationId != null)
+            .Select(d => d.Id)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        var boundDevices = await verifyDb.PrintBridgeSetupSessions
+            .Where(s => s.TenantId == tenantId && s.PrintBridgeDeviceId != null)
+            .Select(s => s.PrintBridgeDeviceId!.Value)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(exchanges.Count(r => r is not null) <= 1);
-        Assert.True(activeCount <= PrintBridgeDeviceLimits.AllowedActiveDeviceCount);
-        Assert.Equal(1, boundNewSessions);
+        var succeeded = exchanges.Count(r => r is not null);
+        Assert.InRange(succeeded, 1, 2);
+        Assert.Equal(succeeded, newDevices.Count);
+        Assert.Equal(newDevices.Order(), boundDevices.Order());
+        Assert.Equal(boundDevices.Count, boundDevices.Distinct().Count());
 
         async Task<PrintBridgeSetupExchangeResult?> ExchangeWithNewContextAsync(
             DbContextOptions<CentralDbContext> dbOptions,

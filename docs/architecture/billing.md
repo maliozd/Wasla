@@ -27,7 +27,7 @@ CentralDb is the only store of Wasla subscription identity and SaaS billing stat
 | `Tenant` | Linked once the registration is provisioned and names that tenant (`LinkTenantAsync`) |
 | `SubscriptionStatus` | The subscription state, extended with `Pending` (6) and `ReconciliationRequired` (7). `None` and `Trialing` stay tenant-level values that a billing subscription never holds |
 | `WaslaPlanCodes`, `Monthly`/`Yearly` | The plan and period vocabulary of signup, and the key of `BillingPlanPrices` |
-| `WaslaPlanCatalog` | Plan names, features, order and recommendation, and today also a device count and device-limit label per plan and Enterprise's contact-sales "starting from" label, both retired by [Plans and packaging](#plans-and-packaging). It holds no self-service price |
+| `WaslaPlanCatalog` | Plan names, features, order and recommendation, and Enterprise's custom-pricing label (`Pricing.ContactSales`). It holds no price and no printer or device count ([Plans and packaging](#plans-and-packaging)) |
 | `TenantMembership` | Not reused for billing. It requires a tenant (none exists during checkout), it is deleted with the tenant (billing evidence must survive) and it has no environment, provider references or price snapshot. It keeps its current role |
 | `Tenant.SubscriptionStatus`, `Tenant.BillingPaymentStatus` | Unchanged. Provisioning sets `Trialing` and `Paid`; nothing reads them. Whether entitlement projects the billing state onto them is WAS-151 |
 
@@ -54,7 +54,7 @@ Source: `SubscriptionStatusTransitions`. Every other move, including any to `Non
 
 ## Plans and packaging
 
-Product decision of 2026-11-17. It sets the target. The code still behaves as described under [Current behavior](#current-behavior), and the remaining code work is listed under [Known discrepancies](#known-discrepancies).
+Product decision of 2026-11-17. The device limit and the count tiers it retires were removed from the code afterwards; what the code does now is under [Current behavior](#current-behavior), and what is still open under [Known discrepancies](#known-discrepancies).
 
 ### Approved target
 
@@ -66,10 +66,12 @@ Product decision of 2026-11-17. It sets the target. The code still behaves as de
 
 ### Current behavior
 
-- **Device limit.** Every tenant, whatever its plan, may have at most 3 active Print Bridge devices (`PrintBridgeDeviceLimits.AllowedActiveDeviceCount`); the plan is not read. Where it is checked: [print-bridge.md](../integrations/print-bridge.md#device-identity).
-- **Device tiers.** `WaslaPlanCatalog` still gives each plan an included device count (Starter 1, Pro 3, Pro+ 10, Enterprise none) and a device-limit label, which the marketing pricing cards and the signup plan summary show. The counts are text only; nothing enforces them.
-- **Printers.** Each Print Bridge installation prints to one selected printer (`PrintBridgeOptions.PrinterName`). There is no separate printer count, so today the number of printers is bounded only through the device limit.
-- **Enterprise price.** The Enterprise card and the signup summary show a "starting from" label (`Pricing.Plan.Enterprise.Price` with `IsStartingFromPrice`; "Starting from 2,500 TL / month" in en-US).
+- **No device limit.** No code counts a tenant's active Print Bridge devices against a number. The new-device exchange, a move (WAS-91), and the Web panel's create and reactivate add a device whatever the tenant already has; the `device_limit_reached` refusal, `PrintBridgeDeviceLimitReachedException`, the device quota of the Devices page and their texts are gone, in Web and in Print Bridge. No technical ceiling replaces the count.
+- **Protections kept.** Those four writers still take the tenant's setup lock (with the installation lock first for the exchange and the move), because it serializes them with the session's end and the development tenant reset, and the installation lock keeps one computer registered to one tenant. Device-token authentication, revocation (token regeneration, removal, deactivation), tenant-scoped management, the move's proofs, the setup code's single use and expiry, and the rate limits are unchanged. Details: [print-bridge.md](../integrations/print-bridge.md#device-identity).
+- **No count tiers.** `WaslaPlanDefinition` has no included device count, device-limit label or "starting from" flag. The marketing pricing cards and the signup plan summary show no printer or device count, and the plan features no longer list one (Pro+'s "more flexible device usage" went with the 10-device tier).
+- **Printers.** Each Print Bridge installation prints to one selected printer (`PrintBridgeOptions.PrinterName`). There is no separate printer count, and no count bounds the number of installations.
+- **Operational counts.** The Devices page shows the active devices and the devices online now; Central Admin shows a tenant's devices 50 per page, with counts over all of them ([tenant-operations-center.md](../operations/tenant-operations-center.md)). They describe the devices; none is a limit.
+- **Enterprise price.** The Enterprise card (both periods) and the signup summary show the custom-pricing label (`Pricing.ContactSales`: "Özel fiyat", "Custom pricing"), never an amount.
 - **Enterprise enquiries.** Signup refuses Enterprise (`Signup.EnterpriseContactOnly`), and its card links to the contact page. While the marketing site is in coming-soon mode (`Wasla:MarketingSite:FullSiteEnabled` is `false`), neither the pricing cards nor `/contact` are published.
 
 ## Plan prices
@@ -239,11 +241,7 @@ Once entered, every public page shows them without a code change. The Developmen
 ## Known discrepancies
 
 - **Tenant status fields.** `Tenant.SubscriptionStatus` and `Tenant.BillingPaymentStatus` are written at provisioning (`Trialing`, `Paid`) and never read. They are not the billing source of truth.
-- **Device count limit and tiers.** The code still applies what [Plans and packaging](#plans-and-packaging) retires. This is follow-up work; the decision itself changed no code.
-  - Enforcement: `PrintBridgeDeviceLimits.AllowedActiveDeviceCount`, counted by `PrintBridgeDeviceQuota`, in `PrintBridgeSetupSessionService.CreateAndBindNewDeviceAsync` (new-device exchange), `CheckDestinationAsync` in `PrintBridgeSetupSessionService.Transfer` (move) and `PrintBridgeDeviceManagementService` `CreateDeviceInternalAsync` and `SetDeviceActiveAsync` (Web panel create and reactivate). The `TODO` in `PrintBridgeDeviceLimits` plans per-plan enforcement, which the decision replaces.
-  - Refusals and texts: the `device_limit_reached` reply of `PrintBridgeSetupApiController`, `PrintBridgeController`'s handling of `PrintBridgeDeviceLimitReachedException`, the quota on the Devices page (`PrintBridge.DeviceLimitNote`, `PrintBridge.DeviceLimitReached` and `PrintBridge.DeviceLimitExceededWarning`, which also promise a paid add-on) and Print Bridge's `Auto.DeviceLimitReached`.
-  - Tiers and price: `WaslaPlanDefinition.IncludedPrintBridgeDevices`, `DeviceLimitKey` and `IsStartingFromPrice`, the `Pricing.Plan.*.DeviceLimit` and device-count feature strings, and `Pricing.Plan.Enterprise.Price`.
-  - Open: whether abuse protection needs a technical ceiling in place of the commercial count.
+- **Multi-branch wording.** The Enterprise card still lists "Çoklu şube desteği" / "Multi-branch support" (`Pricing.Plan.Enterprise.Feature2`) and the signup plan step asks "Birden fazla şube veya özel entegrasyon mu gerekiyor?" (`Signup.Flow.EnterpriseQuestion`), although multi-branch is planned, not built. Changing product claims was outside the device-limit work; the wording is a separate decision.
 
 ## Tests
 

@@ -102,6 +102,41 @@ internal sealed class SqlCommandCounter : DbCommandInterceptor
     }
 }
 
+/// <summary>
+/// Records each query a context runs: its text and query tag, its parameters and the bytes of their values (a list of ids
+/// sent to the database would grow them), and how many reads EF made on its result (each row, plus the read that finds the
+/// end).
+/// </summary>
+internal sealed class SqlStatementRecorder : DbCommandInterceptor
+{
+    private readonly ConcurrentQueue<RecordedStatement> _statements = new();
+
+    public IReadOnlyList<RecordedStatement> Statements => _statements.ToArray();
+
+    public override InterceptionResult DataReaderDisposing(DbCommand command, DataReaderDisposingEventData eventData, InterceptionResult result)
+    {
+        var parameterBytes = command.Parameters.Cast<DbParameter>()
+            .Sum(p => System.Text.Encoding.UTF8.GetByteCount(
+                Convert.ToString(p.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty));
+        _statements.Enqueue(new RecordedStatement(
+            command.CommandText,
+            TagOf(command.CommandText),
+            command.Parameters.Count,
+            parameterBytes,
+            eventData.ReadCount));
+        return result;
+    }
+
+    private static string? TagOf(string sql) =>
+        sql.StartsWith("-- ", StringComparison.Ordinal) ? sql[3..sql.IndexOf('\n', StringComparison.Ordinal)].Trim() : null;
+}
+
+internal sealed record RecordedStatement(string Sql, string? Tag, int ParameterCount, int ParameterBytes, int Reads)
+{
+    public bool ReadsDevices =>
+        Sql.Contains("\"PrintBridgeDevices\"", StringComparison.Ordinal) || Sql.Contains("[PrintBridgeDevices]", StringComparison.Ordinal);
+}
+
 /// <summary>A file-backed SQLite CentralDb for one test.</summary>
 internal sealed class CentralTestDatabase : IDisposable
 {
@@ -126,6 +161,9 @@ internal sealed class CentralTestDatabase : IDisposable
             builder.AddInterceptors(Counter);
         return new CentralDbContext(builder.Options);
     }
+
+    public CentralDbContext CreateContextWith(params IInterceptor[] interceptors) =>
+        new(new DbContextOptionsBuilder<CentralDbContext>().UseSqlite(ConnectionString).AddInterceptors(interceptors).Options);
 
     public Tenant AddTenant(
         string slug,
@@ -171,6 +209,27 @@ internal sealed class CentralTestDatabase : IDisposable
 
         db.SaveChanges();
         return tenant;
+    }
+
+    /// <summary>Adds <paramref name="count"/> active devices in one save, named "Bulk 0000" onwards.</summary>
+    public void AddDevices(Guid tenantId, int count, DateTime? lastSeenAt)
+    {
+        using var db = CreateContext();
+        for (var i = 0; i < count; i++)
+        {
+            db.PrintBridgeDevices.Add(new PrintBridgeDevice
+            {
+                TenantId = tenantId,
+                Name = $"Bulk {i:0000}",
+                TokenHash = SecretMarkers.TokenHash + Guid.NewGuid().ToString("N"),
+                IsActive = true,
+                LastSeenAt = lastSeenAt,
+                AppVersion = "1.4.2",
+                InstallationId = Guid.NewGuid()
+            });
+        }
+
+        db.SaveChanges();
     }
 
     public void AddDevice(Guid tenantId, string name, bool isActive, DateTime? lastSeenAt, DateTime? removedAt = null)

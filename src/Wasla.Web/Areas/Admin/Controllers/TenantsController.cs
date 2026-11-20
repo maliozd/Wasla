@@ -78,13 +78,14 @@ public sealed class TenantsController : Controller
         }
     }
 
+    /// <param name="devicesPage">The page of the Print Bridge device list (1-based); a page that does not exist shows the nearest one.</param>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Details(Guid id, [FromQuery] int? devicesPage, CancellationToken ct)
     {
         TenantOperationsDetail? detail;
         try
         {
-            detail = await _operations.GetTenantDetailAsync(id, ct).ConfigureAwait(false);
+            detail = await _operations.GetTenantDetailAsync(id, devicesPage ?? 1, ct).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

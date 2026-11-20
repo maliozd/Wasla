@@ -6,7 +6,6 @@
   if (!cfg) return;
 
   var messages = cfg.messages || {};
-  var lastQuota = null;
   var reprintInFlight = {};
   var printJobsRefreshInFlight = false;
   var printJobsPollTimer = null;
@@ -136,14 +135,14 @@
     return String(value);
   }
 
-  function updateSummaryCards(devices, quota) {
+  function updateSummaryCards(devices, summary) {
     devices = devices || [];
-    quota = quota || {};
+    summary = summary || {};
 
-    var activeCount = quota.activeDeviceCount != null ? quota.activeDeviceCount : 0;
-    var allowedCount = quota.allowedActiveDeviceCount != null ? quota.allowedActiveDeviceCount : 1;
-    var latestLastSeen = quota.latestLastSeenAtUtc || null;
-    var lastName = quota.lastConnectedDeviceName || null;
+    var activeCount = summary.activeDeviceCount != null ? summary.activeDeviceCount : 0;
+    var onlineCount = summary.connectedDeviceCount != null ? summary.connectedDeviceCount : 0;
+    var latestLastSeen = summary.latestLastSeenAtUtc || null;
+    var lastName = summary.lastConnectedDeviceName || null;
 
     if (!lastName && devices.length > 0) {
       var latestMs = parseUtc(latestLastSeen);
@@ -159,12 +158,12 @@
     }
 
     var activeEl = document.getElementById("printBridgeSummaryActive");
-    var includedEl = document.getElementById("printBridgeSummaryIncluded");
+    var onlineEl = document.getElementById("printBridgeSummaryOnline");
     var lastDeviceEl = document.getElementById("printBridgeSummaryLastDevice");
     var lastSeenEl = document.getElementById("printBridgeSummaryLastSeen");
 
     if (activeEl) activeEl.textContent = String(activeCount);
-    if (includedEl) includedEl.textContent = String(allowedCount);
+    if (onlineEl) onlineEl.textContent = String(onlineCount);
     if (lastDeviceEl) {
       lastDeviceEl.textContent = lastName || messages.lastConnectedNone || messages.emptyValue || "—";
     }
@@ -365,29 +364,10 @@
     bindActiveToggles();
   }
 
-  function updateQuotaUi(quota) {
-    quota = quota || {};
-    lastQuota = quota;
-    var canCreate = !!quota.canCreateActiveDevice;
-    var exceeds = !!quota.activeCountExceedsLimit;
-
-    var exceededAlert = document.getElementById("printBridgeLimitExceededAlert");
-    var reachedAlert = document.getElementById("printBridgeLimitReachedAlert");
-
-    if (exceededAlert) {
-      exceededAlert.classList.toggle("d-none", !exceeds);
-    }
-
-    if (reachedAlert) {
-      reachedAlert.classList.toggle("d-none", canCreate || exceeds);
-    }
-  }
-
   function renderAll(state) {
     if (!state) return;
-    updateSummaryCards(state.devices, state.quota);
+    updateSummaryCards(state.devices, state.summary);
     renderDevicesTable(state.devices);
-    updateQuotaUi(state.quota);
   }
 
   // --- Device snapshot: the one source of device state on this page ---
@@ -427,7 +407,7 @@
 
     deviceState = {
       devices: data.devices.map(function (d) { return Object.assign({}, d); }),
-      quota: Object.assign({}, data.quota || {})
+      summary: Object.assign({}, data.summary || {})
     };
     renderAll(deviceState);
     schedulePresenceExpiry();
@@ -481,7 +461,7 @@
     });
 
     if (changed) {
-      deviceState.quota.connectedDeviceCount = deviceState.devices.filter(function (d) {
+      deviceState.summary.connectedDeviceCount = deviceState.devices.filter(function (d) {
         return d.connectionStatus === "Connected";
       }).length;
       renderAll(deviceState);

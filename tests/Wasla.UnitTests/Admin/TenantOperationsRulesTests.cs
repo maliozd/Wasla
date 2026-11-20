@@ -204,6 +204,27 @@ public sealed class TenantOperationsRulesTests
     }
 
     [Fact]
+    public void Guidance_ReadsTheCountsOfAllDevices_NotThePageShown()
+    {
+        // Central Admin's second device page shows only passive devices, while an active device on the first page is online.
+        var passivePage = new TenantPrintBridgeDevicePage(
+            [new TenantPrintBridgeDeviceSummary("Old PC", false, null, null, PrintBridgeConnectionStatus.Inactive)], 2, 51);
+        var detail = Detail(devices: []) with
+        {
+            PrintBridgeDevices = passivePage,
+            PrintBridgeDeviceCounts = new TenantPrintBridgeDeviceCounts(Total: 51, Active: 50, Online: 1, ActiveNeverConnected: 0)
+        };
+        var health = Health(printJobs: new TenantPrintJobSummary(Queued: 2, FailedLast24Hours: 0));
+
+        var codes = TenantOperationsGuidanceBuilder.Build(detail, health).Select(g => g.Code).ToList();
+
+        Assert.DoesNotContain(TenantOperationsGuidanceCode.AutoReceiptWithoutDevice, codes);
+        Assert.DoesNotContain(TenantOperationsGuidanceCode.NoPrintBridgeDevice, codes);
+        Assert.DoesNotContain(TenantOperationsGuidanceCode.PrintBridgeOffline, codes);
+        Assert.DoesNotContain(TenantOperationsGuidanceCode.PrintJobsQueuedWithoutOnlineDevice, codes);
+    }
+
+    [Fact]
     public void Guidance_AutoReceiptWithoutAnyDevice_IsAWarning()
     {
         var guidance = TenantOperationsGuidanceBuilder.Build(Detail(devices: []), Health());
@@ -239,7 +260,16 @@ public sealed class TenantOperationsRulesTests
 
     private static TenantOperationsDetail Detail(IReadOnlyList<TenantPrintBridgeDeviceSummary> devices) =>
         new(Guid.NewGuid(), "Kebap", "kebap", "kebap.app.wasla.local", "Wasla_Tenant_kebap", true, Now, Now, true,
-            TenantMigrationRecord.Succeeded, Now, null, null, devices, Now);
+            TenantMigrationRecord.Succeeded, Now, null, null, new TenantPrintBridgeDevicePage(devices, 1, devices.Count),
+            Counts(devices), Now);
+
+    /// <summary>The counts the service reads over all devices, for a list that is the whole of them.</summary>
+    private static TenantPrintBridgeDeviceCounts Counts(IReadOnlyList<TenantPrintBridgeDeviceSummary> devices) =>
+        new(
+            devices.Count,
+            devices.Count(d => d.IsActive),
+            devices.Count(d => d.IsActive && d.ConnectionStatus == PrintBridgeConnectionStatus.Connected),
+            devices.Count(d => d.IsActive && d.ConnectionStatus == PrintBridgeConnectionStatus.NeverConnected));
 
     private static TenantOperationalHealth Health(
         TenantMigrationStatus? migrations = null,

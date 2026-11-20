@@ -58,7 +58,6 @@ public sealed class PrintBridgeSetupTransferApiTests
     [InlineData(PrintBridgeTransferOutcome.InvalidOrExpired, 400, "invalid_or_expired_setup_code")]
     [InlineData(PrintBridgeTransferOutcome.SourceRejected, 401, "source_credential_rejected")]
     [InlineData(PrintBridgeTransferOutcome.PrintingInProgress, 409, "printing_in_progress")]
-    [InlineData(PrintBridgeTransferOutcome.DeviceLimitReached, 409, "device_limit_reached")]
     [InlineData(PrintBridgeTransferOutcome.InstallationConflict, 409, "installation_conflict")]
     [InlineData(PrintBridgeTransferOutcome.DestinationDeviceDisabled, 409, "destination_device_disabled")]
     [InlineData(PrintBridgeTransferOutcome.SameTenant, 409, "same_tenant")]

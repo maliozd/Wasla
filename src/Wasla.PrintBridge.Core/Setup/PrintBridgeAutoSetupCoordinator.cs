@@ -38,9 +38,6 @@ public enum PrintBridgeAutoSetupOutcome
     /// </summary>
     CurrentConnectionUnverified,
 
-    /// <summary>The new restaurant has no room for another Print Bridge device. Nothing changed.</summary>
-    DeviceLimitReached,
-
     /// <summary>This computer is also registered to a device the move may not retire. Nothing changed.</summary>
     InstallationConflict,
 
@@ -599,7 +596,6 @@ public sealed class PrintBridgeAutoSetupCoordinator
         {
             SetupTransferReplyKind.InvalidOrExpired => PrintBridgeAutoSetupOutcome.InvalidOrExpired,
             SetupTransferReplyKind.PrintingInProgress => PrintBridgeAutoSetupOutcome.PrintingInProgress,
-            SetupTransferReplyKind.DeviceLimitReached => PrintBridgeAutoSetupOutcome.DeviceLimitReached,
             SetupTransferReplyKind.InstallationConflict => PrintBridgeAutoSetupOutcome.InstallationConflict,
             SetupTransferReplyKind.DestinationDeviceDisabled => PrintBridgeAutoSetupOutcome.DestinationDeviceDisabled,
             SetupTransferReplyKind.SourceRejected or SetupTransferReplyKind.Unknown =>

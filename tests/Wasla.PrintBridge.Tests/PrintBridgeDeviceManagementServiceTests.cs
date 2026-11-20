@@ -85,6 +85,78 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateDevice_BeyondThreeActiveDevices_AddsWorkingDevicesOfThisTenantOnly()
+    {
+        var foreignTenantId = SeedTenant("foreign", "foreign.wasla.local");
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+        var created = new List<GeneratePrintBridgeTokenResult>();
+        for (var i = 1; i <= 6; i++)
+            created.Add(await _service.CreateDeviceAsync(_tenantId, $"Station {i}", CancellationToken.None));
+
+        var list = await _service.ListDevicesAsync(_tenantId, CancellationToken.None);
+        Assert.Equal(6, list.Count(d => d.IsActive));
+        Assert.Empty(await _service.ListDevicesAsync(foreignTenantId, CancellationToken.None));
+        foreach (var device in created)
+        {
+            var context = await auth.AuthenticateAsync(
+                device.RawToken, new PrintBridgeClientInfo("PC", "1.0.0", "POS-80", "127.0.0.1", Guid.NewGuid()), CancellationToken.None);
+            Assert.NotNull(context);
+            Assert.Equal((_tenantId, device.DeviceId), (context!.TenantId, context.DeviceId));
+        }
+    }
+
+    [Fact]
+    public async Task Reactivate_BeyondThreeActiveDevices_TurnsTheDeviceOn()
+    {
+        for (var i = 1; i <= 4; i++)
+            await SeedDeviceAsync($"Station {i}");
+        var passive = await SeedDeviceAsync("Passive");
+        Assert.True(await _service.SetDeviceActiveAsync(_tenantId, passive, false, CancellationToken.None));
+
+        Assert.True(await _service.SetDeviceActiveAsync(_tenantId, passive, true, CancellationToken.None));
+
+        Assert.True((await LoadDeviceAsync(passive)).IsActive);
+        Assert.Equal(5, (await _service.ListDevicesAsync(_tenantId, CancellationToken.None)).Count(d => d.IsActive));
+    }
+
+    [Fact]
+    public async Task SetDeviceActive_ForeignTenantDevice_ChangesNothing()
+    {
+        var foreignTenantId = SeedTenant("foreign", "foreign.wasla.local");
+        var foreignDeviceId = await SeedDeviceAsync("Foreign", foreignTenantId);
+        Assert.True(await _service.SetDeviceActiveAsync(foreignTenantId, foreignDeviceId, false, CancellationToken.None));
+
+        Assert.False(await _service.SetDeviceActiveAsync(_tenantId, foreignDeviceId, true, CancellationToken.None));
+        Assert.False(await _service.SetDeviceActiveAsync(_tenantId, foreignDeviceId, false, CancellationToken.None));
+
+        Assert.False((await LoadDeviceAsync(foreignDeviceId)).IsActive);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.RegenerateTokenAsync(_tenantId, foreignDeviceId, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task BeyondThreeActiveDevices_RevokedRemovedAndPassiveTokensStillFail()
+    {
+        var auth = new PrintBridgeAuthService(_db, NullLogger<PrintBridgeAuthService>.Instance);
+        var devices = new List<GeneratePrintBridgeTokenResult>();
+        for (var i = 1; i <= 5; i++)
+            devices.Add(await _service.CreateDeviceAsync(_tenantId, $"Station {i}", CancellationToken.None));
+
+        var regenerated = await _service.RegenerateTokenAsync(_tenantId, devices[0].DeviceId, CancellationToken.None);
+        await _service.RemoveDeviceAsync(_tenantId, devices[1].DeviceId, CancellationToken.None);
+        await _service.SetDeviceActiveAsync(_tenantId, devices[2].DeviceId, false, CancellationToken.None);
+
+        Task<PrintBridgeAuthContext?> Authenticate(string token) => auth.AuthenticateAsync(
+            token, new PrintBridgeClientInfo("PC", "1.0.0", null, "127.0.0.1", Guid.NewGuid()), CancellationToken.None);
+        Assert.Null(await Authenticate(devices[0].RawToken));
+        Assert.Null(await Authenticate(devices[1].RawToken));
+        Assert.Null(await Authenticate(devices[2].RawToken));
+        Assert.Null(await Authenticate("not-a-token-of-any-device"));
+        Assert.NotNull(await Authenticate(regenerated.RawToken));
+        Assert.NotNull(await Authenticate(devices[3].RawToken));
+    }
+
+    [Fact]
     public async Task GetDeviceDetails_ForeignTenantDevice_ReturnsNull()
     {
         var foreignTenantId = SeedTenant("foreign", "foreign.wasla.local");
@@ -262,12 +334,11 @@ public sealed class PrintBridgeDeviceManagementServiceTests : IDisposable
         await _service.RemoveDeviceAsync(_tenantId, removedId, CancellationToken.None);
 
         var list = await _service.ListDevicesAsync(_tenantId, CancellationToken.None);
-        var quota = await _service.GetDeviceQuotaAsync(_tenantId, CancellationToken.None);
         var removedDetails = await _service.GetDeviceDetailsAsync(_tenantId, removedId, CancellationToken.None);
 
         Assert.DoesNotContain(list, d => d.Id == removedId);
         Assert.Contains(list, d => d.Id == activeId);
-        Assert.Equal(1, quota.ActiveDeviceCount);
+        Assert.Equal(1, list.Count(d => d.IsActive));
         Assert.Null(removedDetails);
     }
 

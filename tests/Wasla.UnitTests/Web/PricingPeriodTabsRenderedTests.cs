@@ -78,8 +78,8 @@ public sealed partial class PricingPeriodTabsRenderedTests : IAsyncLifetime
 
         // Enterprise keeps its contact-sales labels: the monthly one and, for yearly, the one signup shows.
         var enterprise = Periods(Card(home, "Enterprise"));
-        AssertBlock(enterprise["Monthly"], hidden: false, priceSet: null, Text("Pricing.Plan.Enterprise.Price", culture), vat: null);
-        AssertBlock(enterprise["Yearly"], hidden: true, priceSet: null, Text("Signup.PlanPrice.Enterprise.Yearly", culture), vat: null);
+        AssertBlock(enterprise["Monthly"], hidden: false, priceSet: null, Text("Pricing.ContactSales", culture), vat: null);
+        AssertBlock(enterprise["Yearly"], hidden: true, priceSet: null, Text("Pricing.ContactSales", culture), vat: null);
     }
 
     [Fact]

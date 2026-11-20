@@ -151,8 +151,9 @@ public sealed partial class PrintBridgeSetupSessionService
     }
 
     /// <summary>
-    /// The destination side of a move: no other registration of the installation that the move may not retire, room in
-    /// the destination tenant for a new device, or a reconnect device that is free or already this installation's.
+    /// The destination side of a move: no other registration of the installation that the move may not retire, and for a
+    /// reconnect a device that is free or already this installation's. A new device needs no room: there is no device
+    /// count limit.
     /// </summary>
     private async Task<PrintBridgeTransferOutcome> CheckDestinationAsync(
         PrintBridgeSetupSession session,
@@ -168,12 +169,7 @@ public sealed partial class PrintBridgeSetupSessionService
             return PrintBridgeTransferOutcome.InstallationConflict;
 
         if (mode == PrintBridgeSetupMode.NewDevice)
-        {
-            var activeCount = await CountActiveDevicesAsync(session.TenantId, ct).ConfigureAwait(false);
-            return activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount
-                ? PrintBridgeTransferOutcome.DeviceLimitReached
-                : PrintBridgeTransferOutcome.Ready;
-        }
+            return PrintBridgeTransferOutcome.Ready;
 
         if (!session.PrintBridgeDeviceId.HasValue)
             return PrintBridgeTransferOutcome.InvalidOrExpired;
@@ -246,8 +242,8 @@ public sealed partial class PrintBridgeSetupSessionService
         try
         {
             // The installation lock first, then the tenant locks: the order every setup write uses. A move changes both
-            // tenants' devices (and the source tenant's quota), so it holds both, always in the same order, so two moves
-            // in opposite directions never wait for each other in a circle.
+            // tenants' devices, so it holds both, always in the same order, so two moves in opposite directions never wait for
+            // each other in a circle.
             var lockResult = await _tenantLock.AcquireInstallationLockAsync(installationId, ct).ConfigureAwait(false);
             foreach (var tenantId in new[] { check.SourceTenantId, check.Session.TenantId }.Order())
             {
@@ -340,8 +336,8 @@ public sealed partial class PrintBridgeSetupSessionService
                 destination.UpdatedAt = now;
             }
 
-            // Retire the source: the same soft removal as the Web panel's, so it leaves the list and the quota, keeps its
-            // record and print history, and its token stops working now.
+            // Retire the source: the same soft removal as the Web panel's, so it leaves the list and the active count, keeps
+            // its record and print history, and its token stops working now.
             source.RemovedAtUtc = now;
             source.IsActive = false;
             source.TokenHash = PrintBridgeTokenHasher.HashToken(PrintBridgeTokenHasher.GenerateRawToken());

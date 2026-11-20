@@ -10,31 +10,34 @@ using Wasla.UnitTests.Billing;
 namespace Wasla.UnitTests.Printing;
 
 /// <summary>
-/// WAS-190 on a real SQL Server (a throwaway CentralDb, see <see cref="SqlServerCentralDatabase"/>): Print Bridge devices
-/// added at the same moment, each caller on its own DbContext and connection pool (see <see cref="PrintBridgeSqlServerRace"/>).
+/// Print Bridge devices added at the same moment on a real SQL Server (a throwaway CentralDb, see
+/// <see cref="SqlServerCentralDatabase"/>), each caller on its own DbContext and connection pool (see
+/// <see cref="PrintBridgeSqlServerRace"/>). There is no device count limit (decision of 2026-11-17); these races prove
+/// that removing it kept the protections that never depended on it.
 /// <para>
-/// Restaurants adding devices at once all succeed. The quota count took serializable key-range locks across every
-/// restaurant's devices, so two new-device setups of different restaurants deadlocked on their inserts and one failed.
-/// Those races hold every caller right before its device write until all have reached it, so each has taken its locks and
-/// counted while the others' transactions are open.
+/// Restaurants adding devices at once all succeed (WAS-190): the races hold every caller right before its device write
+/// until all have reached it, so each has taken its locks and read while the others' transactions are open.
 /// </para>
 /// <para>
-/// Within one restaurant, the tenant's setup lock keeps the device limit exact for the writers that take it: the setup
-/// exchange, the move (WAS-91), and the Web panel's create and reactivate. Those races hold one writer right before its
-/// device write and let it go only once SQL Server shows the other waiting for its tenant lock, in both orders.
+/// Within one restaurant that already has more active devices than the retired limit of three, the setup exchange, the
+/// move (WAS-91), and the Web panel's create and reactivate still take the tenant's setup lock: one writer is held right
+/// before its device write until SQL Server shows the other waiting for its lock, in both orders, and then both add
+/// their device. One computer set up for two restaurants at once is registered to exactly one of them: the installation
+/// lock makes the second wait and then refuses it.
 /// </para>
-/// Every writer's outcome is explicit: it added an active device, or the device limit refused it. Any other failure,
-/// error log, deadlock or lock timeout fails the test; nothing retries. SQLite runs no application locks, so these races
-/// are only meaningful here. Two moves for one place left are in <see cref="PrintBridgeTransferSqlServerTests"/>.
+/// Every writer's outcome is explicit. Any other failure, error log, deadlock or lock timeout fails the test; nothing
+/// retries. SQLite runs no application locks, so these races are only meaningful here. Moves of one computer to two
+/// restaurants are in <see cref="PrintBridgeTransferSqlServerTests"/>.
 /// </summary>
-public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
+public sealed class PrintBridgeDeviceConcurrencySqlServerTests : IAsyncLifetime
 {
     private const int Rounds = 10;
     private const int ContendedRounds = 6;
-    private const string ServerUrl = "https://anadolu.app.wasla.tr/";
 
-    /// <summary>The reason a setup session records when the device limit refused its exchange.</summary>
-    private const string QuotaExceeded = "quota_exceeded";
+    /// <summary>The retired commercial limit; the restaurants below already have this many active devices.</summary>
+    private const int RetiredDeviceLimit = 3;
+
+    private const string ServerUrl = "https://anadolu.app.wasla.tr/";
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -42,7 +45,7 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     private readonly SqlServerCentralDatabase _database = new();
     private readonly PrintBridgeSqlServerRace _race;
 
-    public PrintBridgeDeviceQuotaSqlServerTests() => _race = new PrintBridgeSqlServerRace(_database);
+    public PrintBridgeDeviceConcurrencySqlServerTests() => _race = new PrintBridgeSqlServerRace(_database);
 
     public ValueTask InitializeAsync() => _database.InitializeAsync();
 
@@ -51,7 +54,7 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     private enum Outcome
     {
         Added,
-        RefusedByDeviceLimit
+        RefusedAsRegisteredToAnotherRestaurant
     }
 
     [Fact]
@@ -97,12 +100,13 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
             _log.AssertNoErrors();
             foreach (var tenant in tenants)
                 Assert.Equal(1, await ActiveCountAsync(tenant));
+            await AssertEveryInstallationRegisteredOnceAsync();
         }
     }
 
     /// <summary>
-    /// Two writers for a restaurant's last device place. The one holding the tenant lock adds its device; the other waited
-    /// for that lock and is then refused by the device limit, and nothing else. Each pair runs in both orders.
+    /// Two writers of a restaurant that already has three active devices. The one holding the tenant's setup lock adds its
+    /// device; the other is seen waiting for that lock, then adds its own. Each pair runs in both orders.
     /// </summary>
     [Theory]
     [InlineData("exchange", "exchange")]
@@ -114,12 +118,12 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     [InlineData("create", "create")]
     [InlineData("create", "reactivate")]
     [InlineData("reactivate", "reactivate")]
-    public async Task TwoWritersForTheLastPlace_OneWaitingForTheOther_FillItOnce(string firstKind, string secondKind)
+    public async Task TwoWritersBeyondThreeActiveDevices_OneWaitingForTheOthersLock_BothAdd(string firstKind, string secondKind)
     {
         for (var round = 0; round < ContendedRounds; round++)
         {
             var tenant = await TenantAsync();
-            for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount - 1; i++)
+            for (var i = 0; i < RetiredDeviceLimit; i++)
                 await AddDeviceAsync(tenant, isActive: true);
 
             var (holderKind, waiterKind) = round % 2 == 0 ? (firstKind, secondKind) : (secondKind, firstKind);
@@ -129,10 +133,54 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
             var (held, waited) = await _race.ContendAsync(holder, waiter);
 
             Assert.True(
-                (held, waited) == (Outcome.Added, Outcome.RefusedByDeviceLimit),
+                (held, waited) == (Outcome.Added, Outcome.Added),
                 $"Round {round} ({holderKind} holding, {waiterKind} waiting): {held}, {waited}; log: {_log.Text()}");
             _log.AssertNoErrors();
-            Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, await ActiveCountAsync(tenant));
+            Assert.Equal(RetiredDeviceLimit + 2, await ActiveCountAsync(tenant));
+            await AssertEveryInstallationRegisteredOnceAsync();
+        }
+    }
+
+    /// <summary>
+    /// One computer opens setup links of two restaurants at once, each of which already has more devices than the retired
+    /// limit. The exchange holding the installation lock registers it; the other waits for that lock and is then refused,
+    /// so the computer stays registered to exactly one restaurant. Runs in both orders.
+    /// </summary>
+    [Fact]
+    public async Task OneComputerSetUpForTwoRestaurantsAtOnce_IsRegisteredToExactlyOne()
+    {
+        for (var round = 0; round < ContendedRounds; round++)
+        {
+            var first = await TenantAsync();
+            var second = await TenantAsync();
+            for (var i = 0; i < RetiredDeviceLimit + 1; i++)
+            {
+                await AddDeviceAsync(first, isActive: true);
+                await AddDeviceAsync(second, isActive: true);
+            }
+
+            var installation = Guid.NewGuid();
+            var (holderTenant, waiterTenant) = round % 2 == 0 ? (first, second) : (second, first);
+            var holderCode = await CreateSessionAsync(holderTenant);
+            var waiterCode = await CreateSessionAsync(waiterTenant);
+
+            var (held, waited) = await _race.ContendAsync(
+                db => ExchangeAsync(db, holderCode, installation),
+                db => ExchangeAsync(db, waiterCode, installation));
+
+            Assert.True(
+                (held, waited) == (Outcome.Added, Outcome.RefusedAsRegisteredToAnotherRestaurant),
+                $"Round {round}: {held}, {waited}; log: {_log.Text()}");
+            _log.AssertNoErrors();
+            Assert.Equal(RetiredDeviceLimit + 2, await ActiveCountAsync(holderTenant));
+            Assert.Equal(RetiredDeviceLimit + 1, await ActiveCountAsync(waiterTenant));
+            await using var inspector = _database.Open("Inspector");
+            Assert.Equal(
+                [holderTenant],
+                await inspector.PrintBridgeDevices.AsNoTracking()
+                    .Where(d => d.InstallationId == installation && d.RemovedAtUtc == null)
+                    .Select(d => d.TenantId)
+                    .ToListAsync(Ct));
         }
     }
 
@@ -140,7 +188,7 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
 
     /// <summary>
     /// Everything a writer of <paramref name="kind"/> needs for <paramref name="tenantId"/>, made beforehand, and the call
-    /// itself. The call returns what the writer did; anything but adding a device or a device-limit refusal fails it.
+    /// itself. The call returns what the writer did; anything but adding a device fails it.
     /// </summary>
     private async Task<Func<CentralDbContext, Task<Outcome>>> PrepareAsync(string kind, Guid tenantId)
     {
@@ -154,30 +202,16 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
             case "create":
                 return async db =>
                 {
-                    try
-                    {
-                        await Devices(db).CreateDeviceAsync(tenantId, "Web", CancellationToken.None);
-                        return Outcome.Added;
-                    }
-                    catch (PrintBridgeDeviceLimitReachedException)
-                    {
-                        return Outcome.RefusedByDeviceLimit;
-                    }
+                    await Devices(db).CreateDeviceAsync(tenantId, "Web", CancellationToken.None);
+                    return Outcome.Added;
                 };
             case "reactivate":
             {
                 var (deviceId, _) = await AddDeviceAsync(tenantId, isActive: false);
                 return async db =>
                 {
-                    try
-                    {
-                        Assert.True(await Devices(db).SetDeviceActiveAsync(tenantId, deviceId, true, CancellationToken.None), "The device to reactivate was not found.");
-                        return Outcome.Added;
-                    }
-                    catch (PrintBridgeDeviceLimitReachedException)
-                    {
-                        return Outcome.RefusedByDeviceLimit;
-                    }
+                    Assert.True(await Devices(db).SetDeviceActiveAsync(tenantId, deviceId, true, CancellationToken.None), "The device to reactivate was not found.");
+                    return Outcome.Added;
                 };
             }
             case "move":
@@ -192,12 +226,9 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
                 return async db =>
                 {
                     var outcome = (await Service(db).TransferAsync(request, CancellationToken.None)).Outcome;
-                    return outcome switch
-                    {
-                        PrintBridgeTransferOutcome.Ready => Outcome.Added,
-                        PrintBridgeTransferOutcome.DeviceLimitReached => Outcome.RefusedByDeviceLimit,
-                        _ => throw new Xunit.Sdk.XunitException($"The move ended {outcome}, not added or refused by the device limit; log: {_log.Text()}")
-                    };
+                    return outcome == PrintBridgeTransferOutcome.Ready
+                        ? Outcome.Added
+                        : throw new Xunit.Sdk.XunitException($"The move ended {outcome}, not added; log: {_log.Text()}");
                 };
             }
             default:
@@ -206,13 +237,22 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A new-device exchange. Its public result is null for every refusal, so a refusal is read from the setup session's
-    /// recorded failure reason, which must be the device limit.
+    /// A new-device exchange. It adds a device, or, only for a computer already registered to another restaurant, is
+    /// refused with that reason. Any other refusal (its public result is null) fails the test with the recorded reason.
     /// </summary>
-    private async Task<Outcome> ExchangeAsync(CentralDbContext db, string code)
+    private async Task<Outcome> ExchangeAsync(CentralDbContext db, string code, Guid? installation = null)
     {
-        var exchanged = await Service(db).ExchangeAsync(
-            code, new PrintBridgeSetupClientInfo("QA-PC", "1.0.0.0", null, Guid.NewGuid()), CancellationToken.None);
+        PrintBridgeSetupExchangeResult? exchanged;
+        try
+        {
+            exchanged = await Service(db).ExchangeAsync(
+                code, new PrintBridgeSetupClientInfo("QA-PC", "1.0.0.0", null, installation ?? Guid.NewGuid()), CancellationToken.None);
+        }
+        catch (PrintBridgeSetupInstallationRegisteredToAnotherTenantException)
+        {
+            return Outcome.RefusedAsRegisteredToAnotherRestaurant;
+        }
+
         if (exchanged is not null)
             return Outcome.Added;
 
@@ -222,9 +262,7 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
             .Where(s => s.CodeHash == codeHash)
             .Select(s => s.FailureReason)
             .SingleAsync(CancellationToken.None);
-        if (reason != QuotaExceeded)
-            throw new Xunit.Sdk.XunitException($"The exchange failed with \"{reason ?? "no recorded reason"}\", not the device limit; log: {_log.Text()}");
-        return Outcome.RefusedByDeviceLimit;
+        throw new Xunit.Sdk.XunitException($"The exchange failed with \"{reason ?? "no recorded reason"}\"; log: {_log.Text()}");
     }
 
     private async Task<int> ActiveCountAsync(Guid tenantId)
@@ -233,10 +271,23 @@ public sealed class PrintBridgeDeviceQuotaSqlServerTests : IAsyncLifetime
         return await db.PrintBridgeDevices.CountAsync(d => d.TenantId == tenantId && d.IsActive && d.RemovedAtUtc == null, Ct);
     }
 
+    /// <summary>No computer is registered (active or passive, not removed) to two devices, in one restaurant or across them.</summary>
+    private async Task AssertEveryInstallationRegisteredOnceAsync()
+    {
+        await using var db = _database.Open("Inspector");
+        var duplicates = await db.PrintBridgeDevices.AsNoTracking()
+            .Where(d => d.InstallationId != null && d.RemovedAtUtc == null)
+            .GroupBy(d => d.InstallationId)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToListAsync(Ct);
+        Assert.Empty(duplicates);
+    }
+
     private async Task<Guid> TenantAsync()
     {
         await using var db = _database.Open("Seed");
-        var slug = "quota" + Guid.NewGuid().ToString("N")[..10];
+        var slug = "devices" + Guid.NewGuid().ToString("N")[..10];
         var tenant = new Tenant
         {
             Name = "Anadolu Sofrası",

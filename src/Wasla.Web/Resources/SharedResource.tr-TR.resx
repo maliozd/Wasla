@@ -2256,23 +2256,11 @@
   <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
     <value>Cihaz güncellenemedi.</value>
   </data>
-  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>Mevcut paketinizde {0} aktif Print Bridge cihazı bulunmaktadır. Ek bağlantılar daha sonra ücretlendirilecektir.</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
-    <value>Aktif cihaz sayısı mevcut limitin üzerinde. Lütfen fazla cihazları pasifleştirin.</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
-    <value>Mevcut paketinizde {0} aktif Print Bridge cihazına izin verilir.</value>
-  </data>
   <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
     <value>Henüz Print Bridge cihazı yok.</value>
   </data>
   <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
     <value>Başlamak için sağ taraftan bir cihaz oluşturun.</value>
-  </data>
-  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
-    <value>Fazla cihazları pasifleştirerek limiti düşürebilirsiniz.</value>
   </data>
   <data name="PrintBridge.StatusOverview" xml:space="preserve">
     <value>Durum özeti</value>
@@ -2294,9 +2282,6 @@
   </data>
   <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
     <value>Bağlı cihaz: {0}</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
-    <value>İzin verilen: {0}</value>
   </data>
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>Pasif</value>
@@ -2625,21 +2610,6 @@
   <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
     <value>AgentToken değerini Cihazlar sayfasından oluşturduğunuz token ile değiştirin.</value>
   </data>
-  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
-    <value>Dahil cihaz limiti</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
-    <value>Paketinize dahil olan aktif Print Bridge cihaz sayısı aşağıdadır.</value>
-  </data>
-  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
-    <value>Dahil: {0} aktif cihaz</value>
-  </data>
-  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
-    <value>Bundan fazla yazıcı veya cihaz bağlantısı ileride ücretli eklenti olarak sunulabilir.</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
-    <value>{0} / {1} aktif cihaz kullanılıyor. Limite yaklaşıyorsunuz.</value>
-  </data>
   <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
     <value>Fiş otomasyonu ayarları</value>
   </data>
@@ -2733,9 +2703,6 @@
   <data name="PrintBridge.ActiveDevices" xml:space="preserve">
     <value>Aktif Cihazlar</value>
   </data>
-  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
-    <value>Dahil Cihazlar</value>
-  </data>
   <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
     <value>Son Bağlanan Cihaz</value>
   </data>
@@ -2744,9 +2711,6 @@
   </data>
   <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
     <value>Bugünkü Yazdırma İşleri</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
-    <value>En fazla {0} aktif Print Bridge cihazı dahildir. Ek cihazlar için ileride ücretli eklenti gerekebilir.</value>
   </data>
   <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
     <value>Henüz Print Bridge cihazı yok.</value>
@@ -2847,44 +2811,33 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>Fiyatlar bilgilendirme amaçlıdır. Gerçek faturalandırma henüz aktif değildir.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>Küçük restoranlar ve ilk kurulum için</value></data>
-  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>1 aktif Print Bridge cihazı</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>Temel sipariş paneli</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>Desteklenen platform bağlantıları</value></data>
   <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>Temel fiş ayarları</value></data>
-  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>1 aktif Print Bridge cihazı</value></data>
-  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>Sipariş geçmişi</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>Sipariş geçmişi</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>Aktif restoranlar için</value></data>
-  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 aktif Print Bridge cihazı</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>Starter'daki her şey</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>Otomatik sipariş senkronizasyonu</value></data>
   <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>Uygun olduğunda otomatik onay desteği</value></data>
   <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>Canlı mutfak ekranı</value></data>
-  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 aktif Print Bridge cihazı</value></data>
-  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>Sipariş geçmişi ve raporlar</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>Sipariş geçmişi ve raporlar</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>Yoğun restoranlar ve daha büyük operasyonlar için</value></data>
-  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 aktif Print Bridge cihazı</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>Pro'daki her şey</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 aktif Print Bridge cihazı</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>Daha esnek cihaz kullanımı</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>Çoklu istasyonlar için uygun</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>Öncelikli kurulum desteği</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>Çoklu istasyonlar için uygun</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>Öncelikli kurulum desteği</value></data>
   <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
   <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>Zincirler ve özel gereksinimleri olan işletmeler için</value></data>
-  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>2.500 TL'den başlayan</value></data>
-  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>Sınırsız / özel anlaşmaya göre Print Bridge cihazı</value></data>
   <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>Pro+'daki her şey</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Sınırsız / özel Print Bridge cihazları</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Çoklu şube desteği</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Özel entegrasyonlar</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Özel kurulum ve destek</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>Özel anlaşma ve limitler</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>Çoklu şube desteği</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>Özel entegrasyonlar</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>Özel kurulum ve destek</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>Özel anlaşma ve limitler</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>Wasla hesabı oluştur</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>Restoranınızı online sipariş platformlarına bağlayın ve tek yerden yönetin.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>{0} Paketi</value></data>
-  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>Özel teklif</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>Restoran</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>Yetkili hesabı</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>Plan</value></data>
@@ -4903,4 +4856,7 @@
   <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
     <value>Durumu yenile</value>
   </data>
+  <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Çevrimiçi Cihazlar</value></data>
+  <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Print Bridge cihaz sayfaları</value></data>
+  <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>{2} cihazdan {0}–{1} arası gösteriliyor</value></data>
 </root>

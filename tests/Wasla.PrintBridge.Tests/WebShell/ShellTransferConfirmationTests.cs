@@ -33,7 +33,7 @@ public sealed partial class ShellTransferConfirmationTests : IDisposable
     [
         "Auto.Transfer.Title", "Auto.Transfer.Message", "Auto.Transfer.Confirm", "Auto.Transfer.CurrentRestaurant",
         "Auto.Transfer.CurrentServer", "Auto.Transfer.NewRestaurant", "Auto.Transfer.NewServer", "Auto.Transfer.UnknownRestaurant",
-        "Auto.Cancelled", "Auto.CurrentConnectionUnverified", "Auto.DeviceLimitReached", "Auto.InstallationConflict",
+        "Auto.Cancelled", "Auto.CurrentConnectionUnverified", "Auto.InstallationConflict",
         "Auto.InstallationRegisteredToAnotherRestaurant", "Auto.ChangePending", "Auto.DestinationDeviceDisabled", "Auto.PreviousChangeCompleted"
     ];
 
@@ -179,7 +179,6 @@ public sealed partial class ShellTransferConfirmationTests : IDisposable
     [Theory]
     [InlineData(PrintBridgeAutoSetupOutcome.Cancelled, "Auto.Cancelled", MessageBoxIcon.Information)]
     [InlineData(PrintBridgeAutoSetupOutcome.CurrentConnectionUnverified, "Auto.CurrentConnectionUnverified", MessageBoxIcon.Warning)]
-    [InlineData(PrintBridgeAutoSetupOutcome.DeviceLimitReached, "Auto.DeviceLimitReached", MessageBoxIcon.Warning)]
     [InlineData(PrintBridgeAutoSetupOutcome.InstallationConflict, "Auto.InstallationConflict", MessageBoxIcon.Warning)]
     [InlineData(PrintBridgeAutoSetupOutcome.ChangePending, "Auto.ChangePending", MessageBoxIcon.Warning)]
     [InlineData(PrintBridgeAutoSetupOutcome.DestinationDeviceDisabled, "Auto.DestinationDeviceDisabled", MessageBoxIcon.Warning)]

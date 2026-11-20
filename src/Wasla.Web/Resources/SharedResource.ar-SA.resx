@@ -2256,23 +2256,11 @@
   <data name="PrintBridge.DeviceUpdateFailed" xml:space="preserve">
     <value>تعذر تحديث الجهاز.</value>
   </data>
-  <data name="PrintBridge.DeviceLimitReached" xml:space="preserve">
-    <value>تتضمن خطتك الحالية {0} أجهزة Print Bridge نشطة. ستتوفر الاتصالات الإضافية لاحقاً كإضافة مدفوعة.</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitExceededWarning" xml:space="preserve">
-    <value>عدد الأجهزة النشطة يتجاوز الحد الحالي. يرجى إلغاء تفعيل الأجهزة الزائدة.</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCount" xml:space="preserve">
-    <value>تسمح خطتك الحالية بـ {0} جهاز Print Bridge نشط.</value>
-  </data>
   <data name="PrintBridge.NoDevicesYet" xml:space="preserve">
     <value>لا توجد أجهزة Print Bridge بعد.</value>
   </data>
   <data name="PrintBridge.CreateFirstDevice" xml:space="preserve">
     <value>أنشئ جهازاً من الجانب الأيمن للبدء.</value>
-  </data>
-  <data name="PrintBridge.DeactivateExtraDevices" xml:space="preserve">
-    <value>ألغِ تفعيل الأجهزة الزائدة لإعادة العدد ضمن الحد.</value>
   </data>
   <data name="PrintBridge.StatusOverview" xml:space="preserve">
     <value>ملخص الحالة</value>
@@ -2294,9 +2282,6 @@
   </data>
   <data name="PrintBridge.ConnectedDeviceCount" xml:space="preserve">
     <value>الأجهزة المتصلة: {0}</value>
-  </data>
-  <data name="PrintBridge.AllowedDeviceCountLabel" xml:space="preserve">
-    <value>المسموح: {0}</value>
   </data>
   <data name="PrintBridge.Inactive" xml:space="preserve">
     <value>غير نشط</value>
@@ -2625,21 +2610,6 @@
   <data name="PrintBridge.ExampleConfigHelp" xml:space="preserve">
     <value>استبدل AgentToken بالرمز الذي تنشئه من صفحة الأجهزة.</value>
   </data>
-  <data name="PrintBridge.IncludedDevicesTitle" xml:space="preserve">
-    <value>حد الأجهزة المشمولة</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesDescription" xml:space="preserve">
-    <value>تتضمن خطتك عدد أجهزة Print Bridge النشطة الموضح أدناه.</value>
-  </data>
-  <data name="PrintBridge.IncludedDeviceCount" xml:space="preserve">
-    <value>مشمول: {0} أجهزة نشطة</value>
-  </data>
-  <data name="PrintBridge.ExtraDevicesPaidLater" xml:space="preserve">
-    <value>قد تتطلب اتصالات طابعات أو أجهزة إضافية إضافة مدفوعة لاحقاً.</value>
-  </data>
-  <data name="PrintBridge.IncludedDevicesNearLimit" xml:space="preserve">
-    <value>{0} من {1} أجهزة نشطة قيد الاستخدام. أنت تقترب من الحد.</value>
-  </data>
   <data name="PrintBridge.ReceiptAutomationSettings" xml:space="preserve">
     <value>إعدادات أتمتة الإيصال</value>
   </data>
@@ -2733,9 +2703,6 @@
   <data name="PrintBridge.ActiveDevices" xml:space="preserve">
     <value>الأجهزة النشطة</value>
   </data>
-  <data name="PrintBridge.IncludedDevices" xml:space="preserve">
-    <value>الأجهزة المشمولة</value>
-  </data>
   <data name="PrintBridge.LastConnectedDevice" xml:space="preserve">
     <value>آخر جهاز متصل</value>
   </data>
@@ -2744,9 +2711,6 @@
   </data>
   <data name="PrintBridge.PrintJobsToday" xml:space="preserve">
     <value>مهام الطباعة اليوم</value>
-  </data>
-  <data name="PrintBridge.DeviceLimitNote" xml:space="preserve">
-    <value>يُشمل حتى {0} أجهزة Print Bridge نشطة. قد تتطلب الأجهزة الإضافية إضافة مدفوعة لاحقًا.</value>
   </data>
   <data name="PrintBridge.NoDevicesTitle" xml:space="preserve">
     <value>لا توجد أجهزة Print Bridge بعد.</value>
@@ -2847,44 +2811,33 @@
   <data name="Pricing.BillingNote" xml:space="preserve"><value>الأسعار إرشادية. الفوترة الفعلية غير مفعّلة بعد.</value></data>
   <data name="Pricing.Plan.Starter.Name" xml:space="preserve"><value>Starter</value></data>
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve"><value>للمطاعم الصغيرة والإعداد لأول مرة</value></data>
-  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve"><value>جهاز Print Bridge نشط واحد</value></data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve"><value>لوحة طلبات أساسية</value></data>
   <data name="Pricing.Plan.Starter.Feature2" xml:space="preserve"><value>ربط المنصات المدعومة</value></data>
   <data name="Pricing.Plan.Starter.Feature3" xml:space="preserve"><value>إعدادات إيصال أساسية</value></data>
-  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>جهاز Print Bridge نشط واحد</value></data>
-  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve"><value>سجل الطلبات</value></data>
+  <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve"><value>سجل الطلبات</value></data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve"><value>Pro</value></data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve"><value>للمطاعم النشطة</value></data>
-  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve"><value>3 أجهزة Print Bridge نشطة</value></data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve"><value>كل ما في Starter</value></data>
   <data name="Pricing.Plan.Pro.Feature2" xml:space="preserve"><value>مزامنة تلقائية للطلبات</value></data>
   <data name="Pricing.Plan.Pro.Feature3" xml:space="preserve"><value>دعم الموافقة التلقائية حيثما متاح</value></data>
   <data name="Pricing.Plan.Pro.Feature4" xml:space="preserve"><value>شاشة مطبخ مباشرة</value></data>
-  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>3 أجهزة Print Bridge نشطة</value></data>
-  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve"><value>سجل الطلبات والتقارير</value></data>
+  <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve"><value>سجل الطلبات والتقارير</value></data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve"><value>Pro+</value></data>
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve"><value>للمطاعم المزدحمة أو العمليات الأكبر</value></data>
-  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve"><value>كل ما في Pro</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>10 أجهزة Print Bridge نشطة</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>استخدام أجهزة أكثر مرونة</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve"><value>مناسب لمحطات متعددة</value></data>
-  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve"><value>دعم إعداد ذو أولوية</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve"><value>مناسب لمحطات متعددة</value></data>
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve"><value>دعم إعداد ذو أولوية</value></data>
   <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve"><value>Enterprise</value></data>
   <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve"><value>للسلاسل والشركات ذات المتطلبات المخصصة</value></data>
-  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve"><value>يبدأ من 2,500 ليرة تركية / شهر</value></data>
-  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve"><value>أجهزة Print Bridge غير محدودة / حسب اتفاق مخصص</value></data>
   <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve"><value>كل ما في Pro+</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>أجهزة Print Bridge غير محدودة / مخصصة</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>دعم فروع متعددة</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>تكاملات مخصصة</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>إعداد ودعم مخصص</value></data>
-  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve"><value>اتفاق وحدود مخصصة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve"><value>دعم فروع متعددة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve"><value>تكاملات مخصصة</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve"><value>إعداد ودعم مخصص</value></data>
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve"><value>اتفاق وحدود مخصصة</value></data>
   <data name="Signup.Title" xml:space="preserve"><value>إنشاء حساب Wasla</value></data>
   <data name="Signup.Subtitle" xml:space="preserve"><value>اربط مطعمك بمنصات الطلبات عبر الإنترنت وأدر كل شيء من مكان واحد.</value></data>
   <data name="Signup.StepPlan" xml:space="preserve"><value>الخطة</value></data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve"><value>باقة {0}</value></data>
-  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve"><value>عرض مخصص</value></data>
   <data name="Signup.StepBusiness" xml:space="preserve"><value>المطعم</value></data>
   <data name="Signup.StepOwner" xml:space="preserve"><value>حساب المالك</value></data>
   <data name="Signup.Plan" xml:space="preserve"><value>الخطة</value></data>
@@ -4903,4 +4856,7 @@
   <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
     <value>تحديث الحالة</value>
   </data>
+  <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>الأجهزة المتصلة الآن</value></data>
+  <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>صفحات أجهزة Print Bridge</value></data>
+  <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>عرض {0}–{1} من {2} جهازًا</value></data>
 </root>

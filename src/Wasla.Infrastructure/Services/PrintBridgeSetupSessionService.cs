@@ -14,7 +14,6 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
     public static readonly TimeSpan DefaultLifetime = TimeSpan.FromMinutes(5);
 
     private const string FailureReasonTenantLockUnavailable = "tenant_lock_unavailable";
-    private const string FailureReasonQuotaExceeded = "quota_exceeded";
     private const string FailureReasonDeviceCreationFailed = "device_creation_failed";
 
     private readonly CentralDbContext _centralDb;
@@ -171,7 +170,7 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
                 .ConfigureAwait(false);
 
             if (deviceResult is null)
-                return null; // quota exceeded or creation failed (session marked failed), or the session ended while the lock was awaited (left as the reset or expiry left it)
+                return null; // a lock not granted or creation failed (session marked failed), or the session ended while the lock was awaited (left as the reset or expiry left it)
 
             (rawToken, deviceName) = deviceResult.Value;
         }
@@ -348,10 +347,11 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
     }
 
     /// <summary>
-    /// Atomically checks quota, creates a new PrintBridgeDevice, generates its token, and
-    /// binds the session to it. Returns null and marks the session as failed if quota is exceeded
-    /// or creation fails; in that case no device record is persisted. Also returns null, without marking the session,
-    /// when the session ended (failed or expired) while the tenant lock was awaited.
+    /// Atomically creates a new PrintBridgeDevice, generates its token, and binds the session to it, under the
+    /// installation lock and the tenant's setup lock. Returns null and marks the session as failed if a lock is not
+    /// granted or creation fails; in that case no device record is persisted. Also returns null, without marking the
+    /// session, when the session ended (failed or expired) while the tenant lock was awaited. There is no device count
+    /// limit: the locks keep the installation's registration unique and serialize the write with the session's end.
     /// </summary>
     private async Task<(string RawToken, string DeviceName)?> CreateAndBindNewDeviceAsync(
         PrintBridgeSetupSession session,
@@ -425,30 +425,17 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
                     }
                     else
                     {
-                        var activeCount = await CountActiveDevicesAsync(session.TenantId, ct).ConfigureAwait(false);
-                        if (activeCount >= PrintBridgeDeviceLimits.AllowedActiveDeviceCount)
-                        {
-                            failedReason = FailureReasonQuotaExceeded;
-                            await tx.RollbackAsync(ct).ConfigureAwait(false);
+                        // No count is checked: a tenant may have any number of devices (decision of 2026-11-17).
+                        var created = await CreateDeviceAndBindSessionAsync(session, clientInfo, installationId, ct)
+                            .ConfigureAwait(false);
+                        await tx.CommitAsync(ct).ConfigureAwait(false);
 
-                            _logger.LogWarning(
-                                "Print Bridge new-device exchange rejected: active device quota exceeded. " +
-                                "SessionId={SessionId}, TenantId={TenantId}, ActiveCount={ActiveCount}",
-                                session.Id, session.TenantId, activeCount);
-                        }
-                        else
-                        {
-                            var created = await CreateDeviceAndBindSessionAsync(session, clientInfo, installationId, ct)
-                                .ConfigureAwait(false);
-                            await tx.CommitAsync(ct).ConfigureAwait(false);
+                        _logger.LogInformation(
+                            "New Print Bridge device created and bound via setup exchange. " +
+                            "DeviceId={DeviceId}, SessionId={SessionId}, TenantId={TenantId}, DeviceName={DeviceName}",
+                            created.DeviceId, session.Id, session.TenantId, created.DeviceName);
 
-                            _logger.LogInformation(
-                                "New Print Bridge device created and bound via setup exchange. " +
-                                "DeviceId={DeviceId}, SessionId={SessionId}, TenantId={TenantId}, DeviceName={DeviceName}",
-                                created.DeviceId, session.Id, session.TenantId, created.DeviceName);
-
-                            return (created.RawToken, created.DeviceName);
-                        }
+                        return (created.RawToken, created.DeviceName);
                     }
                 }
             }
@@ -607,10 +594,6 @@ public sealed partial class PrintBridgeSetupSessionService : IPrintBridgeSetupSe
         Conflict,
         RegisteredToAnotherTenant
     }
-
-    // The caller holds the tenant's setup lock, as the exchange, the move and the Web panel do (WAS-190): see PrintBridgeDeviceQuota.
-    private Task<int> CountActiveDevicesAsync(Guid tenantId, CancellationToken ct) =>
-        PrintBridgeDeviceQuota.CountActiveDevicesAsync(_centralDb, tenantId, ct);
 
     private async Task<InstallationBinding> BindInstallationIdentityAsync(
         Guid tenantId,

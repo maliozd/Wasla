@@ -1209,9 +1209,6 @@ public sealed class GuidedSetupCoordinatorTests
                     device.MachineName, null, null, null, device.ConnectionStatus, HasToken: true));
         }
 
-        public Task<PrintBridgeDeviceQuotaDto> GetDeviceQuotaAsync(Guid tenantId, CancellationToken ct) =>
-            Task.FromResult(new PrintBridgeDeviceQuotaDto(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, 0, true, false));
-
         public Task<GeneratePrintBridgeTokenResult> CreateDeviceAsync(Guid tenantId, string deviceName, CancellationToken ct) => throw Forbidden();
         public Task<GeneratePrintBridgeTokenResult> RegenerateTokenAsync(Guid tenantId, Guid deviceId, CancellationToken ct) => throw Forbidden();
         public Task<bool> SetDeviceActiveAsync(Guid tenantId, Guid deviceId, bool isActive, CancellationToken ct) => throw Forbidden();

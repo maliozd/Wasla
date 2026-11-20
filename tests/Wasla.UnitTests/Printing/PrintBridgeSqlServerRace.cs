@@ -75,7 +75,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
 
     /// <summary>
     /// Makes two writers compete for one protected section. <paramref name="first"/> runs until right before its first
-    /// device write: it holds its locks and has counted the quota. Then <paramref name="second"/> starts, and the first
+    /// device write: it holds its locks and has read what it checks. Then <paramref name="second"/> starts, and the first
     /// is held until SQL Server reports the second waiting for an application lock (<c>sp_getapplock</c>) that the
     /// first's session holds. Fails if the first ends without writing or the second ends instead of waiting.
     /// </summary>

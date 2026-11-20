@@ -66,9 +66,6 @@
   <data name="Pricing.Plan.Starter.Description" xml:space="preserve">
     <value>Küçük restoranlar ve ilk kurulum için</value>
   </data>
-  <data name="Pricing.Plan.Starter.DeviceLimit" xml:space="preserve">
-    <value>1 aktif Print Bridge cihazı</value>
-  </data>
   <data name="Pricing.Plan.Starter.Feature1" xml:space="preserve">
     <value>Temel sipariş paneli</value>
   </data>
@@ -79,9 +76,6 @@
     <value>Temel fiş ayarları</value>
   </data>
   <data name="Pricing.Plan.Starter.Feature4" xml:space="preserve">
-    <value>1 aktif Print Bridge cihazı</value>
-  </data>
-  <data name="Pricing.Plan.Starter.Feature5" xml:space="preserve">
     <value>Sipariş geçmişi</value>
   </data>
   <data name="Pricing.Plan.Pro.Name" xml:space="preserve">
@@ -89,9 +83,6 @@
   </data>
   <data name="Pricing.Plan.Pro.Description" xml:space="preserve">
     <value>Aktif restoranlar için</value>
-  </data>
-  <data name="Pricing.Plan.Pro.DeviceLimit" xml:space="preserve">
-    <value>3 aktif Print Bridge cihazı</value>
   </data>
   <data name="Pricing.Plan.Pro.Feature1" xml:space="preserve">
     <value>Starter'daki her şey</value>
@@ -106,9 +97,6 @@
     <value>Canlı mutfak ekranı</value>
   </data>
   <data name="Pricing.Plan.Pro.Feature5" xml:space="preserve">
-    <value>3 aktif Print Bridge cihazı</value>
-  </data>
-  <data name="Pricing.Plan.Pro.Feature6" xml:space="preserve">
     <value>Sipariş geçmişi ve raporlar</value>
   </data>
   <data name="Pricing.Plan.ProPlus.Name" xml:space="preserve">
@@ -117,22 +105,13 @@
   <data name="Pricing.Plan.ProPlus.Description" xml:space="preserve">
     <value>Yoğun restoranlar ve daha büyük operasyonlar için</value>
   </data>
-  <data name="Pricing.Plan.ProPlus.DeviceLimit" xml:space="preserve">
-    <value>10 aktif Print Bridge cihazı</value>
-  </data>
   <data name="Pricing.Plan.ProPlus.Feature1" xml:space="preserve">
     <value>Pro'daki her şey</value>
   </data>
   <data name="Pricing.Plan.ProPlus.Feature2" xml:space="preserve">
-    <value>10 aktif Print Bridge cihazı</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve">
-    <value>Daha esnek cihaz kullanımı</value>
-  </data>
-  <data name="Pricing.Plan.ProPlus.Feature4" xml:space="preserve">
     <value>Çoklu istasyonlar için uygun</value>
   </data>
-  <data name="Pricing.Plan.ProPlus.Feature5" xml:space="preserve">
+  <data name="Pricing.Plan.ProPlus.Feature3" xml:space="preserve">
     <value>Öncelikli kurulum desteği</value>
   </data>
   <data name="Pricing.Plan.Enterprise.Name" xml:space="preserve">
@@ -141,28 +120,19 @@
   <data name="Pricing.Plan.Enterprise.Description" xml:space="preserve">
     <value>Zincirler ve özel gereksinimleri olan işletmeler için</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Price" xml:space="preserve">
-    <value>2.500 TL'den başlayan</value>
-  </data>
-  <data name="Pricing.Plan.Enterprise.DeviceLimit" xml:space="preserve">
-    <value>Sınırsız / özel anlaşmaya göre Print Bridge cihazı</value>
-  </data>
   <data name="Pricing.Plan.Enterprise.Feature1" xml:space="preserve">
     <value>Pro+'daki her şey</value>
   </data>
   <data name="Pricing.Plan.Enterprise.Feature2" xml:space="preserve">
-    <value>Sınırsız / özel Print Bridge cihazları</value>
-  </data>
-  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve">
     <value>Çoklu şube desteği</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature3" xml:space="preserve">
     <value>Özel entegrasyonlar</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature4" xml:space="preserve">
     <value>Özel kurulum ve destek</value>
   </data>
-  <data name="Pricing.Plan.Enterprise.Feature6" xml:space="preserve">
+  <data name="Pricing.Plan.Enterprise.Feature5" xml:space="preserve">
     <value>Özel anlaşma ve limitler</value>
   </data>
   <data name="Signup.Title" xml:space="preserve">
@@ -176,9 +146,6 @@
   </data>
   <data name="Signup.SelectedPlanPackageLabel" xml:space="preserve">
     <value>{0} Paketi</value>
-  </data>
-  <data name="Signup.PlanPrice.Enterprise.Yearly" xml:space="preserve">
-    <value>Özel teklif</value>
   </data>
   <data name="Signup.StepBusiness" xml:space="preserve">
     <value>Restoran</value>
@@ -2520,4 +2487,7 @@
   <data name="RegistrationStatus.RefreshStatus" xml:space="preserve">
     <value>Durumu yenile</value>
   </data>
+  <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Çevrimiçi Cihazlar</value></data>
+  <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Print Bridge cihaz sayfaları</value></data>
+  <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>{2} cihazdan {0}–{1} arası gösteriliyor</value></data>
 </root>

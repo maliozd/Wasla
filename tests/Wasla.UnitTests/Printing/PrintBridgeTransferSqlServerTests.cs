@@ -17,9 +17,9 @@ namespace Wasla.UnitTests.Printing;
 /// Bridge installation racing each other and the ordinary exchange. Every caller has its own DbContext and connection
 /// pool, as separate requests or Web instances would, and opens its connection before one start gate releases them all
 /// (<see cref="PrintBridgeSqlServerRace"/>). The installation and tenant application locks (<c>sp_getapplock</c>) and the
-/// serializable transaction must leave exactly one registration, one retired source and one used code. Two moves for a
-/// restaurant's last device place are held so that one waits for the other's tenant lock. SQLite runs no application
-/// locks, so these races are only meaningful here.
+/// serializable transaction must leave exactly one registration, one retired source and one used code. Two moves into a
+/// restaurant with more than three devices are held so that one waits for the other's tenant lock, and both move (there
+/// is no device limit). SQLite runs no application locks, so these races are only meaningful here.
 /// </summary>
 public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
 {
@@ -27,7 +27,7 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
 
     /// <summary>
     /// Other restaurants' devices, enough for SQL Server to change its plans: on a nearly empty table the registration
-    /// read goes through another index, and the active-device count scans the clustered index.
+    /// read goes through another index.
     /// </summary>
     private const int ManyDevices = 300;
 
@@ -141,11 +141,11 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task TwoMovesIntoARestaurantWithOnePlaceLeft_OneWaitingForTheOther_FillItOnce()
+    public async Task TwoMovesIntoARestaurantWithMoreThanThreeDevices_OneWaitingForTheOther_BothMove()
     {
         var (tenantA, _, tenantC) = await TenantsAsync();
         var full = Seed(_database.Open("Seed"), "dolu", "Dolu Lokanta", save: true);
-        for (var i = 0; i < PrintBridgeDeviceLimits.AllowedActiveDeviceCount - 1; i++)
+        for (var i = 0; i < 3; i++)
             await CreateDeviceAsync(full, Guid.NewGuid());
 
         var first = Guid.NewGuid();
@@ -155,17 +155,23 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
         var firstCode = await CreateSessionAsync(full, "https://dolu.app.wasla.tr/");
         var secondCode = await CreateSessionAsync(full, "https://dolu.app.wasla.tr/");
 
-        // The first move is held right before its device write, holding the restaurant's tenant lock and having counted
-        // one place left; it goes on only once the second is seen waiting for that lock.
+        // The first move is held right before its device write, holding the restaurant's tenant lock; it goes on only once
+        // the second is seen waiting for that lock. No device count is checked, so both then move their computer.
         var (held, waited) = await _race.ContendAsync(
             db => Service(db).TransferAsync(Request(firstToken, first, firstCode, "https://dolu.app.wasla.tr/"), CancellationToken.None),
             db => Service(db).TransferAsync(Request(secondToken, second, secondCode, "https://dolu.app.wasla.tr/"), CancellationToken.None));
 
         Assert.True(
-            (held.Outcome, waited.Outcome) == (PrintBridgeTransferOutcome.Ready, PrintBridgeTransferOutcome.DeviceLimitReached),
+            (held.Outcome, waited.Outcome) == (PrintBridgeTransferOutcome.Ready, PrintBridgeTransferOutcome.Ready),
             $"{held.Outcome}, {waited.Outcome}; errors: {Errors.Text()}");
         await using var db = _database.Open("Inspector");
-        Assert.Equal(PrintBridgeDeviceLimits.AllowedActiveDeviceCount, await db.PrintBridgeDevices.CountAsync(d => d.TenantId == full && d.IsActive && d.RemovedAtUtc == null, Ct));
+        Assert.Equal(5, await db.PrintBridgeDevices.CountAsync(d => d.TenantId == full && d.IsActive && d.RemovedAtUtc == null, Ct));
+        foreach (var installation in new[] { first, second })
+        {
+            Assert.Equal(
+                [full],
+                await db.PrintBridgeDevices.Where(d => d.InstallationId == installation && d.RemovedAtUtc == null).Select(d => d.TenantId).ToListAsync(Ct));
+        }
     }
 
     [Theory]
@@ -207,25 +213,6 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
 
         Assert.True(result.Outcome == PrintBridgeTransferOutcome.SourceRejected, $"{result.Outcome}; errors: {Errors.Text()}");
         await AssertDidNotMoveAsync(move);
-    }
-
-    [Fact]
-    public async Task TheDeviceCountOfAMove_WhileADeviceOfTheDestinationIsRemoved_WaitsInsteadOfDeadlocking()
-    {
-        var move = await ArrangeMoveAsync(ManyDevices);
-        var (leavingId, _) = await CreateDeviceAsync(move.Destination, Guid.NewGuid());
-
-        var result = await _race.ReadDuringTwoStepDeviceWriteAsync(
-            leavingId,
-            db => db.Database.ExecuteSqlAsync(
-                $"UPDATE [PrintBridgeDevices] SET [RemovedAtUtc] = SYSUTCDATETIME(), [IsActive] = 0 WHERE [Id] = {leavingId}",
-                Ct),
-            command => PrintBridgeSqlServerRace.IsLockingDeviceReadBy(command, "TenantId"),
-            db => Service(db).TransferAsync(move.Request, CancellationToken.None));
-
-        Assert.True(result.Outcome == PrintBridgeTransferOutcome.Ready, $"{result.Outcome}; errors: {Errors.Text()}");
-        await using var db = _database.Open("Inspector");
-        Assert.Equal(1, await db.PrintBridgeDevices.CountAsync(d => d.InstallationId == move.Installation && d.RemovedAtUtc == null && d.TenantId == move.Destination, Ct));
     }
 
     [Fact]

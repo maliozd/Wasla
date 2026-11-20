@@ -68,13 +68,12 @@ public sealed class PrintBridgeController : BaseController
         if (tenant is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
-        var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
         var printJobs = await _printJobHistory
             .GetRecentReceiptJobsAsync(tenant.Id, PrintJobHistoryLimits.Default, ct)
             .ConfigureAwait(false);
 
-        var model = BuildPageViewModel(deviceRows, quota, printJobs);
-        model.DeviceSnapshot = BuildDeviceSnapshot(deviceRows, quota);
+        var model = BuildPageViewModel(deviceRows, printJobs);
+        model.DeviceSnapshot = BuildDeviceSnapshot(deviceRows);
         model.GuidedDeviceGuide = await _guidedSetup
             .GetDeviceGuideAsync(tenant.Id, CurrentUserId, User, ct)
             .ConfigureAwait(false);
@@ -318,14 +317,6 @@ public sealed class PrintBridgeController : BaseController
                     ?? $"/print-bridge/devices/{created.DeviceId}"
             });
         }
-        catch (PrintBridgeDeviceLimitReachedException)
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
-            });
-        }
         catch (InvalidOperationException)
         {
             return BadRequest(new { success = false, message = _localizer["PrintBridge.Auto.ManualTokenFailed"].Value });
@@ -380,9 +371,8 @@ public sealed class PrintBridgeController : BaseController
         if (tenant is null) return NotFound();
 
         var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
-        var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
 
-        return Ok(BuildDeviceSnapshot(deviceRows, quota));
+        return Ok(BuildDeviceSnapshot(deviceRows));
     }
 
     [ValidateAntiForgeryToken]
@@ -397,7 +387,6 @@ public sealed class PrintBridgeController : BaseController
         {
             var result = await _devices.RegenerateTokenAsync(tenant.Id, deviceId, ct).ConfigureAwait(false);
             var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
-            var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
 
             return Ok(new
             {
@@ -410,8 +399,7 @@ public sealed class PrintBridgeController : BaseController
                 tokenTitle = _localizer["PrintBridge.TokenRegenerated"].Value,
                 tokenNotice = _localizer["PrintBridge.TokenShownOnce"].Value,
                 tokenWarning = _localizer["PrintBridge.OldTokenInvalidAfterRegenerate"].Value,
-                devices = deviceRows.Select(MapDeviceJson),
-                quota = MapQuotaJson(quota, deviceRows)
+                devices = deviceRows.Select(MapDeviceJson)
             });
         }
         catch (InvalidOperationException)
@@ -435,32 +423,23 @@ public sealed class PrintBridgeController : BaseController
                 return NotFound(new { success = false, message = _localizer["PrintBridge.DeviceUpdateFailed"].Value });
 
             var deviceRows = await _devices.ListDevicesAsync(tenant.Id, ct).ConfigureAwait(false);
-            var quota = await _devices.GetDeviceQuotaAsync(tenant.Id, ct).ConfigureAwait(false);
             // The Devices page applies this exactly like a refreshed snapshot.
-            var snapshot = BuildDeviceSnapshot(deviceRows, quota);
+            var snapshot = BuildDeviceSnapshot(deviceRows);
 
             return Ok(new
             {
                 success = true,
                 isActive,
                 devices = snapshot.Devices,
-                quota = snapshot.Quota,
+                summary = snapshot.Summary,
                 serverTimeUtc = snapshot.ServerTimeUtc,
                 connectedThresholdSeconds = snapshot.ConnectedThresholdSeconds,
                 recentlySeenThresholdSeconds = snapshot.RecentlySeenThresholdSeconds
             });
         }
-        catch (PrintBridgeDeviceLimitReachedException)
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = _localizer["PrintBridge.DeviceLimitReached", PrintBridgeDeviceLimits.AllowedActiveDeviceCount].Value
-            });
-        }
         catch (InvalidOperationException)
         {
-            // The tenant's quota lock was not granted in time (WAS-190); nothing was changed.
+            // The tenant's setup lock was not granted in time (WAS-190); nothing was changed.
             return BadRequest(new { success = false, message = _localizer["PrintBridge.DeviceUpdateFailed"].Value });
         }
     }
@@ -519,7 +498,6 @@ public sealed class PrintBridgeController : BaseController
 
     private PrintBridgePageViewModel BuildPageViewModel(
         IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
-        PrintBridgeDeviceQuotaDto quota,
         IReadOnlyList<PrintJobHistoryItemDto> printJobs)
     {
         var tz = TimeZoneHelper.ResolveTurkeyTimeZone();
@@ -546,10 +524,8 @@ public sealed class PrintBridgeController : BaseController
             ReceiptPrinterSettingsUrl = Url.Action(nameof(ReceiptPrinterSettingsController.Index), "ReceiptPrinterSettings", new { area = AreaNames.Tenant })
                 ?? "/settings/receipt-printer",
             Devices = deviceRows.Select(MapDevice).ToList(),
-            AllowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
-            ActiveDeviceCount = quota.ActiveDeviceCount,
-            CanCreateActiveDevice = quota.CanCreateActiveDevice,
-            ActiveCountExceedsLimit = quota.ActiveCountExceedsLimit,
+            ActiveDeviceCount = deviceRows.Count(d => d.IsActive),
+            ConnectedDeviceCount = deviceRows.Count(d => d.IsConnected),
             PrintJobsTodayCount = printJobsTodayCount,
             LastConnectedDeviceName = lastConnected?.Name,
             LastConnectedAtUtc = lastConnected?.LastSeenAtUtc,
@@ -641,13 +617,10 @@ public sealed class PrintBridgeController : BaseController
                 + "#recent-print-activity"
         };
 
-    /// <summary>The Devices page's device snapshot, from the current tenant's device list and quota.</summary>
-    private PrintBridgeDeviceSnapshot BuildDeviceSnapshot(
-        IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows,
-        PrintBridgeDeviceQuotaDto quota) =>
+    /// <summary>The Devices page's device snapshot, from the current tenant's device list.</summary>
+    private PrintBridgeDeviceSnapshot BuildDeviceSnapshot(IReadOnlyList<PrintBridgeDeviceSummaryDto> deviceRows) =>
         PrintBridgeDeviceSnapshot.Create(
             deviceRows,
-            quota,
             DateTime.UtcNow,
             id => Url.Action(nameof(DeviceDetails), "PrintBridge", new { area = AreaNames.Tenant, id }) ?? $"/print-bridge/devices/{id}");
 
@@ -719,34 +692,4 @@ public sealed class PrintBridgeController : BaseController
             FoodPlatform.TrendyolYemek => _localizer["Orders.PlatformTrendyolYemek"].Value,
             _ => platform.ToString()
         };
-
-    private static object MapQuotaJson(
-        PrintBridgeDeviceQuotaDto quota,
-        IReadOnlyList<PrintBridgeDeviceSummaryDto>? devices = null)
-    {
-        var connectedCount = devices?.Count(d => d.ConnectionStatus == PrintBridgeConnectionStatus.Connected) ?? 0;
-        DateTime? latestLastSeen = devices?
-            .Where(d => d.LastSeenAtUtc.HasValue)
-            .Select(d => d.LastSeenAtUtc!.Value)
-            .DefaultIfEmpty()
-            .Max();
-        if (latestLastSeen == default)
-            latestLastSeen = null;
-
-        var lastConnected = devices?
-            .Where(d => d.LastSeenAtUtc.HasValue)
-            .OrderByDescending(d => d.LastSeenAtUtc)
-            .FirstOrDefault();
-
-        return new
-        {
-            allowedActiveDeviceCount = quota.AllowedActiveDeviceCount,
-            activeDeviceCount = quota.ActiveDeviceCount,
-            canCreateActiveDevice = quota.CanCreateActiveDevice,
-            activeCountExceedsLimit = quota.ActiveCountExceedsLimit,
-            connectedDeviceCount = connectedCount,
-            latestLastSeenAtUtc = latestLastSeen,
-            lastConnectedDeviceName = lastConnected?.Name
-        };
-    }
 }

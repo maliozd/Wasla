@@ -477,12 +477,12 @@
                     <p class="wm-text-s">@L[plan.DescriptionKey]</p>
                     @if (plan.IsContactSales)
                     {
-                        @* Contact sales in both periods, with the labels signup shows for them. *@
+                        @* Custom pricing in both periods: a contact-sales plan has no public amount. *@
                         <div class="wm-plan__period" data-plan-period="@PlanPriceText.Monthly">
                             <p class="wm-plan__price" data-plan-price="@PlanPriceText.Monthly">@L[plan.ContactSalesPriceLabelKey!]</p>
                         </div>
                         <div class="wm-plan__period" data-plan-period="@PlanPriceText.Yearly" hidden>
-                            <p class="wm-plan__price" data-plan-price="@PlanPriceText.Yearly">@L["Signup.PlanPrice.Enterprise.Yearly"]</p>
+                            <p class="wm-plan__price" data-plan-price="@PlanPriceText.Yearly">@L[plan.ContactSalesPriceLabelKey!]</p>
                         </div>
                     }
                     else
@@ -502,7 +502,6 @@
                             </div>
                         }
                     }
-                    <p class="wm-plan__devices"><i class="bi bi-printer" aria-hidden="true"></i> @L[plan.DeviceLimitKey]</p>
                     <ul class="wm-checks">
                         @foreach (var featureKey in plan.FeatureKeys)
                         {
