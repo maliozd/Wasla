@@ -34,12 +34,9 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         _connection.Open();
         await SignupWebHost.CreateCentralDbAsync(_connection);
         await using var db = NewContext();
-        db.Cities.AddRange(
-            new City { Id = 34, CountryCode = "TR", Name = "İstanbul", PlateCode = "34", SortOrder = 34, IsActive = true },
-            new City { Id = 6, CountryCode = "TR", Name = "Ankara", PlateCode = "06", SortOrder = 6, IsActive = true },
-            new City { Id = 16, CountryCode = "TR", Name = "Bursa", PlateCode = "16", SortOrder = 16, IsActive = true },
-            new City { Id = 17, CountryCode = "TR", Name = "Çanakkale", PlateCode = "17", SortOrder = 17, IsActive = true },
-            new City { Id = 7, CountryCode = "TR", Name = "Antalya", PlateCode = "07", SortOrder = 7, IsActive = false });
+        // The complete catalog of 81 provinces, plus a city of another country that the form never lists.
+        db.Cities.AddRange(PilotProvinceSeed.All(idOffset: 1000));
+        db.Cities.Add(new City { Id = 900, CountryCode = "CY", Name = "Girne", PlateCode = "99", SortOrder = 900, IsActive = true });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
@@ -128,9 +125,13 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.Matches("id=\"pilot-website\"[^>]*tabindex=\"-1\"", page.Body);
         Assert.Matches("class=\"wm-phone\" dir=\"ltr\"", page.Body);
 
-        // Only the active provinces, by Turkish name, with their plate codes as values.
-        var options = CityOption().Matches(page.Body).Select(m => m.Groups["value"].Value + " " + WebUtility.HtmlDecode(m.Groups["name"].Value)).ToList();
-        Assert.Equal(new[] { "06 Ankara", "16 Bursa", "17 Çanakkale", "34 İstanbul" }, options);
+        // The 81 provinces, by Turkish name, with their plate codes as values; no other country's city.
+        var options = CityOption().Matches(page.Body).Select(m => (Plate: m.Groups["value"].Value, Name: WebUtility.HtmlDecode(m.Groups["name"].Value))).ToList();
+        Assert.Equal(81, options.Count);
+        Assert.Equal(Enumerable.Range(1, 81).Select(n => n.ToString("00", CultureInfo.InvariantCulture)), options.Select(o => o.Plate).Order(StringComparer.Ordinal));
+        Assert.Equal(options.Select(o => o.Name).Order(StringComparer.Create(CultureInfo.GetCultureInfo("tr-TR"), ignoreCase: false)), options.Select(o => o.Name));
+        Assert.Contains(("34", "İstanbul"), options);
+        Assert.DoesNotContain(options, o => o.Name == "Girne");
 
         // The privacy notice is linked before the submit button, opens in a new tab, and asks for no consent.
         var privacy = page.Body.IndexOf($"href=\"{PublicSiteUrls.PilotPrivacyNoticePath}\"", StringComparison.Ordinal);
@@ -210,7 +211,7 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         var submission = Guid.NewGuid().ToString();
 
         var page = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token,
-            ("SubmissionId", submission), ("RestaurantName", "Lezzet <b>Ocak</b>"), ("CityPlateCode", "07"),
+            ("SubmissionId", submission), ("RestaurantName", "Lezzet <b>Ocak</b>"), ("CityPlateCode", "99"),
             ("ContactName", ""), ("Phone", "532 12"), ("Email", "not-an-address"), ("Note", "Öğleden sonra arayın")));
 
         Assert.Equal(HttpStatusCode.OK, page.Status);
@@ -263,9 +264,9 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ApplicationsOverTheNetworkLimit_Get429WithTheFormAgain_AndAreNotStored()
+    public async Task ValidApplicationsOverTheStoreLimit_Get429WithTheFormAgain_AndAreNotStored()
     {
-        var host = await StartAsync(configuration: new Dictionary<string, string?> { ["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "2" });
+        var host = await StartAsync(configuration: new Dictionary<string, string?> { ["AuthenticationRateLimiting:PilotApplicationStore:PermitLimit"] = "2" });
         using var browser = Browser(host, "en-US");
         var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
 
@@ -336,6 +337,121 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.Contains(Text("tr-TR", "PilotPrivacy.DraftTitle"), html, StringComparison.Ordinal);
         Assert.Equal(7, Regex.Matches(html, Regex.Escape(Text("tr-TR", "PilotPrivacy.NotConfigured"))).Count);
         Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync(PublicSiteUrls.PilotPath)).Status);
+    }
+
+    [Fact]
+    public async Task CorrectingValidationErrors_NeverUsesTheStoreLimit_SoTheRealApplicationStillGoesThrough()
+    {
+        var host = await StartAsync(configuration: new Dictionary<string, string?>
+        {
+            ["AuthenticationRateLimiting:PilotApplicationStore:PermitLimit"] = "1",
+            ["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "30"
+        });
+        using var browser = Browser(host, "tr-TR");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
+        var submission = Guid.NewGuid().ToString();
+
+        // Ten rounds of corrections: each is answered with the form and its errors, not with the limit.
+        for (var i = 0; i < 10; i++)
+        {
+            var invalid = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token, ("SubmissionId", submission), ("Email", "not-an-address")));
+            Assert.Equal(HttpStatusCode.OK, invalid.Status);
+            Assert.Contains("data-pilot-state=\"invalid\"", invalid.Body);
+        }
+
+        var valid = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token, ("SubmissionId", submission)));
+
+        Assert.Equal(HttpStatusCode.Redirect, valid.Status);
+        await using var db = NewContext();
+        Assert.Equal(1, await db.ContactMessages.CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task PostsOverTheNetworkLimit_Get429_EvenWhenInvalid_AndStoreNothing()
+    {
+        var host = await StartAsync(configuration: new Dictionary<string, string?> { ["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "3" });
+        using var browser = Browser(host, "en-US");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
+
+        for (var i = 0; i < 3; i++)
+            Assert.Equal(HttpStatusCode.OK, (await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token, ("Email", "not-an-address")))).Status);
+        var limited = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token));
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, limited.Status);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Theory]
+    [InlineData("Staging")]
+    [InlineData("Pilot")]
+    [InlineData("Test")]
+    [InlineData("Develpment")]
+    [InlineData("Production")]
+    public async Task OutsideDevelopment_AnEnabledFormWithAnIncompleteNotice_StaysClosed(string environment)
+    {
+        var host = await StartAsync(enabled: true, completeNotice: false, environment: environment);
+        using var browser = Browser(host, "tr-TR");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPath)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPrivacyNoticePath)).Status);
+        var token = host.IssueAntiforgeryToken(browser);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token))).Status);
+        Assert.DoesNotContain("href=\"/pilot\"", (await browser.GetAsync("/")).Body);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Fact]
+    public async Task InStaging_ACompleteNotice_OpensTheForm()
+    {
+        var host = await StartAsync(environment: "Staging");
+        using var browser = Browser(host, "tr-TR");
+
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync(PublicSiteUrls.PilotPath)).Status);
+        var notice = await browser.GetAsync(PublicSiteUrls.PilotPrivacyNoticePath);
+        Assert.Contains("data-pilot-notice-draft=\"false\"", notice.Body);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(80)]
+    public async Task WithoutTheComplete81ProvinceCatalog_TheFormAndTheActionStayClosed(int provincesLeft)
+    {
+        await using (var db = NewContext())
+        {
+            var keep = db.Cities.Where(c => c.CountryCode == "TR").OrderBy(c => c.Id).Take(provincesLeft).Select(c => c.Id).ToList();
+            db.Cities.RemoveRange(db.Cities.Where(c => c.CountryCode == "TR" && !keep.Contains(c.Id)));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var host = await StartAsync();
+        using var browser = Browser(host, "tr-TR");
+
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPath)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPrivacyNoticePath)).Status);
+        var token = host.IssueAntiforgeryToken(browser);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token))).Status);
+        var home = await browser.GetAsync("/");
+        Assert.DoesNotContain("href=\"/pilot\"", home.Body);
+        Assert.Contains($"href=\"{PublicSiteUrls.InstagramUrl}\"", home.Body);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Theory]
+    [InlineData("app.wasla.local")]
+    [InlineData("lezzet.app.wasla.local")]
+    public async Task OnTheApplicationEntryAndTenantHosts_ThePilotPagesDoNotExist(string host)
+    {
+        var web = await StartAsync();
+        using var browser = Browser(web, "tr-TR");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPath, host)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(PublicSiteUrls.PilotPrivacyNoticePath, host)).Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token), host)).Status);
+        Assert.False(await AnyStoredAsync());
+
+        // The marketing host serves them.
+        Assert.Equal(HttpStatusCode.OK, (await browser.GetAsync(PublicSiteUrls.PilotPath, SignupWebHost.CentralHost)).Status);
     }
 
     // ---- Helpers --------------------------------------------------------------------------------------------------
@@ -456,5 +572,7 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
 
         public Task<ContactNotificationResendResult> ResendNotificationAsync(Guid messageId, CancellationToken ct) =>
             throw new NotSupportedException();
+
+        public Task<int> CountStuckNotificationsAsync(CancellationToken ct) => Task.FromResult(0);
     }
 }

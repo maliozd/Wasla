@@ -4974,7 +4974,8 @@
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
-  /* Phone band: the cashier's face and the order screen; the stand's maker mark stays out of the crop. */
+  /* Phone band: the cashier's face and the order screen. The image file is cut above the stand, so no maker mark
+     appears at any width. */
   object-position: 100% 30%;
 }
 
@@ -5564,7 +5565,8 @@
   }
 
   .wm-pilot__photo img {
-    object-position: 53% 30%;
+    /* The cashier's face, hand and the edge of the order screen. */
+    object-position: 84% 30%;
   }
 
   .wm-pilot__photo::after {

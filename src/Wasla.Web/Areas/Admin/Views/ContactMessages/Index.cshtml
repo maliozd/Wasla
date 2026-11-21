@@ -29,7 +29,8 @@
                   {
                       ((string?)null, "Admin.ContactMessages.FilterAll", AdminContactMessageFilter.All),
                       ("pilot", "Admin.ContactMessages.FilterPilot", AdminContactMessageFilter.PilotApplications),
-                      ("contact", "Admin.ContactMessages.FilterContact", AdminContactMessageFilter.ContactMessages)
+                      ("contact", "Admin.ContactMessages.FilterContact", AdminContactMessageFilter.ContactMessages),
+                      ("attention", "Admin.ContactMessages.FilterAttention", AdminContactMessageFilter.NotificationNeedsAttention)
                   })
         {
             var active = Model.Filter == filter;

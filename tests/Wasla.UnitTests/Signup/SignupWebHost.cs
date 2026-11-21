@@ -154,6 +154,7 @@ internal sealed class SignupWebHost : IAsyncDisposable
         builder.Configuration["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:ContactSubmission:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:PilotApplicationStore:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupDraftSave:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupDraftCreation:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupPhoneSend:PermitLimit"] = "1000";

@@ -4939,13 +4939,14 @@
   <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>You can send requests about your rights under article 11 of the KVKK through:</value></data>
   <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[Not configured]</value></data>
   <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>Draft privacy notice</value></data>
-  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>The data controller and legal details are not configured yet. This draft is shown only in test environments; in Production the form and this page stay closed.</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>The data controller and legal details are not configured yet. This draft is shown only in local development (Development); every other environment keeps the form and this page closed.</value></data>
   <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>Back to the application form</value></data>
   <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>Pilot application</value></data>
   <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>Message type</value></data>
   <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>All</value></data>
   <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>Pilot applications</value></data>
   <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>Contact messages</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>Notification needs attention</value></data>
   <data name="Admin.ContactMessages.City" xml:space="preserve"><value>City</value></data>
   <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>Note</value></data>
   <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>No note was written.</value></data>

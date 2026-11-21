@@ -11,7 +11,14 @@ public enum AdminContactMessageFilter
     PilotApplications,
 
     /// <summary>Contact form messages only.</summary>
-    ContactMessages
+    ContactMessages,
+
+    /// <summary>
+    /// Messages of either kind whose team notification failed, was not configured, or started more than
+    /// <see cref="Wasla.Application.Contact.ContactNotificationRetry.StuckAfter"/> ago without an outcome: the ones Central
+    /// Admin may send again (<see cref="Wasla.Application.Contact.ContactNotificationRetry.NeedsAttentionAt"/>).
+    /// </summary>
+    NotificationNeedsAttention
 }
 
 /// <summary>Contact messages and pilot applications for Central Admin, newest first.</summary>

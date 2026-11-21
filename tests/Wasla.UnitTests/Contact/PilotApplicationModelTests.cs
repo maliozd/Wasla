@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Wasla.Application.Abstractions.ReferenceData;
 using Wasla.Application.Contact;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
@@ -89,22 +92,112 @@ public sealed class PilotApplicationModelTests
     [InlineData(false, false, "Production", false)]
     [InlineData(true, false, "Production", false)]  // enabled, but the notice lacks its controller and legal facts
     [InlineData(true, true, "Production", true)]
-    [InlineData(true, false, "Development", true)]  // a draft notice outside Production
-    [InlineData(true, false, "Staging", true)]
+    [InlineData(true, false, "Development", true)]  // the only environment that shows a draft notice
+    [InlineData(true, false, "Staging", false)]
+    [InlineData(true, false, "Pilot", false)]
+    [InlineData(true, false, "Test", false)]
+    [InlineData(true, false, "Develpment", false)]  // a misspelled name is not Development
+    [InlineData(true, true, "Staging", true)]
     [InlineData(false, true, "Development", false)]
-    public void TheForm_IsOpenOnlyWhenEnabled_AndProductionHasEveryNoticeFact(bool enabled, bool completeNotice, string environment, bool open)
+    public async Task TheForm_IsOpenOnlyWhenEnabled_AndOutsideDevelopmentEveryNoticeFactIsSet(bool enabled, bool completeNotice, string environment, bool open)
     {
-        var gate = new PilotApplicationGate(Options.Create(new PilotApplicationOptions
-        {
-            Enabled = enabled,
-            PrivacyNotice = completeNotice ? CompleteNotice() : new PilotPrivacyNoticeOptions { ControllerName = "Örnek Test Ltd." }
-        }), new Environment(environment));
+        var gate = Gate(enabled, completeNotice, environment, new Catalog(PilotProvinceSeed.All().Select(c => new TurkishProvince(c.PlateCode!, c.Name)).ToList()));
 
-        Assert.Equal(open, gate.IsOpen);
+        Assert.Equal(open, await gate.IsOpenAsync(TestContext.Current.CancellationToken));
         Assert.Equal(!completeNotice, gate.NoticeIsDraft);
-        Assert.Equal(enabled && !completeNotice && environment == "Production", gate.ClosedForMissingNotice);
+        Assert.Equal(enabled && !completeNotice && environment != "Development", gate.ClosedForMissingNotice);
         if (!completeNotice)
             Assert.Contains("Wasla:PilotApplication:PrivacyNotice:ControllerAddress", gate.MissingNoticeFields);
+    }
+
+    [Theory]
+    [InlineData(81, 0, TurkishProvinceCatalogStatus.Complete)]
+    [InlineData(0, 0, TurkishProvinceCatalogStatus.Empty)]
+    [InlineData(80, 0, TurkishProvinceCatalogStatus.Incomplete)]
+    [InlineData(81, 1, TurkishProvinceCatalogStatus.Incomplete)] // a plate code twice
+    public async Task TheForm_StaysClosedUntilTheCatalogHoldsThe81Provinces(int provinces, int duplicates, TurkishProvinceCatalogStatus expected)
+    {
+        var list = PilotProvinceSeed.All().Take(provinces).Select(c => new TurkishProvince(c.PlateCode!, c.Name)).ToList();
+        list.AddRange(list.Take(duplicates).ToList());
+        Assert.Equal(expected, TurkishProvinces.Check(list));
+
+        var gate = Gate(enabled: true, completeNotice: true, "Production", new Catalog(list));
+
+        Assert.Equal(expected == TurkishProvinceCatalogStatus.Complete, await gate.IsOpenAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(expected, (await gate.GetCityCatalogStateAsync(TestContext.Current.CancellationToken)).Status);
+    }
+
+    [Fact]
+    public async Task AnUnreadableCatalog_KeepsTheFormClosed()
+    {
+        var gate = Gate(enabled: true, completeNotice: true, "Production", new Catalog([]) { Failure = new InvalidOperationException("CentralDb down") });
+
+        Assert.False(await gate.IsOpenAsync(TestContext.Current.CancellationToken));
+        var state = await gate.GetCityCatalogStateAsync(TestContext.Current.CancellationToken);
+        Assert.True(state.Unreadable);
+        Assert.Equal(nameof(InvalidOperationException), state.ExceptionType);
+    }
+
+    [Fact]
+    public async Task TheCatalog_IsReadOncePerLifetime_AndAnImportIsSeenWithinAMinute()
+    {
+        var clock = new ManualClock(new DateTimeOffset(Now));
+        var catalog = new Catalog([]);
+        var gate = Gate(enabled: true, completeNotice: true, "Production", catalog, clock);
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.False(await gate.IsOpenAsync(ct));
+        Assert.False(await gate.IsOpenAsync(ct));
+        Assert.Equal(1, catalog.Reads);
+
+        catalog.Provinces = PilotProvinceSeed.All().Select(c => new TurkishProvince(c.PlateCode!, c.Name)).ToList();
+        clock.Advance(PilotApplicationGate.IncompleteCatalogLifetime);
+        Assert.True(await gate.IsOpenAsync(ct));
+        Assert.Equal(2, catalog.Reads);
+
+        clock.Advance(PilotApplicationGate.CompleteCatalogLifetime - TimeSpan.FromSeconds(1));
+        Assert.True(await gate.IsOpenAsync(ct));
+        Assert.Equal(2, catalog.Reads);
+    }
+
+    [Fact]
+    public async Task WithoutConfiguration_TheCatalogIsNeverRead()
+    {
+        var catalog = new Catalog([]);
+        var gate = Gate(enabled: false, completeNotice: true, "Production", catalog);
+
+        Assert.False(await gate.IsOpenAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, catalog.Reads);
+    }
+
+    private static PilotApplicationGate Gate(bool enabled, bool completeNotice, string environment, Catalog catalog, TimeProvider? clock = null)
+    {
+        var services = new ServiceCollection().AddSingleton<ITurkishProvinceCatalog>(catalog).BuildServiceProvider();
+        return new PilotApplicationGate(
+            Options.Create(new PilotApplicationOptions
+            {
+                Enabled = enabled,
+                PrivacyNotice = completeNotice ? CompleteNotice() : new PilotPrivacyNoticeOptions { ControllerName = "Örnek Test Ltd." }
+            }),
+            new Environment(environment),
+            services.GetRequiredService<IServiceScopeFactory>(),
+            clock ?? new ManualClock(new DateTimeOffset(Now)),
+            NullLogger<PilotApplicationGate>.Instance);
+    }
+
+    private sealed class Catalog(List<TurkishProvince> provinces) : ITurkishProvinceCatalog
+    {
+        public List<TurkishProvince> Provinces { get; set; } = provinces;
+
+        public Exception? Failure { get; init; }
+
+        public int Reads { get; private set; }
+
+        public Task<IReadOnlyList<TurkishProvince>> GetActiveProvincesAsync(CancellationToken ct)
+        {
+            Reads++;
+            return Failure is null ? Task.FromResult<IReadOnlyList<TurkishProvince>>(Provinces) : Task.FromException<IReadOnlyList<TurkishProvince>>(Failure);
+        }
     }
 
     internal static PilotPrivacyNoticeOptions CompleteNotice() => new()

@@ -271,10 +271,12 @@
                         </div>
                     </div>
 
-                    @* Left empty by people; hidden from sight, keyboard and assistive technology. *@
-                    <div class="wm-visually-hidden" aria-hidden="true">
+                    @* Left empty by people. Not rendered (hidden), so it is out of sight, the tab order and the accessibility
+                       tree, and browsers and password managers do not fill a field that cannot be focused; scripts that
+                       post every input of the markup still fill it. *@
+                    <div class="wm-honeypot" hidden>
                         <label for="pilot-website">@L["Contact.Form.HoneypotLabel"]</label>
-                        <input type="text" id="pilot-website" name="Website" value="" tabindex="-1" autocomplete="off" />
+                        <input type="text" id="pilot-website" name="Website" value="" tabindex="-1" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other" />
                     </div>
 
                     <div class="wm-pilot-form__submit">

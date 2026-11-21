@@ -29,7 +29,7 @@
         <div class="wm-coming-soon__row">
             <p class="wm-body-l wm-coming-soon__lead">@L["Marketing.ComingSoonPage.Lead"]</p>
             <div class="wm-actions wm-coming-soon__actions">
-                @if (PilotGate.IsOpen)
+                @if (await PilotGate.IsOpenAsync(Context.RequestAborted))
                 {
                     <a class="wm-btn wm-btn--primary" href="@PublicSiteUrls.PilotPath" data-coming-soon-cta="pilot">
                         @L["Marketing.ComingSoonPage.BecomePilot"]

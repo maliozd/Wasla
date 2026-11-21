@@ -17,8 +17,8 @@ public sealed class PilotApplicationOptions
 
 /// <summary>
 /// The facts of the pilot privacy notice that the company and its legal review must provide (KVKK article 10). Each is
-/// shown as configured, in every UI language. While one is empty the notice is a draft, and Production keeps the form
-/// closed.
+/// shown as configured, in every UI language. While one is empty the notice is a draft, shown only in Development; every
+/// other environment keeps the form closed.
 /// </summary>
 public sealed class PilotPrivacyNoticeOptions
 {

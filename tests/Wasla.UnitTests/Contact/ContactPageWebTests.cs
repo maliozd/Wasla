@@ -321,5 +321,7 @@ public sealed partial class ContactPageWebTests : IAsyncLifetime
 
         public Task<ContactNotificationResendResult> ResendNotificationAsync(Guid messageId, CancellationToken ct) =>
             throw new NotSupportedException();
+
+        public Task<int> CountStuckNotificationsAsync(CancellationToken ct) => Task.FromResult(0);
     }
 }

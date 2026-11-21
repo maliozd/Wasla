@@ -42,6 +42,7 @@ public sealed class ContactMessagesController : Controller
         {
             "pilot" => AdminContactMessageFilter.PilotApplications,
             "contact" => AdminContactMessageFilter.ContactMessages,
+            "attention" => AdminContactMessageFilter.NotificationNeedsAttention,
             _ => AdminContactMessageFilter.All
         };
         var result = await _service.GetListAsync(page, AdminContactMessagePaging.MaxPageSize, filter, ct).ConfigureAwait(false);

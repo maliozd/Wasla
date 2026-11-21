@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -18,6 +19,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                 maxLength: 2,
                 nullable: true);
 
+            migrationBuilder.AddColumn<Guid>(
+                name: "NotificationClaimId",
+                table: "ContactMessages",
+                type: "uniqueidentifier",
+                nullable: true);
+
             migrationBuilder.CreateIndex(
                 name: "IX_ContactMessages_Topic_CreatedAtUtc",
                 table: "ContactMessages",
@@ -33,6 +40,10 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
             migrationBuilder.DropColumn(
                 name: "CityPlateCode",
+                table: "ContactMessages");
+
+            migrationBuilder.DropColumn(
+                name: "NotificationClaimId",
                 table: "ContactMessages");
         }
     }

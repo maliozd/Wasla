@@ -5365,13 +5365,14 @@
   <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>Обращения по вашим правам согласно статье 11 KVKK можно направить:</value></data>
   <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[Не настроено]</value></data>
   <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>Черновик уведомления</value></data>
-  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>Данные оператора и юридические сведения ещё не настроены. Этот черновик виден только в тестовых средах; в Production форма и эта страница закрыты.</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>Данные оператора и юридические сведения ещё не настроены. Этот черновик виден только в локальной среде разработки (Development); во всех остальных средах форма и эта страница закрыты.</value></data>
   <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>Вернуться к форме заявки</value></data>
   <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>Пилотная заявка</value></data>
   <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>Тип сообщения</value></data>
   <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>Все</value></data>
   <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>Пилотные заявки</value></data>
   <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>Сообщения обратной связи</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>Уведомление требует внимания</value></data>
   <data name="Admin.ContactMessages.City" xml:space="preserve"><value>Город</value></data>
   <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>Примечание</value></data>
   <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>Примечание не указано.</value></data>

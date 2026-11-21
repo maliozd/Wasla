@@ -88,8 +88,8 @@ public sealed class TenantResolutionMiddleware
                 RedirectToTenantNotFound(context, host);
                 return;
 
-            // The marketing host serves the public site, signup, checkout, Central Admin and Print Bridge; sign-in
-            // asks for the tenant address.
+            // The marketing host serves the public site, signup, checkout, the pilot application, Central Admin and
+            // Print Bridge; sign-in asks for the tenant address.
             case WaslaHostKind.Public:
                 if (route == RouteGroup.Application && IsUnder(path, "/auth"))
                 {
@@ -101,11 +101,14 @@ public sealed class TenantResolutionMiddleware
                 return;
 
             // The application entry is neither a tenant nor the marketing site: signup and checkout move to the
-            // marketing host; Central Admin, Print Bridge and the tenant address page stay; everything else asks for the
-            // tenant address.
+            // marketing host; Central Admin, Print Bridge and the tenant address page stay; the pilot application does
+            // not exist there; everything else asks for the tenant address.
             case WaslaHostKind.Application:
                 switch (route)
                 {
+                    case RouteGroup.MarketingOnly:
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
                     case RouteGroup.PublicFlow:
                     case RouteGroup.SignupStatus:
                         RedirectToMarketingHost(context, environment, options.MarketingBaseDomain);
@@ -123,9 +126,12 @@ public sealed class TenantResolutionMiddleware
 
         // A tenant host. Central Admin, Print Bridge (authenticated by its device token) and the status page of the
         // host's own pending registration are served without tenant resolution, as before; signup and checkout belong
-        // to the marketing host.
+        // to the marketing host; the pilot application does not exist on a tenant host and is answered without a lookup.
         switch (route)
         {
+            case RouteGroup.MarketingOnly:
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
             case RouteGroup.PublicFlow:
                 RedirectToMarketingHost(context, environment, options.MarketingBaseDomain);
                 return;
@@ -222,6 +228,8 @@ public sealed class TenantResolutionMiddleware
             return RouteGroup.SignupStatus;
         if (IsUnder(path, "/signup") || IsUnder(path, "/checkout"))
             return RouteGroup.PublicFlow;
+        if (IsUnder(path, PublicSiteUrls.PilotPath))
+            return RouteGroup.MarketingOnly;
         if (IsUnder(path, "/admin"))
             return RouteGroup.CentralAdmin;
         if (IsUnder(path, "/api/print-bridge"))
@@ -276,6 +284,12 @@ public sealed class TenantResolutionMiddleware
 
         /// <summary>Signup and checkout.</summary>
         PublicFlow,
+
+        /// <summary>
+        /// The pilot application and its notice (<c>/pilot</c>, WAS-217): the marketing host only, 404 on the application
+        /// entry and tenant hosts.
+        /// </summary>
+        MarketingOnly,
 
         /// <summary><c>/signup/pending/{id}</c>.</summary>
         SignupStatus,

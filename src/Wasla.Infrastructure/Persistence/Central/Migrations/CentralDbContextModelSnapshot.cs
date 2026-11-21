@@ -568,6 +568,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Property<DateTime?>("NotificationAttemptedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("NotificationClaimId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("NotificationStatus")
                         .HasColumnType("int");
 

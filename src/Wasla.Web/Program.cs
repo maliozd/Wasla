@@ -130,10 +130,13 @@ builder.Services.AddWaslaTenantHostMissCache(builder.Configuration);
 
 // The marketing host shows only the coming-soon page until Wasla:MarketingSite:FullSiteEnabled publishes the full site.
 builder.Services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
-// The pilot restaurant application at /pilot (WAS-217): off unless Wasla:PilotApplication:Enabled; Production keeps it
-// closed until every privacy notice fact under Wasla:PilotApplication:PrivacyNotice is configured.
+// The pilot restaurant application at /pilot (WAS-217): off unless Wasla:PilotApplication:Enabled; outside Development
+// it stays closed until every privacy notice fact under Wasla:PilotApplication:PrivacyNotice is configured, and in every
+// environment until the CentralDb city catalog holds the 81 provinces. The readiness check logs why it is closed and
+// any notification that started but never finished.
 builder.Services.Configure<PilotApplicationOptions>(builder.Configuration.GetSection(PilotApplicationOptions.SectionName));
 builder.Services.AddSingleton<PilotApplicationGate>();
+builder.Services.AddHostedService<PilotApplicationReadinessCheck>();
 
 // Temporary Development tools: off unless Development and explicitly enabled (appsettings.Development.json).
 var developmentToolsSection = builder.Configuration.GetSection(DevelopmentToolsOptions.SectionName);
@@ -175,13 +178,14 @@ var pilotGate = app.Services.GetRequiredService<PilotApplicationGate>();
 if (pilotGate.ClosedForMissingNotice)
 {
     app.Logger.LogWarning(
-        "The pilot application form stays closed: Wasla:PilotApplication:Enabled is true, but the privacy notice lacks {MissingNoticeFields}.",
-        string.Join(", ", pilotGate.MissingNoticeFields));
+        "The pilot application form stays closed: Wasla:PilotApplication:Enabled is true, but the privacy notice lacks {MissingNoticeFields} (Environment={Environment}; a draft notice is shown only in Development).",
+        string.Join(", ", pilotGate.MissingNoticeFields),
+        app.Environment.EnvironmentName);
 }
 else if (pilotGate.Enabled && pilotGate.NoticeIsDraft)
 {
     app.Logger.LogWarning(
-        "The pilot application form is open with a draft privacy notice (Environment={Environment}); Production keeps it closed until {MissingNoticeFields} are set.",
+        "The pilot application form is open with a draft privacy notice (Environment={Environment}); every other environment keeps it closed until {MissingNoticeFields} are set.",
         app.Environment.EnvironmentName,
         string.Join(", ", pilotGate.MissingNoticeFields));
 }

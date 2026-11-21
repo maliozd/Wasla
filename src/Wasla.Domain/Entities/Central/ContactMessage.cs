@@ -52,6 +52,13 @@ public sealed class ContactMessage
 
     public DateTime? NotificationAttemptedAtUtc { get; private set; }
 
+    /// <summary>
+    /// The attempt that currently owns the team notification: set when the row is stored and when Central Admin claims a
+    /// new attempt, cleared when an attempt records its outcome. An attempt records its outcome only while it still owns
+    /// the row, so a late outcome of an earlier attempt never overwrites a newer one.
+    /// </summary>
+    public Guid? NotificationClaimId { get; private set; }
+
     public static ContactMessage Create(
         string fullName,
         string restaurantName,
@@ -83,7 +90,8 @@ public sealed class ContactMessage
             Culture = OptionalCulture(culture),
             PrivacyNoticeAcknowledged = true,
             CreatedAtUtc = nowUtc,
-            NotificationStatus = ContactMessageNotificationStatus.Pending
+            NotificationStatus = ContactMessageNotificationStatus.Pending,
+            NotificationClaimId = Guid.NewGuid()
         };
     }
 
@@ -130,7 +138,8 @@ public sealed class ContactMessage
             Culture = OptionalCulture(culture),
             PrivacyNoticeAcknowledged = false,
             CreatedAtUtc = nowUtc,
-            NotificationStatus = ContactMessageNotificationStatus.Pending
+            NotificationStatus = ContactMessageNotificationStatus.Pending,
+            NotificationClaimId = Guid.NewGuid()
         };
     }
 
@@ -177,6 +186,7 @@ public sealed class ContactMessage
     {
         NotificationStatus = status;
         NotificationAttemptedAtUtc = nowUtc;
+        NotificationClaimId = null;
     }
 
     private static string Required(string value, int maxLength, string parameterName)

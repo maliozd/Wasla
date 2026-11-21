@@ -12,7 +12,7 @@ using Wasla.Infrastructure.Persistence.Central;
 namespace Wasla.Infrastructure.Persistence.Central.Migrations
 {
     [DbContext(typeof(CentralDbContext))]
-    [Migration("20261120181316_AddPilotApplications")]
+    [Migration("20261121032923_AddPilotApplications")]
     partial class AddPilotApplications
     {
         /// <inheritdoc />
@@ -570,6 +570,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
                     b.Property<DateTime?>("NotificationAttemptedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("NotificationClaimId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("NotificationStatus")
                         .HasColumnType("int");

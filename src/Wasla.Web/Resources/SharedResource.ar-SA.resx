@@ -4939,13 +4939,14 @@
   <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>يمكنك إرسال طلباتك المتعلقة بحقوقك بموجب المادة 11 من KVKK عبر:</value></data>
   <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[غير مُعدّ]</value></data>
   <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>مسودة إشعار الخصوصية</value></data>
-  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>لم تُعدّ بعد بيانات المسؤول عن البيانات والتفاصيل القانونية. تظهر هذه المسودة في بيئات الاختبار فقط، وفي بيئة الإنتاج يبقى النموذج وهذه الصفحة مغلقين.</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>لم تُعدّ بعد بيانات المسؤول عن البيانات والتفاصيل القانونية. تظهر هذه المسودة في بيئة التطوير المحلية (Development) فقط، وفي كل البيئات الأخرى يبقى النموذج وهذه الصفحة مغلقين.</value></data>
   <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>العودة إلى نموذج الطلب</value></data>
   <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>طلب البرنامج التجريبي</value></data>
   <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>نوع الرسالة</value></data>
   <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>الكل</value></data>
   <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>طلبات البرنامج التجريبي</value></data>
   <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>رسائل التواصل</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>إشعارات تحتاج إلى متابعة</value></data>
   <data name="Admin.ContactMessages.City" xml:space="preserve"><value>المدينة</value></data>
   <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>الملاحظة</value></data>
   <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>لم تُكتب ملاحظة.</value></data>

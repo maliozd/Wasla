@@ -137,6 +137,34 @@ public sealed class AdminContactMessagesWebTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TheAttentionFilter_ListsFailedAndUnfinishedNotifications_NotSentOrRecentOnes()
+    {
+        var now = DateTime.UtcNow;
+        using (var db = _central.CreateContext())
+        {
+            // Stored, but the process stopped before an outcome: pending for longer than the stuck window.
+            db.ContactMessages.Add(ContactMessage.Create("Unfinished Owner", "Unfinished Kebap", "u@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-30)));
+            db.ContactMessages.Add(ContactMessage.Create("Recent Owner", "Recent Kebap", "r@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-1)));
+            var sent = ContactMessage.Create("Sent Owner", "Sent Kebap", "s@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-30));
+            sent.MarkNotificationSent(now.AddMinutes(-30));
+            db.ContactMessages.Add(sent);
+            db.SaveChanges();
+        }
+
+        using var browser = await _host.SignedInAdminAsync("en-US");
+        var page = await browser.GetAsync("/admin/contact-messages?kind=attention");
+        var html = WebUtility.HtmlDecode(page.Body);
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        Assert.Contains("data-contact-filter=\"attention\"", page.Body, StringComparison.Ordinal);
+        Assert.Contains(Resource("Admin.ContactMessages.FilterAttention"), html, StringComparison.Ordinal);
+        Assert.Contains("Lezzet Ocakbaşı", html, StringComparison.Ordinal);
+        Assert.Contains("Unfinished Kebap", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Recent Kebap", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sent Kebap", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Resend_NeedsTheAntiforgeryToken_AndWithoutSmtpSaysNothingWasSent()
     {
         using var browser = await _host.SignedInAdminAsync("en-US");

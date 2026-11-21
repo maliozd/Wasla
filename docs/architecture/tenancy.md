@@ -126,6 +126,7 @@ Classification is `WaslaHostClassifier` (`src/Wasla.Application/Onboarding/Wasla
 | `/auth/*` | → `/tenant-address-required` | → `/tenant-address-required` | Tenant resolved, then served | → tenant-not-found |
 | `/signup*`, `/checkout*` | Served | → same path on the marketing host | → same path on the marketing host | → tenant-not-found |
 | `/signup/pending/{id}` | Served | → same path on the marketing host | Served (the status page a pending tenant host redirects to) | → tenant-not-found |
+| `/pilot*` (pilot application, WAS-217) | Served | 404 | 404, without a tenant lookup | → tenant-not-found |
 | `/tenant-address-required` | Served | Served | Tenant resolved, then served | → tenant-not-found |
 | `/admin/*` (Central Admin) | Served | Served | Served | → tenant-not-found |
 | `/api/print-bridge/*` | Served | Served | Served | 404 |

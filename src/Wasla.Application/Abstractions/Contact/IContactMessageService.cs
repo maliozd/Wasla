@@ -71,7 +71,16 @@ public interface IContactMessageService
 
     /// <summary>
     /// Sends the team notification of a stored message again when the earlier one failed, was not configured, or never
-    /// finished. Only one attempt runs at a time for a message, so two administrators cannot send it twice.
+    /// finished. One conditional update claims the attempt, so two administrators clicking at once start one attempt.
+    /// The SMTP server's acceptance and the recorded outcome are two steps: when an attempt ends without knowing whether
+    /// the server took the email (a timeout after sending, a lost connection), it is recorded as failed and a resend
+    /// may deliver a second copy.
     /// </summary>
     Task<ContactNotificationResendResult> ResendNotificationAsync(Guid messageId, CancellationToken ct);
+
+    /// <summary>
+    /// How many stored messages have a notification attempt that started more than
+    /// <see cref="Wasla.Application.Contact.ContactNotificationRetry.StuckAfter"/> ago and never recorded an outcome.
+    /// </summary>
+    Task<int> CountStuckNotificationsAsync(CancellationToken ct);
 }

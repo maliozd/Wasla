@@ -54,7 +54,8 @@ public sealed class PilotApplicationBrowserTests : IAsyncLifetime
             ["Wasla:TenantOnboarding:MarketingBaseDomain"] = Host,
             ["Wasla:TenantOnboarding:ApplicationBaseDomain"] = "app." + Host,
             ["Wasla:PilotApplication:Enabled"] = "true",
-            ["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "1000"
+            ["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "1000",
+            ["AuthenticationRateLimiting:PilotApplicationStore:PermitLimit"] = "1000"
         };
         var notice = PilotApplicationModelTests.CompleteNotice();
         foreach (var property in typeof(PilotPrivacyNoticeOptions).GetProperties())
@@ -64,10 +65,8 @@ public sealed class PilotApplicationBrowserTests : IAsyncLifetime
 
         using var scope = _host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
-        db.Cities.AddRange(
-            new City { Id = 34, CountryCode = "TR", Name = "İstanbul", PlateCode = "34", IsActive = true },
-            new City { Id = 6, CountryCode = "TR", Name = "Ankara", PlateCode = "06", IsActive = true },
-            new City { Id = 35, CountryCode = "TR", Name = "İzmir", PlateCode = "35", IsActive = true });
+        // The complete catalog: the form stays closed while the city catalog lacks any of the 81 provinces.
+        db.Cities.AddRange(PilotProvinceSeed.All(idOffset: 1000));
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 

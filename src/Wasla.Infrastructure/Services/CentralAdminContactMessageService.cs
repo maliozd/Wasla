@@ -29,6 +29,7 @@ public sealed class CentralAdminContactMessageService : ICentralAdminContactMess
         {
             AdminContactMessageFilter.PilotApplications => query.Where(m => m.Topic == ContactTopic.PilotApplication),
             AdminContactMessageFilter.ContactMessages => query.Where(m => m.Topic != ContactTopic.PilotApplication),
+            AdminContactMessageFilter.NotificationNeedsAttention => query.Where(ContactNotificationRetry.NeedsAttentionAt(_time.GetUtcNow().UtcDateTime)),
             _ => query
         };
 

@@ -15,6 +15,7 @@ public sealed class AdminContactMessageListViewModel
     {
         AdminContactMessageFilter.PilotApplications => "pilot",
         AdminContactMessageFilter.ContactMessages => "contact",
+        AdminContactMessageFilter.NotificationNeedsAttention => "attention",
         _ => null
     };
 }

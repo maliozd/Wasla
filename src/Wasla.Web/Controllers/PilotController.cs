@@ -18,7 +18,8 @@ namespace Wasla.Web.Controllers;
 /// CentralDb as a <see cref="Domain.Enums.ContactTopic.PilotApplication"/> message and emailed to the Wasla team
 /// (<see cref="IContactMessageService"/>); Central Admin lists it with the contact messages. After a stored application
 /// the page redirects to itself and shows the received state, so a reload does not send it again. It starts no signup,
-/// payment or provisioning. The pages answer 404 unless <see cref="PilotApplicationGate.IsOpen"/>.
+/// payment or provisioning. The pages answer 404 unless <see cref="PilotApplicationGate.IsOpenAsync"/>, and exist on the
+/// marketing host only.
 /// </summary>
 [AllowAnonymous]
 [PilotApplicationRequired]
@@ -30,17 +31,20 @@ public sealed class PilotController : Controller, IAuthenticationRateLimitRespon
     private readonly IContactMessageService _messages;
     private readonly ITurkishProvinceCatalog _provinces;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly WebAuthenticationRateLimiter _limiter;
     private readonly ILogger<PilotController> _logger;
 
     public PilotController(
         IContactMessageService messages,
         ITurkishProvinceCatalog provinces,
         IStringLocalizer<SharedResource> localizer,
+        WebAuthenticationRateLimiter limiter,
         ILogger<PilotController> logger)
     {
         _messages = messages;
         _provinces = provinces;
         _localizer = localizer;
+        _limiter = limiter;
         _logger = logger;
     }
 
@@ -57,7 +61,9 @@ public sealed class PilotController : Controller, IAuthenticationRateLimitRespon
         return View(model);
     }
 
-    // Limited per client network before anything is stored or sent (AuthenticationRateLimiting:PilotApplication).
+    // Two limits per client network: every post (AuthenticationRateLimiting:PilotApplication, generous, so corrections of
+    // validation errors never lock a visitor out), and valid applications about to be stored and emailed
+    // (AuthenticationRateLimiting:PilotApplicationStore), taken only after validation and the honeypot.
     [ValidateAntiForgeryToken]
     [AuthenticationRateLimit(AuthenticationRateLimitPolicies.PilotApplication)]
     [HttpPost(PublicSiteUrls.PilotPath)]
@@ -79,6 +85,16 @@ public sealed class PilotController : Controller, IAuthenticationRateLimitRespon
         if (!ModelState.IsValid)
             return View(model);
 
+        using var storeLease = _limiter.AttemptAcquire(AuthenticationRateLimitPolicies.PilotApplicationStore, HttpContext);
+        if (!storeLease.IsAcquired)
+        {
+            var retryAfter = AuthenticationRateLimiting.RetryAfter(storeLease, _limiter.Rule(AuthenticationRateLimitPolicies.PilotApplicationStore));
+            AuthenticationRateLimiting.ApplyRejection(Response, retryAfter);
+            AuthenticationRateLimiting.LogRejection(HttpContext, AuthenticationRateLimitPolicies.PilotApplicationStore, retryAfter);
+            ViewData[WebAuthenticationRateLimiting.RateLimitedViewDataKey] = true;
+            return TooManyAttemptsView(model);
+        }
+
         try
         {
             await _messages.SubmitPilotApplicationAsync(
@@ -95,7 +111,8 @@ public sealed class PilotController : Controller, IAuthenticationRateLimitRespon
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogError("Pilot application could not be stored. ExceptionType={ExceptionType}", ex.GetType().Name);
+            // The service logged the cause (exception types and SQL error number, nothing the visitor typed).
+            _logger.LogWarning("Pilot application could not be stored; the form is shown again. ExceptionType={ExceptionType}", ex.GetType().Name);
             model.SaveFailed = true;
             return View(model);
         }
@@ -115,6 +132,12 @@ public sealed class PilotController : Controller, IAuthenticationRateLimitRespon
             model.SubmissionId = Guid.NewGuid();
         model.Provinces = await _provinces.GetActiveProvincesAsync(context.HttpContext.RequestAborted);
         LocalizeModelStateErrors();
+        return TooManyAttemptsView(model);
+    }
+
+    /// <summary>The form again with what was typed, the limit message and status 429; nothing is stored or sent.</summary>
+    private ViewResult TooManyAttemptsView(PilotApplicationViewModel model)
+    {
         ModelState.AddModelError(string.Empty, _localizer["Pilot.TooManyAttempts", PublicSiteUrls.ContactEmail].Value);
         var result = View(nameof(Index), model);
         result.StatusCode = StatusCodes.Status429TooManyRequests;
