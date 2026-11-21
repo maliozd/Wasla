@@ -613,7 +613,11 @@ public sealed class GuidedSetupServiceTests : IDisposable
             var connectionString = _pools.Own(new SqliteConnectionStringBuilder
             {
                 DataSource = Path.Combine(_directory, tenantId.ToString("N") + ".db"),
-                DefaultTimeout = 30
+                DefaultTimeout = 30,
+                // No pool: every open gets its own native connection. Microsoft.Data.Sqlite 8.0.x can lend one pooled
+                // connection to two opens that run at the same time (dotnet/efcore#39008, WAS-223), and the concurrency
+                // tests in this class open many at once.
+                Pooling = false
             }.ToString());
 
             lock (_gate)
