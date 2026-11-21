@@ -166,7 +166,7 @@ public sealed class SqlitePoolOwnershipTests
                 await db.SaveChangesAsync(Ct);
                 Assert.Equal(1, await db.AppUsers.CountAsync(Ct));
                 var file = DataSource(db.Database.GetConnectionString());
-                return new UsedHelper(databases, System.IO.Path.GetDirectoryName(file)!, file, Pooled: true);
+                return new UsedHelper(databases, System.IO.Path.GetDirectoryName(file)!, file, Pooled: false);
             }
             case Helper.CentralTestDatabase:
             {
