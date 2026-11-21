@@ -142,20 +142,20 @@ public sealed class ContactMessageServiceTests : IDisposable
         }
 
         await using var read = NewContext();
-        var service = new CentralAdminContactMessageService(read);
+        var service = new CentralAdminContactMessageService(read, new FixedTime(Now));
 
-        var first = await service.GetListAsync(1, 500, TestContext.Current.CancellationToken);
+        var first = await service.GetListAsync(1, 500, AdminContactMessageFilter.All, TestContext.Current.CancellationToken);
         Assert.Equal(AdminContactMessagePaging.MaxPageSize, first.PageSize);
         Assert.Equal(50, first.Items.Count);
         Assert.Equal((53, 2), (first.TotalCount, first.TotalPages));
         Assert.Equal("Sender 52", first.Items[0].FullName);
 
-        var second = await service.GetListAsync(2, 50, TestContext.Current.CancellationToken);
+        var second = await service.GetListAsync(2, 50, AdminContactMessageFilter.All, TestContext.Current.CancellationToken);
         Assert.Equal(new[] { "Sender 02", "Sender 01", "Sender 00" }, second.Items.Select(i => i.FullName));
 
-        var beyond = await service.GetListAsync(9, 50, TestContext.Current.CancellationToken);
+        var beyond = await service.GetListAsync(9, 50, AdminContactMessageFilter.All, TestContext.Current.CancellationToken);
         Assert.Equal(2, beyond.Page);
-        var before = await service.GetListAsync(-3, 50, TestContext.Current.CancellationToken);
+        var before = await service.GetListAsync(-3, 50, AdminContactMessageFilter.All, TestContext.Current.CancellationToken);
         Assert.Equal(1, before.Page);
 
         var detail = await service.GetDetailAsync(first.Items[0].Id, TestContext.Current.CancellationToken);
@@ -168,7 +168,7 @@ public sealed class ContactMessageServiceTests : IDisposable
     {
         await using var read = NewContext();
 
-        var empty = await new CentralAdminContactMessageService(read).GetListAsync(1, 50, TestContext.Current.CancellationToken);
+        var empty = await new CentralAdminContactMessageService(read, new FixedTime(Now)).GetListAsync(1, 50, AdminContactMessageFilter.All, TestContext.Current.CancellationToken);
 
         Assert.Empty(empty.Items);
         Assert.Equal((0, 1, 1), (empty.TotalCount, empty.TotalPages, empty.Page));
@@ -186,6 +186,7 @@ public sealed class ContactMessageServiceTests : IDisposable
             db,
             sender,
             factory,
+            new TurkishProvinceCatalog(db),
             emailOptions,
             new FixedTime(Now),
             logger is null

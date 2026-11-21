@@ -31,6 +31,9 @@ public sealed class ContactMessageEmailFactory
     {
         ArgumentNullException.ThrowIfNull(message);
 
+        if (message.Topic == ContactTopic.PilotApplication)
+            return BuildPilotApplicationNotification(message);
+
         var topic = TopicLabel(message.Topic);
         var tokens = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -56,12 +59,47 @@ public sealed class ContactMessageEmailFactory
         };
     }
 
+    /// <summary>
+    /// The pilot application notification (WAS-217), sent to <see cref="ContactOptions.PilotRecipientEmail"/> when it is
+    /// set and to the contact recipient otherwise. The subject names no restaurant or person.
+    /// </summary>
+    private EmailMessage BuildPilotApplicationNotification(ContactMessage message)
+    {
+        var tokens = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["RestaurantName"] = message.RestaurantName,
+            ["CityPlateCode"] = message.CityPlateCode ?? "-",
+            ["ContactName"] = message.FullName,
+            ["Phone"] = FormatPhone(message.Phone),
+            ["Email"] = message.Email,
+            ["Note"] = string.IsNullOrWhiteSpace(message.Message) ? "-" : message.Message,
+            ["Culture"] = message.Culture ?? "-",
+            ["CreatedAtUtc"] = message.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC",
+            ["MessageId"] = message.Id.ToString(),
+            ["FromName"] = _emailOptions.FromName.Trim()
+        };
+
+        var recipient = string.IsNullOrWhiteSpace(_contactOptions.PilotRecipientEmail)
+            ? _contactOptions.RecipientEmail
+            : _contactOptions.PilotRecipientEmail;
+
+        return new EmailMessage
+        {
+            ToEmail = recipient.Trim(),
+            Subject = "Wasla: yeni pilot restoran başvurusu",
+            HtmlBody = _renderer.Render("PilotApplicationReceived.tr.html", tokens, htmlEncodeValues: true),
+            TextBody = _renderer.Render("PilotApplicationReceived.tr.txt", tokens, htmlEncodeValues: false),
+            IsSensitive = true
+        };
+    }
+
     public static string TopicLabel(ContactTopic topic) => topic switch
     {
         ContactTopic.WaslaOrders => "Wasla Orders",
         ContactTopic.WaslaPos => "Wasla POS",
         ContactTopic.PrintBridgeSetup => "Print Bridge kurulumu",
         ContactTopic.Pricing => "Fiyatlandırma",
+        ContactTopic.PilotApplication => "Pilot başvurusu",
         _ => "Diğer"
     };
 

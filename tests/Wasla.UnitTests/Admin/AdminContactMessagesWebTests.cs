@@ -103,6 +103,89 @@ public sealed class AdminContactMessagesWebTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PilotApplications_HaveTheirOwnFilter_AndTheirDetailNamesTheCityAndNote()
+    {
+        var pilotId = Guid.NewGuid();
+        using (var db = _central.CreateContext())
+        {
+            db.Cities.Add(new City { Id = 34, CountryCode = "TR", Name = "İstanbul", PlateCode = "34", IsActive = true });
+            var pilot = ContactMessage.CreatePilotApplication(pilotId, "Pilot Kebap", "Elif Aydın", "elif@pilot.test", "5324182790", "34", null, "tr-TR",
+                new DateTime(2026, 11, 20, 9, 0, 0, DateTimeKind.Utc));
+            pilot.MarkNotificationFailed(new DateTime(2026, 11, 20, 9, 0, 1, DateTimeKind.Utc));
+            db.ContactMessages.Add(pilot);
+            db.SaveChanges();
+        }
+
+        using var browser = await _host.SignedInAdminAsync("en-US");
+
+        var pilots = WebUtility.HtmlDecode((await browser.GetAsync("/admin/contact-messages?kind=pilot")).Body);
+        Assert.Contains("Pilot Kebap", pilots, StringComparison.Ordinal);
+        Assert.Contains(Resource("Contact.Topic.PilotApplication"), pilots, StringComparison.Ordinal);
+        Assert.DoesNotContain("Lezzet Ocakbaşı", pilots, StringComparison.Ordinal);
+        Assert.Contains("data-contact-filter=\"pilot\"", pilots, StringComparison.Ordinal);
+
+        var contacts = WebUtility.HtmlDecode((await browser.GetAsync("/admin/contact-messages?kind=contact")).Body);
+        Assert.DoesNotContain("Pilot Kebap", contacts, StringComparison.Ordinal);
+        Assert.Contains("Lezzet Ocakbaşı", contacts, StringComparison.Ordinal);
+
+        var detail = await browser.GetAsync($"/admin/contact-messages/{pilotId}");
+        var html = WebUtility.HtmlDecode(detail.Body);
+        Assert.Contains("İstanbul", html, StringComparison.Ordinal);
+        Assert.Contains("data-contact-city=\"34\"", detail.Body);
+        Assert.Contains(Resource("Admin.ContactMessages.NoNote"), html, StringComparison.Ordinal);
+        Assert.Contains("data-contact-resend", detail.Body);
+    }
+
+    [Fact]
+    public async Task TheAttentionFilter_ListsFailedAndUnfinishedNotifications_NotSentOrRecentOnes()
+    {
+        var now = DateTime.UtcNow;
+        using (var db = _central.CreateContext())
+        {
+            // Stored, but the process stopped before an outcome: pending for longer than the stuck window.
+            db.ContactMessages.Add(ContactMessage.Create("Unfinished Owner", "Unfinished Kebap", "u@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-30)));
+            db.ContactMessages.Add(ContactMessage.Create("Recent Owner", "Recent Kebap", "r@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-1)));
+            var sent = ContactMessage.Create("Sent Owner", "Sent Kebap", "s@pilot.test", null, ContactTopic.Other, "Merhaba", "en-US", true, now.AddMinutes(-30));
+            sent.MarkNotificationSent(now.AddMinutes(-30));
+            db.ContactMessages.Add(sent);
+            db.SaveChanges();
+        }
+
+        using var browser = await _host.SignedInAdminAsync("en-US");
+        var page = await browser.GetAsync("/admin/contact-messages?kind=attention");
+        var html = WebUtility.HtmlDecode(page.Body);
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        Assert.Contains("data-contact-filter=\"attention\"", page.Body, StringComparison.Ordinal);
+        Assert.Contains(Resource("Admin.ContactMessages.FilterAttention"), html, StringComparison.Ordinal);
+        Assert.Contains("Lezzet Ocakbaşı", html, StringComparison.Ordinal);
+        Assert.Contains("Unfinished Kebap", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Recent Kebap", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Sent Kebap", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Resend_NeedsTheAntiforgeryToken_AndWithoutSmtpSaysNothingWasSent()
+    {
+        using var browser = await _host.SignedInAdminAsync("en-US");
+        var page = await browser.GetAsync($"/admin/contact-messages/{_message.Id}");
+        Assert.Contains("data-contact-resend", page.Body);
+
+        var refused = await browser.PostAsync($"/admin/contact-messages/{_message.Id}/resend-notification", antiforgeryToken: null);
+        Assert.Equal(HttpStatusCode.BadRequest, refused.Status);
+
+        var posted = await browser.PostAsync($"/admin/contact-messages/{_message.Id}/resend-notification", AdminBrowser.AntiforgeryTokenIn(page.Body));
+        Assert.Equal(HttpStatusCode.Redirect, posted.Status);
+
+        var after = await browser.GetAsync($"/admin/contact-messages/{_message.Id}");
+        var html = WebUtility.HtmlDecode(after.Body);
+        // Email:Provider is Log here: the page never claims delivery.
+        Assert.Contains(Resource("Admin.ContactMessages.ResendNotConfigured"), html, StringComparison.Ordinal);
+        Assert.Contains(Resource("Admin.ContactMessages.Status.NotConfigured"), html, StringComparison.Ordinal);
+        Assert.DoesNotContain(Resource("Admin.ContactMessages.ResendSent"), html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task UnknownMessage_IsNotFound()
     {
         using var browser = await _host.SignedInAdminAsync("en-US");

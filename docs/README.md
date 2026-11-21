@@ -40,6 +40,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md) | Single Ubuntu server: systemd units, Nginx, paths, SQL identities, first deployment, update, rollback, backups (`deploy/linux/`) |
 | [operations/observability.md](operations/observability.md) | Logs, trace id, health |
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
+| [operations/pilot-applications.md](operations/pilot-applications.md) | Pilot restaurant applications from the coming-soon page (WAS-217): `/pilot`, storage, team notification and its resend, the privacy notice configuration and production prerequisites |
 | [operations/testing.md](operations/testing.md) | What to run, and what not to claim |
 | [product/product-boundaries.md](product/product-boundaries.md) | Wasla Orders, Wasla POS, and shared-infrastructure boundaries |
 | [product/pos-mvp.md](product/pos-mvp.md) | Wasla POS MVP (planned, not implemented): local-first installed product, workflows, payments through the fiscal cash register (ÖKC), POS roles, scope, payment boundary, UX and non-functional requirements |

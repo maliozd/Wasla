@@ -57,7 +57,7 @@ Main `DbSet` entities:
 | `PendingRegistration` | Signup / payment / provisioning pipeline |
 | `BillingPlanPrice` / `BillingSubscription` / `BillingPayment` | Wasla plan prices, subscription identity and state, verified paid periods (WAS-147; see [billing.md](billing.md)) |
 | `PrintBridgeDevice` / `PrintBridgeSetupSession` | Print Bridge device registry (central) |
-| `ContactMessage` | Messages from the public contact form (`/contact`) and whether the Wasla team was e-mailed; read by Central Admin at `/admin/contact-messages`. Not tenant data: the sender is a prospective restaurant, not a tenant user |
+| `ContactMessage` | Messages from the public contact form (`/contact`) and pilot restaurant applications from `/pilot` (`Topic = PilotApplication`, with a city plate code; [pilot-applications.md](../operations/pilot-applications.md)), and whether the Wasla team was e-mailed; read by Central Admin at `/admin/contact-messages`. Not tenant data: the sender is a prospective restaurant, not a tenant user |
 | Address/catalog helpers | `BusinessType`, `Country`, `City`, `District`, `Neighborhood`, `Street`, and related pending-registration join |
 
 ### Tenant registry entity
@@ -126,6 +126,7 @@ Classification is `WaslaHostClassifier` (`src/Wasla.Application/Onboarding/Wasla
 | `/auth/*` | → `/tenant-address-required` | → `/tenant-address-required` | Tenant resolved, then served | → tenant-not-found |
 | `/signup*`, `/checkout*` | Served | → same path on the marketing host | → same path on the marketing host | → tenant-not-found |
 | `/signup/pending/{id}` | Served | → same path on the marketing host | Served (the status page a pending tenant host redirects to) | → tenant-not-found |
+| `/pilot*` (pilot application, WAS-217) | Served | 404 | 404, without a tenant lookup | → tenant-not-found |
 | `/tenant-address-required` | Served | Served | Tenant resolved, then served | → tenant-not-found |
 | `/admin/*` (Central Admin) | Served | Served | Served | → tenant-not-found |
 | `/api/print-bridge/*` | Served | Served | Served | 404 |

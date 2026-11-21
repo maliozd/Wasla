@@ -1,0 +1,18 @@
+Yeni pilot restoran başvurusu
+
+Restoran: {{RestaurantName}}
+Şehir (plaka): {{CityPlateCode}}
+Yetkili kişi: {{ContactName}}
+Telefon: {{Phone}}
+E-posta: {{Email}}
+
+Not:
+{{Note}}
+
+Gönderildi: {{CreatedAtUtc}}
+Sayfa dili: {{Culture}}
+Kayıt: {{MessageId}}
+
+Başvuru Central Admin'de İletişim mesajları sayfasında, Pilot başvuruları filtresinde kayıtlı. Başvuru hiçbir hesap, ödeme ya da panel oluşturmadı; görüşme için başvurana telefonla ya da e-postayla ulaşın.
+
+{{FromName}}

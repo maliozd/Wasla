@@ -138,6 +138,9 @@ internal sealed class SignupWebHost : IAsyncDisposable
         services.Configure<TenantOnboardingOptions>(builder.Configuration.GetSection(TenantOnboardingOptions.SectionName));
         // Wasla:MarketingSite as Program.cs binds it: without the test's configuration only the coming-soon page is published.
         services.Configure<MarketingSiteOptions>(builder.Configuration.GetSection(MarketingSiteOptions.SectionName));
+        // Wasla:PilotApplication as Program.cs binds it (WAS-217): closed unless the test's configuration enables it.
+        services.Configure<PilotApplicationOptions>(builder.Configuration.GetSection(PilotApplicationOptions.SectionName));
+        services.AddSingleton<PilotApplicationGate>();
         services.AddSingleton<IWaslaPlanCatalog, WaslaPlanCatalog>();
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<IPendingRegistrationService, PendingRegistrationService>();
@@ -150,6 +153,8 @@ internal sealed class SignupWebHost : IAsyncDisposable
         builder.Configuration["AuthenticationRateLimiting:SignupSubmission:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupCheckout:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:ContactSubmission:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:PilotApplication:PermitLimit"] = "1000";
+        builder.Configuration["AuthenticationRateLimiting:PilotApplicationStore:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupDraftSave:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupDraftCreation:PermitLimit"] = "1000";
         builder.Configuration["AuthenticationRateLimiting:SignupPhoneSend:PermitLimit"] = "1000";

@@ -2490,4 +2490,101 @@
   <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Çevrimiçi Cihazlar</value></data>
   <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Print Bridge cihaz sayfaları</value></data>
   <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>{2} cihazdan {0}–{1} arası gösteriliyor</value></data>
+  <data name="Marketing.ComingSoonPage.BecomePilot" xml:space="preserve"><value>Pilot restoran olun</value></data>
+  <data name="Marketing.ComingSoonPage.ContactUs" xml:space="preserve"><value>Bize ulaşın</value></data>
+  <data name="Pilot.MetaTitle" xml:space="preserve"><value>Pilot restoran olun · Wasla</value></data>
+  <data name="Pilot.MetaTitleWithErrors" xml:space="preserve"><value>Hata: Pilot restoran başvurusu · Wasla</value></data>
+  <data name="Pilot.MetaTitleSent" xml:space="preserve"><value>Başvurunuz alındı · Wasla</value></data>
+  <data name="Pilot.MetaDescription" xml:space="preserve"><value>Wasla’yı ilk kullanan restoranlardan biri olmak için pilot başvurusu yapın.</value></data>
+  <data name="Pilot.Eyebrow" xml:space="preserve"><value>Pilot başvurusu</value></data>
+  <data name="Pilot.Title" xml:space="preserve"><value>Pilot restoran olun.</value></data>
+  <data name="Pilot.Lead" xml:space="preserve"><value>Wasla’yı ilk kullanan restoranlardan biri olmak için başvurun. Ekibimiz başvurunuzu inceler ve görüşmek için sizinle iletişime geçer.</value></data>
+  <data name="Pilot.StepsHeading" xml:space="preserve"><value>Nasıl ilerler?</value></data>
+  <data name="Pilot.NextStepsHeading" xml:space="preserve"><value>Sonraki adımlar</value></data>
+  <data name="Pilot.Step1.Title" xml:space="preserve"><value>Başvurunuzu gönderin</value></data>
+  <data name="Pilot.Step1.Text" xml:space="preserve"><value>Restoranınızı ve size nasıl ulaşacağımızı yazın.</value></data>
+  <data name="Pilot.Step1.DoneTitle" xml:space="preserve"><value>Başvurunuz alındı</value></data>
+  <data name="Pilot.Step1.DoneText" xml:space="preserve"><value>Ekibimiz başvurunuzu inceleyecek.</value></data>
+  <data name="Pilot.Step2.Title" xml:space="preserve"><value>Sizinle görüşelim</value></data>
+  <data name="Pilot.Step2.Text" xml:space="preserve"><value>Ekibimiz telefonla ya da e-postayla ulaşır; çalışma düzeninizi konuşuruz.</value></data>
+  <data name="Pilot.Step3.Title" xml:space="preserve"><value>Pilotu birlikte planlayalım</value></data>
+  <data name="Pilot.Step3.Text" xml:space="preserve"><value>Pilota katılım, görüşmeden sonra birlikte kararlaştırılır.</value></data>
+  <data name="Pilot.Home" xml:space="preserve"><value>Ana sayfa</value></data>
+  <data name="Pilot.Form.Title" xml:space="preserve"><value>Başvuru formu</value></data>
+  <data name="Pilot.Form.RequiredHint" xml:space="preserve"><value>Not dışındaki alanlar zorunludur.</value></data>
+  <data name="Pilot.Form.RestaurantLegend" xml:space="preserve"><value>Restoran</value></data>
+  <data name="Pilot.Form.ContactLegend" xml:space="preserve"><value>İletişim</value></data>
+  <data name="Pilot.Form.RestaurantName" xml:space="preserve"><value>Restoran adı</value></data>
+  <data name="Pilot.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>Örn. Lezzet Ocakbaşı</value></data>
+  <data name="Pilot.Form.City" xml:space="preserve"><value>Şehir</value></data>
+  <data name="Pilot.Form.CityPlaceholder" xml:space="preserve"><value>Şehir seçin</value></data>
+  <data name="Pilot.Form.ContactName" xml:space="preserve"><value>Yetkili kişi</value></data>
+  <data name="Pilot.Form.ContactNamePlaceholder" xml:space="preserve"><value>Adınız ve soyadınız</value></data>
+  <data name="Pilot.Form.Phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="Pilot.Form.PhoneHint" xml:space="preserve"><value>Görüşme için size ulaşabileceğimiz numara.</value></data>
+  <data name="Pilot.Form.Email" xml:space="preserve"><value>E-posta</value></data>
+  <data name="Pilot.Form.EmailPlaceholder" xml:space="preserve"><value>ornek@restoraniniz.com</value></data>
+  <data name="Pilot.Form.Note" xml:space="preserve"><value>Not (isteğe bağlı)</value></data>
+  <data name="Pilot.Form.NotePlaceholder" xml:space="preserve"><value>Örneğin kullandığınız sipariş platformları ya da sizi aramamız için uygun saatler.</value></data>
+  <data name="Pilot.Form.PrivacyTitle" xml:space="preserve"><value>Kişisel verileriniz</value></data>
+  <data name="Pilot.Form.PrivacyText" xml:space="preserve"><value>Bu formdaki bilgileri pilot başvurunuzu değerlendirmek ve sizinle iletişime geçmek için işleriz.</value></data>
+  <data name="Pilot.Form.PrivacyLink" xml:space="preserve"><value>Pilot Başvuru Aydınlatma Metni</value></data>
+  <data name="Pilot.Form.Submit" xml:space="preserve"><value>Başvuruyu gönder</value></data>
+  <data name="Pilot.Form.Resubmit" xml:space="preserve"><value>Yeniden gönder</value></data>
+  <data name="Pilot.Form.Sending" xml:space="preserve"><value>Gönderiliyor…</value></data>
+  <data name="Pilot.Errors.Title" xml:space="preserve"><value>Başvurunuz gönderilmedi. Şu alanları düzeltin:</value></data>
+  <data name="Pilot.Failed.Title" xml:space="preserve"><value>Başvurunuz kaydedilemedi.</value></data>
+  <data name="Pilot.Failed.Body" xml:space="preserve"><value>Bilgileriniz formda duruyor. Biraz sonra yeniden gönderin; sorun sürerse {0} adresine yazın.</value></data>
+  <data name="Pilot.TooManyAttempts" xml:space="preserve"><value>Kısa sürede çok fazla başvuru gönderildi. Lütfen biraz sonra yeniden deneyin ya da {0} adresine yazın.</value></data>
+  <data name="Pilot.Sent.Title" xml:space="preserve"><value>Başvurunuz bize ulaştı.</value></data>
+  <data name="Pilot.Sent.Body" xml:space="preserve"><value>Teşekkürler. Ekibimiz başvurunuzu inceleyip görüşme için sizinle telefonla ya da e-postayla iletişime geçecek.</value></data>
+  <data name="Pilot.Sent.InfoHeading" xml:space="preserve"><value>Bilmeniz gerekenler</value></data>
+  <data name="Pilot.Sent.NoAccount" xml:space="preserve"><value>Bu başvuruyla hesap ya da panel açılmaz, ödeme alınmaz.</value></data>
+  <data name="Pilot.Sent.ChangeDetails" xml:space="preserve"><value>Bilgilerinizi değiştirmek ya da eklemek isterseniz {0} adresine yazın; formu yeniden göndermeniz gerekmez.</value></data>
+  <data name="Pilot.Sent.Home" xml:space="preserve"><value>Ana sayfaya dönün</value></data>
+  <data name="Validation.PilotCityRequired" xml:space="preserve"><value>Şehir seçin.</value></data>
+  <data name="Validation.PilotContactNameRequired" xml:space="preserve"><value>Yetkili kişinin adını ve soyadını yazın.</value></data>
+  <data name="Validation.PilotPhoneRequired" xml:space="preserve"><value>Size ulaşabileceğimiz bir telefon numarası yazın.</value></data>
+  <data name="Validation.PilotNoteTooLong" xml:space="preserve"><value>Not en fazla 2000 karakter olabilir.</value></data>
+  <data name="PilotPrivacy.MetaTitle" xml:space="preserve"><value>Pilot Başvuru Aydınlatma Metni · Wasla</value></data>
+  <data name="PilotPrivacy.MetaDescription" xml:space="preserve"><value>Pilot başvuru formunda paylaştığınız kişisel verilerin nasıl işlendiği.</value></data>
+  <data name="PilotPrivacy.Title" xml:space="preserve"><value>Pilot Başvuru Aydınlatma Metni</value></data>
+  <data name="PilotPrivacy.Subtitle" xml:space="preserve"><value>Pilot başvuru formunda paylaştığınız kişisel verilerin nasıl işlendiğini açıklar.</value></data>
+  <data name="PilotPrivacy.Intro" xml:space="preserve"><value>Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu’nun (“KVKK”) 10. maddesi uyarınca, pilot başvuru formu aracılığıyla paylaştığınız kişisel verilerin işlenmesine ilişkindir. Formu göndermeniz bir sözleşme kabulü ya da pazarlama izni değildir.</value></data>
+  <data name="PilotPrivacy.ControllerHeading" xml:space="preserve"><value>1. Veri sorumlusu</value></data>
+  <data name="PilotPrivacy.ControllerName" xml:space="preserve"><value>Unvan</value></data>
+  <data name="PilotPrivacy.ControllerAddress" xml:space="preserve"><value>Adres</value></data>
+  <data name="PilotPrivacy.ControllerContact" xml:space="preserve"><value>İletişim</value></data>
+  <data name="PilotPrivacy.DataHeading" xml:space="preserve"><value>2. Hangi kişisel verileri işliyoruz?</value></data>
+  <data name="PilotPrivacy.DataText" xml:space="preserve"><value>Pilot başvuru formunda paylaştığınız restoran adı ve şehir; yetkili kişinin adı soyadı, telefon numarası ve e-posta adresi; isteğe bağlı notunuz. Başvurunun tarihi ve formu kullandığınız dil de kaydedilir.</value></data>
+  <data name="PilotPrivacy.PurposesHeading" xml:space="preserve"><value>3. Hangi amaçlarla işliyoruz?</value></data>
+  <data name="PilotPrivacy.Purpose1" xml:space="preserve"><value>Pilot başvurunuzu değerlendirmek.</value></data>
+  <data name="PilotPrivacy.Purpose2" xml:space="preserve"><value>Görüşme için sizinle telefonla ya da e-postayla iletişime geçmek.</value></data>
+  <data name="PilotPrivacy.Purpose3" xml:space="preserve"><value>Pilota katılım birlikte kararlaştırılırsa kurulumu planlamak.</value></data>
+  <data name="PilotPrivacy.NoMarketing" xml:space="preserve"><value>Bu veriler pazarlama iletisi göndermek için kullanılmaz.</value></data>
+  <data name="PilotPrivacy.LegalBasisHeading" xml:space="preserve"><value>4. Toplama yöntemi ve hukuki sebep</value></data>
+  <data name="PilotPrivacy.CollectionText" xml:space="preserve"><value>Verileriniz bu web formu aracılığıyla elektronik ortamda toplanır. Hukuki sebep:</value></data>
+  <data name="PilotPrivacy.TransfersHeading" xml:space="preserve"><value>5. Kimlere aktarılır?</value></data>
+  <data name="PilotPrivacy.TransfersText" xml:space="preserve"><value>Başvurunuzu Wasla ekibinin yetkili kişileri görür. Hizmet sağlayıcılar ve aktarımlar:</value></data>
+  <data name="PilotPrivacy.RetentionHeading" xml:space="preserve"><value>6. Ne kadar süre saklanır?</value></data>
+  <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>KVKK’nın 11. maddesindeki haklarınızla ilgili taleplerinizi şu kanaldan iletebilirsiniz:</value></data>
+  <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[Yapılandırılmadı]</value></data>
+  <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>Taslak aydınlatma metni</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>Veri sorumlusu ve hukuki bilgiler henüz yapılandırılmadı. Bu taslak yalnızca yerel geliştirme ortamında (Development) görünür; diğer bütün ortamlarda form ve bu sayfa kapalı kalır.</value></data>
+  <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>Başvuru formuna dön</value></data>
+  <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>Pilot başvurusu</value></data>
+  <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>Mesaj türü</value></data>
+  <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>Tümü</value></data>
+  <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>Pilot başvuruları</value></data>
+  <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>İletişim mesajları</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>Bildirimi bekleyenler</value></data>
+  <data name="Admin.ContactMessages.City" xml:space="preserve"><value>Şehir</value></data>
+  <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>Not</value></data>
+  <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>Not yazılmadı.</value></data>
+  <data name="Admin.ContactMessages.Resend" xml:space="preserve"><value>Bildirimi yeniden gönder</value></data>
+  <data name="Admin.ContactMessages.ResendSent" xml:space="preserve"><value>Bildirim e-postası SMTP sunucusuna teslim edildi.</value></data>
+  <data name="Admin.ContactMessages.ResendFailed" xml:space="preserve"><value>Bildirim e-postası yine gönderilemedi. Kayıt duruyor; SMTP ayarlarını kontrol edip yeniden deneyin.</value></data>
+  <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>E-posta gönderimi yapılandırılmadığı için bildirim gönderilmedi (Email:Provider Smtp değil).</value></data>
+  <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>Bu mesajın bildirimi zaten gönderilmiş; yeniden gönderilmedi.</value></data>
+  <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>Bu mesaj için bir gönderim az önce başladı; bir süre sonra durumu yeniden kontrol edin.</value></data>
 </root>

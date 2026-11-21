@@ -4859,4 +4859,101 @@
   <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>الأجهزة المتصلة الآن</value></data>
   <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>صفحات أجهزة Print Bridge</value></data>
   <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>عرض {0}–{1} من {2} جهازًا</value></data>
+  <data name="Marketing.ComingSoonPage.BecomePilot" xml:space="preserve"><value>انضم كمطعم تجريبي</value></data>
+  <data name="Marketing.ComingSoonPage.ContactUs" xml:space="preserve"><value>تواصل معنا</value></data>
+  <data name="Pilot.MetaTitle" xml:space="preserve"><value>انضم كمطعم تجريبي · Wasla</value></data>
+  <data name="Pilot.MetaTitleWithErrors" xml:space="preserve"><value>خطأ: طلب الانضمام كمطعم تجريبي · Wasla</value></data>
+  <data name="Pilot.MetaTitleSent" xml:space="preserve"><value>تم استلام طلبك · Wasla</value></data>
+  <data name="Pilot.MetaDescription" xml:space="preserve"><value>قدّم طلبك لتكون من أوائل المطاعم التي تستخدم Wasla.</value></data>
+  <data name="Pilot.Eyebrow" xml:space="preserve"><value>البرنامج التجريبي</value></data>
+  <data name="Pilot.Title" xml:space="preserve"><value>انضم كمطعم تجريبي.</value></data>
+  <data name="Pilot.Lead" xml:space="preserve"><value>قدّم طلبك لتكون من أوائل المطاعم التي تستخدم Wasla. يراجع فريقنا طلبك ويتواصل معك لترتيب محادثة.</value></data>
+  <data name="Pilot.StepsHeading" xml:space="preserve"><value>كيف تسير الأمور؟</value></data>
+  <data name="Pilot.NextStepsHeading" xml:space="preserve"><value>الخطوات التالية</value></data>
+  <data name="Pilot.Step1.Title" xml:space="preserve"><value>أرسل طلبك</value></data>
+  <data name="Pilot.Step1.Text" xml:space="preserve"><value>أخبرنا عن مطعمك وكيف نتواصل معك.</value></data>
+  <data name="Pilot.Step1.DoneTitle" xml:space="preserve"><value>تم استلام طلبك</value></data>
+  <data name="Pilot.Step1.DoneText" xml:space="preserve"><value>سيراجع فريقنا طلبك.</value></data>
+  <data name="Pilot.Step2.Title" xml:space="preserve"><value>نتحدث معك</value></data>
+  <data name="Pilot.Step2.Text" xml:space="preserve"><value>يتواصل فريقنا معك عبر الهاتف أو البريد الإلكتروني لنتحدث عن طريقة عملك.</value></data>
+  <data name="Pilot.Step3.Title" xml:space="preserve"><value>نخطط للتجربة معًا</value></data>
+  <data name="Pilot.Step3.Text" xml:space="preserve"><value>نتفق معًا على المشاركة في التجربة بعد المحادثة.</value></data>
+  <data name="Pilot.Home" xml:space="preserve"><value>الصفحة الرئيسية</value></data>
+  <data name="Pilot.Form.Title" xml:space="preserve"><value>نموذج الطلب</value></data>
+  <data name="Pilot.Form.RequiredHint" xml:space="preserve"><value>جميع الحقول مطلوبة ما عدا الملاحظة.</value></data>
+  <data name="Pilot.Form.RestaurantLegend" xml:space="preserve"><value>المطعم</value></data>
+  <data name="Pilot.Form.ContactLegend" xml:space="preserve"><value>التواصل</value></data>
+  <data name="Pilot.Form.RestaurantName" xml:space="preserve"><value>اسم المطعم</value></data>
+  <data name="Pilot.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>مثال: مطعم الشام</value></data>
+  <data name="Pilot.Form.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Pilot.Form.CityPlaceholder" xml:space="preserve"><value>اختر المدينة</value></data>
+  <data name="Pilot.Form.ContactName" xml:space="preserve"><value>الشخص المسؤول</value></data>
+  <data name="Pilot.Form.ContactNamePlaceholder" xml:space="preserve"><value>اسمك واسم عائلتك</value></data>
+  <data name="Pilot.Form.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Pilot.Form.PhoneHint" xml:space="preserve"><value>رقم يمكننا التواصل معك عليه لترتيب المحادثة.</value></data>
+  <data name="Pilot.Form.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Pilot.Form.EmailPlaceholder" xml:space="preserve"><value>name@yourrestaurant.com</value></data>
+  <data name="Pilot.Form.Note" xml:space="preserve"><value>ملاحظة (اختياري)</value></data>
+  <data name="Pilot.Form.NotePlaceholder" xml:space="preserve"><value>مثلًا منصات الطلب التي تستخدمها أو الأوقات المناسبة للاتصال بك.</value></data>
+  <data name="Pilot.Form.PrivacyTitle" xml:space="preserve"><value>بياناتك الشخصية</value></data>
+  <data name="Pilot.Form.PrivacyText" xml:space="preserve"><value>نعالج المعلومات الواردة في هذا النموذج لتقييم طلبك للبرنامج التجريبي والتواصل معك.</value></data>
+  <data name="Pilot.Form.PrivacyLink" xml:space="preserve"><value>إشعار الخصوصية لطلبات البرنامج التجريبي</value></data>
+  <data name="Pilot.Form.Submit" xml:space="preserve"><value>أرسل الطلب</value></data>
+  <data name="Pilot.Form.Resubmit" xml:space="preserve"><value>أعد الإرسال</value></data>
+  <data name="Pilot.Form.Sending" xml:space="preserve"><value>جارٍ الإرسال…</value></data>
+  <data name="Pilot.Errors.Title" xml:space="preserve"><value>لم يُرسَل طلبك. صحّح الحقول التالية:</value></data>
+  <data name="Pilot.Failed.Title" xml:space="preserve"><value>تعذّر حفظ طلبك.</value></data>
+  <data name="Pilot.Failed.Body" xml:space="preserve"><value>معلوماتك لا تزال في النموذج. أعد الإرسال بعد قليل، وإذا استمرت المشكلة فراسلنا على {0}.</value></data>
+  <data name="Pilot.TooManyAttempts" xml:space="preserve"><value>تم إرسال عدد كبير من الطلبات خلال وقت قصير. يُرجى المحاولة لاحقًا أو مراسلتنا على {0}.</value></data>
+  <data name="Pilot.Sent.Title" xml:space="preserve"><value>وصلنا طلبك.</value></data>
+  <data name="Pilot.Sent.Body" xml:space="preserve"><value>شكرًا لك. سيراجع فريقنا طلبك ويتواصل معك عبر الهاتف أو البريد الإلكتروني لترتيب محادثة.</value></data>
+  <data name="Pilot.Sent.InfoHeading" xml:space="preserve"><value>ما يجب أن تعرفه</value></data>
+  <data name="Pilot.Sent.NoAccount" xml:space="preserve"><value>لا يُنشئ هذا الطلب حسابًا أو لوحة تحكم، ولا يتم تحصيل أي مبلغ.</value></data>
+  <data name="Pilot.Sent.ChangeDetails" xml:space="preserve"><value>لتغيير معلوماتك أو إضافة تفاصيل، راسلنا على {0}؛ لا داعي لإرسال النموذج مرة أخرى.</value></data>
+  <data name="Pilot.Sent.Home" xml:space="preserve"><value>العودة إلى الصفحة الرئيسية</value></data>
+  <data name="Validation.PilotCityRequired" xml:space="preserve"><value>اختر المدينة.</value></data>
+  <data name="Validation.PilotContactNameRequired" xml:space="preserve"><value>اكتب اسم الشخص المسؤول واسم عائلته.</value></data>
+  <data name="Validation.PilotPhoneRequired" xml:space="preserve"><value>اكتب رقم هاتف يمكننا التواصل معك عليه.</value></data>
+  <data name="Validation.PilotNoteTooLong" xml:space="preserve"><value>يمكن أن تتكون الملاحظة من 2000 حرف كحد أقصى.</value></data>
+  <data name="PilotPrivacy.MetaTitle" xml:space="preserve"><value>إشعار الخصوصية لطلبات البرنامج التجريبي · Wasla</value></data>
+  <data name="PilotPrivacy.MetaDescription" xml:space="preserve"><value>كيف تُعالَج البيانات الشخصية التي تشاركها في نموذج طلب البرنامج التجريبي.</value></data>
+  <data name="PilotPrivacy.Title" xml:space="preserve"><value>إشعار الخصوصية لطلبات البرنامج التجريبي</value></data>
+  <data name="PilotPrivacy.Subtitle" xml:space="preserve"><value>يوضح كيفية معالجة البيانات الشخصية التي تشاركها في نموذج طلب البرنامج التجريبي.</value></data>
+  <data name="PilotPrivacy.Intro" xml:space="preserve"><value>يُقدَّم هذا الإشعار وفقًا للمادة 10 من قانون حماية البيانات الشخصية التركي رقم 6698 (“KVKK”)، ويتعلق بالبيانات الشخصية التي تشاركها عبر نموذج طلب البرنامج التجريبي. إرسال النموذج ليس قبولًا لعقد ولا موافقة على التسويق.</value></data>
+  <data name="PilotPrivacy.ControllerHeading" xml:space="preserve"><value>1. المسؤول عن البيانات</value></data>
+  <data name="PilotPrivacy.ControllerName" xml:space="preserve"><value>الاسم القانوني</value></data>
+  <data name="PilotPrivacy.ControllerAddress" xml:space="preserve"><value>العنوان</value></data>
+  <data name="PilotPrivacy.ControllerContact" xml:space="preserve"><value>التواصل</value></data>
+  <data name="PilotPrivacy.DataHeading" xml:space="preserve"><value>2. ما البيانات الشخصية التي نعالجها؟</value></data>
+  <data name="PilotPrivacy.DataText" xml:space="preserve"><value>اسم المطعم والمدينة، واسم الشخص المسؤول ورقم هاتفه وبريده الإلكتروني، وملاحظتك الاختيارية، كما تدخلها في نموذج طلب البرنامج التجريبي. ويُسجَّل أيضًا تاريخ الطلب ولغة النموذج.</value></data>
+  <data name="PilotPrivacy.PurposesHeading" xml:space="preserve"><value>3. لأي أغراض نعالجها؟</value></data>
+  <data name="PilotPrivacy.Purpose1" xml:space="preserve"><value>تقييم طلبك للبرنامج التجريبي.</value></data>
+  <data name="PilotPrivacy.Purpose2" xml:space="preserve"><value>التواصل معك عبر الهاتف أو البريد الإلكتروني لترتيب محادثة.</value></data>
+  <data name="PilotPrivacy.Purpose3" xml:space="preserve"><value>التخطيط للإعداد إذا اتُّفق معًا على المشاركة في التجربة.</value></data>
+  <data name="PilotPrivacy.NoMarketing" xml:space="preserve"><value>لا تُستخدم هذه البيانات لإرسال رسائل تسويقية.</value></data>
+  <data name="PilotPrivacy.LegalBasisHeading" xml:space="preserve"><value>4. طريقة الجمع والأساس القانوني</value></data>
+  <data name="PilotPrivacy.CollectionText" xml:space="preserve"><value>تُجمع بياناتك إلكترونيًا عبر نموذج الويب هذا. الأساس القانوني:</value></data>
+  <data name="PilotPrivacy.TransfersHeading" xml:space="preserve"><value>5. لمن تُنقل؟</value></data>
+  <data name="PilotPrivacy.TransfersText" xml:space="preserve"><value>يطّلع على طلبك أعضاء فريق Wasla المخوّلون. مزودو الخدمة وعمليات النقل:</value></data>
+  <data name="PilotPrivacy.RetentionHeading" xml:space="preserve"><value>6. ما مدة الاحتفاظ بها؟</value></data>
+  <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>يمكنك إرسال طلباتك المتعلقة بحقوقك بموجب المادة 11 من KVKK عبر:</value></data>
+  <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[غير مُعدّ]</value></data>
+  <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>مسودة إشعار الخصوصية</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>لم تُعدّ بعد بيانات المسؤول عن البيانات والتفاصيل القانونية. تظهر هذه المسودة في بيئة التطوير المحلية (Development) فقط، وفي كل البيئات الأخرى يبقى النموذج وهذه الصفحة مغلقين.</value></data>
+  <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>العودة إلى نموذج الطلب</value></data>
+  <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>طلب البرنامج التجريبي</value></data>
+  <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>نوع الرسالة</value></data>
+  <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>طلبات البرنامج التجريبي</value></data>
+  <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>رسائل التواصل</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>إشعارات تحتاج إلى متابعة</value></data>
+  <data name="Admin.ContactMessages.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>الملاحظة</value></data>
+  <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>لم تُكتب ملاحظة.</value></data>
+  <data name="Admin.ContactMessages.Resend" xml:space="preserve"><value>إعادة إرسال الإشعار</value></data>
+  <data name="Admin.ContactMessages.ResendSent" xml:space="preserve"><value>تم تسليم رسالة الإشعار إلى خادم SMTP.</value></data>
+  <data name="Admin.ContactMessages.ResendFailed" xml:space="preserve"><value>تعذّر إرسال رسالة الإشعار مرة أخرى. الرسالة لا تزال محفوظة؛ تحقق من إعدادات SMTP وحاول مجددًا.</value></data>
+  <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>لم يُرسل أي إشعار لأن إرسال البريد الإلكتروني غير مُعدّ (Email:Provider ليس Smtp).</value></data>
+  <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>سبق إرسال إشعار هذه الرسالة؛ لم يُرسل مرة أخرى.</value></data>
+  <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>بدأت عملية إرسال لهذه الرسالة للتو؛ تحقق من حالتها بعد قليل.</value></data>
 </root>

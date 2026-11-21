@@ -1,0 +1,109 @@
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using Wasla.Web.Models.Marketing
+@using Wasla.Web.Routing
+@inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject PilotApplicationGate Gate
+@{
+    ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
+        L["PilotPrivacy.MetaTitle"].Value,
+        L["PilotPrivacy.MetaDescription"].Value,
+        PublicSiteUrls.PilotPrivacyNoticePath);
+
+    var notice = Gate.Notice;
+    var updated = DateOnly.TryParseExact(notice.UpdatedOn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+        ? date.ToString("d MMMM yyyy", CultureInfo.CurrentCulture)
+        : null;
+    var missing = L["PilotPrivacy.NotConfigured"].Value;
+    string Fact(string? value) => string.IsNullOrWhiteSpace(value) ? missing : value.Trim();
+    bool IsMissing(string? value) => string.IsNullOrWhiteSpace(value);
+}
+@* KVKK article 10 notice of the pilot application form (WAS-217, Figma S10). The company and legal facts come only
+   from Wasla:PilotApplication:PrivacyNotice; nothing about the data controller is written in code. While a fact is
+   missing the page is a draft, which only a non-Production host shows (PilotApplicationGate). *@
+<article class="wm-legal" aria-labelledby="pilot-privacy-title" data-pilot-notice-draft="@(Gate.NoticeIsDraft ? "true" : "false")">
+    <div class="wm-container wm-legal__container">
+        @if (Gate.NoticeIsDraft)
+        {
+            <div class="wm-pilot-alert wm-pilot-alert--warning" role="note">
+                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                <div>
+                    <p class="wm-pilot-alert__title">@L["PilotPrivacy.DraftTitle"]</p>
+                    <p class="wm-pilot-alert__body">@L["PilotPrivacy.DraftBody"]</p>
+                </div>
+            </div>
+        }
+        <header class="wm-legal__head">
+            <p class="wm-eyebrow wm-eyebrow--chip">@L["Marketing.PrivacyNotice.Eyebrow"]</p>
+            <h1 class="wm-display-l" id="pilot-privacy-title">@L["PilotPrivacy.Title"]</h1>
+            <p class="wm-body-l">@L["PilotPrivacy.Subtitle"]</p>
+            @if (updated is not null)
+            {
+                <p class="wm-mono-caption">@L["Marketing.PrivacyNotice.Updated", updated]</p>
+            }
+        </header>
+        <p class="wm-body-l wm-legal__intro">@L["PilotPrivacy.Intro"]</p>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-1">
+            <h2 class="wm-heading-m" id="pilot-privacy-1">@L["PilotPrivacy.ControllerHeading"]</h2>
+            <dl class="wm-pilot-facts">
+                <dt>@L["PilotPrivacy.ControllerName"]</dt>
+                <dd class="@(IsMissing(notice.ControllerName) ? "wm-pilot-facts__missing" : null)" data-notice-fact="ControllerName">@Fact(notice.ControllerName)</dd>
+                <dt>@L["PilotPrivacy.ControllerAddress"]</dt>
+                <dd class="@(IsMissing(notice.ControllerAddress) ? "wm-pilot-facts__missing" : null)" data-notice-fact="ControllerAddress">@Fact(notice.ControllerAddress)</dd>
+                <dt>@L["PilotPrivacy.ControllerContact"]</dt>
+                <dd class="@(IsMissing(notice.ControllerContact) ? "wm-pilot-facts__missing" : null)" data-notice-fact="ControllerContact" dir="auto">@Fact(notice.ControllerContact)</dd>
+            </dl>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-2">
+            <h2 class="wm-heading-m" id="pilot-privacy-2">@L["PilotPrivacy.DataHeading"]</h2>
+            <p class="wm-body-m">@L["PilotPrivacy.DataText"]</p>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-3">
+            <h2 class="wm-heading-m" id="pilot-privacy-3">@L["PilotPrivacy.PurposesHeading"]</h2>
+            <ul class="wm-legal__list">
+                <li>@L["PilotPrivacy.Purpose1"]</li>
+                <li>@L["PilotPrivacy.Purpose2"]</li>
+                <li>@L["PilotPrivacy.Purpose3"]</li>
+            </ul>
+            <p class="wm-body-m">@L["PilotPrivacy.NoMarketing"]</p>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-4">
+            <h2 class="wm-heading-m" id="pilot-privacy-4">@L["PilotPrivacy.LegalBasisHeading"]</h2>
+            <p class="wm-body-m">@L["PilotPrivacy.CollectionText"]</p>
+            <p class="wm-body-m @(IsMissing(notice.LegalBasis) ? "wm-pilot-facts__missing" : null)" data-notice-fact="LegalBasis">@Fact(notice.LegalBasis)</p>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-5">
+            <h2 class="wm-heading-m" id="pilot-privacy-5">@L["PilotPrivacy.TransfersHeading"]</h2>
+            <p class="wm-body-m">@L["PilotPrivacy.TransfersText"]</p>
+            <p class="wm-body-m @(IsMissing(notice.Transfers) ? "wm-pilot-facts__missing" : null)" data-notice-fact="Transfers">@Fact(notice.Transfers)</p>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-6">
+            <h2 class="wm-heading-m" id="pilot-privacy-6">@L["PilotPrivacy.RetentionHeading"]</h2>
+            <p class="wm-body-m @(IsMissing(notice.Retention) ? "wm-pilot-facts__missing" : null)" data-notice-fact="Retention">@Fact(notice.Retention)</p>
+        </section>
+
+        <section class="wm-legal__section" aria-labelledby="pilot-privacy-7">
+            <h2 class="wm-heading-m" id="pilot-privacy-7">@L["Marketing.PrivacyNotice.RightsHeading"]</h2>
+            <ul class="wm-legal__list">
+                @for (var i = 1; i <= 6; i++)
+                {
+                    <li>@L[$"Marketing.PrivacyNotice.Right{i}"]</li>
+                }
+            </ul>
+        </section>
+
+        <section class="wm-legal__apply" aria-labelledby="pilot-privacy-8">
+            <h2 class="wm-heading-m" id="pilot-privacy-8">@L["Marketing.PrivacyNotice.ApplyHeading"]</h2>
+            <p class="wm-body-m">@L["PilotPrivacy.ApplyText"]</p>
+            <p class="wm-body-m @(IsMissing(notice.RequestChannel) ? "wm-pilot-facts__missing" : null)" data-notice-fact="RequestChannel" dir="auto">@Fact(notice.RequestChannel)</p>
+        </section>
+
+        <p><a class="wm-btn wm-btn--secondary" href="@PublicSiteUrls.PilotPath"><i class="bi bi-arrow-left wm-flip-rtl" aria-hidden="true"></i> @L["PilotPrivacy.BackToForm"]</a></p>
+    </div>
+</article>
