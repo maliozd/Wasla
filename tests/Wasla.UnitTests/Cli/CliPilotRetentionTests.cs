@@ -109,7 +109,25 @@ public sealed class CliPilotRetentionTests : IAsyncLifetime
         var (code, output) = await CaptureAsync(() => CliCommandTree.Build(host).InvokeAsync(["pilot-applications-retention", "--dry-run"]));
 
         Assert.Equal(1, code);
-        Assert.Contains("The pilot application retention run failed before it finished", output, StringComparison.Ordinal);
+        Assert.Contains("STOPPED EARLY: SqliteException.", output, StringComparison.Ordinal);
+        Assert.Contains("Expired: 0.", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ARunThatStopsPartway_PrintsWhatItDeleted_ThenTheStop_AndExitsWithOne()
+    {
+        using var host = Host(new FailReads(Infrastructure.Services.PilotApplicationRetentionCleanup.ExpiredBatchTag, read => read == 2 ? new InvalidOperationException("Simulated lost connection.") : null));
+
+        var (code, output) = await CaptureAsync(() => CliCommandTree.Build(host).InvokeAsync(["pilot-applications-retention", "--batch-size", "1"]));
+
+        Assert.Equal(1, code);
+        Assert.Contains($"deleted {_expired}", output, StringComparison.Ordinal);
+        Assert.Contains("STOPPED EARLY: InvalidOperationException. The applications listed above were handled", output, StringComparison.Ordinal);
+        Assert.Contains("Deleted: 1.", output, StringComparison.Ordinal);
+        Assert.True(output.IndexOf($"deleted {_expired}", StringComparison.Ordinal) < output.IndexOf("STOPPED EARLY", StringComparison.Ordinal));
+        AssertNoPersonalData(output);
+        await using var db = Context();
+        Assert.Equal(_expired, await db.DataDestructionRecords.Select(r => r.SubjectId).SingleAsync(Ct));
     }
 
     [Theory]

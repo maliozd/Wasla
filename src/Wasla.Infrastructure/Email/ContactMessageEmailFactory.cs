@@ -61,19 +61,14 @@ public sealed class ContactMessageEmailFactory
 
     /// <summary>
     /// The pilot application notification (WAS-217), sent to <see cref="ContactOptions.PilotRecipientEmail"/> when it is
-    /// set and to the contact recipient otherwise. The subject names no restaurant or person.
+    /// set and to the contact recipient otherwise. It carries the record id and the time received only, never what the
+    /// applicant typed (WAS-222): a copy in a mailbox or at the SMTP provider would escape the 90-day retention and a
+    /// data subject's deletion, which reach only the stored record. The team opens the record in Central Admin.
     /// </summary>
     private EmailMessage BuildPilotApplicationNotification(ContactMessage message)
     {
         var tokens = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["RestaurantName"] = message.RestaurantName,
-            ["CityPlateCode"] = message.CityPlateCode ?? "-",
-            ["ContactName"] = message.FullName,
-            ["Phone"] = FormatPhone(message.Phone),
-            ["Email"] = message.Email,
-            ["Note"] = string.IsNullOrWhiteSpace(message.Message) ? "-" : message.Message,
-            ["Culture"] = message.Culture ?? "-",
             ["CreatedAtUtc"] = message.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC",
             ["MessageId"] = message.Id.ToString(),
             ["FromName"] = _emailOptions.FromName.Trim()

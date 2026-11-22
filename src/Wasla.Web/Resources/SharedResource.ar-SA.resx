@@ -4964,7 +4964,7 @@
   <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>مرفوض</value></data>
   <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>آخر نشاط</value></data>
   <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>يُحذف في هذا الوقت أو بعده</value></data>
-  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>تُحفظ البيانات الشخصية مدة {0} يومًا بعد آخر نشاط (استلام الطلب أو تغيير حالته أو تسجيل تواصل)، ثم تحذفها عملية تنظيف الحفظ.</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>تنتهي مدة الحفظ بعد {0} يومًا من آخر نشاط (استلام الطلب أو تغيير حالته أو تسجيل تواصل)، ثم تحذف أول عملية تنظيف مجدولة بعد ذلك البيانات الشخصية.</value></data>
   <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>حفظ الحالة</value></data>
   <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>تسجيل تواصل</value></data>
   <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>استخدمه بعد مكالمة أو رسالة بريد إلكتروني مع المطعم: تبدأ مدة {0} يومًا من جديد من الآن.</value></data>
@@ -4994,5 +4994,5 @@
   <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>البحث عن طلب شخص</value></data>
   <data name="Admin.Pilot.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>يُحفظ طلبك مدة أقصاها {0} يومًا بعد آخر تواصل فعلي بيننا أو آخر تغيير في حالته، ثم يُحذف. إذا شارك مطعمك في البرنامج التجريبي، تُعالج البيانات اللازمة بعد ذلك ضمن مسار العملاء المنفصل وقواعد الحفظ الخاصة به.</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>تنتهي مدة حفظ طلبك بعد {0} يومًا من آخر تواصل فعلي بيننا أو آخر تغيير في حالته، ثم يُحذف الطلب في أول عملية تنظيف مجدولة بعد ذلك. إذا شارك مطعمك في البرنامج التجريبي، تُعالج البيانات اللازمة بعد ذلك ضمن مسار العملاء المنفصل وقواعد الحفظ الخاصة به.</value></data>
 </root>

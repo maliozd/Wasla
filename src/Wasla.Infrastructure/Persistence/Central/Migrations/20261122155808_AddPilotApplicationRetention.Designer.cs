@@ -12,7 +12,7 @@ using Wasla.Infrastructure.Persistence.Central;
 namespace Wasla.Infrastructure.Persistence.Central.Migrations
 {
     [DbContext(typeof(CentralDbContext))]
-    [Migration("20261122125233_AddPilotApplicationRetention")]
+    [Migration("20261122155808_AddPilotApplicationRetention")]
     partial class AddPilotApplicationRetention
     {
         /// <inheritdoc />
@@ -610,7 +610,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.HasIndex("Topic", "PilotLastActivityAtUtc", "Id")
                         .HasDatabaseName("IX_ContactMessages_Topic_PilotLastActivityAtUtc");
 
-                    b.ToTable("ContactMessages", (string)null);
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("Topic", "PilotLastActivityAtUtc", "Id"), new[] { "PilotStatus", "NotificationClaimId", "NotificationAttemptedAtUtc", "CreatedAtUtc" });
+
+                    b.ToTable("ContactMessages", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ContactMessages_PilotFields", "[Topic] <> 5 OR ([PilotStatus] IS NOT NULL AND [PilotLastActivityAtUtc] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.Country", b =>

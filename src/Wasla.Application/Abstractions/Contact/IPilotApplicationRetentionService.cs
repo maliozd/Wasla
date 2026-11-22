@@ -13,8 +13,11 @@ public static class PilotRetentionRun
     public const int MaxBatchSize = 1000;
 }
 
-/// <summary>An expired pilot application, by id and codes only: no name, contact, city or note.</summary>
-public sealed record PilotRetentionCandidate(Guid Id, PilotApplicationStatus Status, DateTime LastActivityAtUtc, DateTime DeleteOnOrAfterUtc);
+/// <summary>
+/// An expired pilot application, by id and codes only: no name, contact, city or note. <see cref="Status"/> is null only
+/// for a malformed row, which the run reports as failed and does not delete.
+/// </summary>
+public sealed record PilotRetentionCandidate(Guid Id, PilotApplicationStatus? Status, DateTime LastActivityAtUtc, DateTime DeleteOnOrAfterUtc);
 
 /// <summary>What one run found and did. Holds identifiers and counts only, so it may be printed and logged.</summary>
 public sealed class PilotRetentionRunResult
@@ -35,13 +38,24 @@ public sealed class PilotRetentionRunResult
     /// </summary>
     public IReadOnlyList<Guid> NoLongerExpired { get; init; } = [];
 
-    /// <summary>The applications whose deletion failed. They are still stored and the next run tries again.</summary>
+    /// <summary>
+    /// The applications whose deletion failed, or that have no pilot status and were not deleted. They are still stored
+    /// and the next run tries again.
+    /// </summary>
     public IReadOnlyList<Guid> Failed { get; init; } = [];
 
     /// <summary>Destruction records older than their three-year retention: removed, or in a dry run found.</summary>
     public int DestructionRecordsPastRetention { get; init; }
 
-    public bool Succeeded => Failed.Count == 0;
+    /// <summary>
+    /// Why the run stopped before it finished (an exception type and SQL Server error number, never row content), or null
+    /// when it finished. The lists above still hold everything the run did before it stopped.
+    /// </summary>
+    public string? StopReason { get; init; }
+
+    public bool StoppedEarly => StopReason is not null;
+
+    public bool Succeeded => Failed.Count == 0 && !StoppedEarly;
 }
 
 /// <summary>

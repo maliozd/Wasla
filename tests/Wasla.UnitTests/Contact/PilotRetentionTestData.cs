@@ -56,6 +56,28 @@ internal static class PilotRetentionTestData
         return id;
     }
 
+    /// <summary>
+    /// Stores one <c>New</c> pilot application per time, received then and last active then, in one save; for the
+    /// repeated SQL Server rounds, where a save per row would dominate the run time.
+    /// </summary>
+    public static async Task<List<Guid>> AddPilotsAsync(CentralDbContext db, IEnumerable<DateTime> receivedAtUtc, CancellationToken ct = default)
+    {
+        var ids = new List<Guid>();
+        foreach (var received in receivedAtUtc)
+        {
+            var id = Guid.NewGuid();
+            var application = ContactMessage.CreatePilotApplication(
+                id, RestaurantName, ContactName, Email(id), Phone, "34", Note, "tr-TR", received);
+            application.MarkNotificationSent(received.AddSeconds(2));
+            db.ContactMessages.Add(application);
+            ids.Add(id);
+        }
+
+        await db.SaveChangesAsync(ct);
+        db.ChangeTracker.Clear();
+        return ids;
+    }
+
     /// <summary>Gives the application a notification claim taken at <paramref name="claimedAtUtc"/>, as a resend would.</summary>
     public static Task ClaimNotificationAsync(CentralDbContext db, Guid id, DateTime claimedAtUtc, CancellationToken ct = default)
     {
@@ -97,6 +119,78 @@ internal sealed class FailDeleteOf(Guid id) : DbCommandInterceptor
         }
 
         return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Fails reads whose command text contains <paramref name="marker"/>: the <paramref name="failure"/> for the read number
+/// it is given (1 for the first such read), or nothing when it returns null.
+/// </summary>
+internal sealed class FailReads(string marker, Func<int, Exception?> failure) : DbCommandInterceptor
+{
+    private int _reads;
+
+    public int Reads => _reads;
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+    {
+        if (command.CommandText.Contains(marker, StringComparison.Ordinal)
+            && failure(Interlocked.Increment(ref _reads)) is { } exception)
+        {
+            throw exception;
+        }
+
+        return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(
+        DbCommand command, CommandEventData eventData, InterceptionResult<object> result, CancellationToken cancellationToken = default)
+    {
+        if (command.CommandText.Contains(marker, StringComparison.Ordinal)
+            && failure(Interlocked.Increment(ref _reads)) is { } exception)
+        {
+            throw exception;
+        }
+
+        return base.ScalarExecutingAsync(command, eventData, result, cancellationToken);
+    }
+}
+
+/// <summary>
+/// A <see cref="Microsoft.Data.SqlClient.SqlException"/> with a chosen error number, as SQL Server raises it. SqlClient
+/// has no public constructor, so it is built through its internal factory (Microsoft.Data.SqlClient 5.x).
+/// </summary>
+internal static class SqlServerErrors
+{
+    public const int DeadlockVictim = 1205;
+
+    public static Microsoft.Data.SqlClient.SqlException Create(int number)
+    {
+        const System.Reflection.BindingFlags Internal = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var errorType = typeof(Microsoft.Data.SqlClient.SqlError);
+        var constructor = errorType.GetConstructors(Internal)
+            .Where(c => c.GetParameters() is [{ ParameterType: var first }, ..] && first == typeof(int))
+            .OrderBy(c => c.GetParameters().Length)
+            .First();
+        var arguments = constructor.GetParameters().Select(p => p.ParameterType switch
+        {
+            var t when t == typeof(int) && p.Position == 0 => (object?)number,
+            var t when t == typeof(string) => p.Name == "errorMessage" ? $"Simulated SQL Server error {number}." : "test",
+            var t when t == typeof(byte) => (byte)0,
+            var t when t == typeof(int) => 0,
+            var t when t == typeof(uint) => 0u,
+            _ => null
+        }).ToArray();
+        var error = constructor.Invoke(arguments);
+
+        var collection = Activator.CreateInstance(typeof(Microsoft.Data.SqlClient.SqlErrorCollection), nonPublic: true)!;
+        typeof(Microsoft.Data.SqlClient.SqlErrorCollection).GetMethod("Add", Internal)!.Invoke(collection, [error]);
+        var create = typeof(Microsoft.Data.SqlClient.SqlException).GetMethod(
+            "CreateException",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+            [typeof(Microsoft.Data.SqlClient.SqlErrorCollection), typeof(string)])!;
+        return (Microsoft.Data.SqlClient.SqlException)create.Invoke(null, [collection, "16.0"])!;
     }
 }
 

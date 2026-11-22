@@ -356,6 +356,163 @@ public sealed class PilotApplicationRetentionTests : IDisposable
             (await after.DataDestructionRecords.Where(r => r.SubjectId == failing).Select(r => r.Result).ToListAsync(Ct)).Order());
     }
 
+    /// <summary>
+    /// A pilot application with a last activity but no status cannot be stored (CK_ContactMessages_PilotFields). If one
+    /// exists anyway (the constraint bypassed), it is reported as failed with a failed destruction record, not deleted, and
+    /// the run carries on with the other rows instead of stopping on it.
+    /// </summary>
+    [Fact]
+    public async Task APilotApplicationWithoutAStatus_IsRefusedByTheDatabase_AndIfPresent_IsReportedNotDeleted_TheOthersContinue()
+    {
+        Guid malformed, valid;
+        await using (var db = _central.CreateContext())
+        {
+            malformed = await PilotRetentionTestData.AddPilotAsync(db, Now.AddDays(-120), ct: Ct);
+            valid = await PilotRetentionTestData.AddPilotAsync(db, Now.AddDays(-110), ct: Ct);
+
+            await Assert.ThrowsAnyAsync<Exception>(() => db.Database.ExecuteSqlAsync(
+                $"UPDATE \"ContactMessages\" SET \"PilotStatus\" = NULL WHERE \"Id\" = {malformed}", Ct));
+
+            await db.Database.OpenConnectionAsync(Ct);
+            await db.Database.ExecuteSqlRawAsync("PRAGMA ignore_check_constraints = ON;", Ct);
+            await db.Database.ExecuteSqlAsync($"UPDATE \"ContactMessages\" SET \"PilotStatus\" = NULL WHERE \"Id\" = {malformed}", Ct);
+            await db.Database.ExecuteSqlRawAsync("PRAGMA ignore_check_constraints = OFF;", Ct);
+        }
+
+        var before = await SnapshotAsync();
+        var dryRun = await RunAsync(dryRun: true);
+        Assert.Equal(before, await SnapshotAsync());
+        Assert.Equal(malformed, Assert.Single(dryRun.Failed));
+        Assert.Null(dryRun.Expired.Single(c => c.Id == malformed).Status);
+        Assert.False(dryRun.Succeeded);
+
+        var logger = new CapturingLogger<PilotApplicationRetentionCleanup>();
+        PilotRetentionRunResult run;
+        await using (var db = _central.CreateContext())
+            run = await new PilotApplicationRetentionCleanup(db, new ManualClock(new DateTimeOffset(Now)), logger).RunAsync(new PilotRetentionRunRequest(false, 1), Ct);
+
+        Assert.False(run.Succeeded);
+        Assert.False(run.StoppedEarly);
+        Assert.Equal(malformed, Assert.Single(run.Failed));
+        Assert.Equal(valid, Assert.Single(run.Deleted));
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Error && e.Text.Contains(malformed.ToString(), StringComparison.Ordinal) && e.Text.Contains("no pilot status", StringComparison.Ordinal));
+        Assert.All(logger.Entries, e => Assert.All(PilotRetentionTestData.PersonalValues, v => Assert.DoesNotContain(v, e.Text, StringComparison.OrdinalIgnoreCase)));
+        await using var check = _central.CreateContext();
+        Assert.True(await check.ContactMessages.AnyAsync(m => m.Id == malformed, Ct));
+        Assert.Equal(DataDestructionResult.Failed, (await check.DataDestructionRecords.SingleAsync(r => r.SubjectId == malformed, Ct)).Result);
+    }
+
+    /// <summary>
+    /// A contact form message whose pilot columns hold expired values (by mistake or on purpose) is still not a pilot
+    /// application: only the topic decides. Without the topic check in the rule this row would be selected and deleted.
+    /// </summary>
+    [Fact]
+    public async Task AContactMessageWithPilotValues_IsNeverSelectedOrDeleted_BecauseOfItsTopic()
+    {
+        Guid contact;
+        await using (var db = _central.CreateContext())
+        {
+            contact = await PilotRetentionTestData.AddContactMessageAsync(db, Now.AddDays(-400), Ct);
+            await db.ContactMessages.Where(m => m.Id == contact).ExecuteUpdateAsync(
+                s => s.SetProperty(m => m.PilotStatus, (PilotApplicationStatus?)PilotApplicationStatus.Declined)
+                    .SetProperty(m => m.PilotLastActivityAtUtc, (DateTime?)Now.AddDays(-400)),
+                Ct);
+            Assert.Empty(await db.ContactMessages.AsNoTracking().Where(PilotApplicationRetention.ExpiredAt(Now)).ToListAsync(Ct));
+        }
+
+        var dryRun = await RunAsync(dryRun: true);
+        var run = await RunAsync(dryRun: false);
+
+        Assert.Empty(dryRun.Expired);
+        Assert.Empty(run.Expired);
+        Assert.True(run.Succeeded);
+        await using var check = _central.CreateContext();
+        Assert.True(await check.ContactMessages.AnyAsync(m => m.Id == contact, Ct));
+        Assert.False(await check.DataDestructionRecords.AnyAsync(Ct));
+        Assert.Equal(
+            PilotApplicationChangeOutcome.NotFound,
+            await AdminService(check, new ManualClock(new DateTimeOffset(Now))).DeleteOnRequestAsync(contact, Guid.NewGuid(), Ct));
+        Assert.True(await check.ContactMessages.AnyAsync(m => m.Id == contact, Ct));
+    }
+
+    /// <summary>
+    /// When a later batch read fails for good, or the removal of old destruction records fails, the run stops but returns
+    /// and logs what it already did: the applications deleted before the failure, each with its destruction record.
+    /// </summary>
+    [Theory]
+    [InlineData("batch")]
+    [InlineData("records")]
+    public async Task ARunThatFailsPartway_ReturnsWhatItAlreadyDeleted_AndReportsTheStop(string failingStep)
+    {
+        var ids = new List<Guid>();
+        await using (var db = _central.CreateContext())
+        {
+            for (var i = 0; i < 5; i++)
+                ids.Add(await PilotRetentionTestData.AddPilotAsync(db, Now.AddDays(-120).AddMinutes(i), ct: Ct));
+        }
+
+        var failure = failingStep == "batch"
+            ? new FailReads(PilotApplicationRetentionCleanup.ExpiredBatchTag, read => read == 2 ? new InvalidOperationException("Simulated lost connection.") : null)
+            : new FailReads("FROM \"DataDestructionRecords\"", _ => new InvalidOperationException("Simulated lost connection."));
+        var logger = new CapturingLogger<PilotApplicationRetentionCleanup>();
+        PilotRetentionRunResult run;
+        await using (var db = _central.CreateContextWith(failure))
+            run = await new PilotApplicationRetentionCleanup(db, new ManualClock(new DateTimeOffset(Now)), logger).RunAsync(new PilotRetentionRunRequest(false, 2), Ct);
+
+        var deletedBeforeTheStop = failingStep == "batch" ? ids.Take(2).ToList() : ids;
+        Assert.True(run.StoppedEarly);
+        Assert.False(run.Succeeded);
+        Assert.Equal("InvalidOperationException", run.StopReason);
+        Assert.Equal(deletedBeforeTheStop, run.Deleted);
+        Assert.Contains(logger.Entries, e => e.Level == LogLevel.Error && e.Text.Contains($"Deleted={deletedBeforeTheStop.Count}", StringComparison.Ordinal) && e.Text.Contains("StoppedEarly=True", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Entries, e => e.Text.Contains("Simulated lost connection", StringComparison.Ordinal));
+        await using var check = _central.CreateContext();
+        Assert.Equal(deletedBeforeTheStop.Order(), (await check.DataDestructionRecords.Select(r => r.SubjectId).ToListAsync(Ct)).Order());
+        Assert.Equal(ids.Except(deletedBeforeTheStop).Order(), (await check.ContactMessages.Select(m => m.Id).ToListAsync(Ct)).Order());
+
+        var next = await RunAsync(dryRun: false);
+        Assert.True(next.Succeeded);
+        Assert.Equal(ids.Except(deletedBeforeTheStop).Order(), next.Deleted.Order());
+    }
+
+    /// <summary>
+    /// A batch read chosen as a SQL Server deadlock victim (1205) is read again, each retry logged, at most
+    /// <see cref="PilotApplicationRetentionCleanup.MaxReadAttempts"/> times in all; then the run stops and says so. Other
+    /// errors are not retried.
+    /// </summary>
+    [Theory]
+    [InlineData(SqlServerErrors.DeadlockVictim, 2, 3, true)]
+    [InlineData(SqlServerErrors.DeadlockVictim, 3, 3, false)]
+    [InlineData(SqlServerErrors.DeadlockVictim, 100, 3, false)]
+    [InlineData(4060, 1, 1, false)]
+    public async Task ABatchReadLosingADeadlock_IsReadAgain_AFewTimesOnly(int errorNumber, int failingReads, int expectedReads, bool succeeds)
+    {
+        Guid id;
+        await using (var db = _central.CreateContext())
+            id = await PilotRetentionTestData.AddPilotAsync(db, Now.AddDays(-120), ct: Ct);
+
+        var failure = new FailReads(PilotApplicationRetentionCleanup.ExpiredBatchTag, read => read <= failingReads ? SqlServerErrors.Create(errorNumber) : null);
+        var logger = new CapturingLogger<PilotApplicationRetentionCleanup>();
+        PilotRetentionRunResult run;
+        await using (var db = _central.CreateContextWith(failure))
+            run = await new PilotApplicationRetentionCleanup(db, new ManualClock(new DateTimeOffset(Now)), logger).RunAsync(new PilotRetentionRunRequest(false), Ct);
+
+        Assert.Equal(expectedReads, failure.Reads);
+        Assert.Equal(succeeds, run.Succeeded);
+        var retries = logger.Entries.Where(e => e.Level == LogLevel.Warning && e.Text.Contains("lost a deadlock", StringComparison.Ordinal)).ToList();
+        Assert.Equal(errorNumber == SqlServerErrors.DeadlockVictim ? Math.Min(failingReads, expectedReads - 1) : 0, retries.Count);
+        if (succeeds)
+        {
+            Assert.Equal(id, Assert.Single(run.Deleted));
+        }
+        else
+        {
+            Assert.Empty(run.Deleted);
+            Assert.Equal($"SqlException (SQL Server error {errorNumber})", run.StopReason);
+            Assert.Contains(logger.Entries, e => e.Level == LogLevel.Error && e.Text.Contains($"SqlErrorNumber={errorNumber}", StringComparison.Ordinal));
+        }
+    }
+
     // --- Destruction records -----------------------------------------------------------------------
 
     [Fact]

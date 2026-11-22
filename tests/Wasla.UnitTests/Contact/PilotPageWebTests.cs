@@ -373,7 +373,7 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
     {
         var text = Text(culture, "PilotPrivacy.RetentionText");
 
-        Assert.Equal(1, Regex.Matches(text, Regex.Escape("{0}")).Count);
+        Assert.Single(Regex.Matches(text, Regex.Escape("{0}")));
         Assert.DoesNotMatch(@"\d", text.Replace("{0}", string.Empty, StringComparison.Ordinal));
         var deleted = culture switch
         {

@@ -100,6 +100,7 @@ Some CentralDb migrations refuse their own `Down` while rolling back would delet
 | `AddBillingSubscriptions` | 50147 | Any plan price, subscription or payment exists ([../architecture/billing.md](../architecture/billing.md#migration-and-rollback)) |
 | `AddBillingPlanPriceCorrections` | 50064 | Any plan price correction is recorded |
 | `AddRegistrationDrafts` | 50192 | Any registration holds an owner phone verification time (`PendingRegistrations.OwnerPhoneVerifiedAtUtc`); drafts, verification rows and send records are dropped ([../architecture/signup-registration.md](../architecture/signup-registration.md#persistence)) |
+| `AddPilotApplicationRetention` | 50222 | Any destruction record exists (`DataDestructionRecords`, kept three years), or any pilot application holds a status other than `New` or a last activity other than its received time, which applying the migration again would reset ([pilot-applications.md](pilot-applications.md#storage)) |
 
 An operator who really means to roll back exports and clears that data first; once real data matters, roll forward instead. Each guard is tested on SQL Server ([testing.md](testing.md#sql-server-concurrency-tests)).
 

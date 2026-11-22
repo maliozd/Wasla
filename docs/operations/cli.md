@@ -190,7 +190,7 @@ Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-web
 
 | Command | Purpose |
 |---------|---------|
-| `pilot-applications-retention` | Delete pilot applications 90 days after their last activity, each with a destruction record, then remove destruction records older than three years (WAS-222). `--dry-run` lists the expired applications (ids, status, UTC dates) and changes nothing; `--batch-size` (1 to 1,000, default 100). CentralDb only. Exit code `0` done, `1` a deletion failed (retried by the next run), `2` an invalid option. Rule, output, scheduling and backups: [pilot-applications.md](pilot-applications.md#retention-and-deletion) |
+| `pilot-applications-retention` | Delete pilot applications whose retention period ended (90 days after their last activity), each with a destruction record, then remove destruction records older than three years (WAS-222). `--dry-run` lists the expired applications (ids, status, UTC dates) and changes nothing; `--batch-size` (1 to 1,000, default 100). CentralDb only. Exit code `0` done, `1` a deletion failed or a row has no pilot status (retried by the next run), or the run stopped early (`STOPPED EARLY`, after printing what it deleted), `2` an invalid option. Rule, output, scheduling and backups: [pilot-applications.md](pilot-applications.md#retention-and-deletion) |
 
 ### Utility
 

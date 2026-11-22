@@ -48,9 +48,10 @@ internal static class CliPilotRetentionCommands
             $"Pilot application retention: {PilotApplicationRetention.PeriodDays} days after the last activity. " +
             $"Now {Utc(result.NowUtc)}. {(result.DryRun ? "Dry run: nothing is deleted." : "Deleting.")}");
 
+        var withoutStatus = result.Expired.Where(c => c.Status is null).Select(c => c.Id).ToHashSet();
         if (result.DryRun)
         {
-            foreach (var candidate in result.Expired)
+            foreach (var candidate in result.Expired.Where(c => c.Status is not null))
             {
                 Console.WriteLine(
                     $"would delete {candidate.Id} status={candidate.Status} last-activity={Utc(candidate.LastActivityAtUtc)} due={Utc(candidate.DeleteOnOrAfterUtc)}");
@@ -62,12 +63,23 @@ internal static class CliPilotRetentionCommands
                 Console.WriteLine($"deleted {id}");
             foreach (var id in result.NoLongerExpired)
                 Console.WriteLine($"kept {id} (changed since it was read: new activity, a running notification, or already deleted)");
-            foreach (var id in result.Failed)
-                Console.Error.WriteLine($"FAILED {id} (still stored; the next run tries again)");
+        }
+
+        foreach (var id in result.Failed)
+        {
+            Console.Error.WriteLine(withoutStatus.Contains(id)
+                ? $"FAILED {id} (no pilot status: not deleted; correct the row, the next run deletes it if it is still expired)"
+                : $"FAILED {id} (still stored; the next run tries again)");
+        }
+
+        if (result.StopReason is { } reason)
+        {
+            Console.Error.WriteLine(
+                $"STOPPED EARLY: {reason}. The applications listed above were handled; the rest stay stored and the next run continues.");
         }
 
         Console.WriteLine(result.DryRun
-            ? $"Expired: {result.Expired.Count}. Destruction records past their {Domain.Entities.Central.DataDestructionRecord.RetentionYears}-year retention: {result.DestructionRecordsPastRetention}."
+            ? $"Expired: {result.Expired.Count}. Without a pilot status: {withoutStatus.Count}. Destruction records past their {Domain.Entities.Central.DataDestructionRecord.RetentionYears}-year retention: {result.DestructionRecordsPastRetention}."
             : $"Expired: {result.Expired.Count}. Deleted: {result.Deleted.Count}. Kept: {result.NoLongerExpired.Count}. Failed: {result.Failed.Count}. " +
               $"Destruction records removed after {Domain.Entities.Central.DataDestructionRecord.RetentionYears} years: {result.DestructionRecordsPastRetention}.");
     }

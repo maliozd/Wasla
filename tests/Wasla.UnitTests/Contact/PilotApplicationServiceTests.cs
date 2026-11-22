@@ -57,8 +57,10 @@ public sealed class PilotApplicationServiceTests : IDisposable
         Assert.Equal("pilot-team@wasla.test", email.ToEmail);
         Assert.True(email.IsSensitive);
         Assert.DoesNotContain("Lezzet", email.Subject, StringComparison.Ordinal);
-        Assert.Contains("Lezzet Ocakbaşı", email.TextBody, StringComparison.Ordinal);
-        Assert.Contains("+90 532 418 27 90", email.TextBody, StringComparison.Ordinal);
+        // WAS-222: the email names the record, not what the applicant typed.
+        Assert.Contains(Request().SubmissionId.ToString(), email.TextBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("Lezzet", email.TextBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("532 418", email.TextBody, StringComparison.Ordinal);
         Assert.True(sender.StoredBeforeSending, "The notification was sent before the application was stored.");
 
         await using var check = NewContext();
@@ -212,6 +214,77 @@ public sealed class PilotApplicationServiceTests : IDisposable
         Assert.Contains("FailureCategory=", log, StringComparison.Ordinal);
         foreach (var personal in new[] { "Ayşe", "Lezzet", "5324182790", "532 418", "ayse@", "SMTP refused", "Hafta" })
             Assert.DoesNotContain(personal, log, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// WAS-222: the team notification carries the record id, the time received and a Central Admin path, and nothing the
+    /// applicant typed: a copy in a mailbox or at the SMTP provider would outlive the 90-day retention and a deletion on
+    /// request. Every field holds a value found nowhere else, checked in the subject, both bodies, the Central Admin path,
+    /// the logs of a sent, a failed and a resent notification, and the exception of a refused submission.
+    /// </summary>
+    [Fact]
+    public async Task TheNotification_AndTheLogs_CarryNothingTheApplicantTyped()
+    {
+        var id = Guid.Parse("1f2e3d4c-5b6a-4978-8a9b-0c1d2e3f4a5b");
+        var request = new PilotApplicationRequest(
+            id,
+            "Qx7Restoran Sentinel",
+            "Qx7Yetkili Sentinel",
+            "qx7.sentinel@pilot.test",
+            "5398761204",
+            "35",
+            "Qx7Not sentinel text",
+            "tr-TR");
+        string[] typed = ["Qx7", "Sentinel", "sentinel", "qx7", "5398761204", "539 876", "876 12", "İzmir", "Izmir", "@pilot.test"];
+        var logs = new CapturingLoggerProvider();
+
+        var sender = new RecordingSender();
+        await using (var db = NewContext())
+            await Service(db, sender, logger: logs).SubmitPilotApplicationAsync(request, TestContext.Current.CancellationToken);
+        var email = Assert.Single(sender.Sent);
+
+        foreach (var text in new[] { email.Subject, email.TextBody, email.HtmlBody })
+        {
+            foreach (var value in typed)
+                Assert.DoesNotContain(value, text, StringComparison.OrdinalIgnoreCase);
+        }
+
+        Assert.DoesNotContain("35", email.TextBody, StringComparison.Ordinal);
+        Assert.Contains(id.ToString(), email.TextBody, StringComparison.Ordinal);
+        Assert.Contains("2026-11-20 09:00 UTC", email.TextBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{", email.TextBody + email.HtmlBody, StringComparison.Ordinal);
+        var paths = System.Text.RegularExpressions.Regex.Matches(email.TextBody + email.HtmlBody, @"/admin/[^\s)<""]*")
+            .Select(m => m.Value)
+            .Distinct()
+            .ToList();
+        Assert.Equal(new[] { $"/admin/contact-messages/{id}" }, paths);
+
+        // A failed notification, then Central Admin's resend.
+        await using (var setup = NewContext())
+            await setup.ContactMessages.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        var failing = new RecordingSender { Failure = new InvalidOperationException("SMTP refused the message") };
+        await using (var db = NewContext())
+            await Service(db, failing, logger: logs).SubmitPilotApplicationAsync(request, TestContext.Current.CancellationToken);
+        var resent = new RecordingSender();
+        await using (var db = NewContext())
+            await Service(db, resent, logger: logs, now: Now.AddHours(1)).ResendNotificationAsync(id, TestContext.Current.CancellationToken);
+        var again = Assert.Single(resent.Sent);
+        foreach (var value in typed)
+            Assert.DoesNotContain(value, again.Subject + again.TextBody + again.HtmlBody, StringComparison.OrdinalIgnoreCase);
+
+        // A refused submission (a province that is not active).
+        await using (var db = NewContext())
+        {
+            var refused = await Assert.ThrowsAnyAsync<Exception>(() => Service(db, new RecordingSender(), logger: logs)
+                .SubmitPilotApplicationAsync(request with { SubmissionId = Guid.NewGuid(), CityPlateCode = "07" }, TestContext.Current.CancellationToken));
+            foreach (var value in typed)
+                Assert.DoesNotContain(value, refused.ToString(), StringComparison.OrdinalIgnoreCase);
+        }
+
+        var log = string.Join(Environment.NewLine, logs.Entries);
+        Assert.Contains(id.ToString(), log, StringComparison.Ordinal);
+        foreach (var value in typed)
+            Assert.DoesNotContain(value, log, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -19,10 +19,26 @@ namespace Wasla.Infrastructure.Services;
 /// again in the same run and the run always ends.</para>
 /// <para>A failed deletion is logged with the row id, the exception type and the SQL Server error number only, recorded
 /// as a failed destruction (best effort), and left for the next run; the run continues with the other rows and reports
-/// failure, so the CLI exits non-zero. No log or result holds what the applicant typed.</para>
+/// failure, so the CLI exits non-zero. A pilot application without a status (which <c>CK_ContactMessages_PilotFields</c>
+/// prevents) is reported and recorded the same way and not deleted, so someone looks at the row. No log or result holds
+/// what the applicant typed.</para>
+/// <para>The batch read uses <c>IX_ContactMessages_Topic_PilotLastActivityAtUtc</c> alone, which covers every column it
+/// reads, so it never holds an index key while waiting for a row that another run is deleting (the deadlock of two
+/// overlapping runs). If SQL Server still picks the read as a deadlock victim (error 1205), it is read again up to
+/// <see cref="MaxReadAttempts"/> times in all, each retry logged. When a read or the removal of old destruction records
+/// fails for good, the run stops and returns what it already did, marked <see cref="PilotRetentionRunResult.StopReason"/>,
+/// so the deletions made so far are still reported and the CLI exits non-zero.</para>
 /// </remarks>
 public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentionService
 {
+    /// <summary>The query tag of the batch read, by which a test finds its cached SQL Server plans.</summary>
+    public const string ExpiredBatchTag = "WAS-222 pilot retention batch read";
+
+    /// <summary>How many times one batch read is tried in all when SQL Server picks it as a deadlock victim.</summary>
+    public const int MaxReadAttempts = 3;
+
+    private const int DeadlockVictim = 1205;
+
     private readonly CentralDbContext _db;
     private readonly TimeProvider _time;
     private readonly ILogger<PilotApplicationRetentionCleanup> _logger;
@@ -46,11 +62,81 @@ public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentio
         var noLongerExpired = new List<Guid>();
         var failed = new List<Guid>();
 
+        string? stopReason = null;
+        var recordsPastRetention = 0;
+        try
+        {
+            await DeleteExpiredAsync(request, now, expired, deleted, noLongerExpired, failed, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
+        {
+            stopReason = Describe(ex);
+            _logger.LogError(
+                "The pilot application retention cleanup could not read the next batch and stopped; the rows it already handled are reported. ExceptionType={ExceptionType} SqlErrorNumber={SqlErrorNumber}",
+                ex.GetType().Name,
+                PilotApplicationDestruction.SqlErrorNumber(ex));
+        }
+
+        if (stopReason is null)
+        {
+            try
+            {
+                recordsPastRetention = request.DryRun
+                    ? await _db.DataDestructionRecords.AsNoTracking().CountAsync(r => r.RetainUntilUtc <= now, ct).ConfigureAwait(false)
+                    : await RemoveRecordsPastRetentionAsync(now, request.BatchSize, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
+            {
+                stopReason = Describe(ex);
+                _logger.LogError(
+                    "The pilot application retention cleanup could not remove destruction records past their retention and stopped; the applications it already handled are reported. ExceptionType={ExceptionType} SqlErrorNumber={SqlErrorNumber}",
+                    ex.GetType().Name,
+                    PilotApplicationDestruction.SqlErrorNumber(ex));
+            }
+        }
+
+        var result = new PilotRetentionRunResult
+        {
+            NowUtc = now,
+            DryRun = request.DryRun,
+            Expired = expired,
+            Deleted = deleted,
+            NoLongerExpired = noLongerExpired,
+            Failed = failed,
+            DestructionRecordsPastRetention = recordsPastRetention,
+            StopReason = stopReason
+        };
+
+        _logger.Log(
+            result.Succeeded ? LogLevel.Information : LogLevel.Error,
+            "Pilot application retention cleanup finished. DryRun={DryRun} Expired={Expired} Deleted={Deleted} NoLongerExpired={NoLongerExpired} Failed={Failed} DestructionRecordsPastRetention={DestructionRecordsPastRetention} StoppedEarly={StoppedEarly}",
+            result.DryRun,
+            expired.Count,
+            deleted.Count,
+            noLongerExpired.Count,
+            failed.Count,
+            recordsPastRetention,
+            result.StoppedEarly);
+
+        return result;
+    }
+
+    // Reads expired applications batch by batch and deletes each, filling the lists as it goes, so a read that fails
+    // later leaves the caller with everything done before it.
+    private async Task DeleteExpiredAsync(
+        PilotRetentionRunRequest request,
+        DateTime now,
+        List<PilotRetentionCandidate> expired,
+        List<Guid> deleted,
+        List<Guid> noLongerExpired,
+        List<Guid> failed,
+        CancellationToken ct)
+    {
         DateTime? lastActivity = null;
         var seenAtLastActivity = new List<Guid>();
         while (true)
         {
-            var batch = await ReadExpiredAsync(now, lastActivity, seenAtLastActivity, request.BatchSize, ct).ConfigureAwait(false);
+            var batch = await ReadExpiredWithRetryAsync(now, lastActivity, seenAtLastActivity, request.BatchSize, ct).ConfigureAwait(false);
             foreach (var candidate in batch)
             {
                 expired.Add(candidate);
@@ -61,6 +147,17 @@ public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentio
                 }
 
                 seenAtLastActivity.Add(candidate.Id);
+                if (candidate.Status is null)
+                {
+                    failed.Add(candidate.Id);
+                    _logger.LogError(
+                        "Pilot application {ContactMessageId} has a last activity but no pilot status; the retention cleanup did not delete it. Correct the row; the next run deletes it if it is still expired.",
+                        candidate.Id);
+                    if (!request.DryRun)
+                        await RecordFailureAsync(candidate.Id, now, ct).ConfigureAwait(false);
+                    continue;
+                }
+
                 if (request.DryRun)
                     continue;
 
@@ -93,33 +190,33 @@ public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentio
             if (batch.Count < request.BatchSize)
                 break;
         }
+    }
 
-        var recordsPastRetention = request.DryRun
-            ? await _db.DataDestructionRecords.AsNoTracking().CountAsync(r => r.RetainUntilUtc <= now, ct).ConfigureAwait(false)
-            : await RemoveRecordsPastRetentionAsync(now, request.BatchSize, ct).ConfigureAwait(false);
-
-        var result = new PilotRetentionRunResult
+    private async Task<List<PilotRetentionCandidate>> ReadExpiredWithRetryAsync(
+        DateTime now,
+        DateTime? after,
+        IReadOnlyCollection<Guid> seenAtAfter,
+        int batchSize,
+        CancellationToken ct)
+    {
+        for (var attempt = 1; ; attempt++)
         {
-            NowUtc = now,
-            DryRun = request.DryRun,
-            Expired = expired,
-            Deleted = deleted,
-            NoLongerExpired = noLongerExpired,
-            Failed = failed,
-            DestructionRecordsPastRetention = recordsPastRetention
-        };
-
-        _logger.Log(
-            result.Succeeded ? LogLevel.Information : LogLevel.Error,
-            "Pilot application retention cleanup finished. DryRun={DryRun} Expired={Expired} Deleted={Deleted} NoLongerExpired={NoLongerExpired} Failed={Failed} DestructionRecordsPastRetention={DestructionRecordsPastRetention}",
-            result.DryRun,
-            expired.Count,
-            deleted.Count,
-            noLongerExpired.Count,
-            failed.Count,
-            recordsPastRetention);
-
-        return result;
+            try
+            {
+                return await ReadExpiredAsync(now, after, seenAtAfter, batchSize, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (attempt < MaxReadAttempts
+                && !ct.IsCancellationRequested
+                && PilotApplicationDestruction.SqlErrorNumber(ex) == DeadlockVictim)
+            {
+                _logger.LogWarning(
+                    "The pilot application retention batch read lost a deadlock (SQL Server error {SqlErrorNumber}), attempt {Attempt} of {MaxAttempts}; reading the batch again.",
+                    DeadlockVictim,
+                    attempt,
+                    MaxReadAttempts);
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), ct).ConfigureAwait(false);
+            }
+        }
     }
 
     private async Task<List<PilotRetentionCandidate>> ReadExpiredAsync(
@@ -129,7 +226,7 @@ public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentio
         int batchSize,
         CancellationToken ct)
     {
-        var query = _db.ContactMessages.AsNoTracking().Where(PilotApplicationRetention.ExpiredAt(now));
+        var query = _db.ContactMessages.AsNoTracking().TagWith(ExpiredBatchTag).Where(PilotApplicationRetention.ExpiredAt(now));
         if (after is { } last)
         {
             var seen = seenAtAfter.ToList();
@@ -147,11 +244,16 @@ public sealed class PilotApplicationRetentionCleanup : IPilotApplicationRetentio
         return rows
             .Select(r => new PilotRetentionCandidate(
                 r.Id,
-                r.PilotStatus!.Value,
+                r.PilotStatus,
                 r.PilotLastActivityAtUtc!.Value,
                 PilotApplicationRetention.DeleteOnOrAfter(r.PilotLastActivityAtUtc!.Value)))
             .ToList();
     }
+
+    private static string Describe(Exception ex) =>
+        PilotApplicationDestruction.SqlErrorNumber(ex) is { } number
+            ? $"{ex.GetType().Name} (SQL Server error {number})"
+            : ex.GetType().Name;
 
     private async Task RecordFailureAsync(Guid id, DateTime now, CancellationToken ct)
     {

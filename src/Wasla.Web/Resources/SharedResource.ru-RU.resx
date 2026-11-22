@@ -5390,7 +5390,7 @@
   <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Отклонена</value></data>
   <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Последнее действие</value></data>
   <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>Удаляется не раньше</value></data>
-  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Персональные данные хранятся {0} дней после последнего действия (получение заявки, смена статуса или записанный контакт), затем их удаляет плановая очистка.</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Срок хранения истекает через {0} дней после последнего действия (получение заявки, смена статуса или записанный контакт); после этого персональные данные удаляет ближайшая плановая очистка.</value></data>
   <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Сохранить статус</value></data>
   <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Записать контакт</value></data>
   <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Используйте после звонка или письма ресторану: срок {0} дней начнётся заново с этого момента.</value></data>
@@ -5420,5 +5420,5 @@
   <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Найти заявку человека</value></data>
   <data name="Admin.Pilot.Save" xml:space="preserve"><value>Сохранить</value></data>
   <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Отмена</value></data>
-  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Ваша заявка хранится не более {0} дней после нашего последнего содержательного контакта с вами или последнего изменения её статуса, после чего удаляется. Если ваш ресторан участвует в пилоте, нужные с этого момента данные обрабатываются в отдельном клиентском процессе по его собственным правилам хранения.</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Срок хранения вашей заявки истекает через {0} дней после нашего последнего содержательного контакта с вами или последнего изменения её статуса; затем заявка удаляется при ближайшей плановой очистке. Если ваш ресторан участвует в пилоте, нужные с этого момента данные обрабатываются в отдельном клиентском процессе по его собственным правилам хранения.</value></data>
 </root>

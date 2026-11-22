@@ -4964,7 +4964,7 @@
   <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Declined</value></data>
   <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Last activity</value></data>
   <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>Deleted on or after</value></data>
-  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>The personal data is kept for {0} days after the last activity (receipt, a status change or a recorded contact) and is then deleted by the retention cleanup.</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>The retention period ends {0} days after the last activity (receipt, a status change or a recorded contact); the next scheduled retention cleanup after that deletes the personal data.</value></data>
   <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Save status</value></data>
   <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Record a contact</value></data>
   <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Use it after a call or an email with the restaurant: the {0}-day period starts again from now.</value></data>
@@ -4994,5 +4994,5 @@
   <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Find a person’s application</value></data>
   <data name="Admin.Pilot.Save" xml:space="preserve"><value>Save</value></data>
   <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Your application is kept for at most {0} days after our last meaningful contact with you or the last change of its status, and is then deleted. If your restaurant takes part in the pilot, the data needed from then on is handled under the separate customer process and its own retention rules.</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>The retention period of your application ends {0} days after our last meaningful contact with you or the last change of its status; the application is then deleted by the next scheduled cleanup. If your restaurant takes part in the pilot, the data needed from then on is handled under the separate customer process and its own retention rules.</value></data>
 </root>

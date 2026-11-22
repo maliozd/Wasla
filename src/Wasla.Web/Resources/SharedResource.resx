@@ -2595,7 +2595,7 @@
   <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Reddedildi</value></data>
   <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Son işlem</value></data>
   <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>En erken silinme zamanı</value></data>
-  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Kişisel veriler son işlemden (başvurunun alınması, durum değişikliği veya kaydedilen bir görüşme) sonra {0} gün saklanır, ardından saklama temizliği tarafından silinir.</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Saklama süresi son işlemden (başvurunun alınması, durum değişikliği veya kaydedilen bir görüşme) {0} gün sonra dolar; kişisel verileri ondan sonraki ilk planlı saklama temizliği siler.</value></data>
   <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Durumu kaydet</value></data>
   <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Görüşme kaydet</value></data>
   <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Restoranla bir arama veya e-postadan sonra kullanın: {0} günlük süre şimdiden yeniden başlar.</value></data>
@@ -2625,5 +2625,5 @@
   <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Kişinin başvurusunu bul</value></data>
   <data name="Admin.Pilot.Save" xml:space="preserve"><value>Kaydet</value></data>
   <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
-  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Başvurunuz, sizinle son anlamlı iletişimimizden veya başvuru durumundaki son değişiklikten itibaren en fazla {0} gün saklanır ve ardından silinir. Restoranınız pilota katılırsa, bundan sonra gereken veriler ayrı müşteri süreci ve onun saklama kuralları kapsamında işlenir.</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Başvurunuzun saklama süresi, sizinle son anlamlı iletişimimizden veya başvuru durumundaki son değişiklikten {0} gün sonra dolar; başvurunuz bu tarihten sonraki ilk planlı temizlikte silinir. Restoranınız pilota katılırsa, bundan sonra gereken veriler ayrı müşteri süreci ve onun saklama kuralları kapsamında işlenir.</value></data>
 </root>
