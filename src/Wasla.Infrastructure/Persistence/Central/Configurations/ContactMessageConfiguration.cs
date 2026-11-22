@@ -26,10 +26,14 @@ public sealed class ContactMessageConfiguration : IEntityTypeConfiguration<Conta
         builder.Property(x => x.CityPlateCode).HasMaxLength(ContactMessageLimits.CityPlateCodeLength).IsUnicode(false);
         builder.Property(x => x.Culture).HasMaxLength(ContactMessageLimits.CultureMaxLength).IsUnicode(false);
         builder.Property(x => x.NotificationStatus).HasConversion<int>();
+        builder.Property(x => x.PilotStatus).HasConversion<int?>();
 
         builder.HasIndex(x => x.CreatedAtUtc).HasDatabaseName("IX_ContactMessages_CreatedAtUtc");
 
         // The Central Admin list filtered to one topic (pilot applications or contact messages), newest first.
         builder.HasIndex(x => new { x.Topic, x.CreatedAtUtc }).HasDatabaseName("IX_ContactMessages_Topic_CreatedAtUtc");
+
+        // The retention cleanup (WAS-222): pilot applications by last activity, oldest first, read in batches.
+        builder.HasIndex(x => new { x.Topic, x.PilotLastActivityAtUtc, x.Id }).HasDatabaseName("IX_ContactMessages_Topic_PilotLastActivityAtUtc");
     }
 }

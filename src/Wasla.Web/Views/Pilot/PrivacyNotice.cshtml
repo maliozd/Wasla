@@ -85,6 +85,8 @@
 
         <section class="wm-legal__section" aria-labelledby="pilot-privacy-6">
             <h2 class="wm-heading-m" id="pilot-privacy-6">@L["PilotPrivacy.RetentionHeading"]</h2>
+            @* The period comes from the rule the retention cleanup runs (WAS-222), so the notice cannot state another one. *@
+            <p class="wm-body-m" data-notice-retention-days="@Wasla.Application.Contact.PilotApplicationRetention.PeriodDays">@L["PilotPrivacy.RetentionText", Wasla.Application.Contact.PilotApplicationRetention.PeriodDays]</p>
             <p class="wm-body-m @(IsMissing(notice.Retention) ? "wm-pilot-facts__missing" : null)" data-notice-fact="Retention">@Fact(notice.Retention)</p>
         </section>
 

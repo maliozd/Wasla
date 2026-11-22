@@ -87,7 +87,9 @@ public sealed class CentralAdminContactMessageService : ICentralAdminContactMess
                 m.Culture,
                 m.CreatedAtUtc,
                 m.NotificationStatus,
-                m.NotificationAttemptedAtUtc
+                m.NotificationAttemptedAtUtc,
+                m.PilotStatus,
+                m.PilotLastActivityAtUtc
             })
             .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
@@ -111,7 +113,10 @@ public sealed class CentralAdminContactMessageService : ICentralAdminContactMess
             NotificationStatus = row.NotificationStatus,
             NotificationAttemptedAtUtc = row.NotificationAttemptedAtUtc,
             CanResendNotification = ContactNotificationRetry.CanResend(
-                row.NotificationStatus, row.CreatedAtUtc, row.NotificationAttemptedAtUtc, _time.GetUtcNow().UtcDateTime)
+                row.NotificationStatus, row.CreatedAtUtc, row.NotificationAttemptedAtUtc, _time.GetUtcNow().UtcDateTime),
+            PilotStatus = row.PilotStatus,
+            PilotLastActivityAtUtc = row.PilotLastActivityAtUtc,
+            PilotDeleteOnOrAfterUtc = row.PilotLastActivityAtUtc is { } last ? PilotApplicationRetention.DeleteOnOrAfter(last) : null
         };
     }
 }

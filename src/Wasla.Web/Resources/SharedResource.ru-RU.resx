@@ -5382,4 +5382,43 @@
   <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>Уведомление не отправлено: отправка почты не настроена (Email:Provider не Smtp).</value></data>
   <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>Уведомление об этом сообщении уже отправлено; повторно не отправлялось.</value></data>
   <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>Отправка для этого сообщения только что началась; проверьте статус чуть позже.</value></data>
+  <data name="Admin.Pilot.StatusTitle" xml:space="preserve"><value>Статус заявки</value></data>
+  <data name="Admin.Pilot.Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="Admin.Pilot.Status.New" xml:space="preserve"><value>Новая, ответа ещё не было</value></data>
+  <data name="Admin.Pilot.Status.Contacted" xml:space="preserve"><value>Идёт общение</value></data>
+  <data name="Admin.Pilot.Status.Accepted" xml:space="preserve"><value>Принята в пилот</value></data>
+  <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Отклонена</value></data>
+  <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Последнее действие</value></data>
+  <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>Удаляется не раньше</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Персональные данные хранятся {0} дней после последнего действия (получение заявки, смена статуса или записанный контакт), затем их удаляет плановая очистка.</value></data>
+  <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Сохранить статус</value></data>
+  <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Записать контакт</value></data>
+  <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Используйте после звонка или письма ресторану: срок {0} дней начнётся заново с этого момента.</value></data>
+  <data name="Admin.Pilot.StatusSaved" xml:space="preserve"><value>Статус сохранён. Срок хранения отсчитывается заново с этого момента.</value></data>
+  <data name="Admin.Pilot.StatusUnchanged" xml:space="preserve"><value>У заявки уже этот статус.</value></data>
+  <data name="Admin.Pilot.ContactRecorded" xml:space="preserve"><value>Контакт записан. Срок хранения отсчитывается заново с этого момента.</value></data>
+  <data name="Admin.Pilot.DataRequestTitle" xml:space="preserve"><value>Запрос субъекта данных</value></data>
+  <data name="Admin.Pilot.DataRequestHelp" xml:space="preserve"><value>Прежде чем скачать, исправить или удалить эти данные, сами проверьте личность заявителя (например, перезвонив на сохранённый номер). Здесь данные никуда не отправляются.</value></data>
+  <data name="Admin.Pilot.Export" xml:space="preserve"><value>Скачать данные (JSON)</value></data>
+  <data name="Admin.Pilot.Correct" xml:space="preserve"><value>Исправить данные</value></data>
+  <data name="Admin.Pilot.Delete" xml:space="preserve"><value>Удалить заявку</value></data>
+  <data name="Admin.Pilot.IdentityVerified" xml:space="preserve"><value>Личность заявителя проверена</value></data>
+  <data name="Admin.Pilot.IdentityRequired" xml:space="preserve"><value>Перед удалением подтвердите, что личность заявителя проверена.</value></data>
+  <data name="Admin.Pilot.Deleted" xml:space="preserve"><value>Заявка на пилот удалена, удаление записано.</value></data>
+  <data name="Admin.Pilot.DeleteInProgress" xml:space="preserve"><value>Для этой заявки сейчас отправляется уведомление команде. Повторите через несколько минут.</value></data>
+  <data name="Admin.Pilot.CorrectTitle" xml:space="preserve"><value>Исправление данных заявки</value></data>
+  <data name="Admin.Pilot.CorrectHelp" xml:space="preserve"><value>Исправление не продлевает срок хранения.</value></data>
+  <data name="Admin.Pilot.Corrected" xml:space="preserve"><value>Данные заявки исправлены.</value></data>
+  <data name="Admin.Pilot.Invalid" xml:space="preserve"><value>Не удалось сохранить значения. Проверьте поля.</value></data>
+  <data name="Admin.Pilot.FindTitle" xml:space="preserve"><value>Найти заявку человека на пилот</value></data>
+  <data name="Admin.Pilot.FindHelp" xml:space="preserve"><value>Введите точный адрес электронной почты или номер телефона, указанный человеком. Показываются только точные совпадения.</value></data>
+  <data name="Admin.Pilot.FindEmail" xml:space="preserve"><value>Адрес электронной почты</value></data>
+  <data name="Admin.Pilot.FindPhone" xml:space="preserve"><value>Номер телефона</value></data>
+  <data name="Admin.Pilot.FindSubmit" xml:space="preserve"><value>Найти</value></data>
+  <data name="Admin.Pilot.FindNone" xml:space="preserve"><value>Подходящих заявок нет.</value></data>
+  <data name="Admin.Pilot.FindNeedsValue" xml:space="preserve"><value>Введите адрес электронной почты или номер телефона.</value></data>
+  <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Найти заявку человека</value></data>
+  <data name="Admin.Pilot.Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Ваша заявка хранится не более {0} дней после нашего последнего содержательного контакта с вами или последнего изменения её статуса, после чего удаляется. Если ваш ресторан участвует в пилоте, нужные с этого момента данные обрабатываются в отдельном клиентском процессе по его собственным правилам хранения.</value></data>
 </root>

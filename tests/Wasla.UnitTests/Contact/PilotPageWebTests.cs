@@ -7,6 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Contact;
+using Wasla.Application.Contact;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
@@ -357,6 +358,31 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.Contains(Text(culture, "PilotPrivacy.NoMarketing"), html, StringComparison.Ordinal);
         Assert.DoesNotContain(Text(culture, "PilotPrivacy.NotConfigured"), html, StringComparison.Ordinal);
         Assert.Contains(Text(culture, "Marketing.PrivacyNotice.Right6"), html, StringComparison.Ordinal);
+
+        // WAS-222: the notice states the period the retention cleanup runs, in this culture, from the same constant.
+        Assert.Contains($"data-notice-retention-days=\"{PilotApplicationRetention.PeriodDays}\"", page.Body, StringComparison.Ordinal);
+        Assert.Contains(string.Format(CultureInfo.InvariantCulture, Text(culture, "PilotPrivacy.RetentionText"), PilotApplicationRetention.PeriodDays), html, StringComparison.Ordinal);
+        Assert.True(
+            html.IndexOf(Text(culture, "PilotPrivacy.RetentionHeading"), StringComparison.Ordinal)
+            < html.IndexOf(string.Format(CultureInfo.InvariantCulture, Text(culture, "PilotPrivacy.RetentionText"), PilotApplicationRetention.PeriodDays), StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public void TheRetentionSentence_NamesTheDaysOnce_AndSaysTheApplicationIsDeleted(string culture)
+    {
+        var text = Text(culture, "PilotPrivacy.RetentionText");
+
+        Assert.Equal(1, Regex.Matches(text, Regex.Escape("{0}")).Count);
+        Assert.DoesNotMatch(@"\d", text.Replace("{0}", string.Empty, StringComparison.Ordinal));
+        var deleted = culture switch
+        {
+            "tr-TR" => "silinir",
+            "en-US" => "deleted",
+            "ar-SA" => "يُحذف",
+            _ => "удаляется"
+        };
+        Assert.Contains(deleted, text, StringComparison.Ordinal);
     }
 
     [Fact]

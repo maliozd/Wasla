@@ -1,0 +1,89 @@
+@model Wasla.Web.Areas.Admin.Models.AdminPilotFindViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = L["Admin.Pilot.FindTitle"].Value;
+    var summary = ViewData.ModelState.TryGetValue(string.Empty, out var general) ? general.Errors.Select(e => e.ErrorMessage).ToList() : [];
+    var phoneErrors = ViewData.ModelState.TryGetValue(nameof(Model.Phone), out var phoneState) ? phoneState.Errors.Select(e => e.ErrorMessage).ToList() : [];
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/admin">@L["Admin.DashboardTitle"]</a></li>
+        <li class="breadcrumb-item"><a href="/admin/contact-messages?kind=pilot">@L["Admin.ContactMessages.Title"]</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@L["Admin.Pilot.FindTitle"]</li>
+    </ol>
+</nav>
+
+<div class="mb-3">
+    <h1 class="h4 mb-1">@L["Admin.Pilot.FindTitle"]</h1>
+    <p class="text-muted small mb-0" id="pilot-find-help">@L["Admin.Pilot.FindHelp"]</p>
+</div>
+
+@foreach (var message in summary)
+{
+    <div class="alert alert-warning" role="alert" data-pilot-find-error>@message</div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <form method="post" action="/admin/contact-messages/find" class="row g-3 align-items-end" data-pilot-find-form aria-describedby="pilot-find-help" autocomplete="off">
+            @Html.AntiForgeryToken()
+            <div class="col-12 col-md-5">
+                <label class="form-label small mb-1" for="pilot-find-email">@L["Admin.Pilot.FindEmail"]</label>
+                <input class="form-control form-control-sm" type="email" id="pilot-find-email" name="Email" value="@Model.Email" maxlength="254" dir="ltr" autocomplete="off" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small mb-1" for="pilot-find-phone">@L["Admin.Pilot.FindPhone"]</label>
+                <input class="form-control form-control-sm @(phoneErrors.Count > 0 ? "is-invalid" : null)" type="tel" id="pilot-find-phone" name="Phone" value="@Model.Phone" maxlength="32" dir="ltr" inputmode="tel" autocomplete="off"
+                       aria-invalid="@(phoneErrors.Count > 0 ? "true" : null)" aria-describedby="@(phoneErrors.Count > 0 ? "pilot-find-phone-error" : null)" />
+                @if (phoneErrors.Count > 0)
+                {
+                    <div class="invalid-feedback" id="pilot-find-phone-error">@phoneErrors[0]</div>
+                }
+            </div>
+            <div class="col-12 col-md-3">
+                <button class="btn btn-sm btn-primary w-100" type="submit"><i class="bi bi-search me-1" aria-hidden="true"></i>@L["Admin.Pilot.FindSubmit"]</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Searched)
+{
+    <div class="card border-0 shadow-sm" data-pilot-find-results="@Model.Results.Count">
+        <div class="card-body p-0">
+            @if (Model.Results.Count == 0)
+            {
+                <p class="text-muted text-center py-4 px-3 mb-0" role="status">@L["Admin.Pilot.FindNone"]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>@L["Admin.ContactMessages.Received"]</th>
+                            <th>@L["Admin.ContactMessages.Restaurant"]</th>
+                            <th>@L["Admin.ContactMessages.Sender"]</th>
+                            <th>@L["Admin.Pilot.Status"]</th>
+                            <th class="text-end">@L["Admin.Actions"]</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.Results)
+                        {
+                            <tr>
+                                <td class="small text-muted text-nowrap"><time datetime="@item.CreatedAtUtc.ToString("O", CultureInfo.InvariantCulture)">@item.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) UTC</time></td>
+                                <td class="small">@item.RestaurantName</td>
+                                <td class="fw-medium">@item.ContactName</td>
+                                <td class="small">@L[$"Admin.Pilot.Status.{item.Status}"]</td>
+                                <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="/admin/contact-messages/@item.Id">@L["Admin.Details"]</a></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}

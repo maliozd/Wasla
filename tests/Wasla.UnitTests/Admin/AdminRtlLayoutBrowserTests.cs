@@ -1,4 +1,7 @@
 using System.Text.Json;
+using System.Xml.Linq;
+using Microsoft.EntityFrameworkCore;
+using Wasla.UnitTests.Contact;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -44,6 +47,7 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
     private Guid _tenantId;
     private Guid _correctablePriceId;
     private Guid _referencedPriceId;
+    private Guid _pilotId;
 
     public async ValueTask InitializeAsync()
     {
@@ -54,6 +58,14 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
         _tenants.CreateTenantDatabase(tenant.Id);
         _tenants.Seed(tenant.Id, db => TenantSeed.HealthyTenant(db, DateTime.UtcNow));
         SeedPlanPrices();
+        await using (var db = _central.CreateContext())
+        {
+            // A pilot application with its province catalog, for the WAS-222 status and data request pages.
+            db.Cities.AddRange(PilotProvinceSeed.All(idOffset: 1000));
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            _pilotId = await PilotRetentionTestData.AddPilotAsync(db, DateTime.UtcNow.AddDays(-3), ct: TestContext.Current.CancellationToken);
+        }
+
         _host = await AdminWebHost.StartAsync(_central, _tenants);
     }
 
@@ -105,7 +117,10 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
                          "/admin/billing/plan-prices",
                          $"/admin/billing/plan-prices/{_correctablePriceId}/correct",
                          $"/admin/billing/plan-prices/{_referencedPriceId}/correct",
-                         $"/admin/billing/plan-prices/{_referencedPriceId}/supersede"
+                         $"/admin/billing/plan-prices/{_referencedPriceId}/supersede",
+                         $"/admin/contact-messages/{_pilotId}",
+                         $"/admin/contact-messages/{_pilotId}/correct",
+                         "/admin/contact-messages/find"
                      })
             {
                 var page = $"{path} at {width}px ({culture})";
@@ -167,6 +182,63 @@ public sealed class AdminRtlLayoutBrowserTests : IAsyncLifetime
 
         Assert.True(overflow > 5000, $"Expected the uncorrected AdminLTE live region to overflow; document was {overflow}px wide.");
     }
+
+    [Theory]
+    [InlineData("ar-SA", 375, 812, true)]
+    [InlineData("tr-TR", 1366, 860, false)]
+    public async Task ThePilotRequestControls_AreNamedByTheirLabels_AndADeletionNeedsTheIdentityBoxTicked(string culture, int width, int height, bool mobile)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await SignedInBrowserAsync(culture, ct);
+        await browser.SetViewportAsync(width, height, mobile, ct);
+        await LoadAsync(browser, $"/admin/contact-messages/{_pilotId}", ct);
+
+        var select = Assert.Single(await browser.AccessibleNodesAsync("#pilot-status", ct));
+        Assert.Equal(Resource(culture, "Admin.Pilot.Status"), select.Name);
+        var box = Assert.Single(await browser.AccessibleNodesAsync("#pilot-identity-verified", ct));
+        Assert.Equal("checkbox", box.Role);
+        // Chromium adds the required state to the name it reports; the label is what names it.
+        Assert.StartsWith(Resource(culture, "Admin.Pilot.IdentityVerified"), box.Name, StringComparison.Ordinal);
+        var delete = Assert.Single(await browser.AccessibleNodesAsync("[data-pilot-delete] button", ct));
+        Assert.Equal(Resource(culture, "Admin.Pilot.Delete"), delete.Name);
+
+        // A real click on Delete without the box ticked: the browser refuses the form and the application stays.
+        await ClickAsync(browser, "[data-pilot-delete] button", ct);
+        Assert.True(await browser.WaitForAsync("document.querySelector('#pilot-identity-verified').matches(':invalid')", TimeSpan.FromSeconds(5), ct));
+        Assert.Equal($"/admin/contact-messages/{_pilotId}", await browser.EvaluateAsync<string>("location.pathname", ct));
+        Assert.True(await StoredAsync());
+
+        await ClickAsync(browser, "#pilot-identity-verified", ct);
+        await browser.EvaluateAsync<bool>("(() => { window.__pilotDetail = true; return true; })()", ct);
+        await ClickAsync(browser, "[data-pilot-delete] button", ct);
+        await browser.WaitForNavigationAsync("__pilotDetail", ct);
+
+        Assert.Equal("/admin/contact-messages", await browser.EvaluateAsync<string>("location.pathname", ct));
+        Assert.True(await browser.EvaluateAsync<bool>("!!document.querySelector('[data-contact-list-result=\"success\"]')", ct));
+        Assert.False(await StoredAsync());
+        Assert.True(await browser.EvaluateAsync<bool>("document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1", ct));
+    }
+
+    private static async Task ClickAsync(HeadlessChromium browser, string selector, CancellationToken ct)
+    {
+        var point = await browser.EvaluateAsync<JsonElement>(
+            $"(() => {{ const e = document.querySelector({JsonSerializer.Serialize(selector)}); e.scrollIntoView({{ block: 'center', behavior: 'instant' }}); const r = e.getBoundingClientRect(); return {{ x: r.left + r.width / 2, y: r.top + r.height / 2 }}; }})()",
+            ct);
+        await browser.ClickAtAsync(point.GetProperty("x").GetDouble(), point.GetProperty("y").GetDouble(), ct);
+    }
+
+    private async Task<bool> StoredAsync()
+    {
+        await using var db = _central.CreateContext();
+        return await db.ContactMessages.AnyAsync(m => m.Id == _pilotId, TestContext.Current.CancellationToken);
+    }
+
+    private static string Resource(string culture, string key) =>
+        XDocument.Load(TenantOperationsRulesTests.RepoFile("src", "Wasla.Web", "Resources", $"SharedResource.{culture}.resx"))
+            .Root!
+            .Elements("data")
+            .Single(e => e.Attribute("name")!.Value == key)
+            .Element("value")!.Value;
 
     private async Task<HeadlessChromium> SignedInBrowserAsync(string culture, CancellationToken ct)
     {

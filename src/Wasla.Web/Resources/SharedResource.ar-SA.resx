@@ -4956,4 +4956,43 @@
   <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>لم يُرسل أي إشعار لأن إرسال البريد الإلكتروني غير مُعدّ (Email:Provider ليس Smtp).</value></data>
   <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>سبق إرسال إشعار هذه الرسالة؛ لم يُرسل مرة أخرى.</value></data>
   <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>بدأت عملية إرسال لهذه الرسالة للتو؛ تحقق من حالتها بعد قليل.</value></data>
+  <data name="Admin.Pilot.StatusTitle" xml:space="preserve"><value>حالة الطلب</value></data>
+  <data name="Admin.Pilot.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Pilot.Status.New" xml:space="preserve"><value>جديد، لم يُرد عليه بعد</value></data>
+  <data name="Admin.Pilot.Status.Contacted" xml:space="preserve"><value>قيد التواصل</value></data>
+  <data name="Admin.Pilot.Status.Accepted" xml:space="preserve"><value>مقبول في البرنامج التجريبي</value></data>
+  <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>آخر نشاط</value></data>
+  <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>يُحذف في هذا الوقت أو بعده</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>تُحفظ البيانات الشخصية مدة {0} يومًا بعد آخر نشاط (استلام الطلب أو تغيير حالته أو تسجيل تواصل)، ثم تحذفها عملية تنظيف الحفظ.</value></data>
+  <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>حفظ الحالة</value></data>
+  <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>تسجيل تواصل</value></data>
+  <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>استخدمه بعد مكالمة أو رسالة بريد إلكتروني مع المطعم: تبدأ مدة {0} يومًا من جديد من الآن.</value></data>
+  <data name="Admin.Pilot.StatusSaved" xml:space="preserve"><value>حُفظت الحالة. تبدأ مدة الحفظ من جديد من الآن.</value></data>
+  <data name="Admin.Pilot.StatusUnchanged" xml:space="preserve"><value>الطلب في هذه الحالة بالفعل.</value></data>
+  <data name="Admin.Pilot.ContactRecorded" xml:space="preserve"><value>سُجّل التواصل. تبدأ مدة الحفظ من جديد من الآن.</value></data>
+  <data name="Admin.Pilot.DataRequestTitle" xml:space="preserve"><value>طلب صاحب البيانات</value></data>
+  <data name="Admin.Pilot.DataRequestHelp" xml:space="preserve"><value>قبل تنزيل هذه البيانات أو تصحيحها أو حذفها، تحقّق بنفسك من هوية مقدّم الطلب (مثلًا بمعاودة الاتصال بالرقم المحفوظ). لا يُرسل أي إجراء هنا البيانات إلى أي جهة.</value></data>
+  <data name="Admin.Pilot.Export" xml:space="preserve"><value>تنزيل البيانات (JSON)</value></data>
+  <data name="Admin.Pilot.Correct" xml:space="preserve"><value>تصحيح البيانات</value></data>
+  <data name="Admin.Pilot.Delete" xml:space="preserve"><value>حذف الطلب</value></data>
+  <data name="Admin.Pilot.IdentityVerified" xml:space="preserve"><value>تحقّقت من هوية مقدّم الطلب</value></data>
+  <data name="Admin.Pilot.IdentityRequired" xml:space="preserve"><value>أكّد أنك تحقّقت من هوية مقدّم الطلب قبل الحذف.</value></data>
+  <data name="Admin.Pilot.Deleted" xml:space="preserve"><value>حُذف طلب البرنامج التجريبي وسُجّل الحذف.</value></data>
+  <data name="Admin.Pilot.DeleteInProgress" xml:space="preserve"><value>يجري إرسال إشعار الفريق لهذا الطلب. حاول مرة أخرى بعد بضع دقائق.</value></data>
+  <data name="Admin.Pilot.CorrectTitle" xml:space="preserve"><value>تصحيح بيانات الطلب</value></data>
+  <data name="Admin.Pilot.CorrectHelp" xml:space="preserve"><value>لا يعيد التصحيح بدء مدة الحفظ.</value></data>
+  <data name="Admin.Pilot.Corrected" xml:space="preserve"><value>صُحّحت بيانات الطلب.</value></data>
+  <data name="Admin.Pilot.Invalid" xml:space="preserve"><value>تعذّر حفظ القيم. تحقّق من الحقول.</value></data>
+  <data name="Admin.Pilot.FindTitle" xml:space="preserve"><value>البحث عن طلب شخص في البرنامج التجريبي</value></data>
+  <data name="Admin.Pilot.FindHelp" xml:space="preserve"><value>أدخل البريد الإلكتروني أو رقم الهاتف الذي قدّمه الشخص كما هو تمامًا. لا تُعرض إلا المطابقات التامة.</value></data>
+  <data name="Admin.Pilot.FindEmail" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Pilot.FindPhone" xml:space="preserve"><value>رقم الهاتف</value></data>
+  <data name="Admin.Pilot.FindSubmit" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Pilot.FindNone" xml:space="preserve"><value>لا يوجد طلب مطابق.</value></data>
+  <data name="Admin.Pilot.FindNeedsValue" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا أو رقم هاتف.</value></data>
+  <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>البحث عن طلب شخص</value></data>
+  <data name="Admin.Pilot.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>يُحفظ طلبك مدة أقصاها {0} يومًا بعد آخر تواصل فعلي بيننا أو آخر تغيير في حالته، ثم يُحذف. إذا شارك مطعمك في البرنامج التجريبي، تُعالج البيانات اللازمة بعد ذلك ضمن مسار العملاء المنفصل وقواعد الحفظ الخاصة به.</value></data>
 </root>
