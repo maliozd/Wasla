@@ -58,6 +58,7 @@ public sealed class SetupInstanceChannel : IDisposable
     private readonly ILogger _logger;
     private readonly string _pipeName;
     private readonly TimeSpan _readTimeout;
+    private readonly TimeProvider _timeProvider;
     private readonly CancellationTokenSource _cts = new();
     private Task? _listenTask;
 
@@ -69,12 +70,14 @@ public sealed class SetupInstanceChannel : IDisposable
     {
     }
 
-    internal SetupInstanceChannel(ILogger logger, string pipeName, TimeSpan readTimeout)
+    /// <param name="timeProvider">Runs the read limit of each connection; the system clock unless a test expires it.</param>
+    internal SetupInstanceChannel(ILogger logger, string pipeName, TimeSpan readTimeout, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
         _logger = logger;
         _pipeName = pipeName;
         _readTimeout = readTimeout;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public void StartListening()
@@ -163,8 +166,8 @@ public sealed class SetupInstanceChannel : IDisposable
     /// </summary>
     private async Task<string?> ReadMessageAsync(NamedPipeServerStream server, CancellationToken ct)
     {
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        deadline.CancelAfter(_readTimeout);
+        using var readLimit = new CancellationTokenSource(_readTimeout, _timeProvider);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct, readLimit.Token);
 
         using var buffer = new MemoryStream();
         var chunk = new byte[1024];
