@@ -3,6 +3,7 @@ using System.Text.Json;
 using Wasla.Application.Reports;
 using Wasla.Application.Time;
 using Wasla.UnitTests.Admin;
+using Xunit.Sdk;
 using static Wasla.UnitTests.Reports.ReportExportFixtures;
 
 namespace Wasla.UnitTests.Web;
@@ -76,17 +77,20 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await _host.DisposeAsync();
 
-    private async Task<HeadlessChromium> OpenAsync(string culture, int width, bool mobile, string path, CancellationToken ct)
+    private async Task<HeadlessChromium> OpenAsync(string culture, int width, bool mobile, string path, CancellationToken ct, string instrument = Instrument)
     {
         var browser = await _host.BrowserAsync(culture, width, 900, mobile, ct);
         if (browser is null)
             Assert.Skip("No Chromium browser is installed.");
-        await browser.AddScriptBeforePageScriptsAsync(Instrument, ct);
-        await browser.NavigateAsync(new Uri(_host.BaseAddress, path), ct);
-        Assert.True(await browser.WaitForAsync(Settled, TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
-        if (!await browser.EvaluateAsync<bool>("!!window.bootstrap", ct))
-            Assert.Skip("Bootstrap could not be loaded from its CDN.");
-        return browser;
+        // The caller owns the browser only once this returns, so a failure or skip here disposes it.
+        return await browser.SetUpAsync(async started =>
+        {
+            await started.AddScriptBeforePageScriptsAsync(instrument, ct);
+            await started.NavigateAsync(new Uri(_host.BaseAddress, path), ct);
+            Assert.True(await started.WaitForAsync(Settled, TimeSpan.FromSeconds(15), ct), $"{path} did not render. {_host.ServerErrors}");
+            if (!await started.EvaluateAsync<bool>("!!window.bootstrap", ct))
+                Assert.Skip("Bootstrap could not be loaded from its CDN.");
+        });
     }
 
     /// <summary>A real mouse click in the middle of the element.</summary>
@@ -286,6 +290,76 @@ public sealed class ReportsExportBrowserTests : IAsyncLifetime
             $"The second keyboard export did not download. {_host.ServerErrors}");
         Assert.StartsWith("504b0304", await browser.EvaluateAsync<string>("window.__downloads[1].head", ct), StringComparison.Ordinal);
         Assert.Equal(2, await RequestsAsync(browser, ct));
+    }
+
+    [Fact]
+    public Task AnOpeningThatFails_DisposesTheBrowserItStarted() =>
+        // The Orders page renders, but it is not the report the opening waits for.
+        // Only the report wait counts: a failed start or navigation leaves this scenario unproven.
+        AssertTheOpeningDisposesItsBrowserAsync(
+            ct => OpenAsync("tr-TR", 1280, false, "/orders", ct),
+            "the report wait",
+            failure => failure is TrueException && failure.Message.StartsWith("/orders did not render.", StringComparison.Ordinal));
+
+    [Fact]
+    public Task AnOpeningThatSkips_DisposesTheBrowserItStarted() =>
+        // The report renders, and window.bootstrap stays unset as when the CDN does not deliver the bundle. The skip comes
+        // only from the opening's Bootstrap check, and the opening passes it on unchanged.
+        AssertTheOpeningDisposesItsBrowserAsync(
+            ct => OpenAsync("tr-TR", 1280, false, "/reports", ct,
+                Instrument + "Object.defineProperty(window, 'bootstrap', { configurable: false, get: () => undefined, set: () => {} });"),
+            "the Bootstrap skip",
+            failure => failure is SkipException && failure.Message.EndsWith("Bootstrap could not be loaded from its CDN.", StringComparison.Ordinal));
+
+    /// <summary>
+    /// WAS-218: the opening runs before the test's <c>await using</c> owns the browser. A browser it left behind (a page
+    /// that did not render, a CDN skip) ran until the test process ended, and then outlived it. Opens with
+    /// <paramref name="open"/>, checks that it ended at <paramref name="stage"/>, then checks that the browser it started
+    /// has no running process and no profile left; the last-resort disposal runs only after those checks.
+    /// </summary>
+    private static async Task AssertTheOpeningDisposesItsBrowserAsync(
+        Func<CancellationToken, Task> open, string stage, Func<Exception, bool> endedAtStage)
+    {
+        if (!OperatingSystem.IsWindows())
+            Assert.Skip("The browser's processes are observed through Windows process handles.");
+        if (HeadlessChromium.FindExecutable() is null)
+            Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the real-browser export checks.");
+        var ct = TestContext.Current.CancellationToken;
+        var started = new List<(HeadlessChromium Browser, string Profile, List<BrowserProcessTree.ProcessWatch> Watches)>();
+        try
+        {
+            Exception? failure = null;
+            using (HeadlessChromium.ObserveStarts(browser =>
+                       started.Add((browser, browser.ProfilePath, [.. browser.TrackedProcesses().Select(BrowserProcessTree.Watch)]))))
+            {
+                // Not Record.ExceptionAsync: it rethrows a skip, which would end this test as skipped before any check.
+                try
+                {
+                    await open(ct);
+                }
+                catch (Exception thrown)
+                {
+                    failure = thrown;
+                }
+            }
+
+            Assert.NotNull(failure);
+            Assert.True(endedAtStage(failure), $"The opening did not end at {stage}: {failure}");
+            var (_, profile, watches) = Assert.Single(started);
+            Assert.NotEmpty(watches);
+            // Cleanup waits until no process runs any more; Windows may finish tearing one down afterwards.
+            Assert.All(watches, watch => Assert.True(watch.HasStopped, $"{watch} still runs after the opening failed ({failure.GetType().Name})."));
+            Assert.False(Directory.Exists(profile), "The browser profile directory was not deleted after the opening failed.");
+        }
+        finally
+        {
+            foreach (var (browser, _, watches) in started)
+            {
+                foreach (var watch in watches)
+                    watch.Dispose();
+                await browser.DisposeAsync();
+            }
+        }
     }
 
     [Fact]

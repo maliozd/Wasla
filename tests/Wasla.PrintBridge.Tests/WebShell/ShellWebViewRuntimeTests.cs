@@ -743,15 +743,49 @@ public sealed class ShellWebViewRuntimeTests : IDisposable
             })()
             """);
 
-    /// <summary>A real key press through the browser input pipeline, not a synthetic DOM event.</summary>
+    /// <summary>
+    /// A real key press through the browser input pipeline, not a synthetic DOM event. It waits until the page can
+    /// take input first: Chromium drops input that arrives before a newly loaded page has been painted, and the press
+    /// still reports success, so the key would be lost without any error.
+    /// </summary>
     private static async Task PressAsync(CoreWebView2 core, string key)
     {
+        await WaitUntilThePageTakesInputAsync(core);
         foreach (var type in new[] { "keyDown", "keyUp" })
         {
             await core.CallDevToolsProtocolMethodAsync(
                 "Input.dispatchKeyEvent",
                 JsonSerializer.Serialize(new { type, key, code = key, windowsVirtualKeyCode = VirtualKey(key) }));
         }
+    }
+
+    /// <summary>
+    /// The page shows nothing until it has rendered the host's first snapshot (<c>aria-busy="true"</c> hides the app).
+    /// Its first contentful paint therefore means that state is on screen and the page has been painted. A sent
+    /// snapshot is not enough: the page may not have rendered or painted it yet. The page reports both itself.
+    /// </summary>
+    private static async Task WaitUntilThePageTakesInputAsync(CoreWebView2 core)
+    {
+        var state = await EvalAsync(core, """
+            new Promise(resolve => {
+              const app = document.getElementById('app');
+              let painted = false;
+              const rendered = new MutationObserver(() => check());
+              const paints = new PerformanceObserver(list => {
+                painted = painted || list.getEntries().some(entry => entry.name === 'first-contentful-paint');
+                check();
+              });
+              function check() {
+                if (!painted || app.getAttribute('aria-busy') !== 'false') return;
+                rendered.disconnect();
+                paints.disconnect();
+                resolve('takes input');
+              }
+              rendered.observe(app, { attributes: true, attributeFilter: ['aria-busy'] });
+              paints.observe({ type: 'paint', buffered: true });
+            })
+            """).WaitAsync(Timeout);
+        Assert.Equal("takes input", state);
     }
 
     private static int VirtualKey(string key) => key switch
