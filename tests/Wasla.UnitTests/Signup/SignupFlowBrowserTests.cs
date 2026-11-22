@@ -1147,6 +1147,28 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         }
     }
 
+    // The restaurant's phone with the steps the pilot application form runs too (TurkishPhoneFieldScenario): a single
+    // Backspace or Delete next to a group space removes a digit, and text inserted in one go ends as its paste does,
+    // while a single 11th digit typed is refused. In Turkish on a desktop and in Arabic right to left at phone width,
+    // where the page does not overflow sideways afterwards.
+    [Theory]
+    [InlineData("tr-TR", 1440, 900, false)]
+    [InlineData("ar-SA", 390, 844, true)]
+    public async Task TheBusinessPhone_StepsOverGroupSpaces_AndTakesTextInsertedInOneGoLikeAPaste(string culture, int width, int height, bool mobile)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, height, mobile, ct);
+        await OpenAsync(browser, "/signup?plan=Pro", ct);
+        await ContinueAsync(browser, "restaurant", ct);
+
+        await TurkishPhoneFieldScenario.RunAsync(browser, "signupBusinessPhone", ct);
+
+        var overflow = await browser.EvaluateAsync<string>(
+            "JSON.stringify([document.documentElement.scrollWidth, window.innerWidth])", ct);
+        using var sizes = JsonDocument.Parse(overflow);
+        Assert.True(sizes.RootElement[0].GetInt32() <= sizes.RootElement[1].GetInt32(), $"Sideways overflow: {overflow}");
+    }
+
     // The restaurant's landline after the fixed +90: grouped as it is typed and pasted, with a trunk zero or country code
     // removed instead of stored twice, the caret kept in place, and the same number after switching the type. The hint
     // shows an example with the city's area code, left to right in Arabic too. The saved value is the national number,

@@ -9,6 +9,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Auth;
+using Wasla.UnitTests.Signup;
 using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Contact;
@@ -310,6 +311,23 @@ public sealed class PilotApplicationBrowserTests : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
         var stored = await db.ContactMessages.AsNoTracking().SingleAsync(m => m.RestaurantName == "Telefon Lokantası", ct);
         Assert.Equal(("06", "5324182790"), (stored.CityPlateCode, stored.Phone));
+    }
+
+    // The phone field's group spaces and text inserted in one go, with the steps the signup page runs too
+    // (TurkishPhoneFieldScenario), on a desktop in Turkish and at phone width in Arabic right to left; the page does not
+    // overflow sideways afterwards.
+    [Theory]
+    [InlineData("tr-TR", 1440, 900, false)]
+    [InlineData("ar-SA", 390, 844, true)]
+    public async Task ThePhoneField_StepsOverGroupSpaces_AndTakesTextInsertedInOneGoLikeAPaste(string culture, int width, int height, bool mobile)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync(culture, width, height, mobile, ct);
+        await OpenAsync(browser, PublicSiteUrls.PilotPath, ct);
+
+        await TurkishPhoneFieldScenario.RunAsync(browser, "pilot-phone", ct);
+
+        await AssertNoSidewaysOverflowAsync(browser, ct);
     }
 
     // ---- Helpers --------------------------------------------------------------------------------------------------
