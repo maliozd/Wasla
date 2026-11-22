@@ -272,7 +272,8 @@
         formatMobileInput: formatPhoneInput,
         formatPhoneInput: formatPhoneInput,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
-        // Another field for the owner's mobile (the phone step's "change number"): same format and limit.
+        // Another Türkiye phone field with the same format and limit: the phone step's "change number", and the pilot
+        // application form's phone (WAS-217, bound by wasla-marketing.js).
         bindMobileInput: function (input) { bindPhoneInput(input, "waslaChangePhoneBound"); },
         landlineExample: landlineExample,
         normalizeForSubmit: normalizeForSubmit,

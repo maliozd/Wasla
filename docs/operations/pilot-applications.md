@@ -27,6 +27,15 @@ contact person, a Turkish phone number (required, fixed `+90`, the contact form'
 optional note. There is no password, payment, address, plan or setup field, and no consent or acknowledgement checkbox:
 the privacy notice is information, not consent, and the form asks for no marketing permission.
 
+The phone field takes the 10 national digits after the fixed `+90` with the signup page's phone behaviour
+(`js/signup/signup-phone-format.js`, bound by `wasla-marketing.js` to inputs marked `data-wm-phone`; no second
+formatter): an 11th digit typed is refused, letters and other characters never land, the number is grouped as
+`532 418 27 90`, and a paste is cleaned of spaces, brackets and dashes, loses a `+90`, `0090` or trunk `0`, and keeps
+its first 10 national digits. The input has `inputmode="numeric"`, `autocomplete="tel-national"` and `maxlength="20"`;
+20 fits a number written out in full (`+90 (532) 418-27-90`), so an input method that inserts it as text is not cut
+short before the prefix is removed. The server still validates the number (`Validation.PilotPhoneRequired`,
+`Validation.ContactPhoneInvalid`); the field's limit is a convenience, not a check.
+
 ## When the form is open
 
 The form, its notice and the coming-soon action are published only when all three hold (`PilotApplicationGate`):
@@ -168,4 +177,4 @@ parity, on SQLite), `PilotPageWebTests` (environments, the city catalog, hosts, 
 on SQL Server (the same form posted at once, resends at once, a hanging send past the stuck window, a stuck attempt that
 records its outcome late, rule parity); and `Contact/PilotApplicationBrowserTests` (headless Chromium,
 `Category=Browser`) for the 1440 and 390 px layouts, Arabic right to left, long Russian text, keyboard order, error
-focus and a double click. No test sends email or SMS.
+focus, a double click, and the phone field (typed, edited and pasted numbers, then a send). No test sends email or SMS.

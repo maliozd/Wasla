@@ -124,6 +124,9 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.DoesNotContain("type=\"password\"", page.Body);
         Assert.Matches("id=\"pilot-website\"[^>]*tabindex=\"-1\"", page.Body);
         Assert.Matches("class=\"wm-phone\" dir=\"ltr\"", page.Body);
+        // The phone field: the 10 national digits after +90, with the signup page's shared phone behaviour.
+        Assert.Matches("id=\"pilot-phone\" name=\"Phone\" type=\"tel\" inputmode=\"numeric\"[^>]*autocomplete=\"tel-national\" maxlength=\"20\" required data-wm-phone", page.Body);
+        Assert.Matches("<script src=\"/js/signup/signup-phone-format\\.js(\\?v=[^\"]+)?\"></script>", page.Body);
 
         // The 81 provinces, by Turkish name, with their plate codes as values; no other country's city.
         var options = CityOption().Matches(page.Body).Select(m => (Plate: m.Groups["value"].Value, Name: WebUtility.HtmlDecode(m.Groups["name"].Value))).ToList();
@@ -234,6 +237,39 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.Contains("value=\"532 12\"", page.Body);
         Assert.Contains("Öğleden sonra arayın", html, StringComparison.Ordinal);
         Assert.Contains($"value=\"{submission}\"", page.Body);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Theory]
+    [InlineData("53241827901")]
+    [InlineData("+90 532 418 27 90 12")]
+    [InlineData("5324182790123456789")]
+    [InlineData("532 418 27 9a")]
+    [InlineData("632 418 27 90")]
+    public async Task APhoneThatIsNotTenNationalDigits_PostedPastTheField_IsStillRefusedByTheServer(string phone)
+    {
+        var host = await StartAsync();
+        using var browser = Browser(host, "tr-TR");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
+
+        var page = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token, ("Phone", phone)));
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        Assert.Contains("data-pilot-state=\"invalid\"", page.Body);
+        Assert.Contains(Text("tr-TR", "Validation.ContactPhoneInvalid"), WebUtility.HtmlDecode(page.Body), StringComparison.Ordinal);
+        Assert.False(await AnyStoredAsync());
+    }
+
+    [Fact]
+    public async Task AnEmptyPhone_StillGetsTheRequiredMessage()
+    {
+        var host = await StartAsync();
+        using var browser = Browser(host, "en-US");
+        var token = await browser.GetAntiforgeryTokenAsync(PublicSiteUrls.PilotPath);
+
+        var page = await browser.PostFormAsync(PublicSiteUrls.PilotPath, Form(token, ("Phone", "")));
+
+        Assert.Contains(Text("en-US", "Validation.PilotPhoneRequired"), WebUtility.HtmlDecode(page.Body), StringComparison.Ordinal);
         Assert.False(await AnyStoredAsync());
     }
 

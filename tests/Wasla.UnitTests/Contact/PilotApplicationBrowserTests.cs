@@ -200,6 +200,118 @@ public sealed class PilotApplicationBrowserTests : IAsyncLifetime
         await AssertNoSidewaysOverflowAsync(browser, ct);
     }
 
+    // The phone field after the fixed +90 holds the 10 national digits only, with the signup page's phone behaviour
+    // (signup-phone-format.js): an 11th digit typed is refused where the caret is, letters and symbols never land, the
+    // editing keys and Ctrl+A work, a paste is cleaned of spaces, brackets and dashes, loses a +90, 0090 or trunk 0, and
+    // keeps its first 10 national digits. Then the form sends the number. Keyboard input is real (CDP), pastes are
+    // clipboard events like the signup tests'.
+    [Fact]
+    public async Task ThePhoneField_HoldsTenNationalDigits_TypedOrPasted_AndTheFormSendsIt()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var browser = await BrowserAsync("tr-TR", 1440, 900, mobile: false, ct);
+        await OpenAsync(browser, PublicSiteUrls.PilotPath, ct);
+        const string Phone = "document.getElementById('pilot-phone')";
+        async Task<string> ValueAsync() => await browser.EvaluateAsync<string>($"{Phone}.value", ct);
+        async Task<int> CaretAsync() => await browser.EvaluateAsync<int>($"{Phone}.selectionStart", ct);
+        async Task PasteAsync(string text, bool replaceAll = true)
+        {
+            var json = JsonSerializer.Serialize(text);
+            await browser.EvaluateAsync<bool>($$"""
+                (() => { const p = {{Phone}}; p.focus(); if ({{(replaceAll ? "true" : "false")}}) p.select(); else p.setSelectionRange(p.value.length, p.value.length);
+                  const data = new DataTransfer(); data.setData('text', {{json}});
+                  p.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true })); return true; })()
+                """, ct);
+        }
+
+        var attributes = await Json(browser, $$"""
+            (() => { const p = {{Phone}}; return JSON.stringify({ type: p.type, inputmode: p.getAttribute('inputmode'), maxlength: p.getAttribute('maxlength'),
+              autocomplete: p.getAttribute('autocomplete'), required: p.required, prefix: p.parentElement.querySelector('.wm-phone__prefix').textContent.trim(),
+              dir: p.parentElement.getAttribute('dir'), bound: p.dataset.waslaChangePhoneBound === 'true' }); })()
+            """, ct);
+        Assert.Equal("tel", attributes.GetProperty("type").GetString());
+        Assert.Equal("numeric", attributes.GetProperty("inputmode").GetString());
+        Assert.Equal("20", attributes.GetProperty("maxlength").GetString());
+        Assert.Equal("tel-national", attributes.GetProperty("autocomplete").GetString());
+        Assert.True(attributes.GetProperty("required").GetBoolean());
+        Assert.Equal(("+90", "ltr"), (attributes.GetProperty("prefix").GetString(), attributes.GetProperty("dir").GetString()));
+        Assert.True(attributes.GetProperty("bound").GetBoolean(), "The pilot phone field is not bound to the shared phone behaviour.");
+
+        // 1. Typed digit by digit, grouped as it goes; the 11th digit is refused at the end and in the middle.
+        await browser.EvaluateAsync<bool>($"(() => {{ {Phone}.focus(); return true; }})()", ct);
+        foreach (var digit in "5324182790")
+            await browser.InsertTextAsync(digit.ToString(), ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        await browser.InsertTextAsync("1", ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        await browser.EvaluateAsync<bool>($"(() => {{ {Phone}.setSelectionRange(4, 4); return true; }})()", ct);
+        await browser.InsertTextAsync("9", ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        Assert.Equal(4, await CaretAsync());
+
+        // 4. Letters and other characters never land; digits typed among them do.
+        await browser.PressSelectAllAsync(ct);
+        await browser.PressKeyAsync("Backspace", shift: false, ct);
+        Assert.Equal(string.Empty, await ValueAsync());
+        foreach (var key in new[] { "a", "5", "x", "-", "3", "(", "Ş", "2", "+", "." })
+            await browser.InsertTextAsync(key, ct);
+        Assert.Equal("532", await ValueAsync());
+
+        // Editing keys work: Backspace, Home, Delete, arrows, and a selection replaced by typing.
+        await browser.PressKeyAsync("Backspace", shift: false, ct);
+        Assert.Equal("53", await ValueAsync());
+        foreach (var digit in "24182790")
+            await browser.InsertTextAsync(digit.ToString(), ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        await browser.PressKeyAsync("Home", shift: false, ct);
+        await browser.PressKeyAsync("Delete", shift: false, ct);
+        Assert.Equal("324 182 79 0", await ValueAsync());
+        await browser.InsertTextAsync("5", ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        await browser.PressKeyAsync("End", shift: false, ct);
+        await browser.PressKeyAsync("ArrowLeft", shift: false, ct);
+        await browser.PressKeyAsync("Backspace", shift: false, ct);
+        Assert.Equal("532 418 27 0", await ValueAsync());
+        await browser.InsertTextAsync("9", ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        await browser.PressSelectAllAsync(ct);
+        await browser.InsertTextAsync("2", ct);
+        Assert.Equal("2", await ValueAsync());
+
+        // 2. and 3. Pastes: cleaned, prefixes removed, at most the first 10 national digits.
+        await PasteAsync("5324182790123456");
+        Assert.Equal("532 418 27 90", await ValueAsync());
+        foreach (var pasted in new[] { "+90 (532) 418-27-90", "0532 418 27 90", "0090 532 418 27 90", "+90 532 418 27 90 12", "(0532) 418-27-90" })
+        {
+            await PasteAsync(pasted);
+            Assert.Equal("532 418 27 90", await ValueAsync());
+        }
+
+        // A number inserted as text in one go (an input method, a phone keyboard's clipboard suggestion) arrives whole.
+        await browser.EvaluateAsync<bool>($"(() => {{ {Phone}.select(); return true; }})()", ct);
+        await browser.InsertTextAsync("+90 (532) 418-27-90", ct);
+        Assert.Equal("532 418 27 90", await ValueAsync());
+
+        await PasteAsync("212 345 67 89");
+        Assert.Equal("212 345 67 89", await ValueAsync());
+        await PasteAsync("44", replaceAll: false);
+        Assert.Equal("212 345 67 89", await ValueAsync());
+
+        // 5. The form sends a valid 10-digit number and the server stores its digits.
+        await PasteAsync("+90 (532) 418-27-90");
+        await TypeAsync(browser, "pilot-restaurant-name", "Telefon Lokantası", ct);
+        await browser.EvaluateAsync<bool>("(() => { const s = document.getElementById('pilot-city'); s.value = '06'; s.dispatchEvent(new Event('change', { bubbles: true })); return true; })()", ct);
+        await TypeAsync(browser, "pilot-contact-name", "Can Telefoncu", ct);
+        await TypeAsync(browser, "pilot-email", "can@telefon.test", ct);
+        await SubmitAsync(browser, "document.querySelector('[data-wm-submit-label]').click()", ct);
+
+        Assert.Equal("pilot-sent-title", await browser.EvaluateAsync<string>("document.activeElement.id", ct));
+        using var scope = _host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
+        var stored = await db.ContactMessages.AsNoTracking().SingleAsync(m => m.RestaurantName == "Telefon Lokantası", ct);
+        Assert.Equal(("06", "5324182790"), (stored.CityPlateCode, stored.Phone));
+    }
+
     // ---- Helpers --------------------------------------------------------------------------------------------------
 
     private static async Task<List<string>> TabOrderAsync(HeadlessChromium browser, int presses, CancellationToken ct)

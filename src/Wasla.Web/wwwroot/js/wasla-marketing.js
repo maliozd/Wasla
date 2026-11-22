@@ -174,6 +174,18 @@
     });
   }
 
+  // A Turkish phone field marked data-wm-phone (the pilot form, WAS-217) uses the signup page's phone behaviour
+  // (js/signup/signup-phone-format.js, loaded by that view): at most 10 national digits after the fixed +90, a pasted
+  // +90 or trunk 0 removed, grouped as typed. Without that script the field is a plain input and the server's check
+  // still applies.
+  function initPhoneFields() {
+    var phone = window.WaslaSignupPhone;
+    if (!phone || typeof phone.bindMobileInput !== "function") return;
+    Array.prototype.forEach.call(document.querySelectorAll("input[data-wm-phone]"), function (input) {
+      phone.bindMobileInput(input);
+    });
+  }
+
   // The error summary, a save failure or the received message takes focus when the page loads, so keyboard and screen
   // reader users start where the result is.
   function focusOnLoad() {
@@ -185,6 +197,7 @@
     init();
     initPeriodTabs();
     initSubmitOnce();
+    initPhoneFields();
     focusOnLoad();
   }
 

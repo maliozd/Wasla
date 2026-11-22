@@ -226,8 +226,13 @@
                                 <label class="wm-form-field__label" for="pilot-phone">@L["Pilot.Form.Phone"]</label>
                                 <div class="wm-phone@(HasError(nameof(Model.Phone)) ? " wm-phone--invalid" : string.Empty)" dir="ltr">
                                     <span class="wm-phone__prefix" aria-hidden="true">+90</span>
-                                    <input class="wm-input" id="pilot-phone" name="Phone" type="tel" inputmode="tel" value="@Model.Phone"
-                                           placeholder="532 123 45 67" autocomplete="tel-national" maxlength="32" required
+                                    @* The 10 national digits after the fixed +90, grouped as typed (signup-phone-format.js, shared with
+                                       signup); the script refuses an 11th digit and anything but digits. maxlength 20 fits a number
+                                       written out in full ("+90 (532) 418-27-90", "0090 532 418 27 90"), so an input method or a phone
+                                       keyboard's clipboard suggestion that inserts it as text is not cut short before the script removes
+                                       the prefix. The server still validates the number. *@
+                                    <input class="wm-input" id="pilot-phone" name="Phone" type="tel" inputmode="numeric" value="@Model.Phone"
+                                           placeholder="532 123 45 67" autocomplete="tel-national" maxlength="20" required data-wm-phone
                                            aria-invalid="@Invalid(nameof(Model.Phone))" aria-describedby="@Described(nameof(Model.Phone), "pilot-phone-hint")" />
                                 </div>
                                 <span class="wm-pilot-form__help" id="pilot-phone-hint">@L["Pilot.Form.PhoneHint"]</span>
@@ -309,3 +314,11 @@
         </footer>
     </div>
 </div>
+
+@section Scripts {
+    @if (!Model.Sent)
+    {
+        @* The Turkish phone field of signup: at most 10 national digits, +90 or a trunk 0 removed, grouped as typed. *@
+        <script src="~/js/signup/signup-phone-format.js" asp-append-version="true"></script>
+    }
+}
