@@ -147,6 +147,7 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             // Track the processes the browser started with while their parents still run; cleanup looks again.
             processes.Refresh();
             started = new HeadlessChromium(processes, profile, socket);
+            StartObserver.Value?.Invoke(started);
         }
         catch (Exception startupFailure)
         {
@@ -156,6 +157,25 @@ internal sealed class HeadlessChromium : IAsyncDisposable
         }
 
         return await started.SetUpAsync(browser => browser.EmulateMediaAsync(ct));
+    }
+
+    private static readonly AsyncLocal<Action<HeadlessChromium>?> StartObserver = new();
+
+    /// <summary>
+    /// Calls <paramref name="observer"/> with every browser started from the calling flow (and the flows it awaits) until
+    /// the returned scope is disposed, as soon as the browser runs and before its starter returns it. A test uses it to
+    /// reach a browser that a helper never handed over, for example one a failed setup left behind.
+    /// </summary>
+    internal static IDisposable ObserveStarts(Action<HeadlessChromium> observer)
+    {
+        var previous = StartObserver.Value;
+        StartObserver.Value = observer;
+        return new StartObservation(previous);
+    }
+
+    private sealed class StartObservation(Action<HeadlessChromium>? previous) : IDisposable
+    {
+        public void Dispose() => StartObserver.Value = previous;
     }
 
     private static string? DescribeExit(Process process)
