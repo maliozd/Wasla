@@ -20,6 +20,7 @@ using Wasla.Application.Abstractions.Billing;
 using Wasla.Application.Abstractions.Contact;
 using Wasla.Application.Abstractions.Plans;
 using Wasla.Domain.Entities.Central;
+using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Plans;
@@ -132,6 +133,10 @@ internal sealed class AdminWebHost : IAsyncDisposable
         services.AddScoped<ICentralAdminPendingRegistrationService, CentralAdminPendingRegistrationService>();
         services.AddScoped<IBillingPlanPriceAdminService, BillingPlanPriceAdminService>();
         services.AddScoped<ICentralAdminContactMessageService, CentralAdminContactMessageService>();
+        // The contact and pilot notification resend (WAS-217) as Program.cs registers it; Email:Provider stays Log here.
+        builder.Configuration["Wasla:Contact:RecipientEmail"] = "contact-inbox@wasla.test";
+        services.AddWaslaEmail(builder.Configuration);
+        services.AddWaslaContactMessages(builder.Configuration);
         // Provisioning itself is covered by PendingRegistrationProvisioningServiceTests; by default it is never invoked.
         services.AddSingleton(provisioning ?? new NoProvisioning());
         services.AddSingleton<ITenantDbContextFactory>(tenants);

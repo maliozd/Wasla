@@ -15,6 +15,18 @@
     };
 
     string Utc(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
+    var isPilot = m.Topic == ContactTopic.PilotApplication;
+    var success = TempData[Wasla.Web.Areas.Admin.Controllers.ContactMessagesController.SuccessKey] as string;
+    var error = TempData[Wasla.Web.Areas.Admin.Controllers.ContactMessagesController.ErrorKey] as string;
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+    <div class="alert alert-success" role="status" data-contact-resend-result="success">@success</div>
+}
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-warning" role="alert" data-contact-resend-result="error">@error</div>
 }
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -47,14 +59,26 @@
             <dd class="col-sm-9" dir="ltr">@(string.IsNullOrWhiteSpace(m.Phone) ? L["Admin.ContactMessages.NoPhone"].Value : TurkishPhoneDisplayFormatter.FormatWithCountryCode(m.Phone))</dd>
             <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Topic"]</dt>
             <dd class="col-sm-9">@L[$"Contact.Topic.{m.Topic}"]</dd>
+            @if (isPilot)
+            {
+                <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.City"]</dt>
+                <dd class="col-sm-9" data-contact-city="@m.CityPlateCode">@(m.CityName ?? "-") <span class="text-muted">(@m.CityPlateCode)</span></dd>
+            }
         </dl>
     </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white fw-semibold">@L["Admin.ContactMessages.Message"]</div>
+    <div class="card-header bg-white fw-semibold">@(isPilot ? L["Admin.ContactMessages.Note"] : L["Admin.ContactMessages.Message"])</div>
     <div class="card-body">
-        <p class="mb-0 text-break" style="white-space: pre-wrap;" data-contact-message>@m.Message</p>
+        @if (string.IsNullOrWhiteSpace(m.Message))
+        {
+            <p class="mb-0 text-muted" data-contact-message>@L["Admin.ContactMessages.NoNote"]</p>
+        }
+        else
+        {
+            <p class="mb-0 text-break" style="white-space: pre-wrap;" data-contact-message>@m.Message</p>
+        }
     </div>
 </div>
 
@@ -70,6 +94,13 @@
                 @if (m.NotificationAttemptedAtUtc is { } attempted)
                 {
                     <span class="text-muted ms-2">@Utc(attempted)</span>
+                }
+                @if (m.CanResendNotification)
+                {
+                    <form class="d-inline ms-2" method="post" action="/admin/contact-messages/@m.Id/resend-notification" data-contact-resend>
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>@L["Admin.ContactMessages.Resend"]</button>
+                    </form>
                 }
             </dd>
             <dt class="col-sm-3 text-muted">@L["Admin.ContactMessages.Culture"]</dt>

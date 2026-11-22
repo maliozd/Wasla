@@ -2,6 +2,7 @@
 @using Wasla.Web.Models.Marketing
 @using Wasla.Web.Routing
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
+@inject PilotApplicationGate PilotGate
 @{
     ViewData[PublicPageMetadata.ViewDataKey] = new PublicPageMetadata(
         L["Marketing.ComingSoonPage.MetaTitle"].Value,
@@ -12,7 +13,9 @@
 @* Coming-soon page, shown at / while Wasla:MarketingSite:FullSiteEnabled is false (Figma "Wasla — Yakında Sayfası",
    recommended v2 "Mutfak ısınıyor": desktop 340:298, mobile 341:328). Until the company side is ready it makes no
    product claim and shows no price, platform, signup or form: a one-sentence description, e-mail and Instagram. The
-   ocakbaşı photo (Pexels, credited) lies under the whole page in the brand-orange duotone and is decorative. *@
+   ocakbaşı photo (Pexels, credited) lies under the whole page in the brand-orange duotone and is decorative.
+   While the pilot application is open (WAS-217, Wasla:PilotApplication) the actions are "Become a pilot restaurant"
+   (/pilot) and "Contact us" (the contact e-mail); the Instagram account stays in the footer. *@
 
 <div class="wm-soon-photo" aria-hidden="true">
     <img src="~/images/marketing/ocakbasi-grill-wide.jpg" alt="" width="1600" height="1147" fetchpriority="high" />
@@ -26,11 +29,22 @@
         <div class="wm-coming-soon__row">
             <p class="wm-body-l wm-coming-soon__lead">@L["Marketing.ComingSoonPage.Lead"]</p>
             <div class="wm-actions wm-coming-soon__actions">
-                <a class="wm-btn wm-btn--primary" href="mailto:@PublicSiteUrls.ContactEmail">
-                    @L["Marketing.ComingSoonPage.EmailUs"]
-                    <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
-                </a>
-                <a class="wm-btn wm-btn--secondary-dark" href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer">@L["Marketing.ComingSoonPage.FollowOnInstagram"]<span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span></a>
+                @if (await PilotGate.IsOpenAsync(Context.RequestAborted))
+                {
+                    <a class="wm-btn wm-btn--primary" href="@PublicSiteUrls.PilotPath" data-coming-soon-cta="pilot">
+                        @L["Marketing.ComingSoonPage.BecomePilot"]
+                        <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                    <a class="wm-btn wm-btn--secondary-dark" href="mailto:@PublicSiteUrls.ContactEmail" data-coming-soon-cta="contact">@L["Marketing.ComingSoonPage.ContactUs"]</a>
+                }
+                else
+                {
+                    <a class="wm-btn wm-btn--primary" href="mailto:@PublicSiteUrls.ContactEmail">
+                        @L["Marketing.ComingSoonPage.EmailUs"]
+                        <i class="bi bi-arrow-right wm-flip-rtl" aria-hidden="true"></i>
+                    </a>
+                    <a class="wm-btn wm-btn--secondary-dark" href="@PublicSiteUrls.InstagramUrl" target="_blank" rel="noopener noreferrer">@L["Marketing.ComingSoonPage.FollowOnInstagram"]<span class="wm-visually-hidden"> (@L["Common.OpensInNewTab"])</span></a>
+                }
             </div>
         </div>
         <p class="wm-coming-soon__credit">@L["Marketing.PhotoCredit", "Hasan Hüseyin Turan"]</p>

@@ -24,6 +24,12 @@ public static class PublicSiteUrls
     /// <summary>The privacy notice (KVKK Aydınlatma Metni) of the contact form.</summary>
     public const string PrivacyNoticePath = "/privacy-notice";
 
+    /// <summary>The pilot restaurant application form (WAS-217), open only while <see cref="PilotApplicationGate.IsOpenAsync"/>.</summary>
+    public const string PilotPath = "/pilot";
+
+    /// <summary>The privacy notice (KVKK Aydınlatma Metni) of the pilot application form.</summary>
+    public const string PilotPrivacyNoticePath = "/pilot/privacy-notice";
+
     /// <summary>The published contact email address.</summary>
     public const string ContactEmail = "mehmetaliozdemir@wasla.tr";
 

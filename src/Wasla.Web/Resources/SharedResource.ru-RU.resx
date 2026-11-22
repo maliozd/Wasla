@@ -5285,4 +5285,101 @@
   <data name="PrintBridge.OnlineDevices" xml:space="preserve"><value>Устройства онлайн</value></data>
   <data name="Admin.Ops.PrintBridge.Pagination" xml:space="preserve"><value>Страницы устройств Print Bridge</value></data>
   <data name="Admin.Ops.PrintBridge.Showing" xml:space="preserve"><value>Показаны устройства {0}–{1} из {2}</value></data>
+  <data name="Marketing.ComingSoonPage.BecomePilot" xml:space="preserve"><value>Станьте пилотным рестораном</value></data>
+  <data name="Marketing.ComingSoonPage.ContactUs" xml:space="preserve"><value>Свяжитесь с нами</value></data>
+  <data name="Pilot.MetaTitle" xml:space="preserve"><value>Станьте пилотным рестораном · Wasla</value></data>
+  <data name="Pilot.MetaTitleWithErrors" xml:space="preserve"><value>Ошибка: заявка на участие в пилоте · Wasla</value></data>
+  <data name="Pilot.MetaTitleSent" xml:space="preserve"><value>Заявка получена · Wasla</value></data>
+  <data name="Pilot.MetaDescription" xml:space="preserve"><value>Подайте заявку, чтобы одним из первых начать работать с Wasla.</value></data>
+  <data name="Pilot.Eyebrow" xml:space="preserve"><value>Пилотная программа</value></data>
+  <data name="Pilot.Title" xml:space="preserve"><value>Станьте пилотным рестораном.</value></data>
+  <data name="Pilot.Lead" xml:space="preserve"><value>Подайте заявку, чтобы одним из первых начать работать с Wasla. Наша команда рассмотрит её и свяжется с вами, чтобы договориться о разговоре.</value></data>
+  <data name="Pilot.StepsHeading" xml:space="preserve"><value>Как это работает?</value></data>
+  <data name="Pilot.NextStepsHeading" xml:space="preserve"><value>Следующие шаги</value></data>
+  <data name="Pilot.Step1.Title" xml:space="preserve"><value>Отправьте заявку</value></data>
+  <data name="Pilot.Step1.Text" xml:space="preserve"><value>Расскажите о ресторане и о том, как с вами связаться.</value></data>
+  <data name="Pilot.Step1.DoneTitle" xml:space="preserve"><value>Заявка получена</value></data>
+  <data name="Pilot.Step1.DoneText" xml:space="preserve"><value>Наша команда рассмотрит вашу заявку.</value></data>
+  <data name="Pilot.Step2.Title" xml:space="preserve"><value>Поговорим с вами</value></data>
+  <data name="Pilot.Step2.Text" xml:space="preserve"><value>Наша команда свяжется с вами по телефону или почте, и мы обсудим, как работает ваш ресторан.</value></data>
+  <data name="Pilot.Step3.Title" xml:space="preserve"><value>Вместе спланируем пилот</value></data>
+  <data name="Pilot.Step3.Text" xml:space="preserve"><value>Об участии в пилоте мы договоримся вместе после разговора.</value></data>
+  <data name="Pilot.Home" xml:space="preserve"><value>Главная</value></data>
+  <data name="Pilot.Form.Title" xml:space="preserve"><value>Форма заявки</value></data>
+  <data name="Pilot.Form.RequiredHint" xml:space="preserve"><value>Все поля, кроме примечания, обязательны.</value></data>
+  <data name="Pilot.Form.RestaurantLegend" xml:space="preserve"><value>Ресторан</value></data>
+  <data name="Pilot.Form.ContactLegend" xml:space="preserve"><value>Контакты</value></data>
+  <data name="Pilot.Form.RestaurantName" xml:space="preserve"><value>Название ресторана</value></data>
+  <data name="Pilot.Form.RestaurantNamePlaceholder" xml:space="preserve"><value>Например, Lezzet Ocakbaşı</value></data>
+  <data name="Pilot.Form.City" xml:space="preserve"><value>Город</value></data>
+  <data name="Pilot.Form.CityPlaceholder" xml:space="preserve"><value>Выберите город</value></data>
+  <data name="Pilot.Form.ContactName" xml:space="preserve"><value>Контактное лицо</value></data>
+  <data name="Pilot.Form.ContactNamePlaceholder" xml:space="preserve"><value>Ваши имя и фамилия</value></data>
+  <data name="Pilot.Form.Phone" xml:space="preserve"><value>Телефон</value></data>
+  <data name="Pilot.Form.PhoneHint" xml:space="preserve"><value>Номер, по которому мы сможем с вами связаться.</value></data>
+  <data name="Pilot.Form.Email" xml:space="preserve"><value>Эл. почта</value></data>
+  <data name="Pilot.Form.EmailPlaceholder" xml:space="preserve"><value>name@yourrestaurant.com</value></data>
+  <data name="Pilot.Form.Note" xml:space="preserve"><value>Примечание (необязательно)</value></data>
+  <data name="Pilot.Form.NotePlaceholder" xml:space="preserve"><value>Например, какими платформами заказов вы пользуетесь или когда вам удобно ответить на звонок.</value></data>
+  <data name="Pilot.Form.PrivacyTitle" xml:space="preserve"><value>Ваши персональные данные</value></data>
+  <data name="Pilot.Form.PrivacyText" xml:space="preserve"><value>Мы обрабатываем данные из этой формы, чтобы рассмотреть вашу заявку на участие в пилоте и связаться с вами.</value></data>
+  <data name="Pilot.Form.PrivacyLink" xml:space="preserve"><value>Уведомление об обработке персональных данных для пилотных заявок</value></data>
+  <data name="Pilot.Form.Submit" xml:space="preserve"><value>Отправить заявку</value></data>
+  <data name="Pilot.Form.Resubmit" xml:space="preserve"><value>Отправить ещё раз</value></data>
+  <data name="Pilot.Form.Sending" xml:space="preserve"><value>Отправка…</value></data>
+  <data name="Pilot.Errors.Title" xml:space="preserve"><value>Заявка не отправлена. Исправьте следующие поля:</value></data>
+  <data name="Pilot.Failed.Title" xml:space="preserve"><value>Не удалось сохранить заявку.</value></data>
+  <data name="Pilot.Failed.Body" xml:space="preserve"><value>Ваши данные остались в форме. Отправьте её ещё раз чуть позже; если проблема сохранится, напишите на {0}.</value></data>
+  <data name="Pilot.TooManyAttempts" xml:space="preserve"><value>За короткое время отправлено слишком много заявок. Попробуйте позже или напишите на {0}.</value></data>
+  <data name="Pilot.Sent.Title" xml:space="preserve"><value>Мы получили вашу заявку.</value></data>
+  <data name="Pilot.Sent.Body" xml:space="preserve"><value>Спасибо. Наша команда рассмотрит заявку и свяжется с вами по телефону или почте, чтобы договориться о разговоре.</value></data>
+  <data name="Pilot.Sent.InfoHeading" xml:space="preserve"><value>Полезно знать</value></data>
+  <data name="Pilot.Sent.NoAccount" xml:space="preserve"><value>Эта заявка не создаёт учётную запись или панель, оплата не взимается.</value></data>
+  <data name="Pilot.Sent.ChangeDetails" xml:space="preserve"><value>Чтобы изменить или дополнить данные, напишите на {0}; отправлять форму повторно не нужно.</value></data>
+  <data name="Pilot.Sent.Home" xml:space="preserve"><value>Вернуться на главную</value></data>
+  <data name="Validation.PilotCityRequired" xml:space="preserve"><value>Выберите город.</value></data>
+  <data name="Validation.PilotContactNameRequired" xml:space="preserve"><value>Укажите имя и фамилию контактного лица.</value></data>
+  <data name="Validation.PilotPhoneRequired" xml:space="preserve"><value>Укажите номер телефона, по которому с вами можно связаться.</value></data>
+  <data name="Validation.PilotNoteTooLong" xml:space="preserve"><value>Примечание может содержать не более 2000 символов.</value></data>
+  <data name="PilotPrivacy.MetaTitle" xml:space="preserve"><value>Уведомление о данных для пилотных заявок · Wasla</value></data>
+  <data name="PilotPrivacy.MetaDescription" xml:space="preserve"><value>Как обрабатываются персональные данные из формы пилотной заявки.</value></data>
+  <data name="PilotPrivacy.Title" xml:space="preserve"><value>Уведомление об обработке персональных данных для пилотных заявок</value></data>
+  <data name="PilotPrivacy.Subtitle" xml:space="preserve"><value>Объясняет, как обрабатываются персональные данные, которые вы указываете в форме пилотной заявки.</value></data>
+  <data name="PilotPrivacy.Intro" xml:space="preserve"><value>Это уведомление предоставляется в соответствии со статьёй 10 Закона Турции № 6698 о защите персональных данных («KVKK») и касается персональных данных, которые вы передаёте через форму пилотной заявки. Отправка формы не означает принятие договора или согласие на маркетинг.</value></data>
+  <data name="PilotPrivacy.ControllerHeading" xml:space="preserve"><value>1. Оператор данных</value></data>
+  <data name="PilotPrivacy.ControllerName" xml:space="preserve"><value>Наименование</value></data>
+  <data name="PilotPrivacy.ControllerAddress" xml:space="preserve"><value>Адрес</value></data>
+  <data name="PilotPrivacy.ControllerContact" xml:space="preserve"><value>Контакты</value></data>
+  <data name="PilotPrivacy.DataHeading" xml:space="preserve"><value>2. Какие персональные данные мы обрабатываем</value></data>
+  <data name="PilotPrivacy.DataText" xml:space="preserve"><value>Название ресторана и город, имя и фамилия контактного лица, номер телефона и адрес электронной почты, а также ваше необязательное примечание, указанные в форме пилотной заявки. Также сохраняются дата заявки и язык формы.</value></data>
+  <data name="PilotPrivacy.PurposesHeading" xml:space="preserve"><value>3. Цели обработки</value></data>
+  <data name="PilotPrivacy.Purpose1" xml:space="preserve"><value>Рассмотреть вашу заявку на участие в пилоте.</value></data>
+  <data name="PilotPrivacy.Purpose2" xml:space="preserve"><value>Связаться с вами по телефону или почте, чтобы договориться о разговоре.</value></data>
+  <data name="PilotPrivacy.Purpose3" xml:space="preserve"><value>Спланировать подключение, если участие в пилоте будет согласовано.</value></data>
+  <data name="PilotPrivacy.NoMarketing" xml:space="preserve"><value>Эти данные не используются для отправки рекламных сообщений.</value></data>
+  <data name="PilotPrivacy.LegalBasisHeading" xml:space="preserve"><value>4. Способ сбора и правовое основание</value></data>
+  <data name="PilotPrivacy.CollectionText" xml:space="preserve"><value>Ваши данные собираются в электронном виде через эту веб-форму. Правовое основание:</value></data>
+  <data name="PilotPrivacy.TransfersHeading" xml:space="preserve"><value>5. Кому передаются данные</value></data>
+  <data name="PilotPrivacy.TransfersText" xml:space="preserve"><value>Вашу заявку видят уполномоченные сотрудники Wasla. Поставщики услуг и передача данных:</value></data>
+  <data name="PilotPrivacy.RetentionHeading" xml:space="preserve"><value>6. Срок хранения</value></data>
+  <data name="PilotPrivacy.ApplyText" xml:space="preserve"><value>Обращения по вашим правам согласно статье 11 KVKK можно направить:</value></data>
+  <data name="PilotPrivacy.NotConfigured" xml:space="preserve"><value>[Не настроено]</value></data>
+  <data name="PilotPrivacy.DraftTitle" xml:space="preserve"><value>Черновик уведомления</value></data>
+  <data name="PilotPrivacy.DraftBody" xml:space="preserve"><value>Данные оператора и юридические сведения ещё не настроены. Этот черновик виден только в локальной среде разработки (Development); во всех остальных средах форма и эта страница закрыты.</value></data>
+  <data name="PilotPrivacy.BackToForm" xml:space="preserve"><value>Вернуться к форме заявки</value></data>
+  <data name="Contact.Topic.PilotApplication" xml:space="preserve"><value>Пилотная заявка</value></data>
+  <data name="Admin.ContactMessages.FilterLabel" xml:space="preserve"><value>Тип сообщения</value></data>
+  <data name="Admin.ContactMessages.FilterAll" xml:space="preserve"><value>Все</value></data>
+  <data name="Admin.ContactMessages.FilterPilot" xml:space="preserve"><value>Пилотные заявки</value></data>
+  <data name="Admin.ContactMessages.FilterContact" xml:space="preserve"><value>Сообщения обратной связи</value></data>
+  <data name="Admin.ContactMessages.FilterAttention" xml:space="preserve"><value>Уведомление требует внимания</value></data>
+  <data name="Admin.ContactMessages.City" xml:space="preserve"><value>Город</value></data>
+  <data name="Admin.ContactMessages.Note" xml:space="preserve"><value>Примечание</value></data>
+  <data name="Admin.ContactMessages.NoNote" xml:space="preserve"><value>Примечание не указано.</value></data>
+  <data name="Admin.ContactMessages.Resend" xml:space="preserve"><value>Отправить уведомление повторно</value></data>
+  <data name="Admin.ContactMessages.ResendSent" xml:space="preserve"><value>Письмо-уведомление передано SMTP-серверу.</value></data>
+  <data name="Admin.ContactMessages.ResendFailed" xml:space="preserve"><value>Письмо-уведомление снова не отправлено. Сообщение сохранено; проверьте настройки SMTP и повторите попытку.</value></data>
+  <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>Уведомление не отправлено: отправка почты не настроена (Email:Provider не Smtp).</value></data>
+  <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>Уведомление об этом сообщении уже отправлено; повторно не отправлялось.</value></data>
+  <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>Отправка для этого сообщения только что началась; проверьте статус чуть позже.</value></data>
 </root>

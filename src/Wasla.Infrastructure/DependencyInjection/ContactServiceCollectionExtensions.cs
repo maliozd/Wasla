@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Contact;
+using Wasla.Application.Abstractions.ReferenceData;
 using Wasla.Infrastructure.Email;
 using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Services;
@@ -24,6 +25,7 @@ public static class ContactServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<ContactOptions>, ContactOptionsValidator>());
 
         services.TryAddSingleton<ContactMessageEmailFactory>();
+        services.TryAddScoped<ITurkishProvinceCatalog, TurkishProvinceCatalog>();
         services.TryAddScoped<IContactMessageService, ContactMessageService>();
         services.TryAddScoped<ICentralAdminContactMessageService, CentralAdminContactMessageService>();
         return services;

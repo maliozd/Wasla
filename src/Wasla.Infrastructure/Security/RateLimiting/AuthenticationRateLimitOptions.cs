@@ -36,6 +36,19 @@ public static class AuthenticationRateLimitPolicies
     public const string ContactSubmission = "contact-submission";
 
     /// <summary>
+    /// Every post of the anonymous pilot restaurant application form, <c>POST /pilot</c> (WAS-217), valid or not.
+    /// Generous, so a visitor correcting validation errors, or several restaurants behind one carrier-grade NAT, is not
+    /// locked out; it bounds automated posting. Partitioned by client network.
+    /// </summary>
+    public const string PilotApplication = "pilot-application";
+
+    /// <summary>
+    /// Valid pilot applications about to be stored and emailed (WAS-217), taken only after the form passed validation
+    /// and the honeypot. It bounds the rows and team emails one client network can create. Partitioned by client network.
+    /// </summary>
+    public const string PilotApplicationStore = "pilot-application-store";
+
+    /// <summary>
     /// Registration draft writes (WAS-192): the section saves under <c>/signup/draft</c> and the owner phone change.
     /// Partitioned by client network.
     /// </summary>
@@ -82,6 +95,10 @@ public sealed class AuthenticationRateLimitOptions
 
     public AuthenticationRateLimitRule ContactSubmission { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromHours(1) };
 
+    public AuthenticationRateLimitRule PilotApplication { get; set; } = new() { PermitLimit = 30, Window = TimeSpan.FromHours(1) };
+
+    public AuthenticationRateLimitRule PilotApplicationStore { get; set; } = new() { PermitLimit = 10, Window = TimeSpan.FromHours(1) };
+
     public AuthenticationRateLimitRule SignupDraftSave { get; set; } = new() { PermitLimit = 60, Window = TimeSpan.FromMinutes(10) };
 
     public AuthenticationRateLimitRule SignupDraftCreation { get; set; } = new() { PermitLimit = 20, Window = TimeSpan.FromHours(1) };
@@ -100,6 +117,8 @@ public sealed class AuthenticationRateLimitOptions
         AuthenticationRateLimitPolicies.SignupSubmission => SignupSubmission,
         AuthenticationRateLimitPolicies.SignupCheckout => SignupCheckout,
         AuthenticationRateLimitPolicies.ContactSubmission => ContactSubmission,
+        AuthenticationRateLimitPolicies.PilotApplication => PilotApplication,
+        AuthenticationRateLimitPolicies.PilotApplicationStore => PilotApplicationStore,
         AuthenticationRateLimitPolicies.SignupDraftSave => SignupDraftSave,
         AuthenticationRateLimitPolicies.SignupDraftCreation => SignupDraftCreation,
         AuthenticationRateLimitPolicies.SignupPhoneSend => SignupPhoneSend,
@@ -137,6 +156,8 @@ public sealed class AuthenticationRateLimitOptionsValidator : IValidateOptions<A
         Check(options.SignupSubmission, nameof(AuthenticationRateLimitOptions.SignupSubmission), failures);
         Check(options.SignupCheckout, nameof(AuthenticationRateLimitOptions.SignupCheckout), failures);
         Check(options.ContactSubmission, nameof(AuthenticationRateLimitOptions.ContactSubmission), failures);
+        Check(options.PilotApplication, nameof(AuthenticationRateLimitOptions.PilotApplication), failures);
+        Check(options.PilotApplicationStore, nameof(AuthenticationRateLimitOptions.PilotApplicationStore), failures);
         Check(options.SignupDraftSave, nameof(AuthenticationRateLimitOptions.SignupDraftSave), failures);
         Check(options.SignupDraftCreation, nameof(AuthenticationRateLimitOptions.SignupDraftCreation), failures);
         Check(options.SignupPhoneSend, nameof(AuthenticationRateLimitOptions.SignupPhoneSend), failures);

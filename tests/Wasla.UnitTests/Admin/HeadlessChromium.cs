@@ -228,8 +228,8 @@ internal sealed class HeadlessChromium : IAsyncDisposable
     }
 
     /// <summary>
-    /// Presses and releases one key as real keyboard input (Escape, Tab, Enter, a space, the arrows, Home or End), with
-    /// optional Shift.
+    /// Presses and releases one key as real keyboard input (Escape, Tab, Enter, a space, the arrows, Home, End, Backspace
+    /// or Delete), with optional Shift.
     /// </summary>
     public async Task PressKeyAsync(string key, bool shift, CancellationToken ct)
     {
@@ -243,6 +243,8 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             "ArrowDown" => ("ArrowDown", 40, null),
             "Home" => ("Home", 36, null),
             "End" => ("End", 35, null),
+            "Backspace" => ("Backspace", 8, null),
+            "Delete" => ("Delete", 46, null),
             "Enter" => ("Enter", 13, "\r"),
             " " => ("Space", 32, " "),
             _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unsupported key.")
@@ -254,6 +256,14 @@ internal sealed class HeadlessChromium : IAsyncDisposable
             : new { type = "keyDown", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers, text };
         await SendAsync("Input.dispatchKeyEvent", down, ct);
         await SendAsync("Input.dispatchKeyEvent", new { type = "keyUp", key, code, windowsVirtualKeyCode = keyCode, nativeVirtualKeyCode = keyCode, modifiers }, ct);
+    }
+
+    /// <summary>Ctrl+A as real keyboard input: selects the text of the focused field.</summary>
+    public async Task PressSelectAllAsync(CancellationToken ct)
+    {
+        const int Ctrl = 2;
+        await SendAsync("Input.dispatchKeyEvent", new { type = "rawKeyDown", key = "a", code = "KeyA", windowsVirtualKeyCode = 65, nativeVirtualKeyCode = 65, modifiers = Ctrl, commands = new[] { "selectAll" } }, ct);
+        await SendAsync("Input.dispatchKeyEvent", new { type = "keyUp", key = "a", code = "KeyA", windowsVirtualKeyCode = 65, nativeVirtualKeyCode = 65, modifiers = Ctrl }, ct);
     }
 
     /// <summary>

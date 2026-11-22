@@ -454,6 +454,7 @@ public sealed partial class AdminTenantOperationsWebTests : IAsyncLifetime
                 "admin/billing/plan-prices/{id:guid}/withdraw",
                 "admin/contact-messages",
                 "admin/contact-messages/{id:guid}",
+                "admin/contact-messages/{id:guid}/resend-notification",
                 "admin/login",
                 "admin/logout",
                 "admin/pending-registrations",

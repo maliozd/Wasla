@@ -61,7 +61,8 @@ public sealed class ContactFormViewModel
         if (!ContactPhoneNumber.TryNormalize(Phone, out _))
             yield return (nameof(Phone), "Validation.ContactPhoneInvalid");
 
-        if (!Enum.IsDefined(Topic))
+        // Only the topics the form offers: a pilot application comes from /pilot, with its city and phone (WAS-217).
+        if (!Topics.Contains(Topic))
             yield return (nameof(Topic), "Validation.ContactTopicInvalid");
 
         if (!PrivacyNoticeAcknowledged)

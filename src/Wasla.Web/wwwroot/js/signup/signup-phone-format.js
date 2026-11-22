@@ -5,8 +5,11 @@
     // 10-digit national number after the fixed +90 prefix (mobile 5xx, landline area code and 7 digits), typed and shown
     // as "212 345 67 89" and sent as digits. A country code or trunk zero the visitor types or pastes is removed, so it is
     // never stored twice. A field holds at most 10 national digits (owner's decision): typing an 11th does nothing, and a
-    // longer paste keeps its first 10 after the prefix. A shorter number (a 444 line) is kept as typed. The server still
-    // refuses a longer business phone sent to it directly, and the owner's mobile keeps its exact rule.
+    // longer paste, or longer text inserted in one go (a keyboard suggestion, an input method, autofill), keeps its first
+    // 10 after the prefix. A shorter number (a 444 line) is kept as typed. Only the ASCII digits 0-9 count (owner's
+    // decision); any other character, other scripts' digits included, is dropped. The group spaces are the field's own:
+    // Backspace and Delete step over them to the next digit. The server still refuses a longer business phone sent to it
+    // directly, and the owner's mobile keeps its exact rule.
 
     var MOBILE_TYPE = "Mobile";
     var NATIONAL_LENGTH = 10;
@@ -96,6 +99,48 @@
         return { value: formatted, caret: position };
     }
 
+    // Text put in over the selection [start, end), as a paste does: the whole field is formatted, a +90, 0090 or trunk 0
+    // in front comes off, at most the first 10 national digits stay, and the caret follows the inserted digits.
+    function insertPhoneText(value, start, end, text) {
+        var current = String(value == null ? "" : value);
+        var inserted = String(text == null ? "" : text);
+        var from = typeof start === "number" ? Math.max(0, Math.min(start, current.length)) : current.length;
+        var to = typeof end === "number" ? Math.max(from, Math.min(end, current.length)) : from;
+        return formatPhoneValue(current.slice(0, from) + inserted + current.slice(to), from + inserted.length);
+    }
+
+    // One keystroke puts in at most one digit. Text with more digits arrives in one go (a keyboard suggestion, an input
+    // method, autofill) and is treated as a paste: cleaned and cut to the first 10 national digits, never refused whole.
+    function isBulkText(text) {
+        return stripPhoneDigits(text).length > 1;
+    }
+
+    // The group spaces are the field's own: a Backspace with the caret right after one (or a Delete right before one)
+    // removes the digit beyond it, so a digit never takes two presses. Returns the formatted field and caret, or null
+    // when there is no digit on that side.
+    function deleteDigitBeyondSpace(value, caret, forward) {
+        var text = String(value == null ? "" : value);
+        var index = Math.max(0, Math.min(caret, text.length));
+        if (forward) {
+            while (index < text.length && !/\d/.test(text.charAt(index))) {
+                index++;
+            }
+            if (index >= text.length) {
+                return null;
+            }
+            return formatPhoneValue(text.slice(0, index) + text.slice(index + 1), index);
+        }
+
+        index--;
+        while (index >= 0 && !/\d/.test(text.charAt(index))) {
+            index--;
+        }
+        if (index < 0) {
+            return null;
+        }
+        return formatPhoneValue(text.slice(0, index) + text.slice(index + 1), index);
+    }
+
     // The landline example for the hint: the chosen city's area code when it has one, otherwise 212. Only a hint: a city
     // can have several codes (İstanbul has 212 and 216), so nothing is filled in or checked against it.
     function landlineExample(areaCode) {
@@ -109,6 +154,9 @@
         wouldOverflow: wouldOverflow,
         formatTurkishPhoneDigits: formatTurkishPhoneDigits,
         formatPhoneValue: formatPhoneValue,
+        insertPhoneText: insertPhoneText,
+        isBulkText: isBulkText,
+        deleteDigitBeyondSpace: deleteDigitBeyondSpace,
         landlineExample: landlineExample
     };
 
@@ -161,8 +209,21 @@
         return !!checked && checked.value === MOBILE_TYPE;
     }
 
-    // A paste replaces the selection with the pasted text; then the whole field is formatted, the caret follows the
-    // pasted digits, and the page hears an input like any other change.
+    function setPhoneValue(input, result) {
+        input.value = result.value;
+        if (typeof input.setSelectionRange === "function") {
+            input.setSelectionRange(result.caret, result.caret);
+        }
+    }
+
+    // Puts text in over the selection as a paste (insertPhoneText), and the page hears an input like any other change.
+    function insertIntoInput(input, text) {
+        var start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
+        var end = typeof input.selectionEnd === "number" ? input.selectionEnd : start;
+        setPhoneValue(input, insertPhoneText(input.value, start, end, text));
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
     function bindPasteFormatter(input) {
         input.addEventListener("paste", function (event) {
             var clipboard = event.clipboardData;
@@ -171,15 +232,7 @@
             }
 
             event.preventDefault();
-            var pasted = clipboard.getData("text") || "";
-            var start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
-            var end = typeof input.selectionEnd === "number" ? input.selectionEnd : start;
-            var result = formatPhoneValue(input.value.slice(0, start) + pasted + input.value.slice(end), start + pasted.length);
-            input.value = result.value;
-            if (typeof input.setSelectionRange === "function") {
-                input.setSelectionRange(result.caret, result.caret);
-            }
-            input.dispatchEvent(new Event("input", { bubbles: true }));
+            insertIntoInput(input, clipboard.getData("text") || "");
         });
     }
 
@@ -188,30 +241,58 @@
             && inputType !== "insertFromPaste" && inputType !== "insertFromDrop";
     }
 
-    // Typing into a full field changes nothing: the keystroke is refused before it lands, and where a browser cannot
-    // refuse it (an input method), the field goes back to its last value with the caret where it was. Pastes, drops and
-    // values set by the page (a restored draft) keep their first 10 national digits instead.
+    function isDeletingOneCharacter(inputType) {
+        return inputType === "deleteContentBackward" || inputType === "deleteContentForward";
+    }
+
+    // A digit typed into a full field changes nothing: the keystroke is refused before it lands, and where a browser
+    // cannot refuse it (an input method), the field goes back to its last value with the caret where it was. Text with
+    // more than one digit inserted in one go is put in like a paste; pastes, drops and values set by the page (a restored
+    // draft) keep their first 10 national digits too. A Backspace or Delete that removed only a group space removes the
+    // digit beyond it as well.
     function bindDigitLimit(input) {
-        var last = { value: input.value, caret: null };
+        var last = { value: input.value, start: null, end: null, bulk: false };
 
         input.addEventListener("beforeinput", function (event) {
             var start = typeof input.selectionStart === "number" ? input.selectionStart : input.value.length;
             var end = typeof input.selectionEnd === "number" ? input.selectionEnd : start;
-            last = { value: input.value, caret: start };
-            if (isTyping(event.inputType) && event.data != null && wouldOverflow(input.value, start, end, event.data)) {
+            last = { value: input.value, start: start, end: end, bulk: false };
+            if (!isTyping(event.inputType) || event.data == null) {
+                return;
+            }
+
+            if (isBulkText(event.data)) {
+                last.bulk = true;
+                // Where the browser lets the insertion be replaced, it goes in as a paste. Otherwise (an input method's
+                // composition) it lands as the browser puts it, and the input handler below formats it.
+                if (event.cancelable) {
+                    event.preventDefault();
+                    insertIntoInput(input, event.data);
+                }
+                return;
+            }
+
+            if (wouldOverflow(input.value, start, end, event.data)) {
                 event.preventDefault();
             }
         });
 
         input.addEventListener("input", function (event) {
-            if (isTyping(event.inputType) && splitNational(input.value).overflow && splitNational(last.value).national.length === NATIONAL_LENGTH) {
+            var type = event.inputType;
+            if (!last.bulk && isTyping(type) && splitNational(input.value).overflow && splitNational(last.value).national.length === NATIONAL_LENGTH) {
                 input.value = last.value;
-                if (typeof last.caret === "number" && typeof input.setSelectionRange === "function") {
-                    input.setSelectionRange(last.caret, last.caret);
+                if (typeof last.start === "number" && typeof input.setSelectionRange === "function") {
+                    input.setSelectionRange(last.start, last.start);
+                }
+            } else if (isDeletingOneCharacter(type) && typeof last.start === "number" && last.start === last.end
+                && stripPhoneDigits(input.value) === stripPhoneDigits(last.value)) {
+                var result = deleteDigitBeyondSpace(last.value, last.start, type === "deleteContentForward");
+                if (result) {
+                    setPhoneValue(input, result);
                 }
             }
             formatPhoneInput(input);
-            last = { value: input.value, caret: null };
+            last = { value: input.value, start: null, end: null, bulk: false };
         }, true);
     }
 
@@ -272,7 +353,8 @@
         formatMobileInput: formatPhoneInput,
         formatPhoneInput: formatPhoneInput,
         normalizeTurkishLocalDigits: normalizeTurkishLocalDigits,
-        // Another field for the owner's mobile (the phone step's "change number"): same format and limit.
+        // Another Türkiye phone field with the same format and limit: the phone step's "change number", and the pilot
+        // application form's phone (WAS-217, bound by wasla-marketing.js).
         bindMobileInput: function (input) { bindPhoneInput(input, "waslaChangePhoneBound"); },
         landlineExample: landlineExample,
         normalizeForSubmit: normalizeForSubmit,

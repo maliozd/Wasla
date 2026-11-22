@@ -537,6 +537,11 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CityPlateCode")
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -563,6 +568,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.Property<DateTime?>("NotificationAttemptedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("NotificationClaimId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("NotificationStatus")
                         .HasColumnType("int");
 
@@ -586,6 +594,9 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
 
                     b.HasIndex("CreatedAtUtc")
                         .HasDatabaseName("IX_ContactMessages_CreatedAtUtc");
+
+                    b.HasIndex("Topic", "CreatedAtUtc")
+                        .HasDatabaseName("IX_ContactMessages_Topic_CreatedAtUtc");
 
                     b.ToTable("ContactMessages", (string)null);
                 });

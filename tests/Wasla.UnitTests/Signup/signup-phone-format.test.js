@@ -115,6 +115,70 @@ test("the caret stays after the digit it followed, also when a prefix in front g
     assert.deepEqual(phone.formatPhoneValue("212345 67 89", 3), { value: "212 345 67 89", caret: 3 });
 });
 
+test("one Backspace right after a group space removes the digit before it, and the caret stays at that place", () => {
+    const full = "532 418 27 90";
+    // Caret after each of the three spaces (4, 8, 11).
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 4, false), { value: "534 182 79 0", caret: 2 });
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 8, false), { value: "532 412 79 0", caret: 6 });
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 11, false), { value: "532 418 29 0", caret: 9 });
+    // Nothing before the caret: nothing to remove.
+    assert.equal(phone.deleteDigitBeyondSpace(full, 0, false), null);
+});
+
+test("one Delete right before a group space removes the digit after it, and the caret stays where it was", () => {
+    const full = "532 418 27 90";
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 3, true), { value: "532 182 79 0", caret: 3 });
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 7, true), { value: "532 418 79 0", caret: 7 });
+    assert.deepEqual(phone.deleteDigitBeyondSpace(full, 10, true), { value: "532 418 27 0", caret: 10 });
+    assert.equal(phone.deleteDigitBeyondSpace(full, full.length, true), null);
+});
+
+// What the page does with text put in by the keyboard over [start, end): one digit at most is a keystroke and refused
+// when it would make an 11th national digit; more digits at once go in as a paste.
+function insertAt(value, start, end, data) {
+    if (!phone.isBulkText(data)) {
+        if (phone.wouldOverflow(value, start, end, data)) {
+            return { value, caret: start };
+        }
+        return phone.formatPhoneValue(value.slice(0, start) + data + value.slice(end), start + data.length);
+    }
+    return phone.insertPhoneText(value, start, end, data);
+}
+
+test("text with several digits inserted in one go is cleaned and cut like a paste, never refused whole", () => {
+    const cases = [
+        "5324182790123",
+        "+90 (532) 418-27-90 12",
+        "0090 532 418 27 90 999",
+        "0532 418 27 90 1",
+        "(0532) 418-27-90",
+        "+90 532 ABC 418 x 27 - 90 77"
+    ];
+    for (const text of cases) {
+        // Into an empty field and over a full field's selection: the first 10 national digits, the caret at the end.
+        assert.deepEqual(insertAt("", 0, 0, text), { value: "532 418 27 90", caret: 13 }, text);
+        assert.deepEqual(insertAt("212 345 67 89", 0, 13, text), { value: "532 418 27 90", caret: 13 }, text);
+        // The same as a paste of that text.
+        assert.deepEqual(phone.insertPhoneText("", 0, 0, text), phone.formatPhoneValue(text, text.length), text);
+    }
+    assert.equal(phone.isBulkText("5"), false);
+    assert.equal(phone.isBulkText("a"), false);
+    assert.equal(phone.isBulkText("+9"), false);
+    assert.equal(phone.isBulkText("12"), true);
+});
+
+test("a single 11th digit typed into a full number is still refused, at the end and in the middle", () => {
+    const full = "532 418 27 90";
+    assert.deepEqual(insertAt(full, 13, 13, "1"), { value: full, caret: 13 });
+    assert.deepEqual(insertAt(full, 4, 4, "9"), { value: full, caret: 4 });
+});
+
+test("only the ASCII digits 0-9 count; other scripts' digits are dropped like letters", () => {
+    assert.equal(phone.normalizeTurkishLocalDigits("٥٣٢٤١٨٢٧٩٠"), "");
+    assert.equal(phone.formatPhoneValue("٥٣٢ 418").value, "418");
+    assert.equal(phone.isBulkText("٥٣٢"), false);
+});
+
 test("the landline example uses the city's area code only as an example", () => {
     assert.equal(phone.landlineExample("264"), "+90 264 345 67 89");
     assert.equal(phone.landlineExample("216"), "+90 216 345 67 89");

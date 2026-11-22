@@ -143,9 +143,62 @@
     tablist.hidden = false;
   }
 
+  // A form marked data-wm-submit-once is sent once: a second click or Enter while it is being sent does nothing, and
+  // its submit button says so (data-wm-sending-label, localized by the view). The server still deduplicates (WAS-217).
+  function initSubmitOnce() {
+    var forms = document.querySelectorAll("form[data-wm-submit-once]");
+    Array.prototype.forEach.call(forms, function (form) {
+      var button = form.querySelector("[data-wm-submit-label]");
+      var label = button ? button.innerHTML : "";
+      form.addEventListener("submit", function (event) {
+        if (form.getAttribute("data-wm-submitting") === "true") {
+          event.preventDefault();
+          return;
+        }
+        form.setAttribute("data-wm-submitting", "true");
+        if (button) {
+          button.setAttribute("aria-disabled", "true");
+          var sending = form.getAttribute("data-wm-sending-label");
+          if (sending) button.textContent = sending;
+        }
+      });
+      // Back/forward cache: a restored page can be sent again.
+      window.addEventListener("pageshow", function (event) {
+        if (!event.persisted) return;
+        form.removeAttribute("data-wm-submitting");
+        if (button) {
+          button.removeAttribute("aria-disabled");
+          button.innerHTML = label;
+        }
+      });
+    });
+  }
+
+  // A Turkish phone field marked data-wm-phone (the pilot form, WAS-217) uses the signup page's phone behaviour
+  // (js/signup/signup-phone-format.js, loaded by that view): at most 10 national digits after the fixed +90, a pasted
+  // +90 or trunk 0 removed, grouped as typed. Without that script the field is a plain input and the server's check
+  // still applies.
+  function initPhoneFields() {
+    var phone = window.WaslaSignupPhone;
+    if (!phone || typeof phone.bindMobileInput !== "function") return;
+    Array.prototype.forEach.call(document.querySelectorAll("input[data-wm-phone]"), function (input) {
+      phone.bindMobileInput(input);
+    });
+  }
+
+  // The error summary, a save failure or the received message takes focus when the page loads, so keyboard and screen
+  // reader users start where the result is.
+  function focusOnLoad() {
+    var target = document.querySelector("[data-wm-focus-on-load]");
+    if (target && typeof target.focus === "function") target.focus();
+  }
+
   function start() {
     init();
     initPeriodTabs();
+    initSubmitOnce();
+    initPhoneFields();
+    focusOnLoad();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

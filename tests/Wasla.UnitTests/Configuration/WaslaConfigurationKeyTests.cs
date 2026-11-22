@@ -335,6 +335,11 @@ public sealed partial class WaslaConfigurationKeyTests
         };
         approved.UnionWith(typeof(TenantOnboardingOptions).GetProperties().Select(p => $"{TenantOnboardingOptions.SectionName}:{p.Name}"));
         approved.UnionWith(typeof(MarketingSiteOptions).GetProperties().Select(p => $"{MarketingSiteOptions.SectionName}:{p.Name}"));
+        // The pilot application (WAS-217): its switch, its privacy notice facts and the team's notification address.
+        approved.Add($"{PilotApplicationOptions.SectionName}:{nameof(PilotApplicationOptions.Enabled)}");
+        approved.UnionWith(typeof(PilotPrivacyNoticeOptions).GetProperties()
+            .Select(p => $"{PilotApplicationOptions.SectionName}:{nameof(PilotApplicationOptions.PrivacyNotice)}:{p.Name}"));
+        approved.Add("Wasla:Contact:PilotRecipientEmail");
         // Registration drafts and owner phone verification (WAS-192).
         approved.Add($"{SmsOptions.SectionName}:{nameof(SmsOptions.Mode)}");
         approved.Add($"{SignupOptions.SectionName}:{nameof(SignupOptions.SupportEmail)}");
