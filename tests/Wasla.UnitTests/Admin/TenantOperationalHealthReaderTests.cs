@@ -506,11 +506,11 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
     {
         public FoodPlatform Platform => platform;
         public TimeSpan? MaxFetchWindow => null;
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }

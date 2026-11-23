@@ -17,6 +17,7 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -569,7 +570,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await SyncAsync(sync, order);
         var ready = await ReadAsync(order.ExternalOrderId);
         Assert.Equal(OrderStatus.ReadyForPickup, ready.InternalStatus);
-        var actions = new OrderActionService(_db, [_client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
+        var actions = new OrderActionService(_db, [_client], new PassthroughSecrets(), NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
         // Pickup: refused before any provider call or status change; provider sync applies it.
         var manualPickup = await actions.MarkOnTheWayAsync(_tenantId, ready.Id, CancellationToken);
@@ -625,6 +626,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         return new OrderSyncService(
             _db,
             [_client],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
@@ -815,18 +817,18 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
         public int MarkShippedCalls { get; private set; }
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
         {
             MarkShippedCalls++;
             return Task.CompletedTask;
@@ -834,13 +836,13 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
 
         public int MarkDeliveredCalls { get; private set; }
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
         {
             MarkDeliveredCalls++;
             return Task.CompletedTask;
         }
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

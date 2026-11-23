@@ -10,6 +10,7 @@ using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Realtime;
 
@@ -25,14 +26,14 @@ internal sealed class ScriptedPlatformClient(FoodPlatform platform) : IFoodPlatf
 
     public void Returns(params ExternalOrderDto[] orders) => _orders = orders;
 
-    public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+    public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
         Task.FromResult(_orders);
 
-    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act("accept");
-    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("invoiced");
-    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("shipped");
-    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("delivered");
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act("reject");
+    public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act("accept");
+    public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("invoiced");
+    public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("shipped");
+    public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("delivered");
+    public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Act("reject");
 
     private Task Act(string action)
     {
@@ -96,6 +97,7 @@ internal static class OrderChangeFixtures
         new(
             tenants,
             [client],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoAutoApprove.Instance,
             NoReceipts.Instance,
@@ -103,7 +105,7 @@ internal static class OrderChangeFixtures
             NullLogger<OrderSyncService>.Instance);
 
     public static OrderActionService Actions(ITenantDbContextFactory tenants, IFoodPlatformClient client, ITenantChangeNotifier notifier) =>
-        new(tenants, [client], notifier, NullLogger<OrderActionService>.Instance);
+        new(tenants, [client], new PassthroughSecrets(), notifier, NullLogger<OrderActionService>.Instance);
 
     public static async Task<Order> ReadOrderAsync(ITenantDbContextFactory tenants, Guid tenantId, string externalOrderId)
     {

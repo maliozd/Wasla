@@ -159,7 +159,7 @@ public sealed class TrendyolRequestLimiterTests
             return Json(Page(page, totalPages: 3, Package($"p{page}")));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(3, orders.Count);
         Assert.Equal([0, 1, 2], sentAt.Select(s => s.Page));
@@ -183,9 +183,9 @@ public sealed class TrendyolRequestLimiterTests
         var tenantA = Create(clock, shared, Responder);
         var tenantB = Create(clock, shared, Responder);
 
-        await tenantA.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
-        await tenantB.FetchOrdersAsync(Connection("supplier-b"), Window, CancellationToken.None);
-        await tenantA.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        await tenantA.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
+        await tenantB.FetchOrdersAsync(Connection("supplier-b").AsProviderContext(), Window, CancellationToken.None);
+        await tenantA.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["supplier-a", "supplier-b", "supplier-a"], sentAt.Select(s => s.Supplier));
         Assert.Equal(sentAt[0].At + TenSeconds, sentAt[2].At);
@@ -246,7 +246,7 @@ public sealed class TrendyolRequestLimiterTests
             return Json(Page(page, totalPages: 3, Package($"p{page}")));
         });
 
-        var orders = await client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal([0, 1, 1, 2], pages);
         Assert.Equal(["p0", "p1", "p2"], orders.Select(o => o.ExternalOrderId));
@@ -273,7 +273,7 @@ public sealed class TrendyolRequestLimiterTests
             return Json(Page(0, totalPages: 1, Package("only")));
         });
 
-        await client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(2, attempts);
         Assert.Equal([TrendyolGoFoodPlatformClient.DefaultThrottleDelay], clock.Waits);
@@ -295,7 +295,7 @@ public sealed class TrendyolRequestLimiterTests
             return throttled;
         });
 
-        await client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal([TrendyolGoFoodPlatformClient.MaxThrottleDelay], clock.Waits);
         Assert.Equal(TimeSpan.FromSeconds(60), TrendyolGoFoodPlatformClient.MaxThrottleDelay);
@@ -314,7 +314,7 @@ public sealed class TrendyolRequestLimiterTests
         }, logger);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None));
+            client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None));
 
         Assert.Equal(HttpStatusCode.TooManyRequests, ex.StatusCode);
         Assert.Equal(1 + TrendyolGoFoodPlatformClient.MaxThrottledRetries, pages.Count);
@@ -352,7 +352,7 @@ public sealed class TrendyolRequestLimiterTests
             return throttled;
         });
 
-        await client.FetchOrdersAsync(Connection("supplier-a"), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, CancellationToken.None);
 
         // Retry-After: 0 asks for no pause, but the retry still needs a permit: with a limit of one it waits a window.
         Assert.Equal(2, attempts);
@@ -378,7 +378,7 @@ public sealed class TrendyolRequestLimiterTests
         });
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.FetchOrdersAsync(Connection("supplier-a"), Window, cts.Token).WaitAsync(TimeSpan.FromSeconds(5), Ct));
+            client.FetchOrdersAsync(Connection("supplier-a").AsProviderContext(), Window, cts.Token).WaitAsync(TimeSpan.FromSeconds(5), Ct));
         Assert.Equal(1, attempts);
     }
 
@@ -389,7 +389,6 @@ public sealed class TrendyolRequestLimiterTests
         ILogger<TrendyolGoFoodPlatformClient>? logger = null) =>
         new(
             new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://trendyol.example/") },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
             Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),

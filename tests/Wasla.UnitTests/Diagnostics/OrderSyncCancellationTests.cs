@@ -10,6 +10,7 @@ using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Diagnostics;
 
@@ -63,6 +64,7 @@ public sealed class OrderSyncCancellationTests : IDisposable
         new(
             _db,
             [client],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
@@ -95,25 +97,25 @@ public sealed class OrderSyncCancellationTests : IDisposable
         public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             throwNow();
             return Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

@@ -14,6 +14,7 @@ using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -222,12 +223,13 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
     }
 
     private OrderActionService Operator(string instance) =>
-        new(_database.Instance(instance), [_provider], _notifier, NullLogger<OrderActionService>.Instance);
+        new(_database.Instance(instance), [_provider], new PassthroughSecrets(), _notifier, NullLogger<OrderActionService>.Instance);
 
     private OrderSyncService Sync(string instance, params IInterceptor[] interceptors) =>
         new(
             new InterceptedFactory(_database.ConnectionString(instance), interceptors),
             [_provider],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
@@ -402,19 +404,19 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
         public IReadOnlyList<int?> RejectReasonsFor(Guid orderId) =>
             _rejects.Where(r => r.ExternalOrderId == $"CANCEL-{orderId:N}").Select(r => r.ReasonId).ToList();
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
-        public async Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+        public async Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         {
             _rejects.Enqueue((order.ExternalOrderId, reasonId));
             await EnterAsync();
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => EnterAsync();
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => EnterAsync();
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
 
         private async Task EnterAsync()
         {

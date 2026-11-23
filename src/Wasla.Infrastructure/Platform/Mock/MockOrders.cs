@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.TenantDb;
+using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Platform.Mock;
@@ -120,7 +120,7 @@ internal static class MockOrders
 
     public static IReadOnlyCollection<ExternalOrderDto> CreateOrders(
         FoodPlatform platform,
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         int count,
         Random? random = null,
         IReadOnlyList<string>? subtypeCodes = null,
@@ -357,7 +357,7 @@ internal static class MockOrders
 
     private static string CreateRawPayload(
         FoodPlatform platform,
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         string externalOrderId,
         string externalStatus,
         IReadOnlyCollection<ExternalOrderItemDto> items,
@@ -399,7 +399,7 @@ internal static class MockOrders
 
     private static string CreateSubtypeRawPayload(
         FoodPlatform platform,
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         string externalOrderId,
         string externalStatus,
         IReadOnlyCollection<ExternalOrderItemDto> items,

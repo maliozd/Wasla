@@ -77,7 +77,7 @@ public sealed class ProviderOrderTimeMappingTests
         var connection = new PlatformConnection { Platform = FoodPlatform.TrendyolYemek, StoreId = "mock-store" };
         var before = DateTime.UtcNow;
 
-        var orders = MockOrders.CreateOrders(FoodPlatform.TrendyolYemek, connection, 60, new Random(125));
+        var orders = MockOrders.CreateOrders(FoodPlatform.TrendyolYemek, connection.AsProviderContext(), 60, new Random(125));
 
         Assert.Contains(orders, o => o.OrderedAtUtc is not null);
         foreach (var order in orders.Where(o => o.OrderedAtUtc is not null))
@@ -107,7 +107,6 @@ public sealed class ProviderOrderTimeMappingTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
@@ -125,6 +124,6 @@ public sealed class ProviderOrderTimeMappingTests
             EncryptedApiSecret = "fake-secret"
         };
         var end = new DateTime(2026, 10, 16, 19, 0, 0, DateTimeKind.Utc);
-        return await client.FetchOrdersAsync(connection, new OrderFetchWindow(end.AddHours(-1), end), TestContext.Current.CancellationToken);
+        return await client.FetchOrdersAsync(connection.AsProviderContext(), new OrderFetchWindow(end.AddHours(-1), end), TestContext.Current.CancellationToken);
     }
 }

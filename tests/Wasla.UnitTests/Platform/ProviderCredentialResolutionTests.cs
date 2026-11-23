@@ -12,6 +12,7 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.Mock;
 using Wasla.Infrastructure.Platform.TrendyolGo;
@@ -404,7 +405,6 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     private TrendyolGoFoodPlatformClient TrendyolGo(Func<HttpRequestMessage, HttpResponseMessage> responder) =>
         new(
             new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://trendyol.example/") },
-            _secrets,
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
             Options.Create(new TrendyolGoMealWebhookPilotOptions()),
@@ -415,7 +415,6 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     private YemeksepetiFoodPlatformClient Yemeksepeti(Func<HttpRequestMessage, HttpResponseMessage> responder) =>
         new(
             new SingleClientFactory(new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://yemeksepeti.example/") }),
-            _secrets,
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
@@ -425,11 +424,11 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
             }),
             NullLogger<YemeksepetiFoodPlatformClient>.Instance);
 
-    private IFoodPlatformClient MockClient(FoodPlatform platform) => platform switch
+    private static IFoodPlatformClient MockClient(FoodPlatform platform) => platform switch
     {
-        FoodPlatform.TrendyolYemek => new MockTrendyolYemekFoodPlatformClient(_secrets),
-        FoodPlatform.Yemeksepeti => new MockYemeksepetiFoodPlatformClient(_secrets),
-        FoodPlatform.GetirYemek => new MockGetirYemekFoodPlatformClient(_secrets),
+        FoodPlatform.TrendyolYemek => new MockTrendyolYemekFoodPlatformClient(),
+        FoodPlatform.Yemeksepeti => new MockYemeksepetiFoodPlatformClient(),
+        FoodPlatform.GetirYemek => new MockGetirYemekFoodPlatformClient(),
         _ => throw new ArgumentOutOfRangeException(nameof(platform))
     };
 
@@ -437,6 +436,7 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
         new(
             _tenants,
             [client],
+            _secrets,
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoSideEffects.Instance,
             NoSideEffects.Instance,
@@ -444,31 +444,37 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
             NullLogger<OrderSyncService>.Instance);
 
     private OrderActionService Actions(IFoodPlatformClient client) =>
-        new(_tenants, [client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
+        new(_tenants, [client], _secrets, NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
-    private static Task<IReadOnlyCollection<ExternalOrderDto>> FetchAsync(
+    // A call gets the connection as Orders hands it over: through the host adapter, decrypting with _secrets.
+    private Task<IReadOnlyCollection<ExternalOrderDto>> FetchAsync(
         IFoodPlatformClient client,
         PlatformConnection connection,
         OrderFetchWindow window) =>
-        client.FetchOrdersAsync(connection, window, Ct);
+        client.FetchOrdersAsync(connection.ToProviderContext(_secrets), window, Ct);
 
-    private static Task AcceptAsync(IFoodPlatformClient client, PlatformConnection connection, string externalOrderId) =>
-        client.AcceptOrderAsync(connection, externalOrderId, preparationMinutes: 0, Ct);
+    private Task AcceptAsync(IFoodPlatformClient client, PlatformConnection connection, string externalOrderId) =>
+        client.AcceptOrderAsync(connection.ToProviderContext(_secrets), externalOrderId, preparationMinutes: 0, Ct);
 
-    private static Task RejectAsync(IFoodPlatformClient client, PlatformConnection connection, Order order, int? reasonId) =>
-        client.RejectOrderAsync(connection, order, reasonId, Ct);
+    private Task RejectAsync(IFoodPlatformClient client, PlatformConnection connection, Order order, int? reasonId) =>
+        client.RejectOrderAsync(connection.ToProviderContext(_secrets), Reference(order), reasonId, Ct);
 
     /// <summary>Calls one lifecycle operation and returns its task without awaiting it.</summary>
-    private static Task Lifecycle(IFoodPlatformClient client, string operation, PlatformConnection connection, Order order) =>
-        operation switch
+    private Task Lifecycle(IFoodPlatformClient client, string operation, PlatformConnection connection, Order order)
+    {
+        var context = connection.ToProviderContext(_secrets);
+        return operation switch
         {
-            "accept" => client.AcceptOrderAsync(connection, order.ExternalOrderId, preparationMinutes: 0, Ct),
-            "invoiced" => client.MarkInvoicedAsync(connection, order.ExternalOrderId, Ct),
-            "shipped" => client.MarkShippedAsync(connection, order.ExternalOrderId, Ct),
-            "delivered" => client.MarkDeliveredAsync(connection, order.ExternalOrderId, Ct),
-            "reject" => client.RejectOrderAsync(connection, order, reasonId: null, Ct),
+            "accept" => client.AcceptOrderAsync(context, order.ExternalOrderId, preparationMinutes: 0, Ct),
+            "invoiced" => client.MarkInvoicedAsync(context, order.ExternalOrderId, Ct),
+            "shipped" => client.MarkShippedAsync(context, order.ExternalOrderId, Ct),
+            "delivered" => client.MarkDeliveredAsync(context, order.ExternalOrderId, Ct),
+            "reject" => client.RejectOrderAsync(context, Reference(order), reasonId: null, Ct),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))
         };
+    }
+
+    private static ProviderOrderReference Reference(Order order) => new(order.ExternalOrderId, order.RawPayloadJson);
 
     private sealed record SeenConnection(
         Guid ConnectionId,
@@ -488,38 +494,38 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
         public TimeSpan? MaxFetchWindow => null;
         public IReadOnlyList<SeenCall> Calls => _calls.ToArray();
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             _calls.Enqueue(new SeenCall("fetch", Seen(connection), null, null));
             return Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
             Record("accept", connection, externalOrderId);
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("invoiced", connection, externalOrderId);
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("shipped", connection, externalOrderId);
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("delivered", connection, externalOrderId);
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         {
-            _calls.Enqueue(new SeenCall("reject", Seen(connection), order.ExternalOrderId, order.RawPayloadJson));
+            _calls.Enqueue(new SeenCall("reject", Seen(connection), order.ExternalOrderId, order.StoredPayloadJson));
             return Task.CompletedTask;
         }
 
-        private Task Record(string operation, PlatformConnection connection, string externalOrderId)
+        private Task Record(string operation, ProviderConnectionContext connection, string externalOrderId)
         {
             _calls.Enqueue(new SeenCall(operation, Seen(connection), externalOrderId, null));
             return Task.CompletedTask;
         }
 
-        private static SeenConnection Seen(PlatformConnection connection) =>
-            new(connection.Id, connection.Platform, connection.StoreId, connection.SupplierId, connection.ExecutorEmail, connection.IsActive);
+        private static SeenConnection Seen(ProviderConnectionContext connection) =>
+            new(connection.ConnectionId, connection.Platform, connection.StoreId, connection.SupplierId, connection.ExecutorEmail, connection.IsActive);
     }
 
     // ── Fakes ─────────────────────────────────────────────────────────────────────────────────────────────────

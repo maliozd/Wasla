@@ -49,9 +49,9 @@ public sealed class ProviderHttpClientRegistrationTests
         foreach (var tenant in new[] { "a", "b" })
         {
             await using (var scope = services.CreateAsyncScope())
-                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             await using (var scope = services.CreateAsyncScope())
-                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
         }
 
         // Overlapping calls of both providers. Each origin holds its requests until all of them have arrived; the
@@ -62,11 +62,11 @@ public sealed class ProviderHttpClientRegistrationTests
             new[] { "t0", "t1", "t2" }.Select(async tenant =>
             {
                 await using var scope = services.CreateAsyncScope();
-                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             }).Concat(new[] { "a", "b" }.Select(async tenant =>
             {
                 await using var scope = services.CreateAsyncScope();
-                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             })));
 
         // One registered name per provider, one pooled handler per name for every scope, never shared.
@@ -118,11 +118,11 @@ public sealed class ProviderHttpClientRegistrationTests
         {
             var clients = scope.ServiceProvider.GetServices<IFoodPlatformClient>().ToArray();
             await clients.OfType<TrendyolGoFoodPlatformClient>().Single()
-                .FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None);
+                .FetchOrdersAsync(TrendyolConnection("a").AsProviderContext(), Window, CancellationToken.None);
             await clients.OfType<YemeksepetiFoodPlatformClient>().Single()
-                .FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None);
+                .FetchOrdersAsync(YemeksepetiConnection("a").AsProviderContext(), Window, CancellationToken.None);
             await clients.OfType<OtherProviderClient>().Single()
-                .FetchOrdersAsync(TrendyolConnection("other"), Window, CancellationToken.None);
+                .FetchOrdersAsync(TrendyolConnection("other").AsProviderContext(), Window, CancellationToken.None);
         }
 
         Assert.True(otherOrigin.Requests.Count == 1, "The other provider's origin received:" + Environment.NewLine + string.Join(Environment.NewLine, otherOrigin.Requests));
@@ -216,13 +216,13 @@ public sealed class ProviderHttpClientRegistrationTests
         foreach (var tenant in new[] { "a", "b", "r" })
         {
             await using var scope = services.CreateAsyncScope();
-            outcomes.Add(await Outcome($"TrendyolGo {tenant}", () => Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None)));
+            outcomes.Add(await Outcome($"TrendyolGo {tenant}", () => Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None)));
         }
 
         foreach (var tenant in new[] { "a", "b", "r" })
         {
             await using var scope = services.CreateAsyncScope();
-            outcomes.Add(await Outcome($"Yemeksepeti {tenant}", () => Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None)));
+            outcomes.Add(await Outcome($"Yemeksepeti {tenant}", () => Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None)));
         }
 
         Assert.Equal(
@@ -444,7 +444,7 @@ public sealed class ProviderHttpClientRegistrationTests
 
         public TimeSpan? MaxFetchWindow => null;
 
-        public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "/other/orders");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "other-provider-token");
@@ -454,14 +454,14 @@ public sealed class ProviderHttpClientRegistrationTests
             return [];
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }

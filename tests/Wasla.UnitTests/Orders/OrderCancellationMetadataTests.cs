@@ -14,6 +14,7 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Admin;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -574,12 +575,13 @@ public sealed class OrderCancellationMetadataTests : IDisposable
     };
 
     private OrderActionService Actions() =>
-        new(_tenants, [_trendyol, _yemeksepeti, _getir], new NoNotifier(), NullLogger<OrderActionService>.Instance);
+        new(_tenants, [_trendyol, _yemeksepeti, _getir], new PassthroughSecrets(), new NoNotifier(), NullLogger<OrderActionService>.Instance);
 
     private OrderSyncService Sync() =>
         new(
             _tenants,
             [_trendyol, _yemeksepeti, _getir],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
@@ -723,10 +725,10 @@ public sealed class OrderCancellationMetadataTests : IDisposable
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         {
             if (FailNextReject is { } failure)
             {
@@ -738,10 +740,10 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class NoNotifier : ITenantChangeNotifier

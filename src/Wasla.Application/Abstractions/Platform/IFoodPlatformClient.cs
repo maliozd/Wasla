@@ -1,9 +1,13 @@
-﻿using Wasla.Domain.Entities.TenantDb;
-using Wasla.Domain.Enums;
+﻿using Wasla.Domain.Enums;
 using Wasla.Application.Platform.Dtos;
 
 namespace Wasla.Application.Abstractions.Platform;
 
+/// <summary>
+/// One food-delivery platform's provider API. Every operation gets the connection as a
+/// <see cref="ProviderConnectionContext"/>: its values as the caller loaded them, and a source the client asks for the
+/// credentials when it is about to use them. No operation takes an Orders persistence entity.
+/// </summary>
 public interface IFoodPlatformClient
 {
     FoodPlatform Platform { get; }
@@ -20,21 +24,20 @@ public interface IFoodPlatformClient
     /// <paramref name="window"/>.
     /// </summary>
     Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         OrderFetchWindow window,
         CancellationToken ct);
 
-    Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct);
-    Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
-    Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
-    Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct);
+    Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct);
+    Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct);
+    Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct);
+    Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct);
 
     /// <summary>
     /// Rejects the whole order on the provider. <paramref name="reasonId"/> is the operator's reason, already checked
     /// against <c>OrderRejectReasons</c> for the order's platform (null for a platform without reasons). The client
-    /// derives the rest of its request (item ids) from <paramref name="order"/> and throws, before any request, when the
-    /// stored order cannot supply it.
+    /// derives the rest of its request (item ids) from <paramref name="order"/>'s stored payload and throws, before any
+    /// request, when that payload cannot supply it.
     /// </summary>
-    Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct);
+    Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct);
 }
-

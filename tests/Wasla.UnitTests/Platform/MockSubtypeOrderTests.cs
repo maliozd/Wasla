@@ -84,7 +84,7 @@ public sealed class MockSubtypeOrderTests
         var legacy = Create("tr", ["restaurant", "not-a-subtype"], 8, 31);
         Assert.All(legacy, order => Assert.Equal("Generic", Scenario(order.RawPayloadJson)));
 
-        var lokanta = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection(), 12, new Random(41));
+        var lokanta = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection().AsProviderContext(), 12, new Random(41));
         Assert.All(lokanta, order =>
         {
             using var document = JsonDocument.Parse(order.RawPayloadJson);
@@ -99,7 +99,7 @@ public sealed class MockSubtypeOrderTests
     {
         using (MockOrderGenerationContext.Begin(["pizza"], "ar"))
         {
-            var orders = MockOrders.CreateOrders(FoodPlatform.GetirYemek, Connection(), 12, new Random(43));
+            var orders = MockOrders.CreateOrders(FoodPlatform.GetirYemek, Connection().AsProviderContext(), 12, new Random(43));
             var stored = orders.SelectMany(order => order.Items).Select(item => item.ProductName).ToArray();
             Assert.All(orders, order => Assert.Equal("Pizza", Scenario(order.RawPayloadJson)));
             var arabicNames = ProductNames("Pizza", "ar");
@@ -108,7 +108,7 @@ public sealed class MockSubtypeOrderTests
             Assert.Contains(stored, name => !englishNames.Contains(name, StringComparer.Ordinal));
         }
 
-        var after = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection(), 4, new Random(44));
+        var after = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection().AsProviderContext(), 4, new Random(44));
         Assert.All(after, order =>
         {
             using var document = JsonDocument.Parse(order.RawPayloadJson);
@@ -148,7 +148,7 @@ public sealed class MockSubtypeOrderTests
         int seed) =>
         MockOrders.CreateOrders(
             FoodPlatform.Yemeksepeti,
-            Connection(),
+            Connection().AsProviderContext(),
             count,
             new Random(seed),
             codes,

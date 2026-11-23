@@ -63,7 +63,7 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("ordersRejectSuccess", await MessageAsync(response));
         Assert.Equal(OrderStatus.Cancelled, await StatusAsync(_host.AlphaId, orderId));
-        Assert.Equal([(orderId, (int?)reasonId)], _trendyol.Rejects);
+        Assert.Equal([(ExternalId(orderId), (int?)reasonId)], _trendyol.Rejects);
 
         // Repeating it is refused by the status check; the provider is not called again.
         var again = await RejectAsync(client, token, orderId, reasonId.ToString());
@@ -107,7 +107,7 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
         // The request the Orders page and Live Screen send for it: no body.
         var response = await client.SendAsync(HttpMethod.Post, $"/orders/{orderId}/reject", content: null, Headers(token));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal([(orderId, (int?)null)], _yemeksepeti.Rejects);
+        Assert.Equal([(ExternalId(orderId), (int?)null)], _yemeksepeti.Rejects);
         Assert.Equal(OrderStatus.Cancelled, await StatusAsync(_host.AlphaId, orderId));
     }
 
@@ -156,10 +156,13 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
         Assert.Empty(_trendyol.Rejects);
     }
 
+    /// <summary>The provider id each seeded order gets, derived from its row id so a recorded reject names its order.</summary>
+    private static string ExternalId(Guid orderId) => $"REJECT-{orderId:N}";
+
     private Guid SeedNewOrder(Guid tenantId, FoodPlatform platform)
     {
         var orderId = Guid.NewGuid();
-        var externalId = $"REJECT-{orderId:N}";
+        var externalId = ExternalId(orderId);
         var order = PrintServices.Order(orderId, tenantId, externalId);
         order.Platform = platform;
         order.IdempotencyKey = $"{platform}:{externalId}:{tenantId:N}";
@@ -200,23 +203,23 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
 
     private sealed class RecordingClient(FoodPlatform platform) : IFoodPlatformClient
     {
-        private readonly ConcurrentQueue<(Guid OrderId, int? ReasonId)> _rejects = new();
+        private readonly ConcurrentQueue<(string ExternalOrderId, int? ReasonId)> _rejects = new();
 
         public FoodPlatform Platform => platform;
         public TimeSpan? MaxFetchWindow => null;
-        public IReadOnlyList<(Guid OrderId, int? ReasonId)> Rejects => _rejects.ToArray();
+        public IReadOnlyList<(string ExternalOrderId, int? ReasonId)> Rejects => _rejects.ToArray();
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         {
-            _rejects.Enqueue((order.Id, reasonId));
+            _rejects.Enqueue((order.ExternalOrderId, reasonId));
             return Task.CompletedTask;
         }
     }

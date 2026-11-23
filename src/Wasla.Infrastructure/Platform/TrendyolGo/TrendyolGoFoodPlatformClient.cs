@@ -8,10 +8,8 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
@@ -60,7 +58,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     };
 
     private readonly HttpClient _httpClient;
-    private readonly ISecretManager _secretManager;
     private readonly IOrderStatusMapper _statusMapper;
     private readonly IOptions<TrendyolGoOptions> _options;
     private readonly IOptions<TrendyolGoMealWebhookPilotOptions> _pilot;
@@ -77,7 +74,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     /// </param>
     public TrendyolGoFoodPlatformClient(
         HttpClient httpClient,
-        ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<TrendyolGoOptions> options,
         IOptions<TrendyolGoMealWebhookPilotOptions> pilot,
@@ -86,7 +82,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         TimeProvider time)
     {
         _httpClient = httpClient;
-        _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options;
         _pilot = pilot;
@@ -104,7 +99,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
 
     public TimeSpan? MaxFetchWindow => FetchWindowLength;
 
-    private static string? ResolveSupplierId(PlatformConnection connection)
+    private static string? ResolveSupplierId(ProviderConnectionContext connection)
     {
         if (!string.IsNullOrWhiteSpace(connection.SupplierId)) return connection.SupplierId.Trim();
         if (!string.IsNullOrWhiteSpace(connection.StoreId)) return connection.StoreId.Trim();
@@ -112,7 +107,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     }
 
     public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         OrderFetchWindow window,
         CancellationToken ct)
     {
@@ -187,7 +182,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     }
 
     private async Task<TrendyolGoPackagesResponse> FetchPackagePageAsync(
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         string supplierId,
         long startMs,
         long endMs,
@@ -338,7 +333,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             $"TrendyolGo FetchOrders pagination failed: {reason}. PagesFetched={pagesFetched}.");
     }
 
-    public async Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
+    public async Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
     {
         var supplierId = EnsureSupplierAndExecutor(connection);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/picked";
@@ -347,7 +342,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         await SendAndEnsureSuccessAsync(req, "AcceptOrder", externalOrderId, ct);
     }
 
-    public async Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public async Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
     {
         var supplierId = EnsureSupplierAndExecutor(connection);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/invoiced";
@@ -356,7 +351,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         await SendAndEnsureSuccessAsync(req, "MarkInvoiced", externalOrderId, ct);
     }
 
-    public async Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public async Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
     {
         var supplierId = EnsureSupplierAndExecutor(connection);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-shipped";
@@ -365,7 +360,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         await SendAndEnsureSuccessAsync(req, "MarkShipped", externalOrderId, ct);
     }
 
-    public async Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public async Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
     {
         var supplierId = EnsureSupplierAndExecutor(connection);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/{externalOrderId}/manual-delivered";
@@ -380,7 +375,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     /// outside its restaurant reasons (HTTP 400 on its stage API, 2026-11-03). A missing or unsupported reason, or a
     /// stored package that cannot supply a complete item id list, throws before any request.
     /// </summary>
-    public async Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+    public async Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
     {
         if (OrderRejectReasons.Refusal(FoodPlatform.TrendyolYemek, reasonId) is not null)
             throw new InvalidOperationException("TrendyolGo RejectOrder: the reason is missing or not a supported restaurant reason.");
@@ -394,20 +389,21 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     }
 
     /// <summary>
-    /// Every <c>lines[].items[].packageItemId</c> of the package this client stored on the order at its last sync
-    /// (<see cref="Order.RawPayloadJson"/>; <see cref="OrderItem"/> keeps no provider item id). Never <c>lineItemId</c>,
+    /// Every <c>lines[].items[].packageItemId</c> of the package this client returned for the order at its last sync, as
+    /// the caller stored it (<see cref="ProviderOrderReference.StoredPayloadJson"/>; Wasla keeps no provider item id on
+    /// its order items). Never <c>lineItemId</c>,
     /// a product id or a Wasla row id. The documentation defines a full cancellation as all the package item ids the
     /// packages call returned, so an item already reported as cancelled is listed too; a subset is a partial
     /// cancellation. Throws, so no request is sent, when the stored package is missing, unreadable or another package,
     /// or when any line has no items, any item is null, or any item has no id: sending the ids that remain would cancel
     /// only part of the order while Wasla records the whole order as cancelled.
     /// </summary>
-    private static List<string> PackageItemIdsToReject(Order order)
+    private static List<string> PackageItemIdsToReject(ProviderOrderReference order)
     {
         TrendyolGoPackage? package;
         try
         {
-            package = JsonSerializer.Deserialize<TrendyolGoPackage>(order.RawPayloadJson, JsonOptions);
+            package = JsonSerializer.Deserialize<TrendyolGoPackage>(order.StoredPayloadJson, JsonOptions);
         }
         catch (JsonException)
         {
@@ -431,7 +427,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             new("TrendyolGo RejectOrder: the stored package has no complete item id list.");
     }
 
-    private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, PlatformConnection connection, string supplierId, CancellationToken ct)
+    private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string path, ProviderConnectionContext connection, string supplierId, CancellationToken ct)
     {
         // Every request is built here, so the pilot's connection never reaches the deployment's API and no other
         // connection reaches the pilot's. Routing is decided before the credentials are read.
@@ -439,9 +435,9 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ? new Uri(api, path.TrimStart('/'))
             : new Uri(path, UriKind.Relative);
 
-        var apiKey = await _secretManager.DecryptAsync(connection.EncryptedApiKey, connection.EncryptionKeyVersion, ct);
-        var apiSecret = await _secretManager.DecryptAsync(connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
-        var basicCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{apiKey}:{apiSecret}"));
+        // Resolved for this request only, like every request of a fetch or an action.
+        var credentials = await connection.Credentials.GetCredentialsAsync(ct);
+        var basicCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{credentials.ApiKey}:{credentials.ApiSecret}"));
 
         var req = new HttpRequestMessage(method, requestUri);
         req.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicCredentials);
@@ -456,7 +452,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         return req;
     }
 
-    private string EnsureSupplierAndExecutor(PlatformConnection connection)
+    private string EnsureSupplierAndExecutor(ProviderConnectionContext connection)
     {
         var supplierId = ResolveSupplierId(connection);
         if (string.IsNullOrWhiteSpace(supplierId))

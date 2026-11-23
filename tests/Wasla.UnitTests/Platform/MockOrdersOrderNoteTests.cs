@@ -48,7 +48,7 @@ public sealed class MockOrdersOrderNoteTests
             {
                 Platform = FoodPlatform.TrendyolYemek,
                 StoreId = "mock-store",
-            },
+            }.AsProviderContext(),
             count: 80,
             random: new Random(2026));
 

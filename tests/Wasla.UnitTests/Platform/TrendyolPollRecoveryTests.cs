@@ -830,7 +830,6 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         var mapper = new DefaultOrderStatusMapper(_mapperLog);
         var client = new TrendyolGoFoodPlatformClient(
             new HttpClient(new DelegateHandler(_api.Handle)) { BaseAddress = new Uri("https://trendyol.example/") },
-            new PassthroughSecrets(),
             mapper,
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
@@ -841,6 +840,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         return new OrderSyncService(
             _tenants,
             [client],
+            new PassthroughSecrets(),
             mapper,
             _effects,
             _effects,
