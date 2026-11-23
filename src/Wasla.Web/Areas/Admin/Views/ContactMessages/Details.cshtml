@@ -15,6 +15,16 @@
     };
 
     string Utc(DateTime value) => value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
+
+    string PilotBadge(PilotApplicationStatus s) => s switch
+    {
+        PilotApplicationStatus.Contacted => "text-bg-primary",
+        PilotApplicationStatus.Accepted => "text-bg-success",
+        PilotApplicationStatus.Declined => "text-bg-dark",
+        _ => "text-bg-secondary"
+    };
+
+    var retentionDays = Wasla.Application.Contact.PilotApplicationRetention.PeriodDays;
     var isPilot = m.Topic == ContactTopic.PilotApplication;
     var success = TempData[Wasla.Web.Areas.Admin.Controllers.ContactMessagesController.SuccessKey] as string;
     var error = TempData[Wasla.Web.Areas.Admin.Controllers.ContactMessagesController.ErrorKey] as string;
@@ -108,5 +118,68 @@
         </dl>
     </div>
 </div>
+
+@if (isPilot && m.PilotStatus is { } pilotStatus && m.PilotLastActivityAtUtc is { } lastActivity)
+{
+    <div class="card border-0 shadow-sm mb-3" data-pilot-status-card>
+        <div class="card-header bg-white fw-semibold">@L["Admin.Pilot.StatusTitle"]</div>
+        <div class="card-body">
+            <dl class="row small mb-2">
+                <dt class="col-sm-3 text-muted">@L["Admin.Pilot.Status"]</dt>
+                <dd class="col-sm-9"><span class="badge @PilotBadge(pilotStatus)" data-pilot-status="@pilotStatus">@L[$"Admin.Pilot.Status.{pilotStatus}"]</span></dd>
+                <dt class="col-sm-3 text-muted">@L["Admin.Pilot.LastActivity"]</dt>
+                <dd class="col-sm-9"><time datetime="@lastActivity.ToString("O", CultureInfo.InvariantCulture)" data-pilot-last-activity>@Utc(lastActivity)</time></dd>
+                @if (m.PilotDeleteOnOrAfterUtc is { } deleteOn)
+                {
+                    <dt class="col-sm-3 text-muted">@L["Admin.Pilot.DeleteOnOrAfter"]</dt>
+                    <dd class="col-sm-9"><time datetime="@deleteOn.ToString("O", CultureInfo.InvariantCulture)" data-pilot-delete-on>@Utc(deleteOn)</time></dd>
+                }
+            </dl>
+            <p class="small text-muted mb-3">@L["Admin.Pilot.RetentionHelp", retentionDays]</p>
+            <div class="d-flex flex-wrap align-items-end gap-2">
+                <form class="d-flex flex-wrap align-items-end gap-2" method="post" action="/admin/contact-messages/@m.Id/status" data-pilot-status-form>
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label class="form-label small mb-1" for="pilot-status">@L["Admin.Pilot.Status"]</label>
+                        <select class="form-select form-select-sm" id="pilot-status" name="status">
+                            @foreach (var option in new[] { PilotApplicationStatus.Contacted, PilotApplicationStatus.Accepted, PilotApplicationStatus.Declined })
+                            {
+                                <option value="@option" selected="@(option == pilotStatus)">@L[$"Admin.Pilot.Status.{option}"]</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-primary" type="submit">@L["Admin.Pilot.SetStatus"]</button>
+                </form>
+                <form method="post" action="/admin/contact-messages/@m.Id/record-contact" data-pilot-record-contact>
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-primary" type="submit" aria-describedby="pilot-record-contact-help"><i class="bi bi-telephone me-1" aria-hidden="true"></i>@L["Admin.Pilot.RecordContact"]</button>
+                </form>
+            </div>
+            <p class="small text-muted mt-2 mb-0" id="pilot-record-contact-help">@L["Admin.Pilot.RecordContactHelp", retentionDays]</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" data-pilot-data-request>
+        <div class="card-header bg-white fw-semibold">@L["Admin.Pilot.DataRequestTitle"]</div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">@L["Admin.Pilot.DataRequestHelp"]</p>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <form method="post" action="/admin/contact-messages/@m.Id/export" data-pilot-export>
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-download me-1" aria-hidden="true"></i>@L["Admin.Pilot.Export"]</button>
+                </form>
+                <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages/@m.Id/correct" data-pilot-correct><i class="bi bi-pencil me-1" aria-hidden="true"></i>@L["Admin.Pilot.Correct"]</a>
+            </div>
+            <form class="border-top pt-3" method="post" action="/admin/contact-messages/@m.Id/delete" data-pilot-delete>
+                @Html.AntiForgeryToken()
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="pilot-identity-verified" name="identityVerified" value="true" required />
+                    <label class="form-check-label small" for="pilot-identity-verified">@L["Admin.Pilot.IdentityVerified"]</label>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash me-1" aria-hidden="true"></i>@L["Admin.Pilot.Delete"]</button>
+            </form>
+        </div>
+    </div>
+}
 
 <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>@L["Admin.ContactMessages.Back"]</a>

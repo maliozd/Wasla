@@ -48,6 +48,7 @@ public sealed class CliCommandInventoryTests
         ["list-print-jobs"] = ["--slug", "--tenant-id"],
         ["meal-webhook-integrator"] = ["--action", "--name", "--token-file"],
         ["meal-webhook-inbox"] = ["--limit", "--replay"],
+        ["pilot-applications-retention"] = ["--dry-run", "--batch-size"],
     };
 
     /// <summary>Handled in Program.cs before the command tree is built, so they are known but not registered.</summary>

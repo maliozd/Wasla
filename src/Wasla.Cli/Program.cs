@@ -70,6 +70,7 @@ if (string.Equals(args[0], "add-central-admin", StringComparison.OrdinalIgnoreCa
     string.Equals(args[0], "reset-central-admin-password", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "list-central-admins", StringComparison.OrdinalIgnoreCase) ||
     string.Equals(args[0], "generate-print-bridge-token", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(args[0], "pilot-applications-retention", StringComparison.OrdinalIgnoreCase) ||
     IsCentralPasswordReset(args))
 {
     // These commands operate on CentralDb only and do not require ENCRYPTION_MASTER_KEY.

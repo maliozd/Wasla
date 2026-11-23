@@ -1,0 +1,86 @@
+@model Wasla.Web.Areas.Admin.Models.AdminPilotCorrectionViewModel
+@{
+    ViewData["Title"] = L["Admin.Pilot.CorrectTitle"].Value;
+    var summary = ViewData.ModelState.TryGetValue(string.Empty, out var general) ? general.Errors.Select(e => e.ErrorMessage).ToList() : [];
+
+    string? Error(string field) =>
+        ViewData.ModelState.TryGetValue(field, out var state) && state.Errors.Count > 0 ? state.Errors[0].ErrorMessage : null;
+    string? Invalid(string field) => Error(field) is null ? null : "is-invalid";
+    string? AriaInvalid(string field) => Error(field) is null ? null : "true";
+    string? Described(string field) => Error(field) is null ? null : $"pilot-correct-{field}-error";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/admin">@L["Admin.DashboardTitle"]</a></li>
+        <li class="breadcrumb-item"><a href="/admin/contact-messages?kind=pilot">@L["Admin.ContactMessages.Title"]</a></li>
+        <li class="breadcrumb-item"><a href="/admin/contact-messages/@Model.Id">@L["Admin.ContactMessages.DetailTitle"]</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@L["Admin.Pilot.CorrectTitle"]</li>
+    </ol>
+</nav>
+
+<div class="mb-3">
+    <h1 class="h4 mb-1">@L["Admin.Pilot.CorrectTitle"]</h1>
+    <p class="text-muted small mb-0">@L["Admin.Pilot.DataRequestHelp"] @L["Admin.Pilot.CorrectHelp"]</p>
+</div>
+
+@foreach (var message in summary)
+{
+    <div class="alert alert-warning" role="alert">@message</div>
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <form method="post" action="/admin/contact-messages/@Model.Id/correct" class="row g-3" data-pilot-correct-form autocomplete="off" novalidate>
+            @Html.AntiForgeryToken()
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="pilot-correct-RestaurantName">@L["Admin.ContactMessages.Restaurant"]</label>
+                <input class="form-control form-control-sm @Invalid("RestaurantName")" id="pilot-correct-RestaurantName" name="RestaurantName" value="@Model.RestaurantName" maxlength="@Wasla.Domain.Entities.Central.ContactMessageLimits.RestaurantNameMaxLength" required dir="auto"
+                       aria-invalid="@AriaInvalid("RestaurantName")" aria-describedby="@Described("RestaurantName")" />
+                @if (Error("RestaurantName") is { } e1) { <div class="invalid-feedback" id="pilot-correct-RestaurantName-error">@e1</div> }
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="pilot-correct-ContactName">@L["Admin.ContactMessages.Sender"]</label>
+                <input class="form-control form-control-sm @Invalid("ContactName")" id="pilot-correct-ContactName" name="ContactName" value="@Model.ContactName" maxlength="@Wasla.Domain.Entities.Central.ContactMessageLimits.FullNameMaxLength" required dir="auto"
+                       aria-invalid="@AriaInvalid("ContactName")" aria-describedby="@Described("ContactName")" />
+                @if (Error("ContactName") is { } e2) { <div class="invalid-feedback" id="pilot-correct-ContactName-error">@e2</div> }
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="pilot-correct-Email">@L["Admin.ContactMessages.Email"]</label>
+                <input class="form-control form-control-sm @Invalid("Email")" type="email" id="pilot-correct-Email" name="Email" value="@Model.Email" maxlength="254" required dir="ltr"
+                       aria-invalid="@AriaInvalid("Email")" aria-describedby="@Described("Email")" />
+                @if (Error("Email") is { } e3) { <div class="invalid-feedback" id="pilot-correct-Email-error">@e3</div> }
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="pilot-correct-Phone">@L["Admin.ContactMessages.Phone"]</label>
+                <div class="input-group input-group-sm" dir="ltr">
+                    <span class="input-group-text">+90</span>
+                    <input class="form-control @Invalid("Phone")" type="tel" id="pilot-correct-Phone" name="Phone" value="@Model.Phone" maxlength="32" required inputmode="numeric"
+                           aria-invalid="@AriaInvalid("Phone")" aria-describedby="@Described("Phone")" />
+                    @if (Error("Phone") is { } e4) { <div class="invalid-feedback" id="pilot-correct-Phone-error">@e4</div> }
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small mb-1" for="pilot-correct-CityPlateCode">@L["Admin.ContactMessages.City"]</label>
+                <select class="form-select form-select-sm @Invalid("CityPlateCode")" id="pilot-correct-CityPlateCode" name="CityPlateCode" required
+                        aria-invalid="@AriaInvalid("CityPlateCode")" aria-describedby="@Described("CityPlateCode")">
+                    @foreach (var province in Model.Provinces)
+                    {
+                        <option value="@province.PlateCode" selected="@(province.PlateCode == Model.CityPlateCode)">@province.Name (@province.PlateCode)</option>
+                    }
+                </select>
+                @if (Error("CityPlateCode") is { } e5) { <div class="invalid-feedback" id="pilot-correct-CityPlateCode-error">@e5</div> }
+            </div>
+            <div class="col-12">
+                <label class="form-label small mb-1" for="pilot-correct-Note">@L["Admin.ContactMessages.Note"]</label>
+                <textarea class="form-control form-control-sm @Invalid("Note")" id="pilot-correct-Note" name="Note" rows="4" maxlength="2000" dir="auto"
+                          aria-invalid="@AriaInvalid("Note")" aria-describedby="@Described("Note")">@Model.Note</textarea>
+                @if (Error("Note") is { } e6) { <div class="invalid-feedback" id="pilot-correct-Note-error">@e6</div> }
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-primary" type="submit">@L["Admin.Pilot.Save"]</button>
+                <a class="btn btn-sm btn-outline-secondary" href="/admin/contact-messages/@Model.Id">@L["Admin.Pilot.Cancel"]</a>
+            </div>
+        </form>
+    </div>
+</div>

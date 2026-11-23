@@ -28,6 +28,18 @@ public static class ContactServiceCollectionExtensions
         services.TryAddScoped<ITurkishProvinceCatalog, TurkishProvinceCatalog>();
         services.TryAddScoped<IContactMessageService, ContactMessageService>();
         services.TryAddScoped<ICentralAdminContactMessageService, CentralAdminContactMessageService>();
+        services.TryAddScoped<ICentralAdminPilotApplicationService, CentralAdminPilotApplicationService>();
+        return services;
+    }
+
+    /// <summary>
+    /// The pilot application retention cleanup (WAS-222), for the CLI command that runs it. Needs CentralDb; registers the
+    /// system clock if the host has none.
+    /// </summary>
+    public static IServiceCollection AddWaslaPilotApplicationRetention(this IServiceCollection services)
+    {
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddScoped<IPilotApplicationRetentionService, PilotApplicationRetentionCleanup>();
         return services;
     }
 }
