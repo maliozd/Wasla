@@ -27,6 +27,7 @@ internal static class CliServices
         services.AddScoped<ITenantDatabaseProvisioningOperations, SqlServerTenantDatabaseProvisioningOperations>();
         services.AddScoped<IPendingRegistrationProvisioningService, PendingRegistrationProvisioningService>();
         services.AddWaslaEmail(configuration);
+        services.AddWaslaPilotApplicationRetention();
         return services;
     }
 }

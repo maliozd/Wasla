@@ -18,26 +18,17 @@
             </td>
           </tr>
           <tr>
-            <td style="padding:12px 30px 0 30px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:15px; line-height:22px; color:#1F1F1F;">
-                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Restoran</td><td style="padding:4px 0;">{{RestaurantName}}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Şehir (plaka)</td><td style="padding:4px 0;">{{CityPlateCode}}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Yetkili kişi</td><td style="padding:4px 0;">{{ContactName}}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Telefon</td><td style="padding:4px 0;">{{Phone}}</td></tr>
-                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">E-posta</td><td style="padding:4px 0;">{{Email}}</td></tr>
+            <td style="padding:12px 30px 0 30px; font-size:15px; line-height:22px; color:#1F1F1F;">
+              <p style="margin:0;">Yeni bir pilot restoran başvurusu alındı. Başvuranın yazdıkları bu e-postada yer almaz; yalnızca Central Admin’de saklanır ve saklama süresi dolunca oradan silinir.</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:12px; font-size:15px; line-height:22px; color:#1F1F1F;">
+                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Kayıt</td><td style="padding:4px 0;">{{MessageId}}</td></tr>
+                <tr><td style="padding:4px 12px 4px 0; color:#5F5F5F; white-space:nowrap;">Alındı</td><td style="padding:4px 0;">{{CreatedAtUtc}}</td></tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td style="padding:16px 30px 0 30px;">
-              <p style="margin:0 0 8px 0; font-size:13px; line-height:18px; color:#5F5F5F;">Not</p>
-              <p style="margin:0; padding:14px 16px; background-color:#FFF4EC; border:1px solid #E8DED2; border-radius:12px; font-size:15px; line-height:22px; white-space:pre-wrap;">{{Note}}</p>
-            </td>
-          </tr>
-          <tr>
             <td style="padding:18px 30px 26px 30px; font-size:12px; line-height:18px; color:#888888;">
-              <p style="margin:0;">Gönderildi: {{CreatedAtUtc}} · Sayfa dili: {{Culture}} · Kayıt: {{MessageId}}</p>
-              <p style="margin:4px 0 0 0;">Başvuru Central Admin’de İletişim mesajları sayfasında, Pilot başvuruları filtresinde kayıtlı. Başvuru hiçbir hesap, ödeme ya da panel oluşturmadı; görüşme için başvurana telefonla ya da e-postayla ulaşın.</p>
+              <p style="margin:0;">Başvuruyu görmek için Central Admin’e giriş yapın ve İletişim mesajları sayfasında Pilot başvuruları filtresinden bu kaydı açın (/admin/contact-messages/{{MessageId}}). Bu e-postayı başvuranın bilgileriyle yanıtlamayın ya da iletmeyin.</p>
               <p style="margin:8px 0 0 0;">{{FromName}}</p>
             </td>
           </tr>

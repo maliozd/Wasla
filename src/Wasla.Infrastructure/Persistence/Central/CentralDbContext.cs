@@ -17,6 +17,7 @@ using BillingPayment = Wasla.Domain.Entities.Central.BillingPayment;
 using BillingPlanPrice = Wasla.Domain.Entities.Central.BillingPlanPrice;
 using BillingPlanPriceCorrection = Wasla.Domain.Entities.Central.BillingPlanPriceCorrection;
 using ContactMessage = Wasla.Domain.Entities.Central.ContactMessage;
+using DataDestructionRecord = Wasla.Domain.Entities.Central.DataDestructionRecord;
 using RegistrationDraft = Wasla.Domain.Entities.Central.RegistrationDraft;
 using RegistrationPhoneVerification = Wasla.Domain.Entities.Central.RegistrationPhoneVerification;
 using RegistrationPhoneVerificationSend = Wasla.Domain.Entities.Central.RegistrationPhoneVerificationSend;
@@ -49,6 +50,7 @@ public class CentralDbContext : DbContext
     public DbSet<BillingPlanPrice> BillingPlanPrices => Set<BillingPlanPrice>();
     public DbSet<BillingPlanPriceCorrection> BillingPlanPriceCorrections => Set<BillingPlanPriceCorrection>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<DataDestructionRecord> DataDestructionRecords => Set<DataDestructionRecord>();
     public DbSet<RegistrationDraft> RegistrationDrafts => Set<RegistrationDraft>();
     public DbSet<RegistrationPhoneVerification> RegistrationPhoneVerifications => Set<RegistrationPhoneVerification>();
     public DbSet<RegistrationPhoneVerificationSend> RegistrationPhoneVerificationSends => Set<RegistrationPhoneVerificationSend>();
@@ -73,6 +75,7 @@ public class CentralDbContext : DbContext
         modelBuilder.ApplyConfiguration(new BillingPlanPriceConfiguration());
         modelBuilder.ApplyConfiguration(new BillingPlanPriceCorrectionConfiguration());
         modelBuilder.ApplyConfiguration(new ContactMessageConfiguration());
+        modelBuilder.ApplyConfiguration(new DataDestructionRecordConfiguration());
         modelBuilder.ApplyConfiguration(new RegistrationDraftConfiguration());
         modelBuilder.ApplyConfiguration(new RegistrationPhoneVerificationConfiguration());
         modelBuilder.ApplyConfiguration(new RegistrationPhoneVerificationSendConfiguration());

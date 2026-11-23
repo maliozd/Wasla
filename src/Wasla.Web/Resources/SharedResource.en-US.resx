@@ -4956,4 +4956,43 @@
   <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>No notification was sent because email delivery is not configured (Email:Provider is not Smtp).</value></data>
   <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>This message’s notification was already sent; it was not sent again.</value></data>
   <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>A send for this message started moments ago; check its status again shortly.</value></data>
+  <data name="Admin.Pilot.StatusTitle" xml:space="preserve"><value>Application status</value></data>
+  <data name="Admin.Pilot.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Pilot.Status.New" xml:space="preserve"><value>New, not answered yet</value></data>
+  <data name="Admin.Pilot.Status.Contacted" xml:space="preserve"><value>In contact</value></data>
+  <data name="Admin.Pilot.Status.Accepted" xml:space="preserve"><value>Accepted into the pilot</value></data>
+  <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Declined</value></data>
+  <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Last activity</value></data>
+  <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>Deleted on or after</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>The retention period ends {0} days after the last activity (receipt, a status change or a recorded contact); the next scheduled retention cleanup after that deletes the personal data.</value></data>
+  <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Save status</value></data>
+  <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Record a contact</value></data>
+  <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Use it after a call or an email with the restaurant: the {0}-day period starts again from now.</value></data>
+  <data name="Admin.Pilot.StatusSaved" xml:space="preserve"><value>Status saved. The retention period starts again from now.</value></data>
+  <data name="Admin.Pilot.StatusUnchanged" xml:space="preserve"><value>The application already has this status.</value></data>
+  <data name="Admin.Pilot.ContactRecorded" xml:space="preserve"><value>Contact recorded. The retention period starts again from now.</value></data>
+  <data name="Admin.Pilot.DataRequestTitle" xml:space="preserve"><value>Data subject request</value></data>
+  <data name="Admin.Pilot.DataRequestHelp" xml:space="preserve"><value>Before you download, correct or delete this data, verify the requester’s identity yourself (for example by calling back the stored phone number). Nothing here sends the data anywhere.</value></data>
+  <data name="Admin.Pilot.Export" xml:space="preserve"><value>Download data (JSON)</value></data>
+  <data name="Admin.Pilot.Correct" xml:space="preserve"><value>Correct data</value></data>
+  <data name="Admin.Pilot.Delete" xml:space="preserve"><value>Delete application</value></data>
+  <data name="Admin.Pilot.IdentityVerified" xml:space="preserve"><value>I verified the requester’s identity</value></data>
+  <data name="Admin.Pilot.IdentityRequired" xml:space="preserve"><value>Confirm that you verified the requester’s identity before deleting.</value></data>
+  <data name="Admin.Pilot.Deleted" xml:space="preserve"><value>The pilot application was deleted and the deletion recorded.</value></data>
+  <data name="Admin.Pilot.DeleteInProgress" xml:space="preserve"><value>A team notification is being sent for this application. Try again in a few minutes.</value></data>
+  <data name="Admin.Pilot.CorrectTitle" xml:space="preserve"><value>Correct application data</value></data>
+  <data name="Admin.Pilot.CorrectHelp" xml:space="preserve"><value>A correction does not restart the retention period.</value></data>
+  <data name="Admin.Pilot.Corrected" xml:space="preserve"><value>The application data was corrected.</value></data>
+  <data name="Admin.Pilot.Invalid" xml:space="preserve"><value>The values could not be saved. Check the fields.</value></data>
+  <data name="Admin.Pilot.FindTitle" xml:space="preserve"><value>Find a person’s pilot application</value></data>
+  <data name="Admin.Pilot.FindHelp" xml:space="preserve"><value>Enter the exact email address or phone number the person gave. Only exact matches are listed.</value></data>
+  <data name="Admin.Pilot.FindEmail" xml:space="preserve"><value>Email address</value></data>
+  <data name="Admin.Pilot.FindPhone" xml:space="preserve"><value>Phone number</value></data>
+  <data name="Admin.Pilot.FindSubmit" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Pilot.FindNone" xml:space="preserve"><value>No pilot application matches.</value></data>
+  <data name="Admin.Pilot.FindNeedsValue" xml:space="preserve"><value>Enter an email address or a phone number.</value></data>
+  <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Find a person’s application</value></data>
+  <data name="Admin.Pilot.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>The retention period of your application ends {0} days after our last meaningful contact with you or the last change of its status; the application is then deleted by the next scheduled cleanup. If your restaurant takes part in the pilot, the data needed from then on is handled under the separate customer process and its own retention rules.</value></data>
 </root>

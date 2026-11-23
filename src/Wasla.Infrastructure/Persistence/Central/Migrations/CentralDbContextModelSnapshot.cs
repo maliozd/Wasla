@@ -579,6 +579,12 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(10)");
 
+                    b.Property<DateTime?>("PilotLastActivityAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("PilotStatus")
+                        .HasColumnType("int");
+
                     b.Property<bool>("PrivacyNoticeAcknowledged")
                         .HasColumnType("bit");
 
@@ -598,7 +604,15 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                     b.HasIndex("Topic", "CreatedAtUtc")
                         .HasDatabaseName("IX_ContactMessages_Topic_CreatedAtUtc");
 
-                    b.ToTable("ContactMessages", (string)null);
+                    b.HasIndex("Topic", "PilotLastActivityAtUtc", "Id")
+                        .HasDatabaseName("IX_ContactMessages_Topic_PilotLastActivityAtUtc");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("Topic", "PilotLastActivityAtUtc", "Id"), new[] { "PilotStatus", "NotificationClaimId", "NotificationAttemptedAtUtc", "CreatedAtUtc" });
+
+                    b.ToTable("ContactMessages", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ContactMessages_PilotFields", "[Topic] <> 5 OR ([PilotStatus] IS NOT NULL AND [PilotLastActivityAtUtc] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.Country", b =>
@@ -628,6 +642,46 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .IsUnique();
 
                     b.ToTable("Countries", (string)null);
+                });
+
+            modelBuilder.Entity("Wasla.Domain.Entities.Central.DataDestructionRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Actor")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Method")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Result")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RetainUntilUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Subject")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId")
+                        .HasDatabaseName("IX_DataDestructionRecords_SubjectId");
+
+                    b.HasIndex("RetainUntilUtc", "Id")
+                        .HasDatabaseName("IX_DataDestructionRecords_RetainUntilUtc");
+
+                    b.ToTable("DataDestructionRecords", (string)null);
                 });
 
             modelBuilder.Entity("Wasla.Domain.Entities.Central.District", b =>

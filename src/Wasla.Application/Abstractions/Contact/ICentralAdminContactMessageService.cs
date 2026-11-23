@@ -83,4 +83,13 @@ public sealed class AdminContactMessageDetailDto
 
     /// <summary>Whether Central Admin may send the team notification again now (see <see cref="IContactMessageService.ResendNotificationAsync"/>).</summary>
     public bool CanResendNotification { get; init; }
+
+    /// <summary>The team's status of a pilot application (WAS-222); null for a contact message.</summary>
+    public PilotApplicationStatus? PilotStatus { get; init; }
+
+    /// <summary>The last meaningful activity of a pilot application, from which its retention period runs; null for a contact message.</summary>
+    public DateTime? PilotLastActivityAtUtc { get; init; }
+
+    /// <summary>When the retention cleanup may delete the pilot application, unless new activity is recorded first.</summary>
+    public DateTime? PilotDeleteOnOrAfterUtc { get; init; }
 }

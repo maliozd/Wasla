@@ -57,6 +57,7 @@ Most commands call `AesSecretManager.ValidateMasterKeyOrThrow()` before the host
 - `reset-central-admin-password`
 - `list-central-admins`
 - `generate-print-bridge-token`
+- `pilot-applications-retention`
 - `reset-password` when `--scope central`
 
 All other registered commands require the master key (including tenant operations, migrations, encrypt, `create-user`, Print Bridge seed/list, etc.).
@@ -184,6 +185,12 @@ Trendyol GO Meal webhook stage pilot only ([../integrations/trendyol-go-meal-web
 |---------|---------|
 | `meal-webhook-integrator` | `--action create` registers the integrator for `ReceiverBaseUrl` with the pilot connection's seller credentials, writes its token to `--token-file` (new file, owner-only) and prints only the SHA-256 for `SecretSha256`; `show`, `enable`, `disable`, `test-order` use the token. `show`, `enable` and `test-order` fail closed unless Get Integrator reports exactly the expected base URL, timeout, seller and event destinations; `enable` reads the integrator back and disables it again if it differs |
 | `meal-webhook-inbox` | List received events (delivery, status, outcome, matched order code and status; never payloads); `--replay <event-id>` queues a Failed or Processed event again |
+
+### Data protection
+
+| Command | Purpose |
+|---------|---------|
+| `pilot-applications-retention` | Delete pilot applications whose retention period ended (90 days after their last activity), each with a destruction record, then remove destruction records older than three years (WAS-222). `--dry-run` lists the expired applications (ids, status, UTC dates) and changes nothing; `--batch-size` (1 to 1,000, default 100). CentralDb only. Exit code `0` done, `1` a deletion failed or a row has no pilot status (retried by the next run), or the run stopped early (`STOPPED EARLY`, after printing what it deleted), `2` an invalid option. Rule, output, scheduling and backups: [pilot-applications.md](pilot-applications.md#retention-and-deletion) |
 
 ### Utility
 

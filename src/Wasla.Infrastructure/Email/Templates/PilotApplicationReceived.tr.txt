@@ -1,18 +1,10 @@
 Yeni pilot restoran başvurusu
 
-Restoran: {{RestaurantName}}
-Şehir (plaka): {{CityPlateCode}}
-Yetkili kişi: {{ContactName}}
-Telefon: {{Phone}}
-E-posta: {{Email}}
+Yeni bir pilot restoran başvurusu alındı. Başvuranın yazdıkları bu e-postada yer almaz; yalnızca Central Admin'de saklanır ve saklama süresi dolunca oradan silinir.
 
-Not:
-{{Note}}
-
-Gönderildi: {{CreatedAtUtc}}
-Sayfa dili: {{Culture}}
 Kayıt: {{MessageId}}
+Alındı: {{CreatedAtUtc}}
 
-Başvuru Central Admin'de İletişim mesajları sayfasında, Pilot başvuruları filtresinde kayıtlı. Başvuru hiçbir hesap, ödeme ya da panel oluşturmadı; görüşme için başvurana telefonla ya da e-postayla ulaşın.
+Başvuruyu görmek için Central Admin'e giriş yapın ve İletişim mesajları sayfasında Pilot başvuruları filtresinden bu kaydı açın (/admin/contact-messages/{{MessageId}}). Bu e-postayı başvuranın bilgileriyle yanıtlamayın ya da iletmeyin.
 
 {{FromName}}
