@@ -43,7 +43,7 @@ public sealed class ProviderCookieIsolationTests
         {
             // A new scope per tenant, as the Worker and Web resolve clients.
             await using var scope = services.CreateAsyncScope();
-            var orders = await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+            var orders = await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             Assert.Equal([$"package-supplier-{tenant}"], orders.Select(o => o.ExternalOrderId));
         }
 
@@ -60,7 +60,7 @@ public sealed class ProviderCookieIsolationTests
         foreach (var tenant in new[] { "a", "b", "a" })
         {
             await using var scope = services.CreateAsyncScope();
-            await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+            await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
         }
 
         Assert.Equal(3, server.Requests.Count);
@@ -84,12 +84,12 @@ public sealed class ProviderCookieIsolationTests
         await using (var scopeA = services.CreateAsyncScope())
         {
             var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-                Trendyol(scopeA).FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None));
+                Trendyol(scopeA).FetchOrdersAsync(TrendyolConnection("a").AsProviderContext(), Window, CancellationToken.None));
             Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
         }
 
         await using (var scopeB = services.CreateAsyncScope())
-            await Trendyol(scopeB).FetchOrdersAsync(TrendyolConnection("b"), Window, CancellationToken.None);
+            await Trendyol(scopeB).FetchOrdersAsync(TrendyolConnection("b").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["supplier-a", "supplier-b"], server.Requests.Select(r => r.Tag));
         AssertNoCookieWasSent(server);
@@ -103,10 +103,10 @@ public sealed class ProviderCookieIsolationTests
 
         // The Web operator path: an accept for tenant A, then a Worker fetch for tenant B.
         await using (var scopeA = services.CreateAsyncScope())
-            await Trendyol(scopeA).AcceptOrderAsync(TrendyolConnection("a"), "package-1", 15, CancellationToken.None);
+            await Trendyol(scopeA).AcceptOrderAsync(TrendyolConnection("a").AsProviderContext(), "package-1", 15, CancellationToken.None);
 
         await using (var scopeB = services.CreateAsyncScope())
-            await Trendyol(scopeB).FetchOrdersAsync(TrendyolConnection("b"), Window, CancellationToken.None);
+            await Trendyol(scopeB).FetchOrdersAsync(TrendyolConnection("b").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["PUT", "GET"], server.Requests.Select(r => r.Method));
         AssertNoCookieWasSent(server);
@@ -128,7 +128,7 @@ public sealed class ProviderCookieIsolationTests
             await Task.WhenAll(tenants.Select(async tenant =>
             {
                 await using var scope = services.CreateAsyncScope();
-                var orders = await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+                var orders = await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
                 Assert.Equal([$"package-supplier-{tenant}"], orders.Select(o => o.ExternalOrderId));
             }));
         }
@@ -146,7 +146,7 @@ public sealed class ProviderCookieIsolationTests
         foreach (var tenant in new[] { "a", "b", "c", "a" })
         {
             await using var scope = services.CreateAsyncScope();
-            var orders = await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+            var orders = await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             Assert.Equal([$"order-vendor-{tenant}"], orders.Select(o => o.ExternalOrderId));
         }
 
@@ -173,14 +173,14 @@ public sealed class ProviderCookieIsolationTests
         await Task.WhenAll(tenants.Select(async tenant =>
         {
             await using var scope = services.CreateAsyncScope();
-            await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+            await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
         }));
 
         server.HoldUntil(tenantCount);
         await Task.WhenAll(tenants.Select(async tenant =>
         {
             await using var scope = services.CreateAsyncScope();
-            await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+            await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
         }));
 
         Assert.Equal(tenantCount * 3, server.Requests.Count);

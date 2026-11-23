@@ -567,7 +567,6 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             {
                 BaseAddress = new Uri("https://api.tgoapis.com/")
             },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://api.tgoapis.com" }),
             Options.Create(_options),
@@ -604,7 +603,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             NullLogger<TrendyolGoMealWebhookProcessor>.Instance, _clock);
 
     private OrderSyncService Sync() =>
-        new(_tenants, [_providerClient ?? _client], new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
+        new(_tenants, [_providerClient ?? _client], new PassthroughSecrets(), new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
             NullLogger<OrderSyncService>.Instance, time: _clock);
 
     private async Task<List<ProviderWebhookEvent>> EventsAsync()
@@ -700,17 +699,17 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         public void FailWith(Exception failure) => _failure = failure;
         public void Succeed() => _failure = null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             Windows.Add(window);
             return _failure is null ? Task.FromResult(_orders) : Task.FromException<IReadOnlyCollection<ExternalOrderDto>>(_failure);
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

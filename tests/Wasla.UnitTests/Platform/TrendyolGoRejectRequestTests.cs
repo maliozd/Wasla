@@ -78,10 +78,10 @@ public sealed class TrendyolGoRejectRequestTests
     public async Task Reject_SendsEveryPackageItemIdOfTheStoredPackage_WithTheChosenReason(int reasonId)
     {
         var client = Client();
-        var package = Assert.Single(await client.FetchOrdersAsync(Connection(), new OrderFetchWindow(WindowEnd.AddHours(-1), WindowEnd), Ct));
+        var package = Assert.Single(await client.FetchOrdersAsync(Connection().AsProviderContext(), new OrderFetchWindow(WindowEnd.AddHours(-1), WindowEnd), Ct));
         _requests.Clear();
 
-        await client.RejectOrderAsync(Connection(), StoredOrder(package.ExternalOrderId, package.RawPayloadJson), reasonId, Ct);
+        await client.RejectOrderAsync(Connection().AsProviderContext(), StoredOrder(package.ExternalOrderId, package.RawPayloadJson).AsProviderReference(), reasonId, Ct);
 
         var request = Assert.Single(_requests);
         Assert.Equal(HttpMethod.Put, request.Method);
@@ -116,7 +116,7 @@ public sealed class TrendyolGoRejectRequestTests
         var client = Client();
 
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => client.RejectOrderAsync(Connection(), StoredPackageOrder(PackageId, "1"), reasonId, Ct));
+            () => client.RejectOrderAsync(Connection().AsProviderContext(), StoredPackageOrder(PackageId, "1").AsProviderReference(), reasonId, Ct));
 
         Assert.StartsWith("TrendyolGo RejectOrder:", failure.Message, StringComparison.Ordinal);
         Assert.Empty(_requests);
@@ -152,7 +152,7 @@ public sealed class TrendyolGoRejectRequestTests
         var client = Client();
 
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => client.RejectOrderAsync(Connection(), StoredOrder(PackageId, rawPayloadJson), 623, Ct));
+            () => client.RejectOrderAsync(Connection().AsProviderContext(), StoredOrder(PackageId, rawPayloadJson).AsProviderReference(), 623, Ct));
 
         Assert.StartsWith("TrendyolGo RejectOrder:", failure.Message, StringComparison.Ordinal);
         Assert.True(_requests.Count == 0, $"{reason}: a request was sent.");
@@ -164,7 +164,7 @@ public sealed class TrendyolGoRejectRequestTests
         var client = Client(rejectStatus: HttpStatusCode.BadRequest);
 
         await Assert.ThrowsAsync<ProviderRequestException>(
-            () => client.RejectOrderAsync(Connection(), StoredPackageOrder(PackageId, "1", "2"), 622, Ct));
+            () => client.RejectOrderAsync(Connection().AsProviderContext(), StoredPackageOrder(PackageId, "1", "2").AsProviderReference(), 622, Ct));
 
         Assert.Single(_requests);
     }
@@ -204,7 +204,6 @@ public sealed class TrendyolGoRejectRequestTests
         var options = new TrendyolGoOptions { AgentName = "WaslaTest", BaseUrl = "https://stageapi.tgoapis.com" };
         return new TrendyolGoFoodPlatformClient(
             new HttpClient(new RecordingHandler(_requests, rejectStatus)) { BaseAddress = new Uri(options.BaseUrl) },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(options),
             Options.Create(new TrendyolGoMealWebhookPilotOptions()),

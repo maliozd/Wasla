@@ -54,14 +54,14 @@ public sealed class ProviderHttpLoggingTests
             var trendyol = clients.OfType<TrendyolGoFoodPlatformClient>().Single();
             var yemeksepeti = clients.OfType<YemeksepetiFoodPlatformClient>().Single();
 
-            await trendyol.FetchOrdersAsync(Trendyol("supplier-ok"), Window, CancellationToken.None);
-            await trendyol.AcceptOrderAsync(Trendyol("supplier-ok"), "package-1", 15, CancellationToken.None);
+            await trendyol.FetchOrdersAsync(Trendyol("supplier-ok").AsProviderContext(), Window, CancellationToken.None);
+            await trendyol.AcceptOrderAsync(Trendyol("supplier-ok").AsProviderContext(), "package-1", 15, CancellationToken.None);
             await Assert.ThrowsAsync<ProviderRequestException>(() =>
-                trendyol.FetchOrdersAsync(Trendyol("supplier-failing"), Window, CancellationToken.None));
+                trendyol.FetchOrdersAsync(Trendyol("supplier-failing").AsProviderContext(), Window, CancellationToken.None));
 
             var connection = Yemeksepeti();
-            await yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None);
-            await yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None);
+            await yemeksepeti.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
+            await yemeksepeti.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         }
 
         // The requests really carried the canaries, and the factory logged their headers at Trace, in each provider's

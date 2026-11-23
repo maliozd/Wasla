@@ -306,7 +306,6 @@ public sealed class TrendyolGoPackageContractTests
         var options = new TrendyolGoOptions { AgentName = AgentName, BaseUrl = "https://stageapi.tgoapis.com" };
         var client = new TrendyolGoFoodPlatformClient(
             new HttpClient(handler) { BaseAddress = new Uri(options.BaseUrl) },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(new CollectingLogger<DefaultOrderStatusMapper>()),
             Options.Create(options),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
@@ -325,7 +324,7 @@ public sealed class TrendyolGoPackageContractTests
         };
 
         return await client.FetchOrdersAsync(
-            connection,
+            connection.AsProviderContext(),
             new OrderFetchWindow(WindowEnd.AddHours(-1), WindowEnd),
             TestContext.Current.CancellationToken);
     }

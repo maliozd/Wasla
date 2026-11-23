@@ -38,7 +38,7 @@ public sealed class MockOrdersCustomerNameTests
 
         var orders = MockOrders.CreateOrders(
             FoodPlatform.Yemeksepeti,
-            connection,
+            connection.AsProviderContext(),
             count: 80,
             random: new Random(12345));
 

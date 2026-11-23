@@ -3,10 +3,12 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Orders;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Services;
@@ -16,16 +18,19 @@ public sealed class OrderActionService : IOrderActionService
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<OrderActionService> _logger;
     private readonly IEnumerable<IFoodPlatformClient> _clients;
+    private readonly ISecretManager _secretManager;
     private readonly ITenantChangeNotifier _notifier;
 
     public OrderActionService(
         ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
+        ISecretManager secretManager,
         ITenantChangeNotifier notifier,
         ILogger<OrderActionService> logger)
     {
         _dbFactory = dbFactory;
         _clients = clients;
+        _secretManager = secretManager;
         _notifier = notifier;
         _logger = logger;
     }
@@ -106,6 +111,8 @@ public sealed class OrderActionService : IOrderActionService
         if (client is null)
             return new OrderActionResult(false, "Orders.ActionFailed");
 
+        var providerConnection = connection.ToProviderContext(_secretManager);
+
         // From here the action owns the transition. The provider call and the local write that records it no longer
         // follow the request: an aborted request must not leave a provider change without its local status. The
         // provider HTTP clients bound the call with their own timeouts.
@@ -113,11 +120,12 @@ public sealed class OrderActionService : IOrderActionService
         {
             if (target == OrderStatus.Preparing)
             {
-                await client.AcceptOrderAsync(connection, order.ExternalOrderId, preparationMinutes: 0, CancellationToken.None);
+                await client.AcceptOrderAsync(providerConnection, order.ExternalOrderId, preparationMinutes: 0, CancellationToken.None);
             }
             else
             {
-                await client.RejectOrderAsync(connection, order, rejectReasonId, CancellationToken.None);
+                var providerOrder = new ProviderOrderReference(order.ExternalOrderId, order.RawPayloadJson);
+                await client.RejectOrderAsync(providerConnection, providerOrder, rejectReasonId, CancellationToken.None);
             }
         }
         catch (Exception ex)
@@ -225,7 +233,7 @@ public sealed class OrderActionService : IOrderActionService
 
     private delegate Task LifecyclePlatformCall(
         IFoodPlatformClient client,
-        PlatformConnection connection,
+        ProviderConnectionContext connection,
         Order order,
         CancellationToken ct);
 
@@ -267,11 +275,13 @@ public sealed class OrderActionService : IOrderActionService
         if (client is null)
             return new OrderActionResult(false, "Orders.OrderActionFailed");
 
+        var providerConnection = connection.ToProviderContext(_secretManager);
+
         // The action owns the transition: as in ExecuteAsync, the provider call and its local write ignore the request token.
         try
         {
             if (platformCall is not null)
-                await platformCall(client, connection, order, CancellationToken.None);
+                await platformCall(client, providerConnection, order, CancellationToken.None);
         }
         catch (Exception ex)
         {

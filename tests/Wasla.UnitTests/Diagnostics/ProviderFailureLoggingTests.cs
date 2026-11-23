@@ -13,6 +13,7 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.Yemeksepeti;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Diagnostics;
 
@@ -30,7 +31,6 @@ public sealed class ProviderFailureLoggingTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
@@ -39,7 +39,7 @@ public sealed class ProviderFailureLoggingTests
             TimeProvider.System);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None));
 
         AssertSafe(ex, logger.Entries);
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
@@ -56,7 +56,7 @@ public sealed class ProviderFailureLoggingTests
         });
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            failing.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
+            failing.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None));
         AssertSafe(ex, failureLogger.Entries);
 
         var successLogger = new CollectingLogger<YemeksepetiFoodPlatformClient>();
@@ -77,7 +77,7 @@ public sealed class ProviderFailureLoggingTests
             };
         });
 
-        var orders = await succeeding.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None);
+        var orders = await succeeding.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None);
         Assert.Empty(orders);
         Assert.Contains(successLogger.Entries, entry =>
             entry.Level == LogLevel.Debug && entry.Message.Contains("fetch completed", StringComparison.OrdinalIgnoreCase));
@@ -126,7 +126,6 @@ public sealed class ProviderFailureLoggingTests
         };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {

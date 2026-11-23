@@ -13,9 +13,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Platform.Dtos;
-using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
 
@@ -42,7 +40,6 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     };
 
     private readonly HttpClient _httpClient;
-    private readonly ISecretManager _secretManager;
     private readonly IOrderStatusMapper _statusMapper;
     private readonly YemeksepetiOptions _options;
     private readonly ILogger<YemeksepetiFoodPlatformClient> _logger;
@@ -67,14 +64,12 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     public YemeksepetiFoodPlatformClient(
         IHttpClientFactory httpClientFactory,
-        ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOptions<YemeksepetiOptions> options,
         ILogger<YemeksepetiFoodPlatformClient> logger,
         TimeProvider? time = null)
     {
         _httpClient = httpClientFactory.CreateClient(YemeksepetiHttpClientName);
-        _secretManager = secretManager;
         _statusMapper = statusMapper;
         _options = options.Value;
         _logger = logger;
@@ -97,18 +92,18 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     // ── Credential resolution ─────────────────────────────────────────────────
 
     /// <summary>
-    /// PlatformConnection field mapping for Yemeksepeti:
+    /// Connection field mapping for Yemeksepeti:
     ///   SupplierId  → chainId  (required)
     ///   StoreId     → vendorId (required; falls back to SupplierId if not set)
-    ///   EncryptedApiKey    → OAuth2 clientId
-    ///   EncryptedApiSecret → OAuth2 clientSecret
+    ///   Credentials ApiKey    → OAuth2 clientId
+    ///   Credentials ApiSecret → OAuth2 clientSecret
     /// </summary>
-    private static (string ChainId, string VendorId) ResolveIds(PlatformConnection connection)
+    private static (string ChainId, string VendorId) ResolveIds(ProviderConnectionContext connection)
     {
         var chainId = connection.SupplierId?.Trim();
         if (string.IsNullOrWhiteSpace(chainId))
             throw new InvalidOperationException(
-                $"Yemeksepeti requires SupplierId (chainId) on PlatformConnection {connection.Id}. Set it in the admin panel.");
+                $"Yemeksepeti requires SupplierId (chainId) on PlatformConnection {connection.ConnectionId}. Set it in the admin panel.");
 
         var vendorId = !string.IsNullOrWhiteSpace(connection.StoreId)
             ? connection.StoreId.Trim()
@@ -120,21 +115,21 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     // ── Fetch orders ──────────────────────────────────────────────────────────
 
     public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-        PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
     {
         var (chainId, vendorId) = ResolveIds(connection);
 
-        var clientId = await _secretManager.DecryptAsync(
-            connection.EncryptedApiKey, connection.EncryptionKeyVersion, ct);
-        var clientSecret = await _secretManager.DecryptAsync(
-            connection.EncryptedApiSecret, connection.EncryptionKeyVersion, ct);
+        // Resolved once per fetch: the token request and the token cache key use the same pair.
+        var credentials = await connection.Credentials.GetCredentialsAsync(ct);
+        var clientId = credentials.ApiKey;
+        var clientSecret = credentials.ApiSecret;
 
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
             throw new InvalidOperationException(
-                $"Yemeksepeti credentials (clientId/clientSecret) are missing for PlatformConnection {connection.Id}.");
+                $"Yemeksepeti credentials (clientId/clientSecret) are missing for PlatformConnection {connection.ConnectionId}.");
 
-        var cacheKey = TokenCacheKey(connection.Id, clientId, clientSecret);
-        var token = await GetOrRefreshTokenAsync(connection.Id, cacheKey, clientId, clientSecret, ct);
+        var cacheKey = TokenCacheKey(connection.ConnectionId, clientId, clientSecret);
+        var token = await GetOrRefreshTokenAsync(connection.ConnectionId, cacheKey, clientId, clientSecret, ct);
         try
         {
             return await FetchOrdersWithTokenAsync(chainId, vendorId, token.AccessToken, ct);
@@ -145,7 +140,7 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
             EvictToken(cacheKey, token);
             _logger.LogInformation(
                 "Yemeksepeti token rejected; cached token discarded. ConnectionId={ConnectionId} StatusCode={StatusCode}",
-                connection.Id,
+                connection.ConnectionId,
                 (int)ex.StatusCode);
             throw;
         }
@@ -517,23 +512,23 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     // ── Lifecycle stubs (not yet implemented) ─────────────────────────────────
 
-    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
+    public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti AcceptOrder is not yet implemented. Use the Yemeksepeti partner portal directly.");
 
-    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti MarkInvoiced is not yet implemented.");
 
-    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti MarkShipped is not yet implemented.");
 
-    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct)
+    public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti MarkDelivered is not yet implemented.");
 
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+    public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         => throw new NotSupportedException(
             "Yemeksepeti RejectOrder is not yet implemented.");
 

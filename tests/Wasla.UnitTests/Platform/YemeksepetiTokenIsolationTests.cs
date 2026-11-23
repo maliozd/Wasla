@@ -34,12 +34,12 @@ public sealed class YemeksepetiTokenIsolationTests
         provider.Register(SharedClientId, "secret-of-tenant-a", "tenant-a");
         var client = Create(provider);
 
-        var tenantA = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a"), Window, CancellationToken.None);
+        var tenantA = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a").AsProviderContext(), Window, CancellationToken.None);
         Assert.Equal(["tenant-a-order"], tenantA.Select(o => o.ExternalOrderId).ToArray());
 
         // Tenant B knows the client id but not the secret. The provider must be asked, and must refuse.
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(SharedClientId, "guessed-secret-of-tenant-b"), Window, CancellationToken.None));
+            client.FetchOrdersAsync(Connection(SharedClientId, "guessed-secret-of-tenant-b").AsProviderContext(), Window, CancellationToken.None));
 
         Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
         Assert.Equal("Token", ex.Operation);
@@ -55,8 +55,8 @@ public sealed class YemeksepetiTokenIsolationTests
         provider.Register(SharedClientId, "secret-of-tenant-b", "tenant-b");
         var client = Create(provider);
 
-        var tenantA = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a"), Window, CancellationToken.None);
-        var tenantB = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-b"), Window, CancellationToken.None);
+        var tenantA = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a").AsProviderContext(), Window, CancellationToken.None);
+        var tenantB = await client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-b").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["tenant-a-order"], tenantA.Select(o => o.ExternalOrderId).ToArray());
         Assert.Equal(["tenant-b-order"], tenantB.Select(o => o.ExternalOrderId).ToArray());
@@ -73,10 +73,10 @@ public sealed class YemeksepetiTokenIsolationTests
         var first = Connection(SharedClientId, "same-secret");
         var second = Connection(SharedClientId, "same-secret");
 
-        await client.FetchOrdersAsync(first, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(second, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(first, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(second, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(first.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(second.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(first.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(second.AsProviderContext(), Window, CancellationToken.None);
 
         // One token per connection, each reused only by the connection that acquired it.
         Assert.Equal(2, provider.TokenRequests);
@@ -95,9 +95,9 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(1, provider.TokenRequests);
         Assert.Single(provider.OrderBearers.Distinct());
@@ -112,15 +112,15 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider, time: clock);
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         // expires_in is 7200 seconds; the token is still reused just before the 5-minute refresh margin.
         clock.Now += TimeSpan.FromMinutes(114);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         Assert.Equal(1, provider.TokenRequests);
 
         clock.Now += TimeSpan.FromMinutes(2);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(2, provider.TokenRequests);
         var bearers = provider.OrderBearers.ToArray();
@@ -138,7 +138,7 @@ public sealed class YemeksepetiTokenIsolationTests
         for (var i = 0; i < 3; i++)
         {
             provider.Register($"client-{i}", $"secret-{i}", $"tenant-{i}");
-            await client.FetchOrdersAsync(Connection($"client-{i}", $"secret-{i}"), Window, CancellationToken.None);
+            await client.FetchOrdersAsync(Connection($"client-{i}", $"secret-{i}").AsProviderContext(), Window, CancellationToken.None);
         }
 
         Assert.Equal(3, client.CachedTokenCount);
@@ -146,7 +146,7 @@ public sealed class YemeksepetiTokenIsolationTests
         // Rotated credentials and removed connections leave entries behind only until their token expires.
         clock.Now += TimeSpan.FromHours(3);
         provider.Register("client-new", "secret-new", "tenant-new");
-        await client.FetchOrdersAsync(Connection("client-new", "secret-new"), Window, CancellationToken.None);
+        await client.FetchOrdersAsync(Connection("client-new", "secret-new").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(1, client.CachedTokenCount);
     }
@@ -159,7 +159,7 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
 
         for (var i = 0; i <= YemeksepetiFoodPlatformClient.MaxCachedTokens; i++)
-            await client.FetchOrdersAsync(Connection(SharedClientId, "same-secret"), Window, CancellationToken.None);
+            await client.FetchOrdersAsync(Connection(SharedClientId, "same-secret").AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(YemeksepetiFoodPlatformClient.MaxCachedTokens, client.CachedTokenCount);
         Assert.Equal(YemeksepetiFoodPlatformClient.MaxCachedTokens + 1, provider.TokenRequests);
@@ -173,12 +173,12 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var connection = Connection(SharedClientId, "old-secret");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         var oldToken = Assert.Single(provider.OrderBearers);
 
         provider.Register(SharedClientId, "new-secret", "tenant-a");
         connection.EncryptedApiSecret = "new-secret";
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(2, provider.TokenRequests);
         Assert.NotEqual(oldToken, provider.OrderBearers.Last());
@@ -192,11 +192,11 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var connection = Connection(SharedClientId, "old-secret");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         connection.EncryptedApiSecret = "mistyped-secret";
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(connection, Window, CancellationToken.None));
+            client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None));
 
         Assert.Equal("Token", ex.Operation);
         Assert.Single(provider.OrderBearers);
@@ -211,7 +211,7 @@ public sealed class YemeksepetiTokenIsolationTests
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
 
         var fetches = Enumerable.Range(0, 8)
-            .Select(_ => client.FetchOrdersAsync(connection, Window, CancellationToken.None))
+            .Select(_ => client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None))
             .ToArray();
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         provider.ReleaseTokenResponses();
@@ -237,7 +237,7 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
 
         var fetches = connections
-            .SelectMany(c => Enumerable.Range(0, 3).Select(_ => (c.Principal, Task: client.FetchOrdersAsync(c.Connection, Window, CancellationToken.None))))
+            .SelectMany(c => Enumerable.Range(0, 3).Select(_ => (c.Principal, Task: client.FetchOrdersAsync(c.Connection.AsProviderContext(), Window, CancellationToken.None))))
             .ToArray();
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         provider.ReleaseTokenResponses();
@@ -263,11 +263,11 @@ public sealed class YemeksepetiTokenIsolationTests
         var tenantB = Connection(SharedClientId, "wrong-secret");
 
         await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(tenantB, Window, CancellationToken.None));
-        var ordersA = await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+            client.FetchOrdersAsync(tenantB.AsProviderContext(), Window, CancellationToken.None));
+        var ordersA = await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
         await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(tenantB, Window, CancellationToken.None));
-        var ordersAAgain = await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+            client.FetchOrdersAsync(tenantB.AsProviderContext(), Window, CancellationToken.None));
+        var ordersAAgain = await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["tenant-a-order"], ordersA.Select(o => o.ExternalOrderId).ToArray());
         Assert.Equal(["tenant-a-order"], ordersAAgain.Select(o => o.ExternalOrderId).ToArray());
@@ -286,14 +286,14 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         provider.RevokeIssuedTokens(rejection);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(connection, Window, CancellationToken.None));
+            client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None));
         Assert.Equal(rejection, ex.StatusCode);
 
-        var orders = await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var orders = await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["tenant-a-order"], orders.Select(o => o.ExternalOrderId).ToArray());
         Assert.Equal(2, provider.TokenRequests);
@@ -307,11 +307,11 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         provider.NextOrdersStatus = HttpStatusCode.InternalServerError;
         await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(connection, Window, CancellationToken.None));
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+            client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None));
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(1, provider.TokenRequests);
     }
@@ -326,13 +326,13 @@ public sealed class YemeksepetiTokenIsolationTests
         var tenantA = Connection(SharedClientId, "secret-of-tenant-a");
         var exceptions = new List<Exception>();
 
-        await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
         exceptions.Add(await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(SharedClientId, "wrong-secret"), Window, CancellationToken.None)));
+            client.FetchOrdersAsync(Connection(SharedClientId, "wrong-secret").AsProviderContext(), Window, CancellationToken.None)));
         provider.RevokeIssuedTokens(HttpStatusCode.Unauthorized);
         exceptions.Add(await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(tenantA, Window, CancellationToken.None)));
-        await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+            client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None)));
+        await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
 
         var forbidden = new[] { "secret-of-tenant-a", "wrong-secret", SharedClientId }
             .Concat(provider.IssuedTokens)
@@ -359,7 +359,7 @@ public sealed class YemeksepetiTokenIsolationTests
         for (var i = 0; i < attempts; i++)
         {
             var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-                client.FetchOrdersAsync(Connection($"client-{i}", $"wrong-secret-{i}"), Window, CancellationToken.None));
+                client.FetchOrdersAsync(Connection($"client-{i}", $"wrong-secret-{i}").AsProviderContext(), Window, CancellationToken.None));
             Assert.Equal("Token", ex.Operation);
         }
 
@@ -377,7 +377,7 @@ public sealed class YemeksepetiTokenIsolationTests
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a"), Window, cts.Token));
+            client.FetchOrdersAsync(Connection(SharedClientId, "secret-of-tenant-a").AsProviderContext(), Window, cts.Token));
 
         Assert.Equal(0, provider.TokenRequests);
         Assert.Equal(0, client.CachedTokenCount);
@@ -392,15 +392,15 @@ public sealed class YemeksepetiTokenIsolationTests
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
         using var waiterCts = new CancellationTokenSource();
 
-        var owner = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var owner = client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-        var waiter = client.FetchOrdersAsync(connection, Window, waiterCts.Token);
+        var waiter = client.FetchOrdersAsync(connection.AsProviderContext(), Window, waiterCts.Token);
         waiterCts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiter);
 
         provider.ReleaseTokenResponses();
         var ownerOrders = await owner.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-        var laterOrders = await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var laterOrders = await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["tenant-a-order"], ownerOrders.Select(o => o.ExternalOrderId).ToArray());
         Assert.Equal(["tenant-a-order"], laterOrders.Select(o => o.ExternalOrderId).ToArray());
@@ -417,9 +417,9 @@ public sealed class YemeksepetiTokenIsolationTests
         var connection = Connection(SharedClientId, "wrong-secret");
         using var waiterCts = new CancellationTokenSource();
 
-        var owner = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var owner = client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-        var waiter = client.FetchOrdersAsync(connection, Window, waiterCts.Token);
+        var waiter = client.FetchOrdersAsync(connection.AsProviderContext(), Window, waiterCts.Token);
         waiterCts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiter);
 
@@ -439,9 +439,9 @@ public sealed class YemeksepetiTokenIsolationTests
         var connection = Connection(SharedClientId, "secret-of-tenant-a");
         using var ownerCts = new CancellationTokenSource();
 
-        var owner = client.FetchOrdersAsync(connection, Window, ownerCts.Token);
+        var owner = client.FetchOrdersAsync(connection.AsProviderContext(), Window, ownerCts.Token);
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
-        var waiter = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var waiter = client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         ownerCts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => owner);
 
@@ -463,10 +463,10 @@ public sealed class YemeksepetiTokenIsolationTests
 
         for (var i = 0; i < rounds; i++)
         {
-            var orders = await client.FetchOrdersAsync(Connection(SharedClientId, "same-secret"), Window, CancellationToken.None);
+            var orders = await client.FetchOrdersAsync(Connection(SharedClientId, "same-secret").AsProviderContext(), Window, CancellationToken.None);
             Assert.Equal(["shared-principal-order"], orders.Select(o => o.ExternalOrderId).ToArray());
             await Assert.ThrowsAsync<ProviderRequestException>(() =>
-                client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret"), Window, CancellationToken.None));
+                client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret").AsProviderContext(), Window, CancellationToken.None));
         }
 
         Assert.Equal(2 * rounds, provider.TokenRequests);
@@ -481,10 +481,10 @@ public sealed class YemeksepetiTokenIsolationTests
         using var cancelled = new CancellationTokenSource();
 
         var failing = Enumerable.Range(0, 200)
-            .Select(i => client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret"), Window, CancellationToken.None))
+            .Select(i => client.FetchOrdersAsync(Connection($"client-{i}", "wrong-secret").AsProviderContext(), Window, CancellationToken.None))
             .ToArray();
         var cancelling = Enumerable.Range(0, 50)
-            .Select(i => client.FetchOrdersAsync(Connection($"cancel-{i}", "wrong-secret"), Window, cancelled.Token))
+            .Select(i => client.FetchOrdersAsync(Connection($"cancel-{i}", "wrong-secret").AsProviderContext(), Window, cancelled.Token))
             .ToArray();
         await provider.FirstTokenRequestStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
@@ -530,7 +530,7 @@ public sealed class YemeksepetiTokenIsolationTests
                     using var cts = new CancellationTokenSource();
                     if (f.Cancel)
                         cts.CancelAfter(TimeSpan.FromTicks(Random.Shared.Next(0, 2000)));
-                    return await client.FetchOrdersAsync(f.Connection, Window, cts.Token);
+                    return await client.FetchOrdersAsync(f.Connection.AsProviderContext(), Window, cts.Token);
                 }, TestContext.Current.CancellationToken)))
                 .ToArray();
 
@@ -557,7 +557,7 @@ public sealed class YemeksepetiTokenIsolationTests
         var before = provider.TokenRequests;
         foreach (var (principal, connection) in valid)
         {
-            var orders = await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+            var orders = await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
             Assert.Equal([$"{principal}-order"], orders.Select(o => o.ExternalOrderId).ToArray());
         }
 
@@ -575,13 +575,13 @@ public sealed class YemeksepetiTokenIsolationTests
 
         // Fetch 1 sends the first token to the orders endpoint and is held there.
         var (ordersStarted, releaseOrders) = provider.HoldNextOrdersResponse();
-        var stale = client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        var stale = client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         await ordersStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         var firstToken = Assert.Single(provider.OrderBearers);
 
         // Meanwhile the first token reaches its refresh margin and fetch 2 replaces it.
         clock.Now += TimeSpan.FromMinutes(116);
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
         var replacement = provider.OrderBearers.Last();
         Assert.NotEqual(firstToken, replacement);
 
@@ -590,7 +590,7 @@ public sealed class YemeksepetiTokenIsolationTests
         releaseOrders();
         await Assert.ThrowsAsync<ProviderRequestException>(() => stale.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 
-        await client.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(2, provider.TokenRequests);
         Assert.Equal(replacement, provider.OrderBearers.Last());
@@ -605,14 +605,14 @@ public sealed class YemeksepetiTokenIsolationTests
         var client = Create(provider);
         var tenantA = Connection(SharedClientId, "secret-of-tenant-a");
 
-        await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+        await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
         for (var i = 0; i < 20; i++)
         {
             await Assert.ThrowsAsync<ProviderRequestException>(() =>
-                client.FetchOrdersAsync(Connection(SharedClientId, $"wrong-secret-{i}"), Window, CancellationToken.None));
+                client.FetchOrdersAsync(Connection(SharedClientId, $"wrong-secret-{i}").AsProviderContext(), Window, CancellationToken.None));
         }
 
-        var again = await client.FetchOrdersAsync(tenantA, Window, CancellationToken.None);
+        var again = await client.FetchOrdersAsync(tenantA.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Equal(["tenant-a-order"], again.Select(o => o.ExternalOrderId).ToArray());
         Assert.Equal(21, provider.TokenRequests);
@@ -628,7 +628,6 @@ public sealed class YemeksepetiTokenIsolationTests
         var http = new HttpClient(provider) { BaseAddress = new Uri("https://yemeksepeti.example/") };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
