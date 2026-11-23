@@ -126,6 +126,39 @@ Methods are compared by class and method name; a theory's data rows count as one
 
 To run one shard locally, take its filter and limit from the plan, for example `.\scripts\ci\select-test-scope.ps1 -EventName push`, and pass them to `dotnet test --filter "<filter>" -- xUnit.MaxParallelThreads=<limit>` (leave out the part after `--` for a shard without a limit).
 
+### Measurements after WAS-243
+
+Measured on `windows-latest` (4 vCPUs) and `ubuntu-latest` on 23 November 2026. A run's wall time is from its first job's start to its last job's end, the plan and the accounting included. Before WAS-243 the single Windows job set the run's wall time; the Ubuntu jobs ran beside it.
+
+| Scope | Before: single Windows job, passing runs of 16 to 23 November | After WAS-243 | Change of the median |
+| --- | --- | --- | --- |
+| fast | median 41.6 min (36.8 to 45.5, 17 runs) | 17.0 min on `527544bf` ([45262353760](https://github.com/maliozd/Wasla/actions/runs/45262353760)); 18.3 min on `1b505963`, with the same fast shards ([45258471458](https://github.com/maliozd/Wasla/actions/runs/45258471458)) | −59 % (−56 % for 18.3 min) |
+| full | median 72.0 min (65.4 to 81.4, 24 runs) | 19.8 min ([45262345594](https://github.com/maliozd/Wasla/actions/runs/45262345594)) and 19.8 min ([45265884654](https://github.com/maliozd/Wasla/actions/runs/45265884654)), both on `527544bf` | −72 % |
+
+Each job in minutes, with its test step in brackets, and the methods and results each shard ran:
+
+| Shard | Methods / results | Fast, 45262353760 | Full, 45262345594 | Full, 45265884654 |
+| --- | --- | --- | --- | --- |
+| `nonbrowser-1` | 541 / 1,622 | 13.2 (11.0) | **19.3** (15.1) | 15.1 (12.5) |
+| `nonbrowser-2` | 2,086 / 3,619 | 14.9 (12.3) | 15.8 (12.8) | 16.9 (13.7) |
+| `browser-1` | 74 / 152 | not in the scope | 16.3 (12.9) | 15.4 (12.6) |
+| `browser-2` | 66 / 174 | not in the scope | 15.5 (12.7) | 18.1 (15.0) |
+| `browser-3` | 67 / 111 | not in the scope | 13.3 (10.3) | 11.8 (9.5) |
+| `print-bridge` | fast 706 / 1,493, full 729 / 1,520 | **16.5** (installers 2.7, tests 11.7) | 17.4 (2.8, 12.7) | **19.2** (3.0, 13.6) |
+
+`Wasla.UnitTests` ran 2,627 methods and 5,241 results in the fast scope and 2,834 methods and 5,678 results in the full scope, the same result counts as the single job's runs of 23 November. No result was skipped. The longest job, in bold, sets the wall time: `print-bridge` in the fast scope; in the full scope it changed from run to run (`nonbrowser-1` once, `print-bridge` once), because the shard jobs end within a few minutes of each other. Every Windows job spends about 2 to 4 minutes outside its tests (checkout, .NET, restore, build, LocalDB).
+
+Wall time and runner use are separate figures. Runner minutes are the sum of the jobs' durations; more jobs run at once, so the wall time falls while the runner minutes rise:
+
+| Scope | Windows runner minutes before (mean) | Windows runner minutes after | Ubuntu runner minutes before / after |
+| --- | --- | --- | --- |
+| fast | 41.3 | 44.5 (`527544bf`), 49.3 (`1b505963`) | 1.5 / 1.6 to 1.9 |
+| full | 72.9 | 97.5 and 96.4 | 1.4 / 2.0 to 2.3 |
+
+These are single measurements, not a guarantee: the speed of GitHub-hosted runners changes from run to run. The same shard on the same commit took 15.1 and 19.3 minutes, and the single job took 65.4 to 81.4 minutes in passing full runs. Run 45265884654 failed one test, `SerializableTransactionSqlServerTests(end: "rollback")` ("The next read did not get the pooled session back"): the intermittent failure recorded in WAS-229, which also failed the single job on 19 and 22 November. Its timings are complete, and its accounting found every test in its planned shard.
+
+For comparison, the push to `dev` of `3cd4f0ee` ([45250602047](https://github.com/maliozd/Wasla/actions/runs/45250602047)), run by the single job on the same day, was cancelled by the job's 90-minute limit while the Print Bridge tests ran: its `Wasla.UnitTests` step took 77 minutes, and no test had failed. The longest shard job above took 19.3 minutes of its 60-minute limit.
+
 ### Full validation of a feature branch
 
 A green fast run does not cover the browser or WebView2 runtime tests. Run the full scope on the branch before merging a pull request into `dev` that changes authentication, authorization or tenant isolation, payment, signup or provisioning, data integrity or migrations, the Web layouts, Live Screen or other browser-visible behavior, the Print Bridge WebView2 app or tray, this workflow or its scripts, or that comes from a machine where the full suite is not run locally:
