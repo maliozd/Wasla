@@ -4,7 +4,7 @@
 
 This document says which checks exist and how to report them. It does not list every test method.
 
-Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla.PrintBridge.Tests`, `.github/workflows/ci.yml`, `scripts/ci/select-test-scope.ps1`, `scripts/ci/assert-test-results.ps1`, and `scripts/ci/terminology-guard.js`. There is no repository `package.json` and no npm test script.
+Source of the commands below: `Wasla.sln`, `tests/Wasla.UnitTests`, `tests/Wasla.PrintBridge.Tests`, `.github/workflows/ci.yml`, `scripts/ci/select-test-scope.ps1`, `scripts/ci/record-test-shard.ps1`, `scripts/ci/assert-test-shards.ps1`, `scripts/ci/assert-test-results.ps1`, and `scripts/ci/terminology-guard.js`. There is no repository `package.json` and no npm test script.
 
 ## Layers
 
@@ -28,15 +28,18 @@ Some Print Bridge tests also skip when no Windows printer is installed. They onl
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `dev` and `master`, on pull requests into them, and manually (**Run workflow** on the Actions tab, or `gh workflow run`). It has three jobs that run in parallel. Each must pass. The job names are the same in every scope.
+`.github/workflows/ci.yml` runs on pushes to `dev` and `master`, on pull requests into them, and manually (**Run workflow** on the Actions tab, or `gh workflow run`). Each job must pass.
 
 | Job | Runner | What it runs |
 | --- | --- | --- |
 | `terminology-guard` | `ubuntu-latest`, Node.js `24.21.0` | The [retired-terminology guard](#retired-terminology-guard) over every tracked file, in every scope. It fails when the repository variable `WASLA_RETIRED_TERMS` is missing or invalid |
-| `build-and-test` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`, then `Wasla.UnitTests` and `Wasla.PrintBridge.Tests` in the [test scope](#test-scope) of the event |
+| `plan` | `ubuntu-latest`, PowerShell 7 | `select-test-scope.ps1`: the [test scope](#test-scope) of the event and its [shards](#test-shards) with their filters |
+| `unit-tests` (one job per shard) | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`, SQL Server LocalDB, then the shard's part of `Wasla.UnitTests` |
+| `print-bridge` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`, the Print Bridge installers, then `Wasla.PrintBridge.Tests` in the scope |
+| `test-accounting` | `ubuntu-latest`, PowerShell 7 | After the test jobs, also when one failed: [every planned test ran exactly once](#test-shards), on the run's commit, and passed |
 | `javascript-tests` | `ubuntu-latest`, Node.js `24.21.0` (pinned in the workflow) | `node --test` over every file `git ls-files '*.test.js'` lists, in every scope. The job fails when that list is empty |
 
-Print Bridge, its WebView2 runtime tests and the Edge headless-browser tests need Windows, so all .NET tests share the Windows job and its single Release build. The Node tests and the terminology guard need no Windows API and run on Ubuntu.
+`terminology-guard`, `plan` and `javascript-tests` start at once; the Windows jobs start when `plan` is done and run in parallel, each on its own runner with its own build (restore and build take about 1.5 minutes, less than handing a build between runners). Print Bridge, its WebView2 runtime tests and the Edge headless-browser tests need Windows. The Node tests, the terminology guard, the plan and the accounting need no Windows API and run on Ubuntu.
 
 A new push to a pull request cancels that pull request's older run; a cancelled run shows as cancelled, never as passed. Runs for pushes to `dev` and `master` and manual runs are never cancelled, so every commit on those branches gets a result. NuGet packages are cached by the project files' hash; restore still runs every time, so the cache only saves download time.
 
@@ -53,14 +56,14 @@ A new push to a pull request cancels that pull request's older run; a cancelled 
 
 ### Test scope
 
-`scripts/ci/select-test-scope.ps1` chooses the scope from the event, logs it with the filters, and adds it to the job summary. The two test steps are named `Run Wasla.UnitTests (fast)` or `(full)`, and likewise for Print Bridge.
+`scripts/ci/select-test-scope.ps1` (the `plan` job) chooses the scope from the event, plans its [shards](#test-shards), logs both with the filters, and adds them to the job summary. The test steps are named `Run Wasla.UnitTests <shard> (fast)` or `(full)`, and `Run Wasla.PrintBridge.Tests (fast)` or `(full)`.
 
 | Event | Scope | `Wasla.UnitTests` | `Wasla.PrintBridge.Tests` |
 | --- | --- | --- | --- |
 | Pull request into `dev` | fast | `--filter "Category!=Browser"` | `--filter "Category!=WebView2Runtime"` |
 | Push to `dev`, pull request into `master` (also when its base changes to `master`), push to `master`, manual run on any branch | full | No filter: every test | No filter: every test |
 
-Any other event or base branch also gets the full scope. Both scopes run the terminology guard, build the whole solution, run every tracked Node test, check the prerequisites, require every selected test to run and pass, report leftover processes and upload the results.
+Any other event or base branch also gets the full scope. Both scopes run the terminology guard, build the whole solution in every Windows job, run every tracked Node test, check the prerequisites, require every selected test to run exactly once and pass, report leftover processes and upload the results.
 
 The fast scope defers two groups, each named by a trait:
 
@@ -82,7 +85,7 @@ Compare-Object $all ($fast + $deferred)
 
 Other in-process integration tests stay in the fast scope, among them the web-host tests for authentication, tenant isolation, session revalidation and rate limits, the realtime hub and load tests and the SQL Server concurrency tests. Since the browsers left the fast scope they are most of its remaining time.
 
-Measured on `windows-latest` (wall time of the Windows job; the Node job takes about 1 to 1.5 minutes in parallel):
+Measured on `windows-latest` while all Windows work was one job (wall time of that job; the Node job takes about 1 to 1.5 minutes in parallel):
 
 | Run | Scope | Windows job | `Wasla.UnitTests` | `Wasla.PrintBridge.Tests` |
 | --- | --- | --- | --- | --- |
@@ -92,7 +95,33 @@ Measured on `windows-latest` (wall time of the Windows job; the Node job takes a
 
 Results count theory cases, so they are higher than the test-method counts above. On the same commit the fast results plus the deferred groups' results (200 and 23) equal the full run's. Earlier full runs of the Windows job took 30 to 47 minutes, so a single run is only an indication.
 
-From 4 to 6 November 2026 the full scope's `Wasla.UnitTests` step took 33 to 52 minutes in passing runs (about 4,430 results). On 6 November a full run of WAS-129 ([run](https://github.com/maliozd/Wasla/actions/runs/42201277724), a newer runner image) took 57 minutes for that step: every test had reported, none stalled (the longest gap between results was 21 s), and the tests both runs share took 1.6 times as long, so the runner was slower throughout. The job's 60-minute limit then cancelled it before Print Bridge. The Windows job's limit is therefore 90 minutes; a hanging test is still stopped after 15 minutes by `--blame-hang-timeout`.
+From 4 to 6 November 2026 the full scope's `Wasla.UnitTests` step took 33 to 52 minutes in passing runs (about 4,430 results). On 6 November a full run of WAS-129 ([run](https://github.com/maliozd/Wasla/actions/runs/42201277724), a newer runner image) took 57 minutes for that step: every test had reported, none stalled (the longest gap between results was 21 s), and the tests both runs share took 1.6 times as long, so the runner was slower throughout. The job's 60-minute limit then cancelled it before Print Bridge, so the single Windows job's limit became 90 minutes. Since the shards (WAS-243) each Windows job runs one part of the suite and has a 60-minute limit; a hanging test is still stopped after 15 minutes by `--blame-hang-timeout`.
+
+### Test shards
+
+The Windows work of a scope is split into jobs that run in parallel on separate runners (WAS-243). `select-test-scope.ps1` defines each shard as rules on traits and namespaces and turns them into its `dotnet test --filter`. A namespace rule covers the namespace and every namespace below it; `Wasla.UnitTests.Auth` does not cover `Wasla.UnitTests.Authorization`.
+
+| Project | Shard | Tests | Scopes |
+| --- | --- | --- | --- |
+| `Wasla.UnitTests` | `nonbrowser-1` | Not `Category=Browser`, namespaces `Auth`, `Routing`, `Printing`, `Contact` | fast and full |
+| `Wasla.UnitTests` | `nonbrowser-2` | Not `Category=Browser`, every other namespace | fast and full |
+| `Wasla.UnitTests` | `browser-1` | `Category=Browser`, namespace `Web` | full |
+| `Wasla.UnitTests` | `browser-2` | `Category=Browser`, every other namespace | full |
+| `Wasla.PrintBridge.Tests` | `print-bridge` | The scope's Print Bridge tests, in the job that also builds the installers | fast and full |
+
+A new test needs no shard of its own: its namespace and traits place it. The namespaces of `nonbrowser-1` were chosen from the class durations of the 2026-11-23 runs so the two non-browser shards take about as long (about 37 and 40 minutes of test-class time, run four classes at a time). `SignupFlowBrowserTests` (about 17 minutes) is the longest single class, so `browser-2` cannot finish sooner. When a shard grows much longer than the others, move a namespace between the two shards of its group in `select-test-scope.ps1`; the accounting below proves the new rules still cover every test once.
+
+Each shard job records, before its tests run, the commit it checked out, its scope and filter, and the test methods its assembly lists (`record-test-shard.ps1`, which runs the xUnit v3 test executable with `-list full/json`). The `test-accounting` job reads those records and the TRX files and runs `assert-test-shards.ps1`. It fails when:
+
+- a planned shard has no record or no TRX file, a TRX file has no results, or a record belongs to a shard the plan does not have;
+- a shard tested another commit, scope or filter than planned;
+- two shards of a project listed different test methods;
+- the shard rules do not partition the scope: a test of the scope that no shard or two shards select, a shard that selects a test outside the scope, or a shard with no test of the scope;
+- a shard did not run one of its planned methods, ran a method it was not planned for, or a method ran in two shards.
+
+Methods are compared by class and method name; a theory's data rows count as one method. The same job then runs `assert-test-results.ps1` over every shard's TRX file, so a failed or skipped test fails it too. The shard jobs check their own results as well, so a failure shows on the job that had it. `scripts/ci/test-shards.test.js` (part of the Node suite) checks the plan of each event and each accounting failure above with made-up results.
+
+To run one shard locally, take its filter from the plan, for example `.\scripts\ci\select-test-scope.ps1 -EventName push`, and pass it to `dotnet test --filter`.
 
 ### Full validation of a feature branch
 
@@ -112,26 +141,27 @@ Moving a pull request's base to `master` starts the full scope by itself: `.gith
 
 Prerequisites on the Windows runner:
 
-- The headless browser is the runner image's Microsoft Edge. The workflow sets `WASLA_TEST_BROWSER` to it and fails before the build if Edge is missing.
+- The headless browser is the runner image's Microsoft Edge. Every `unit-tests` job sets `WASLA_TEST_BROWSER` to it and fails before the build if Edge is missing.
 - The WebView2 runtime tests use the image's WebView2 Runtime and the runner's interactive desktop session. Windows stay off-screen.
 - The Print Bridge runtime tests need at least one installed printer on the runner. Nothing is sent to it.
-- The Print Bridge installer tests (`PrintBridgeInstallerTests`, WAS-62) first check, from the files themselves, that the two setups the Windows job's `Build Print Bridge installers` step built from the same commit are different builds: SHA-256, the setup EXE's and the MSI's version, the version of the two executables in the MSI, different product codes and one upgrade code. Both are signed with a throwaway self-signed certificate the step creates and only that runner trusts (WAS-63; `-TestSigning`, "test-signed development build"), and the check confirms that each file's Authenticode signature matches its metadata. That check changes nothing and also runs locally when `WASLA_PRINT_BRIDGE_SETUP` and `WASLA_PRINT_BRIDGE_UPGRADE_SETUP` name two local builds (signed or unsigned). The update test (WAS-63) installs the older setup without the sign-in start, lets the installed service find, download, verify and stage the newer one from a fake server (a tampered download is refused), runs the staged setup with `FailWhenDeferred=1` so Windows Installer rolls back, then runs it again to a committed update, and checks data, the user's Stop, the startup choice, the service's whole configuration as `sc.exe` reports it (privileges and recovery included, against the installed version's) and the health check each time; the failure is induced and no machine reboot happens. The other two install the older setup, repair it, upgrade it to a build with the next build number, refuse the older setup and MSI, and uninstall it; they also start the installed app as its sign-in entry does and show its WebView2 runtime notice while the service prints (an empty runtime folder set for `Wasla.PrintBridge.exe` only through WebView2's `BrowserExecutableFolder` machine policy: the elevated app ignores `WEBVIEW2_*` environment variables). They run only on GitHub-hosted runners (elevated, disposable) and skip elsewhere; only the installers' version and SHA-256 metadata is uploaded (`print-bridge-installer-metadata`), and the setup and MSI logs, with the installed app's and the service's logs, are in `dotnet-test-results`. See [print-bridge-installer.md](../integrations/print-bridge-installer.md#verification).
+- The Print Bridge installer tests (`PrintBridgeInstallerTests`, WAS-62) first check, from the files themselves, that the two setups the `print-bridge` job's `Build Print Bridge installers` step built from the same commit are different builds: SHA-256, the setup EXE's and the MSI's version, the version of the two executables in the MSI, different product codes and one upgrade code. Both are signed with a throwaway self-signed certificate the step creates and only that runner trusts (WAS-63; `-TestSigning`, "test-signed development build"), and the check confirms that each file's Authenticode signature matches its metadata. That check changes nothing and also runs locally when `WASLA_PRINT_BRIDGE_SETUP` and `WASLA_PRINT_BRIDGE_UPGRADE_SETUP` name two local builds (signed or unsigned). The update test (WAS-63) installs the older setup without the sign-in start, lets the installed service find, download, verify and stage the newer one from a fake server (a tampered download is refused), runs the staged setup with `FailWhenDeferred=1` so Windows Installer rolls back, then runs it again to a committed update, and checks data, the user's Stop, the startup choice, the service's whole configuration as `sc.exe` reports it (privileges and recovery included, against the installed version's) and the health check each time; the failure is induced and no machine reboot happens. The other two install the older setup, repair it, upgrade it to a build with the next build number, refuse the older setup and MSI, and uninstall it; they also start the installed app as its sign-in entry does and show its WebView2 runtime notice while the service prints (an empty runtime folder set for `Wasla.PrintBridge.exe` only through WebView2's `BrowserExecutableFolder` machine policy: the elevated app ignores `WEBVIEW2_*` environment variables). They run only on GitHub-hosted runners (elevated, disposable) and skip elsewhere; only the installers' version and SHA-256 metadata is uploaded (`print-bridge-installer-metadata`), and the setup and MSI logs, with the installed app's and the service's logs, are in `dotnet-test-results-print-bridge`. See [print-bridge-installer.md](../integrations/print-bridge-installer.md#verification).
 - The Print Bridge Windows Service test (`PrintBridgeWindowsServiceTests`, WAS-61) and the cross-account tests need the runner's elevation and run only on GitHub-hosted runners: they register a uniquely named instance of the built service with `sc.exe`, protect its data folder with `secure-data`, create temporary local accounts and a disposable machine printer ("Generic / Text Only" on a loopback TCP/IP port), and remove all of it afterwards. Elsewhere they skip. `WindowsPrintSpoolerTests` (WAS-216) also need the runner: they install a disposable "Generic / Text Only" printer whose loopback TCP/IP port the test listens on (or does not), and check the winspool boundary against the real spooler: job ids, written bytes and finishing, a job that leaves the queue and reaches the port once, a paused queue, jobs that stay queued while nothing listens and are sent once it does, finding a job by its document name, reading another document's job id as not ours, and a removed printer. That is spooler and port evidence, not paper. The engine's own decisions about each Windows outcome run everywhere against a scripted queue (`PrintOutcomeTrackingTests`, `PrintSubmissionTrackerTests`). `WindowsPrintSpoolerNativeResultTests` run `WindowsPrintSpooler` itself, everywhere, against scripted winspool results (return values, last errors, reported byte counts and job listings): failed, partial, zero-progress and implausible writes, and failed, growing and truncated job listings, which the real spooler does not produce on demand. `PrintBridgeServiceProcessTests` start the built `Wasla.PrintBridge.Service.exe` as separate processes (no elevation) and run everywhere. See [print-bridge-service.md](../integrations/print-bridge-service.md#developer-validation).
 - The headless-browser tests need `cdn.jsdelivr.net`. Tests make no other network calls in CI, the workflow uses no repository secrets, and every test server is in-process with fake tokens and data.
 - The runner has no developer environment: no `ENCRYPTION_MASTER_KEY`, user secrets, certificates or local databases. The runner image does ship the SQL Server LocalDB runtime (with Visual Studio); the [SQL Server concurrency tests](#sql-server-concurrency-tests) create their own throwaway database on `(localdb)\MSSQLLocalDB`. A test host that registers the real Infrastructure services must replace `ISecretManager` with a fake (as `TenantVisualWebHost` and `TenantSessionApiHost` do); otherwise a test can pass on a developer machine and fail in CI. `TenantVisualWebHostTests` checks the visual host without the variable.
 - The runner reports `prefers-reduced-motion: reduce`, and a developer machine usually does not. The headless-browser driver (`HeadlessChromium`) therefore starts every browser emulating `prefers-reduced-motion: no-preference`, so a page renders the same everywhere. A test that needs reduced motion sets it for its own browser with `SetReducedMotionAsync("reduce")`. AdminLTE 4.0.0-rc3 displays every `.fade` element under reduced motion, which let a closed modal cover the page (WAS-100); `wasla-theme.css` keeps closed modals hidden, and the `UnderReducedMotion_*` tests in `TenantDarkModeBrowserTests` and `AdminMobileNavigationBrowserTests` check a tenant and an Admin modal at desktop LTR and phone RTL.
 
-The workflow logs the browser version, the WebView2 Runtime version and the number of installed printers before the build.
+The `unit-tests` jobs log the browser version, and the `print-bridge` job the WebView2 Runtime version and the number of installed printers, before the build. Print Bridge tests use SQLite only, so only the `unit-tests` jobs start LocalDB.
 
 How failures surface:
 
-- A build error or a failing test fails its step and the job. The Print Bridge tests still run after a unit-test failure, so one run reports both projects.
-- `scripts/ci/assert-test-results.ps1` then reads every result file, in both scopes. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A filter that selects no test still writes a result file and `dotnet test` still exits with 0, so this check is what fails such a run. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
-- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (90 minutes for Windows, see the measurements above; 15 for Node).
-- After the tests, the Windows job warns (it does not fail or kill anything) when an Edge, WebView2 or test host process outlived them.
-- Results are kept for 14 days as the `dotnet-test-results` (TRX files) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
+- A build error or a failing test fails its step and the job. The other test jobs still run, so one run reports every shard and both projects.
+- `scripts/ci/assert-test-results.ps1` then reads the job's result file, and the `test-accounting` job reads every shard's, in both scopes. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A filter that selects no test still writes a result file and `dotnet test` still exits with 0, so this check is what fails such a run. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
+- A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (60 minutes for each Windows job, see the measurements above; 15 for Node; 10 for the accounting).
+- `test-accounting` fails when a test of the scope did not run, ran twice or in the wrong shard, or a shard is missing or empty (see [Test shards](#test-shards)).
+- After the tests, each Windows job warns (it does not fail or kill anything) when an Edge, WebView2 or test host process outlived them.
+- Results are kept for 14 days as the `dotnet-test-results-<shard>` (TRX files, the shard's record and its assembly's test list; `dotnet-test-results-print-bridge` also has the installer logs) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
 
-To find a failure: open the failed run. The annotations name each failed or skipped test with the first line of its message, and the job summary has the totals. Download the artifact for the full messages and stack traces (the TRX files open in Visual Studio or any XML viewer). A headless-browser page that does not finish loading reports where the page is and what it still waits for. `chrome-error://chromewebdata/` means the server answered with an error. Tests served by `TenantVisualWebHost` put the server's exception first.
+To find a failure: open the failed run. The annotations name each failed or skipped test with the first line of its message, on its shard's job and again on `test-accounting`, and the job summaries have the totals per shard. Download the artifact for the full messages and stack traces (the TRX files open in Visual Studio or any XML viewer). A headless-browser page that does not finish loading reports where the page is and what it still waits for. `chrome-error://chromewebdata/` means the server answered with an error. Tests served by `TenantVisualWebHost` put the server's exception first.
 
 CI does not cover browser smoke of real screens, SQL Server beyond the [SQL Server concurrency tests](#sql-server-concurrency-tests), real platform providers, real printers or physical output, a signed Print Bridge installer, Print Bridge on Windows 10 or on a computer without the WebView2 Runtime, or Print Bridge update delivery. Those stay manual.
 
@@ -190,7 +220,7 @@ In a POSIX shell, the last command is `node --test $(git ls-files '*.test.js')`.
 
 The projects target .NET 8 (`net8.0`, `net8.0-windows`). There is no `global.json`, so a newer SDK also builds them, but the .NET 8 runtimes (`Microsoft.NETCore.App`, `Microsoft.AspNetCore.App`, `Microsoft.WindowsDesktop.App`) must be installed to run the tests. CI uses SDK `8.0.x` and Node.js `24.21.0`.
 
-To reproduce the Windows CI job's full scope exactly, run from the repository root in PowerShell. Clear `ENCRYPTION_MASTER_KEY` in that session first, because the runner does not have it. For the fast scope, add `--filter "Category!=Browser"` to the first `dotnet test` and `--filter "Category!=WebView2Runtime"` to the second:
+To run what the Windows CI jobs run in the full scope, all shards on one machine, run from the repository root in PowerShell. Clear `ENCRYPTION_MASTER_KEY` in that session first, because the runner does not have it. For the fast scope, add `--filter "Category!=Browser"` to the first `dotnet test` and `--filter "Category!=WebView2Runtime"` to the second:
 
 ```powershell
 $env:ENCRYPTION_MASTER_KEY = $null

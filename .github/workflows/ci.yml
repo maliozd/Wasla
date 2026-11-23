@@ -55,18 +55,17 @@ jobs:
           WASLA_RETIRED_TERMS: ${{ vars.WASLA_RETIRED_TERMS }}
         run: node scripts/ci/terminology-guard.js
 
-  build-and-test:
-    name: Release build, .NET and Print Bridge tests (Windows)
-    runs-on: windows-latest
-    # The full scope's Wasla.UnitTests step took 33 to 52 minutes in passing runs and about 57 minutes on a uniformly
-    # slower runner (2026-11-06, every test reported, cancelled at 60 before Print Bridge). With setup (~3 min) and
-    # Print Bridge plus result checks (~3 min) that no longer fits 60. A hanging test is still stopped by
-    # --blame-hang-timeout below.
-    timeout-minutes: 90
-
-    env:
-      DOTNET_NOLOGO: true
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
+  # Chooses the scope (fast or full) and plans the shards that run it: select-test-scope.ps1 owns the scope, the
+  # shards and their filters. Every Windows job below starts from this plan, and test-accounting checks against it.
+  plan:
+    name: Select test scope and shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.select.outputs.scope }}
+      plan: ${{ steps.select.outputs.plan }}
+      unit-shards: ${{ steps.select.outputs.unit-shards }}
+      print-bridge-filter: ${{ steps.select.outputs.print-bridge-filter }}
 
     steps:
       # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
@@ -76,20 +75,49 @@ jobs:
           ref: ${{ inputs.ref }}
 
       # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests); every other event
-      # runs every test. The script owns the filters; see docs/operations/testing.md.
-      - name: Select test scope
+      # runs every test. See docs/operations/testing.md.
+      - name: Select test scope and plan shards
+        id: select
         shell: pwsh
         run: ./scripts/ci/select-test-scope.ps1
+
+  # One job per Wasla.UnitTests shard, each on its own runner with its own build, LocalDB and browser. The shards'
+  # filters partition the scope; test-accounting proves every test of the scope ran in exactly one of them.
+  unit-tests:
+    name: Wasla.UnitTests ${{ matrix.shard.id }}, ${{ matrix.shard.title }} (Windows)
+    needs: plan
+    runs-on: windows-latest
+    # The slowest shard is expected to take about 25 minutes; a runner 1.6 times slower than usual (2026-11-06) still
+    # fits. A hanging test is stopped by --blame-hang-timeout below.
+    timeout-minutes: 60
+    strategy:
+      # Every shard reports its results even when another fails, as the single job reported both suites before.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.unit-shards) }}
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      TEST_SCOPE: ${{ needs.plan.outputs.scope }}
+      SHARD_ID: ${{ matrix.shard.id }}
+      SHARD_FILTER: ${{ matrix.shard.filter }}
+
+    steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
 
-      # The Admin and theme browser tests and the Print Bridge runtime tests skip themselves when their
-      # prerequisite is missing. The browser is chosen here explicitly; a skip of any kind fails the
-      # "Require every test to run and pass" step below.
-      - name: Provide headless browser and report test prerequisites
+      # The Admin and theme browser tests skip themselves when no browser is found. The browser is chosen here
+      # explicitly; a skip of any kind fails the "Require every test to run and pass" step below.
+      - name: Provide headless browser
         shell: pwsh
         run: |
           $edge = @(
@@ -102,14 +130,6 @@ jobs:
           }
           Write-Host "Headless browser: $edge ($((Get-Item -LiteralPath $edge).VersionInfo.ProductVersion))"
           "WASLA_TEST_BROWSER=$edge" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-
-          $webView2 = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
-          $runtime = (Get-ItemProperty -LiteralPath $webView2 -ErrorAction SilentlyContinue).pv
-          if ($runtime) { Write-Host "WebView2 Runtime: $runtime" } else { Write-Host '::warning::No machine-wide WebView2 Runtime registration found; the WebView2 runtime tests will skip and fail the run.' }
-
-          $printers = @(Get-Printer -ErrorAction SilentlyContinue)
-          Write-Host "Installed printers (enumerated only; tests print to a recording fake): $($printers.Count)"
-          if ($printers.Count -eq 0) { Write-Host '::warning::No printer is installed; the Print Bridge runtime tests will skip and fail the run.' }
 
       # Only speeds up the download; restore always runs and resolves every package itself.
       - name: Cache NuGet packages
@@ -126,10 +146,18 @@ jobs:
         id: build
         run: dotnet build Wasla.sln --configuration Release --no-restore
 
+      # The shard's record (commit, scope, filter) and its assembly's test list, for test-accounting. Runs no test.
+      - name: Record the shard and list its project's tests
+        shell: pwsh
+        run: >
+          ./scripts/ci/record-test-shard.ps1 -Project Wasla.UnitTests -Shard $env:SHARD_ID -Scope $env:TEST_SCOPE
+          -Filter $env:SHARD_FILTER -TestExecutable tests/Wasla.UnitTests/bin/Release/net8.0/Wasla.UnitTests.exe
+          -ResultsDirectory artifacts/test-results -ResultsFile "Wasla.UnitTests.$env:SHARD_ID.trx"
+
       # The SQL Server tests use (localdb)\MSSQLLocalDB in both scopes. LocalDB otherwise starts on its first connection,
       # and on a busy runner that start can outlast a test fixture's connect timeout, failing whichever class connects
       # first (#69). Start it explicitly (sqllocaldb start returns once the instance runs) and prove it answers before
-      # any test runs; this step fails, rather than a test, when LocalDB cannot start.
+      # any test runs; this step fails, rather than a test, when LocalDB cannot start. Every shard starts its own.
       - name: Start and verify SQL Server LocalDB
         shell: powershell
         run: |
@@ -167,20 +195,107 @@ jobs:
             $connection.Dispose()
           }
 
-      # An empty filter (full scope) passes no --filter, so the whole project runs.
-      - name: Run Wasla.UnitTests (${{ env.TEST_SCOPE }})
+      # The planned shard filters are never empty; an empty one would pass no --filter and run the whole project.
+      - name: Run Wasla.UnitTests ${{ matrix.shard.id }} (${{ needs.plan.outputs.scope }})
         shell: pwsh
         run: |
-          $filter = if ($env:UNIT_TESTS_FILTER) { '--filter', $env:UNIT_TESTS_FILTER } else { @() }
+          $filter = if ($env:SHARD_FILTER) { '--filter', $env:SHARD_FILTER } else { @() }
           dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj `
             --configuration Release `
             --no-build `
             --verbosity normal `
-            --logger "trx;LogFileName=Wasla.UnitTests.trx" `
+            --logger "trx;LogFileName=Wasla.UnitTests.$env:SHARD_ID.trx" `
             --results-directory artifacts/test-results `
             --blame-hang-timeout 15m `
             --blame-hang-dump-type none `
             @filter
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: ./scripts/ci/assert-test-results.ps1 -Path "artifacts/test-results/Wasla.UnitTests.$env:SHARD_ID.trx"
+
+      # Every test must stop the browsers, WebView2 hosts and test hosts it started. A survivor is reported here, not
+      # killed, so a cleanup leak shows up in the run instead of slowing or breaking later tests unnoticed.
+      - name: Report leftover browser and test processes
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $left = @(Get-Process -Name msedge, msedgewebview2, testhost -ErrorAction SilentlyContinue)
+          if ($left.Count -eq 0) { Write-Host 'No Edge, WebView2 or test host process is left running.'; exit 0 }
+          $left | Group-Object ProcessName | ForEach-Object { Write-Host "$($_.Name): $($_.Count) left running" }
+          Write-Host "::warning title=Leftover processes::$($left.Count) Edge, WebView2 or test host process(es) outlived the tests."
+
+      - name: Upload .NET test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dotnet-test-results-${{ matrix.shard.id }}
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  print-bridge:
+    name: Print Bridge installers and Wasla.PrintBridge.Tests (Windows)
+    needs: plan
+    runs-on: windows-latest
+    # Installers and tests took 14 to 18 minutes in measured runs; a hanging test is stopped by --blame-hang-timeout.
+    timeout-minutes: 60
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      TEST_SCOPE: ${{ needs.plan.outputs.scope }}
+      PRINT_BRIDGE_TESTS_FILTER: ${{ needs.plan.outputs.print-bridge-filter }}
+
+    steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # The Print Bridge runtime tests skip themselves when their prerequisite is missing; a skip of any kind fails the
+      # "Require every test to run and pass" step below.
+      - name: Report Print Bridge test prerequisites
+        shell: pwsh
+        run: |
+          $webView2 = 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $runtime = (Get-ItemProperty -LiteralPath $webView2 -ErrorAction SilentlyContinue).pv
+          if ($runtime) { Write-Host "WebView2 Runtime: $runtime" } else { Write-Host '::warning::No machine-wide WebView2 Runtime registration found; the WebView2 runtime tests will skip and fail the run.' }
+
+          $printers = @(Get-Printer -ErrorAction SilentlyContinue)
+          Write-Host "Installed printers (enumerated only; tests print to a recording fake): $($printers.Count)"
+          if ($printers.Count -eq 0) { Write-Host '::warning::No printer is installed; the Print Bridge runtime tests will skip and fail the run.' }
+
+      # Only speeds up the download; restore always runs and resolves every package itself.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore solution
+        run: dotnet restore Wasla.sln
+
+      - name: Build solution
+        id: build
+        run: dotnet build Wasla.sln --configuration Release --no-restore
+
+      # The shard's record (commit, scope, filter) and its assembly's test list, for test-accounting. Runs no test.
+      - name: Record the shard and list its project's tests
+        shell: pwsh
+        run: >
+          ./scripts/ci/record-test-shard.ps1 -Project Wasla.PrintBridge.Tests -Shard print-bridge -Scope $env:TEST_SCOPE
+          -Filter $env:PRINT_BRIDGE_TESTS_FILTER
+          -TestExecutable tests/Wasla.PrintBridge.Tests/bin/Release/net8.0-windows/Wasla.PrintBridge.Tests.exe
+          -ResultsDirectory artifacts/test-results -ResultsFile Wasla.PrintBridge.Tests.trx
 
       # WAS-62: this commit's Print Bridge setup EXE and MSI, and a build of the same commit with the next build number
       # for the upgrade test. PrintBridgeInstallerTests install, repair, upgrade, update (WAS-63) and uninstall them on this
@@ -218,8 +333,8 @@ jobs:
           ) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Print Bridge setups: $current and $next (test-signed development builds)"
 
-      # Runs after a unit-test failure too, so one run reports both suites.
-      - name: Run Wasla.PrintBridge.Tests (${{ env.TEST_SCOPE }})
+      # Runs after an installer build failure too, so the tests that do not need the installers still report.
+      - name: Run Wasla.PrintBridge.Tests (${{ needs.plan.outputs.scope }})
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: pwsh
         run: |
@@ -237,10 +352,7 @@ jobs:
       - name: Require every test to run and pass
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: pwsh
-        run: >
-          ./scripts/ci/assert-test-results.ps1 -Path
-          artifacts/test-results/Wasla.UnitTests.trx,
-          artifacts/test-results/Wasla.PrintBridge.Tests.trx
+        run: ./scripts/ci/assert-test-results.ps1 -Path artifacts/test-results/Wasla.PrintBridge.Tests.trx
 
       # Every test must stop the browsers, WebView2 hosts and test hosts it started. A survivor is reported here, not
       # killed, so a cleanup leak shows up in the run instead of slowing or breaking later tests unnoticed.
@@ -257,7 +369,7 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: dotnet-test-results
+          name: dotnet-test-results-print-bridge
           path: artifacts/test-results/
           if-no-files-found: warn
           retention-days: 14
@@ -275,6 +387,43 @@ jobs:
             artifacts/print-bridge-upgrade/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 14
+
+  # Runs after the test jobs, also when one of them failed, so one run reports every shard. It fails when a planned
+  # shard has no results, when a test of the scope did not run, ran twice or ran in another shard than planned, when a
+  # shard tested another commit, and when any test failed or was skipped.
+  test-accounting:
+    name: Require every planned test to run once and pass
+    needs: [plan, unit-tests, print-bridge]
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # The same commit the test jobs checked out; its scripts check their results.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download every shard's test results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: dotnet-test-results-*
+          path: artifacts/shards
+
+      - name: Require every planned test to run exactly once, in its planned shard
+        shell: pwsh
+        env:
+          TEST_PLAN: ${{ needs.plan.outputs.plan }}
+        run: ./scripts/ci/assert-test-shards.ps1 -Plan $env:TEST_PLAN -ResultsRoot artifacts/shards -Commit (git rev-parse HEAD)
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem -Path artifacts/shards -Recurse -File -Filter *.trx -ErrorAction SilentlyContinue | Sort-Object FullName | ForEach-Object { $_.FullName })
+          if ($files.Count -eq 0) { Write-Host '::error title=Missing test results::No shard uploaded a result file.'; exit 1 }
+          ./scripts/ci/assert-test-results.ps1 -Path $files
 
   javascript-tests:
     name: JavaScript tests (Node.js)
