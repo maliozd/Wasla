@@ -99,29 +99,32 @@ From 4 to 6 November 2026 the full scope's `Wasla.UnitTests` step took 33 to 52 
 
 ### Test shards
 
-The Windows work of a scope is split into jobs that run in parallel on separate runners (WAS-243). `select-test-scope.ps1` defines each shard as rules on traits and namespaces and turns them into its `dotnet test --filter`. A namespace rule covers the namespace and every namespace below it; `Wasla.UnitTests.Auth` does not cover `Wasla.UnitTests.Authorization`.
+The Windows work of a scope is split into jobs that run in parallel on separate runners (WAS-243). `select-test-scope.ps1` defines each shard as rules on traits and on prefixes of the fully qualified test name (`Namespace.Class.Method`), turns them into its `dotnet test --filter`, and gives it a limit on the test classes xUnit runs at once (none: xUnit's default, one per CPU, four on `windows-latest`). A namespace prefix ends with a dot, so it covers the namespace and every namespace below it, and `Wasla.UnitTests.Auth.` does not cover `Wasla.UnitTests.Authorization`.
 
-| Project | Shard | Tests | Scopes |
-| --- | --- | --- | --- |
-| `Wasla.UnitTests` | `nonbrowser-1` | Not `Category=Browser`, namespaces `Auth`, `Routing`, `Printing`, `Contact` | fast and full |
-| `Wasla.UnitTests` | `nonbrowser-2` | Not `Category=Browser`, every other namespace | fast and full |
-| `Wasla.UnitTests` | `browser-1` | `Category=Browser`, namespace `Web` | full |
-| `Wasla.UnitTests` | `browser-2` | `Category=Browser`, every other namespace | full |
-| `Wasla.PrintBridge.Tests` | `print-bridge` | The scope's Print Bridge tests, in the job that also builds the installers | fast and full |
+| Project | Shard | Tests | Classes at once | Scopes |
+| --- | --- | --- | --- | --- |
+| `Wasla.UnitTests` | `nonbrowser-1` | Not `Category=Browser`, namespaces `Auth`, `Routing`, `Printing`, `Contact` | default | fast and full |
+| `Wasla.UnitTests` | `nonbrowser-2` | Not `Category=Browser`, every other namespace | default | fast and full |
+| `Wasla.UnitTests` | `browser-1` | `Category=Browser`, classes of the `Web` namespace whose names start with `L`, `O` or `P` | 2 | full |
+| `Wasla.UnitTests` | `browser-2` | `Category=Browser`, the other classes of the `Web` namespace | 2 | full |
+| `Wasla.UnitTests` | `browser-3` | `Category=Browser`, every other namespace | 2 | full |
+| `Wasla.PrintBridge.Tests` | `print-bridge` | The scope's Print Bridge tests, in the job that also builds the installers | default | fast and full |
 
-A new test needs no shard of its own: its namespace and traits place it. The namespaces of `nonbrowser-1` were chosen from the class durations of the 2026-11-23 runs so the two non-browser shards take about as long (about 37 and 40 minutes of test-class time, run four classes at a time). `SignupFlowBrowserTests` (about 17 minutes) is the longest single class, so `browser-2` cannot finish sooner. When a shard grows much longer than the others, move a namespace between the two shards of its group in `select-test-scope.ps1`; the accounting below proves the new rules still cover every test once.
+A new test needs no shard of its own: its traits, namespace and class name place it. The prefixes were chosen from the class durations of the 2026-11-23 runs so the shards of a group take about as long: about 37 and 40 minutes of test-class time for the two non-browser shards, and about 38, 39 and 35 for the three browser shards. `SignupFlowBrowserTests` (9 to 17 minutes) is the longest single class, so `browser-3` cannot finish sooner. When a shard grows much longer than the others of its group, move a prefix between them in `select-test-scope.ps1`; the accounting below proves the new rules still cover every test once.
 
-Each shard job records, before its tests run, the commit it checked out, its scope and filter, and the test methods its assembly lists (`record-test-shard.ps1`, which runs the xUnit v3 test executable with `-list full/json`). The `test-accounting` job reads those records and the TRX files and runs `assert-test-shards.ps1`. It fails when:
+The browser shards run at most two test classes at once. In the single Windows job before WAS-243, browser classes shared the runner with the other tests, and four browser tests ran at once at most 11 % of the time (one or two most of the time). The first shard layout ran four browser classes at once for 43 % of its time; three realtime browser classes then started together and `RealtimeLifecycleBrowserTests` missed its 8-second wait for a pushed order (run [45258289534](https://github.com/maliozd/Wasla/actions/runs/45258289534)). The limit keeps every browser test at a density no higher than that job usually had; it does not change any test or wait.
+
+Each shard job records, before its tests run, the commit it checked out, its scope, filter and limit, and the test methods its assembly lists (`record-test-shard.ps1`, which runs the xUnit v3 test executable with `-list full/json`). The `test-accounting` job reads those records and the TRX files and runs `assert-test-shards.ps1`. It fails when:
 
 - a planned shard has no record or no TRX file, a TRX file has no results, or a record belongs to a shard the plan does not have;
-- a shard tested another commit, scope or filter than planned;
+- a shard tested another commit, scope, filter or limit on classes at once than planned;
 - two shards of a project listed different test methods;
 - the shard rules do not partition the scope: a test of the scope that no shard or two shards select, a shard that selects a test outside the scope, or a shard with no test of the scope;
 - a shard did not run one of its planned methods, ran a method it was not planned for, or a method ran in two shards.
 
 Methods are compared by class and method name; a theory's data rows count as one method. The same job then runs `assert-test-results.ps1` over every shard's TRX file, so a failed or skipped test fails it too. The shard jobs check their own results as well, so a failure shows on the job that had it. `scripts/ci/test-shards.test.js` (part of the Node suite) checks the plan of each event and each accounting failure above with made-up results.
 
-To run one shard locally, take its filter from the plan, for example `.\scripts\ci\select-test-scope.ps1 -EventName push`, and pass it to `dotnet test --filter`.
+To run one shard locally, take its filter and limit from the plan, for example `.\scripts\ci\select-test-scope.ps1 -EventName push`, and pass them to `dotnet test --filter "<filter>" -- xUnit.MaxParallelThreads=<limit>` (leave out the part after `--` for a shard without a limit).
 
 ### Full validation of a feature branch
 

@@ -5,12 +5,13 @@
 
 .DESCRIPTION
     select-test-scope.ps1 plans the scope's shards; each shard runs in its own job, which records in its result folder
-    a test-shard.json (project, shard, scope, filter, commit and the names of its two files below), the discovery
+    a test-shard.json (project, shard, scope, filter, parallelism, commit and the names of its two files below), the discovery
     listing of its test assembly (xUnit v3 "-list full/json": every test method with its traits) and its TRX file.
 
     For every project of the plan this script checks:
-      - every planned shard has exactly one record, made on the expected commit, in the planned scope and with the
-        planned filter, and no record belongs to a shard the plan does not have;
+      - every planned shard has exactly one record, made on the expected commit, in the planned scope, with the
+        planned filter and the planned limit on classes run at once, and no record belongs to a shard the plan does
+        not have;
       - every shard of a project listed the same test methods;
       - the plan's rules partition the scope: each listed method outside the scope's excluded traits is in exactly
         one shard, and no shard selects a method outside the scope;
@@ -135,16 +136,22 @@ function Test-Trait($traits, [string] $rule) {
     return @($traits[$name]) -contains $value
 }
 
-function Test-InNamespace([string] $class, [string] $namespace) {
-    return $class.StartsWith("$namespace.", [System.StringComparison]::OrdinalIgnoreCase)
+# The shard's filter tests "contains" (VSTest '~'); every fully qualified name starts with its project's root namespace,
+# and so does every planned prefix. A difference between the two shows up as an omitted or unexpected test.
+function Test-Prefix([string] $name, [string] $prefix) {
+    return $name.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)
 }
 
-function Test-ShardRules($shard, $test) {
+function Test-ShardRules($shard, [string] $name, $test) {
     foreach ($rule in @($shard.requireTraits)) { if (-not (Test-Trait $test.Traits $rule)) { return $false } }
     foreach ($rule in @($shard.excludeTraits)) { if (Test-Trait $test.Traits $rule) { return $false } }
-    $namespaces = @($shard.namespaces)
-    if ($namespaces.Count -gt 0 -and -not @($namespaces | Where-Object { Test-InNamespace $test.Class $_ }).Count) { return $false }
-    foreach ($namespace in @($shard.exceptNamespaces)) { if (Test-InNamespace $test.Class $namespace) { return $false } }
+    $prefixes = @($shard.prefixes)
+    if ($prefixes.Count -gt 0) {
+        $any = $false
+        foreach ($prefix in $prefixes) { if (Test-Prefix $name $prefix) { $any = $true; break } }
+        if (-not $any) { return $false }
+    }
+    foreach ($prefix in @($shard.exceptPrefixes)) { if (Test-Prefix $name $prefix) { return $false } }
     return $true
 }
 
@@ -209,6 +216,10 @@ foreach ($project in @($planObject.projects)) {
         if ($record.commit -ne $Commit) { Add-Problem "${label}: tested commit $($record.commit), not $Commit." }
         if ($record.scope -ne $planObject.scope) { Add-Problem "${label}: ran the $($record.scope) scope, not $($planObject.scope)." }
         if ([string]$record.filter -ne [string]$shard.filter) { Add-Problem "${label}: ran filter '$($record.filter)', not the planned '$($shard.filter)'." }
+        $recordedThreads = Get-Field $record 'maxParallelThreads'
+        if ([string]$recordedThreads -ne [string]$shard.maxParallelThreads) {
+            Add-Problem "${label}: ran with a limit of '$recordedThreads' test classes at once, not the planned $($shard.maxParallelThreads) (0: xUnit's default)."
+        }
 
         $discoveryFile = Join-Path $folder ([string]$record.discovery)
         if (-not $record.discovery -or -not (Test-Path -LiteralPath $discoveryFile -PathType Leaf)) {
@@ -256,7 +267,7 @@ foreach ($project in @($planObject.projects)) {
     foreach ($name in $tests.Keys) {
         $test = $tests[$name]
         $inScope = -not @($scopeExclusions | Where-Object { Test-Trait $test.Traits $_ }).Count
-        $owners = @($shards | Where-Object { Test-ShardRules $_ $test })
+        $owners = @(foreach ($shard in $shards) { if (Test-ShardRules $shard $name $test) { $shard } })
         if ($inScope -and $owners.Count -eq 0) { $notCovered.Add($name) }
         elseif ($inScope -and $owners.Count -gt 1) { $overlapping.Add("$name ($(@($owners | ForEach-Object { $_.id }) -join ', '))") }
         elseif (-not $inScope -and $owners.Count -gt 0) { $outOfScope.Add("$name ($(@($owners | ForEach-Object { $_.id }) -join ', '))") }

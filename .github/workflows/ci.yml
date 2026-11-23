@@ -102,6 +102,7 @@ jobs:
       TEST_SCOPE: ${{ needs.plan.outputs.scope }}
       SHARD_ID: ${{ matrix.shard.id }}
       SHARD_FILTER: ${{ matrix.shard.filter }}
+      SHARD_MAX_PARALLEL_THREADS: ${{ matrix.shard.maxParallelThreads }}
 
     steps:
       # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
@@ -151,7 +152,8 @@ jobs:
         shell: pwsh
         run: >
           ./scripts/ci/record-test-shard.ps1 -Project Wasla.UnitTests -Shard $env:SHARD_ID -Scope $env:TEST_SCOPE
-          -Filter $env:SHARD_FILTER -TestExecutable tests/Wasla.UnitTests/bin/Release/net8.0/Wasla.UnitTests.exe
+          -Filter $env:SHARD_FILTER -MaxParallelThreads $env:SHARD_MAX_PARALLEL_THREADS
+          -TestExecutable tests/Wasla.UnitTests/bin/Release/net8.0/Wasla.UnitTests.exe
           -ResultsDirectory artifacts/test-results -ResultsFile "Wasla.UnitTests.$env:SHARD_ID.trx"
 
       # The SQL Server tests use (localdb)\MSSQLLocalDB in both scopes. LocalDB otherwise starts on its first connection,
@@ -195,11 +197,13 @@ jobs:
             $connection.Dispose()
           }
 
-      # The planned shard filters are never empty; an empty one would pass no --filter and run the whole project.
+      # The planned shard filters are never empty; an empty one would pass no --filter and run the whole project. A shard
+      # with a limit passes it to xUnit as a RunSettings argument (the browser shards run at most two classes at once).
       - name: Run Wasla.UnitTests ${{ matrix.shard.id }} (${{ needs.plan.outputs.scope }})
         shell: pwsh
         run: |
           $filter = if ($env:SHARD_FILTER) { '--filter', $env:SHARD_FILTER } else { @() }
+          $runSettings = if ([int]$env:SHARD_MAX_PARALLEL_THREADS -gt 0) { '--', "xUnit.MaxParallelThreads=$env:SHARD_MAX_PARALLEL_THREADS" } else { @() }
           dotnet test tests/Wasla.UnitTests/Wasla.UnitTests.csproj `
             --configuration Release `
             --no-build `
@@ -208,7 +212,8 @@ jobs:
             --results-directory artifacts/test-results `
             --blame-hang-timeout 15m `
             --blame-hang-dump-type none `
-            @filter
+            @filter `
+            @runSettings
 
       - name: Require every test to run and pass
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
@@ -293,7 +298,7 @@ jobs:
         shell: pwsh
         run: >
           ./scripts/ci/record-test-shard.ps1 -Project Wasla.PrintBridge.Tests -Shard print-bridge -Scope $env:TEST_SCOPE
-          -Filter $env:PRINT_BRIDGE_TESTS_FILTER
+          -Filter $env:PRINT_BRIDGE_TESTS_FILTER -MaxParallelThreads 0
           -TestExecutable tests/Wasla.PrintBridge.Tests/bin/Release/net8.0-windows/Wasla.PrintBridge.Tests.exe
           -ResultsDirectory artifacts/test-results -ResultsFile Wasla.PrintBridge.Tests.trx
 

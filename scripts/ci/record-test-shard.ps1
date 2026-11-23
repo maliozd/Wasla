@@ -7,8 +7,8 @@
     Writes two files into the shard's results folder, before its tests run:
       - <Project>.discovery.json: every test method of the built test assembly with its traits, as the xUnit v3
         runner lists them ("-list full/json"; no test runs);
-      - test-shard.json: the project, shard, scope and filter of this job, the commit it checked out, and the names
-        of the discovery listing and of the TRX file the job's dotnet test writes.
+      - test-shard.json: the project, shard, scope, filter and limit on test classes run at once of this job, the
+        commit it checked out, and the names of the discovery listing and of the TRX file the job's dotnet test writes.
 
     Fails when the assembly cannot be listed or lists no test.
 
@@ -23,6 +23,9 @@
 
 .PARAMETER Filter
     The dotnet test --filter the job runs (empty for the whole project).
+
+.PARAMETER MaxParallelThreads
+    The limit on test classes run at once the job passes to xUnit (0: xUnit's default, one per CPU).
 
 .PARAMETER TestExecutable
     The built xUnit v3 test executable, for example tests/Wasla.UnitTests/bin/Release/net8.0/Wasla.UnitTests.exe.
@@ -39,6 +42,7 @@ param(
     [Parameter(Mandatory = $true)] [string] $Shard,
     [Parameter(Mandatory = $true)] [ValidateSet('fast', 'full')] [string] $Scope,
     [AllowEmptyString()] [string] $Filter = '',
+    [ValidateRange(0, 64)] [int] $MaxParallelThreads = 0,
     [Parameter(Mandatory = $true)] [string] $TestExecutable,
     [Parameter(Mandatory = $true)] [string] $ResultsDirectory,
     [Parameter(Mandatory = $true)] [string] $ResultsFile
@@ -80,13 +84,14 @@ $discovery = "$Project.discovery.json"
 [System.IO.File]::WriteAllText((Join-Path $ResultsDirectory $discovery), $listing, $utf8)
 
 $record = [ordered]@{
-    project   = $Project
-    shard     = $Shard
-    scope     = $Scope
-    filter    = $Filter
-    commit    = $commit
-    results   = $ResultsFile
-    discovery = $discovery
+    project            = $Project
+    shard              = $Shard
+    scope              = $Scope
+    filter             = $Filter
+    maxParallelThreads = $MaxParallelThreads
+    commit             = $commit
+    results            = $ResultsFile
+    discovery          = $discovery
 }
 [System.IO.File]::WriteAllText((Join-Path $ResultsDirectory 'test-shard.json'), (ConvertTo-Json -InputObject $record), $utf8)
 

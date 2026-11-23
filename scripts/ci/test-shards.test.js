@@ -47,8 +47,8 @@ function plan(eventName, baseRef = '') {
 const browser = { Category: ['Browser'] };
 const webView2 = { Category: ['WebView2Runtime'] };
 
-// A small test assembly per project: every shard rule has tests, and a look-alike namespace
-// (Wasla.UnitTests.Authorization) must not count as Wasla.UnitTests.Auth.
+// A small test assembly per project: every shard rule has tests, and look-alike namespaces
+// (Wasla.UnitTests.Authorization, Wasla.UnitTests.WebHosting) must not count as Auth or Web.
 const discovered = {
   'Wasla.UnitTests': [
     ['Wasla.UnitTests.Auth.LoginTests', 'SignsIn'],
@@ -61,7 +61,10 @@ const discovered = {
     ['Wasla.UnitTests.Web.LayoutTests', 'Renders'],
     ['Wasla.UnitTests.Web.LiveScreenBrowserTests', 'Loads', browser],
     ['Wasla.UnitTests.Web.LiveScreenBrowserTests', 'Refreshes', browser],
+    ['Wasla.UnitTests.Web.OrderModalBrowserTests', 'Opens', browser],
+    ['Wasla.UnitTests.Web.TenantDarkModeBrowserTests', 'Paints', browser],
     ['Wasla.UnitTests.Signup.SignupFlowBrowserTests', 'Submits', browser],
+    ['Wasla.UnitTests.WebHosting.HostBrowserTests', 'Serves', browser],
   ],
   'Wasla.PrintBridge.Tests': [
     ['Wasla.PrintBridge.Tests.EngineTests', 'Polls'],
@@ -79,8 +82,9 @@ const expectedShards = {
 };
 expectedShards.full = {
   ...expectedShards.fast,
-  'browser-1': ['Wasla.UnitTests.Web.LiveScreenBrowserTests.Loads', 'Wasla.UnitTests.Web.LiveScreenBrowserTests.Refreshes'],
-  'browser-2': ['Wasla.UnitTests.Signup.SignupFlowBrowserTests.Submits'],
+  'browser-1': ['Wasla.UnitTests.Web.LiveScreenBrowserTests.Loads', 'Wasla.UnitTests.Web.LiveScreenBrowserTests.Refreshes', 'Wasla.UnitTests.Web.OrderModalBrowserTests.Opens'],
+  'browser-2': ['Wasla.UnitTests.Web.TenantDarkModeBrowserTests.Paints'],
+  'browser-3': ['Wasla.UnitTests.Signup.SignupFlowBrowserTests.Submits', 'Wasla.UnitTests.WebHosting.HostBrowserTests.Serves'],
   'print-bridge': [...expectedShards.fast['print-bridge'], 'Wasla.PrintBridge.Tests.WebShell.ShellWebViewRuntimeTests.Renders'],
 };
 
@@ -130,6 +134,7 @@ function writeResults(root, testPlan, change = {}) {
         shard: shard.id,
         scope: testPlan.scope,
         filter: shard.filter,
+        maxParallelThreads: shard.maxParallelThreads,
         commit,
         results: `${project.project}.${shard.id}.trx`,
         discovery: `${project.project}.discovery.json`,
@@ -166,29 +171,30 @@ test('a pull request into dev plans the fast scope: two non-browser unit shards 
   const [unit, printBridge] = fastPlan.projects;
   assert.equal(unit.project, 'Wasla.UnitTests');
   assert.deepEqual(unit.scopeExcludesTraits, ['Category=Browser']);
-  assert.deepEqual(unit.shards.map(s => [s.id, s.filter]), [
-    ['nonbrowser-1', 'Category!=Browser&(FullyQualifiedName~Wasla.UnitTests.Auth.|FullyQualifiedName~Wasla.UnitTests.Routing.|FullyQualifiedName~Wasla.UnitTests.Printing.|FullyQualifiedName~Wasla.UnitTests.Contact.)'],
-    ['nonbrowser-2', 'Category!=Browser&FullyQualifiedName!~Wasla.UnitTests.Auth.&FullyQualifiedName!~Wasla.UnitTests.Routing.&FullyQualifiedName!~Wasla.UnitTests.Printing.&FullyQualifiedName!~Wasla.UnitTests.Contact.'],
+  assert.deepEqual(unit.shards.map(s => [s.id, s.filter, s.maxParallelThreads]), [
+    ['nonbrowser-1', 'Category!=Browser&(FullyQualifiedName~Wasla.UnitTests.Auth.|FullyQualifiedName~Wasla.UnitTests.Routing.|FullyQualifiedName~Wasla.UnitTests.Printing.|FullyQualifiedName~Wasla.UnitTests.Contact.)', 0],
+    ['nonbrowser-2', 'Category!=Browser&FullyQualifiedName!~Wasla.UnitTests.Auth.&FullyQualifiedName!~Wasla.UnitTests.Routing.&FullyQualifiedName!~Wasla.UnitTests.Printing.&FullyQualifiedName!~Wasla.UnitTests.Contact.', 0],
   ]);
   assert.equal(printBridge.project, 'Wasla.PrintBridge.Tests');
   assert.deepEqual(printBridge.scopeExcludesTraits, ['Category=WebView2Runtime']);
-  assert.deepEqual(printBridge.shards.map(s => [s.id, s.filter]), [['print-bridge', 'Category!=WebView2Runtime']]);
+  assert.deepEqual(printBridge.shards.map(s => [s.id, s.filter, s.maxParallelThreads]), [['print-bridge', 'Category!=WebView2Runtime', 0]]);
 });
 
 for (const [eventName, baseRef] of [['push', ''], ['workflow_dispatch', ''], ['pull_request', 'master'], ['merge_group', ''], ['', '']]) {
-  test(`${eventName || 'an unknown event'}${baseRef ? ` into ${baseRef}` : ''} plans the full scope with every test`, () => {
+  test(`${eventName || 'an unknown event'}${baseRef ? ` into ${baseRef}` : ''} plans the full scope with every test, browser shards two classes at a time`, () => {
     const testPlan = plan(eventName, baseRef);
     assert.equal(testPlan.scope, 'full');
     const [unit, printBridge] = testPlan.projects;
     assert.deepEqual(unit.scopeExcludesTraits, []);
-    assert.deepEqual(unit.shards.map(s => [s.id, s.filter]), [
-      ['nonbrowser-1', fastPlan.projects[0].shards[0].filter],
-      ['nonbrowser-2', fastPlan.projects[0].shards[1].filter],
-      ['browser-1', 'Category=Browser&(FullyQualifiedName~Wasla.UnitTests.Web.)'],
-      ['browser-2', 'Category=Browser&FullyQualifiedName!~Wasla.UnitTests.Web.'],
+    assert.deepEqual(unit.shards.map(s => [s.id, s.filter, s.maxParallelThreads]), [
+      ['nonbrowser-1', fastPlan.projects[0].shards[0].filter, 0],
+      ['nonbrowser-2', fastPlan.projects[0].shards[1].filter, 0],
+      ['browser-1', 'Category=Browser&(FullyQualifiedName~Wasla.UnitTests.Web.L|FullyQualifiedName~Wasla.UnitTests.Web.O|FullyQualifiedName~Wasla.UnitTests.Web.P)', 2],
+      ['browser-2', 'Category=Browser&(FullyQualifiedName~Wasla.UnitTests.Web.)&FullyQualifiedName!~Wasla.UnitTests.Web.L&FullyQualifiedName!~Wasla.UnitTests.Web.O&FullyQualifiedName!~Wasla.UnitTests.Web.P', 2],
+      ['browser-3', 'Category=Browser&FullyQualifiedName!~Wasla.UnitTests.Web.', 2],
     ]);
     assert.deepEqual(printBridge.scopeExcludesTraits, []);
-    assert.deepEqual(printBridge.shards.map(s => [s.id, s.filter]), [['print-bridge', '']]);
+    assert.deepEqual(printBridge.shards.map(s => [s.id, s.filter, s.maxParallelThreads]), [['print-bridge', '', 0]]);
   });
 }
 
@@ -208,7 +214,7 @@ test('on GitHub Actions the plan, the unit-test matrix and the Print Bridge filt
     assert.deepEqual(Object.keys(outputs), ['scope', 'plan', 'unit-shards', 'print-bridge-filter']);
     assert.equal(outputs.scope, 'fast');
     assert.deepEqual(JSON.parse(outputs.plan), fastPlan);
-    assert.deepEqual(JSON.parse(outputs['unit-shards']), fastPlan.projects[0].shards.map(({ id, title, filter }) => ({ id, title, filter })));
+    assert.deepEqual(JSON.parse(outputs['unit-shards']), fastPlan.projects[0].shards.map(({ id, title, filter, maxParallelThreads }) => ({ id, title, filter, maxParallelThreads })));
     assert.equal(outputs['print-bridge-filter'], 'Category!=WebView2Runtime');
     assert.match(fs.readFileSync(summary, 'utf8'), /\*\*Test scope: fast\*\*/);
   } finally {
@@ -262,7 +268,7 @@ test('a result file with no test results fails the accounting', () => {
   const result = account(fullPlan, { ran: { 'browser-1': [] } });
   assert.equal(result.status, 1);
   assert.match(result.output, /browser-1: Wasla\.UnitTests\.browser-1\.trx contains no test results/);
-  assert.match(result.output, /browser-1: planned methods that did not run: 2/);
+  assert.match(result.output, /browser-1: planned methods that did not run: 3/);
 });
 
 test('a shard that tested another commit fails the accounting', () => {
@@ -271,11 +277,15 @@ test('a shard that tested another commit fails the accounting', () => {
   assert.match(result.output, /nonbrowser-2: tested commit b{40}, not a{40}/);
 });
 
-test('a shard that ran another filter or scope fails the accounting', () => {
-  const result = account(fastPlan, { record: { 'print-bridge': { filter: '', scope: 'full' } } });
+test('a shard that ran another filter, scope or parallelism fails the accounting', () => {
+  let result = account(fastPlan, { record: { 'print-bridge': { filter: '', scope: 'full' } } });
   assert.equal(result.status, 1);
   assert.match(result.output, /print-bridge: ran the full scope, not fast/);
   assert.match(result.output, /print-bridge: ran filter '', not the planned 'Category!=WebView2Runtime'/);
+
+  result = account(fullPlan, { record: { 'browser-2': { maxParallelThreads: 0 } } });
+  assert.equal(result.status, 1);
+  assert.match(result.output, /browser-2: ran with a limit of '0' test classes at once, not the planned 2/);
 });
 
 test('a result for a shard the plan does not have fails the accounting', () => {
@@ -292,28 +302,28 @@ test('a result for a shard the plan does not have fails the accounting', () => {
 
 test('shards that listed different tests fail the accounting', () => {
   const fewer = discovered['Wasla.UnitTests'].slice(1);
-  const result = account(fullPlan, { discovery: { 'browser-2': fewer } });
+  const result = account(fullPlan, { discovery: { 'browser-3': fewer } });
   assert.equal(result.status, 1);
-  assert.match(result.output, /Wasla\.UnitTests shards browser-1 and browser-2 listed different tests \(1 only in browser-1, 0 only in browser-2\)/);
+  assert.match(result.output, /Wasla\.UnitTests shards browser-1 and browser-3 listed different tests \(1 only in browser-1, 0 only in browser-3\)/);
 });
 
 test('a shard the plan leaves empty fails the accounting', () => {
-  const noOtherBrowserTests = discovered['Wasla.UnitTests'].filter(([cls]) => !cls.includes('Signup'));
+  const noOtherBrowserTests = discovered['Wasla.UnitTests'].filter(([cls]) => !cls.includes('Signup') && !cls.includes('WebHosting'));
   const discovery = Object.fromEntries(fullPlan.projects[0].shards.map(s => [s.id, noOtherBrowserTests]));
-  const result = account(fullPlan, { discovery, ran: { 'browser-2': [] } });
+  const result = account(fullPlan, { discovery, ran: { 'browser-3': [] } });
   assert.equal(result.status, 1);
-  assert.match(result.output, /browser-2: the plan selects no test of the scope; an empty shard proves nothing/);
+  assert.match(result.output, /browser-3: the plan selects no test of the scope; an empty shard proves nothing/);
 });
 
 test('shard rules that overlap or leave a test of the scope out fail the accounting', () => {
   const overlapping = structuredClone(fullPlan);
-  overlapping.projects[0].shards[1].exceptNamespaces = [];
+  overlapping.projects[0].shards[1].exceptPrefixes = [];
   let result = account(fullPlan, { planJson: JSON.stringify(overlapping) });
   assert.equal(result.status, 1);
   assert.match(result.output, /Wasla\.UnitTests methods that more than one shard selects: 5/);
 
   const gap = structuredClone(fullPlan);
-  gap.projects[0].shards[3].exceptNamespaces = ['Wasla.UnitTests.Web', 'Wasla.UnitTests.Signup'];
+  gap.projects[0].shards[4].exceptPrefixes = ['Wasla.UnitTests.Web.', 'Wasla.UnitTests.Signup.'];
   result = account(fullPlan, { planJson: JSON.stringify(gap) });
   assert.equal(result.status, 1);
   assert.match(result.output, /Wasla\.UnitTests methods of the scope that no shard selects: 1\s+Wasla\.UnitTests\.Signup\.SignupFlowBrowserTests\.Submits/);
