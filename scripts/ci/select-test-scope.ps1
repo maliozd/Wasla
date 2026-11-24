@@ -4,11 +4,6 @@
     Chooses the CI test scope for the triggering event, the jobs that run it and the test shards of those jobs.
 
 .DESCRIPTION
-    Scope. A pull request into dev runs the fast scope: every test except the groups that need a real headless browser
-    (Wasla.UnitTests, Category=Browser) or a real WebView2 Runtime (Wasla.PrintBridge.Tests, Category=WebView2Runtime).
-    Every other event runs the full scope, with no test left out: pushes to dev and master, pull requests into master,
-    and manual runs. An event or base branch this script does not know also gets the full scope.
-
     Jobs. The terminology guard and the Node tests run for every change. The Windows jobs (unit-tests: the
     Wasla.UnitTests shards; print-bridge: the installers and Wasla.PrintBridge.Tests) run when the change needs them:
 
@@ -17,9 +12,17 @@
         the jobs the file needs, or "all". The pull request runs the union. Every job runs when a file matches no rule,
         when a file is deleted, renamed, copied or changes type, when the diff is empty, and when it cannot be computed.
       - A push to dev runs every job (observation phase). The plan also records what the rules would have selected for
-        the push's changes (before..after), so the summary and the final job can compare it with the real results.
+        the push's changes (before..after), so the summary and the final jobs can compare it with the real results.
       - Every other event runs every job: manual runs, pushes to master, pull requests into master and unknown events.
         Nothing an event carries (a label, an input) can narrow the selection.
+
+    Scope, chosen after the jobs. The fast scope runs every test except the groups that need a real headless browser
+    (Wasla.UnitTests, Category=Browser) or a real WebView2 Runtime (Wasla.PrintBridge.Tests, Category=WebView2Runtime);
+    the full scope leaves no test out. A pull request into dev runs the fast scope, unless its changes need the full
+    one: a changed file whose rule says so (ci-job-rules.json: CI, build and planner files, the deferred tests
+    themselves, areas not analyzed yet), or every job running for a reason other than a rule (a file no rule matches,
+    a change other than an addition or modification, an empty diff, a diff that cannot be computed). Every other event
+    runs the full scope: pushes to dev and master, pull requests into master, manual runs and unknown events.
 
     Shards. The tests of the scope are split into shards, each run by its own CI job on its own runner. A shard is a
     set of rules: traits a test must have, traits it must not have, name prefixes its fully qualified name (Namespace.
@@ -94,18 +97,15 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $changeListGiven = $PSBoundParameters.ContainsKey('ChangeList')
-$fast = $EventName -eq 'pull_request' -and $BaseRef -eq 'dev'
+$pullRequestIntoDev = $EventName -eq 'pull_request' -and $BaseRef -eq 'dev'
 
-if ($fast) {
-    $scope = 'fast'
-    $reason = 'pull request into dev; the headless-browser and WebView2 runtime tests run after the merge to dev, on pull requests into master and in manual runs'
-}
-else {
-    $scope = 'full'
-    $trigger = if ($EventName) { $EventName } else { 'unknown event' }
-    $reason = if ($BaseRef) { "$trigger into $BaseRef" } else { $trigger }
-    $reason += '; every test runs'
-}
+# The traits of the test groups the fast scope leaves out, by project and job.
+$browser = 'Category=Browser'
+$webView2Runtime = 'Category=WebView2Runtime'
+$fastScopeLeavesOut = @(
+    [ordered]@{ project = 'Wasla.UnitTests'; job = 'unit-tests'; traits = @($browser) },
+    [ordered]@{ project = 'Wasla.PrintBridge.Tests'; job = 'print-bridge'; traits = @($webView2Runtime) }
+)
 
 # ---- Job selection --------------------------------------------------------------------------------------------------
 
@@ -138,6 +138,8 @@ $rules = @(foreach ($rule in @($rulesDocument.rules)) {
         [pscustomobject]@{
             Id       = [string]$rule.id
             Jobs     = $rule.jobs
+            # Anything but "fast" (a missing or misspelled scope) is the full scope.
+            Scope    = $(if ($null -ne $rule.PSObject.Properties['scope'] -and [string]$rule.scope -ceq 'fast') { 'fast' } else { 'full' })
             Why      = [string]$rule.why
             Patterns = @(foreach ($path in @($rule.paths)) { ConvertTo-PathRegex $path })
         }
@@ -229,28 +231,40 @@ function Format-Change($change) {
     }
 }
 
-# Matches the changes against the rules. $changes is $null when the diff could not be computed ($failure says why).
+# The first finding of a list, and how many more there are.
+function Format-Findings($findings, [int] $count) {
+    $text = [string]@($findings)[0]
+    if ($count -gt 1) { $text += " (and $($count - 1) more)" }
+    return $text
+}
+
+# Matches the changes against the rules: first the jobs, then the scope. $changes is $null when the diff could not be
+# computed ($failure says why). A finding that makes the changes untrusted (no diff, an empty diff, a change other than
+# an addition or modification, a file no rule knows) forces both every job and the full scope; a rule forces either
+# only as it says.
 function Get-Selection($changes, [string] $basis, [string] $failure) {
     $forcedBy = New-Object System.Collections.Generic.List[string]
+    $fullScopeBy = New-Object System.Collections.Generic.List[string]
+    $untrusted = New-Object System.Collections.Generic.List[string]
     $matched = [ordered]@{}
     $needed = @{}
     $fileCount = 0
     if ($failure) {
-        $forcedBy.Add("the changes could not be computed: $failure")
+        $untrusted.Add("the changes could not be computed: $failure")
     }
     elseif (@($changes).Count -eq 0) {
-        $forcedBy.Add('the diff is empty')
+        $untrusted.Add('the diff is empty')
     }
     else {
         $fileCount = @($changes).Count
         foreach ($change in $changes) {
             if ($change.Status -ne 'A' -and $change.Status -ne 'M') {
-                $forcedBy.Add("a change other than an addition or modification: $(Format-Change $change)")
+                $untrusted.Add("a change other than an addition or modification: $(Format-Change $change)")
                 continue
             }
             $rule = Find-Rule $change.Path
             if ($null -eq $rule) {
-                $forcedBy.Add("no rule matches $($change.Path)")
+                $untrusted.Add("no rule matches $($change.Path)")
                 continue
             }
             if (-not $matched.Contains($rule.Id)) { $matched[$rule.Id] = New-Object System.Collections.Generic.List[string] }
@@ -264,15 +278,21 @@ function Get-Selection($changes, [string] $basis, [string] $failure) {
                     if (-not $needed[$job].Contains($rule.Id)) { $needed[$job].Add($rule.Id) }
                 }
             }
+            if ($rule.Scope -eq 'full') {
+                $fullScopeBy.Add("rule $($rule.Id) needs the full scope ($($change.Path))")
+            }
         }
     }
+    # Untrusted findings first: they are the ones a reader must see.
+    $forcedBy.InsertRange(0, $untrusted)
+    $fullScopeBy.InsertRange(0, $untrusted)
 
     $mode = if ($forcedBy.Count -gt 0) { 'all' } else { 'focused' }
     $jobs = [ordered]@{}
     foreach ($job in $alwaysRun.Keys) { $jobs[$job] = [ordered]@{ run = $true; why = $alwaysRun[$job] } }
     foreach ($job in $skippableJobs) {
         if ($mode -eq 'all') {
-            $jobs[$job] = [ordered]@{ run = $true; why = "every job runs: $($forcedBy[0])" + $(if ($forcedBy.Count -gt 1) { " (and $($forcedBy.Count - 1) more)" } else { '' }) }
+            $jobs[$job] = [ordered]@{ run = $true; why = "every job runs: $(Format-Findings $forcedBy $forcedBy.Count)" }
         }
         elseif ($needed.ContainsKey($job)) {
             $jobs[$job] = [ordered]@{ run = $true; why = "needed by rule $($needed[$job] -join ', ')" }
@@ -290,18 +310,22 @@ function Get-Selection($changes, [string] $basis, [string] $failure) {
             [ordered]@{
                 id    = $id
                 jobs  = $ruleJobs
+                scope = $rule.Scope
                 files = $matched[$id].Count
                 shown = @($matched[$id] | Select-Object -First $maxListed)
             }
         })
     return [ordered]@{
-        mode     = $mode
-        basis    = $basis
-        files    = $fileCount
-        forcedBy = @($forcedBy | Select-Object -First $maxListed)
-        forced   = $forcedBy.Count
-        rules    = $ruleSummary
-        jobs     = $jobs
+        mode            = $mode
+        basis           = $basis
+        files           = $fileCount
+        forcedBy        = @($forcedBy | Select-Object -First $maxListed)
+        forced          = $forcedBy.Count
+        rules           = $ruleSummary
+        jobs            = $jobs
+        scope           = $(if ($fullScopeBy.Count -gt 0) { 'full' } else { 'fast' })
+        fullScopeBy     = @($fullScopeBy | Select-Object -First $maxListed)
+        fullScopeForced = $fullScopeBy.Count
     }
 }
 
@@ -334,21 +358,40 @@ function Get-AllJobs([string] $why) {
     $jobs = [ordered]@{}
     foreach ($job in $alwaysRun.Keys) { $jobs[$job] = [ordered]@{ run = $true; why = $alwaysRun[$job] } }
     foreach ($job in $skippableJobs) { $jobs[$job] = [ordered]@{ run = $true; why = $why } }
-    return [ordered]@{ mode = 'all'; basis = $why; files = 0; forcedBy = @(); forced = 0; rules = @(); jobs = $jobs }
+    return [ordered]@{ mode = 'all'; basis = $why; files = 0; forcedBy = @(); forced = 0; rules = @(); jobs = $jobs; scope = 'full'; fullScopeBy = @(); fullScopeForced = 0 }
 }
 
 $observation = $null
-if ($fast) {
+if ($pullRequestIntoDev) {
     $selection = Get-EventSelection 'pull request'
 }
 elseif ($EventName -eq 'push' -and $RefName -eq 'dev') {
     $selection = Get-AllJobs 'every job runs on a push to dev (observation phase)'
     $observation = Get-EventSelection 'push'
+    # What the fast scope would have left out, so the test accounting can report a failure there.
+    $observation['fastScopeLeavesOut'] = $fastScopeLeavesOut
 }
 else {
     $trigger = if ($EventName) { $EventName } else { 'an unknown event' }
     $selection = Get-AllJobs "every job runs for $trigger$(if ($BaseRef) { " into $BaseRef" } elseif ($RefName -and $EventName -eq 'push') { " to $RefName" } else { '' })"
 }
+
+# ---- Scope ----------------------------------------------------------------------------------------------------------
+
+# Chosen after the jobs: only a pull request into dev can get the fast scope, and only when its changes allow it.
+$scope = $selection.scope
+if ($pullRequestIntoDev -and $scope -eq 'fast') {
+    $reason = 'pull request into dev, and no changed file needs the full scope; the headless-browser and WebView2 runtime tests run after the merge to dev, on pull requests into master and in manual runs'
+}
+elseif ($pullRequestIntoDev) {
+    $reason = "pull request into dev whose changes need the full scope: $(Format-Findings $selection.fullScopeBy $selection.fullScopeForced); every test runs"
+}
+else {
+    $trigger = if ($EventName) { $EventName } else { 'unknown event' }
+    $reason = if ($BaseRef) { "$trigger into $BaseRef" } else { $trigger }
+    $reason += '; every test runs'
+}
+$fast = $scope -eq 'fast'
 
 # ---- Shards ---------------------------------------------------------------------------------------------------------
 
@@ -391,8 +434,6 @@ function New-Shard {
     }
 }
 
-$browser = 'Category=Browser'
-$webView2Runtime = 'Category=WebView2Runtime'
 $firstNonBrowserNamespaces = @('Wasla.UnitTests.Auth.', 'Wasla.UnitTests.Routing.', 'Wasla.UnitTests.Printing.', 'Wasla.UnitTests.Contact.')
 $web = 'Wasla.UnitTests.Web.'
 $firstWebBrowserClasses = @("${web}L", "${web}O", "${web}P")
@@ -464,10 +505,18 @@ function Format-Jobs($jobs) {
     return $list -join ', '
 }
 
+function Add-Findings($lines, [string] $what, $shown, [int] $count) {
+    if ($count -eq 0) { return }
+    $lines.Add('')
+    $lines.Add("$what because of $count finding(s):")
+    foreach ($finding in $shown) { $lines.Add("- $finding") }
+    if ($count -gt @($shown).Count) { $lines.Add("- ... and $($count - @($shown).Count) more") }
+}
+
 function Format-Selection($title, $chosen) {
     $lines = New-Object System.Collections.Generic.List[string]
     $mode = if ($chosen.mode -eq 'focused') { 'focused' } else { 'every job' }
-    $lines.Add("**${title}: $mode** ($($chosen.basis)$(if ($chosen.files -gt 0) { ", $($chosen.files) changed files" }))")
+    $lines.Add("**${title}: $mode; $($chosen.scope) scope** ($($chosen.basis)$(if ($chosen.files -gt 0) { ", $($chosen.files) changed files" }))")
     $lines.Add('')
     $lines.Add('| Job | Runs | Why |')
     $lines.Add('| --- | --- | --- |')
@@ -477,20 +526,16 @@ function Format-Selection($title, $chosen) {
     }
     if (@($chosen.rules).Count -gt 0) {
         $lines.Add('')
-        $lines.Add('| Rule | Jobs it needs | Changed files |')
-        $lines.Add('| --- | --- | --- |')
+        $lines.Add('| Rule | Jobs it needs | Scope it needs | Changed files |')
+        $lines.Add('| --- | --- | --- | --- |')
         foreach ($rule in $chosen.rules) {
             $files = (@($rule.shown) | ForEach-Object { "``$_``" }) -join ', '
             if ($rule.files -gt @($rule.shown).Count) { $files += " and $($rule.files - @($rule.shown).Count) more" }
-            $lines.Add("| ``$($rule.id)`` | $(Format-Jobs $rule.jobs) | $files |")
+            $lines.Add("| ``$($rule.id)`` | $(Format-Jobs $rule.jobs) | $($rule.scope) | $files |")
         }
     }
-    if ($chosen.forced -gt 0) {
-        $lines.Add('')
-        $lines.Add("Every job runs because of $($chosen.forced) finding(s):")
-        foreach ($finding in $chosen.forcedBy) { $lines.Add("- $finding") }
-        if ($chosen.forced -gt @($chosen.forcedBy).Count) { $lines.Add("- ... and $($chosen.forced - @($chosen.forcedBy).Count) more") }
-    }
+    Add-Findings $lines 'Every job runs' $chosen.forcedBy $chosen.forced
+    Add-Findings $lines 'The full scope runs' $chosen.fullScopeBy $chosen.fullScopeForced
     $lines.Add('')
     return $lines
 }
@@ -499,9 +544,11 @@ Write-Host "Test scope: $scope ($reason)"
 Write-Host "Jobs: $($selection.mode) ($($selection.basis))"
 foreach ($job in $selection.jobs.Keys) { Write-Host "  $job`: $(if ($selection.jobs[$job].run) { 'runs' } else { 'skipped' }) - $($selection.jobs[$job].why)" }
 foreach ($finding in $selection.forcedBy) { Write-Host "  every job: $finding" }
+foreach ($finding in $selection.fullScopeBy) { Write-Host "  full scope: $finding" }
 if ($null -ne $observation) {
-    Write-Host "Observation, what the rules would select for a pull request: $($observation.mode) ($($observation.basis))"
+    Write-Host "Observation, what the rules would select for a pull request: $($observation.mode), $($observation.scope) scope ($($observation.basis))"
     foreach ($job in $observation.jobs.Keys) { Write-Host "  $job`: $(if ($observation.jobs[$job].run) { 'would run' } else { 'would be skipped' }) - $($observation.jobs[$job].why)" }
+    foreach ($finding in $observation.fullScopeBy) { Write-Host "  full scope: $finding" }
 }
 foreach ($project in $plan.projects) {
     foreach ($shard in $project.shards) {
@@ -533,7 +580,7 @@ if ($env:GITHUB_STEP_SUMMARY) {
     $summary.Add('')
     foreach ($line in (Format-Selection 'Jobs' $selection)) { $summary.Add($line) }
     if ($null -ne $observation) {
-        $summary.Add('Observation phase: every job runs on a push to dev. The rules would have selected the following for a pull request with these changes; the final job reports a failure in a job they would have skipped.')
+        $summary.Add('Observation phase: every job and the full scope run on a push to dev. The rules would have selected the following for a pull request with these changes; the final job reports a failure in a job they would have skipped, or, with the fast scope, in a test it leaves out.')
         $summary.Add('')
         foreach ($line in (Format-Selection 'The rules would select' $observation)) { $summary.Add($line) }
     }

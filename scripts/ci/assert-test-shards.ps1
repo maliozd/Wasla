@@ -21,6 +21,10 @@
     Methods are compared by class and method name (a theory's data rows are one method). Whether each test passed and
     nothing was skipped is checked by assert-test-results.ps1 over the same TRX files.
 
+    On a push to dev (observation phase), when the job selection's rules would have chosen the fast scope for the
+    push's changes, the script also warns about every failed test that scope leaves out: a failure the fast scope of
+    a pull request would have missed. The warning does not fail the check.
+
     Prints a table per shard and, on GitHub Actions, adds error annotations (the first 20) and the table to the job
     summary. Exits with 1 when anything is wrong.
 
@@ -55,6 +59,7 @@ $maxAnnotations = 20
 $maxListed = 25
 $onGitHub = $env:GITHUB_ACTIONS -eq 'true'
 $problems = New-Object System.Collections.Generic.List[string]
+$missedByFastScope = New-Object System.Collections.Generic.List[string]
 
 function Add-Problem([string] $message) {
     $script:problems.Add($message)
@@ -115,6 +120,7 @@ function Read-TrxMethods([string] $file) {
         $methodById[$test.GetAttribute('id')] = "$($method.GetAttribute('className')).$($method.GetAttribute('name'))"
     }
     $methods = New-Object 'System.Collections.Generic.HashSet[string]'
+    $failedMethods = New-Object 'System.Collections.Generic.HashSet[string]'
     $outcomes = @{ Passed = 0; Failed = 0; Skipped = 0 }
     $results = 0
     foreach ($result in $document.SelectNodes('//t:Results//t:UnitTestResult', $ns)) {
@@ -124,10 +130,10 @@ function Read-TrxMethods([string] $file) {
         switch ($result.GetAttribute('outcome')) {
             'Passed' { $outcomes.Passed++ }
             'NotExecuted' { $outcomes.Skipped++ }
-            default { $outcomes.Failed++ }
+            default { $outcomes.Failed++; if ($key) { [void]$failedMethods.Add($key) } }
         }
     }
-    return [pscustomobject]@{ Methods = $methods; Results = $results; Outcomes = $outcomes }
+    return [pscustomobject]@{ Methods = $methods; FailedMethods = $failedMethods; Results = $results; Outcomes = $outcomes }
 }
 
 function Test-Trait($traits, [string] $rule) {
@@ -308,11 +314,34 @@ foreach ($project in @($planObject.projects)) {
     }
     $twice = @($runBy.Keys | Where-Object { $runBy[$_].Count -gt 1 } | ForEach-Object { "$_ ($($runBy[$_] -join ', '))" })
     if ($twice.Count -gt 0) { Add-Problem (Format-List "$projectName methods that ran in more than one shard" $twice) }
+
+    # Observation phase (a push to dev): the failed tests the fast scope would have left out, when the rules would have
+    # chosen it and would have run this project's job. A job they would have skipped is reported by assert-ci-jobs.ps1.
+    $shadow = Get-Field $planObject 'observation'
+    if ($null -ne $shadow -and $shadow.scope -eq 'fast') {
+        $leftOut = @(Get-Field $shadow 'fastScopeLeavesOut') | Where-Object { $_.project -eq $projectName } | Select-Object -First 1
+        $job = if ($null -ne $leftOut) { Get-Field $shadow.jobs ([string]$leftOut.job) } else { $null }
+        if ($null -ne $leftOut -and $null -ne $job -and $job.run) {
+            $missed = New-Object System.Collections.Generic.List[string]
+            foreach ($trx in $counts.Values) {
+                foreach ($name in $trx.FailedMethods) {
+                    if ($tests.ContainsKey($name) -and @(@($leftOut.traits) | Where-Object { Test-Trait $tests[$name].Traits $_ }).Count -gt 0) { $missed.Add($name) }
+                }
+            }
+            if ($missed.Count -gt 0) {
+                $script:missedByFastScope.Add((Format-List "The rules would have chosen the fast scope for these changes, which leaves out $projectName tests that failed here ($(@($leftOut.traits) -join ', ')); a failure the fast scope would have missed. Check whether it comes from the changes (then the rule's scope is wrong) or is unrelated" $missed))
+            }
+        }
+    }
 }
 
+foreach ($warning in $missedByFastScope) { $summary.Add(''); $summary.Add("**Warning:** $warning") }
 $summary | ForEach-Object { Write-Host $_ }
 if ($onGitHub -and $env:GITHUB_STEP_SUMMARY) {
     Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Value ($summary -join "`n")
+}
+foreach ($warning in $missedByFastScope) {
+    if ($onGitHub) { Write-Host "::warning title=The fast scope would have missed a failure::$(ConvertTo-CommandValue $warning)" }
 }
 
 if ($problems.Count -gt 0) {

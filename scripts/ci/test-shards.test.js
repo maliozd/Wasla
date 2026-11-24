@@ -1,6 +1,7 @@
 // Tests for the CI test plan's scopes and shards (select-test-scope.ps1) and its accounting (assert-test-shards.ps1).
-// The job selection has its own tests in ci-job-plan.test.js. Without an event payload or a change list the plan
-// selects every job, so every project is planned here.
+// The job selection and the scope chosen after it have their own tests in ci-job-plan.test.js. Here a pull request
+// into dev changes a Print Bridge service file, which selects every job and keeps the fast scope; other events select
+// every job and the full scope without a change list.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -12,8 +13,14 @@ const selectScript = path.join(__dirname, 'select-test-scope.ps1');
 const accountingScript = path.join(__dirname, 'assert-test-shards.ps1');
 const commit = 'a'.repeat(40);
 
-function plan(eventName, baseRef = '') {
-  const result = runPowerShell(`& '${selectScript}' -EventName '${eventName}' -BaseRef '${baseRef}' -PlanOnly`);
+// Every job and the fast scope for a pull request into dev: the Print Bridge service, which every job needs and the
+// tests the fast scope leaves out do not start.
+const allJobsFastChange = 'M\tsrc/Wasla.PrintBridge.Service/Program.cs';
+const changeListArgument = ' -ChangeList ([string[]]@($env:CHANGES -split [char]10 | Where-Object { $_ }))';
+
+function plan(eventName, baseRef = '', { ref = '', changes } = {}) {
+  changes ??= eventName === 'pull_request' && baseRef === 'dev' ? [allJobsFastChange] : undefined;
+  const result = runPowerShell(`& '${selectScript}' -EventName '${eventName}' -BaseRef '${baseRef}' -RefName '${ref}' -PlanOnly${changes ? changeListArgument : ''}`, { CHANGES: (changes ?? []).join('\n') });
   assert.equal(result.status, 0, result.stderr + result.stdout);
   return JSON.parse(result.stdout.trim());
 }
@@ -172,29 +179,54 @@ for (const [eventName, baseRef] of [['push', ''], ['workflow_dispatch', ''], ['p
   });
 }
 
-test('on GitHub Actions the plan, the unit-test matrix and the Print Bridge filter are written as step outputs', () => {
+// The step outputs and summary of a pull request into dev with these changes, as on GitHub Actions.
+function stepOutputs(changes) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wasla-test-scope-'));
   try {
     const output = path.join(dir, 'output');
     const summary = path.join(dir, 'summary');
-    const result = runPowerShell(`& '${selectScript}' -EventName pull_request -BaseRef dev`, { GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: summary });
+    const result = runPowerShell(`& '${selectScript}' -EventName pull_request -BaseRef dev${changeListArgument}`, { GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: summary, CHANGES: changes.join('\n') });
     assert.equal(result.status, 0, result.stderr);
     const bytes = fs.readFileSync(output);
-    assert.notDeepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf], 'no byte-order mark before the first output name');
     const outputs = Object.fromEntries(bytes.toString('utf8').trim().split('\n').map(line => {
       const at = line.indexOf('=');
       return [line.slice(0, at), line.slice(at + 1)];
     }));
-    assert.deepEqual(Object.keys(outputs), ['scope', 'plan', 'unit-shards', 'print-bridge-filter', 'unit-tests', 'print-bridge', 'dotnet-tests']);
-    assert.equal(outputs.scope, 'fast');
-    assert.deepEqual(JSON.parse(outputs.plan), fastPlan);
-    assert.deepEqual(JSON.parse(outputs['unit-shards']), fastPlan.projects[0].shards.map(({ id, title, filter, maxParallelThreads }) => ({ id, title, filter, maxParallelThreads })));
-    assert.equal(outputs['print-bridge-filter'], 'Category!=WebView2Runtime');
-    assert.deepEqual([outputs['unit-tests'], outputs['print-bridge'], outputs['dotnet-tests']], ['true', 'true', 'true']);
-    assert.match(fs.readFileSync(summary, 'utf8'), /\*\*Test scope: fast\*\*/);
+    return { bytes, outputs, summary: fs.readFileSync(summary, 'utf8') };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+}
+
+test('on GitHub Actions the plan, the unit-test matrix and the Print Bridge filter are written as step outputs', () => {
+  const { bytes, outputs, summary } = stepOutputs([allJobsFastChange]);
+  assert.notDeepEqual([...bytes.subarray(0, 3)], [0xef, 0xbb, 0xbf], 'no byte-order mark before the first output name');
+  assert.deepEqual(Object.keys(outputs), ['scope', 'plan', 'unit-shards', 'print-bridge-filter', 'unit-tests', 'print-bridge', 'dotnet-tests']);
+  assert.equal(outputs.scope, 'fast');
+  assert.deepEqual(JSON.parse(outputs.plan), fastPlan);
+  assert.deepEqual(JSON.parse(outputs['unit-shards']), fastPlan.projects[0].shards.map(({ id, title, filter, maxParallelThreads }) => ({ id, title, filter, maxParallelThreads })));
+  assert.equal(outputs['print-bridge-filter'], 'Category!=WebView2Runtime');
+  assert.deepEqual([outputs['unit-tests'], outputs['print-bridge'], outputs['dotnet-tests']], ['true', 'true', 'true']);
+  assert.match(summary, /\*\*Test scope: fast\*\*/);
+});
+
+test('a pull request into dev that changes the planner or the workflow gets the full scope in its step outputs: every unit shard, the browser shards included, and no Print Bridge filter', () => {
+  const { outputs, summary } = stepOutputs(['M\t.github/workflows/ci.yml', 'M\tscripts/ci/select-test-scope.ps1']);
+  assert.equal(outputs.scope, 'full');
+  assert.deepEqual(JSON.parse(outputs['unit-shards']).map(s => s.id), ['nonbrowser-1', 'nonbrowser-2', 'browser-1', 'browser-2', 'browser-3']);
+  assert.equal(outputs['print-bridge-filter'], '');
+  assert.deepEqual([outputs['unit-tests'], outputs['print-bridge'], outputs['dotnet-tests']], ['true', 'true', 'true']);
+  assert.match(summary, /\*\*Test scope: full\*\* \(pull request into dev whose changes need the full scope: rule ci-and-build needs the full scope \(\.github\/workflows\/ci\.yml\) \(and 1 more\); every test runs\)/);
+  assert.match(summary, /\*\*Jobs: every job; full scope\*\*/);
+  assert.match(summary, /\| `ci-and-build` \| all \| full \|/);
+  assert.match(summary, /The full scope runs because of 2 finding\(s\):/);
+});
+
+test('a pull request into dev that changes only a headless-browser test runs Wasla.UnitTests alone, browser shards included', () => {
+  const { outputs } = stepOutputs(['M\ttests/Wasla.UnitTests/Web/ReportsPageBrowserTests.cs']);
+  assert.equal(outputs.scope, 'full');
+  assert.deepEqual(JSON.parse(outputs['unit-shards']).map(s => s.id), ['nonbrowser-1', 'nonbrowser-2', 'browser-1', 'browser-2', 'browser-3']);
+  assert.deepEqual([outputs['unit-tests'], outputs['print-bridge'], outputs['dotnet-tests']], ['true', 'false', 'true']);
 });
 
 for (const scope of ['fast', 'full']) {
@@ -225,6 +257,32 @@ test('a deferred browser test that runs in the fast scope fails the accounting',
   const result = account(fastPlan, { ran: { 'nonbrowser-2': ran } });
   assert.equal(result.status, 1);
   assert.match(result.output, /nonbrowser-2: methods that ran but were not planned for this shard: 1\s+Wasla\.UnitTests\.Web\.LiveScreenBrowserTests\.Loads/);
+});
+
+// Observation phase: a push to dev runs every job and the full scope; the rules' choice for its changes is recorded.
+const pushToDev = changes => plan('push', '', { ref: 'dev', changes });
+const failedBrowserTest = { outcomes: { 'Wasla.UnitTests.Web.OrderModalBrowserTests.Opens': 'Failed' } };
+
+test('on a push to dev, a failed test the fast scope leaves out is reported when the rules would have chosen the fast scope', () => {
+  let result = account(pushToDev([allJobsFastChange]), failedBrowserTest);
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /The rules would have chosen the fast scope for these changes, which leaves out Wasla\.UnitTests tests that failed here \(Category=Browser\); a failure the fast scope would have missed\. [^\n]*: 1\s+Wasla\.UnitTests\.Web\.OrderModalBrowserTests\.Opens/);
+
+  result = account(pushToDev([allJobsFastChange]), { outcomes: { 'Wasla.PrintBridge.Tests.WebShell.ShellWebViewRuntimeTests.Renders': 'Failed' } });
+  assert.match(result.output, /leaves out Wasla\.PrintBridge\.Tests tests that failed here \(Category=WebView2Runtime\)[^\n]*: 1\s+Wasla\.PrintBridge\.Tests\.WebShell\.ShellWebViewRuntimeTests\.Renders/);
+});
+
+test('on a push to dev, no fast-scope warning when the rules would have chosen the full scope, skipped the job, or the failed test is in the fast scope', () => {
+  for (const [why, testPlan, change] of [
+    ['full scope', pushToDev(['M\t.github/workflows/ci.yml']), failedBrowserTest],
+    ['the job would be skipped (the final job reports that)', pushToDev(['M\ttests/Wasla.PrintBridge.Tests/A.cs']), failedBrowserTest],
+    ['a test the fast scope runs', pushToDev([allJobsFastChange]), { outcomes: { 'Wasla.UnitTests.Orders.OrderTests.Approves': 'Failed' } }],
+    ['no observation outside a push to dev', fullPlan, failedBrowserTest],
+  ]) {
+    const result = account(testPlan, change);
+    assert.equal(result.status, 0, `${why}: ${result.output}`);
+    assert.doesNotMatch(result.output, /would have chosen the fast scope/, why);
+  }
 });
 
 test('a shard without results fails the accounting', () => {

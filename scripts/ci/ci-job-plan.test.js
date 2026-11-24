@@ -1,5 +1,6 @@
-// Tests for the CI job selection (select-test-scope.ps1 with ci-job-rules.json) and the final job's check of it
-// (assert-ci-jobs.ps1), plus guards that fail when a dependency a focused rule relies on changes in the repository.
+// Tests for the CI job selection and the scope chosen after it (select-test-scope.ps1 with ci-job-rules.json), the
+// final job's check of them (assert-ci-jobs.ps1, assert-test-shards.ps1), plus guards that fail when a dependency a
+// focused rule relies on changes in the repository.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -53,7 +54,28 @@ function windowsJobs(selection) {
   return Object.entries(selection.jobs).filter(([job, entry]) => [UT, PB].includes(job) && entry.run).map(([job]) => job);
 }
 
-function assertSelection(testPlan, { mode, jobs, projects, rule, forced }) {
+const browserShards = ['browser-1', 'browser-2', 'browser-3'];
+
+// The scope, checked on its own: the plan's scope and the selection's agree, and every planned project runs exactly
+// the scope's tests (the browser shards and the WebView2 runtime tests only in the full scope).
+function assertScope(testPlan, scope, fullScopeBy) {
+  assert.equal(testPlan.scope, scope, JSON.stringify(testPlan.selection));
+  assert.equal(testPlan.selection.scope, scope);
+  if (scope === 'fast') assert.equal(testPlan.selection.fullScopeForced, 0);
+  for (const project of testPlan.projects) {
+    const shards = project.shards.map(s => s.id);
+    if (project.project === 'Wasla.UnitTests') {
+      assert.deepEqual(shards, ['nonbrowser-1', 'nonbrowser-2', ...(scope === 'full' ? browserShards : [])]);
+      assert.deepEqual(project.scopeExcludesTraits, scope === 'full' ? [] : ['Category=Browser']);
+    } else {
+      assert.deepEqual(project.scopeExcludesTraits, scope === 'full' ? [] : ['Category=WebView2Runtime']);
+      assert.equal(project.shards[0].filter, scope === 'full' ? '' : 'Category!=WebView2Runtime');
+    }
+  }
+  if (fullScopeBy) assert.match(testPlan.selection.fullScopeBy.join('\n'), fullScopeBy);
+}
+
+function assertSelection(testPlan, { mode, jobs, projects, rule, forced, scope, fullScopeBy }) {
   const selection = testPlan.selection;
   assert.equal(selection.mode, mode, JSON.stringify(selection));
   assert.deepEqual(windowsJobs(selection), jobs, JSON.stringify(selection));
@@ -62,67 +84,108 @@ function assertSelection(testPlan, { mode, jobs, projects, rule, forced }) {
   assert.deepEqual(testPlan.projects.map(p => p.project), projects ?? jobs.map(job => Object.keys(projectJob).find(p => projectJob[p] === job)));
   if (rule) assert.deepEqual(selection.rules.map(r => r.id), rule);
   if (forced) assert.match(selection.forcedBy.join('\n'), forced);
+  if (scope) assertScope(testPlan, scope, fullScopeBy);
 }
 
-// ---- Rules, one area or several ----------------------------------------------------------------------------------
+// ---- Rules, one area or several: the jobs, then the scope ---------------------------------------------------------
 
 const focused = [
-  ['documentation only', ['M\tdocs/README.md', 'M\tdocs/product/terminology.md', 'A\tdocs/brand/new-sketch.svg'], [], ['documentation']],
-  ['root and agent instructions', ['M\tREADME.md', 'M\tAGENTS.md', 'M\tCLAUDE.md', 'M\t.claude/rules/web-ui.md'], [], ['documentation']],
-  ['the testing guide, which no test reads', ['M\tdocs/operations/testing.md'], [], ['documentation']],
-  ['a document Wasla.UnitTests reads', ['M\tdocs/operations/migrations.md'], [UT], ['docs-read-by-unit-tests']],
-  ['a document Wasla.PrintBridge.Tests reads', ['M\tdocs/integrations/print-bridge-service.md'], [PB], ['docs-read-by-print-bridge-tests']],
-  ['Wasla.UnitTests sources and Node tests', ['M\ttests/Wasla.UnitTests/Auth/LoginTests.cs', 'A\ttests/Wasla.UnitTests/Signup/signup-steps.test.js'], [UT], ['unit-tests-project']],
-  ['Wasla.PrintBridge.Tests sources', ['M\ttests/Wasla.PrintBridge.Tests/WebShell/ShellTests.cs'], [PB], ['print-bridge-tests-project']],
-  ['the Print Bridge installer sources', ['M\tinstaller/print-bridge/Package/Package.wxs'], [PB], ['print-bridge-installer']],
-  ['the server hosts', ['M\tsrc/Wasla.Api/Program.cs', 'M\tsrc/Wasla.Cli/Program.cs', 'M\tsrc/Wasla.Worker/Jobs/OrderSyncWorker.cs', 'M\tsrc/Wasla.Contracts/Orders/OrderDto.cs'], [UT], ['server-hosts']],
-  ['documentation and Wasla.UnitTests: the union', ['M\tdocs/README.md', 'M\ttests/Wasla.UnitTests/Auth/LoginTests.cs'], [UT], ['documentation', 'unit-tests-project']],
-  ['both test projects: the union', ['M\ttests/Wasla.UnitTests/A.cs', 'M\ttests/Wasla.PrintBridge.Tests/B.cs'], [UT, PB], ['unit-tests-project', 'print-bridge-tests-project']],
-  ['a server host and the installer: the union', ['M\tsrc/Wasla.Worker/Program.cs', 'M\tinstaller/print-bridge/Bundle/Bundle.wxs', 'M\tdocs/README.md'], [UT, PB], ['server-hosts', 'print-bridge-installer', 'documentation']],
+  ['documentation only', ['M\tdocs/README.md', 'M\tdocs/product/terminology.md', 'A\tdocs/brand/new-sketch.svg'], [], ['documentation'], 'fast'],
+  ['root and agent instructions', ['M\tREADME.md', 'M\tAGENTS.md', 'M\tCLAUDE.md', 'M\t.claude/rules/web-ui.md'], [], ['documentation'], 'fast'],
+  ['the testing guide, which no test reads', ['M\tdocs/operations/testing.md'], [], ['documentation'], 'fast'],
+  ['a document Wasla.UnitTests reads', ['M\tdocs/operations/migrations.md'], [UT], ['docs-read-by-unit-tests'], 'fast'],
+  ['a document Wasla.PrintBridge.Tests reads', ['M\tdocs/integrations/print-bridge-service.md'], [PB], ['docs-read-by-print-bridge-tests'], 'fast'],
+  ['Wasla.UnitTests sources and Node tests', ['M\ttests/Wasla.UnitTests/Auth/LoginTests.cs', 'A\ttests/Wasla.UnitTests/Signup/signup-steps.test.js'], [UT], ['unit-tests-project'], 'fast'],
+  ['Wasla.PrintBridge.Tests sources outside the web shell', ['M\ttests/Wasla.PrintBridge.Tests/Printing/PrintJobPollerTests.cs'], [PB], ['print-bridge-tests-project'], 'fast'],
+  ['the Print Bridge installer sources', ['M\tinstaller/print-bridge/Package/Package.wxs'], [PB], ['print-bridge-installer'], 'fast'],
+  ['the server hosts, which neither deferred test group starts', ['M\tsrc/Wasla.Api/Program.cs', 'M\tsrc/Wasla.Cli/Program.cs', 'M\tsrc/Wasla.Worker/Jobs/OrderSyncWorker.cs'], [UT], ['server-hosts'], 'fast'],
+  ['the contracts, which Wasla.Web builds on', ['M\tsrc/Wasla.Contracts/Orders/OrderDto.cs'], [UT], ['contracts'], 'full'],
+  ['a server host and the contracts', ['M\tsrc/Wasla.Api/Program.cs', 'M\tsrc/Wasla.Contracts/Orders/OrderDto.cs'], [UT], ['server-hosts', 'contracts'], 'full'],
+  ['documentation and Wasla.UnitTests: the union', ['M\tdocs/README.md', 'M\ttests/Wasla.UnitTests/Auth/LoginTests.cs'], [UT], ['documentation', 'unit-tests-project'], 'fast'],
+  ['both test projects: the union', ['M\ttests/Wasla.UnitTests/A.cs', 'M\ttests/Wasla.PrintBridge.Tests/B.cs'], [UT, PB], ['unit-tests-project', 'print-bridge-tests-project'], 'fast'],
+  ['a server host and the installer: the union', ['M\tsrc/Wasla.Worker/Program.cs', 'M\tinstaller/print-bridge/Bundle/Bundle.wxs', 'M\tdocs/README.md'], [UT, PB], ['server-hosts', 'print-bridge-installer', 'documentation'], 'fast'],
+  ['a headless-browser test', ['M\ttests/Wasla.UnitTests/Web/OrderDetailModalBrowserTests.cs'], [UT], ['browser-tests'], 'full'],
+  ['a headless-browser test whose name does not end in BrowserTests', ['M\ttests/Wasla.UnitTests/Admin/HeadlessChromiumNavigationTests.cs'], [UT], ['browser-tests'], 'full'],
+  ['the headless-browser driver', ['M\ttests/Wasla.UnitTests/Admin/HeadlessChromium.cs', 'M\ttests/Wasla.UnitTests/Admin/BrowserProcessTree.cs'], [UT], ['browser-tests'], 'full'],
+  ['a WebView2 runtime test', ['M\ttests/Wasla.PrintBridge.Tests/WebShell/ShellWebViewRuntimeTests.cs'], [PB], ['webview2-runtime-tests'], 'full'],
+  ['the web shell tests\' host', ['M\ttests/Wasla.PrintBridge.Tests/WebShell/TrayTestHost.cs'], [PB], ['webview2-runtime-tests'], 'full'],
+  ['a headless-browser test and documentation', ['M\tdocs/README.md', 'A\ttests/Wasla.UnitTests/Web/NewPageBrowserTests.cs'], [UT], ['documentation', 'browser-tests'], 'full'],
+  ['a headless-browser test and other unit tests', ['M\ttests/Wasla.UnitTests/Auth/LoginTests.cs', 'M\ttests/Wasla.UnitTests/Signup/SignupFlowBrowserTests.cs'], [UT], ['unit-tests-project', 'browser-tests'], 'full'],
+  ['a headless-browser test and a Print Bridge test: the union', ['M\ttests/Wasla.UnitTests/Web/ReportsPageBrowserTests.cs', 'M\ttests/Wasla.PrintBridge.Tests/B.cs'], [UT, PB], ['browser-tests', 'print-bridge-tests-project'], 'full'],
 ];
 
-for (const [name, changes, jobs, rule] of focused) {
-  test(`a pull request into dev that changes ${name} runs ${jobs.length ? jobs.join(' and ') : 'no .NET job'}`, () => {
-    assertSelection(planFor({ changes }), { mode: 'focused', jobs, rule });
+for (const [name, changes, jobs, rule, scope] of focused) {
+  test(`a pull request into dev that changes ${name} runs ${jobs.length ? jobs.join(' and ') : 'no .NET job'}, in the ${scope} scope`, () => {
+    assertSelection(planFor({ changes }), { mode: 'focused', jobs, rule, scope });
   });
 }
 
 const everything = [
-  ['Wasla.Web Razor views (tenant UI)', ['M\tsrc/Wasla.Web/Areas/Tenant/Views/Orders/_OrdersTable.cshtml'], /rule web needs every job/],
-  ['Wasla.Web JavaScript and static files', ['M\tsrc/Wasla.Web/wwwroot/js/live-screen.js', 'M\tsrc/Wasla.Web/wwwroot/css/site.css'], /rule web needs every job/],
-  ['Wasla.Web authentication and authorization', ['M\tsrc/Wasla.Web/Program.cs'], /rule web needs every job/],
-  ['Domain, Application and Infrastructure', ['M\tsrc/Wasla.Domain/Orders/Order.cs'], /rule shared-libraries needs every job/],
-  ['an EF migration', ['A\tsrc/Wasla.Infrastructure/Persistence/Migrations/Tenant/20261124_Add.cs'], /rule shared-libraries needs every job/],
-  ['tenant isolation in Infrastructure', ['M\tsrc/Wasla.Infrastructure/Tenancy/TenantDbContextFactory.cs'], /rule shared-libraries needs every job/],
-  ['Print Bridge product code', ['M\tsrc/Wasla.PrintBridge.Core/Services/WaslaPrintBridgeClient.cs'], /rule print-bridge-product needs every job/],
-  ['Print Bridge resources', ['M\tsrc/Wasla.PrintBridge/Resources/PrintBridgeResources.ru-RU.resx'], /rule print-bridge-product needs every job/],
-  ['the Print Bridge version', ['M\tsrc/Wasla.PrintBridge.Version.props'], /rule ci-and-build needs every job/],
-  ['a project file inside a focused folder', ['M\ttests/Wasla.UnitTests/Wasla.UnitTests.csproj'], /rule ci-and-build needs every job/],
-  ['an MSBuild file inside the installer folder', ['M\tinstaller/print-bridge/Directory.Build.props'], /rule ci-and-build needs every job/],
-  ['the solution', ['M\tWasla.sln'], /rule ci-and-build needs every job/],
-  ['the CI workflow', ['M\t.github/workflows/ci.yml'], /rule ci-and-build needs every job/],
-  ['the planner and its rules', ['M\tscripts/ci/select-test-scope.ps1', 'M\tscripts/ci/ci-job-rules.json'], /rule ci-and-build needs every job/],
-  ['the release scripts', ['M\tscripts/release/package-print-bridge.ps1'], /rule ci-and-build needs every job/],
-  ['Git attributes', ['M\t.gitattributes'], /rule ci-and-build needs every job/],
-  ['the deployment scripts', ['M\tdeploy/linux/publish-release.ps1'], /rule deployment needs every job/],
-  ['the report export smoke test', ['M\ttests/Wasla.ReportExport.LinuxSmoke/Program.cs'], /rule report-export-smoke needs every job/],
-  ['a path no rule knows', ['A\ttools/new-tool.ps1'], /no rule matches tools\/new-tool\.ps1/],
-  ['a new top-level file', ['A\tLICENSE'], /no rule matches LICENSE/],
-  ['a path that differs only in case from a focused folder', ['M\tDocs/README.md'], /no rule matches Docs\/README\.md/],
-  ['documentation together with Wasla.Web', ['M\tdocs/README.md', 'M\tsrc/Wasla.Web/wwwroot/js/a.js'], /rule web needs every job/],
-  ['documentation together with a path no rule knows', ['M\tdocs/README.md', 'A\tnotes/todo.txt'], /no rule matches notes\/todo\.txt/],
-  ['a deleted document', ['D\tdocs/README.md'], /other than an addition or modification: deleted docs\/README\.md/],
-  ['a renamed document', ['R100\tdocs/a.md\tdocs/b.md'], /renamed docs\/a\.md to docs\/b\.md/],
-  ['a copied test file', ['C090\ttests/Wasla.UnitTests/A.cs\ttests/Wasla.UnitTests/B.cs'], /copied tests\/Wasla\.UnitTests\/A\.cs to tests\/Wasla\.UnitTests\/B\.cs/],
-  ['a file whose type changed', ['T\tdocs/README.md'], /changed the type of docs\/README\.md/],
-  ['nothing (an empty diff)', [], /the diff is empty/],
+  ['Wasla.Web Razor views (tenant UI)', ['M\tsrc/Wasla.Web/Areas/Tenant/Views/Orders/_OrdersTable.cshtml'], /rule web needs every job/, 'full', /rule web needs the full scope/],
+  ['Wasla.Web JavaScript and static files', ['M\tsrc/Wasla.Web/wwwroot/js/live-screen.js', 'M\tsrc/Wasla.Web/wwwroot/css/site.css'], /rule web needs every job/, 'full'],
+  ['Wasla.Web authentication and authorization', ['M\tsrc/Wasla.Web/Program.cs'], /rule web needs every job/, 'full'],
+  ['Domain, Application and Infrastructure', ['M\tsrc/Wasla.Domain/Orders/Order.cs'], /rule shared-libraries needs every job/, 'full', /rule shared-libraries needs the full scope/],
+  ['an EF migration', ['A\tsrc/Wasla.Infrastructure/Persistence/Migrations/Tenant/20261124_Add.cs'], /rule shared-libraries needs every job/, 'full'],
+  ['tenant isolation in Infrastructure', ['M\tsrc/Wasla.Infrastructure/Tenancy/TenantDbContextFactory.cs'], /rule shared-libraries needs every job/, 'full'],
+  ['the Print Bridge engine', ['M\tsrc/Wasla.PrintBridge.Core/Services/WaslaPrintBridgeClient.cs'], /rule print-bridge-app needs every job/, 'full', /rule print-bridge-app needs the full scope/],
+  ['the Print Bridge tray app and its resources', ['M\tsrc/Wasla.PrintBridge/Resources/PrintBridgeResources.ru-RU.resx'], /rule print-bridge-app needs every job/, 'full'],
+  ['the Print Bridge Windows Service, which the WebView2 runtime tests do not start', ['M\tsrc/Wasla.PrintBridge.Service/Program.cs'], /rule print-bridge-service needs every job/, 'fast'],
+  ['the Print Bridge Windows Service and documentation', ['M\tsrc/Wasla.PrintBridge.Service/Program.cs', 'M\tdocs/README.md'], /rule print-bridge-service needs every job/, 'fast'],
+  ['the Print Bridge version', ['M\tsrc/Wasla.PrintBridge.Version.props'], /rule ci-and-build needs every job/, 'full', /rule ci-and-build needs the full scope \(src\/Wasla\.PrintBridge\.Version\.props\)/],
+  ['a project file inside a focused folder', ['M\ttests/Wasla.UnitTests/Wasla.UnitTests.csproj'], /rule ci-and-build needs every job/, 'full'],
+  ['an MSBuild file inside the installer folder', ['M\tinstaller/print-bridge/Directory.Build.props'], /rule ci-and-build needs every job/, 'full'],
+  ['the solution', ['M\tWasla.sln'], /rule ci-and-build needs every job/, 'full'],
+  ['the CI workflow', ['M\t.github/workflows/ci.yml'], /rule ci-and-build needs every job/, 'full', /rule ci-and-build needs the full scope \(\.github\/workflows\/ci\.yml\)/],
+  ['the planner and its rules', ['M\tscripts/ci/select-test-scope.ps1', 'M\tscripts/ci/ci-job-rules.json'], /rule ci-and-build needs every job/, 'full', /rule ci-and-build needs the full scope \(scripts\/ci\/select-test-scope\.ps1\)/],
+  ['the release scripts', ['M\tscripts/release/package-print-bridge.ps1'], /rule ci-and-build needs every job/, 'full'],
+  ['Git attributes', ['M\t.gitattributes'], /rule ci-and-build needs every job/, 'full'],
+  ['the deployment scripts', ['M\tdeploy/linux/publish-release.ps1'], /rule deployment needs every job/, 'full', /rule deployment needs the full scope/],
+  ['the report export smoke test', ['M\ttests/Wasla.ReportExport.LinuxSmoke/Program.cs'], /rule report-export-smoke needs every job/, 'full'],
+  ['a path no rule knows', ['A\ttools/new-tool.ps1'], /no rule matches tools\/new-tool\.ps1/, 'full', /no rule matches tools\/new-tool\.ps1/],
+  ['a new top-level file', ['A\tLICENSE'], /no rule matches LICENSE/, 'full'],
+  ['a path that differs only in case from a focused folder', ['M\tDocs/README.md'], /no rule matches Docs\/README\.md/, 'full'],
+  ['documentation together with Wasla.Web', ['M\tdocs/README.md', 'M\tsrc/Wasla.Web/wwwroot/js/a.js'], /rule web needs every job/, 'full'],
+  ['the Print Bridge Windows Service together with Wasla.Web', ['M\tsrc/Wasla.PrintBridge.Service/Program.cs', 'M\tsrc/Wasla.Web/Program.cs'], /rule print-bridge-service needs every job/, 'full', /rule web needs the full scope/],
+  ['Wasla.Web together with a headless-browser test', ['M\tsrc/Wasla.Web/wwwroot/js/live-screen.js', 'M\ttests/Wasla.UnitTests/Web/LiveScreenFirstLoadBrowserTests.cs'], /rule web needs every job/, 'full', /rule browser-tests needs the full scope/],
+  ['Wasla.Web together with the CI workflow', ['M\tsrc/Wasla.Web/Program.cs', 'M\t.github/workflows/ci.yml'], /rule web needs every job/, 'full', /rule ci-and-build needs the full scope/],
+  ['documentation together with a path no rule knows', ['M\tdocs/README.md', 'A\tnotes/todo.txt'], /no rule matches notes\/todo\.txt/, 'full'],
+  ['a deleted document', ['D\tdocs/README.md'], /other than an addition or modification: deleted docs\/README\.md/, 'full', /deleted docs\/README\.md/],
+  ['a renamed document', ['R100\tdocs/a.md\tdocs/b.md'], /renamed docs\/a\.md to docs\/b\.md/, 'full', /renamed docs\/a\.md to docs\/b\.md/],
+  ['a copied test file', ['C090\ttests/Wasla.UnitTests/A.cs\ttests/Wasla.UnitTests/B.cs'], /copied tests\/Wasla\.UnitTests\/A\.cs to tests\/Wasla\.UnitTests\/B\.cs/, 'full'],
+  ['a file whose type changed', ['T\tdocs/README.md'], /changed the type of docs\/README\.md/, 'full'],
+  ['nothing (an empty diff)', [], /the diff is empty/, 'full', /the diff is empty/],
 ];
 
-for (const [name, changes, forced] of everything) {
-  test(`a pull request into dev that changes ${name} runs every job`, () => {
-    assertSelection(planFor({ changes }), { mode: 'all', jobs: [UT, PB], forced });
+for (const [name, changes, forced, scope, fullScopeBy] of everything) {
+  test(`a pull request into dev that changes ${name} runs every job, in the ${scope} scope`, () => {
+    assertSelection(planFor({ changes }), { mode: 'all', jobs: [UT, PB], forced, scope, fullScopeBy });
   });
 }
+
+// The two decisions are independent: each combination of focused or every job with the fast or full scope occurs.
+for (const [changes, mode, scope] of [
+  [['M\tdocs/README.md'], 'focused', 'fast'],
+  [['M\ttests/Wasla.UnitTests/Web/OrderDetailModalBrowserTests.cs'], 'focused', 'full'],
+  [['M\tsrc/Wasla.PrintBridge.Service/Program.cs'], 'all', 'fast'],
+  [['M\t.github/workflows/ci.yml'], 'all', 'full'],
+]) {
+  test(`the scope is chosen after the jobs: ${changes[0].split('\t')[1]} gets ${mode === 'all' ? 'every job' : 'focused jobs'} and the ${scope} scope`, () => {
+    const testPlan = planFor({ changes });
+    assert.equal(testPlan.selection.mode, mode);
+    assertScope(testPlan, scope);
+  });
+}
+
+test('the scope reason says why a pull request into dev gets the full scope, or that nothing needs it', () => {
+  let testPlan = planFor({ changes: ['M\tdocs/README.md', 'M\tscripts/ci/select-test-scope.ps1', 'M\tscripts/ci/ci-job-rules.json'] });
+  assert.equal(testPlan.reason, 'pull request into dev whose changes need the full scope: rule ci-and-build needs the full scope (scripts/ci/select-test-scope.ps1) (and 1 more); every test runs');
+  assert.deepEqual(testPlan.selection.rules.map(r => [r.id, r.scope]), [['documentation', 'fast'], ['ci-and-build', 'full']]);
+  testPlan = planFor({ changes: ['M\tsrc/Wasla.Api/Program.cs'] });
+  assert.match(testPlan.reason, /^pull request into dev, and no changed file needs the full scope; the headless-browser and WebView2 runtime tests run after the merge to dev/);
+  // An untrusted change comes first, even after a rule's finding.
+  testPlan = planFor({ changes: ['M\t.github/workflows/ci.yml', 'D\tdocs/a.md'] });
+  assert.match(testPlan.reason, /need the full scope: a change other than an addition or modification: deleted docs\/a\.md \(and 1 more\)/);
+});
 
 test('every job that runs and every job that is skipped says why', () => {
   const selection = planFor({ changes: ['M\tdocs/README.md', 'M\ttests/Wasla.UnitTests/A.cs'] }).selection;
@@ -135,32 +198,44 @@ test('every job that runs and every job that is skipped says why', () => {
 
 test('a manual run runs every job and the full scope, whatever changed: it is the way to force everything', () => {
   const testPlan = planFor({ event: 'workflow_dispatch', base: '', changes: ['M\tdocs/README.md'] });
-  assert.equal(testPlan.scope, 'full');
-  assertSelection(testPlan, { mode: 'all', jobs: [UT, PB] });
+  assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], scope: 'full' });
   assert.match(testPlan.selection.basis, /every job runs for workflow_dispatch/);
+  assert.equal(testPlan.reason, 'workflow_dispatch; every test runs');
   assert.equal(testPlan.observation, null);
 });
 
 for (const [event, base, ref] of [['pull_request', 'master', ''], ['push', '', 'master'], ['merge_group', '', ''], ['', '', '']]) {
-  test(`${event || 'an unknown event'}${base ? ` into ${base}` : ''}${ref ? ` to ${ref}` : ''} runs every job, even for a documentation change`, () => {
+  test(`${event || 'an unknown event'}${base ? ` into ${base}` : ''}${ref ? ` to ${ref}` : ''} runs every job and the full scope, even for a documentation change`, () => {
     const testPlan = planFor({ event, base, ref, changes: ['M\tdocs/README.md'] });
-    assert.equal(testPlan.scope, 'full');
-    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB] });
+    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], scope: 'full' });
     assert.equal(testPlan.observation, null);
   });
 }
 
-test('a push to dev runs every job and records what the rules would have selected (observation phase)', () => {
-  const testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tdocs/README.md', 'M\ttests/Wasla.PrintBridge.Tests/A.cs'] });
-  assert.equal(testPlan.scope, 'full');
-  assertSelection(testPlan, { mode: 'all', jobs: [UT, PB] });
+test('a push to dev runs every job and the full scope, and records what the rules would have selected (observation phase)', () => {
+  let testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tdocs/README.md', 'M\ttests/Wasla.PrintBridge.Tests/A.cs'] });
+  assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], scope: 'full' });
   assert.match(testPlan.selection.basis, /observation phase/);
   assert.equal(testPlan.observation.mode, 'focused');
+  assert.equal(testPlan.observation.scope, 'fast');
   assert.deepEqual(windowsJobs(testPlan.observation), [PB]);
+  assert.deepEqual(testPlan.observation.fastScopeLeavesOut, [
+    { project: 'Wasla.UnitTests', job: UT, traits: ['Category=Browser'] },
+    { project: 'Wasla.PrintBridge.Tests', job: PB, traits: ['Category=WebView2Runtime'] },
+  ]);
+
+  testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tsrc/Wasla.PrintBridge.Service/Program.cs'] });
+  assert.deepEqual([testPlan.scope, testPlan.observation.mode, testPlan.observation.scope], ['full', 'all', 'fast']);
+  testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tsrc/Wasla.Web/Program.cs'] });
+  assert.deepEqual([testPlan.scope, testPlan.observation.mode, testPlan.observation.scope], ['full', 'all', 'full']);
+  testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tscripts/ci/ci-job-rules.json'] });
+  assert.deepEqual([testPlan.scope, testPlan.observation.mode, testPlan.observation.scope], ['full', 'all', 'full']);
+  testPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\ttests/Wasla.UnitTests/Web/ReportsPageBrowserTests.cs'] });
+  assert.deepEqual([testPlan.scope, testPlan.observation.mode, testPlan.observation.scope], ['full', 'focused', 'full']);
 });
 
-test('a pull request into dev without an event payload runs every job', () => {
-  assertSelection(planFor({}), { mode: 'all', jobs: [UT, PB], forced: /the event payload is not available/ });
+test('a pull request into dev without an event payload runs every job and the full scope', () => {
+  assertSelection(planFor({}), { mode: 'all', jobs: [UT, PB], forced: /the event payload is not available/, scope: 'full', fullScopeBy: /the event payload is not available/ });
 });
 
 // ---- Git diffs ---------------------------------------------------------------------------------------------------
@@ -212,7 +287,7 @@ test('a pull request is diffed from the merge-base, so changes that reached its 
     git(repo, 'checkout', '-q', '-b', 'base', root);
     const baseTip = commit(repo, { 'src/Wasla.Web/Program.cs': 'web, edited on dev\n' }, 'dev moved on');
     const testPlan = planFor({ repo, payload: { pull_request: { base: { sha: baseTip }, head: { sha: head } } } });
-    assertSelection(testPlan, { mode: 'focused', jobs: [], rule: ['documentation'] });
+    assertSelection(testPlan, { mode: 'focused', jobs: [], rule: ['documentation'], scope: 'fast' });
     assert.match(testPlan.selection.basis, new RegExp(`merge-base ${root.slice(0, 12)} to head ${head.slice(0, 12)}`));
   });
 });
@@ -227,6 +302,7 @@ test('a push of several commits is diffed from before to after: every commit cou
     assert.deepEqual(windowsJobs(testPlan.observation), [UT]);
     assert.deepEqual(testPlan.observation.rules.map(r => r.id), ['documentation', 'unit-tests-project']);
     assert.equal(testPlan.observation.files, 2);
+    assert.equal(testPlan.observation.scope, 'fast');
   });
 });
 
@@ -234,7 +310,7 @@ test('a pull request with renamed and deleted files runs every job', () => {
   withRepo((repo, root) => {
     const head = commit(repo, { 'docs/a.md': null, 'docs/b.md': 'a\n', 'tests/Wasla.UnitTests/A.cs': null }, 'rename and delete');
     const testPlan = planFor({ repo, payload: { pull_request: { base: { sha: root }, head: { sha: head } } } });
-    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /renamed docs\/a\.md to docs\/b\.md/ });
+    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /renamed docs\/a\.md to docs\/b\.md/, scope: 'full', fullScopeBy: /deleted tests\/Wasla\.UnitTests\/A\.cs/ });
     assert.match(testPlan.selection.forcedBy.join('\n'), /deleted tests\/Wasla\.UnitTests\/A\.cs/);
   });
 });
@@ -242,7 +318,7 @@ test('a pull request with renamed and deleted files runs every job', () => {
 test('a pull request whose head is already in its base has an empty diff and runs every job', () => {
   withRepo((repo, root) => {
     const tip = commit(repo, { 'docs/README.md': 'docs, edited\n' }, 'already merged');
-    assertSelection(planFor({ repo, payload: { pull_request: { base: { sha: tip }, head: { sha: root } } } }), { mode: 'all', jobs: [UT, PB], forced: /the diff is empty/ });
+    assertSelection(planFor({ repo, payload: { pull_request: { base: { sha: tip }, head: { sha: root } } } }), { mode: 'all', jobs: [UT, PB], forced: /the diff is empty/, scope: 'full' });
   });
 });
 
@@ -250,7 +326,7 @@ test('a commit missing from the fetched history (a shallow clone or a force push
   withRepo((repo, root) => {
     const missing = 'f'.repeat(40);
     let testPlan = planFor({ repo, payload: { pull_request: { base: { sha: missing }, head: { sha: root } } } });
-    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /the previous commit f{40} is not in the fetched history/ });
+    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /the previous commit f{40} is not in the fetched history/, scope: 'full' });
 
     const shallow = tempDir('wasla-ci-shallow-');
     try {
@@ -260,7 +336,7 @@ test('a commit missing from the fetched history (a shallow clone or a force push
       const cloned = spawnSync('git', ['clone', '-q', '--depth', '1', url, shallow], { encoding: 'utf8' });
       assert.equal(cloned.status, 0, cloned.stderr);
       testPlan = planFor({ repo: shallow, payload: { pull_request: { base: { sha: root }, head: { sha: head } } } });
-      assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /not in the fetched history/ });
+      assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /not in the fetched history/, scope: 'full', fullScopeBy: /not in the fetched history/ });
     } finally {
       fs.rmSync(shallow, { recursive: true, force: true });
     }
@@ -272,6 +348,7 @@ test('a push without a previous commit (a new branch) records that every job wou
     const testPlan = planFor({ event: 'push', base: '', ref: 'dev', repo, payload: { before: '0'.repeat(40), after: root } });
     assertSelection(testPlan, { mode: 'all', jobs: [UT, PB] });
     assert.equal(testPlan.observation.mode, 'all');
+    assert.equal(testPlan.observation.scope, 'full');
     assert.match(testPlan.observation.forcedBy.join('\n'), /the changes could not be computed: the previous commit is unknown/);
   });
 });
@@ -280,7 +357,7 @@ test('a diff git cannot compute (not a repository) runs every job', () => {
   const notARepo = tempDir('wasla-ci-norepo-');
   try {
     const testPlan = planFor({ repo: notARepo, payload: { pull_request: { base: { sha: 'a'.repeat(40) }, head: { sha: 'b'.repeat(40) } } } });
-    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /the changes could not be computed/ });
+    assertSelection(testPlan, { mode: 'all', jobs: [UT, PB], forced: /the changes could not be computed/, scope: 'full' });
   } finally {
     fs.rmSync(notARepo, { recursive: true, force: true });
   }
@@ -366,6 +443,29 @@ test('the test accounting of a plan without .NET projects passes without results
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('the final job shows the planned scope apart from the planned jobs, and on a push to dev the scope the rules would choose', () => {
+  let result = checkJobs(planFor({ changes: ['M\t.github/workflows/ci.yml'] }), { ...passing, [UT]: 'success', [PB]: 'success' });
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\*\*Planned scope: full\*\* \(pull request into dev whose changes need the full scope: rule ci-and-build needs the full scope \(\.github\/workflows\/ci\.yml\); every test runs\)/);
+  assert.match(result.output, /\*\*Planned jobs: every job\*\*/);
+
+  result = checkJobs(planFor({ changes: ['M\ttests/Wasla.UnitTests/Web/ReportsPageBrowserTests.cs'] }), { ...passing, [UT]: 'success', [PB]: 'skipped' });
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\*\*Planned scope: full\*\*/);
+  assert.match(result.output, /\*\*Planned jobs: focused\*\*/);
+
+  result = checkJobs(docsOnly, { ...passing, [UT]: 'skipped', [PB]: 'skipped' });
+  assert.match(result.output, /\*\*Planned scope: fast\*\* \(pull request into dev, and no changed file needs the full scope/);
+
+  const pushPlan = planFor({ event: 'push', base: '', ref: 'dev', changes: ['M\tsrc/Wasla.PrintBridge.Service/Program.cs'] });
+  result = checkJobs(pushPlan, { ...passing, [UT]: 'success', [PB]: 'success' });
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /\*\*Planned scope: full\*\* \(push; every test runs\)/);
+  assert.match(result.output, /the rules would select every job and the fast scope\*\*/);
+  assert.match(result.output, /The fast scope would have left out the headless-browser and WebView2 runtime tests; the test accounting reports a failure among them\./);
+  assert.match(result.output, /The rules would have run every job for these changes; nothing to compare\./);
 });
 
 // ---- Guards: the repository still has the dependencies the focused rules rely on ---------------------------------
@@ -547,7 +647,43 @@ test('guard: every document the rules list as read by the tests exists', () => {
   assert.deepEqual(listed.filter(p => !fs.existsSync(path.join(repoRoot, p))), []);
 });
 
-test('guard: every rule is well formed and only names jobs the workflow can skip', () => {
+// The fast scope leaves out tests by trait. A pull request that changes one of them, or the headless-browser driver,
+// must run the full scope, or the changed tests would not run before the merge.
+test('guard: every test the fast scope leaves out, and the browser driver, is in a rule that runs its job in the full scope', () => {
+  const deferred = { 'Wasla.UnitTests': 'Browser', 'Wasla.PrintBridge.Tests': 'WebView2Runtime' };
+  const dependencies = [];
+  for (const [project, dir] of Object.entries(testProjects)) {
+    const trait = new RegExp(`Trait\\(\\s*"Category"\\s*,\\s*"${deferred[project]}"\\s*\\)`);
+    for (const file of trackedUnder(relative(dir), name => name.endsWith('.cs'))) {
+      const text = fs.readFileSync(file, 'utf8');
+      if (trait.test(text)) dependencies.push({ job: projectJob[project], path: relative(file), why: `has Category=${deferred[project]}` });
+      if (/\bclass\s+HeadlessChromium\b/.test(text)) dependencies.push({ job: UT, path: relative(file), why: 'defines the headless-browser driver' });
+    }
+  }
+  assert.ok(dependencies.filter(d => d.job === UT).length >= 30, 'expected the headless-browser test classes');
+  assert.ok(dependencies.some(d => d.job === PB), 'expected the WebView2 runtime tests');
+  const selections = jobsForPaths(dependencies.map(d => d.path));
+  const uncovered = dependencies.filter(d => !selections.get(d.path).jobs[d.job].run || selections.get(d.path).scope !== 'full');
+  assert.deepEqual(uncovered.map(d => `${d.path} ${d.why}, but its rule does not run ${d.job} in the full scope`), []);
+});
+
+// The headless-browser tests start Wasla.Web and the WebView2 runtime tests start the Wasla.PrintBridge tray app, each
+// with the projects it builds on. A change to any of them can change what those tests see, so the full scope.
+test('guard: every project the deferred tests start, or that it builds on, is in a rule with the full scope', () => {
+  const started = { 'Wasla.Web': 'the headless-browser tests', 'Wasla.PrintBridge': 'the WebView2 runtime tests' };
+  const dependencies = [];
+  for (const [project, tests] of Object.entries(started)) {
+    const projectFile = path.join(repoRoot, 'src', project, `${project}.csproj`);
+    for (const reference of [projectFile, ...closure(projectFile)]) {
+      dependencies.push({ path: `${relative(path.dirname(reference))}/Probe.cs`, why: `${tests} start ${project}${reference === projectFile ? '' : `, which builds on ${path.basename(reference, '.csproj')}`}` });
+    }
+  }
+  assert.ok(dependencies.length >= 7, 'expected Web with Contracts, Application, Infrastructure and Domain, and Print Bridge with its engine');
+  const selections = jobsForPaths(dependencies.map(d => d.path));
+  assert.deepEqual(dependencies.filter(d => selections.get(d.path).scope !== 'full').map(d => `${d.path}: ${d.why}, but its rule keeps the fast scope`), []);
+});
+
+test('guard: every rule is well formed, only names jobs the workflow can skip and names its scope', () => {
   assert.deepEqual(rules.skippableJobs, [UT, PB]);
   const ids = new Set();
   for (const rule of rules.rules) {
@@ -555,5 +691,21 @@ test('guard: every rule is well formed and only names jobs the workflow can skip
     ids.add(rule.id);
     assert.ok(rule.why && rule.paths.length > 0, rule.id);
     assert.ok(rule.jobs === 'all' || (Array.isArray(rule.jobs) && rule.jobs.every(job => rules.skippableJobs.includes(job))), rule.id);
+    assert.ok(['fast', 'full'].includes(rule.scope), `rule ${rule.id} scope ${rule.scope}`);
+  }
+});
+
+test('a rule without a valid scope gets the full scope', () => {
+  const dir = tempDir('wasla-ci-rules-');
+  try {
+    const file = path.join(dir, 'rules.json');
+    fs.writeFileSync(file, JSON.stringify({ skippableJobs: [UT, PB], rules: [{ id: 'docs', jobs: [], scope: 'Fast', why: 'x', paths: ['docs/**'] }, { id: 'tests', jobs: [UT], why: 'x', paths: ['tests/**'] }] }));
+    for (const change of ['M\tdocs/README.md', 'M\ttests/A.cs']) {
+      const result = runPowerShell(`& '${selectScript}' -EventName pull_request -BaseRef dev -RulesPath '${file}' -ChangeList $env:CHANGE -PlanOnly`, { CHANGE: change });
+      assert.equal(result.status, 0, result.stderr + result.stdout);
+      assert.equal(JSON.parse(result.stdout.trim()).scope, 'full', change);
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

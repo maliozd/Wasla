@@ -55,8 +55,8 @@ jobs:
           WASLA_RETIRED_TERMS: ${{ vars.WASLA_RETIRED_TERMS }}
         run: node scripts/ci/terminology-guard.js
 
-  # Chooses the scope (fast or full), the jobs that run it and the shards of those jobs: select-test-scope.ps1 owns
-  # the scope, the job selection (rules in ci-job-rules.json), the shards and their filters. Every Windows job below
+  # Chooses the jobs, then the scope (fast or full) and the shards of those jobs: select-test-scope.ps1 owns the job
+  # selection and the scope (rules in ci-job-rules.json), the shards and their filters. Every Windows job below
   # starts from this plan, and test-accounting checks the run against it.
   plan:
     name: Select test scope, jobs and shards
@@ -80,8 +80,9 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests) and only the jobs
-      # its changed files need; every other event runs every test and every job. See docs/operations/testing.md.
+      # A pull request into dev runs only the jobs its changed files need, then the fast scope (no headless-browser or
+      # WebView2 runtime tests) unless its changes need the full one; every other event runs every job and the full
+      # scope. See docs/operations/testing.md.
       - name: Select test scope, jobs and shards
         id: select
         shell: pwsh

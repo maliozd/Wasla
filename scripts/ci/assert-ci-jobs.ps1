@@ -13,7 +13,8 @@
 
     On a push to dev every job runs, and the plan also records what the rules would have selected for a pull request
     with the push's changes (observation phase). For every job the rules would have skipped, this script reports the
-    job's real result; a failure there is a failure the rules would have missed, reported as a warning.
+    job's real result; a failure there is a failure the rules would have missed, reported as a warning. When the rules
+    would have chosen the fast scope, assert-test-shards.ps1 reports the failed tests that scope leaves out.
 
     Prints a table and, on GitHub Actions, adds it to the job summary with error and warning annotations. Exits with 1
     when a job's result does not match the plan.
@@ -61,6 +62,8 @@ $warnings = New-Object System.Collections.Generic.List[string]
 
 $mode = if ($selection.mode -eq 'focused') { 'focused' } else { 'every job' }
 $summary = New-Object System.Collections.Generic.List[string]
+$summary.Add("**Planned scope: $($planObject.scope)** ($($planObject.reason))")
+$summary.Add('')
 $summary.Add("**Planned jobs: $mode** ($($selection.basis))")
 $summary.Add('')
 $summary.Add('| Job | Planned | Result | Why |')
@@ -83,8 +86,12 @@ $summary.Add('')
 $observation = $planObject.PSObject.Properties['observation']
 if ($null -ne $observation -and $null -ne $observation.Value) {
     $shadow = $observation.Value
-    $summary.Add("**Observation phase: the rules would select $(if ($shadow.mode -eq 'focused') { 'a focused set' } else { 'every job' })** ($($shadow.basis))")
+    $summary.Add("**Observation phase: the rules would select $(if ($shadow.mode -eq 'focused') { 'a focused set' } else { 'every job' }) and the $($shadow.scope) scope** ($($shadow.basis))")
     $summary.Add('')
+    if ($shadow.scope -eq 'fast') {
+        $summary.Add('The fast scope would have left out the headless-browser and WebView2 runtime tests; the test accounting reports a failure among them.')
+        $summary.Add('')
+    }
     $skipped = @($shadow.jobs.PSObject.Properties | Where-Object { -not $_.Value.run })
     if ($skipped.Count -eq 0) {
         $summary.Add('The rules would have run every job for these changes; nothing to compare.')
