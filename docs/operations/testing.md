@@ -28,16 +28,16 @@ Some Print Bridge tests also skip when no Windows printer is installed. They onl
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes to `dev` and `master`, on pull requests into them, and manually (**Run workflow** on the Actions tab, or `gh workflow run`). Each job must pass.
+`.github/workflows/ci.yml` runs on pushes to `dev` and `master`, on pull requests into them, and manually (**Run workflow** on the Actions tab, or `gh workflow run`). Every job the plan selects must pass. A job the plan leaves out shows as skipped, and the final job (`test-accounting`) fails the run unless exactly the planned jobs ran and passed (see [Job selection](#job-selection)).
 
 | Job | Runner | What it runs |
 | --- | --- | --- |
-| `terminology-guard` | `ubuntu-latest`, Node.js `24.21.0` | The [retired-terminology guard](#retired-terminology-guard) over every tracked file, in every scope. It fails when the repository variable `WASLA_RETIRED_TERMS` is missing or invalid |
-| `plan` | `ubuntu-latest`, PowerShell 7 | `select-test-scope.ps1`: the [test scope](#test-scope) of the event and its [shards](#test-shards) with their filters |
-| `unit-tests` (one job per shard) | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`, SQL Server LocalDB, then the shard's part of `Wasla.UnitTests` |
-| `print-bridge` | `windows-latest`, .NET 8 SDK (`8.0.x`) | Restore and Release build of `Wasla.sln`, the Print Bridge installers, then `Wasla.PrintBridge.Tests` in the scope |
-| `test-accounting` | `ubuntu-latest`, PowerShell 7 | After the test jobs, also when one failed: [every planned test ran exactly once](#test-shards), on the run's commit, and passed |
-| `javascript-tests` | `ubuntu-latest`, Node.js `24.21.0` (pinned in the workflow) | `node --test` over every file `git ls-files '*.test.js'` lists, in every scope. The job fails when that list is empty |
+| `terminology-guard` | `ubuntu-latest`, Node.js `24.21.0` | The [retired-terminology guard](#retired-terminology-guard) over every tracked file, in every scope and for every change. It fails when the repository variable `WASLA_RETIRED_TERMS` is missing or invalid |
+| `plan` | `ubuntu-latest`, PowerShell 7 | `select-test-scope.ps1`: the [test scope](#test-scope) of the event, the [jobs](#job-selection) the change needs and their [shards](#test-shards) with their filters |
+| `unit-tests` (one job per shard) | `windows-latest`, .NET 8 SDK (`8.0.x`) | When the plan selects it: restore and Release build of `Wasla.sln`, SQL Server LocalDB, then the shard's part of `Wasla.UnitTests` |
+| `print-bridge` | `windows-latest`, .NET 8 SDK (`8.0.x`) | When the plan selects it: restore and Release build of `Wasla.sln`, the Print Bridge installers, then `Wasla.PrintBridge.Tests` in the scope |
+| `test-accounting` | `ubuntu-latest`, PowerShell 7 | After every other job, also when one failed: every planned job passed and every other job was skipped on purpose ([Job selection](#job-selection)), and [every planned test ran exactly once](#test-shards), on the run's commit, and passed |
+| `javascript-tests` | `ubuntu-latest`, Node.js `24.21.0` (pinned in the workflow) | `node --test` over every file `git ls-files '*.test.js'` lists, in every scope and for every change. The job fails when that list is empty |
 
 `terminology-guard`, `plan` and `javascript-tests` start at once; the Windows jobs start when `plan` is done and run in parallel, each on its own runner with its own build (restore and build take about 1.5 minutes, less than handing a build between runners). Print Bridge, its WebView2 runtime tests and the Edge headless-browser tests need Windows. The Node tests, the terminology guard, the plan and the accounting need no Windows API and run on Ubuntu.
 
@@ -97,6 +97,106 @@ Results count theory cases, so they are higher than the test-method counts above
 
 From 4 to 6 November 2026 the full scope's `Wasla.UnitTests` step took 33 to 52 minutes in passing runs (about 4,430 results). On 6 November a full run of WAS-129 ([run](https://github.com/maliozd/Wasla/actions/runs/42201277724), a newer runner image) took 57 minutes for that step: every test had reported, none stalled (the longest gap between results was 21 s), and the tests both runs share took 1.6 times as long, so the runner was slower throughout. The job's 60-minute limit then cancelled it before Print Bridge, so the single Windows job's limit became 90 minutes. Since the shards (WAS-243) each Windows job runs one part of the suite and has a 60-minute limit; a hanging test is still stopped after 15 minutes by `--blame-hang-timeout`.
 
+### Job selection
+
+`select-test-scope.ps1` also chooses which jobs of the scope run (WAS-246), from the files a change touches and the rules in `scripts/ci/ci-job-rules.json`. It does not change the scope: a pull request into `dev` still runs the fast scope, every other event the full scope, with the same shards. It only decides whether the two Windows jobs run:
+
+- `unit-tests`: every shard of the scope, or none;
+- `print-bridge`: the installers and `Wasla.PrintBridge.Tests`.
+
+`terminology-guard` and `javascript-tests` run for every change; `plan` and `test-accounting` always run.
+
+| Event | Jobs |
+| --- | --- |
+| Pull request into `dev` | The jobs its changed files need (below). Changes: from the merge-base of the pull request's base and head to its head, as **Files changed** shows them |
+| Push to `dev` | Every job (observation phase, below). The plan also records what the rules would have selected for the push's changes, from its previous commit to its new one, every pushed commit included |
+| Pull request into `master`, push to `master`, manual run, any other event | Every job |
+
+The `plan` job checks out the whole history and diffs with `git diff --name-status -M`. Every changed file is matched against the rules in order; the first rule whose path matches decides, and the pull request runs the union of the jobs its files need. Every job runs when:
+
+- a matching rule needs every job;
+- a file matches no rule (the rules are an allowlist: a new folder runs everything until a rule covers it);
+- a file is deleted, renamed, copied or changes type;
+- the diff is empty;
+- the changes cannot be computed: a commit missing from the fetched history (a force push, a shallow clone), a push without a previous commit (a new branch), a missing event payload, a git error.
+
+#### Decision matrix
+
+Dependencies as of `4de3a6a9`, checked by the guards below:
+
+| Rule | Paths | Runs | Left out, and why that is safe |
+| --- | --- | --- | --- |
+| `ci-and-build` | `.github/**`, `scripts/**`, `*.sln`, `*.csproj`, `*.wixproj`, `*.props`, `*.targets`, NuGet and `global.json` files, `.editorconfig`, `.gitattributes`, `.gitignore`, `.config/**` | every job | Nothing: they change how every job builds or checks. This planner and its rules are under `scripts/ci/` |
+| `docs-read-by-unit-tests` | `docs/operations/{deployment,cli,local-development,migrations}.md`, `docs/architecture/tenancy.md`, `docs/orders-printjob-status-signalr.md`, `docs/temporary-receipt-test-output.md` | `unit-tests` | `print-bridge`: no Print Bridge test reads them (`WaslaConfigurationKeyTests` and `WaslaVisualFoundationTests` do) |
+| `docs-read-by-print-bridge-tests` | `docs/integrations/print-bridge-service.md` | `print-bridge` | `unit-tests`: no unit test reads it (`PrintBridgeInstallerSourceTests` does) |
+| `documentation` | every other file under `docs/`, `*.md` at the root, `.claude/rules/*.md` | no .NET job | Both: no project compiles them and no .NET test reads them. The terminology guard and the Node tests still run |
+| `unit-tests-project` | `tests/Wasla.UnitTests/**` | `unit-tests` | `print-bridge`: Print Bridge neither compiles nor reads that folder |
+| `print-bridge-tests-project` | `tests/Wasla.PrintBridge.Tests/**` | `print-bridge` | `unit-tests`: the unit tests neither compile nor read that folder |
+| `print-bridge-installer` | `installer/print-bridge/**` (its MSBuild files match `ci-and-build` first) | `print-bridge` | `unit-tests`: only the Print Bridge job builds the installers, and no unit test reads their sources |
+| `server-hosts` | `src/Wasla.Api/**`, `src/Wasla.Cli/**`, `src/Wasla.Worker/**`, `src/Wasla.Contracts/**` | `unit-tests` | `print-bridge`: no Print Bridge project or test compiles or reads them. The unit tests compile Api, Cli and Contracts, read Worker sources and scan every file under `src/` |
+| `web` | `src/Wasla.Web/**` | every job | Nothing: `Wasla.PrintBridge.Tests` reads Web views, scripts and resources (`PrintBridgeWebUiSourceTests`, `WaslaLogoTests`), and `Wasla.PrintBridge` embeds the Web logo |
+| `shared-libraries` | `src/Wasla.Domain/**`, `src/Wasla.Application/**`, `src/Wasla.Infrastructure/**` | every job | Nothing: both test projects compile them |
+| `print-bridge-product` | `src/Wasla.PrintBridge/**`, `src/Wasla.PrintBridge.Core/**`, `src/Wasla.PrintBridge.Service/**` | every job | Nothing: the unit tests read Print Bridge resources and sources and scan every file under `src/` |
+| `deployment` | `deploy/**` | every job | Nothing: the unit tests read `deploy/linux/publish-release.ps1`; not narrowed yet |
+| `report-export-smoke` | `tests/Wasla.ReportExport.LinuxSmoke/**` | every job | Nothing: checked by `report-export-checks.yml`; not narrowed yet |
+| none | any other path | every job | Nothing |
+
+By kind of change:
+
+| Change | Jobs | Rule |
+| --- | --- | --- |
+| Documentation only | none, or the test job that reads the document | `documentation`, `docs-read-by-*` |
+| Wasla.Web JavaScript, CSS and other static files | every job | `web` |
+| Tenant UI, Razor views, browser behavior | every job | `web` |
+| Print Bridge app, engine or service | every job | `print-bridge-product` |
+| Print Bridge installer sources | `print-bridge` | `print-bridge-installer` |
+| Tests only, in one test project | that project's job | `unit-tests-project`, `print-bridge-tests-project` |
+| Api, CLI, Worker, Contracts | `unit-tests` | `server-hosts` |
+| Domain, Application, Infrastructure (backend and shared code) | every job | `shared-libraries` |
+| EF migrations, DbContexts, database and tenant isolation | every job | `shared-libraries` (Infrastructure), `web` (middleware) |
+| Authentication and authorization | every job | `web`, `shared-libraries` |
+| Solution, project, MSBuild and NuGet files | every job | `ci-and-build` |
+| CI and test infrastructure (workflows, `scripts/ci`, this planner) | every job | `ci-and-build` |
+
+A focused selection never widens or narrows the scope. For a pull request into `dev` the headless-browser and WebView2 runtime tests still run only after the merge; the [manual run](#full-validation-of-a-feature-branch) covers them before.
+
+`scripts/ci/ci-job-plan.test.js`, part of the Node suite, has three groups of tests:
+
+- **Decisions:** table-driven tests of every rule; mixed changes; unknown paths, deletions, renames, copies, type changes, empty diffs, missing history and git errors; the diff of a pull request from its merge-base and of a multi-commit push, in temporary git repositories; and every event.
+- **Final job:** its checks of the job results.
+- **Guards** against this repository:
+  - every project a test project compiles must be in a rule that runs that project's job;
+  - every file a project links from another folder must be in a rule that runs every job;
+  - every `src`, `tests`, `installer`, `deploy` or `scripts` folder its tests name in a string literal must be in such a rule. A folder named without a subfolder counts every folder under it;
+  - every Markdown document its tests read must be in such a rule.
+
+The guards run with the Node tests on every change, so a new dependency fails CI until the rules cover it. They find literal paths only: a path a test builds at run time is not found, so review new file reads in tests with that in mind.
+
+To change a rule, edit `ci-job-rules.json` (the first matching rule wins: put a narrower path before a broader one) and add a case to `ci-job-plan.test.js`. A change to the rules or the planner runs every job.
+
+#### Running every job by hand
+
+On any branch, **Actions → CI → Run workflow** or `gh workflow run ci.yml --ref <branch>` runs the full scope and every job (see [Full validation of a feature branch](#full-validation-of-a-feature-branch)). No label or input narrows the selection: the plan reads only the event's name, its base branch and its commits.
+
+#### Reading the summary
+
+- **The `plan` job's summary:**
+  - the scope;
+  - **Jobs: focused** or **Jobs: every job**, with the changes it compared (merge-base and head, or the previous and new commit) and how many files changed;
+  - a table of the jobs, each with whether it runs and why;
+  - a table of the rules the changed files matched, with the jobs they need and the files (the first 20 per rule);
+  - when every job runs, the findings that caused it.
+- **Skipped jobs in the pull request's checks:** a job the plan left out shows as skipped; the unit-test matrix shows as one skipped check. It is skipped on purpose only when the final job, **Require every planned job and test to run and pass**, passes.
+- **The final job's summary:**
+  - every job, planned or "skipped on purpose", with its result and why;
+  - then the test accounting of the planned .NET projects.
+
+  It fails when a planned job failed, was cancelled or was skipped, and when a job the plan left out ran.
+
+#### Observation phase on `dev`
+
+Every push to `dev` still runs every job. The `plan` summary also shows what the rules would have selected for a pull request with the push's changes. The final job lists each job the rules would have skipped, with its real result. A failure there adds a warning, **Job selection would have missed a failure**: check whether the change caused it (then a rule is wrong) or it is unrelated (for example WAS-229 or WAS-244). Until it is decided otherwise (WAS-246), every push to `dev` keeps running every job.
+
 ### Test shards
 
 The Windows work of a scope is split into jobs that run in parallel on separate runners (WAS-243). `select-test-scope.ps1` defines each shard as rules on traits and on prefixes of the fully qualified test name (`Namespace.Class.Method`), turns them into its `dotnet test --filter`, and gives it a limit on the test classes xUnit runs at once (none: xUnit's default, one per CPU, four on `windows-latest`). A namespace prefix ends with a dot, so it covers the namespace and every namespace below it, and `Wasla.UnitTests.Auth.` does not cover `Wasla.UnitTests.Authorization`.
@@ -114,15 +214,15 @@ A new test needs no shard of its own: its traits, namespace and class name place
 
 The browser shards run at most two test classes at once. In the single Windows job before WAS-243, browser classes shared the runner with the other tests, and four browser tests ran at once at most 11 % of the time (one or two most of the time). The first shard layout ran four browser classes at once for 43 % of its time; three realtime browser classes then started together and `RealtimeLifecycleBrowserTests` missed its 8-second wait for a pushed order (run [45258289534](https://github.com/maliozd/Wasla/actions/runs/45258289534)). The limit keeps every browser test at a density no higher than that job usually had; it does not change any test or wait.
 
-Each shard job records, before its tests run, the commit it checked out, its scope, filter and limit, and the test methods its assembly lists (`record-test-shard.ps1`, which runs the xUnit v3 test executable with `-list full/json`). The `test-accounting` job reads those records and the TRX files and runs `assert-test-shards.ps1`. It fails when:
+Each shard job records, before its tests run, the commit it checked out, its scope, filter and limit, and the test methods its assembly lists (`record-test-shard.ps1`, which runs the xUnit v3 test executable with `-list full/json`). The `test-accounting` job reads those records and the TRX files and runs `assert-test-shards.ps1` for the projects whose job the plan selected (none when the [job selection](#job-selection) runs no .NET job). It fails when:
 
-- a planned shard has no record or no TRX file, a TRX file has no results, or a record belongs to a shard the plan does not have;
+- a planned shard has no record or no TRX file, a TRX file has no results, or a record belongs to a shard the plan does not have (a shard of a project whose job the plan left out included);
 - a shard tested another commit, scope, filter or limit on classes at once than planned;
 - two shards of a project listed different test methods;
 - the shard rules do not partition the scope: a test of the scope that no shard or two shards select, a shard that selects a test outside the scope, or a shard with no test of the scope;
 - a shard did not run one of its planned methods, ran a method it was not planned for, or a method ran in two shards.
 
-Methods are compared by class and method name; a theory's data rows count as one method. The same job then runs `assert-test-results.ps1` over every shard's TRX file, so a failed or skipped test fails it too. The shard jobs check their own results as well, so a failure shows on the job that had it. `scripts/ci/test-shards.test.js` (part of the Node suite) checks the plan of each event and each accounting failure above with made-up results.
+Methods are compared by class and method name; a theory's data rows count as one method. The same job then runs `assert-test-results.ps1` over every shard's TRX file, so a failed or skipped test fails it too. The shard jobs check their own results as well, so a failure shows on the job that had it. `scripts/ci/test-shards.test.js` (part of the Node suite) checks the scope and shards of each event and each accounting failure above with made-up results.
 
 To run one shard locally, take its filter and limit from the plan, for example `.\scripts\ci\select-test-scope.ps1 -EventName push`, and pass them to `dotnet test --filter "<filter>" -- xUnit.MaxParallelThreads=<limit>` (leave out the part after `--` for a shard without a limit).
 
@@ -167,11 +267,11 @@ A green fast run does not cover the browser or WebView2 runtime tests. Run the f
 gh workflow run ci.yml --ref <branch>
 ```
 
-Or open **Actions → CI → Run workflow** and choose the branch. The run tests the branch's head commit at that moment; it shows in the pull request's checks with `(workflow_dispatch)` after the job name. Make sure its commit is the pull request's head, and run it again after a later push that should be covered.
+Or open **Actions → CI → Run workflow** and choose the branch. The run tests the branch's head commit at that moment and runs every job, whatever the branch changes; it shows in the pull request's checks with `(workflow_dispatch)` after the job name. Make sure its commit is the pull request's head, and run it again after a later push that should be covered.
 
 ### Tradeoff: `dev` can fail after a merge
 
-A pull request into `dev` can merge with only the fast scope green. The full scope then runs on the push to `dev`, so `dev` can turn red for a browser or WebView2 runtime failure that the pull request never ran. Treat a red `dev` run as the first thing to fix (fix forward or revert), and do not open a pull request from `dev` into `master` until the latest `dev` run is green. `master` gets no unvalidated change: pull requests into `master` and pushes to `master` always run the full scope.
+A pull request into `dev` can merge with only the fast scope green, and only with the jobs its changes need. The full scope and every job then run on the push to `dev`, so `dev` can turn red for a browser or WebView2 runtime failure that the pull request never ran. Treat a red `dev` run as the first thing to fix (fix forward or revert), and do not open a pull request from `dev` into `master` until the latest `dev` run is green. `master` gets no unvalidated change: pull requests into `master` and pushes to `master` always run the full scope.
 
 Moving a pull request's base to `master` starts the full scope by itself: `.github/workflows/ci-base-change.yml` reacts to an edit of a pull request into `master`, and when the edit changed the base it runs the CI workflow on the merge with `master`. The event still carries the merge with the old base, so its first job (`Find the merge with the new base`) waits, up to 10 minutes, until GitHub's merge commit has the current `master` and the pull request's head as parents, and the CI workflow checks out that commit. It fails, rather than skips, when it cannot read the pull request, when the pull request conflicts with `master` or when no merge commit appears. The CI checks are named `Full CI after base change / ` followed by the CI job names. They replace an older run of that pull request that is still in progress. A title or description edit only skips its jobs and starts no CI run. Moving a base from `master` back to `dev` starts nothing; the existing full checks stay. Re-running an old run keeps the event and base branch it started with, and so its scope.
 
@@ -193,7 +293,7 @@ How failures surface:
 - A build error or a failing test fails its step and the job. The other test jobs still run, so one run reports every shard and both projects.
 - `scripts/ci/assert-test-results.ps1` then reads the job's result file, and the `test-accounting` job reads every shard's, in both scopes. It fails the job when a file is missing, has no tests, or reports a failed or **skipped** test. A filter that selects no test still writes a result file and `dotnet test` still exits with 0, so this check is what fails such a run. A missing browser, an unreachable CDN, a missing WebView2 Runtime or a missing printer therefore fails CI instead of passing as a skip. The script adds an error annotation per failed or skipped test (first 20) and a totals table to the job summary.
 - A test that hangs for 15 minutes is stopped by `--blame-hang-timeout`. The run then fails with the hanging test's name and no memory dump. Each job also has a time limit (60 minutes for each Windows job, see the measurements above; 15 for Node; 10 for the accounting).
-- `test-accounting` fails when a test of the scope did not run, ran twice or in the wrong shard, or a shard is missing or empty (see [Test shards](#test-shards)).
+- `test-accounting` fails when a planned job did not pass or a job the plan left out ran (see [Job selection](#job-selection)), and when a test of the scope did not run, ran twice or in the wrong shard, or a shard is missing or empty (see [Test shards](#test-shards)).
 - After the tests, each Windows job warns (it does not fail or kill anything) when an Edge, WebView2 or test host process outlived them.
 - Results are kept for 14 days as the `dotnet-test-results-<shard>` (TRX files, the shard's record and its assembly's test list; `dotnet-test-results-print-bridge` also has the installer logs) and `javascript-test-results` (JUnit XML) artifacts. They contain test names, messages and output from fake data only.
 

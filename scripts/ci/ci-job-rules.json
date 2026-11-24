@@ -1,0 +1,140 @@
+{
+  "description": "Which CI jobs a changed file needs. select-test-scope.ps1 matches every changed file against these rules in order; the first rule whose pattern matches decides. A rule lists the jobs the file needs, or \"all\". A file no rule matches, a change other than an addition or modification, an empty diff and a diff that cannot be computed all run every job. Patterns are relative to the repository root, case-sensitive, with forward slashes: * matches within one folder, ** across folders, and **/ at the start also matches the root. The focused rules rely on dependencies that scripts/ci/ci-job-plan.test.js checks against the repository; see docs/operations/testing.md (Job selection).",
+  "skippableJobs": ["unit-tests", "print-bridge"],
+  "rules": [
+    {
+      "id": "ci-and-build",
+      "jobs": "all",
+      "why": "Workflows, CI and release scripts (this planner included), the solution, project, MSBuild and NuGet files and Git attributes change how every job builds or checks.",
+      "paths": [
+        ".github/**",
+        "scripts/**",
+        "**/*.sln",
+        "**/*.csproj",
+        "**/*.wixproj",
+        "**/*.props",
+        "**/*.targets",
+        "**/nuget.config",
+        "**/NuGet.config",
+        "**/NuGet.Config",
+        "**/global.json",
+        "**/packages.lock.json",
+        "**/.editorconfig",
+        "**/.gitattributes",
+        "**/.gitignore",
+        ".config/**"
+      ]
+    },
+    {
+      "id": "docs-read-by-unit-tests",
+      "jobs": ["unit-tests"],
+      "why": "Wasla.UnitTests reads these documents (WaslaConfigurationKeyTests) or checks their working-tree state (WaslaVisualFoundationTests).",
+      "paths": [
+        "docs/operations/deployment.md",
+        "docs/operations/cli.md",
+        "docs/operations/local-development.md",
+        "docs/operations/migrations.md",
+        "docs/architecture/tenancy.md",
+        "docs/orders-printjob-status-signalr.md",
+        "docs/temporary-receipt-test-output.md"
+      ]
+    },
+    {
+      "id": "docs-read-by-print-bridge-tests",
+      "jobs": ["print-bridge"],
+      "why": "Wasla.PrintBridge.Tests reads this document (PrintBridgeInstallerSourceTests).",
+      "paths": [
+        "docs/integrations/print-bridge-service.md"
+      ]
+    },
+    {
+      "id": "documentation",
+      "jobs": [],
+      "why": "No .NET project compiles these files and no .NET test reads them. The terminology guard and the Node tests run for every change.",
+      "paths": [
+        "docs/**",
+        "*.md",
+        ".claude/rules/*.md"
+      ]
+    },
+    {
+      "id": "unit-tests-project",
+      "jobs": ["unit-tests"],
+      "why": "Only Wasla.UnitTests compiles or reads the files of its own folder.",
+      "paths": [
+        "tests/Wasla.UnitTests/**"
+      ]
+    },
+    {
+      "id": "print-bridge-tests-project",
+      "jobs": ["print-bridge"],
+      "why": "Only Wasla.PrintBridge.Tests compiles or reads the files of its own folder.",
+      "paths": [
+        "tests/Wasla.PrintBridge.Tests/**"
+      ]
+    },
+    {
+      "id": "print-bridge-installer",
+      "jobs": ["print-bridge"],
+      "why": "Only the Print Bridge job builds the installers, and only Wasla.PrintBridge.Tests reads their sources. The MSBuild files of the folder match ci-and-build first.",
+      "paths": [
+        "installer/print-bridge/**"
+      ]
+    },
+    {
+      "id": "server-hosts",
+      "jobs": ["unit-tests"],
+      "why": "Wasla.UnitTests compiles Api, Cli and Contracts, reads Worker sources and scans every file under src/. No Print Bridge project or test compiles or reads these projects.",
+      "paths": [
+        "src/Wasla.Api/**",
+        "src/Wasla.Cli/**",
+        "src/Wasla.Worker/**",
+        "src/Wasla.Contracts/**"
+      ]
+    },
+    {
+      "id": "web",
+      "jobs": "all",
+      "why": "Wasla.UnitTests compiles Wasla.Web; Wasla.PrintBridge.Tests reads Web views, scripts and resources, and Wasla.PrintBridge embeds the Web logo.",
+      "paths": [
+        "src/Wasla.Web/**"
+      ]
+    },
+    {
+      "id": "shared-libraries",
+      "jobs": "all",
+      "why": "Both test projects compile Domain, Application and Infrastructure: persistence and migrations, tenant isolation, authentication services and provider clients.",
+      "paths": [
+        "src/Wasla.Domain/**",
+        "src/Wasla.Application/**",
+        "src/Wasla.Infrastructure/**"
+      ]
+    },
+    {
+      "id": "print-bridge-product",
+      "jobs": "all",
+      "why": "Wasla.PrintBridge.Tests compiles the Print Bridge projects; Wasla.UnitTests reads their resources and sources and scans every file under src/.",
+      "paths": [
+        "src/Wasla.PrintBridge/**",
+        "src/Wasla.PrintBridge.Core/**",
+        "src/Wasla.PrintBridge.Service/**"
+      ]
+    },
+    {
+      "id": "deployment",
+      "jobs": "all",
+      "why": "Wasla.UnitTests reads deploy/linux/publish-release.ps1; the folder is not narrowed in the first version.",
+      "paths": [
+        "deploy/**"
+      ]
+    },
+    {
+      "id": "report-export-smoke",
+      "jobs": "all",
+      "why": "Checked by report-export-checks.yml, not by this workflow's jobs; not narrowed in the first version.",
+      "paths": [
+        "tests/Wasla.ReportExport.LinuxSmoke/**"
+      ]
+    }
+  ]
+}

@@ -55,10 +55,11 @@ jobs:
           WASLA_RETIRED_TERMS: ${{ vars.WASLA_RETIRED_TERMS }}
         run: node scripts/ci/terminology-guard.js
 
-  # Chooses the scope (fast or full) and plans the shards that run it: select-test-scope.ps1 owns the scope, the
-  # shards and their filters. Every Windows job below starts from this plan, and test-accounting checks against it.
+  # Chooses the scope (fast or full), the jobs that run it and the shards of those jobs: select-test-scope.ps1 owns
+  # the scope, the job selection (rules in ci-job-rules.json), the shards and their filters. Every Windows job below
+  # starts from this plan, and test-accounting checks the run against it.
   plan:
-    name: Select test scope and shards
+    name: Select test scope, jobs and shards
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -66,26 +67,33 @@ jobs:
       plan: ${{ steps.select.outputs.plan }}
       unit-shards: ${{ steps.select.outputs.unit-shards }}
       print-bridge-filter: ${{ steps.select.outputs.print-bridge-filter }}
+      unit-tests: ${{ steps.select.outputs.unit-tests }}
+      print-bridge: ${{ steps.select.outputs.print-bridge }}
+      dotnet-tests: ${{ steps.select.outputs.dotnet-tests }}
 
     steps:
-      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit. The
+      # whole history: the job selection diffs a pull request from its merge-base and a push from its previous commit.
       - name: Check out repository
         uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
 
-      # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests); every other event
-      # runs every test. See docs/operations/testing.md.
-      - name: Select test scope and plan shards
+      # A pull request into dev runs the fast scope (no headless-browser or WebView2 runtime tests) and only the jobs
+      # its changed files need; every other event runs every test and every job. See docs/operations/testing.md.
+      - name: Select test scope, jobs and shards
         id: select
         shell: pwsh
         run: ./scripts/ci/select-test-scope.ps1
 
   # One job per Wasla.UnitTests shard, each on its own runner with its own build, LocalDB and browser. The shards'
-  # filters partition the scope; test-accounting proves every test of the scope ran in exactly one of them.
+  # filters partition the scope; test-accounting proves every test of the scope ran in exactly one of them. Skipped
+  # only when the plan's job selection leaves Wasla.UnitTests out; test-accounting then requires it to be skipped.
   unit-tests:
     name: Wasla.UnitTests ${{ matrix.shard.id }}, ${{ matrix.shard.title }} (Windows)
     needs: plan
+    if: ${{ needs.plan.outputs.unit-tests == 'true' }}
     runs-on: windows-latest
     # The slowest shard is expected to take about 25 minutes; a runner 1.6 times slower than usual (2026-11-06) still
     # fits. A hanging test is stopped by --blame-hang-timeout below.
@@ -240,9 +248,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+  # Skipped only when the plan's job selection leaves Print Bridge out; test-accounting then requires it to be skipped.
   print-bridge:
     name: Print Bridge installers and Wasla.PrintBridge.Tests (Windows)
     needs: plan
+    if: ${{ needs.plan.outputs.print-bridge == 'true' }}
     runs-on: windows-latest
     # Installers and tests took 14 to 18 minutes in measured runs; a hanging test is stopped by --blame-hang-timeout.
     timeout-minutes: 60
@@ -393,12 +403,13 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # Runs after the test jobs, also when one of them failed, so one run reports every shard. It fails when a planned
-  # shard has no results, when a test of the scope did not run, ran twice or ran in another shard than planned, when a
-  # shard tested another commit, and when any test failed or was skipped.
+  # Runs after every other job, also when one of them failed, so one run reports every job and shard. It fails when a
+  # planned job did not pass, when a job the plan left out did not skip, when a planned shard has no results, when a
+  # test of the scope did not run, ran twice or ran in another shard than planned, when a shard tested another commit,
+  # and when any test failed or was skipped. A skipped job counts as passed on GitHub; this job is the run's verdict.
   test-accounting:
-    name: Require every planned test to run once and pass
-    needs: [plan, unit-tests, print-bridge]
+    name: Require every planned job and test to run and pass
+    needs: [plan, terminology-guard, javascript-tests, unit-tests, print-bridge]
     if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -410,20 +421,30 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
+      # On a push to dev it also reports the result of every job the rules would have skipped (observation phase).
+      - name: Require every planned job to pass and every other job to be skipped
+        shell: pwsh
+        env:
+          TEST_PLAN: ${{ needs.plan.outputs.plan }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: ./scripts/ci/assert-ci-jobs.ps1 -Plan $env:TEST_PLAN -Needs $env:JOB_RESULTS
+
       - name: Download every shard's test results
+        if: ${{ !cancelled() && needs.plan.outputs.dotnet-tests == 'true' }}
         uses: actions/download-artifact@v8
         with:
           pattern: dotnet-test-results-*
           path: artifacts/shards
 
       - name: Require every planned test to run exactly once, in its planned shard
+        if: ${{ !cancelled() && needs.plan.outputs.dotnet-tests == 'true' }}
         shell: pwsh
         env:
           TEST_PLAN: ${{ needs.plan.outputs.plan }}
         run: ./scripts/ci/assert-test-shards.ps1 -Plan $env:TEST_PLAN -ResultsRoot artifacts/shards -Commit (git rev-parse HEAD)
 
       - name: Require every test to run and pass
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.plan.outputs.dotnet-tests == 'true' }}
         shell: pwsh
         run: |
           $files = @(Get-ChildItem -Path artifacts/shards -Recurse -File -Filter *.trx -ErrorAction SilentlyContinue | Sort-Object FullName | ForEach-Object { $_.FullName })

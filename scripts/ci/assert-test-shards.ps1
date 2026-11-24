@@ -165,7 +165,9 @@ function Format-List([string] $what, $items) {
 }
 
 $planObject = $Plan | ConvertFrom-Json
-if (-not (Test-Path -LiteralPath $ResultsRoot -PathType Container)) {
+# A plan without .NET projects (a change no .NET test job needs) expects no results at all.
+$plannedProjects = @($planObject.projects)
+if ($plannedProjects.Count -gt 0 -and -not (Test-Path -LiteralPath $ResultsRoot -PathType Container)) {
     Add-Problem "The results folder $ResultsRoot does not exist; no shard result was found."
 }
 
@@ -326,4 +328,8 @@ if ($problems.Count -gt 0) {
     exit 1
 }
 
+if ($plannedProjects.Count -eq 0) {
+    Write-Host 'Test accounting is clean: the plan has no .NET test job, and no shard reported results.'
+    exit 0
+}
 Write-Host 'Test accounting is clean: every test of the scope ran exactly once, in its planned shard, on the expected commit.'

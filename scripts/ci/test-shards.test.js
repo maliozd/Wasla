@@ -1,42 +1,16 @@
-// Tests for the CI test plan (select-test-scope.ps1) and its accounting (assert-test-shards.ps1).
-// They run the scripts in PowerShell 7 (pwsh) or, on Windows without it, in Windows PowerShell 5.1.
+// Tests for the CI test plan's scopes and shards (select-test-scope.ps1) and its accounting (assert-test-shards.ps1).
+// The job selection has its own tests in ci-job-plan.test.js. Without an event payload or a change list the plan
+// selects every job, so every project is planned here.
 const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { runPowerShell } = require('./ci-test-support');
 
 const selectScript = path.join(__dirname, 'select-test-scope.ps1');
 const accountingScript = path.join(__dirname, 'assert-test-shards.ps1');
 const commit = 'a'.repeat(40);
-
-function findPowerShell() {
-  for (const candidate of process.platform === 'win32' ? ['pwsh', 'powershell'] : ['pwsh']) {
-    const probe = spawnSync(candidate, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'], { encoding: 'utf8' });
-    if (probe.status === 0) return candidate;
-  }
-  throw new Error('PowerShell (pwsh, or powershell on Windows) is required for the CI script tests.');
-}
-
-const powershell = findPowerShell();
-
-// The tests run inside GitHub Actions too: the scripts must not write to this job's outputs or summary.
-function cleanEnv(extra = {}) {
-  const env = { ...process.env };
-  for (const key of Object.keys(env)) {
-    if (key.startsWith('GITHUB_')) delete env[key];
-  }
-  return { ...env, ...extra };
-}
-
-function runPowerShell(command, env) {
-  return spawnSync(powershell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
-    encoding: 'utf8',
-    env: cleanEnv(env),
-    maxBuffer: 16 * 1024 * 1024,
-  });
-}
 
 function plan(eventName, baseRef = '') {
   const result = runPowerShell(`& '${selectScript}' -EventName '${eventName}' -BaseRef '${baseRef}' -PlanOnly`);
@@ -211,11 +185,12 @@ test('on GitHub Actions the plan, the unit-test matrix and the Print Bridge filt
       const at = line.indexOf('=');
       return [line.slice(0, at), line.slice(at + 1)];
     }));
-    assert.deepEqual(Object.keys(outputs), ['scope', 'plan', 'unit-shards', 'print-bridge-filter']);
+    assert.deepEqual(Object.keys(outputs), ['scope', 'plan', 'unit-shards', 'print-bridge-filter', 'unit-tests', 'print-bridge', 'dotnet-tests']);
     assert.equal(outputs.scope, 'fast');
     assert.deepEqual(JSON.parse(outputs.plan), fastPlan);
     assert.deepEqual(JSON.parse(outputs['unit-shards']), fastPlan.projects[0].shards.map(({ id, title, filter, maxParallelThreads }) => ({ id, title, filter, maxParallelThreads })));
     assert.equal(outputs['print-bridge-filter'], 'Category!=WebView2Runtime');
+    assert.deepEqual([outputs['unit-tests'], outputs['print-bridge'], outputs['dotnet-tests']], ['true', 'true', 'true']);
     assert.match(fs.readFileSync(summary, 'utf8'), /\*\*Test scope: fast\*\*/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
