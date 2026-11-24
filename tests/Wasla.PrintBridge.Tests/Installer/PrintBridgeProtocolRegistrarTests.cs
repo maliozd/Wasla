@@ -13,10 +13,10 @@ namespace Wasla.PrintBridge.Tests.Installer;
 /// </summary>
 public sealed class PrintBridgeProtocolRegistrarTests : IDisposable
 {
-    private const string TestsKey = @"Software\WaslaPrintBridgeTests";
     private const string Installed = "\"C:\\Program Files\\Wasla\\Print Bridge\\Wasla.PrintBridge.exe\" \"%1\"";
 
-    private readonly string _root = TestsKey + @"\" + Guid.NewGuid().ToString("N");
+    // Each test owns an independent key with no shared parent, so no test deletes a key another test is using (WAS-245).
+    private readonly string _root = @"Software\WaslaPrintBridgeTests-" + Guid.NewGuid().ToString("N");
     private readonly RegistryKey _machine;
     private readonly RegistryKey _user;
     private readonly DirectoryInfo _folder = Directory.CreateTempSubdirectory("wasla-pb-protocol-");
@@ -35,15 +35,6 @@ public sealed class PrintBridgeProtocolRegistrarTests : IDisposable
         _machine.Dispose();
         _user.Dispose();
         Registry.CurrentUser.DeleteSubKeyTree(_root, throwOnMissingSubKey: false);
-        try
-        {
-            // The shared parent goes once no test class uses it; another class may just have added its own key.
-            Registry.CurrentUser.DeleteSubKey(TestsKey, throwOnMissingSubKey: false);
-        }
-        catch (InvalidOperationException)
-        {
-        }
-
         _folder.Delete(recursive: true);
     }
 
