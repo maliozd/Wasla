@@ -2065,7 +2065,7 @@
     <value>Максимальная длина ApiSecret — 500.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Максимальная длина идентификатора поставщика — 100.</value>
+    <value>Максимальная длина идентификатора поставщика — 64 символа.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Максимальная длина электронного письма исполнителя — 200.</value>

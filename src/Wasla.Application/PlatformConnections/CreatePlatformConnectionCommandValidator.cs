@@ -8,6 +8,16 @@ public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator
     /// <summary>The longest API key or secret accepted, on create and when an edit replaces one.</summary>
     public const int MaxCredentialLength = 500;
 
+    /// <summary>The longest supplier id stored, on create and edit: the length of the <c>SupplierId</c> column.</summary>
+    public const int MaxSupplierIdLength = 64;
+
+    /// <summary>
+    /// Whether a supplier id is too long as it is stored: trimmed, and longer than <see cref="MaxSupplierIdLength"/>.
+    /// A null or blank value is stored as null and is never too long.
+    /// </summary>
+    public static bool IsSupplierIdTooLong(string? supplierId) =>
+        !string.IsNullOrWhiteSpace(supplierId) && supplierId.Trim().Length > MaxSupplierIdLength;
+
     public CreatePlatformConnectionCommandValidator()
     {
         RuleFor(x => x.Platform)
@@ -26,8 +36,7 @@ public sealed class CreatePlatformConnectionCommandValidator : AbstractValidator
             .MaximumLength(MaxCredentialLength).WithMessage("Validation.ApiSecretMaxLength");
 
         RuleFor(x => x.SupplierId)
-            .MaximumLength(100).WithMessage("Validation.SupplierIdMaxLength")
-            .When(x => !string.IsNullOrWhiteSpace(x.SupplierId));
+            .Must(supplierId => !IsSupplierIdTooLong(supplierId)).WithMessage("Validation.SupplierIdMaxLength");
 
         RuleFor(x => x.ExecutorEmail)
             .MaximumLength(200).WithMessage("Validation.ExecutorEmailMaxLength")

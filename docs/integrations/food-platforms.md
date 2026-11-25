@@ -233,6 +233,8 @@ Implications:
 | Yemeksepeti | `SupplierId` → chainId (required); `StoreId` → vendorId (falls back to chainId); encrypted API key/secret → OAuth clientId/clientSecret |
 | Getir | Mock credentials / connection shape only until a real client exists |
 
+`SupplierId` holds at most 64 characters, the length of its column (`CreatePlatformConnectionCommandValidator.MaxSupplierIdLength`). The limit applies to the value as stored: trimmed, with a blank value stored as null. Create, from Web and Api, checks it through the create validator. An edit checks it in `PlatformConnectionService.UpdateAsync` before any field is written, so a refused edit leaves the row unchanged. Both refusals use `Validation.SupplierIdMaxLength`, and the Web create and edit forms limit the input to the same length.
+
 Never log decrypted secrets.
 
 ### Credentials in the tenant Web forms
