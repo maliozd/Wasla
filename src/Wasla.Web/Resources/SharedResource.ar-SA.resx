@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>تعذر إكمال هذه الخطوة مع المنصة. أعد المحاولة أو تحقق من الاتصال.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>لم يُرسل إلى المنصة: تعذر التأكد من أن هذا الطلب يخص المتجر المتصل حاليًا. أدِر هذا الطلب من لوحة المنصة نفسها.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>جاهز</value>
   </data>
