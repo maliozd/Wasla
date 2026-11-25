@@ -245,6 +245,19 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task MarketingPages_TakeBootstrapAndItsIconsFromTheSite(string culture)
+    {
+        foreach (var path in MarketingPaths)
+        {
+            var page = await GetAsync(path, culture);
+
+            Assert.Equal(HttpStatusCode.OK, page.Status);
+            MarketingVendorFilesTests.AssertStylesAndScriptsComeFromTheSite(page.Body, path);
+        }
+    }
+
     [Fact]
     public void MarketingImages_ExistInTheRepository()
     {
@@ -271,6 +284,21 @@ public sealed partial class PublicMarketingSiteTests : IClassFixture<PublicMarke
         Assert.Contains("class=\"wm-footer\"", page.Body);
         Assert.Contains("__RequestVerificationToken", page.Body);
         Assert.DoesNotContain("rel=\"canonical\"", page.Body);
+    }
+
+    [Fact]
+    public async Task SignupPage_KeepsBootstrapFromTheCdn_TheSameReleaseAsTheMarketingCopies()
+    {
+        var page = await GetAsync("/signup", "tr-TR");
+
+        // WAS-248 moved only the marketing pages to the pinned copies. Signup keeps the CDN stylesheets, Bootstrap's with
+        // the pinned copy's hash as its SRI, and its Bootstrap JavaScript.
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        var bootstrap = Assert.Single(Regex.Matches(page.Body, "<link href=\"https://cdn\\.jsdelivr\\.net/npm/bootstrap@5\\.3\\.3/dist/css/bootstrap\\.min\\.css\"[^>]*>"));
+        Assert.Contains($"integrity=\"{MarketingVendorFilesTests.BootstrapSha384}\"", bootstrap.Value);
+        Assert.Contains("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css\">", page.Body);
+        Assert.Contains("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"", page.Body);
+        Assert.DoesNotContain("/lib/bootstrap-", page.Body);
     }
 
     [Fact]

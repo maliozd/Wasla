@@ -743,6 +743,7 @@ public sealed class OrdersController : BaseController
             "Orders.OrderActionFailed" => "ordersOrderActionFailed",
             "Orders.ApproveFailed" => "ordersApproveFailed",
             "Orders.RejectFailed" => "ordersRejectFailed",
+            "Orders.StoreNotConfirmed" => "ordersStoreNotConfirmed",
             OrderRejectReasons.ReasonRequiredKey => "ordersRejectReasonRequired",
             OrderRejectReasons.ReasonNotSupportedKey => "ordersRejectReasonNotSupported",
             "Orders.ApproveSuccess" => "ordersApproveSuccess",
