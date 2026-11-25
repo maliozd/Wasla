@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.UnitTests.Auth;
 using Wasla.UnitTests.Realtime;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -205,7 +207,7 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
     {
         private readonly ConcurrentQueue<(string ExternalOrderId, int? ReasonId)> _rejects = new();
 
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public IReadOnlyList<(string ExternalOrderId, int? ReasonId)> Rejects => _rejects.ToArray();
 

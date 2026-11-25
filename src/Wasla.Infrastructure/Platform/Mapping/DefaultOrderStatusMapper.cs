@@ -1,6 +1,7 @@
 ﻿using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Microsoft.Extensions.Logging;
 
 namespace Wasla.Infrastructure.Platform.Mapping;

@@ -7,15 +7,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
-using Wasla.Infrastructure.Platform;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Diagnostics;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using static Wasla.UnitTests.Platform.ProviderCookieIsolationTests;
 
 namespace Wasla.UnitTests.Platform;
@@ -289,6 +290,48 @@ public sealed class ProviderHttpClientRegistrationTests
         Assert.True(findings.Count == 0, "Host code composes HTTP clients itself:" + Environment.NewLine + string.Join(Environment.NewLine, findings));
     }
 
+    /// <summary>
+    /// The provider clients, their HTTP clients and the Trendyol GO rate limiter are registered only by the provider
+    /// library (WAS-233): <c>AddWaslaInfrastructure</c> calls <c>AddWaslaIntegrations</c>, and no other source project
+    /// registers a provider client, calls the provider HTTP registration or registers the limiter itself.
+    /// </summary>
+    [Fact]
+    public void OrdersProjects_RegisterProviderClientsOnlyThroughTheIntegrationsRegistration()
+    {
+        var registration = new Regex(
+            @"\b(AddProviderHttpClient|ProviderPrimaryHandlerGuard)\b|\bAddTypedClient<IFoodPlatformClient\b|\b(Try)?Add(Singleton|Scoped|Transient|Enumerable)?<(IFoodPlatformClient|TrendyolRequestRateLimiter)\b",
+            RegexOptions.CultureInvariant);
+        var root = RepositoryRoot();
+        var source = Path.Combine(root, "src");
+        var library = Path.Combine(source, "Wasla.Integrations");
+        var findings = new List<string>();
+        var libraryRegistrations = 0;
+
+        foreach (var file in Directory.EnumerateFiles(source, "*.cs", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(source, file);
+            if (IsBuildOutput(Path.GetRelativePath(Path.Combine(source, relative.Split(Path.DirectorySeparatorChar)[0]), file)))
+                continue;
+
+            var lines = File.ReadAllLines(file);
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (!registration.IsMatch(lines[i]) || lines[i].TrimStart().StartsWith("//", StringComparison.Ordinal))
+                    continue;
+                if (file.StartsWith(library + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    libraryRegistrations++;
+                else
+                    findings.Add($"{Path.GetRelativePath(root, file)}:{i + 1}: {lines[i].Trim()}");
+            }
+        }
+
+        Assert.True(libraryRegistrations > 0, "Expected the provider registrations in src/Wasla.Integrations.");
+        Assert.True(findings.Count == 0, "Orders code registers provider clients itself:" + Environment.NewLine + string.Join(Environment.NewLine, findings));
+
+        var infrastructure = File.ReadAllText(Path.Combine(source, "Wasla.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs"));
+        Assert.Contains("services.AddWaslaIntegrations(configuration);", infrastructure, StringComparison.Ordinal);
+    }
+
     private static void AddHandlerOverride(IServiceCollection services, string overrideKind)
     {
         switch (overrideKind)
@@ -440,7 +483,7 @@ public sealed class ProviderHttpClientRegistrationTests
     {
         public const string KeyHeader = "x-other-provider-key";
 
-        public FoodPlatform Platform => FoodPlatform.GetirYemek;
+        public ProviderPlatform Platform => ProviderPlatform.GetirYemek;
 
         public TimeSpan? MaxFetchWindow => null;
 

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -22,7 +23,9 @@ public static class TrendyolGoMealWebhookPilotRegistration
     /// Binds and validates the pilot's options once, at startup: an enabled pilot with an incomplete configuration, or a
     /// provider API override that is not exactly the stage API for one identified connection, stops the host. Every host
     /// that calls Trendyol GO registers them (through <c>AddWaslaInfrastructure</c>), so the pilot's connection is routed
-    /// the same way in Web, Api and Worker.
+    /// the same way in Web, Api and Worker. The Trendyol GO client gets that routing as its
+    /// <see cref="ITrendyolGoApiRouter"/> (<see cref="TrendyolGoMealWebhookPilotApiRouter"/>), in place of the provider
+    /// library's default, whether this runs before or after <c>AddWaslaIntegrations</c>.
     /// </summary>
     internal static IServiceCollection AddTrendyolGoMealWebhookPilotOptions(this IServiceCollection services, IConfiguration configuration)
     {
@@ -36,6 +39,7 @@ public static class TrendyolGoMealWebhookPilotRegistration
             .Bind(configuration.GetSection(TrendyolGoMealWebhookPilotOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<TrendyolGoMealWebhookPilotOptions>, TrendyolGoMealWebhookPilotOptionsValidator>();
+        services.Replace(ServiceDescriptor.Singleton<ITrendyolGoApiRouter, TrendyolGoMealWebhookPilotApiRouter>());
         return services;
     }
 

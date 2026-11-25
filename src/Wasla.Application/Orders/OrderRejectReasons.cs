@@ -1,4 +1,3 @@
-using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Orders;
@@ -14,10 +13,20 @@ public static class OrderRejectReasons
     public const string ReasonNotSupportedKey = "Orders.RejectReasonNotSupported";
 
     /// <summary>
-    /// The reasons an operator may choose for <paramref name="platform"/>: every reason id the provider accepts
-    /// (<see cref="ProviderRejectReasons"/>, the one list of those ids), in the provider's order.
+    /// Trendyol GO: every reason the provider accepts from a restaurant whose orders the platform's couriers deliver.
+    /// The provider's list, which its client checks a reason against before sending it, is <c>ProviderRejectReasons</c>
+    /// in <c>Wasla.Integrations</c>. Application does not reference that library (Print Bridge builds on Application), so
+    /// Orders keeps the operator's list here and <c>OrderRejectReasonParityTests</c> requires it to equal the provider's
+    /// for every platform (WAS-233).
     /// </summary>
-    public static IReadOnlyList<int> For(FoodPlatform platform) => ProviderRejectReasons.For(platform);
+    private static readonly IReadOnlyList<int> TrendyolGo = [621, 622, 623, 627];
+
+    /// <summary>
+    /// The reasons an operator may choose for <paramref name="platform"/>: every reason id the provider accepts, in the
+    /// provider's order; empty for a platform without a verified list.
+    /// </summary>
+    public static IReadOnlyList<int> For(FoodPlatform platform) =>
+        platform == FoodPlatform.TrendyolYemek ? TrendyolGo : [];
 
     /// <summary>
     /// Null when <paramref name="reasonId"/> is acceptable for <paramref name="platform"/>; otherwise the message key of

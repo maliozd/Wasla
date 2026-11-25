@@ -8,14 +8,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Setup;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
 using Wasla.Infrastructure.Services;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -522,7 +524,7 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
     /// <summary>A client outside the mock namespace, standing in for a real HTTP client.</summary>
     private sealed class FakeRealClient(FoodPlatform platform) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
         public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();

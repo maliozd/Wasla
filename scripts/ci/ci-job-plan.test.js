@@ -81,6 +81,7 @@ function assertSelection(testPlan, { mode, jobs, projects, rule, forced, scope, 
   assert.deepEqual(windowsJobs(selection), jobs, JSON.stringify(selection));
   assert.equal(selection.jobs['terminology-guard'].run, true);
   assert.equal(selection.jobs['javascript-tests'].run, true);
+  assert.equal(selection.jobs['integrations-consumer'].run, true);
   assert.deepEqual(testPlan.projects.map(p => p.project), projects ?? jobs.map(job => Object.keys(projectJob).find(p => projectJob[p] === job)));
   if (rule) assert.deepEqual(selection.rules.map(r => r.id), rule);
   if (forced) assert.match(selection.forcedBy.join('\n'), forced);
@@ -380,7 +381,7 @@ function checkJobs(testPlan, results) {
 const docsOnly = planFor({ changes: ['M\tdocs/README.md'] });
 const unitOnly = planFor({ changes: ['M\ttests/Wasla.UnitTests/A.cs'] });
 const allJobs = planFor({ changes: ['M\tsrc/Wasla.Web/Program.cs'] });
-const passing = { 'terminology-guard': 'success', 'javascript-tests': 'success' };
+const passing = { 'terminology-guard': 'success', 'javascript-tests': 'success', 'integrations-consumer': 'success' };
 
 test('the final job passes when the planned jobs passed and the others were skipped on purpose', () => {
   let result = checkJobs(docsOnly, { ...passing, [UT]: 'skipped', [PB]: 'skipped' });
@@ -399,10 +400,22 @@ for (const outcome of ['failure', 'cancelled', 'skipped']) {
 }
 
 test('the final job fails when the terminology guard or the Node tests did not pass', () => {
-  const result = checkJobs(docsOnly, { 'terminology-guard': 'failure', 'javascript-tests': 'skipped', [UT]: 'skipped', [PB]: 'skipped' });
+  const result = checkJobs(docsOnly, { ...passing, 'terminology-guard': 'failure', 'javascript-tests': 'skipped', [UT]: 'skipped', [PB]: 'skipped' });
   assert.equal(result.status, 1, result.output);
   assert.match(result.output, /terminology-guard was planned to run and pass, but its result is failure/);
   assert.match(result.output, /javascript-tests was planned to run and pass, but its result is skipped/);
+});
+
+test('the final job fails when the Wasla.Integrations consumer tests did not pass, whatever changed', () => {
+  for (const [plan, results] of [[docsOnly, { [UT]: 'skipped', [PB]: 'skipped' }], [allJobs, { [UT]: 'success', [PB]: 'success' }]]) {
+    assert.equal(plan.selection.jobs['integrations-consumer'].run, true);
+    assert.equal(plan.selection.jobs['integrations-consumer'].why, 'runs for every change');
+    for (const outcome of ['failure', 'skipped']) {
+      const result = checkJobs(plan, { ...passing, ...results, 'integrations-consumer': outcome });
+      assert.equal(result.status, 1, result.output);
+      assert.match(result.output, new RegExp(`integrations-consumer was planned to run and pass, but its result is ${outcome}`));
+    }
+  }
 });
 
 test('the final job fails when a job the plan left out ran, or a job is missing from its needs', () => {

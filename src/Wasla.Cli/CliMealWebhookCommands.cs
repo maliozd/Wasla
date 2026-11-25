@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.Cli;

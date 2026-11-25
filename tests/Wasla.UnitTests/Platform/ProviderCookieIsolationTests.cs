@@ -8,14 +8,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Diagnostics;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 
 namespace Wasla.UnitTests.Platform;
 

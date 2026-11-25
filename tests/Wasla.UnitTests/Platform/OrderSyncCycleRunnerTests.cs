@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Wasla.Application.Abstractions.Orders.Services;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Sync;
 
 namespace Wasla.UnitTests.Platform;

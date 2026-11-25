@@ -1,8 +1,9 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -110,7 +111,7 @@ public sealed class TrendyolGoMealWebhookPilotOptions
                 $"{SectionName}:ProviderApiBaseUrl is not exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}; no Trendyol GO API is called for the pilot's connection.");
         }
 
-        if (!IsPilotConnection(connection.ConnectionId, connection.Platform, connection.IsActive, connection.SupplierId, connection.StoreId))
+        if (!IsPilotConnection(connection.ConnectionId, connection.Platform.ToFoodPlatform(), connection.IsActive, connection.SupplierId, connection.StoreId))
         {
             throw new InvalidOperationException(
                 "The webhook pilot's platform connection is inactive or no longer the configured Trendyol GO seller and store; no Trendyol GO API is called for it.");
@@ -118,6 +119,16 @@ public sealed class TrendyolGoMealWebhookPilotOptions
 
         return StageApi;
     }
+}
+
+/// <summary>
+/// The Trendyol GO client's API routing in Orders (WAS-233): <see cref="TrendyolGoMealWebhookPilotOptions.ProviderApiFor"/>
+/// for every request. The pilot's one configured connection goes to exactly the stage API, whether or not the pilot is
+/// enabled, a pilot connection that no longer matches is refused, and every other connection uses the deployment's API.
+/// </summary>
+internal sealed class TrendyolGoMealWebhookPilotApiRouter(IOptions<TrendyolGoMealWebhookPilotOptions> pilot) : ITrendyolGoApiRouter
+{
+    public Uri? ApiFor(ProviderConnectionContext connection) => pilot.Value.ProviderApiFor(connection);
 }
 
 /// <summary>

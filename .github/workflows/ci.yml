@@ -410,7 +410,7 @@ jobs:
   # and when any test failed or was skipped. A skipped job counts as passed on GitHub; this job is the run's verdict.
   test-accounting:
     name: Require every planned job and test to run and pass
-    needs: [plan, terminology-guard, javascript-tests, unit-tests, print-bridge]
+    needs: [plan, terminology-guard, javascript-tests, integrations-consumer, unit-tests, print-bridge]
     if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -495,6 +495,61 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: javascript-test-results
+          path: artifacts/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # The provider library's independent consumer (WAS-233): Wasla.Integrations.ConsumerTests references Wasla.Integrations
+  # and no other Wasla project, so this job builds only the two and shows the library composes and runs on Linux with no
+  # Orders or POS assembly present. It runs for every change, like the Node tests; see docs/operations/testing.md.
+  integrations-consumer:
+    name: Wasla.Integrations consumer tests (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      # inputs.ref is empty unless ci-base-change.yml called this workflow; empty checks out the event's commit.
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      # Only speeds up the download; restore always runs and resolves every package itself.
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Run Wasla.Integrations.ConsumerTests
+        run: >
+          dotnet test tests/Wasla.Integrations.ConsumerTests/Wasla.Integrations.ConsumerTests.csproj
+          --configuration Release
+          --verbosity normal
+          --logger "trx;LogFileName=Wasla.Integrations.ConsumerTests.trx"
+          --results-directory artifacts/test-results
+
+      - name: Require every test to run and pass
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./scripts/ci/assert-test-results.ps1 -Path artifacts/test-results/Wasla.Integrations.ConsumerTests.trx
+
+      # Not named dotnet-test-results-*: the shard accounting of test-accounting reads only the Windows shards.
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: integrations-consumer-test-results
           path: artifacts/test-results/
           if-no-files-found: warn
           retention-days: 14

@@ -4,8 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -18,6 +19,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Setup;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -433,7 +435,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     /// <summary>A new provider order: two items, one with options.</summary>
     private static ExternalOrderDto NewOrder(string externalOrderId, FoodPlatform platform = FoodPlatform.TrendyolYemek, string status = "Created") =>
         new(
-            Platform: platform,
+            Platform: platform.ToProviderPlatform(),
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: "N-" + externalOrderId,
             OrderedAtUtc: new DateTime(2026, 10, 2, 8, 55, 0, DateTimeKind.Utc),
@@ -444,8 +446,8 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: 150m,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: status,
             RawPayloadJson: """{"lines":[],"customerNote":"Zile basmayın"}""",
             Items:
@@ -503,7 +505,7 @@ public sealed class OrderSyncFailureIsolationTests : IDisposable
     {
         public IReadOnlyCollection<ExternalOrderDto> Orders { get; set; } = [];
 
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
 
         public TimeSpan? MaxFetchWindow => null;
 

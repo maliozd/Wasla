@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
@@ -94,7 +95,7 @@ public sealed class OrderSyncCancellationTests : IDisposable
 
     private sealed class ThrowingClient(Action throwNow) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)

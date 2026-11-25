@@ -5,13 +5,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Sync;
@@ -568,7 +569,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
                 BaseAddress = new Uri("https://api.tgoapis.com/")
             },
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://api.tgoapis.com" }),
-            Options.Create(_options),
+            new TrendyolGoMealWebhookPilotApiRouter(Options.Create(_options)),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             _clock);
@@ -654,7 +655,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
 
     private static ExternalOrderDto Package(string packageId, string providerStatus) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             packageId,
             "946511491",
             DateTime.UtcNow.AddMinutes(-2),
@@ -665,8 +666,8 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             0m,
             0m,
             173.93m,
-            PaymentMethod.OnlinePayment,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.OnlinePayment,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(packageId + "-line-1", "Synthetic drink", 1, 173.93m, 173.93m, null, [])])
@@ -690,7 +691,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
         private Exception? _failure;
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => TimeSpan.FromHours(1);
         public List<OrderFetchWindow> Windows { get; } = [];
 

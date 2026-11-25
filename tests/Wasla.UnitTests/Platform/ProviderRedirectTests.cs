@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Infrastructure.Diagnostics;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Diagnostics;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using static Wasla.UnitTests.Platform.ProviderCookieIsolationTests;
 
 namespace Wasla.UnitTests.Platform;

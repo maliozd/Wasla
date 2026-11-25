@@ -5,9 +5,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -159,7 +160,7 @@ public sealed class OrderIngestionTests : IDisposable
         Assert.Null(OrderIngestion.ContradictsConnection(connection, package with { ProviderStoreId = "  ", ProviderSupplierId = "" }));
         Assert.Equal("store", OrderIngestion.ContradictsConnection(connection, package with { ProviderStoreId = "900003" }));
         Assert.Equal("supplier", OrderIngestion.ContradictsConnection(connection, package with { ProviderSupplierId = "900009" }));
-        Assert.Equal("platform", OrderIngestion.ContradictsConnection(connection, package with { Platform = FoodPlatform.Yemeksepeti }));
+        Assert.Equal("platform", OrderIngestion.ContradictsConnection(connection, package with { Platform = ProviderPlatform.Yemeksepeti }));
 
         // All-digit identifiers compare as numbers: a JSON number 123 is the store typed in as "00123", and back.
         var zeroPadded = new PlatformConnection { Platform = FoodPlatform.TrendyolYemek, StoreId = "00123", SupplierId = "0900001" };
@@ -417,7 +418,7 @@ public sealed class OrderIngestionTests : IDisposable
 
     private static ExternalOrderDto Package(string externalOrderId, string providerStatus) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId,
             new DateTime(2026, 10, 26, 9, 0, 0, DateTimeKind.Utc),
@@ -428,8 +429,8 @@ public sealed class OrderIngestionTests : IDisposable
             0m,
             0m,
             100m,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-line-1", "Lahmacun", 1, 100m, 100m, "No onions", [new ExternalOrderItemOptionDto("Spicy", 0m)])]);
@@ -438,7 +439,7 @@ public sealed class OrderIngestionTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;

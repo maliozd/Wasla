@@ -5,9 +5,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -343,7 +344,7 @@ public sealed class OrderItemSequenceTests : IDisposable
     /// <summary>The provider's order with <paramref name="lines"/> in that order, each under its own stable id.</summary>
     private static ExternalOrderDto Sample(string externalOrderId, Line[] lines, string? rawPayloadJson = null) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId,
             OrderedAt,
@@ -354,8 +355,8 @@ public sealed class OrderItemSequenceTests : IDisposable
             0m,
             0m,
             100m,
-            PaymentMethod.OnlinePayment,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.OnlinePayment,
+            ProviderPaymentStatus.Paid,
             "Created",
             rawPayloadJson ?? $$"""{"id":"{{externalOrderId}}"}""",
             lines
@@ -420,7 +421,7 @@ public sealed class OrderItemSequenceTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;

@@ -2,13 +2,14 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.Mock;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform.Mock;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -77,7 +78,7 @@ public sealed class ProviderOrderTimeMappingTests
         var connection = new PlatformConnection { Platform = FoodPlatform.TrendyolYemek, StoreId = "mock-store" };
         var before = DateTime.UtcNow;
 
-        var orders = MockOrders.CreateOrders(FoodPlatform.TrendyolYemek, connection.AsProviderContext(), 60, new Random(125));
+        var orders = MockOrders.CreateOrders(ProviderPlatform.TrendyolYemek, connection.AsProviderContext(), 60, new Random(125));
 
         Assert.Contains(orders, o => o.OrderedAtUtc is not null);
         foreach (var order in orders.Where(o => o.OrderedAtUtc is not null))
@@ -108,7 +109,7 @@ public sealed class ProviderOrderTimeMappingTests
                 BaseAddress = new Uri("https://trendyol.example/")
             },
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
+                        new TrendyolGoDeploymentApiRouter(),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             TimeProvider.System);

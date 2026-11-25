@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -18,6 +19,7 @@ using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -368,16 +370,16 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         await AssertUpdatedAsync(sync, order with { DeliveryFee = 18m, ServiceFee = 6m }, stored => Assert.Equal(6m, stored.ServiceFee));
         await AssertUpdatedAsync(
             sync,
-            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = PaymentMethod.Cash },
+            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = ProviderPaymentMethod.Cash },
             stored => Assert.Equal(PaymentMethod.Cash, stored.PaymentMethod));
         await AssertUpdatedAsync(
             sync,
-            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = PaymentMethod.Cash, PaymentStatus = PaymentStatus.Pending },
+            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = ProviderPaymentMethod.Cash, PaymentStatus = ProviderPaymentStatus.Pending },
             stored => Assert.Equal(PaymentStatus.Pending, stored.PaymentStatus));
         var later = OrderedAt.AddMinutes(5);
         await AssertUpdatedAsync(
             sync,
-            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = PaymentMethod.Cash, PaymentStatus = PaymentStatus.Pending, OrderedAtUtc = later },
+            order with { DeliveryFee = 18m, ServiceFee = 6m, PaymentMethod = ProviderPaymentMethod.Cash, PaymentStatus = ProviderPaymentStatus.Pending, OrderedAtUtc = later },
             stored => Assert.Equal(later, stored.CreatedAtPlatform));
         await AssertUpdatedAsync(
             sync,
@@ -385,8 +387,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             {
                 DeliveryFee = 18m,
                 ServiceFee = 6m,
-                PaymentMethod = PaymentMethod.Cash,
-                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = ProviderPaymentMethod.Cash,
+                PaymentStatus = ProviderPaymentStatus.Pending,
                 OrderedAtUtc = later,
                 CustomerName = "Mehmet Demir"
             },
@@ -397,8 +399,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             {
                 DeliveryFee = 18m,
                 ServiceFee = 6m,
-                PaymentMethod = PaymentMethod.Cash,
-                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = ProviderPaymentMethod.Cash,
+                PaymentStatus = ProviderPaymentStatus.Pending,
                 OrderedAtUtc = later,
                 CustomerName = "Mehmet Demir",
                 CustomerPhone = "5550000000"
@@ -410,8 +412,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             {
                 DeliveryFee = 18m,
                 ServiceFee = 6m,
-                PaymentMethod = PaymentMethod.Cash,
-                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = ProviderPaymentMethod.Cash,
+                PaymentStatus = ProviderPaymentStatus.Pending,
                 OrderedAtUtc = later,
                 CustomerName = "Mehmet Demir",
                 CustomerPhone = "5550000000",
@@ -424,8 +426,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             {
                 DeliveryFee = 18m,
                 ServiceFee = 6m,
-                PaymentMethod = PaymentMethod.Cash,
-                PaymentStatus = PaymentStatus.Pending,
+                PaymentMethod = ProviderPaymentMethod.Cash,
+                PaymentStatus = ProviderPaymentStatus.Pending,
                 OrderedAtUtc = later,
                 CustomerName = "Mehmet Demir",
                 CustomerPhone = "5550000000",
@@ -739,7 +741,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
         ];
 
         return new ExternalOrderDto(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId,
             orderedAtUtc ?? OrderedAt,
@@ -750,8 +752,8 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
             deliveryFee,
             serviceFee,
             total,
-            paymentMethod,
-            paymentStatus,
+            paymentMethod.ToProviderPaymentMethod(),
+            paymentStatus.ToProviderPaymentStatus(),
             externalStatus,
             rawPayloadJson,
             items,
@@ -812,7 +814,7 @@ public sealed class OrderSyncUnchangedShortCircuitTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;

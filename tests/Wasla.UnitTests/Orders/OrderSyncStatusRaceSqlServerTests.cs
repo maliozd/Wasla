@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -319,7 +320,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
 
     private static ExternalOrderDto Payload(string externalOrderId) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId[^12..],
             DateTime.UtcNow.AddMinutes(-5),
@@ -330,8 +331,8 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
             0m,
             0m,
             100m,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             "Created",
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-item", "Lahmacun", 1, 100m, 100m, null, [])],
@@ -431,7 +432,7 @@ public sealed class OrderSyncStatusRaceSqlServerTests : IClassFixture<SqlServerT
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;

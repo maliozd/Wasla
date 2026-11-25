@@ -4,9 +4,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -15,6 +16,7 @@ using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Admin;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -697,7 +699,7 @@ public sealed class OrderCancellationMetadataTests : IDisposable
 
     private static ExternalOrderDto Package(FoodPlatform platform, string externalOrderId, string providerStatus) =>
         new(
-            platform,
+            platform.ToProviderPlatform(),
             externalOrderId,
             "CODE-" + externalOrderId,
             new DateTime(2026, 11, 8, 9, 0, 0, DateTimeKind.Utc),
@@ -708,8 +710,8 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             0m,
             0m,
             100m,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-line", "Lahmacun", 1, 100m, 100m, null, [])]);
@@ -718,7 +720,7 @@ public sealed class OrderCancellationMetadataTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public Exception? FailNextReject { get; set; }
         public List<int?> RejectReasons { get; } = [];

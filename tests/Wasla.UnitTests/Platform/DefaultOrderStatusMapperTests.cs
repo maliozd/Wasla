@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Contracts.Enums;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.UnitTests.Platform;
 
