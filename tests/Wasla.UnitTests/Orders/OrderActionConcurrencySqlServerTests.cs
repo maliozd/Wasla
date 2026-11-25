@@ -402,6 +402,8 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
             ExternalOrderId = externalId,
             ExternalOrderCode = $"TY-{externalId[..13]}",
             IdempotencyKey = $"TrendyolYemek:{externalId}",
+            // Imported under the connection EnsureTenantRowsAsync adds (WAS-241).
+            StoreId = "store-concurrency",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Concurrency Customer",

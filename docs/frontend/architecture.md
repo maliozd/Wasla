@@ -17,10 +17,19 @@ Describe the **current** frontend stack so contributors extend the existing ASP.
 ### Stack
 
 - ASP.NET Core MVC / Razor views and partials
-- Bootstrap 5.3 (CDN) + Bootstrap Icons
+- Bootstrap 5.3.3 + Bootstrap Icons 1.11.3: from jsDelivr, except on the public marketing pages, which serve pinned copies from `wwwroot/lib/` (see [Bootstrap files: CDN and pinned copies](#bootstrap-files-cdn-and-pinned-copies))
 - Vanilla JavaScript IIFEs under `src/Wasla.Web/wwwroot/js/`
 - Shared toast helper `wasla-toast.js`
 - No frontend bundler requirement for orders JS (asp-append-version script tags)
+
+### Bootstrap files: CDN and pinned copies
+
+- **CDN.** The tenant app, the Live Screen, Central Admin, the tenant and Admin sign-in pages, signup and the other public pages of `_PublicLayout`, the registration status and checkout pages, `TenantNotFound`, `TenantAddressRequired` and `Error/Index` load Bootstrap 5.3.3 (CSS, and JS where used), Bootstrap Icons 1.11.3 and, where used, AdminLTE and the validation scripts from `cdn.jsdelivr.net` at pinned versions. When jsDelivr is slow or unreachable, these pages wait for it and then open without Bootstrap's styles and icons.
+- **Pinned copies (WAS-248).** The marketing pages, the views that set `PublicPageMetadata` (homepage, coming-soon page, `/pos`, `/contact`, `/privacy-notice`, `/pilot`, `/pilot/privacy-notice`), load Bootstrap's stylesheet and Bootstrap Icons from the site: `wwwroot/lib/bootstrap-5.3.3/dist/css/bootstrap.min.css` and `wwwroot/lib/bootstrap-icons-1.11.3/font/` (its stylesheet, and the `fonts/` folder beside it with `bootstrap-icons.woff2` and `.woff`). `_PublicLayout` chooses by the metadata, so these pages contact no other origin. They load no Bootstrap JavaScript.
+- **The files.** Unchanged files from the npm releases, at the paths they have in the package. Each folder's `LICENSE.txt` names the package, the source tarball and its integrity, followed by the package's MIT licence. `MarketingVendorFilesTests` checks each file's SHA-384: the stylesheets match the files jsDelivr serves, and Bootstrap's matches the SRI hash of the CDN link. `.gitattributes` marks both folders `-text`, so a Windows checkout keeps their bytes. `wwwroot/lib/bootstrap/` (Bootstrap 5.1.0 from the project template) is not linked by any page.
+- **Versions and caching.** The version is part of the folder name: an upgrade adds a new folder and changes the two links, and the old folder is removed. The links carry `asp-append-version`. The icon stylesheet requests its fonts by relative URL, with the release's own query string; the folder name keeps those URLs unique per release. Kestrel sends `ETag` and `Last-Modified` for static files, no `Cache-Control`, and does not compress. The repository's Nginx site configuration (`deploy/linux/nginx/`) adds no compression or cache rule for them. A returning visitor's browser therefore keeps them only as long as its own heuristics allow and then revalidates them with the server, where jsDelivr sends `max-age=31536000, immutable`. Compression and long-lived cache headers for these versioned files belong to the Nginx compression work (WAS-247).
+- **Compression is required.** The two stylesheets are about 319 KB uncompressed; jsDelivr sends them brotli-compressed at about 33 KB. Served uncompressed, the marketing pages paint later than with the CDN on a slow mobile connection: in the local WAS-248 measurement (headless Edge, 150 ms latency, 1.6 Mbps, 4× CPU, median of 5) first contentful paint moved from 2.2 s to 3.9 s on the coming-soon page and from 3.0 s to 4.9 s on the homepage. With gzip it stayed within the measurement's noise on mobile and improved slightly on desktop. Production therefore needs compression of `text/css` in front of Web (WAS-247) before or together with the deployment that switches the marketing pages to the pinned copies.
+- **Icon font loading.** The font face is the release's own (`font-display: block`, so an icon stays blank rather than showing a wrong glyph while the font loads). The font is not preloaded: the icons are decorative, and a preload would take bandwidth from the stylesheets, text fonts and hero photo on slow connections.
 
 ### Page composition
 
@@ -143,6 +152,7 @@ Not themed: every page that does not use one of the three layouts above has no t
 | Orders JS | `wwwroot/js/orders/*.js` |
 | RTL | `wwwroot/css/rtl.css` |
 | Public marketing header, footer and menus | `Views/Shared/_PublicLayout.cshtml`, `wwwroot/js/wasla-marketing.js`; see [design-system.md](design-system.md#public-marketing-site) |
+| Pinned Bootstrap and Bootstrap Icons copies (marketing pages) | `wwwroot/lib/bootstrap-5.3.3/`, `wwwroot/lib/bootstrap-icons-1.11.3/`; see [Bootstrap files: CDN and pinned copies](#bootstrap-files-cdn-and-pinned-copies) |
 | Signup page (steps over the registration draft API) | `Views/Signup/Index.cshtml`, `Views/Shared/_Signup*.cshtml`, `wwwroot/js/signup/*.js` (`signup-flow.js` drives the steps, `signup-api.js` calls the API, `signup-draft.js` reads the draft, `signup-phone-step.js` the phone step); see [design-system.md](design-system.md#signup-page) and [../architecture/signup-registration.md](../architecture/signup-registration.md) |
 | Report page | `Areas/Tenant/Views/Reports/*`, `wwwroot/js/reports/reports-page.js`, `wwwroot/css/wasla-reports.css`; see [design-system.md](design-system.md#report-page) |
 | Localization | `Wasla.Web/Resources/SharedResource*.resx` |

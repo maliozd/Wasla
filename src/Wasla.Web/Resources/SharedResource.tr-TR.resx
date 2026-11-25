@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Bu adım platformla tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Platforma gönderilmedi: Bu siparişin şu an bağlı olan mağazaya ait olduğu doğrulanamadı. Siparişi platformun kendi panelinden yönetin.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Hazır</value>
   </data>
