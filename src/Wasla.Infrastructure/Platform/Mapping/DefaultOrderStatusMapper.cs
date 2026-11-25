@@ -1,5 +1,6 @@
 ﻿using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Platform.TrendyolGo;
 using Microsoft.Extensions.Logging;
 
 namespace Wasla.Infrastructure.Platform.Mapping;
@@ -81,58 +82,47 @@ public sealed class DefaultOrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    // EN: Trendyol GO package statuses (and a few Turkish mock labels) fold into the same shared Wasla statuses as the real integration.
-    // TR: Trendyol GO paket statüleri (ve birkaç Türkçe mock etiketi) gerçek entegrasyonla aynı ortak Wasla statülerine indirgenir.
-    private static OrderStatus MapTrendyol(string status)
+    // Which order status each recognized Trendyol GO package status means. The recognized statuses, their spellings and
+    // the comparison rule (trimmed, case-sensitive, Returned in any casing) are the provider's: TrendyolGoPackageStatus.
+    // Picking is the seller's acceptance (the `picked` call) and starts preparation; there is no separate prepare status.
+    private static OrderStatus MapTrendyol(string recognizedStatus) => recognizedStatus switch
     {
-        var t = (status ?? string.Empty).Trim();
-        if (t.Length == 0) return OrderStatus.New;
+        TrendyolGoPackageStatus.Created => OrderStatus.New,
+        TrendyolGoPackageStatus.Picking => OrderStatus.Preparing,
+        TrendyolGoPackageStatus.Invoiced => OrderStatus.ReadyForPickup,
+        TrendyolGoPackageStatus.Shipped => OrderStatus.OnTheWay,
+        TrendyolGoPackageStatus.Delivered => OrderStatus.Delivered,
+        TrendyolGoPackageStatus.Cancelled => OrderStatus.Cancelled,
+        TrendyolGoPackageStatus.UnSupplied => OrderStatus.Cancelled,
+        TrendyolGoPackageStatus.Returned => OrderStatus.Cancelled,
 
-        if (t.Equals("Returned", StringComparison.OrdinalIgnoreCase))
-            return OrderStatus.Cancelled;
+        // Labels earlier mock data used
+        TrendyolGoPackageStatus.New => OrderStatus.New,
+        TrendyolGoPackageStatus.TurkishNew => OrderStatus.New,
+        TrendyolGoPackageStatus.TurkishApproved => OrderStatus.Preparing,
+        TrendyolGoPackageStatus.TurkishPreparing => OrderStatus.Preparing,
+        TrendyolGoPackageStatus.TurkishReady => OrderStatus.ReadyForPickup,
+        TrendyolGoPackageStatus.TurkishOnTheWay => OrderStatus.OnTheWay,
+        TrendyolGoPackageStatus.TurkishDelivery => OrderStatus.Delivered,
+        TrendyolGoPackageStatus.TurkishDelivered => OrderStatus.Delivered,
+        TrendyolGoPackageStatus.TurkishCancel => OrderStatus.Cancelled,
+        TrendyolGoPackageStatus.TurkishCancelled => OrderStatus.Cancelled,
+        TrendyolGoPackageStatus.TurkishFailed => OrderStatus.Failed,
 
-        return t switch
-        {
-            // Trendyol GO
-            "Created" => OrderStatus.New,
-            // The seller accepted the package (the `picked` call) and is preparing it; there is no separate prepare status.
-            "Picking" => OrderStatus.Preparing,
-            "Invoiced" => OrderStatus.ReadyForPickup,
-            "Shipped" => OrderStatus.OnTheWay,
-            "Delivered" => OrderStatus.Delivered,
-            "Cancelled" => OrderStatus.Cancelled,
-            "UnSupplied" => OrderStatus.Cancelled,
-
-            // Turkish mock labels / UI-ish strings
-            "Yeni" or "yeni" => OrderStatus.New,
-            "Onaylandı" or "Onaylandi" or "onaylandı" or "onaylandi" => OrderStatus.Preparing,
-            "Hazırlanıyor" or "Hazirlaniyor" or "hazırlanıyor" or "hazirlaniyor" => OrderStatus.Preparing,
-            "Hazır" or "Hazir" or "hazır" or "hazir" => OrderStatus.ReadyForPickup,
-            "Yolda" or "yolda" => OrderStatus.OnTheWay,
-            "Teslim" or "Teslim edildi" or "teslim" or "teslim edildi" => OrderStatus.Delivered,
-            "İptal" or "Iptal" or "İptal edildi" or "Iptal edildi" or "iptal" or "iptal edildi" => OrderStatus.Cancelled,
-            "Başarısız" or "Basarisiz" or "başarısız" or "basarisiz" => OrderStatus.Failed,
-
-            _ => OrderStatus.New
-        };
-    }
+        // A status the provider recognizes but this mapper does not map yet; DefaultOrderStatusMapperTests
+        // fails until it is added above.
+        _ => OrderStatus.New
+    };
 
     private OrderStatus MapTrendyolWithWarning(string status)
     {
-        var mapped = MapTrendyol(status);
-        if (mapped == OrderStatus.New)
-        {
-            // EN: Warn when Trendyol sends an unknown status string so we do not silently assume New without a trace.
-            // TR: Trendyol bilinmeyen statü string'i gönderdiğinde uyarı; sessizce New varsaymayalım.
-            var s = (status ?? string.Empty).Trim();
-            var isKnownNew =
-                s is "Created" or "Yeni" or "yeni" or "new" or "New";
+        if (TrendyolGoPackageStatus.Recognize(status) is { } recognized)
+            return MapTrendyol(recognized);
 
-            if (!isKnownNew)
-            {
-                _logger.LogWarning("Unknown Trendyol status '{ExternalStatus}', defaulting to New", s);
-            }
-        }
-        return mapped;
+        // EN: Warn when Trendyol sends an unknown status string so we do not silently assume New without a trace.
+        // TR: Trendyol bilinmeyen statü string'i gönderdiğinde uyarı; sessizce New varsaymayalım.
+        // A blank status never gets here: MapToInternalStatus returns New for it first.
+        _logger.LogWarning("Unknown Trendyol status '{ExternalStatus}', defaulting to New", TrendyolGoPackageStatus.Normalize(status));
+        return OrderStatus.New;
     }
 }

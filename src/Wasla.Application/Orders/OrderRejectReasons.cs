@@ -1,3 +1,4 @@
+using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Enums;
 
 namespace Wasla.Application.Orders;
@@ -13,14 +14,10 @@ public static class OrderRejectReasons
     public const string ReasonNotSupportedKey = "Orders.RejectReasonNotSupported";
 
     /// <summary>
-    /// Trendyol GO's documented restaurant reasons ("Paket Modelleri", checked 2026-11-03) for sellers whose orders the
-    /// platform's couriers deliver: 621 supply problem, 622 store closed, 623 store cannot prepare the order, 627 order
-    /// confusion. 624 and 626 are only for sellers with their own couriers, which Wasla does not support.
+    /// The reasons an operator may choose for <paramref name="platform"/>: every reason id the provider accepts
+    /// (<see cref="ProviderRejectReasons"/>, the one list of those ids), in the provider's order.
     /// </summary>
-    private static readonly int[] TrendyolGo = [621, 622, 623, 627];
-
-    public static IReadOnlyList<int> For(FoodPlatform platform) =>
-        platform == FoodPlatform.TrendyolYemek ? TrendyolGo : [];
+    public static IReadOnlyList<int> For(FoodPlatform platform) => ProviderRejectReasons.For(platform);
 
     /// <summary>
     /// Null when <paramref name="reasonId"/> is acceptable for <paramref name="platform"/>; otherwise the message key of

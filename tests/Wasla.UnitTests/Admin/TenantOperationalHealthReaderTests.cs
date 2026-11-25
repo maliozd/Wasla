@@ -369,6 +369,24 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
         Assert.Equal(ProviderConnectionHealthState.NeverSynced, byPlatform[FoodPlatform.GetirYemek].State);
     }
 
+    /// <summary>
+    /// The explicit mark gives the same kind as the namespace check it replaced (WAS-232): every client in the mock
+    /// namespace carries it, and no other provider client does.
+    /// </summary>
+    [Fact]
+    public void TheMockMark_IsOnExactlyTheMockNamespaceClients()
+    {
+        var clients = typeof(MockGetirYemekFoodPlatformClient).Assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IFoodPlatformClient).IsAssignableFrom(t))
+            .ToList();
+
+        Assert.Equal(5, clients.Count);
+        Assert.All(clients, client => Assert.Equal(
+            client.Namespace == typeof(MockGetirYemekFoodPlatformClient).Namespace,
+            typeof(IMockFoodPlatformClient).IsAssignableFrom(client)));
+        Assert.Equal(3, clients.Count(typeof(IMockFoodPlatformClient).IsAssignableFrom));
+    }
+
     // Probe-only SQL Server connection -------------------------------------------------------------------
 
     [Fact]

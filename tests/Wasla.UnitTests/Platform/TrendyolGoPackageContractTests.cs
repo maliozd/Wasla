@@ -306,7 +306,6 @@ public sealed class TrendyolGoPackageContractTests
         var options = new TrendyolGoOptions { AgentName = AgentName, BaseUrl = "https://stageapi.tgoapis.com" };
         var client = new TrendyolGoFoodPlatformClient(
             new HttpClient(handler) { BaseAddress = new Uri(options.BaseUrl) },
-            new DefaultOrderStatusMapper(new CollectingLogger<DefaultOrderStatusMapper>()),
             Options.Create(options),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             _clientLog,

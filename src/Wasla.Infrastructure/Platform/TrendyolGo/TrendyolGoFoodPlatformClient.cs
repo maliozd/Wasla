@@ -8,7 +8,6 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Orders;
 using Wasla.Application.Platform.Dtos;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
@@ -34,11 +33,11 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     internal static readonly TimeSpan FetchWindowLength = TimeSpan.FromHours(1);
 
     /// <summary>
-    /// Every <c>packageStatuses</c> value the official documentation lists, with its casing and in its order. The
-    /// terminal statuses (Cancelled, UnSupplied, Delivered) are required: without them a cancellation or a delivery
-    /// reported by Trendyol GO never reaches Wasla.
+    /// Every <c>packageStatuses</c> value the official documentation lists, with its casing and in its order
+    /// (<see cref="TrendyolGoPackageStatus.Documented"/>). The terminal statuses (Cancelled, UnSupplied, Delivered) are
+    /// required: without them a cancellation or a delivery reported by Trendyol GO never reaches Wasla.
     /// </summary>
-    internal const string PackageStatusesFilter = "Created,Picking,Invoiced,Cancelled,UnSupplied,Shipped,Delivered";
+    internal static readonly string PackageStatusesFilter = string.Join(',', TrendyolGoPackageStatus.Documented);
 
     /// <summary>
     /// Retries of the same page after HTTP 429. A page gets at most three attempts; the third 429 fails the window.
@@ -58,7 +57,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     };
 
     private readonly HttpClient _httpClient;
-    private readonly IOrderStatusMapper _statusMapper;
     private readonly IOptions<TrendyolGoOptions> _options;
     private readonly IOptions<TrendyolGoMealWebhookPilotOptions> _pilot;
     private readonly ILogger<TrendyolGoFoodPlatformClient> _logger;
@@ -74,7 +72,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     /// </param>
     public TrendyolGoFoodPlatformClient(
         HttpClient httpClient,
-        IOrderStatusMapper statusMapper,
         IOptions<TrendyolGoOptions> options,
         IOptions<TrendyolGoMealWebhookPilotOptions> pilot,
         ILogger<TrendyolGoFoodPlatformClient> logger,
@@ -82,7 +79,6 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         TimeProvider time)
     {
         _httpClient = httpClient;
-        _statusMapper = statusMapper;
         _options = options;
         _pilot = pilot;
         _logger = logger;
@@ -377,14 +373,14 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
     /// </summary>
     public async Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
     {
-        if (OrderRejectReasons.Refusal(FoodPlatform.TrendyolYemek, reasonId) is not null)
+        if (reasonId is not { } reason || !ProviderRejectReasons.TrendyolGo.Contains(reason))
             throw new InvalidOperationException("TrendyolGo RejectOrder: the reason is missing or not a supported restaurant reason.");
 
         var supplierId = EnsureSupplierAndExecutor(connection);
         var itemIdList = PackageItemIdsToReject(order);
         var path = $"/integrator/order/meal/suppliers/{supplierId}/packages/unsupplied";
         using var req = await BuildRequestAsync(HttpMethod.Put, path, connection, supplierId, ct);
-        req.Content = JsonContent.Create(new { packageId = order.ExternalOrderId, itemIdList, reasonId = reasonId!.Value }, options: JsonOptions);
+        req.Content = JsonContent.Create(new { packageId = order.ExternalOrderId, itemIdList, reasonId = reason }, options: JsonOptions);
         await SendAndEnsureSuccessAsync(req, "RejectOrder", order.ExternalOrderId, ct);
     }
 
@@ -475,7 +471,7 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
         var orderedAtUtc = FromEpochMilliseconds(package.PackageCreationDate);
         var modifiedAtUtc = FromEpochMilliseconds(package.PackageModificationDate);
 
-        var internalStatus = _statusMapper.MapToInternalStatus(FoodPlatform.TrendyolYemek, package.PackageStatus ?? string.Empty);
+        WarnIfUnknownPackageStatus(package.PackageStatus);
 
         var (paymentMethod, paymentStatus) = MapPayment(package.Payment);
 
@@ -510,6 +506,21 @@ public sealed class TrendyolGoFoodPlatformClient : IFoodPlatformClient
             ProviderStoreId = package.StoreId,
             ProviderCancellationReasonCode = package.CancellationReasonCode
         };
+    }
+
+    /// <summary>
+    /// Logs a package status that <see cref="TrendyolGoPackageStatus"/> does not recognize as a warning, so an unknown
+    /// status that ingestion stores as New leaves a trace. A missing or blank status logs nothing. The level and message
+    /// template are the ones this client logged through the Orders status mapper before WAS-232 (decision R5(a));
+    /// ingestion still logs its own warning for the same status. The client maps no status.
+    /// </summary>
+    private void WarnIfUnknownPackageStatus(string? packageStatus)
+    {
+        var status = TrendyolGoPackageStatus.Normalize(packageStatus);
+        if (status.Length == 0 || TrendyolGoPackageStatus.Recognize(status) is not null)
+            return;
+
+        _logger.LogWarning("Unknown Trendyol status '{ExternalStatus}', defaulting to New", status);
     }
 
     private static DateTime? FromEpochMilliseconds(long? value)

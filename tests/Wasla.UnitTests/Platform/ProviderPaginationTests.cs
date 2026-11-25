@@ -337,7 +337,6 @@ public sealed class TrendyolPaginationTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             logger ?? NullLogger<TrendyolGoFoodPlatformClient>.Instance,
@@ -614,7 +613,6 @@ public sealed class YemeksepetiPaginationTests
         };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
                 BaseUrl = "https://yemeksepeti.example/",

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Sync;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -69,12 +68,12 @@ public sealed class TrendyolGoMealWebhookPilotOptions
     /// <summary>Whether a seller id is the configured seller (all-digit ids compare as numbers).</summary>
     public bool IsPilotSeller(string? sellerId) =>
         !string.IsNullOrWhiteSpace(sellerId) && !string.IsNullOrWhiteSpace(SellerId)
-        && OrderIngestion.SameProviderIdentifier(sellerId, SellerId);
+        && ProviderIdentifier.Same(sellerId, SellerId);
 
     /// <summary>Whether a store id is the configured store (all-digit ids compare as numbers).</summary>
     public bool IsPilotStore(string? storeId) =>
         !string.IsNullOrWhiteSpace(storeId) && !string.IsNullOrWhiteSpace(StoreId)
-        && OrderIngestion.SameProviderIdentifier(storeId, StoreId);
+        && ProviderIdentifier.Same(storeId, StoreId);
 
     /// <summary>
     /// Whether <paramref name="connection"/> is the pilot's: the configured, active Trendyol GO connection of the configured

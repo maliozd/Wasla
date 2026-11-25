@@ -98,6 +98,11 @@ public sealed class TrendyolGoRejectRequestTests
         Assert.All(body.RootElement.GetProperty("itemIdList").EnumerateArray(), id => Assert.Equal(JsonValueKind.String, id.ValueKind));
         Assert.Equal(JsonValueKind.Number, body.RootElement.GetProperty("reasonId").ValueKind);
         Assert.Equal(reasonId, body.RootElement.GetProperty("reasonId").GetInt32());
+
+        // The exact bytes, unchanged since the reason ids moved to the provider contract (WAS-232).
+        Assert.Equal(
+            $$"""{"packageId":"{{PackageId}}","itemIdList":["1000008723596","1000008723597","1000008723598","1000008723599"],"reasonId":{{reasonId}}}""",
+            request.Body);
     }
 
     /// <summary>
@@ -204,7 +209,6 @@ public sealed class TrendyolGoRejectRequestTests
         var options = new TrendyolGoOptions { AgentName = "WaslaTest", BaseUrl = "https://stageapi.tgoapis.com" };
         return new TrendyolGoFoodPlatformClient(
             new HttpClient(new RecordingHandler(_requests, rejectStatus)) { BaseAddress = new Uri(options.BaseUrl) },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(options),
             Options.Create(new TrendyolGoMealWebhookPilotOptions()),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,

@@ -34,8 +34,8 @@ public interface IFoodPlatformClient
     Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct);
 
     /// <summary>
-    /// Rejects the whole order on the provider. <paramref name="reasonId"/> is the operator's reason, already checked
-    /// against <c>OrderRejectReasons</c> for the order's platform (null for a platform without reasons). The client
+    /// Rejects the whole order on the provider. <paramref name="reasonId"/> is the operator's reason, already checked by
+    /// Orders against the platform's <see cref="ProviderRejectReasons"/> (null for a platform without reasons). The client
     /// derives the rest of its request (item ids) from <paramref name="order"/>'s stored payload and throws, before any
     /// request, when that payload cannot supply it.
     /// </summary>

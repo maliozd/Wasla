@@ -405,7 +405,6 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     private TrendyolGoFoodPlatformClient TrendyolGo(Func<HttpRequestMessage, HttpResponseMessage> responder) =>
         new(
             new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://trendyol.example/") },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
             Options.Create(new TrendyolGoMealWebhookPilotOptions()),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
@@ -415,7 +414,6 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     private YemeksepetiFoodPlatformClient Yemeksepeti(Func<HttpRequestMessage, HttpResponseMessage> responder) =>
         new(
             new SingleClientFactory(new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://yemeksepeti.example/") }),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
                 BaseUrl = "https://yemeksepeti.example/",

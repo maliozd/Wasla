@@ -45,8 +45,6 @@ public sealed class TenantOperationalHealthReader : ITenantOperationalHealthRead
         OrderStatus.OnTheWay
     ];
 
-    private static readonly string? MockClientNamespace = typeof(MockGetirYemekFoodPlatformClient).Namespace;
-
     private readonly ConcurrentDictionary<Guid, Lazy<Task<TenantOperationalHealth>>> _inFlight = new();
     private readonly ITenantDbContextFactory _tenantDbs;
     private readonly IServiceScopeFactory _scopes;
@@ -324,7 +322,7 @@ public sealed class TenantOperationalHealthReader : ITenantOperationalHealthRead
                 .GroupBy(client => client.Platform)
                 .ToDictionary(
                     group => group.Key,
-                    group => group.Last().GetType().Namespace == MockClientNamespace
+                    group => group.Last() is IMockFoodPlatformClient
                         ? ProviderClientKind.Mock
                         : ProviderClientKind.Real);
         }

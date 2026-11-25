@@ -628,7 +628,6 @@ public sealed class YemeksepetiTokenIsolationTests
         var http = new HttpClient(provider) { BaseAddress = new Uri("https://yemeksepeti.example/") };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
                 BaseUrl = "https://yemeksepeti.example/",

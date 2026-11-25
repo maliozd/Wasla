@@ -191,7 +191,6 @@ public sealed class TrendyolGoPilotApiRoutingTests
                 // The deployment's API, as wasla-preflight requires it.
                 BaseAddress = new Uri("https://" + Production + "/")
             },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://" + Production }),
             Options.Create(pilot),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,

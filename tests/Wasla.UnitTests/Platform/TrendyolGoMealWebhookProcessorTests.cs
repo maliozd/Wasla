@@ -567,7 +567,6 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             {
                 BaseAddress = new Uri("https://api.tgoapis.com/")
             },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://api.tgoapis.com" }),
             Options.Create(_options),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
