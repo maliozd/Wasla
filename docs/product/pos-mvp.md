@@ -36,7 +36,8 @@ Terms used below:
 | Term | Meaning |
 | --- | --- |
 | **POS Edge** | The installed Wasla POS service and its local database on the restaurant's Edge machine |
-| **Terminal** | A paired Windows touch device running the Wasla POS Terminal app, which talks to POS Edge over the restaurant network or on the same machine |
+| **Terminal** | A paired Windows touch device running the Wasla POS Terminal app (WinUI 3), which talks to POS Edge's local API over the restaurant network or on the same machine. It also holds the back office |
+| **Waiter device** | A paired Android phone or tablet running the Wasla POS Waiter app, for the Waiter role. Whether it ships for the first pilots is [open](#unresolved-product-decisions) |
 | **Check** (*adisyon*) | One open or closed sale: a table's bill, a takeaway order or a quick sale. Lines and payments belong to a check |
 | **Line** | One product on a check with its chosen modifiers, quantity, note and price snapshot |
 | **Kitchen ticket** | A printed request to prepare the lines sent from a check; also a durable record. Internal and non-fiscal |
@@ -62,7 +63,7 @@ After setup, internet is needed only to synchronize, to receive updates and lice
 
 ## Cashier workflows
 
-All flows run on a paired Terminal with a signed-in staff member ([Roles](#roles)). Every step that changes a check is a request to POS Edge over the restaurant network. **None of them needs the internet or the Wasla cloud.** The Terminal holds only unsent draft lines ([LAN loss](#lan-loss)).
+All flows run on a paired Terminal with a signed-in staff member ([Roles](#roles)); the Waiter role's flows also run on a paired waiter device. Every step that changes a check is a request to POS Edge over the restaurant network. **None of them needs the internet or the Wasla cloud.** The Terminal holds only unsent draft lines ([LAN loss](#lan-loss)).
 
 ### 1. Product, category and modifier selection
 
@@ -213,6 +214,26 @@ POS roles are owned by Wasla POS. They are **not** the Wasla Orders `UserRole` v
 - **Waiter** cannot take payments in the MVP. Whether some restaurants want waiters to collect payment is an [open decision](#unresolved-product-decisions).
 - **Owner** in POS is the restaurant's POS administrator. Its PIN, recovery and relation to the Orders Owner account are decided in the [ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery).
 - POS Edge enforces this table on every request. Hiding a button is not authorization.
+- The Owner and Manager capabilities that change configuration are pages of the Terminal's back office ([Screens by role](#screens-by-role)). A browser back office is later ([Should-have later](#should-have-later)).
+
+### Screens by role
+
+Derived from the [role table](#roles); POS Edge enforces it on every request.
+
+| Area | Screens | Owner | Manager | Cashier | Waiter |
+| --- | --- | :-: | :-: | :-: | :-: |
+| Sign-in | Staff and PIN, lock | ✓ | ✓ | ✓ | ✓ |
+| Selling | Tables, sale screen with modifiers, takeaway, quick sale, kitchen tickets and their print state, pre-bill | ✓ | ✓ | ✓ | ✓ |
+| Payment | Payment through the ÖKC, partial and remaining amounts as the device allows, close | ✓ | ✓ | ✓ | |
+| Approvals | Void approval, check cancellation, payment reversal, unknown ÖKC outcome | ✓ | ✓ | | |
+| History | Completed sales, day summary, reprint of non-fiscal documents | ✓ | ✓ | ✓ | |
+| Back office: menu | Categories, products, modifier groups, availability today | ✓ | ✓ | | |
+| Back office: floor | Areas and tables | ✓ | ✓ | | |
+| Back office: health | Sync and backup status, support bundle, updates | ✓ | ✓ | | |
+| Back office: administration | Staff and PINs, devices and pairing codes, printer roles, the ÖKC, POS settings, emergency licence code | ✓ | | | |
+| Setup console (Edge machine) | Activation, first Owner PIN, restore status | ✓ | | | |
+
+Waiters use a Terminal, or a waiter device where the restaurant has the Android app. The Kitchen role has no screens in the MVP. **Product editing** sets a product's name, category, price, active and available-today flags, and its modifier groups. A **modifier group** is single or multiple choice; it is **required** when its minimum is at least 1, and **optional** when its minimum is 0. Its maximum limits the choices, and each option has an optional price change. A product's VAT rate or ÖKC department waits for the [ÖKC decision](#unresolved-product-decisions).
 
 ## MVP boundary
 
@@ -220,7 +241,7 @@ POS roles are owned by Wasla POS. They are **not** the Wasla Orders `UserRole` v
 
 **Installed product:**
 - POS Edge, a Windows service with a local SQLite database, installed with a signed installer.
-- The Terminal app.
+- The Terminal app (WinUI 3), including the back office and the setup console.
 - Activation of one installation per restaurant location.
 - Update with automatic rollback when the new version is unhealthy.
 
@@ -286,7 +307,7 @@ In rough order of expected value:
 4. Kitchen display screen for the Kitchen role, and routing tickets to several kitchen printers or stations
 5. Encrypted cloud backups of the POS Edge database
 6. Cloud reports and a remote back office (menu, reports) in a browser, with single-writer configuration rules
-7. Waiter tablets and phones (Android, iPadOS)
+7. Waiter phones and tablets: the Android app is decided ([ADR](../architecture/pos-application-boundary.md#clients-and-the-local-api)) and its timing is [open](#unresolved-product-decisions); iPadOS later
 8. Barcode lookup for packaged products; product images
 9. Daily and period sales reports, product sales ranking, export
 10. Delivery orders taken by phone (*paket servis*) with customer address
@@ -332,7 +353,7 @@ In rough order of expected value:
 | **Hardware and support model.** Who supplies and installs the Edge machine, whether a spare machine is required, and the restore time target | The Edge machine is the single point of failure ([ADR](../architecture/pos-application-boundary.md#failure-behavior)) | Pilot selection |
 | **Owner account.** Whether the POS Owner signs in with the same email and password as Wasla Orders | POS staff identity is local for the MVP; one Wasla login needs identity to move out of the Orders tenant database ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | Selling POS and Orders together |
 | **Waiter payments.** Whether waiters may record payments, as a per-restaurant setting | Changes the role table and the audit trail | Pilot onboarding |
-| **Waiter tablets.** Whether non-Windows devices are needed for the first pilots | Needs a second shell or a trusted LAN certificate scheme | Pilot selection |
+| **Waiter devices.** Whether the Android waiter app ships for the first pilots | The app and its pairing are decided in the [ADR](../architecture/pos-application-boundary.md#clients-and-the-local-api); shipping it adds its build, distribution and device tests to the pilot | Pilot selection |
 | **Pricing and packaging.** Whether POS is a separate plan, an add-on to Orders, or bundled | Decides what the licence lease checks (WAS-147 owns the billing domain) | Self-service activation |
 | **Kitchen printing layout.** One kitchen printer, or routing by category to several stations | Several stations need product-to-printer routing in the menu | First pilot with more than one kitchen station |
 | **Check numbering.** Per business day or continuous for Wasla check numbers. After a restore, numbers carry the epoch as a prefix in either case ([ADR](../architecture/pos-application-boundary.md#numbering-after-a-restore)). Fiscal receipt and Z numbers belong to the ÖKC | Affects history search and how staff match a check to a fiscal receipt | First slice (the slice uses per-day numbers and can change before production) |
@@ -369,18 +390,20 @@ Rules:
 
 ## UX requirements
 
-The POS uses the Wasla visual direction (warm operational minimalism, foundation tokens in [../frontend/design-system.md](../frontend/design-system.md)). It uses the repository's frontend stack: ASP.NET Core MVC/Razor, Bootstrap 5 and vanilla JavaScript ([../frontend/architecture.md](../frontend/architecture.md)). The pages are served by POS Edge and shown in the Terminal app. It is a separate operational surface from the Orders tenant shell.
+The POS uses the Wasla visual direction (warm operational minimalism, foundation tokens in [../frontend/design-system.md](../frontend/design-system.md)). The Terminal is a native WinUI 3 app and the waiter app a native Android app; both call the POS Edge local API ([ADR](../architecture/pos-application-boundary.md#clients-and-the-local-api)). It is a separate operational surface from the Orders tenant shell.
+
+The screens are designed in the Figma file "Wasla - POS" (`MoXvcRyB7JN3Lnx9XpYJOh`). Its tokens carry their WinUI resource and Compose names. A design that conflicts with this document is a proposal until this document changes.
 
 **Layout (1024×768 and larger, landscape):**
 
 - Three zones: categories (top or start edge), product grid (center), cart and actions (end edge, about one third of the width). In Arabic the zones mirror.
 - Dense, with no decorative whitespace. Text and prices are legible at arm's length (product names at least 16 px, totals at least 24 px).
 - The tables screen is a grid of table tiles per area. Both tile colour and a text label show free or occupied; colour is never the only signal.
-- Portrait terminals (768 px wide) stack the cart under the products with a cart summary bar. Phone widths are not a target for the MVP.
+- Portrait terminals (768 px wide) stack the cart under the products with a cart summary bar. Phone widths are served by the waiter app, not the Terminal.
 
 **Touch targets and taps:**
 
-- Every interactive control is at least 48×48 CSS px, with at least 8 px between targets. Product tiles are at least 96×72 px. WCAG 2.2 requires 24 px; 48 px is the operational target for wet or gloved hands.
+- Every interactive control is at least 48×48 effective pixels on Windows and 48×48 dp on Android, with at least 8 between targets. Product tiles are at least 96×72 px. WCAG 2.2 requires 24 px; 48 px is the operational target for wet or gloved hands.
 - Tap counts:
   - Add a product without modifiers: 1 tap.
   - Quick sale paid with exact cash: **Pay** + **Cash (ÖKC) exact** = 2 taps after the products; the ÖKC then prints the fiscal receipt.
@@ -400,18 +423,18 @@ The POS uses the Wasla visual direction (warm operational minimalism, foundation
 
 **Localization:**
 
-- TR (default), EN, AR, RU for every POS string, including the Terminal app, setup console and printed documents. Resource keys go under a POS prefix. There is no hardcoded copy in Razor or JavaScript, and JavaScript messages are passed from Razor, as in Wasla Orders ([AGENTS.md](../../AGENTS.md#13-user-experience-and-localization)).
-- Arabic is right to left: mirrored zones, logical CSS properties, and amounts and check numbers kept left to right inside right-to-left text.
+- TR (default), EN, AR, RU for every POS string, including the Terminal app, setup console and printed documents. Resource keys go under a POS prefix. There is no hardcoded copy: the Terminal uses `.resw` resources and the waiter app Android string resources, with a parity test across the four cultures, as Wasla Orders does ([AGENTS.md](../../AGENTS.md#13-user-experience-and-localization)).
+- Arabic is right to left: mirrored zones (`FlowDirection` on Windows, layout direction on Android), and amounts and check numbers kept left to right inside right-to-left text.
 - Amounts are in TRY with `₺`, through the culture's number format, never the culture's own currency. Dates are Gregorian in every culture, as in Orders (WAS-44 for amounts, WAS-130 for dates).
 - Product, category and modifier names are restaurant data and are not translated.
 
 **Accessibility:** WCAG 2.2 AA for the POS screens:
 - AA contrast in light and dark themes;
 - labelled controls;
-- status changes (line added, payment recorded, print failed, POS Edge unreachable, sync state) announced through live regions;
+- status changes (line added, payment recorded, print failed, POS Edge unreachable, sync state) announced to Narrator and TalkBack;
 - no information by colour alone;
-- `prefers-reduced-motion` respected;
-- 200 % zoom without loss of function on the back-office screens.
+- the system's reduced-animation setting respected on Windows and Android;
+- text scaling to 200 % without loss of function on the back-office screens.
 
 ## Non-functional requirements
 

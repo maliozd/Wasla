@@ -30,7 +30,7 @@ The slice is a development and test milestone. It is not production-ready and no
 
 ### Included
 
-- **Applications:** POS Edge as a Windows service with local HTTPS and a loopback-only console. The POS Terminal shell. POS Cloud with activation and ingestion. `Wasla.Pos.Cli`.
+- **Applications:** POS Edge as a Windows service with the local API over HTTPS and a loopback-only setup listener. The POS Terminal app (WinUI 3) with the setup console. POS Cloud with activation and ingestion. `Wasla.Pos.Cli`.
 - **Local data:** a local SQLite database with migrations, the transactional outbox, scheduled backups, and a restore command that ends in a cloud recovery.
 - **Activation and licence:** installation activation, the installation credential, and an entitlement lease with grace and restricted mode.
 - **Devices and staff:** an installation CA with renewable server certificates; Terminal pairing that pins the CA; Owner PIN sign-in, lockout, the recovery code; POS roles and policies (Manager, Cashier, Waiter and Kitchen exist in the policy table and tests, without screens of their own).
@@ -61,7 +61,7 @@ Each criterion names the test that proves it. Tests run against an in-process PO
 1. **Sale with the WAN disconnected throughout.**
    - Steps 7–12 complete with every cloud request failing, and none of them waits for the cloud.
    - The sync chip shows "Offline since", and the outbox holds the expected records in sequence order.
-   - *Integration test; Terminal or headless-browser test of the sale screen at 1024×768, LTR and RTL.*
+   - *Integration test; Terminal UI Automation test of the sale screen at 1024×768, LTR and RTL.*
 2. **Local printing without cloud.**
    - Send to kitchen creates one Pending local print job, and the print worker sends it to a recording printer.
    - The job ends Printed, all with the WAN disconnected.
@@ -142,7 +142,7 @@ Not proven by the slice: real restaurant networks and routers, physical printers
 
 Each step is one Linear issue, merged into `dev` through its own branch and worktree, with focused tests. No step changes Orders behavior. WAS-156 and WAS-163 move Orders and Print Bridge code into shared libraries without changing behavior.
 
-1. [WAS-157](https://linear.app/wasla-food/issue/WAS-157) Scaffold POS Edge, the Terminal shell and POS Cloud, with CI and boundary tests.
+1. [WAS-157](https://linear.app/wasla-food/issue/WAS-157) Scaffold POS Edge with its local API, the Terminal app and POS Cloud, with CI and boundary tests.
 2. [WAS-158](https://linear.app/wasla-food/issue/WAS-158) Local SQLite database, migrations, outbox, backup and restore.
 3. [WAS-156](https://linear.app/wasla-food/issue/WAS-156) Platform library for secrets and the CentralDb POS registry. It can run in parallel with steps 1 and 2.
 4. [WAS-165](https://linear.app/wasla-food/issue/WAS-165) Activation, installation identity and the offline licence lease.
@@ -162,18 +162,18 @@ Linear project *Wasla POS — MVP*. Each issue's description holds its full boun
 
 | Order | Issue | Area | Boundary | Depends on | Verification |
 | --- | --- | --- | --- | --- | --- |
-| 1 | [WAS-157](https://linear.app/wasla-food/issue/WAS-157) | Edge runtime foundation | POS projects and `Wasla.Pos.sln`; Edge as a Windows service with LAN and loopback HTTPS; loopback-only console; Terminal shell; Cloud health endpoint; CI job; reference-direction tests | This ADR merged | POS build and tests; existing CI unchanged; console refuses LAN requests |
+| 1 | [WAS-157](https://linear.app/wasla-food/issue/WAS-157) | Edge runtime foundation | POS projects and `Wasla.Pos.sln`; Edge as a Windows service with LAN and loopback HTTPS; versioned local API with its OpenAPI document and contract test; loopback-only setup listener; WinUI 3 Terminal app with the setup console; Cloud health endpoint; CI job; reference-direction tests | This ADR merged | POS build and tests; existing CI unchanged; console refuses LAN requests |
 | 2 | [WAS-158](https://linear.app/wasla-food/issue/WAS-158) | Local database and migrations | SQLite, WAL mode, money in kuruş, explicit `migrate`, transactional outbox, scheduled backups, local restore into the Recovering state (no selling until cloud recovery) | 1 | Outbox and backup/restore tests, labelled as SQLite evidence |
 | 3 | [WAS-156](https://linear.app/wasla-food/issue/WAS-156) | Shared platform | Secrets and the CentralDb registry reader and POS registration writer, extracted from `Wasla.Infrastructure` with no Orders behavior change | This ADR merged | Full Orders suites; reference-direction test |
 | 4 | [WAS-165](https://linear.app/wasla-food/issue/WAS-165) | Activation and licence | Tenant activation, POS cloud database, installation credential, signed lease, restricted mode, emergency code, clock high-water mark | 2, 3 | Unit tests; SQL Server test on a throwaway database |
-| 5 | [WAS-159](https://linear.app/wasla-food/issue/WAS-159) | Pairing, PIN, certificates | Installation CA and renewable server certificates, CA rollover and compromise, pairing codes bound to the CA key, device credentials, peppered PINs, lockout, Owner setup and recovery codes, POS roles | 4 | Unit tests with the WAN disconnected; renewal, IP-change and rollover tests; Terminal or browser test in four cultures and RTL |
+| 5 | [WAS-159](https://linear.app/wasla-food/issue/WAS-159) | Pairing, PIN, certificates | Installation CA and renewable server certificates, CA rollover and compromise, pairing codes bound to the CA key, device credentials, peppered PINs, lockout, Owner setup and recovery codes, POS roles | 4 | Unit tests with the WAN disconnected; renewal, IP-change and rollover tests; Terminal UI Automation test in four cultures and RTL |
 | 6 | [WAS-160](https://linear.app/wasla-food/issue/WAS-160) | Menu and tables | Local entities, validated idempotent import, snapshots to the outbox | 5 | Unit tests with the WAN disconnected |
-| 7 | [WAS-161](https://linear.app/wasla-food/issue/WAS-161) | Local sale workflow | Sale and tables screens, checks, quick sale, send to kitchen with ticket, print job and outbox in one transaction | 6 | Unit, Node and Terminal/browser tests; concurrency on SQLite |
-| 8 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) | Payments, history, audit | ÖKC device-adapter interface and fake driver, fiscal transactions with the unknown-outcome check, payment records with separate check, fiscal and bank identifiers, close, history, day summary, outbox and audit | 7 | Concurrency on SQLite; fake-driver outcome tests; unit and browser tests |
+| 7 | [WAS-161](https://linear.app/wasla-food/issue/WAS-161) | Local sale workflow | Sale and tables screens, checks, quick sale, send to kitchen with ticket, print job and outbox in one transaction | 6 | Unit and Terminal UI Automation tests; concurrency on SQLite |
+| 8 | [WAS-162](https://linear.app/wasla-food/issue/WAS-162) | Payments, history, audit | ÖKC device-adapter interface and fake driver, fiscal transactions with the unknown-outcome check, payment records with separate check, fiscal and bank identifiers, close, history, day summary, outbox and audit | 7 | Concurrency on SQLite; fake-driver outcome tests; unit and Terminal UI tests |
 | 9 | [WAS-163](https://linear.app/wasla-food/issue/WAS-163) | Local printing | Printing library extracted from Print Bridge Core; Edge print worker; printer roles; non-fiscal documents (kitchen ticket, void slip, pre-bill; no customer receipt) | 8 | Print Bridge tests unchanged; worker tests with a recording printer; manual physical print reported separately |
 | 10 | [WAS-166](https://linear.app/wasla-food/issue/WAS-166) | Outbox and cloud ingestion | Sync contracts v1, batches, ingestion with unique keys, acknowledgement after durable storage, partial acknowledgement, retry, replay | 4, 8 | Integration tests; SQL Server concurrent ingestion test |
-| 11 | [WAS-167](https://linear.app/wasla-food/issue/WAS-167) | Sync health, conflicts, versions, recovery | Protocol N/N−1, integrity conflicts, poison records, cloud commands, sync health, `installation-status`, support bundle; restore codes, signed recovery packages, recovery conflicts, numbering after a restore | 10 | Integration tests, including stale-backup recovery; browser test of sync health |
-| 12 | [WAS-168](https://linear.app/wasla-food/issue/WAS-168) | Installer, update, rollback | Signed per-machine installer, service account, firewall rule, installation CA and server certificate (kept on repair and upgrade), WebView2 Runtime, updater with backup, migrate, health check and rollback | 2, 5 | Clean Windows 10 and 11 VMs; forced rollback; tampered package refused |
+| 11 | [WAS-167](https://linear.app/wasla-food/issue/WAS-167) | Sync health, conflicts, versions, recovery | Protocol N/N−1, integrity conflicts, poison records, cloud commands, sync health, `installation-status`, support bundle; restore codes, signed recovery packages, recovery conflicts, numbering after a restore | 10 | Integration tests, including stale-backup recovery; Terminal UI test of sync health |
+| 12 | [WAS-168](https://linear.app/wasla-food/issue/WAS-168) | Installer, update, rollback | Signed per-machine installer, service account, firewall rule, installation CA and server certificate (kept on repair and upgrade), the Terminal app with its self-contained Windows App SDK, updater with backup, migrate, health check and rollback | 2, 5 | Clean Windows 10 and 11 VMs; forced rollback; tampered package refused |
 | 13 | [WAS-169](https://linear.app/wasla-food/issue/WAS-169) | Backup/restore and pilot readiness | Restore and cloud-recovery drill from a deliberately stale backup on real hardware, physical printing, WAN-cut service, support runbook, fiscal gate | 9, 11, 12 | Written report from real hardware, separate from automated results |
 
 ## After the slice
@@ -183,7 +183,8 @@ In this order, before a pilot restaurant:
 1. [WAS-168](https://linear.app/wasla-food/issue/WAS-168): the installer, updater and rollback.
 2. **ÖKC technical investigation, then the first real driver** (issues to be created). The investigation tests the available Verifone devices and others, and records brand and model, SDK or protocol access, connection, manufacturer or authority approval requirements and fees ([ADR](../architecture/pos-application-boundary.md#fiscal-cash-register-ökc)). The driver implements the adapter interface proven by the fake driver in the slice.
 3. The remaining MVP features. Each gets its own issue when the slice is accepted:
-   - the back-office editor for menu, tables, staff and terminals;
+   - the back office in the Terminal app: menu (categories, products, modifier groups), tables, staff and devices;
+   - the Android waiter app, if the [pilot decision](pos-mvp.md#unresolved-product-decisions) includes it;
    - takeaway;
    - voids, cancellations and payment reversals with manager approval;
    - void slips and reprints of non-fiscal documents;
