@@ -107,6 +107,16 @@ public sealed partial class ComingSoonPageTests : IAsyncLifetime
     }
 
     [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task Homepage_TakesBootstrapAndItsIconsFromTheSite(string culture)
+    {
+        var page = await GetAsync("/", culture);
+
+        Assert.Equal(HttpStatusCode.OK, page.Status);
+        MarketingVendorFilesTests.AssertStylesAndScriptsComeFromTheSite(page.Body, "/");
+    }
+
+    [Theory]
     [InlineData(PublicSiteUrls.PosPath)]
     [InlineData(PublicSiteUrls.ContactPath)]
     [InlineData(PublicSiteUrls.PrivacyNoticePath)]
