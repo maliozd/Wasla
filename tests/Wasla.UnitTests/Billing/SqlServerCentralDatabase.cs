@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Orders;
+using Wasla.UnitTests.Setup;
 
 namespace Wasla.UnitTests.Billing;
 
@@ -19,6 +20,9 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
 
     private readonly string _server = SqlServerTenantDatabase.ResolveServer();
 
+    // The pools of this database only; DisposeAsync clears them, never every pool in the process (WAS-229).
+    private readonly OwnedSqlServerPools _pools = new();
+
     public string DatabaseName { get; } = NamePrefix + Guid.NewGuid().ToString("N")[..12];
 
     public BillingClock Time { get; } = new(BillingTestData.Now);
@@ -28,12 +32,12 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
 
     /// <summary>Each distinct <paramref name="instance"/> has its own connection pool, as separate processes would.</summary>
     public CentralDbContext Open(string instance = "Inspector") => new(new DbContextOptionsBuilder<CentralDbContext>()
-        .UseSqlServer(ConnectionString(DatabaseName, instance))
+        .UseSqlServer(_pools.Own(ConnectionString(DatabaseName, instance)))
         .Options);
 
     /// <summary>A context of its own connection pool whose commands pass through <paramref name="interceptors"/>.</summary>
     public CentralDbContext Open(string instance, params IInterceptor[] interceptors) => new(new DbContextOptionsBuilder<CentralDbContext>()
-        .UseSqlServer(ConnectionString(DatabaseName, instance))
+        .UseSqlServer(_pools.Own(ConnectionString(DatabaseName, instance)))
         .AddInterceptors(interceptors)
         .Options);
 
@@ -59,7 +63,7 @@ public sealed class SqlServerCentralDatabase : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        SqlConnection.ClearAllPools();
+        _pools.Clear();
         if (!DatabaseName.StartsWith(NamePrefix, StringComparison.Ordinal))
             return;
 

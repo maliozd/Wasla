@@ -12,6 +12,7 @@ using Wasla.Infrastructure.Plans;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sms;
 using Wasla.UnitTests.Orders;
+using Wasla.UnitTests.Setup;
 
 namespace Wasla.UnitTests.Signup;
 
@@ -29,6 +30,9 @@ public sealed class SqlServerSignupDatabase : IAsyncLifetime
 
     private readonly string _server = SqlServerTenantDatabase.ResolveServer();
 
+    // The pools of this database only; DisposeAsync clears them, never every pool in the process (WAS-229).
+    private readonly OwnedSqlServerPools _pools = new();
+
     public string DatabaseName { get; } = NamePrefix + Guid.NewGuid().ToString("N")[..12];
 
     public SignupTestClock Clock { get; } = new(DateTime.UtcNow);
@@ -40,7 +44,7 @@ public sealed class SqlServerSignupDatabase : IAsyncLifetime
     /// <summary>Each distinct <paramref name="instance"/> has its own connection pool, as separate Web processes would.</summary>
     public CentralDbContext Open(string instance = "Inspector", params IInterceptor[] interceptors) =>
         new(new DbContextOptionsBuilder<CentralDbContext>()
-            .UseSqlServer(ConnectionString(DatabaseName, instance))
+            .UseSqlServer(_pools.Own(ConnectionString(DatabaseName, instance)))
             .AddInterceptors(interceptors)
             .Options);
 
@@ -125,7 +129,7 @@ public sealed class SqlServerSignupDatabase : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        SqlConnection.ClearAllPools();
+        _pools.Clear();
         if (!DatabaseName.StartsWith(NamePrefix, StringComparison.Ordinal))
             return;
 
