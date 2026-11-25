@@ -12,6 +12,7 @@ using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.UnitTests.Signup;
+using Wasla.UnitTests.Web;
 using Wasla.Web.Routing;
 
 namespace Wasla.UnitTests.Contact;
@@ -365,6 +366,22 @@ public sealed partial class PilotPageWebTests : IAsyncLifetime
         Assert.True(
             html.IndexOf(Text(culture, "PilotPrivacy.RetentionHeading"), StringComparison.Ordinal)
             < html.IndexOf(string.Format(CultureInfo.InvariantCulture, Text(culture, "PilotPrivacy.RetentionText"), PilotApplicationRetention.PeriodDays), StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [MemberData(nameof(Cultures))]
+    public async Task FormAndNotice_TakeBootstrapAndItsIconsFromTheSite(string culture)
+    {
+        var host = await StartAsync();
+        using var browser = Browser(host, culture);
+
+        foreach (var path in new[] { PublicSiteUrls.PilotPath, PublicSiteUrls.PilotPrivacyNoticePath })
+        {
+            var page = await browser.GetAsync(path);
+
+            Assert.Equal(HttpStatusCode.OK, page.Status);
+            MarketingVendorFilesTests.AssertStylesAndScriptsComeFromTheSite(page.Body, path);
+        }
     }
 
     [Theory]
