@@ -7,7 +7,7 @@ namespace Wasla.Infrastructure.Platform.Mock;
 
 // EN: Mock echoes use Trendyol GO-style package statuses so they align with DefaultOrderStatusMapper and the real client contract.
 // TR: Mock yanıtları Trendyol GO paket statüleriyle uyumludur; DefaultOrderStatusMapper ve gerçek istemci sözleşmesiyle hizalanır.
-public sealed class MockTrendyolYemekFoodPlatformClient : IFoodPlatformClient
+public sealed class MockTrendyolYemekFoodPlatformClient : IFoodPlatformClient, IMockFoodPlatformClient
 {
     public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
 

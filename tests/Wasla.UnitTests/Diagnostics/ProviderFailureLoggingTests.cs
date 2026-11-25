@@ -31,7 +31,6 @@ public sealed class ProviderFailureLoggingTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             logger,
@@ -126,7 +125,6 @@ public sealed class ProviderFailureLoggingTests
         };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
                 BaseUrl = "https://yemeksepeti.example/",

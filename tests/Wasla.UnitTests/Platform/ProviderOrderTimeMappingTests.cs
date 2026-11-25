@@ -107,7 +107,6 @@ public sealed class ProviderOrderTimeMappingTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
                         Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,

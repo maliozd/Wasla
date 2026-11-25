@@ -5,7 +5,7 @@ using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Platform.Mock;
 
-public sealed class MockGetirYemekFoodPlatformClient : IFoodPlatformClient
+public sealed class MockGetirYemekFoodPlatformClient : IFoodPlatformClient, IMockFoodPlatformClient
 {
     public FoodPlatform Platform => FoodPlatform.GetirYemek;
 

@@ -40,7 +40,6 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
     };
 
     private readonly HttpClient _httpClient;
-    private readonly IOrderStatusMapper _statusMapper;
     private readonly YemeksepetiOptions _options;
     private readonly ILogger<YemeksepetiFoodPlatformClient> _logger;
     private readonly TimeProvider _time;
@@ -64,13 +63,11 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
 
     public YemeksepetiFoodPlatformClient(
         IHttpClientFactory httpClientFactory,
-        IOrderStatusMapper statusMapper,
         IOptions<YemeksepetiOptions> options,
         ILogger<YemeksepetiFoodPlatformClient> logger,
         TimeProvider? time = null)
     {
         _httpClient = httpClientFactory.CreateClient(YemeksepetiHttpClientName);
-        _statusMapper = statusMapper;
         _options = options.Value;
         _logger = logger;
         _time = time ?? TimeProvider.System;
@@ -546,7 +543,6 @@ public sealed class YemeksepetiFoodPlatformClient : IFoodPlatformClient
         var orderedAt = TryParseDateTime(o.CreationDate);
 
         var externalStatus = o.Status ?? string.Empty;
-        var internalStatus = _statusMapper.MapToInternalStatus(FoodPlatform.Yemeksepeti, externalStatus);
 
         var items = (o.Basket ?? [])
             .Select(MapBasketItem)
