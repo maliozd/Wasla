@@ -177,7 +177,7 @@ Provider code is the clients, their models, the mock clients and their state, th
 
 `ProviderCodeDependencyTests` checks this on the compiled code, method bodies included. Orders code that still lives in those namespaces is listed in the test with its reason: `DefaultOrderStatusMapper`, and the webhook pilot's inbox, processor and inspection.
 
-- **Statuses.** The Trendyol GO client maps no status. It warns about a package status it does not know, the same strings ingestion stores as New with its own warning (`TrendyolGoUnknownStatusWarningTests`).
+- **Statuses.** The Trendyol GO package statuses Wasla recognizes, their spellings and the comparison rule are in one place, `TrendyolGoPackageStatus` (`src/Wasla.Infrastructure/Platform/TrendyolGo/`): a status is trimmed and compared case-sensitively, `Returned` matches in any casing, and a missing or blank status is neither recognized nor unknown. The client maps no status. It builds its `packageStatuses` filter from the documented statuses there and warns about a status the list does not recognize (`TrendyolGoUnknownStatusWarningTests`). `DefaultOrderStatusMapper` recognizes statuses through the same list and keeps the order status each one means; a status added to the list fails `DefaultOrderStatusMapperTests` until the mapper maps it.
 - **Identifiers.** Seller, supplier and store ids are compared by one helper, `ProviderIdentifier` (`src/Wasla.Infrastructure/Platform/`). Ingestion's connection check and the webhook pilot both use it.
 - **Mock clients.** They implement `IMockFoodPlatformClient`, which tenant operational health uses to report a platform's client as Mock.
 

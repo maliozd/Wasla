@@ -13,10 +13,11 @@ using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 namespace Wasla.UnitTests.Platform;
 
 /// <summary>
-/// Decision R5(a) of WAS-232: the Trendyol GO client recognizes its package statuses itself, without the Orders status
-/// mapper, and still warns about an unknown status at the same level, with the same message template and property, as
-/// it did through the mapper. The warning is now written under the client's own logger category. Ingestion keeps its
-/// own warning (<see cref="DefaultOrderStatusMapper"/>), so an unknown status is still logged twice.
+/// Decision R5(a) of WAS-232: the Trendyol GO client recognizes its package statuses through the provider's own list
+/// (<see cref="TrendyolGoPackageStatus"/>), without the Orders status mapper, and still warns about an unknown status at
+/// the same level, with the same message template and property, as it did through the mapper. The warning is now
+/// written under the client's own logger category. Ingestion keeps its own warning (<see cref="DefaultOrderStatusMapper"/>,
+/// which recognizes from the same list), so an unknown status is still logged twice.
 /// </summary>
 public sealed class TrendyolGoUnknownStatusWarningTests
 {
