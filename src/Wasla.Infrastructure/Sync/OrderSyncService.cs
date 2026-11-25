@@ -22,6 +22,7 @@ using Wasla.Infrastructure.Realtime;
 using Polly;
 using Polly.Retry;
 using Polly.Timeout;
+using Wasla.Application.Abstractions.Tenant;
 
 namespace Wasla.Infrastructure.Sync;
 
@@ -40,6 +41,7 @@ public sealed class OrderSyncService : IOrderSyncService
     private readonly ILogger<OrderSyncService> _logger;
     private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
     private readonly TimeProvider _time;
+    private readonly ITenantProductReader? _products;
 
     private static readonly ResiliencePipeline<IReadOnlyCollection<ExternalOrderDto>> _fetchPipeline =
         new ResiliencePipelineBuilder<IReadOnlyCollection<ExternalOrderDto>>()
@@ -83,7 +85,8 @@ public sealed class OrderSyncService : IOrderSyncService
         ITenantChangeNotifier notifier,
         ILogger<OrderSyncService> logger,
         ITenantBusinessSubtypeReader? businessSubtypeReader = null,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        ITenantProductReader? products = null)
     {
         _tenantDbFactory = tenantDbFactory;
         _platformClients = platformClients;
@@ -92,6 +95,39 @@ public sealed class OrderSyncService : IOrderSyncService
         _logger = logger;
         _businessSubtypeReader = businessSubtypeReader;
         _time = time ?? TimeProvider.System;
+        _products = products;
+    }
+
+    /// <summary>
+    /// Whether Orders may still start work for the tenant (WAS-235): it is assigned to Orders now. Checked before a
+    /// tenant pass and before each connection pass, so an assignment change takes effect at the next boundary; work
+    /// already started is not stopped (WAS-240). Without a reader (tests that build the service directly) every tenant
+    /// is served, as before.
+    /// </summary>
+    internal async Task<bool> ServesTenantAsync(Guid tenantId, CancellationToken ct) =>
+        _products is null || await _products.IsOrdersTenantAsync(tenantId, ct).ConfigureAwait(false);
+
+    private OrderSyncTenantResult NotServed(Guid tenantId, string pass)
+    {
+        _logger.LogInformation(
+            "Order {Pass} skipped: the tenant is not assigned to Wasla Orders. TenantId={TenantId}",
+            pass,
+            tenantId);
+        return new OrderSyncTenantResult(tenantId, 0, 0, 0, 0, 0, 0, 0) { WasNotOrdersTenant = true };
+    }
+
+    /// <summary>Checks the assignment before a connection pass; logs and returns false when the tenant has left Orders.</summary>
+    private async Task<bool> ServesConnectionAsync(Guid tenantId, PlatformConnection connection, string pass, CancellationToken ct)
+    {
+        if (await ServesTenantAsync(tenantId, ct).ConfigureAwait(false))
+            return true;
+
+        _logger.LogInformation(
+            "Order {Pass} stopped before connection {ConnectionId}: the tenant is no longer assigned to Wasla Orders. TenantId={TenantId}",
+            pass,
+            connection.Id,
+            tenantId);
+        return false;
     }
 
     public async Task SyncTenantAsync(Guid tenantId, CancellationToken ct)
@@ -102,6 +138,9 @@ public sealed class OrderSyncService : IOrderSyncService
     public async Task<OrderSyncTenantResult> SyncTenantWithResultAsync(Guid tenantId, CancellationToken ct)
     {
         var swTenant = Stopwatch.StartNew();
+        if (!await ServesTenantAsync(tenantId, ct).ConfigureAwait(false))
+            return NotServed(tenantId, "sync");
+
         await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
@@ -168,12 +207,19 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         var connectionResults = new List<OrderSyncConnectionResult>(dueConnections.Count);
+        var stopped = false;
 
         var mockGenerationScope = await BeginMockGenerationScopeAsync(tenantId, db, ct).ConfigureAwait(false);
         try
         {
             foreach (var connection in dueConnections)
             {
+                if (!await ServesConnectionAsync(tenantId, connection, "sync", ct).ConfigureAwait(false))
+                {
+                    stopped = true;
+                    break;
+                }
+
                 var result = await SyncConnectionAsync(tenantId, db, connection, OrderSyncPass.Current, ct).ConfigureAwait(false);
                 connectionResults.Add(result);
             }
@@ -184,7 +230,7 @@ public sealed class OrderSyncService : IOrderSyncService
         }
 
         swTenant.Stop();
-        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "sync");
+        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "sync") with { WasNotOrdersTenant = stopped };
     }
 
     /// <summary>
@@ -196,6 +242,9 @@ public sealed class OrderSyncService : IOrderSyncService
     public async Task<OrderSyncTenantResult> BackfillTenantAsync(Guid tenantId, CancellationToken ct)
     {
         var swTenant = Stopwatch.StartNew();
+        if (!await ServesTenantAsync(tenantId, ct).ConfigureAwait(false))
+            return NotServed(tenantId, "backfill");
+
         await using var db = await _tenantDbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
 
         if (!await IsOrderSyncEnabledAsync(db, ct).ConfigureAwait(false))
@@ -213,14 +262,21 @@ public sealed class OrderSyncService : IOrderSyncService
             .ToList();
 
         var connectionResults = new List<OrderSyncConnectionResult>(behind.Count);
+        var stopped = false;
         foreach (var connection in behind)
         {
+            if (!await ServesConnectionAsync(tenantId, connection, "backfill", ct).ConfigureAwait(false))
+            {
+                stopped = true;
+                break;
+            }
+
             var result = await SyncConnectionAsync(tenantId, db, connection, OrderSyncPass.Backfill, ct).ConfigureAwait(false);
             connectionResults.Add(result);
         }
 
         swTenant.Stop();
-        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "backfill");
+        return Summarize(tenantId, connectionResults, swTenant.ElapsedMilliseconds, "backfill") with { WasNotOrdersTenant = stopped };
     }
 
     /// <summary>

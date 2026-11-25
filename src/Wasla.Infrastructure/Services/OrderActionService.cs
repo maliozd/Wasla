@@ -11,6 +11,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Realtime;
+using Wasla.Application.Abstractions.Tenant;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -21,19 +22,39 @@ public sealed class OrderActionService : IOrderActionService
     private readonly IEnumerable<IFoodPlatformClient> _clients;
     private readonly ISecretManager _secretManager;
     private readonly ITenantChangeNotifier _notifier;
+    private readonly ITenantProductReader? _products;
 
     public OrderActionService(
         ITenantDbContextFactory dbFactory,
         IEnumerable<IFoodPlatformClient> clients,
         ISecretManager secretManager,
         ITenantChangeNotifier notifier,
-        ILogger<OrderActionService> logger)
+        ILogger<OrderActionService> logger,
+        ITenantProductReader? products = null)
     {
         _dbFactory = dbFactory;
         _clients = clients;
         _secretManager = secretManager;
         _notifier = notifier;
         _logger = logger;
+        _products = products;
+    }
+
+    /// <summary>
+    /// WAS-235: an order action for a tenant that is not assigned to Wasla Orders is refused before the tenant database
+    /// is opened or a provider is called, with the generic action failure (the tenant is treated like an inactive one).
+    /// Without a reader (tests that build the service directly) every tenant is served, as before.
+    /// </summary>
+    private async Task<bool> RefusesTenantAsync(Guid tenantId, Guid orderId, CancellationToken ct)
+    {
+        if (_products is null || await _products.IsOrdersTenantAsync(tenantId, ct))
+            return false;
+
+        _logger.LogInformation(
+            "Order action refused: the tenant is not assigned to Wasla Orders. TenantId={TenantId} OrderId={OrderId}",
+            tenantId,
+            orderId);
+        return true;
     }
 
     public async Task<bool> TryUpdateStatusAsync(
@@ -42,6 +63,9 @@ public sealed class OrderActionService : IOrderActionService
         OrderStatus newStatus,
         CancellationToken ct)
     {
+        if (await RefusesTenantAsync(tenantId, orderId, ct))
+            return false;
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         // Only allow actions while still New to avoid clobbering worker-driven updates. The write itself checks that,
@@ -68,6 +92,9 @@ public sealed class OrderActionService : IOrderActionService
     private async Task<OrderActionResult> ExecuteAsync(Guid tenantId, Guid orderId, OrderStatus target, int? rejectReasonId, CancellationToken ct)
     {
         if (target is not (OrderStatus.Preparing or OrderStatus.Cancelled))
+            return new OrderActionResult(false, "Orders.ActionFailed");
+
+        if (await RefusesTenantAsync(tenantId, orderId, ct))
             return new OrderActionResult(false, "Orders.ActionFailed");
 
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
@@ -248,6 +275,9 @@ public sealed class OrderActionService : IOrderActionService
         CancellationToken ct,
         Func<Order, string?>? refuseUserCommand = null)
     {
+        if (await RefusesTenantAsync(tenantId, orderId, ct))
+            return new OrderActionResult(false, "Orders.ActionFailed");
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         await using var claim = await OrderActionLock.TryAcquireAsync(db, orderId, ct);

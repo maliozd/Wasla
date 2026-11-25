@@ -72,9 +72,39 @@ Current implementation stores, among other fields:
 - `EncryptionKeyVersion`
 - `SchemaVersion`, migration metadata
 - `IsActive`
+- `Product`: the product the tenant is assigned to ([Product assignment](#product-assignment-was-235))
 - Billing / provisioning / subscription status enums (written at provisioning, not the billing source of truth; see [billing.md](billing.md#what-is-reused-and-what-is-not))
 
-Resolution looks up by `PrimaryDomain` (case-normalized) and requires `IsActive`.
+Resolution looks up by `PrimaryDomain` (case-normalized) and requires `IsActive` and `Product` Orders.
+
+### Product assignment (WAS-235)
+
+A restaurant uses Wasla Orders or Wasla POS, never both at once. `Tenants.Product` (`TenantProduct`) is the one record of which, for each tenant:
+
+| Value | Stored | Meaning |
+| --- | --- | --- |
+| `Orders` | 1 | The tenant uses Wasla Orders. The database default |
+| `MovingToPos` | 2 | Moving to POS: Orders has stopped starting work for the tenant, POS has not started |
+| `Pos` | 3 | The tenant uses Wasla POS |
+| `MovingToOrders` | 4 | Moving back to Orders: POS has stopped, Orders has not started |
+
+- **Orders serves only `Orders`.** A tenant in any other state is refused like an inactive tenant:
+  - **Tenant resolution:** Web shows tenant-not-found and Api answers 404.
+  - **Print Bridge sign-in:** refused with the inactive-tenant failure code.
+  - **Services:**
+    - order actions answer `Orders.ActionFailed`;
+    - platform connection create, edit, reactivate and remove answer not found;
+    - nothing is written and no provider is called.
+  - **Worker:** loads only active `Orders` tenants (`OrdersTenantQueries.ActiveOrdersTenants`). It reads the assignment again before every tenant pass and every connection pass.
+  - **Webhook processor:** reads the assignment before every event it claims.
+  - **CLI:** the migration gate (`migration-status`), `migrate-all-tenants` and `reset-all-tenant-dbs` skip the tenant and name it in their output.
+- **When a change takes effect.** Each check reads CentralDb again (`ITenantProductReader`), so a change takes effect at the next such boundary.
+  - Tenant resolution still uses its 5-minute cache, like `IsActive`.
+  - Work that has already started is not stopped. Stopping it (quiescence or fencing) is the cutover's job, WAS-240.
+- **Defaults.** Every existing tenant, every tenant provisioned today and every insert from a build that predates the column is `Orders`: the column's database default is 1 and the entity default is `Orders`.
+- **Changing the assignment is the cutover (WAS-240).** No code path changes it yet. Central Admin shows it read-only on the tenant list and detail pages.
+- **Orders database of a POS tenant (decision D3).** Whether a tenant that is not on Orders has an Orders database is decided with POS activation (WAS-158, WAS-165). Orders never opens one either way.
+- **Rollback.** A rollback past the `AddTenantProduct` migration drops the column, and every tenant becomes Orders again. Roll back past it only while every tenant is on Orders. After the first other assignment, see WAS-236.
 
 ## Database-per-tenant
 
@@ -145,7 +175,7 @@ DNS, wildcard DNS, the reverse proxy, the `www.wasla.tr` redirect and TLS certif
 **Source:** `src/Wasla.Infrastructure/Tenant/TenantResolver.cs`
 
 - Input: request host
-- Lookup: `CentralDb.Tenants` where `PrimaryDomain` matches (lowercased) and `IsActive`
+- Lookup: `CentralDb.Tenants` where `PrimaryDomain` matches (lowercased), `IsActive` and `Product` is Orders (WAS-235)
 - Result: `ResolvedTenantDto` (Id, Name, Slug, PrimaryDomain)
 - In-resolver cache TTL: **5 minutes** (`tenant:{host}`)
 

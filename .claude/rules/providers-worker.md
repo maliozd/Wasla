@@ -45,6 +45,10 @@ These rules add detail for provider clients and order synchronization to
   isolation when changing the sync loop.
 - When a tenant's Order Sync is off, the sync skips that tenant and logs the
   skip.
+- The Worker syncs only active tenants assigned to Wasla Orders
+  (`OrdersTenantQueries.ActiveOrdersTenants`). `OrderSyncService` reads the
+  assignment again before each tenant and connection pass (WAS-235); keep
+  both checks when changing the loop.
 - Update an existing order in place inside the upsert transaction. Replace its
   `OrderItems` and `OrderItemOptions` with `ExecuteDeleteAsync` and re-add them;
   never delete or reinsert the parent `Order`.
