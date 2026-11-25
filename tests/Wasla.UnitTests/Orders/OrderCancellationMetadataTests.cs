@@ -622,6 +622,8 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             ExternalOrderId = externalOrderId,
             ExternalOrderCode = "CODE-" + externalOrderId,
             IdempotencyKey = OrderIngestion.IdempotencyKey(platform, externalOrderId),
+            // Imported under the connection SeedConnectionAsync adds (WAS-241).
+            StoreId = "store-metadata",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Metadata Customer",
