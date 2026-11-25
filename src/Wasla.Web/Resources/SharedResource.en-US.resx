@@ -2068,7 +2068,7 @@
     <value>ApiSecret max length is 500.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Supplier Id max length is 100.</value>
+    <value>Supplier Id can be at most 64 characters.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Executor Email max length is 200.</value>

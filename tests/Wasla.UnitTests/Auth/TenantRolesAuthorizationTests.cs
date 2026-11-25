@@ -869,7 +869,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
     }
 
     private TenantUserRoleService CreateTenantUserRoleService() =>
-        new(_db, new DefaultPasswordPolicy());
+        new(_db, new DefaultPasswordPolicy(), NullLogger<TenantUserRoleService>.Instance);
 
     private static TenantUserEditViewModel EditModel(
         AppUser user,
@@ -1151,7 +1151,7 @@ public sealed class TenantRolesAuthorizationTests : IDisposable
         var first = NewUser("first@example.test", UserRole.Owner);
         var second = NewUser("second@example.test", UserRole.Owner);
         tenants.Seed(_tenantId, db => db.AppUsers.AddRange(first, second));
-        var service = new TenantUserRoleService(tenants, new DefaultPasswordPolicy());
+        var service = new TenantUserRoleService(tenants, new DefaultPasswordPolicy(), NullLogger<TenantUserRoleService>.Instance);
         var ct = TestContext.Current.CancellationToken;
 
         var results = await Task.WhenAll(
