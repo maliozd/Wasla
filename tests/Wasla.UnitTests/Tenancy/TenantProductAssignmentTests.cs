@@ -277,6 +277,8 @@ public sealed class TenantProductAssignmentTests : IDisposable
                 ["ConnectionStrings:CentralDb"] = "Server=unused;Database=unused"
             })
             .Build());
+        // The hosts' AesSecretManager needs ENCRYPTION_MASTER_KEY, which CI does not have; nothing is decrypted here.
+        services.AddSingleton<ISecretManager, PassthroughSecrets>();
         services.AddScoped<OrderSyncService>();
 
         await using (var registered = services.BuildServiceProvider())
