@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.TenantDb;
@@ -15,6 +16,7 @@ using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -572,7 +574,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
     private sealed class RecordingPlatformClient(FoodPlatform platform = FoodPlatform.TrendyolYemek) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }

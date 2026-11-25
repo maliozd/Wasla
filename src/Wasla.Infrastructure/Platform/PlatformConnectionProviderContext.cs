@@ -1,4 +1,5 @@
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Domain.Entities.TenantDb;
 
@@ -18,7 +19,7 @@ internal static class PlatformConnectionProviderContext
         ArgumentNullException.ThrowIfNull(secretManager);
         return new ProviderConnectionContext(
             connection.Id,
-            connection.Platform,
+            connection.Platform.ToProviderPlatform(),
             connection.StoreId,
             connection.SupplierId,
             connection.ExecutorEmail,

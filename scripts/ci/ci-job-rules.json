@@ -77,6 +77,13 @@
       "paths": ["tests/Wasla.PrintBridge.Tests/WebShell/**"]
     },
     {
+      "id": "integrations-consumer-tests-project",
+      "jobs": [],
+      "scope": "fast",
+      "why": "The Wasla.Integrations consumer tests reference only Wasla.Integrations; no Windows job runs or reads them. Their own job, integrations-consumer, runs for every change. The Windows jobs build them with Wasla.sln, and that job builds them too.",
+      "paths": ["tests/Wasla.Integrations.ConsumerTests/**"]
+    },
+    {
       "id": "unit-tests-project",
       "jobs": ["unit-tests"],
       "scope": "fast",
@@ -126,11 +133,12 @@
       "id": "shared-libraries",
       "jobs": "all",
       "scope": "full",
-      "why": "Both test projects compile Domain, Application and Infrastructure: persistence and migrations, tenant isolation, authentication services and provider clients. Wasla.Web builds on all three and Wasla.PrintBridge on Domain and Application, so the headless-browser and WebView2 runtime tests run them: the full scope.",
+      "why": "Both test projects compile Domain, Application and Infrastructure: persistence and migrations, tenant isolation, authentication services and provider clients. They compile Wasla.Integrations, the provider library, through Infrastructure, and the integrations-consumer job, which runs for every change, tests it too. Wasla.Web builds on all four and Wasla.PrintBridge on Domain and Application, so the headless-browser and WebView2 runtime tests run them: the full scope.",
       "paths": [
         "src/Wasla.Domain/**",
         "src/Wasla.Application/**",
-        "src/Wasla.Infrastructure/**"
+        "src/Wasla.Infrastructure/**",
+        "src/Wasla.Integrations/**"
       ]
     },
     {

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Orders;
@@ -107,7 +108,7 @@ public sealed class OrderActionService : IOrderActionService
         if (connection is null)
             return new OrderActionResult(false, "Orders.ActionFailed");
 
-        var client = _clients.FirstOrDefault(c => c.Platform == order.Platform);
+        var client = _clients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == order.Platform);
         if (client is null)
             return new OrderActionResult(false, "Orders.ActionFailed");
 
@@ -271,7 +272,7 @@ public sealed class OrderActionService : IOrderActionService
         if (connection is null)
             return new OrderActionResult(false, "Orders.OrderActionFailed");
 
-        var client = _clients.FirstOrDefault(c => c.Platform == order.Platform);
+        var client = _clients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == order.Platform);
         if (client is null)
             return new OrderActionResult(false, "Orders.OrderActionFailed");
 

@@ -42,9 +42,9 @@ Primary sources:
 - `src/Wasla.Infrastructure/Sync/OrderIngestion.cs` (what happens to one observed order; see [Shared ingestion](#shared-ingestion-was-18))
 - `src/Wasla.Infrastructure/Sync/OrderFetchWindowPlanner.cs`
 - `src/Wasla.Infrastructure/Sync/OrderSyncCycleRunner.cs`
-- `src/Wasla.Infrastructure/Platform/TrendyolGo/TrendyolGoFoodPlatformClient.cs`
-- `src/Wasla.Infrastructure/Platform/TrendyolGo/TrendyolRequestRateLimiter.cs`
-- `src/Wasla.Infrastructure/Platform/Yemeksepeti/YemeksepetiFoodPlatformClient.cs`
+- `src/Wasla.Integrations/Platform/TrendyolGo/TrendyolGoFoodPlatformClient.cs`
+- `src/Wasla.Integrations/Platform/TrendyolGo/TrendyolRequestRateLimiter.cs`
+- `src/Wasla.Integrations/Platform/Yemeksepeti/YemeksepetiFoodPlatformClient.cs`
 
 ## Webhooks and polling
 

@@ -4,12 +4,13 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Integrations.Diagnostics;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using Wasla.UnitTests.Diagnostics;
 
 namespace Wasla.UnitTests.Platform;

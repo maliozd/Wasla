@@ -3,11 +3,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.UnitTests.Platform;
@@ -91,7 +91,7 @@ public sealed class TrendyolGoUnknownStatusWarningTests
                 BaseAddress = new Uri(options.BaseUrl)
             },
             Options.Create(options),
-            Options.Create(new TrendyolGoMealWebhookPilotOptions()),
+            new TrendyolGoDeploymentApiRouter(),
             log,
             new LimiterClock().Limiter(),
             TimeProvider.System);

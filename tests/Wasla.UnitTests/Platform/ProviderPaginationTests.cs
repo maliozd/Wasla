@@ -4,13 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Integrations.Diagnostics;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using Wasla.UnitTests.Diagnostics;
 
 namespace Wasla.UnitTests.Platform;
@@ -338,7 +339,7 @@ public sealed class TrendyolPaginationTests
                 BaseAddress = new Uri("https://trendyol.example/")
             },
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
+                        new TrendyolGoDeploymentApiRouter(),
             logger ?? NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             TimeProvider.System);

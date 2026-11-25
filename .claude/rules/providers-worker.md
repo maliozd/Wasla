@@ -2,11 +2,13 @@
 paths:
   - "src/Wasla.Worker/**"
   - "src/Wasla.Infrastructure/Platform/**"
+  - "src/Wasla.Integrations/**"
   - "src/Wasla.Infrastructure/Sync/**"
   - "src/Wasla.Infrastructure/DependencyInjection/ServiceCollectionExtensions.cs"
   - "src/Wasla.{Web,Api,Worker,Cli}/appsettings*.json"
   - "deploy/linux/env/**"
   - "tests/Wasla.UnitTests/Platform/**"
+  - "tests/Wasla.Integrations.ConsumerTests/**"
 ---
 
 # Provider and Worker rules
@@ -19,14 +21,22 @@ These rules add detail for provider clients and order synchronization to
 
 - `ProviderModeResolver` is the only parser of `Platforms:ProviderMode`. A
   missing or invalid value throws at startup; keep it that way.
-- In Mock mode `AddWaslaInfrastructure` registers only the mock clients. The
-  real Trendyol GO and Yemeksepeti HTTP clients and the Trendyol rate limiter
-  are registered only in the Real branch. Keep them there, so Mock mode never
-  creates a real client or calls a provider host.
+- The provider clients are composed only by `AddWaslaIntegrations` in
+  `Wasla.Integrations`, which `AddWaslaInfrastructure` calls. In Mock mode it
+  registers only the mock clients. The real Trendyol GO and Yemeksepeti HTTP
+  clients and the Trendyol rate limiter are registered only in the Real
+  branch. Keep them there, so Mock mode never creates a real client or calls a
+  provider host.
+- `Wasla.Integrations` references no Orders or POS project. Orders converts
+  the library's enums at its boundary (`ProviderEnumConversions`).
 - Do not tighten Real mode validation unless the task asks for it.
 - Provider options live under `Platform:TrendyolGo` and `Platform:Yemeksepeti`
   (singular `Platform`). The Trendyol GO Meal webhook pilot uses its own
   `TrendyolGoMealWebhookPilot` section. Getir has a mock client only.
+- The webhook pilot's options, validation and API routing rule stay in Orders
+  (`src/Wasla.Infrastructure/Platform/TrendyolGo/Webhooks/`). The Trendyol GO
+  client gets its API from the library's `ITrendyolGoApiRouter`, before it
+  reads credentials.
 
 ## Worker and synchronization
 

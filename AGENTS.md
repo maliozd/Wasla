@@ -263,12 +263,22 @@ Web UI detail is in `.claude/rules/web-ui.md`.
 
 - EF Core, DbContexts (`CentralDbContext`, `TenantDbContext`), persistence, and
   migrations.
-- Provider (platform) API clients.
+- Composition of the provider (platform) API clients from `Wasla.Integrations`.
 - Encryption, secret management, SMTP, and email.
 - Application interface implementations.
 - Data access and external-system integrations.
 
-May reference Application and Domain. Do not add a dependency on Web.
+May reference Application, Domain and Integrations. Do not add a dependency on
+Web.
+
+### Wasla.Integrations
+
+- The food-platform provider library: the provider contract, the external order
+  DTOs, the Trendyol GO and Yemeksepeti clients, the mock clients, the provider
+  HTTP registration and the provider options.
+- References no Orders and no POS project. Orders composes it from
+  Infrastructure through `AddWaslaIntegrations`; Domain, Application and Print
+  Bridge do not reference it.
 
 EF Core migration commands use `Wasla.Cli` as the startup project. Do not add
 EF tooling packages to `Wasla.Web`. See `docs/operations/migrations.md`.

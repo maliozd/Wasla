@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Application.Time;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -324,7 +325,7 @@ public sealed class OrderTimeSemanticsTests : IDisposable
 
     private static ExternalOrderDto Sample(string id, DateTime? placedUtc, DateTime? modifiedUtc, string status = "Created") =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             id,
             "TY-" + id,
             placedUtc,
@@ -335,8 +336,8 @@ public sealed class OrderTimeSemanticsTests : IDisposable
             0m,
             0m,
             100m,
-            PaymentMethod.OnlinePayment,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.OnlinePayment,
+            ProviderPaymentStatus.Paid,
             status,
             "{}",
             [new ExternalOrderItemDto(id + "-item", "Lahmacun", 1, 100m, 100m, null, [])],
@@ -351,7 +352,7 @@ public sealed class OrderTimeSemanticsTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;

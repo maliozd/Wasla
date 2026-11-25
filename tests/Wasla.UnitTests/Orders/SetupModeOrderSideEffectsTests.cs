@@ -4,9 +4,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Setup;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -271,7 +272,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
 
     private static ExternalOrderDto ProviderOrder(string externalOrderId, string externalStatus) =>
         new(
-            Platform: FoodPlatform.TrendyolYemek,
+            Platform: ProviderPlatform.TrendyolYemek,
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: $"TY-{externalOrderId}",
             OrderedAtUtc: DateTime.UtcNow.AddMinutes(-2),
@@ -282,8 +283,8 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: 100m,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: externalStatus,
             RawPayloadJson: "{}",
             Items: new[]
@@ -295,7 +296,7 @@ public sealed class SetupModeOrderSideEffectsTests : IDisposable
     {
         public IReadOnlyCollection<ExternalOrderDto> Orders { get; set; } = [];
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>

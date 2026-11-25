@@ -1,7 +1,8 @@
 using System.Text.RegularExpressions;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -37,7 +38,7 @@ public sealed class MockOrdersCustomerNameTests
         };
 
         var orders = MockOrders.CreateOrders(
-            FoodPlatform.Yemeksepeti,
+            ProviderPlatform.Yemeksepeti,
             connection.AsProviderContext(),
             count: 80,
             random: new Random(12345));

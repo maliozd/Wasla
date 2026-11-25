@@ -4,8 +4,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
@@ -15,6 +16,7 @@ using Wasla.Infrastructure.Printing;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -257,7 +259,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             Options: Array.Empty<ExternalOrderItemOptionDto>());
 
         return new ExternalOrderDto(
-            Platform: FoodPlatform.TrendyolYemek,
+            Platform: ProviderPlatform.TrendyolYemek,
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: $"TY-{externalOrderId}",
             OrderedAtUtc: DateTime.UtcNow.AddMinutes(-2),
@@ -268,8 +270,8 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: 100m,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: externalStatus,
             RawPayloadJson: $"{{\"externalOrderId\":\"{externalOrderId}\",\"externalStatus\":\"{externalStatus}\"}}",
             Items: new[] { item });
@@ -283,11 +285,11 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
 
         public FakeFoodPlatformClient(FoodPlatform platform, params ExternalOrderDto[] orders)
         {
-            Platform = platform;
+            Platform = platform.ToProviderPlatform();
             _orders = orders;
         }
 
-        public FoodPlatform Platform { get; }
+        public ProviderPlatform Platform { get; }
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(

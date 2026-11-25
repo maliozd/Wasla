@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -43,7 +44,7 @@ public sealed class MockOrdersOrderNoteTests
     public void CreateOrders_KeepsOrderNotesIndependentFromItemNotes_WithScenarioVariety()
     {
         var orders = MockOrders.CreateOrders(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             new PlatformConnection
             {
                 Platform = FoodPlatform.TrendyolYemek,

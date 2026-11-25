@@ -1,4 +1,5 @@
 using Wasla.Infrastructure.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.UnitTests.Platform;

@@ -7,16 +7,17 @@ using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Signup;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
 using Wasla.Infrastructure.Realtime;
 using Polly;
 using Polly.Retry;
@@ -329,7 +330,7 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     private IFoodPlatformClient? ClientFor(PlatformConnection connection) =>
-        _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+        _platformClients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == connection.Platform);
 
     /// <summary>
     /// A windowed connection's history is behind while its checkpoint is older than its last current-pass attempt.
@@ -418,7 +419,7 @@ public sealed class OrderSyncService : IOrderSyncService
             return null;
 
         var culture = await ReadReceiptLanguageAsync(db, ct).ConfigureAwait(false);
-        return MockOrderGenerationContext.Begin(codes, culture);
+        return MockOrderGenerationContext.Begin(MockScenarioNames.ForSubtypeCodes(codes), culture);
     }
 
     private static async Task<string> ReadReceiptLanguageAsync(TenantDbContext db, CancellationToken ct)
@@ -488,7 +489,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
         try
         {
-            var client = _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+            var client = _platformClients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == connection.Platform);
             if (client is null)
             {
                 throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");

@@ -4,7 +4,8 @@
     Chooses the CI test scope for the triggering event, the jobs that run it and the test shards of those jobs.
 
 .DESCRIPTION
-    Jobs. The terminology guard and the Node tests run for every change. The Windows jobs (unit-tests: the
+    Jobs. The terminology guard, the Node tests and the Wasla.Integrations consumer tests (integrations-consumer, on
+    Linux) run for every change. The Windows jobs (unit-tests: the
     Wasla.UnitTests shards; print-bridge: the installers and Wasla.PrintBridge.Tests) run when the change needs them:
 
       - A pull request into dev selects them from the files it changes, from the merge-base of its base and head to
@@ -111,8 +112,9 @@ $fastScopeLeavesOut = @(
 
 $maxListed = 20
 $alwaysRun = [ordered]@{
-    'terminology-guard' = 'runs for every change'
-    'javascript-tests'  = 'runs for every change'
+    'terminology-guard'     = 'runs for every change'
+    'javascript-tests'      = 'runs for every change'
+    'integrations-consumer' = 'runs for every change'
 }
 $rulesDocument = Get-Content -LiteralPath $RulesPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $skippableJobs = @($rulesDocument.skippableJobs)

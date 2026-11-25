@@ -1,7 +1,10 @@
 using System.Text.Json;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
+using Wasla.Infrastructure.Platform;
+using Wasla.Integrations.Platform.Dtos;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -84,7 +87,7 @@ public sealed class MockSubtypeOrderTests
         var legacy = Create("tr", ["restaurant", "not-a-subtype"], 8, 31);
         Assert.All(legacy, order => Assert.Equal("Generic", Scenario(order.RawPayloadJson)));
 
-        var lokanta = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection().AsProviderContext(), 12, new Random(41));
+        var lokanta = MockOrders.CreateOrders(ProviderPlatform.Yemeksepeti, Connection().AsProviderContext(), 12, new Random(41));
         Assert.All(lokanta, order =>
         {
             using var document = JsonDocument.Parse(order.RawPayloadJson);
@@ -97,9 +100,9 @@ public sealed class MockSubtypeOrderTests
     [Fact]
     public void AmbientContext_SelectsTenantFamilies_AndResolvedTextDoesNotChangeLater()
     {
-        using (MockOrderGenerationContext.Begin(["pizza"], "ar"))
+        using (MockOrderGenerationContext.Begin(MockScenarioNames.ForSubtypeCodes(["pizza"]), "ar"))
         {
-            var orders = MockOrders.CreateOrders(FoodPlatform.GetirYemek, Connection().AsProviderContext(), 12, new Random(43));
+            var orders = MockOrders.CreateOrders(ProviderPlatform.GetirYemek, Connection().AsProviderContext(), 12, new Random(43));
             var stored = orders.SelectMany(order => order.Items).Select(item => item.ProductName).ToArray();
             Assert.All(orders, order => Assert.Equal("Pizza", Scenario(order.RawPayloadJson)));
             var arabicNames = ProductNames("Pizza", "ar");
@@ -108,7 +111,7 @@ public sealed class MockSubtypeOrderTests
             Assert.Contains(stored, name => !englishNames.Contains(name, StringComparer.Ordinal));
         }
 
-        var after = MockOrders.CreateOrders(FoodPlatform.Yemeksepeti, Connection().AsProviderContext(), 4, new Random(44));
+        var after = MockOrders.CreateOrders(ProviderPlatform.Yemeksepeti, Connection().AsProviderContext(), 4, new Random(44));
         Assert.All(after, order =>
         {
             using var document = JsonDocument.Parse(order.RawPayloadJson);
@@ -119,19 +122,19 @@ public sealed class MockSubtypeOrderTests
     [Fact]
     public void ComplexityProfiles_CoverSimpleNormalGroupAndNoteHeavyOrders()
     {
-        var simple = MockSubtypeOrders.Build(["cafe"], "en", "simple-1", new Random(3), MockOrderComplexity.Simple);
+        var simple = MockSubtypeOrders.Build(MockScenarioNames.ForSubtypeCodes(["cafe"]), "en", "simple-1", new Random(3), MockOrderComplexity.Simple);
         Assert.Single(simple.Items);
         Assert.True(simple.Items.Single().Options.Count <= 1);
         Assert.Equal(1, simple.Items.Single().Quantity);
 
-        var normal = MockSubtypeOrders.Build(["kebab"], "tr", "normal-1", new Random(5), MockOrderComplexity.Normal);
+        var normal = MockSubtypeOrders.Build(MockScenarioNames.ForSubtypeCodes(["kebab"]), "tr", "normal-1", new Random(5), MockOrderComplexity.Normal);
         Assert.InRange(normal.Items.Count, 2, 4);
 
-        var group = MockSubtypeOrders.Build(["doner"], "tr", "group-1", new Random(7), MockOrderComplexity.Group);
+        var group = MockSubtypeOrders.Build(MockScenarioNames.ForSubtypeCodes(["doner"]), "tr", "group-1", new Random(7), MockOrderComplexity.Group);
         Assert.InRange(group.Items.Count, 4, 8);
         Assert.Contains(group.Items, item => item.Quantity is >= 2 and <= 4);
 
-        var noted = MockSubtypeOrders.Build(["burger"], "en", "notes-1", new Random(9), MockOrderComplexity.NoteHeavy);
+        var noted = MockSubtypeOrders.Build(MockScenarioNames.ForSubtypeCodes(["burger"]), "en", "notes-1", new Random(9), MockOrderComplexity.NoteHeavy);
         Assert.False(string.IsNullOrWhiteSpace(noted.CustomerNote));
         Assert.Contains(noted.Items, item => !string.IsNullOrWhiteSpace(item.Notes));
         Assert.Contains(noted.Items, item => item.Options.Count >= 2);
@@ -141,17 +144,17 @@ public sealed class MockSubtypeOrderTests
         Assert.DoesNotContain("Mock.", noted.CustomerNote, StringComparison.Ordinal);
     }
 
-    private static IReadOnlyCollection<Wasla.Application.Platform.Dtos.ExternalOrderDto> Create(
+    private static IReadOnlyCollection<ExternalOrderDto> Create(
         string culture,
         IReadOnlyList<string> codes,
         int count,
         int seed) =>
         MockOrders.CreateOrders(
-            FoodPlatform.Yemeksepeti,
+            ProviderPlatform.Yemeksepeti,
             Connection().AsProviderContext(),
             count,
             new Random(seed),
-            codes,
+            MockScenarioNames.ForSubtypeCodes(codes),
             culture);
 
     private static string[] ProductNames(string family, string culture) =>

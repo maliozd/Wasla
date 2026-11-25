@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -15,6 +16,7 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -316,7 +318,7 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
     /// <summary>The order as the provider reports it with another status; only the status differs from what is stored.</summary>
     private static ExternalOrderDto PackageOf(Order order, string providerStatus) =>
         new(
-            order.Platform,
+            order.Platform.ToProviderPlatform(),
             order.ExternalOrderId,
             order.ExternalOrderCode,
             null,
@@ -327,8 +329,8 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
             order.DeliveryFee,
             order.ServiceFee,
             order.TotalAmount,
-            order.PaymentMethod,
-            order.PaymentStatus,
+            order.PaymentMethod.ToProviderPaymentMethod(),
+            order.PaymentStatus.ToProviderPaymentStatus(),
             providerStatus,
             "{}",
             []);
@@ -383,7 +385,7 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
         private TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
         public Task FirstCallEntered => _entered.Task;
 

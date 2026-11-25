@@ -2,11 +2,11 @@ using System.Collections.Concurrent;
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.UnitTests.Platform;
@@ -192,7 +192,7 @@ public sealed class TrendyolGoPilotApiRoutingTests
                 BaseAddress = new Uri("https://" + Production + "/")
             },
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://" + Production }),
-            Options.Create(pilot),
+            new TrendyolGoMealWebhookPilotApiRouter(Options.Create(pilot)),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             TimeProvider.System);

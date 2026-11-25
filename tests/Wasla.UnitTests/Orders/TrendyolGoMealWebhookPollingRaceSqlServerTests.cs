@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -146,7 +147,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
 
     private static ExternalOrderDto Package(string packageId) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             packageId,
             "946511491",
             DateTime.UtcNow.AddMinutes(-2),
@@ -157,8 +158,8 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
             0m,
             0m,
             100m,
-            PaymentMethod.OnlinePayment,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.OnlinePayment,
+            ProviderPaymentStatus.Paid,
             "Picking",
             "{}",
             [new ExternalOrderItemDto(packageId + "-line-1", "Synthetic drink", 1, 100m, 100m, null, [])])
@@ -201,7 +202,7 @@ public sealed class TrendyolGoMealWebhookPollingRaceSqlServerTests : IClassFixtu
 
     private sealed class FakeWindowedClient(ExternalOrderDto package) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => TimeSpan.FromHours(1);
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>

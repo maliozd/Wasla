@@ -2,8 +2,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -11,6 +12,7 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Realtime;
 
@@ -19,7 +21,7 @@ internal sealed class ScriptedPlatformClient(FoodPlatform platform) : IFoodPlatf
 {
     private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-    public FoodPlatform Platform { get; } = platform;
+    public ProviderPlatform Platform { get; } = platform.ToProviderPlatform();
     public TimeSpan? MaxFetchWindow => null;
     public bool FailActions { get; set; }
     public List<string> Actions { get; } = [];
@@ -75,7 +77,7 @@ internal static class OrderChangeFixtures
     /// <summary>A provider order; "Created" maps to New, "Picking" to Preparing, "Cancelled" to Cancelled.</summary>
     public static ExternalOrderDto External(string externalOrderId, string status = "Created", decimal total = 100m, FoodPlatform platform = FoodPlatform.TrendyolYemek) =>
         new(
-            Platform: platform,
+            Platform: platform.ToProviderPlatform(),
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: $"TY-{externalOrderId}",
             OrderedAtUtc: DateTime.UtcNow.AddMinutes(-1),
@@ -86,8 +88,8 @@ internal static class OrderChangeFixtures
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: total,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: status,
             RawPayloadJson: "{}",
             Items: [new ExternalOrderItemDto($"{externalOrderId}-1", "Lahmacun", 1, total, total, null, [])]);

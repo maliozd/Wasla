@@ -6,9 +6,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -343,7 +344,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
 
     private static ExternalOrderDto Payload(string externalOrderId, string providerStatus) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId[^12..],
             DateTime.UtcNow.AddMinutes(-5),
@@ -354,8 +355,8 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
             0m,
             0m,
             100m,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-item", "Lahmacun", 1, 100m, 100m, null, [])],
@@ -433,7 +434,7 @@ public sealed class OrderIngestionInsertRaceSqlServerTests : IClassFixture<SqlSe
     /// <summary>Returns its payload on every fetch; lifecycle calls succeed without side effects.</summary>
     private sealed class FakeProvider(ExternalOrderDto payload) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>

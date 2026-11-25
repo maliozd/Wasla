@@ -9,11 +9,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Admin;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -319,7 +320,7 @@ public sealed class TenantOperationalHealthReader : ITenantOperationalHealthRead
             using var scope = _scopes.CreateScope();
             return scope.ServiceProvider
                 .GetServices<IFoodPlatformClient>()
-                .GroupBy(client => client.Platform)
+                .GroupBy(client => client.Platform.ToFoodPlatform())
                 .ToDictionary(
                     group => group.Key,
                     group => group.Last() is IMockFoodPlatformClient

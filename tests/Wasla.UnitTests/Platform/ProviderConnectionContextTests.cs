@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -42,7 +43,7 @@ public sealed class ProviderConnectionContextTests : IDisposable
         var context = connection.ToProviderContext(_secrets);
 
         Assert.Equal(connection.Id, context.ConnectionId);
-        Assert.Equal(FoodPlatform.TrendyolYemek, context.Platform);
+        Assert.Equal(ProviderPlatform.TrendyolYemek, context.Platform);
         Assert.Equal("store-a", context.StoreId);
         Assert.Equal("supplier-a", context.SupplierId);
         Assert.Equal(ExecutorCanary, context.ExecutorEmail);
@@ -162,9 +163,9 @@ public sealed class ProviderConnectionContextTests : IDisposable
         var source = Connection(isActive: true).ToProviderContext(_secrets).Credentials;
 
         Assert.Throws<ArgumentNullException>(() =>
-            new ProviderConnectionContext(Guid.NewGuid(), FoodPlatform.TrendyolYemek, "store", null, null, true, null!));
+            new ProviderConnectionContext(Guid.NewGuid(), ProviderPlatform.TrendyolYemek, "store", null, null, true, null!));
         Assert.Throws<ArgumentNullException>(() =>
-            new ProviderConnectionContext(Guid.NewGuid(), FoodPlatform.TrendyolYemek, null!, null, null, true, source));
+            new ProviderConnectionContext(Guid.NewGuid(), ProviderPlatform.TrendyolYemek, null!, null, null, true, source));
         Assert.Throws<ArgumentNullException>(() => new ProviderOrderReference(null!, "{}"));
         Assert.Throws<ArgumentNullException>(() => new ProviderOrderReference("pkg-1", null!));
         Assert.Throws<ArgumentNullException>(() => ((PlatformConnection)null!).ToProviderContext(_secrets));

@@ -5,11 +5,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Abstractions.Reports;
 using Wasla.Application.Abstractions.Tenant;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Application.Reports;
 using Wasla.Application.Time;
 using Wasla.Contracts.Dashboard;
@@ -931,7 +932,7 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
 
     private static ExternalOrderDto Payload(string externalOrderId, string providerStatus, DateTime placedUtc, decimal total) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             externalOrderId,
             "TY-" + externalOrderId[^12..],
             placedUtc,
@@ -942,8 +943,8 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
             0m,
             0m,
             total,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-item", "Lahmacun", 1, total, total, null, [])],
@@ -1006,7 +1007,7 @@ public sealed class OrderReportSqlServerTests : IClassFixture<SqlServerTenantDat
 
     private sealed class FakeProvider(ExternalOrderDto payload) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>

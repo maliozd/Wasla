@@ -1,4 +1,5 @@
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Infrastructure.Platform;

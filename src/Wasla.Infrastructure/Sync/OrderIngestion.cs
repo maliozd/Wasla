@@ -7,9 +7,10 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -87,12 +88,12 @@ internal sealed class OrderIngestion
             return new OrderUpsertResult(false, false, true, false, external.ExternalOrderId);
         }
 
-        var key = IdempotencyKey(external.Platform, external.ExternalOrderId);
+        var key = IdempotencyKey(external.Platform.ToFoodPlatform(), external.ExternalOrderId);
 
         var nowUtc = DateTime.UtcNow;
         external = WithPlausibleProviderTimes(external, nowUtc);
         var newStatus = _statusMapper.MapToInternalStatus(
-            external.Platform,
+            external.Platform.ToFoodPlatform(),
             external.ExternalStatus);
 
         var existing = await db.Orders
@@ -203,8 +204,8 @@ internal sealed class OrderIngestion
         existing.TotalAmount = external.Total;
         existing.DeliveryFee = external.DeliveryFee;
         existing.ServiceFee = external.ServiceFee;
-        existing.PaymentMethod = external.PaymentMethod;
-        existing.PaymentStatus = external.PaymentStatus;
+        existing.PaymentMethod = external.PaymentMethod.ToPaymentMethod();
+        existing.PaymentStatus = external.PaymentStatus.ToPaymentStatus();
         existing.RawPayloadJson = external.RawPayloadJson;
         // ReceivedAt (first import) is never written here. A provider time the payload lacks keeps the stored one.
         existing.CreatedAtPlatform = external.OrderedAtUtc ?? existing.CreatedAtPlatform;
@@ -423,7 +424,7 @@ internal sealed class OrderIngestion
     /// </remarks>
     internal static string? ContradictsConnection(PlatformConnection connection, ExternalOrderDto external)
     {
-        if (external.Platform != connection.Platform)
+        if (external.Platform.ToFoodPlatform() != connection.Platform)
             return "platform";
         if (Differs(external.ProviderStoreId, connection.StoreId))
             return "store";
@@ -593,7 +594,7 @@ internal sealed class OrderIngestion
     {
         var order = new Order
         {
-            Platform = external.Platform,
+            Platform = external.Platform.ToFoodPlatform(),
             ExternalOrderId = external.ExternalOrderId,
             IdempotencyKey = idempotencyKey,
             InternalStatus = internalStatus,
@@ -602,8 +603,8 @@ internal sealed class OrderIngestion
             TotalAmount = external.Total,
             DeliveryFee = external.DeliveryFee,
             ServiceFee = external.ServiceFee,
-            PaymentMethod = external.PaymentMethod,
-            PaymentStatus = external.PaymentStatus,
+            PaymentMethod = external.PaymentMethod.ToPaymentMethod(),
+            PaymentStatus = external.PaymentStatus.ToPaymentStatus(),
             CreatedAtPlatform = external.OrderedAtUtc,
             PlatformModifiedAt = external.ModifiedAtUtc,
             ReceivedAt = receivedAtUtc,
@@ -797,10 +798,10 @@ internal sealed class OrderIngestion
         if (!MoneyEquals(existing.ServiceFee, external.ServiceFee))
             return false;
 
-        if (existing.PaymentMethod != external.PaymentMethod)
+        if (existing.PaymentMethod != external.PaymentMethod.ToPaymentMethod())
             return false;
 
-        if (existing.PaymentStatus != external.PaymentStatus)
+        if (existing.PaymentStatus != external.PaymentStatus.ToPaymentStatus())
             return false;
 
         // A provider time the payload lacks keeps the stored one (see UpdateExisting), so only a sent value can differ.

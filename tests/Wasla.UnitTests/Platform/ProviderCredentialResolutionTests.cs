@@ -8,16 +8,17 @@ using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.Mock;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Mock;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
@@ -406,7 +407,7 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
         new(
             new HttpClient(new DelegateHandler(responder)) { BaseAddress = new Uri("https://trendyol.example/") },
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-            Options.Create(new TrendyolGoMealWebhookPilotOptions()),
+            new TrendyolGoDeploymentApiRouter(),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             TimeProvider.System);
@@ -488,7 +489,7 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     {
         private readonly ConcurrentQueue<SeenCall> _calls = new();
 
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public IReadOnlyList<SeenCall> Calls => _calls.ToArray();
 
@@ -523,7 +524,7 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
         }
 
         private static SeenConnection Seen(ProviderConnectionContext connection) =>
-            new(connection.ConnectionId, connection.Platform, connection.StoreId, connection.SupplierId, connection.ExecutorEmail, connection.IsActive);
+            new(connection.ConnectionId, connection.Platform.ToFoodPlatform(), connection.StoreId, connection.SupplierId, connection.ExecutorEmail, connection.IsActive);
     }
 
     // ── Fakes ─────────────────────────────────────────────────────────────────────────────────────────────────
