@@ -48,6 +48,12 @@ internal static class OrderChangeFixtures
 {
     private static readonly Guid SettingsId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
+    /// <summary>
+    /// The store of the connection <see cref="SeedSyncableTenant"/> adds: an order seeded directly for that tenant records
+    /// it, as an order imported under that connection would (WAS-241).
+    /// </summary>
+    public static string StoreIdOf(Guid tenantId) => $"store-{tenantId:N}";
+
     /// <summary>An active connection for the platform and the operational settings row sync reads.</summary>
     public static void SeedSyncableTenant(Admin.RecordingTenantDbFactory tenants, Guid tenantId, FoodPlatform platform = FoodPlatform.TrendyolYemek) =>
         tenants.Seed(tenantId, db =>
@@ -55,7 +61,7 @@ internal static class OrderChangeFixtures
             db.PlatformConnections.Add(new PlatformConnection
             {
                 Platform = platform,
-                StoreId = $"store-{tenantId:N}",
+                StoreId = StoreIdOf(tenantId),
                 EncryptedApiKey = "fake",
                 EncryptedApiSecret = "fake",
                 IsActive = true,

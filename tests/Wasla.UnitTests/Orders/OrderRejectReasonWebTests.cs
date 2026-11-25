@@ -131,6 +131,32 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
         Assert.Empty(_trendyol.Rejects);
     }
 
+    /// <summary>
+    /// WAS-241 over HTTP: an order imported under an earlier store, or stored before the store was recorded, is refused
+    /// with the store message the Orders page and Live Screen show, before the provider and without a change.
+    /// </summary>
+    [Theory]
+    [InlineData("store-previous")]
+    [InlineData(null)]
+    public async Task AnOrderNotOfTheConnectedStore_IsRefusedWithTheStoreMessage_AndNotSent(string? storeId)
+    {
+        var orderId = SeedNewOrder(_host.AlphaId, FoodPlatform.TrendyolYemek);
+        await using (var db = await _host.Tenants.CreateAsync(_host.AlphaId, Ct))
+            await db.Orders.Where(o => o.Id == orderId).ExecuteUpdateAsync(s => s.SetProperty(o => o.StoreId, storeId), Ct);
+        var (client, token) = await SignInAsync(UserRole.Owner);
+
+        var response = await RejectAsync(client, token, orderId, "623");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("ordersStoreNotConfirmed", await MessageAsync(response));
+        Assert.Equal(OrderStatus.New, await StatusAsync(_host.AlphaId, orderId));
+        Assert.Empty(_trendyol.Rejects);
+
+        // Both pages that send order actions carry the message under that key.
+        foreach (var page in new[] { "/orders/live-display", "/orders" })
+            Assert.Contains("ordersStoreNotConfirmed", await (await client.GetAsync(page)).Content.ReadAsStringAsync(Ct));
+    }
+
     [Fact]
     public async Task WithoutTheAntiforgeryToken_NothingIsRejected()
     {
@@ -168,6 +194,7 @@ public sealed class OrderRejectReasonWebTests : IAsyncLifetime
         var order = PrintServices.Order(orderId, tenantId, externalId);
         order.Platform = platform;
         order.IdempotencyKey = $"{platform}:{externalId}:{tenantId:N}";
+        order.StoreId = OrderChangeFixtures.StoreIdOf(tenantId);
         order.InternalStatus = OrderStatus.New;
         order.PlatformStatus = "Created";
         _host.Tenants.Seed(tenantId, db => db.Orders.Add(order));

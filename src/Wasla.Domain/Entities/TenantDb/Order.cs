@@ -28,6 +28,23 @@ public class Order : BaseEntity
     /// </summary>
     public string IdempotencyKey { get; set; } = string.Empty;
 
+    // --- The provider store the order was imported under (WAS-241) ---
+
+    /// <summary>
+    /// The <see cref="PlatformConnection.StoreId"/> of the connection this order was imported under, as that connection
+    /// had it when it fetched the order. Written once, when the order is first stored, and never changed afterwards:
+    /// an order action is sent to the provider only while the platform's connection still has this store and
+    /// <see cref="SupplierId"/>. Null for orders stored before Wasla recorded it.
+    /// </summary>
+    public string? StoreId { get; set; }
+
+    /// <summary>
+    /// The <see cref="PlatformConnection.SupplierId"/> of the connection this order was imported under, recorded with
+    /// <see cref="StoreId"/>. Null when that connection had none, and for orders stored before Wasla recorded it
+    /// (then <see cref="StoreId"/> is null too).
+    /// </summary>
+    public string? SupplierId { get; set; }
+
     public OrderStatus InternalStatus { get; set; } = OrderStatus.New;
 
     /// <summary>

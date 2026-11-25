@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Нам не удалось выполнить этот шаг с платформой. Попробуйте еще раз или проверьте соединение.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Не отправлено на платформу: не удалось подтвердить, что этот заказ относится к магазину, который подключён сейчас. Обработайте его в панели самой платформы.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Отметить готовность</value>
   </data>

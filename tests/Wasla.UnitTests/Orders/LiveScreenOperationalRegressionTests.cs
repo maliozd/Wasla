@@ -512,6 +512,8 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
             ExternalOrderId = externalOrderId,
             ExternalOrderCode = "TY-" + externalOrderId,
             IdempotencyKey = $"{platform}:{externalOrderId}:{_tenantId:N}",
+            // Imported under the connection above (WAS-241).
+            StoreId = "store-1",
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Test Customer",

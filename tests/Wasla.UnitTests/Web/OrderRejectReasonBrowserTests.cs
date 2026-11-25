@@ -339,6 +339,8 @@ public sealed class OrderRejectReasonBrowserTests : IAsyncLifetime
             ExternalOrderId = "TY-91005",
             ExternalOrderCode = "TY-91005",
             IdempotencyKey = "TrendyolYemek:TY-91005",
+            StoreId = TenantVisualWebHost.StoreIdOf(FoodPlatform.TrendyolYemek),
+            SupplierId = TenantVisualWebHost.SupplierIdOf(FoodPlatform.TrendyolYemek),
             InternalStatus = OrderStatus.New,
             PlatformStatus = "Created",
             CustomerName = "Derya Polat",
