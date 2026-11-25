@@ -36,6 +36,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.IdempotencyKey).IsRequired().HasMaxLength(88); // base64 of sha256
         builder.Property(o => o.PlatformStatus).HasMaxLength(64);
 
+        // WAS-241: the store identity of the connection the order was imported under. The same lengths as
+        // PlatformConnections.StoreId and SupplierId, so every stored connection value fits.
+        builder.Property(o => o.StoreId).HasMaxLength(128);
+        builder.Property(o => o.SupplierId).HasMaxLength(64);
+
         builder.Property(o => o.CustomerName).HasMaxLength(200);
         builder.Property(o => o.CustomerPhone).HasMaxLength(50);
         builder.Property(o => o.CustomerAddress).HasMaxLength(1000);

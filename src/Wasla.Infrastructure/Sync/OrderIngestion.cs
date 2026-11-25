@@ -104,6 +104,7 @@ internal sealed class OrderIngestion
         {
             var order = MapToOrderEntity(
                 external,
+                connection,
                 key,
                 receivedAtUtc: nowUtc,
                 internalStatus: newStatus,
@@ -584,8 +585,13 @@ internal sealed class OrderIngestion
         return external with { OrderedAtUtc = orderedAt, ModifiedAtUtc = modifiedAt };
     }
 
+    /// <param name="connection">
+    /// The connection the order was fetched for, as this operation loaded it. Its store identity is recorded on the new
+    /// order once (WAS-241); an update of an existing order never writes it.
+    /// </param>
     private Order MapToOrderEntity(
         ExternalOrderDto external,
+        PlatformConnection connection,
         string idempotencyKey,
         DateTime receivedAtUtc,
         OrderStatus internalStatus,
@@ -597,6 +603,8 @@ internal sealed class OrderIngestion
             Platform = external.Platform.ToFoodPlatform(),
             ExternalOrderId = external.ExternalOrderId,
             IdempotencyKey = idempotencyKey,
+            StoreId = connection.StoreId,
+            SupplierId = connection.SupplierId,
             InternalStatus = internalStatus,
             PlatformStatus = external.ExternalStatus,
             CustomerName = external.CustomerName,

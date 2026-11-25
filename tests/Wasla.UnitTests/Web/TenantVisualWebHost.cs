@@ -489,12 +489,12 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
 
         db.PlatformConnections.Add(new PlatformConnection
         {
-            Platform = FoodPlatform.Yemeksepeti, StoreId = "YS-1001", EncryptedApiKey = SecretMarkers.ApiKey,
+            Platform = FoodPlatform.Yemeksepeti, StoreId = YemeksepetiStoreId, EncryptedApiKey = SecretMarkers.ApiKey,
             EncryptedApiSecret = SecretMarkers.ApiSecret, IsActive = true, LastSyncAttempt = now.AddSeconds(-30), LastSuccessfulSync = now.AddSeconds(-30)
         });
         db.PlatformConnections.Add(new PlatformConnection
         {
-            Platform = FoodPlatform.TrendyolYemek, StoreId = "TY-2002", SupplierId = "5501", EncryptedApiKey = SecretMarkers.ApiKey,
+            Platform = FoodPlatform.TrendyolYemek, StoreId = TrendyolStoreId, SupplierId = TrendyolSupplierId, EncryptedApiKey = SecretMarkers.ApiKey,
             EncryptedApiSecret = SecretMarkers.ApiSecret, IsActive = true, LastSyncAttempt = now.AddMinutes(-1), LastSuccessfulSync = now.AddHours(-3),
             ConsecutiveFailures = 4, CircuitOpenUntil = now.AddMinutes(10)
         });
@@ -517,6 +517,24 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         db.PrintJobs.Add(new PrintJob { OrderId = orders[3].Id, Type = PrintJobType.Receipt, Status = PrintJobStatus.Pending, PayloadJson = "{}" });
     }
 
+    private const string YemeksepetiStoreId = "YS-1001";
+    private const string TrendyolStoreId = "TY-2002";
+    private const string TrendyolSupplierId = "5501";
+
+    /// <summary>
+    /// The store of the connection this host seeds for <paramref name="platform"/> (none for Getir). An order seeded
+    /// for the platform records it, as an order imported under that connection would (WAS-241).
+    /// </summary>
+    public static string? StoreIdOf(FoodPlatform platform) => platform switch
+    {
+        FoodPlatform.Yemeksepeti => YemeksepetiStoreId,
+        FoodPlatform.TrendyolYemek => TrendyolStoreId,
+        _ => null
+    };
+
+    /// <summary>The supplier of the connection this host seeds for <paramref name="platform"/>, recorded with <see cref="StoreIdOf"/>.</summary>
+    public static string? SupplierIdOf(FoodPlatform platform) => platform == FoodPlatform.TrendyolYemek ? TrendyolSupplierId : null;
+
     private static Order Order(Guid id, FoodPlatform platform, string code, OrderStatus status, string customer, decimal total,
         DateTime receivedAt, string? note, DateTime? deliveredAt = null) => new()
     {
@@ -525,6 +543,8 @@ internal sealed class TenantVisualWebHost : IAsyncDisposable
         ExternalOrderId = code,
         ExternalOrderCode = code,
         IdempotencyKey = $"{platform}:{code}",
+        StoreId = StoreIdOf(platform),
+        SupplierId = SupplierIdOf(platform),
         InternalStatus = status,
         PlatformStatus = status.ToString(),
         CustomerName = customer,

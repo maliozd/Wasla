@@ -297,6 +297,8 @@ public sealed class OrderCancellationMetadataSqlServerTests : IClassFixture<SqlS
             ExternalOrderId = externalId,
             ExternalOrderCode = "TY-" + externalId[^12..],
             IdempotencyKey = OrderIngestion.IdempotencyKey(FoodPlatform.TrendyolYemek, externalId),
+            // Imported under the connection above (WAS-241).
+            StoreId = "store-cancellation",
             InternalStatus = OrderStatus.New,
             PlatformStatus = "Created",
             CustomerName = "Cancellation Customer",

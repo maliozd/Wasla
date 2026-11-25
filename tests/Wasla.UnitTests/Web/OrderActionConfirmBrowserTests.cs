@@ -677,6 +677,8 @@ public sealed class OrderActionConfirmBrowserTests : IAsyncLifetime
         ExternalOrderId = code,
         ExternalOrderCode = code,
         IdempotencyKey = $"{platform}:{code}",
+        StoreId = TenantVisualWebHost.StoreIdOf(platform),
+        SupplierId = TenantVisualWebHost.SupplierIdOf(platform),
         InternalStatus = status,
         PlatformStatus = "Created",
         CustomerName = "Derya Polat",
