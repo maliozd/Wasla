@@ -1,4 +1,4 @@
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.UnitTests.Platform;
 

@@ -49,11 +49,17 @@ internal static class CliHelpPrinter
         "reset-password"
     ];
 
+    private static readonly string[] DataProtectionCommands =
+    [
+        "pilot-applications-retention"
+    ];
+
     private static readonly HashSet<string> AllCommands = new(
         TenantCommands
             .Concat(MigrationCommands)
             .Concat(CentralAdminCommands)
             .Concat(AccountCommands)
+            .Concat(DataProtectionCommands)
             .Concat(UtilityCommands),
         StringComparer.OrdinalIgnoreCase);
 
@@ -94,6 +100,10 @@ internal static class CliHelpPrinter
         Console.WriteLine("Account commands:");
         Console.WriteLine("  create-user               Add a user with a role to an existing active tenant.");
         Console.WriteLine("  reset-password            Reset an existing central or tenant user password.");
+        Console.WriteLine();
+
+        Console.WriteLine("Data protection commands:");
+        Console.WriteLine("  pilot-applications-retention Delete pilot applications 90 days after their last activity; --dry-run lists them only.");
         Console.WriteLine();
 
         Console.WriteLine("Utility commands:");
@@ -359,6 +369,18 @@ internal static class CliHelpPrinter
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  meal-webhook-integrator --action create --name <name> --token-file <path>");
                 Console.WriteLine("  meal-webhook-integrator --action show|enable|disable|test-order --name <name> --token-file <path>");
+                return;
+
+            case "pilot-applications-retention":
+                Console.WriteLine("pilot-applications-retention");
+                Console.WriteLine();
+                Console.WriteLine("Deletes pilot applications whose last activity (received, status change or recorded contact) is 90 days or more ago,");
+                Console.WriteLine("each in its own transaction with a destruction record (ids and codes only), skipping one whose team notification is");
+                Console.WriteLine("being sent. Then removes destruction records older than three years. Contact form messages are never touched.");
+                Console.WriteLine("Prints ids, statuses and UTC dates only. Exit code 1 when a deletion failed; the next run tries again.");
+                Console.WriteLine();
+                Console.WriteLine("Usage:");
+                Console.WriteLine("  pilot-applications-retention [--dry-run] [--batch-size <1-1000>]");
                 return;
 
             case "meal-webhook-inbox":

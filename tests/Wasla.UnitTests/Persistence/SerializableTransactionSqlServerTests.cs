@@ -19,7 +19,8 @@ namespace Wasla.UnitTests.Persistence;
 /// reset (<c>sp_reset_connection</c>) does not put it back. A serializable transaction must therefore hand its pooled
 /// session back at read committed, or the next request's ordinary reads on that session run serializable and hold
 /// key-range locks. Each test uses its own connection pool, so the next read gets the transaction's own physical
-/// session back; the tests check that through the server's <c>connection_id</c> instead of assuming it.
+/// session back; the tests check that through the server's <c>connection_id</c> instead of assuming it. No other test
+/// class clears that pool: the SQL Server fixtures clear only their own pools (WAS-229).
 /// </summary>
 public sealed class SerializableTransactionSqlServerTests(SqlServerTenantDatabase database) : IClassFixture<SqlServerTenantDatabase>
 {
@@ -228,15 +229,6 @@ public sealed class SerializableTransactionSqlServerTests(SqlServerTenantDatabas
         Assert.Equal(ReadCommitted, session.Isolation);
     }
 
-    private async Task AssertNextReadReusesTheSessionAtReadCommittedAsync(string instance, Guid expected)
-    {
-        await using var next = database.Open(instance);
-        var session = await SessionAsync(next);
-
-        Assert.True(expected == session.ConnectionId, "The next read did not get the pooled session back, so nothing was checked.");
-        Assert.Equal(ReadCommitted, session.Isolation);
-    }
-
     private static async Task<List<string>> KeyLockModesAsync(TenantDbContext db) =>
         await db.Database.SqlQueryRaw<string>("""
             SELECT DISTINCT request_mode AS [Value] FROM sys.dm_tran_locks
@@ -246,12 +238,17 @@ public sealed class SerializableTransactionSqlServerTests(SqlServerTenantDatabas
     private static async Task<int> TranCountAsync(TenantDbContext db) =>
         (await db.Database.SqlQueryRaw<int>("SELECT @@TRANCOUNT AS [Value]").ToListAsync(Ct)).Single();
 
-    // The pool of this instance holds exactly one physical session (the one the service used); the next ordinary read on a
-    // new context of the same pool must get it, and must run read committed.
-    private async Task AssertNextReadReusesTheSessionAtReadCommittedAsync(string instance)
+    // The pool of this instance holds exactly one physical session, idle: the one the transaction used (expected, when the
+    // test read it during the transaction) or the one the service used. The next ordinary read on a new context of the same
+    // pool must get it, and must run read committed. A session no longer on the server was discarded by the client, and
+    // fails here rather than as a session the pool did not hand back.
+    private async Task AssertNextReadReusesTheSessionAtReadCommittedAsync(string instance, Guid? expected = null)
     {
         var pooled = await PooledConnectionsAsync(instance);
-        var idle = Assert.Single(pooled);
+        Assert.True(
+            pooled.Count == 1 && (expected is null || pooled[0] == expected),
+            $"The transaction's session was not idle in its pool ({pooled.Count} sessions of this pool), so nothing was checked.");
+        var idle = pooled[0];
 
         await using var next = database.Open(instance);
         var session = await SessionAsync(next);

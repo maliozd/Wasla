@@ -32,9 +32,19 @@ Rules (source: `ProviderModeResolver`):
 
 Web, Worker, and API should use the **same** ProviderMode in a given environment.
 
+## Provider library (`Wasla.Integrations`)
+
+Since WAS-233 the provider code is its own class library, `src/Wasla.Integrations`. It holds the provider contract (`IFoodPlatformClient`, `ProviderConnectionContext`, `IProviderCredentialSource`, `ProviderCredentials`, `ProviderOrderReference`, `ProviderRejectReasons`), the external order DTOs and `OrderFetchWindow`, the Trendyol GO and Yemeksepeti clients with their models and options, the Trendyol GO rate limiter, the mock clients, `ProviderModeResolver`, the provider HTTP registration and `ProviderRequestException`.
+
+- **References.** It references no Orders and no POS project. `IntegrationsReferenceDirectionTests` (`Wasla.UnitTests`) reads every project file under `src/`. `IntegrationsIndependenceTests` (`Wasla.Integrations.ConsumerTests`) checks the compiled library and a consumer's build output and loaded assemblies.
+- **Composition.** Orders composes it through `AddWaslaIntegrations`, called by `AddWaslaInfrastructure`. Only Infrastructure references it. Domain, Application and Print Bridge do not, so the Print Bridge payload carries no provider code.
+- **Enums.** The library owns `ProviderPlatform`, `ProviderPaymentMethod` and `ProviderPaymentStatus`. They mirror Domain's `FoodPlatform`, `PaymentMethod` and `PaymentStatus` member for member, with the same names and numeric values (decision D-B; `ProviderEnumParityTests`). Orders converts at its boundary by value (`ProviderEnumConversions`, `src/Wasla.Infrastructure/Platform/`), so stored values and the names written to JSON and payloads keep their meaning.
+- **What the host supplies.** The host supplies each connection's credentials with every call (`IProviderCredentialSource`); the library stores none. It also supplies the Trendyol GO API routing (`ITrendyolGoApiRouter`, below). The mock clients take scenario family names and a language (`MockOrderGenerationContext`). Orders maps a tenant's business subtype codes to family names through its signup catalog (`MockScenarioNames`) and passes its normalized receipt language. `MockOrderLanguageTests` keeps both equal to what the mocks did before.
+- **Consumer tests.** `tests/Wasla.Integrations.ConsumerTests` references only the library. It composes `AddWaslaIntegrations` in Mock mode and in Real mode, where a stub handler answers the Trendyol GO client. CI runs it on Linux in the `integrations-consumer` job for every change ([../operations/testing.md](../operations/testing.md#continuous-integration)).
+
 ## DI registrations (Real vs Mock)
 
-Source: `src/Wasla.Infrastructure/DependencyInjection/ServiceCollectionExtensions.cs`.
+Source: `AddWaslaIntegrations` in `src/Wasla.Integrations/DependencyInjection/WaslaIntegrationsServiceCollectionExtensions.cs`, called by `AddWaslaInfrastructure` (`src/Wasla.Infrastructure/DependencyInjection/ServiceCollectionExtensions.cs`). The options bind `Platform:TrendyolGo` and `Platform:Yemeksepeti`. A missing or invalid `Platforms:ProviderMode` throws while registering.
 
 ### Mock mode
 
@@ -56,7 +66,7 @@ No `HttpClient` is registered against tgoapis.com or Yemeksepeti partner hosts i
 
 ### Provider HTTP clients
 
-Source: `ProviderHttpClientRegistration.AddProviderHttpClient` (`src/Wasla.Infrastructure/Platform/`), called from `ServiceCollectionExtensions` in Real mode (WAS-95, WAS-97). Web, Api and Worker get provider clients only through `AddWaslaInfrastructure`. None of them registers, configures or builds an `HttpClient` itself.
+Source: `ProviderHttpClientRegistration.AddProviderHttpClient` (`src/Wasla.Integrations/Platform/`), called from `AddWaslaIntegrations` in Real mode (WAS-95, WAS-97). Web, Api and Worker get provider clients only through `AddWaslaInfrastructure`, which composes them with `AddWaslaIntegrations`. None of them registers, configures or builds an `HttpClient` itself, and no Orders project registers a provider client itself.
 
 #### One named client per provider
 
@@ -128,6 +138,7 @@ All of these resolve clients from the production Real-mode registration (`AddWas
   - Duplicate names and foreign configuration fail.
   - Later handler overrides (named, `ConfigureHttpClientDefaults`, a later filter) cannot re-enable cookies or redirects, and an unsupported handler type fails.
   - The Web, Api and Worker sources do not compose HTTP clients themselves. This is a source check, because starting the real hosts in a test needs their master key, Data Protection folder and log files.
+  - No source project outside `src/Wasla.Integrations` registers a provider client, calls the provider HTTP registration or registers the Trendyol GO rate limiter, and `AddWaslaInfrastructure` calls `AddWaslaIntegrations` (WAS-233).
 - `ProviderHttpLoggingTests` (WAS-97): with every category at Trace, no canary credential, token, cookie, provider header value or body appears in any log message, structured property, exception or scope.
 
 #### Framework upgrades
@@ -143,13 +154,43 @@ Whether either real provider sets cookies or sends redirects is not confirmed (W
 
 ## `IFoodPlatformClient`
 
-Source: `src/Wasla.Application/Abstractions/Platform/IFoodPlatformClient.cs`.
+Source: `src/Wasla.Integrations/Platform/IFoodPlatformClient.cs`.
 
 Capabilities on the interface:
 
 - `FetchOrdersAsync(connection, window, ct)` — used by Worker sync; returns every page of one fetch or throws
 - `MaxFetchWindow` — the longest window the client requests in one fetch (Trendyol GO: 1 hour), or null when the client ignores the window (Yemeksepeti, mock clients)
-- Lifecycle: `AcceptOrderAsync`, `MarkInvoicedAsync`, `MarkShippedAsync`, `MarkDeliveredAsync` (each with the order's external id), `RejectOrderAsync` (with the stored `Order`, so each client derives its own item ids, and the operator's reason already checked against `OrderRejectReasons`; null for a platform without reasons)
+- Lifecycle: `AcceptOrderAsync`, `MarkInvoicedAsync`, `MarkShippedAsync`, `MarkDeliveredAsync` (each with the order's external id), `RejectOrderAsync` (with the order's `ProviderOrderReference`, so each client derives its own item ids from the stored payload, and the operator's reason already checked by Orders against the platform's `ProviderRejectReasons`; null for a platform without reasons)
+
+### Client inputs and credentials
+
+No operation takes an Orders persistence entity (WAS-231). The inputs are in `src/Wasla.Integrations/Platform/`:
+
+- `ProviderConnectionContext`: the connection's id, platform, `StoreId`, `SupplierId`, `ExecutorEmail` and `IsActive`, and `Credentials`, an `IProviderCredentialSource`. It holds no credential and no stored (encrypted) form of one. Its text form names only the connection id and platform.
+- `ProviderOrderReference` (reject only): the provider's order id and the provider payload stored for the order at its last sync. Its text form names only the order id.
+- `IProviderCredentialSource.GetCredentialsAsync` returns `ProviderCredentials`: the API key and secret (for Yemeksepeti, the OAuth client id and secret), resolved again on every call. Its text form shows neither value.
+
+Orders builds the context with `PlatformConnectionProviderContext.ToProviderContext` (`src/Wasla.Infrastructure/Platform/`) from the connection an operation loaded: once per connection in a sync pass, and once per order action. The source decrypts the stored credentials captured at that point through `ISecretManager`, on every call, keeps nothing it decrypted and never reads the database. A credential edit saved while an operation runs is therefore used from the next operation that loads the connection. When the clients resolve credentials:
+
+- Trendyol GO: for every request, each page of a fetch and each action, after the API routing check (`ITrendyolGoApiRouter`, below).
+- Yemeksepeti: once per fetch, before the token cache lookup. The client computes the token cache key from the resolved pair, as before. Its lifecycle operations resolve nothing.
+- Mock clients: once per completed fetch, discarded. Never for actions.
+
+`ProviderCredentialResolutionTests` and `ProviderConnectionContextTests` cover these rules against loopback fakes; they prove nothing about a real provider.
+
+### What provider code depends on
+
+Provider code is the `Wasla.Integrations` library ([Provider library](#provider-library-waslaintegrations)). It references no Wasla project, so it uses no Orders type: no `IOrderStatusMapper` or `OrderStatus`, nothing from the `Wasla.Application.Orders` namespaces such as `OrderRejectReasons`, and nothing from `Wasla.Infrastructure.Sync` such as `OrderIngestion` (WAS-232). The project references and the compiled assembly are checked (`IntegrationsReferenceDirectionTests`, `IntegrationsIndependenceTests`). These checks replace the WAS-232 method-body scan of the provider namespaces inside Infrastructure. The Orders code that works with provider code stays in Infrastructure: `DefaultOrderStatusMapper`, `PlatformConnectionProviderContext`, `ProviderIdentifier`, and the webhook pilot's options, validation, inbox, processor, inspection and integrator registration.
+
+- **Trendyol GO API routing.** The client asks `ITrendyolGoApiRouter`, the library's interface, which API a connection talks to. It asks before every request and before it reads the connection's credentials. A router that throws refuses the connection: no credential is read and no request is sent. The library's default, `TrendyolGoDeploymentApiRouter`, sends every connection to `Platform:TrendyolGo:BaseUrl`. Orders replaces it with `TrendyolGoMealWebhookPilotApiRouter` (`src/Wasla.Infrastructure/Platform/TrendyolGo/Webhooks/`), which `AddTrendyolGoMealWebhookPilotOptions` registers with the pilot's options. It applies `TrendyolGoMealWebhookPilotOptions.ProviderApiFor`:
+  - the pilot's one connection goes to exactly the stage API, whether or not the pilot is enabled;
+  - a pilot connection that no longer matches its seller, store or active state is refused;
+  - every other connection keeps the deployment's API.
+
+  `TrendyolGoPilotApiRoutingTests` test the rule on the client. `TrendyolGoPilotApiRoutingCompositionTests` test it through `AddWaslaInfrastructure` in Real mode, counting credential reads and requests.
+- **Statuses.** The Trendyol GO package statuses Wasla recognizes, their spellings and the comparison rule are in one place, `TrendyolGoPackageStatus` (`src/Wasla.Integrations/Platform/TrendyolGo/`): a status is trimmed and compared case-sensitively, `Returned` matches in any casing, and a missing or blank status is neither recognized nor unknown. The client maps no status. It builds its `packageStatuses` filter from the documented statuses there and warns about a status the list does not recognize (`TrendyolGoUnknownStatusWarningTests`). `DefaultOrderStatusMapper` recognizes statuses through the same list and keeps the order status each one means; a status added to the list fails `DefaultOrderStatusMapperTests` until the mapper maps it.
+- **Identifiers.** Seller, supplier and store ids are compared by one helper, `ProviderIdentifier` (`src/Wasla.Infrastructure/Platform/`). Ingestion's connection check and the webhook pilot both use it.
+- **Mock clients.** They implement `IMockFoodPlatformClient`, which tenant operational health uses to report a platform's client as Mock.
 
 Yemeksepeti’s real client documents that lifecycle fulfillment endpoints are **not yet implemented** for the partner API path. Do not assume Real mode means accept/reject/deliver against Yemeksepeti works end-to-end. The mock clients set the provider's cancelled status on reject (Trendyol GO `UnSupplied`, Yemeksepeti and Getir `CANCELLED`) and read nothing else from the order or the reason. Yemeksepeti and Getir have no reason list in Wasla: their reject takes no reason until their reject contracts are verified.
 
@@ -159,8 +200,8 @@ Yemeksepeti’s real client documents that lifecycle fulfillment endpoints are *
 
 `PUT /integrator/order/meal/suppliers/{supplierId}/packages/unsupplied` with `{ "packageId": "<package id>", "itemIdList": ["<packageItemId>", …], "reasonId": <operator's reason> }`
 
-- **Reason.** The operator chooses it in the reject dialog; nothing is preselected and there is no default. Wasla offers the documented restaurant reasons for sellers whose orders the platform's couriers deliver: 621 supply problem ("Tedarik problemi"), 622 store closed ("Mağaza kapalı"), 623 store cannot prepare the order ("Mağaza siparişi hazırlayamıyor"), 627 order confusion ("Sipariş karışıklığı"). 624 (high load / no courier) and 626 (outside the area) are documented only for sellers with their own couriers, which Wasla does not support, so they are not offered and are refused. Other cancellation codes in "Paket Modelleri" are reported by the provider and must not be sent. The list lives in `OrderRejectReasons`; `OrderActionService` checks the reason before the provider call and the client checks it again before building the request. Labels are localized (`Orders.RejectReason.TrendyolYemek.<id>`) in Turkish, English, Arabic and Russian.
-- **Item ids.** A full cancellation lists all the package item ids the packages call returned (`lines[].items[].packageItemId`, strings); a subset is a partial cancellation. Never `lineItemId`, a product id or a Wasla row id. `OrderItem` keeps no provider item id (the line id built during mapping is not stored), so the client reads them from `Order.RawPayloadJson`, the package it stored at the last sync. Orders created through the webhook pilot are ingested through the same polling read, so their payload has the same shape.
+- **Reason.** The operator chooses it in the reject dialog; nothing is preselected and there is no default. Wasla offers the documented restaurant reasons for sellers whose orders the platform's couriers deliver: 621 supply problem ("Tedarik problemi"), 622 store closed ("Mağaza kapalı"), 623 store cannot prepare the order ("Mağaza siparişi hazırlayamıyor"), 627 order confusion ("Sipariş karışıklığı"). 624 (high load / no courier) and 626 (outside the area) are documented only for sellers with their own couriers, which Wasla does not support, so they are not offered and are refused. Other cancellation codes in "Paket Modelleri" are reported by the provider and must not be sent. The provider's list is `ProviderRejectReasons` (`src/Wasla.Integrations/Platform/`); the client checks a reason against it before building the request. The operator's list, with the label keys and the checks, is `OrderRejectReasons` in Application. Application does not reference the provider library, because Print Bridge builds on Application, so Orders keeps its own copy of the ids. `OrderRejectReasonParityTests` requires the two lists to be equal for every platform (WAS-233). Before WAS-233, `OrderRejectReasons` read `ProviderRejectReasons` directly. `OrderActionService` checks the reason before the provider call, and the client checks it again before building the request. Labels are localized (`Orders.RejectReason.TrendyolYemek.<id>`) in Turkish, English, Arabic and Russian.
+- **Item ids.** A full cancellation lists all the package item ids the packages call returned (`lines[].items[].packageItemId`, strings); a subset is a partial cancellation. Never `lineItemId`, a product id or a Wasla row id. `OrderItem` keeps no provider item id (the line id built during mapping is not stored), so `OrderActionService` passes `Order.RawPayloadJson`, the package stored at the last sync, in the `ProviderOrderReference`, and the client reads them from it. Orders created through the webhook pilot are ingested through the same polling read, so their payload has the same shape.
 - **Items already cancelled.** An item the package reports with `isCancelled: true` is listed too, as the documentation's "all of the package item ids" says. Whether the provider accepts an id that is already cancelled is not documented and not verified. If it refuses, the reject fails with `Orders.RejectFailed` and the order stays `New`; the operator then rejects it on the provider's panel. Wasla never sends a subset and records the whole order as cancelled.
 - **Refusal before any request.** A stored payload that is missing, unreadable or belongs to another package; a package without lines; a line that is null or has a missing, null or empty item list; a null item; or an item without an id (missing, null or blank) fails the reject with no request. The ids that remain are never sent on their own: that would cancel part of the order while Wasla records the whole order as cancelled.
 - **History.** The request first carried an empty `itemIdList` and `reasonId` 0; the stage API answered HTTP 400 to it twice on 2026-11-03, and production rejects had the same body.

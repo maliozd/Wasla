@@ -7,15 +7,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.DependencyInjection;
 using Wasla.Infrastructure.Diagnostics;
-using Wasla.Infrastructure.Platform;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Diagnostics;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using static Wasla.UnitTests.Platform.ProviderCookieIsolationTests;
 
 namespace Wasla.UnitTests.Platform;
@@ -49,9 +50,9 @@ public sealed class ProviderHttpClientRegistrationTests
         foreach (var tenant in new[] { "a", "b" })
         {
             await using (var scope = services.CreateAsyncScope())
-                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             await using (var scope = services.CreateAsyncScope())
-                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
         }
 
         // Overlapping calls of both providers. Each origin holds its requests until all of them have arrived; the
@@ -62,11 +63,11 @@ public sealed class ProviderHttpClientRegistrationTests
             new[] { "t0", "t1", "t2" }.Select(async tenant =>
             {
                 await using var scope = services.CreateAsyncScope();
-                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None);
+                await Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             }).Concat(new[] { "a", "b" }.Select(async tenant =>
             {
                 await using var scope = services.CreateAsyncScope();
-                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None);
+                await Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None);
             })));
 
         // One registered name per provider, one pooled handler per name for every scope, never shared.
@@ -118,11 +119,11 @@ public sealed class ProviderHttpClientRegistrationTests
         {
             var clients = scope.ServiceProvider.GetServices<IFoodPlatformClient>().ToArray();
             await clients.OfType<TrendyolGoFoodPlatformClient>().Single()
-                .FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None);
+                .FetchOrdersAsync(TrendyolConnection("a").AsProviderContext(), Window, CancellationToken.None);
             await clients.OfType<YemeksepetiFoodPlatformClient>().Single()
-                .FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None);
+                .FetchOrdersAsync(YemeksepetiConnection("a").AsProviderContext(), Window, CancellationToken.None);
             await clients.OfType<OtherProviderClient>().Single()
-                .FetchOrdersAsync(TrendyolConnection("other"), Window, CancellationToken.None);
+                .FetchOrdersAsync(TrendyolConnection("other").AsProviderContext(), Window, CancellationToken.None);
         }
 
         Assert.True(otherOrigin.Requests.Count == 1, "The other provider's origin received:" + Environment.NewLine + string.Join(Environment.NewLine, otherOrigin.Requests));
@@ -216,13 +217,13 @@ public sealed class ProviderHttpClientRegistrationTests
         foreach (var tenant in new[] { "a", "b", "r" })
         {
             await using var scope = services.CreateAsyncScope();
-            outcomes.Add(await Outcome($"TrendyolGo {tenant}", () => Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant), Window, CancellationToken.None)));
+            outcomes.Add(await Outcome($"TrendyolGo {tenant}", () => Trendyol(scope).FetchOrdersAsync(TrendyolConnection(tenant).AsProviderContext(), Window, CancellationToken.None)));
         }
 
         foreach (var tenant in new[] { "a", "b", "r" })
         {
             await using var scope = services.CreateAsyncScope();
-            outcomes.Add(await Outcome($"Yemeksepeti {tenant}", () => Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant), Window, CancellationToken.None)));
+            outcomes.Add(await Outcome($"Yemeksepeti {tenant}", () => Yemeksepeti(scope).FetchOrdersAsync(YemeksepetiConnection(tenant).AsProviderContext(), Window, CancellationToken.None)));
         }
 
         Assert.Equal(
@@ -287,6 +288,48 @@ public sealed class ProviderHttpClientRegistrationTests
         }
 
         Assert.True(findings.Count == 0, "Host code composes HTTP clients itself:" + Environment.NewLine + string.Join(Environment.NewLine, findings));
+    }
+
+    /// <summary>
+    /// The provider clients, their HTTP clients and the Trendyol GO rate limiter are registered only by the provider
+    /// library (WAS-233): <c>AddWaslaInfrastructure</c> calls <c>AddWaslaIntegrations</c>, and no other source project
+    /// registers a provider client, calls the provider HTTP registration or registers the limiter itself.
+    /// </summary>
+    [Fact]
+    public void OrdersProjects_RegisterProviderClientsOnlyThroughTheIntegrationsRegistration()
+    {
+        var registration = new Regex(
+            @"\b(AddProviderHttpClient|ProviderPrimaryHandlerGuard)\b|\bAddTypedClient<IFoodPlatformClient\b|\b(Try)?Add(Singleton|Scoped|Transient|Enumerable)?<(IFoodPlatformClient|TrendyolRequestRateLimiter)\b",
+            RegexOptions.CultureInvariant);
+        var root = RepositoryRoot();
+        var source = Path.Combine(root, "src");
+        var library = Path.Combine(source, "Wasla.Integrations");
+        var findings = new List<string>();
+        var libraryRegistrations = 0;
+
+        foreach (var file in Directory.EnumerateFiles(source, "*.cs", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(source, file);
+            if (IsBuildOutput(Path.GetRelativePath(Path.Combine(source, relative.Split(Path.DirectorySeparatorChar)[0]), file)))
+                continue;
+
+            var lines = File.ReadAllLines(file);
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (!registration.IsMatch(lines[i]) || lines[i].TrimStart().StartsWith("//", StringComparison.Ordinal))
+                    continue;
+                if (file.StartsWith(library + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    libraryRegistrations++;
+                else
+                    findings.Add($"{Path.GetRelativePath(root, file)}:{i + 1}: {lines[i].Trim()}");
+            }
+        }
+
+        Assert.True(libraryRegistrations > 0, "Expected the provider registrations in src/Wasla.Integrations.");
+        Assert.True(findings.Count == 0, "Orders code registers provider clients itself:" + Environment.NewLine + string.Join(Environment.NewLine, findings));
+
+        var infrastructure = File.ReadAllText(Path.Combine(source, "Wasla.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs"));
+        Assert.Contains("services.AddWaslaIntegrations(configuration);", infrastructure, StringComparison.Ordinal);
     }
 
     private static void AddHandlerOverride(IServiceCollection services, string overrideKind)
@@ -440,11 +483,11 @@ public sealed class ProviderHttpClientRegistrationTests
     {
         public const string KeyHeader = "x-other-provider-key";
 
-        public FoodPlatform Platform => FoodPlatform.GetirYemek;
+        public ProviderPlatform Platform => ProviderPlatform.GetirYemek;
 
         public TimeSpan? MaxFetchWindow => null;
 
-        public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public async Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "/other/orders");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "other-provider-token");
@@ -454,14 +497,14 @@ public sealed class ProviderHttpClientRegistrationTests
             return [];
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }

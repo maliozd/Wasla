@@ -3,10 +3,11 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.UnitTests.Diagnostics;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -155,7 +156,7 @@ public sealed class TrendyolGoPackageContractTests
     {
         var order = Assert.Single(await FetchAsync());
 
-        Assert.Equal(FoodPlatform.TrendyolYemek, order.Platform);
+        Assert.Equal(ProviderPlatform.TrendyolYemek, order.Platform);
         Assert.Equal(PackageId, order.ExternalOrderId);
         Assert.Equal("9876543210", order.ExternalOrderCode);
         Assert.Equal("Created", order.ExternalStatus);
@@ -165,8 +166,8 @@ public sealed class TrendyolGoPackageContractTests
         Assert.Equal("5000000000", order.CustomerPhone);
         Assert.Equal("Kontrat Sokak 1, 9 kat 2 daire, Moda, İstanbul", order.CustomerAddress);
         Assert.Equal("Zile basmayın", order.CustomerNote);
-        Assert.Equal(PaymentMethod.Cash, order.PaymentMethod);
-        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        Assert.Equal(ProviderPaymentMethod.Cash, order.PaymentMethod);
+        Assert.Equal(ProviderPaymentStatus.Pending, order.PaymentStatus);
         Assert.Equal(320m, order.Total);
         Assert.Equal(320m, order.Subtotal);
 
@@ -306,10 +307,8 @@ public sealed class TrendyolGoPackageContractTests
         var options = new TrendyolGoOptions { AgentName = AgentName, BaseUrl = "https://stageapi.tgoapis.com" };
         var client = new TrendyolGoFoodPlatformClient(
             new HttpClient(handler) { BaseAddress = new Uri(options.BaseUrl) },
-            new PassthroughSecrets(),
-            new DefaultOrderStatusMapper(new CollectingLogger<DefaultOrderStatusMapper>()),
             Options.Create(options),
-                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
+                        new TrendyolGoDeploymentApiRouter(),
             _clientLog,
             new LimiterClock().Limiter(),
             TimeProvider.System);
@@ -325,7 +324,7 @@ public sealed class TrendyolGoPackageContractTests
         };
 
         return await client.FetchOrdersAsync(
-            connection,
+            connection.AsProviderContext(),
             new OrderFetchWindow(WindowEnd.AddHours(-1), WindowEnd),
             TestContext.Current.CancellationToken);
     }

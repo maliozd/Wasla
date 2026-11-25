@@ -247,6 +247,15 @@ internal sealed class AdminWebHost : IAsyncDisposable
 
 internal sealed record AdminResponse(HttpStatusCode Status, string Body, Uri? Location, IReadOnlyList<string>? SetCookies = null);
 
+internal sealed record AdminDownload(
+    HttpStatusCode Status,
+    string Body,
+    string? ContentType,
+    System.Net.Http.Headers.ContentDispositionHeaderValue? ContentDisposition,
+    string? CacheControl,
+    string? ContentTypeOptions,
+    Uri? Location);
+
 /// <summary>A browser with its own cookie jar that does not follow redirects.</summary>
 internal sealed partial class AdminBrowser : IDisposable
 {
@@ -306,6 +315,24 @@ internal sealed partial class AdminBrowser : IDisposable
         return new AdminResponse(
             response.StatusCode,
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
+            response.Headers.Location);
+    }
+
+    /// <summary>Posts form fields and keeps the response headers a download is judged by.</summary>
+    public async Task<AdminDownload> PostFormForDownloadAsync(string path, IReadOnlyDictionary<string, string> fields, string? antiforgeryToken)
+    {
+        var form = new Dictionary<string, string>(fields);
+        if (antiforgeryToken is not null)
+            form["__RequestVerificationToken"] = antiforgeryToken;
+
+        using var response = await _client.PostAsync(path, new FormUrlEncodedContent(form), TestContext.Current.CancellationToken);
+        return new AdminDownload(
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
+            response.Content.Headers.ContentType?.ToString(),
+            response.Content.Headers.ContentDisposition,
+            response.Headers.CacheControl?.ToString(),
+            response.Headers.TryGetValues("X-Content-Type-Options", out var nosniff) ? string.Join(",", nosniff) : null,
             response.Headers.Location);
     }
 

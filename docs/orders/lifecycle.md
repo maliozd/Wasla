@@ -29,7 +29,7 @@ Document how Wasla stores and advances restaurant orders from platform sync and 
 | 6 | `Cancelled` |
 | 7 | `Failed` |
 
-Raw platform strings remain on `Order.PlatformStatus`. Mapping into these values is `DefaultOrderStatusMapper` (`src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs`), per platform (Yemeksepeti, Getir, Trendyol GO, plus mock/legacy labels). Unknown Trendyol strings default to `New` with a warning log.
+Raw platform strings remain on `Order.PlatformStatus`. Mapping into these values is `DefaultOrderStatusMapper` (`src/Wasla.Infrastructure/Platform/Mapping/DefaultOrderStatusMapper.cs`), per platform (Yemeksepeti, Getir, Trendyol GO, plus mock/legacy labels). Unknown Trendyol strings default to `New` with a warning log. Which Trendyol GO strings are known, and how they are compared, is the provider's list `TrendyolGoPackageStatus`; the mapper decides the status each one means.
 
 ### Acceptance starts preparation (WAS-185)
 

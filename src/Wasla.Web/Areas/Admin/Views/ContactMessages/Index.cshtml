@@ -13,6 +13,13 @@
         ContactMessageNotificationStatus.NotConfigured => "text-bg-warning",
         _ => "text-bg-secondary"
     };
+
+    var success = TempData[Wasla.Web.Areas.Admin.Controllers.ContactMessagesController.SuccessKey] as string;
+}
+
+@if (!string.IsNullOrEmpty(success))
+{
+    <div class="alert alert-success" role="status" data-contact-list-result="success">@success</div>
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
@@ -20,7 +27,10 @@
         <h1 class="h4 mb-1">@L["Admin.ContactMessages.Title"]</h1>
         <p class="text-muted small mb-0">@L["Admin.ContactMessages.Subtitle"]</p>
     </div>
-    <span class="text-muted small" data-contact-total="@Model.TotalCount">@L["Admin.ContactMessages.Total", Model.TotalCount]</span>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="text-muted small" data-contact-total="@Model.TotalCount">@L["Admin.ContactMessages.Total", Model.TotalCount]</span>
+        <a class="btn btn-sm btn-outline-primary" href="/admin/contact-messages/find" data-pilot-find-link><i class="bi bi-person-check me-1" aria-hidden="true"></i>@L["Admin.Pilot.FindLink"]</a>
+    </div>
 </div>
 
 <nav class="mb-3" aria-label="@L["Admin.ContactMessages.FilterLabel"]">

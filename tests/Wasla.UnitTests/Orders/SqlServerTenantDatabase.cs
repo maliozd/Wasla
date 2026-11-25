@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.UnitTests.Setup;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -17,6 +18,9 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
     private const string DefaultServer = @"(localdb)\MSSQLLocalDB";
     private const string NamePrefix = "Wasla_ConcurrencyTest_";
     private static readonly Regex SafeServer = new(@"^[A-Za-z0-9_.\\()\-,]+$", RegexOptions.CultureInvariant);
+
+    // The pools of this database only; DisposeAsync clears them, never every pool in the process (WAS-229).
+    private readonly OwnedSqlServerPools _pools = new();
 
     public string Server { get; } = ResolveServer();
     public string DatabaseName { get; } = NamePrefix + Guid.NewGuid().ToString("N")[..12];
@@ -34,7 +38,7 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
     /// A connection string for one simulated application instance. Each distinct <paramref name="instance"/> gets its
     /// own connection pool (Application Name is part of the pool key), as separate Wasla processes would.
     /// </summary>
-    public string ConnectionString(string instance) => new SqlConnectionStringBuilder
+    public string ConnectionString(string instance) => _pools.Own(new SqlConnectionStringBuilder
     {
         DataSource = Server,
         InitialCatalog = DatabaseName,
@@ -43,7 +47,7 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
         ApplicationName = "Wasla.ConcurrencyTests." + instance,
         MaxPoolSize = 32,
         ConnectTimeout = 60
-    }.ConnectionString;
+    }.ConnectionString);
 
     private string MasterConnectionString() => new SqlConnectionStringBuilder
     {
@@ -87,7 +91,7 @@ public sealed class SqlServerTenantDatabase : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        SqlConnection.ClearAllPools();
+        _pools.Clear();
         if (!DatabaseName.StartsWith(NamePrefix, StringComparison.Ordinal))
             return;
 

@@ -5,13 +5,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Sync;
@@ -567,10 +568,8 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             {
                 BaseAddress = new Uri("https://api.tgoapis.com/")
             },
-            new PassthroughSecrets(),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://api.tgoapis.com" }),
-            Options.Create(_options),
+            new TrendyolGoMealWebhookPilotApiRouter(Options.Create(_options)),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             _clock);
@@ -604,7 +603,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             NullLogger<TrendyolGoMealWebhookProcessor>.Instance, _clock);
 
     private OrderSyncService Sync() =>
-        new(_tenants, [_providerClient ?? _client], new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
+        new(_tenants, [_providerClient ?? _client], new PassthroughSecrets(), new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
             NullLogger<OrderSyncService>.Instance, time: _clock);
 
     private async Task<List<ProviderWebhookEvent>> EventsAsync()
@@ -656,7 +655,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
 
     private static ExternalOrderDto Package(string packageId, string providerStatus) =>
         new(
-            FoodPlatform.TrendyolYemek,
+            ProviderPlatform.TrendyolYemek,
             packageId,
             "946511491",
             DateTime.UtcNow.AddMinutes(-2),
@@ -667,8 +666,8 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
             0m,
             0m,
             173.93m,
-            PaymentMethod.OnlinePayment,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.OnlinePayment,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(packageId + "-line-1", "Synthetic drink", 1, 173.93m, 173.93m, null, [])])
@@ -692,7 +691,7 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
         private Exception? _failure;
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => TimeSpan.FromHours(1);
         public List<OrderFetchWindow> Windows { get; } = [];
 
@@ -700,17 +699,17 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         public void FailWith(Exception failure) => _failure = failure;
         public void Succeed() => _failure = null;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct)
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct)
         {
             Windows.Add(window);
             return _failure is null ? Task.FromResult(_orders) : Task.FromException<IReadOnlyCollection<ExternalOrderDto>>(_failure);
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

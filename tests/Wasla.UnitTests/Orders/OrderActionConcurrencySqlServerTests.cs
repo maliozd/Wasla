@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -314,7 +316,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
     }
 
     private OrderActionService Instance(string name) =>
-        new(_database.Instance(name), [_provider], _notifier, NullLogger<OrderActionService>.Instance);
+        new(_database.Instance(name), [_provider], new PassthroughSecrets(), _notifier, NullLogger<OrderActionService>.Instance);
 
     /// <summary>Starts every caller at the same moment from its own thread and waits for all of them.</summary>
     private static async Task<OrderActionResult[]> RaceAsync(int callers, Func<int, Task<OrderActionResult>> call)
@@ -444,7 +446,7 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         private TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private bool _hold;
 
-        public FoodPlatform Platform => FoodPlatform.TrendyolYemek;
+        public ProviderPlatform Platform => ProviderPlatform.TrendyolYemek;
         public TimeSpan? MaxFetchWindow => null;
         public Task FirstCallEntered => _entered.Task;
 
@@ -464,14 +466,14 @@ public sealed class OrderActionConcurrencySqlServerTests : IClassFixture<SqlServ
         public IReadOnlyList<string> CallsFor(Guid orderId) =>
             _calls.Where(c => c.ExternalOrderId == $"RACE-{orderId:N}").Select(c => c.Action).ToList();
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act(externalOrderId, "accept");
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "invoiced");
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "shipped");
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "delivered");
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act(order.ExternalOrderId, "reject");
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act(externalOrderId, "accept");
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "invoiced");
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "shipped");
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act(externalOrderId, "delivered");
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Act(order.ExternalOrderId, "reject");
 
         private async Task Act(string externalOrderId, string action)
         {

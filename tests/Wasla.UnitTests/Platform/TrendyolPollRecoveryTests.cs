@@ -10,7 +10,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
@@ -830,10 +830,8 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         var mapper = new DefaultOrderStatusMapper(_mapperLog);
         var client = new TrendyolGoFoodPlatformClient(
             new HttpClient(new DelegateHandler(_api.Handle)) { BaseAddress = new Uri("https://trendyol.example/") },
-            new PassthroughSecrets(),
-            mapper,
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
+                        new TrendyolGoDeploymentApiRouter(),
             _clientLog,
             _limiter,
             _clock);
@@ -841,6 +839,7 @@ public sealed class TrendyolPollRecoveryTests : IDisposable
         return new OrderSyncService(
             _tenants,
             [client],
+            new PassthroughSecrets(),
             mapper,
             _effects,
             _effects,

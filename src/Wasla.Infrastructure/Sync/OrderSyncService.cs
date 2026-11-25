@@ -7,14 +7,17 @@ using Microsoft.EntityFrameworkCore;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Signup;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Infrastructure.Platform;
+using Wasla.Integrations.Platform.Mock;
 using Wasla.Infrastructure.Realtime;
 using Polly;
 using Polly.Retry;
@@ -32,6 +35,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
     private readonly ITenantDbContextFactory _tenantDbFactory;
     private readonly IEnumerable<IFoodPlatformClient> _platformClients;
+    private readonly ISecretManager _secretManager;
     private readonly OrderIngestion _ingestion;
     private readonly ILogger<OrderSyncService> _logger;
     private readonly ITenantBusinessSubtypeReader? _businessSubtypeReader;
@@ -72,6 +76,7 @@ public sealed class OrderSyncService : IOrderSyncService
     public OrderSyncService(
         ITenantDbContextFactory tenantDbFactory,
         IEnumerable<IFoodPlatformClient> platformClients,
+        ISecretManager secretManager,
         IOrderStatusMapper statusMapper,
         IOrderAutoApproveService autoApprove,
         IOrderReceiptCreationService receiptCreation,
@@ -82,6 +87,7 @@ public sealed class OrderSyncService : IOrderSyncService
     {
         _tenantDbFactory = tenantDbFactory;
         _platformClients = platformClients;
+        _secretManager = secretManager;
         _ingestion = new OrderIngestion(statusMapper, autoApprove, receiptCreation, notifier, logger);
         _logger = logger;
         _businessSubtypeReader = businessSubtypeReader;
@@ -248,8 +254,9 @@ public sealed class OrderSyncService : IOrderSyncService
             start = nowUtc - OrderFetchWindowPlanner.CheckpointOverlap;
         var window = new OrderFetchWindow(start, nowUtc);
 
+        var providerConnection = connection.ToProviderContext(_secretManager);
         var orders = await _windowedFetchPipeline.ExecuteAsync(
-                async token => await client.FetchOrdersAsync(connection, window, token).ConfigureAwait(false),
+                async token => await client.FetchOrdersAsync(providerConnection, window, token).ConfigureAwait(false),
                 ct)
             .ConfigureAwait(false);
 
@@ -323,7 +330,7 @@ public sealed class OrderSyncService : IOrderSyncService
     }
 
     private IFoodPlatformClient? ClientFor(PlatformConnection connection) =>
-        _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+        _platformClients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == connection.Platform);
 
     /// <summary>
     /// A windowed connection's history is behind while its checkpoint is older than its last current-pass attempt.
@@ -412,7 +419,7 @@ public sealed class OrderSyncService : IOrderSyncService
             return null;
 
         var culture = await ReadReceiptLanguageAsync(db, ct).ConfigureAwait(false);
-        return MockOrderGenerationContext.Begin(codes, culture);
+        return MockOrderGenerationContext.Begin(MockScenarioNames.ForSubtypeCodes(codes), culture);
     }
 
     private static async Task<string> ReadReceiptLanguageAsync(TenantDbContext db, CancellationToken ct)
@@ -482,7 +489,7 @@ public sealed class OrderSyncService : IOrderSyncService
 
         try
         {
-            var client = _platformClients.FirstOrDefault(c => c.Platform == connection.Platform);
+            var client = _platformClients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == connection.Platform);
             if (client is null)
             {
                 throw new InvalidOperationException($"No IFoodPlatformClient registered for platform '{connection.Platform}'.");
@@ -565,6 +572,9 @@ public sealed class OrderSyncService : IOrderSyncService
             }
 
             var fetchPipeline = client.MaxFetchWindow is null ? _fetchPipeline : _windowedFetchPipeline;
+            // The connection as this pass loaded it: every window and retry of the pass uses these values and
+            // credentials, and an edit saved meanwhile is used from the next pass on.
+            var providerConnection = connection.ToProviderContext(_secretManager);
             var connFetched = 0;
             var connInserted = 0;
             var connUpdated = 0;
@@ -580,7 +590,7 @@ public sealed class OrderSyncService : IOrderSyncService
                 // The whole window is fetched (and throttled) before anything from it is applied to the tenant database.
                 var swFetch = Stopwatch.StartNew();
                 var externalOrders = await fetchPipeline.ExecuteAsync(
-                        async token => await client.FetchOrdersAsync(connection, window, token).ConfigureAwait(false),
+                        async token => await client.FetchOrdersAsync(providerConnection, window, token).ConfigureAwait(false),
                         ct)
                     .ConfigureAwait(false);
                 swFetch.Stop();

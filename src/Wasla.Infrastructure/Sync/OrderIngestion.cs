@@ -7,12 +7,14 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
+using Wasla.Infrastructure.Platform;
 using Wasla.Infrastructure.Realtime;
 
 namespace Wasla.Infrastructure.Sync;
@@ -86,12 +88,12 @@ internal sealed class OrderIngestion
             return new OrderUpsertResult(false, false, true, false, external.ExternalOrderId);
         }
 
-        var key = IdempotencyKey(external.Platform, external.ExternalOrderId);
+        var key = IdempotencyKey(external.Platform.ToFoodPlatform(), external.ExternalOrderId);
 
         var nowUtc = DateTime.UtcNow;
         external = WithPlausibleProviderTimes(external, nowUtc);
         var newStatus = _statusMapper.MapToInternalStatus(
-            external.Platform,
+            external.Platform.ToFoodPlatform(),
             external.ExternalStatus);
 
         var existing = await db.Orders
@@ -202,8 +204,8 @@ internal sealed class OrderIngestion
         existing.TotalAmount = external.Total;
         existing.DeliveryFee = external.DeliveryFee;
         existing.ServiceFee = external.ServiceFee;
-        existing.PaymentMethod = external.PaymentMethod;
-        existing.PaymentStatus = external.PaymentStatus;
+        existing.PaymentMethod = external.PaymentMethod.ToPaymentMethod();
+        existing.PaymentStatus = external.PaymentStatus.ToPaymentStatus();
         existing.RawPayloadJson = external.RawPayloadJson;
         // ReceivedAt (first import) is never written here. A provider time the payload lacks keeps the stored one.
         existing.CreatedAtPlatform = external.OrderedAtUtc ?? existing.CreatedAtPlatform;
@@ -422,7 +424,7 @@ internal sealed class OrderIngestion
     /// </remarks>
     internal static string? ContradictsConnection(PlatformConnection connection, ExternalOrderDto external)
     {
-        if (external.Platform != connection.Platform)
+        if (external.Platform.ToFoodPlatform() != connection.Platform)
             return "platform";
         if (Differs(external.ProviderStoreId, connection.StoreId))
             return "store";
@@ -433,24 +435,7 @@ internal sealed class OrderIngestion
         static bool Differs(string? reported, string? configured) =>
             !string.IsNullOrWhiteSpace(reported)
             && !string.IsNullOrWhiteSpace(configured)
-            && !SameProviderIdentifier(reported, configured);
-    }
-
-    /// <summary>
-    /// Whether two provider identifiers name the same thing: trimmed and exact, except that two all-digit values compare
-    /// as numbers, because a provider id may arrive as a JSON number (123) while the connection stores the text typed in
-    /// ("00123").
-    /// </summary>
-    internal static bool SameProviderIdentifier(string first, string second) =>
-        string.Equals(CanonicalIdentifier(first), CanonicalIdentifier(second), StringComparison.Ordinal);
-
-    private static string CanonicalIdentifier(string value)
-    {
-        var trimmed = value.Trim();
-        if (trimmed.Length == 0 || !trimmed.All(char.IsAsciiDigit))
-            return trimmed;
-        var digits = trimmed.TrimStart('0');
-        return digits.Length == 0 ? "0" : digits;
+            && !ProviderIdentifier.Same(reported, configured);
     }
 
     /// <summary>
@@ -609,7 +594,7 @@ internal sealed class OrderIngestion
     {
         var order = new Order
         {
-            Platform = external.Platform,
+            Platform = external.Platform.ToFoodPlatform(),
             ExternalOrderId = external.ExternalOrderId,
             IdempotencyKey = idempotencyKey,
             InternalStatus = internalStatus,
@@ -618,8 +603,8 @@ internal sealed class OrderIngestion
             TotalAmount = external.Total,
             DeliveryFee = external.DeliveryFee,
             ServiceFee = external.ServiceFee,
-            PaymentMethod = external.PaymentMethod,
-            PaymentStatus = external.PaymentStatus,
+            PaymentMethod = external.PaymentMethod.ToPaymentMethod(),
+            PaymentStatus = external.PaymentStatus.ToPaymentStatus(),
             CreatedAtPlatform = external.OrderedAtUtc,
             PlatformModifiedAt = external.ModifiedAtUtc,
             ReceivedAt = receivedAtUtc,
@@ -813,10 +798,10 @@ internal sealed class OrderIngestion
         if (!MoneyEquals(existing.ServiceFee, external.ServiceFee))
             return false;
 
-        if (existing.PaymentMethod != external.PaymentMethod)
+        if (existing.PaymentMethod != external.PaymentMethod.ToPaymentMethod())
             return false;
 
-        if (existing.PaymentStatus != external.PaymentStatus)
+        if (existing.PaymentStatus != external.PaymentStatus.ToPaymentStatus())
             return false;
 
         // A provider time the payload lacks keeps the stored one (see UpdateExisting), so only a sent value can differ.

@@ -2,14 +2,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Realtime;
 
@@ -18,21 +21,21 @@ internal sealed class ScriptedPlatformClient(FoodPlatform platform) : IFoodPlatf
 {
     private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-    public FoodPlatform Platform { get; } = platform;
+    public ProviderPlatform Platform { get; } = platform.ToProviderPlatform();
     public TimeSpan? MaxFetchWindow => null;
     public bool FailActions { get; set; }
     public List<string> Actions { get; } = [];
 
     public void Returns(params ExternalOrderDto[] orders) => _orders = orders;
 
-    public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+    public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
         Task.FromResult(_orders);
 
-    public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act("accept");
-    public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("invoiced");
-    public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("shipped");
-    public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Act("delivered");
-    public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => Act("reject");
+    public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Act("accept");
+    public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("invoiced");
+    public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("shipped");
+    public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Act("delivered");
+    public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Act("reject");
 
     private Task Act(string action)
     {
@@ -74,7 +77,7 @@ internal static class OrderChangeFixtures
     /// <summary>A provider order; "Created" maps to New, "Picking" to Preparing, "Cancelled" to Cancelled.</summary>
     public static ExternalOrderDto External(string externalOrderId, string status = "Created", decimal total = 100m, FoodPlatform platform = FoodPlatform.TrendyolYemek) =>
         new(
-            Platform: platform,
+            Platform: platform.ToProviderPlatform(),
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: $"TY-{externalOrderId}",
             OrderedAtUtc: DateTime.UtcNow.AddMinutes(-1),
@@ -85,8 +88,8 @@ internal static class OrderChangeFixtures
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: total,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: status,
             RawPayloadJson: "{}",
             Items: [new ExternalOrderItemDto($"{externalOrderId}-1", "Lahmacun", 1, total, total, null, [])]);
@@ -96,6 +99,7 @@ internal static class OrderChangeFixtures
         new(
             tenants,
             [client],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoAutoApprove.Instance,
             NoReceipts.Instance,
@@ -103,7 +107,7 @@ internal static class OrderChangeFixtures
             NullLogger<OrderSyncService>.Instance);
 
     public static OrderActionService Actions(ITenantDbContextFactory tenants, IFoodPlatformClient client, ITenantChangeNotifier notifier) =>
-        new(tenants, [client], notifier, NullLogger<OrderActionService>.Instance);
+        new(tenants, [client], new PassthroughSecrets(), notifier, NullLogger<OrderActionService>.Instance);
 
     public static async Task<Order> ReadOrderAsync(ITenantDbContextFactory tenants, Guid tenantId, string externalOrderId)
     {

@@ -12,7 +12,7 @@ namespace Wasla.UnitTests.Terminology;
 public sealed class OrderCustomerTerminologyTests
 {
     private static readonly string[] AssemblyNames =
-        ["Wasla.Domain", "Wasla.Application", "Wasla.Contracts", "Wasla.Infrastructure", "Wasla.Web", "Wasla.Api", "Wasla.Cli"];
+        ["Wasla.Domain", "Wasla.Application", "Wasla.Contracts", "Wasla.Infrastructure", "Wasla.Integrations", "Wasla.Web", "Wasla.Api", "Wasla.Cli"];
 
     private const BindingFlags Declared =
         BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
@@ -46,14 +46,6 @@ public sealed class OrderCustomerTerminologyTests
         "Wasla.Application.Demos.GuidedDemoScenario.ctor(CustomerNameKey)",
         "Wasla.Application.Demos.GuidedDemoSessionState.CustomerNameKey",
         "Wasla.Application.Demos.GuidedDemoSessionState.ctor(CustomerNameKey)",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.CustomerAddress",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.CustomerName",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.CustomerNote",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.CustomerPhone",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.ctor(CustomerAddress)",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.ctor(CustomerName)",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.ctor(CustomerNote)",
-        "Wasla.Application.Platform.Dtos.ExternalOrderDto.ctor(CustomerPhone)",
         "Wasla.Application.Printing.ReceiptLabelLocalizer.Customer",
         "Wasla.Contracts.Orders.OrderDetailDto.CustomerName",
         "Wasla.Contracts.Orders.OrderDetailDto.ctor(CustomerName)",
@@ -67,6 +59,14 @@ public sealed class OrderCustomerTerminologyTests
         // WAS-200: a cancellation not from the restaurant may be the order's customer, the courier or the provider.
         "Wasla.Domain.Enums.OrderCancellationOrigin.ProviderOrCustomer",
         "Wasla.Infrastructure.Persistence.Tenant.Migrations.AddOrderCustomerNote",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.CustomerAddress",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.CustomerName",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.CustomerNote",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.CustomerPhone",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.ctor(CustomerAddress)",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.ctor(CustomerName)",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.ctor(CustomerNote)",
+        "Wasla.Integrations.Platform.Dtos.ExternalOrderDto.ctor(CustomerPhone)",
         "Wasla.Web.Models.Dashboard.DashboardViewModel+RecentOrderRow.CustomerName",
         "Wasla.Web.Models.Orders.OrderDetailViewModel.CustomerAddress",
         "Wasla.Web.Models.Orders.OrderDetailViewModel.CustomerName",

@@ -40,12 +40,14 @@ The frontend intentionally follows the existing MVC/Razor, Bootstrap, and vanill
 | `Wasla.Worker` | Background provider synchronization |
 | `Wasla.Cli` | Provisioning, migrations, administration, and maintenance |
 | `Wasla.Application` | Use cases, interfaces, commands, queries, and result contracts |
-| `Wasla.Infrastructure` | EF Core, persistence, provider clients, security, email, and service implementations |
+| `Wasla.Infrastructure` | EF Core, persistence, security, email, service implementations, and the composition of the provider clients |
+| `Wasla.Integrations` | Food-platform provider library: provider contract, Trendyol GO and Yemeksepeti clients, mock clients; references no Orders or POS project |
 | `Wasla.Domain` | Entities, enums, and core business concepts |
 | `Wasla.Contracts` | API request and response contracts |
 | `Wasla.PrintBridge` | Windows desktop client for local receipt printing |
 | `Wasla.UnitTests` | Server, application, infrastructure, and source-contract tests |
 | `Wasla.PrintBridge.Tests` | Print Bridge behavior and protocol tests |
+| `Wasla.Integrations.ConsumerTests` | The provider library used on its own, without Orders (Mock and Real composition) |
 
 For the process and data-flow map, read [Architecture overview](docs/architecture/overview.md).
 

@@ -4,15 +4,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Diagnostics;
+using Wasla.Integrations.Diagnostics;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
 
 namespace Wasla.UnitTests.Diagnostics;
 
@@ -30,16 +33,14 @@ public sealed class ProviderFailureLoggingTests
             {
                 BaseAddress = new Uri("https://trendyol.example/")
             },
-            new PassthroughSecrets(),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://trendyol.example/" }),
-                        Options.Create(new Wasla.Infrastructure.Platform.TrendyolGo.Webhooks.TrendyolGoMealWebhookPilotOptions()),
+                        new TrendyolGoDeploymentApiRouter(),
             logger,
             new Wasla.UnitTests.Platform.LimiterClock().Limiter(),
             TimeProvider.System);
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            client.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
+            client.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None));
 
         AssertSafe(ex, logger.Entries);
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
@@ -56,7 +57,7 @@ public sealed class ProviderFailureLoggingTests
         });
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            failing.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None));
+            failing.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None));
         AssertSafe(ex, failureLogger.Entries);
 
         var successLogger = new CollectingLogger<YemeksepetiFoodPlatformClient>();
@@ -77,7 +78,7 @@ public sealed class ProviderFailureLoggingTests
             };
         });
 
-        var orders = await succeeding.FetchOrdersAsync(Connection(), LastHour(), CancellationToken.None);
+        var orders = await succeeding.FetchOrdersAsync(Connection().AsProviderContext(new PassthroughSecrets()), LastHour(), CancellationToken.None);
         Assert.Empty(orders);
         Assert.Contains(successLogger.Entries, entry =>
             entry.Level == LogLevel.Debug && entry.Message.Contains("fetch completed", StringComparison.OrdinalIgnoreCase));
@@ -126,8 +127,6 @@ public sealed class ProviderFailureLoggingTests
         };
         return new YemeksepetiFoodPlatformClient(
             new SingleClientFactory(http),
-            new PassthroughSecrets(),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new YemeksepetiOptions
             {
                 BaseUrl = "https://yemeksepeti.example/",

@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Application.Printing;
 using Wasla.Domain.Entities.Central;
 using Wasla.Domain.Entities.TenantDb;
@@ -14,6 +15,8 @@ using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
+using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -94,10 +97,10 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
         Assert.True(rejected.Succeeded);
         Assert.Equal("Orders.RejectSuccess", rejected.MessageKey);
         Assert.Equal(new[] { "reject" }, client.Calls);
-        // The provider client receives the stored order: it derives the provider's item ids from its raw payload.
-        Assert.Equal(orderId, client.RejectedOrder?.Id);
+        // The provider client receives the stored order's provider id and stored payload (not Wasla's row id, WAS-231):
+        // it derives the provider's item ids from that payload.
         Assert.Equal("ORDER-1", client.RejectedOrder?.ExternalOrderId);
-        Assert.Equal("{}", client.RejectedOrder?.RawPayloadJson);
+        Assert.Equal("{}", client.RejectedOrder?.StoredPayloadJson);
         Assert.Equal(623, client.RejectReasonId);
         await AssertStatusAsync(orderId, OrderStatus.Cancelled, accepted: false, delivered: false, cancelled: true);
 
@@ -425,7 +428,7 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
     }
 
     private OrderActionService CreateActions(RecordingPlatformClient client) =>
-        new(_tenantDb, [client], NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
+        new(_tenantDb, [client], new PassthroughSecrets(), NullTenantChangeNotifier.Instance, NullLogger<OrderActionService>.Instance);
 
     private OrderReceiptCreationService CreateReceipts() =>
         new(
@@ -571,34 +574,34 @@ public sealed class LiveScreenOperationalRegressionTests : IDisposable
 
     private sealed class RecordingPlatformClient(FoodPlatform platform = FoodPlatform.TrendyolYemek) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public List<string> Calls { get; } = new();
         public Exception? Failure { get; set; }
-        public Order? RejectedOrder { get; private set; }
+        public ProviderOrderReference? RejectedOrder { get; private set; }
         public int? RejectReasonId { get; private set; }
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-            PlatformConnection connection,
+            ProviderConnectionContext connection,
             OrderFetchWindow window,
             CancellationToken ct) =>
             Task.FromResult<IReadOnlyCollection<ExternalOrderDto>>([]);
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
             Record("accept");
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("invoiced");
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("shipped");
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Record("delivered");
 
         public Task RejectOrderAsync(
-            PlatformConnection connection,
-            Order order,
+            ProviderConnectionContext connection,
+            ProviderOrderReference order,
             int? reasonId,
             CancellationToken ct)
         {

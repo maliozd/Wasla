@@ -2,7 +2,8 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
-using Wasla.Infrastructure.Sync;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
@@ -68,22 +69,27 @@ public sealed class TrendyolGoMealWebhookPilotOptions
     /// <summary>Whether a seller id is the configured seller (all-digit ids compare as numbers).</summary>
     public bool IsPilotSeller(string? sellerId) =>
         !string.IsNullOrWhiteSpace(sellerId) && !string.IsNullOrWhiteSpace(SellerId)
-        && OrderIngestion.SameProviderIdentifier(sellerId, SellerId);
+        && ProviderIdentifier.Same(sellerId, SellerId);
 
     /// <summary>Whether a store id is the configured store (all-digit ids compare as numbers).</summary>
     public bool IsPilotStore(string? storeId) =>
         !string.IsNullOrWhiteSpace(storeId) && !string.IsNullOrWhiteSpace(StoreId)
-        && OrderIngestion.SameProviderIdentifier(storeId, StoreId);
+        && ProviderIdentifier.Same(storeId, StoreId);
 
     /// <summary>
     /// Whether <paramref name="connection"/> is the pilot's: the configured, active Trendyol GO connection of the configured
     /// seller (its <c>SupplierId</c>, or its <c>StoreId</c> when it has none, as polling uses it) and store.
     /// </summary>
     public bool IsPilotConnection(PlatformConnection? connection) =>
-        connection is { IsActive: true, Platform: FoodPlatform.TrendyolYemek }
-        && connection.Id == PlatformConnectionId
-        && IsPilotSeller(string.IsNullOrWhiteSpace(connection.SupplierId) ? connection.StoreId : connection.SupplierId)
-        && IsPilotStore(connection.StoreId);
+        connection is not null
+        && IsPilotConnection(connection.Id, connection.Platform, connection.IsActive, connection.SupplierId, connection.StoreId);
+
+    /// <summary>The one rule behind <see cref="IsPilotConnection(PlatformConnection?)"/> and <see cref="ProviderApiFor"/>.</summary>
+    private bool IsPilotConnection(Guid connectionId, FoodPlatform platform, bool isActive, string? supplierId, string? storeId) =>
+        isActive && platform == FoodPlatform.TrendyolYemek
+        && connectionId == PlatformConnectionId
+        && IsPilotSeller(string.IsNullOrWhiteSpace(supplierId) ? storeId : supplierId)
+        && IsPilotStore(storeId);
 
     /// <summary>
     /// The API <paramref name="connection"/>'s Trendyol GO requests go to instead of the deployment's
@@ -93,10 +99,10 @@ public sealed class TrendyolGoMealWebhookPilotOptions
     /// the active connection of the configured seller and store, or the override is not exactly the stage API, it throws,
     /// and no API is called for that connection.
     /// </summary>
-    public Uri? ProviderApiFor(PlatformConnection connection)
+    public Uri? ProviderApiFor(ProviderConnectionContext connection)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        if (string.IsNullOrEmpty(ProviderApiBaseUrl) || PlatformConnectionId == Guid.Empty || connection.Id != PlatformConnectionId)
+        if (string.IsNullOrEmpty(ProviderApiBaseUrl) || PlatformConnectionId == Guid.Empty || connection.ConnectionId != PlatformConnectionId)
             return null;
 
         if (!TrendyolGoMealIntegratorExpectation.IsStageApiBaseUrl(ProviderApiBaseUrl))
@@ -105,7 +111,7 @@ public sealed class TrendyolGoMealWebhookPilotOptions
                 $"{SectionName}:ProviderApiBaseUrl is not exactly {TrendyolGoMealIntegratorExpectation.StageApiBaseUrl}; no Trendyol GO API is called for the pilot's connection.");
         }
 
-        if (!IsPilotConnection(connection))
+        if (!IsPilotConnection(connection.ConnectionId, connection.Platform.ToFoodPlatform(), connection.IsActive, connection.SupplierId, connection.StoreId))
         {
             throw new InvalidOperationException(
                 "The webhook pilot's platform connection is inactive or no longer the configured Trendyol GO seller and store; no Trendyol GO API is called for it.");
@@ -113,6 +119,16 @@ public sealed class TrendyolGoMealWebhookPilotOptions
 
         return StageApi;
     }
+}
+
+/// <summary>
+/// The Trendyol GO client's API routing in Orders (WAS-233): <see cref="TrendyolGoMealWebhookPilotOptions.ProviderApiFor"/>
+/// for every request. The pilot's one configured connection goes to exactly the stage API, whether or not the pilot is
+/// enabled, a pilot connection that no longer matches is refused, and every other connection uses the deployment's API.
+/// </summary>
+internal sealed class TrendyolGoMealWebhookPilotApiRouter(IOptions<TrendyolGoMealWebhookPilotOptions> pilot) : ITrendyolGoApiRouter
+{
+    public Uri? ApiFor(ProviderConnectionContext connection) => pilot.Value.ProviderApiFor(connection);
 }
 
 /// <summary>

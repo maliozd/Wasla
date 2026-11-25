@@ -65,9 +65,15 @@
     {
         @await Html.PartialAsync("_PublicFooter", returnUrl)
     }
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-            crossorigin="anonymous"></script>
+    @* The marketing pages (the ones with metadata) use no Bootstrap component; wasla-marketing.js runs their menus, tabs
+       and forms. Without this blocking CDN script their deferred script no longer waits for it. The Bootstrap stylesheet
+       stays on every page: the wm- styles build on its Reboot (box sizing, body margin, heading and form defaults). *@
+    @if (metadata is null)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

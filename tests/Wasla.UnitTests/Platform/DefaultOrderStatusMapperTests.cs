@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Contracts.Enums;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.UnitTests.Platform;
 
@@ -43,6 +44,40 @@ public sealed class DefaultOrderStatusMapperTests
     public void EveryPlatformStatus_MapsToADefinedStatus(FoodPlatform platform, string[] externalStatuses)
     {
         Assert.All(externalStatuses, status => Assert.True(Enum.IsDefined(_mapper.MapToInternalStatus(platform, status)), status));
+    }
+
+    /// <summary>
+    /// The provider owns which Trendyol GO statuses exist (<see cref="TrendyolGoPackageStatus"/>); this mapper owns the
+    /// order status each one means. A status the provider starts recognizing fails here until the mapper maps it.
+    /// </summary>
+    [Fact]
+    public void EveryRecognizedTrendyolGoStatus_HasItsOrderStatus()
+    {
+        var expected = new Dictionary<string, OrderStatus>(StringComparer.Ordinal)
+        {
+            ["Created"] = OrderStatus.New,
+            ["Picking"] = OrderStatus.Preparing,
+            ["Invoiced"] = OrderStatus.ReadyForPickup,
+            ["Shipped"] = OrderStatus.OnTheWay,
+            ["Delivered"] = OrderStatus.Delivered,
+            ["Cancelled"] = OrderStatus.Cancelled,
+            ["UnSupplied"] = OrderStatus.Cancelled,
+            ["Returned"] = OrderStatus.Cancelled,
+            ["New"] = OrderStatus.New,
+            ["Yeni"] = OrderStatus.New,
+            ["Onaylandı"] = OrderStatus.Preparing,
+            ["Hazırlanıyor"] = OrderStatus.Preparing,
+            ["Hazır"] = OrderStatus.ReadyForPickup,
+            ["Yolda"] = OrderStatus.OnTheWay,
+            ["Teslim"] = OrderStatus.Delivered,
+            ["Teslim edildi"] = OrderStatus.Delivered,
+            ["İptal"] = OrderStatus.Cancelled,
+            ["İptal edildi"] = OrderStatus.Cancelled,
+            ["Başarısız"] = OrderStatus.Failed,
+        };
+
+        Assert.Equal(expected.Keys.Order(StringComparer.Ordinal), TrendyolGoPackageStatus.All.Order(StringComparer.Ordinal));
+        Assert.All(expected, pair => Assert.Equal(pair.Value, _mapper.MapToInternalStatus(FoodPlatform.TrendyolYemek, pair.Key)));
     }
 
     [Fact]

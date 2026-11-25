@@ -1,0 +1,176 @@
+{
+  "description": "Which CI jobs a changed file needs, and which test scope. select-test-scope.ps1 matches every changed file against these rules in order; the first rule whose pattern matches decides. A rule lists the jobs the file needs, or \"all\", and the scope a pull request into dev runs for it. The scope is full when the tests the fast scope leaves out run the file (the headless-browser tests start Wasla.Web, the WebView2 runtime tests start the Wasla.PrintBridge tray app; both with the projects they build on), when the file is one of those tests, when it changes how the tests are built, selected or counted, and when its dependencies were not analyzed; it is fast otherwise. The jobs are chosen first; a pull request into dev then runs the full scope when a changed file's rule needs it and whenever every job runs for a reason other than a rule (a file no rule matches, a change other than an addition or modification, an empty diff, a diff that cannot be computed), and the fast scope otherwise. Patterns are relative to the repository root, case-sensitive, with forward slashes: * matches within one folder, ** across folders, and **/ at the start also matches the root. The rules rely on dependencies that scripts/ci/ci-job-plan.test.js checks against the repository; see docs/operations/testing.md (Job selection).",
+  "skippableJobs": ["unit-tests", "print-bridge"],
+  "rules": [
+    {
+      "id": "ci-and-build",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Workflows, CI and release scripts (this planner included), the solution, project, MSBuild and NuGet files and Git attributes change how every job builds or checks. They also decide how the tests are selected, sharded and counted, so a pull request that changes them runs the full scope.",
+      "paths": [
+        ".github/**",
+        "scripts/**",
+        "**/*.sln",
+        "**/*.csproj",
+        "**/*.wixproj",
+        "**/*.props",
+        "**/*.targets",
+        "**/nuget.config",
+        "**/NuGet.config",
+        "**/NuGet.Config",
+        "**/global.json",
+        "**/packages.lock.json",
+        "**/.editorconfig",
+        "**/.gitattributes",
+        "**/.gitignore",
+        ".config/**"
+      ]
+    },
+    {
+      "id": "docs-read-by-unit-tests",
+      "jobs": ["unit-tests"],
+      "scope": "fast",
+      "why": "Wasla.UnitTests reads these documents (WaslaConfigurationKeyTests) or checks their working-tree state (WaslaVisualFoundationTests).",
+      "paths": [
+        "docs/operations/deployment.md",
+        "docs/operations/cli.md",
+        "docs/operations/local-development.md",
+        "docs/operations/migrations.md",
+        "docs/architecture/tenancy.md",
+        "docs/orders-printjob-status-signalr.md",
+        "docs/temporary-receipt-test-output.md"
+      ]
+    },
+    {
+      "id": "docs-read-by-print-bridge-tests",
+      "jobs": ["print-bridge"],
+      "scope": "fast",
+      "why": "Wasla.PrintBridge.Tests reads this document (PrintBridgeInstallerSourceTests).",
+      "paths": ["docs/integrations/print-bridge-service.md"]
+    },
+    {
+      "id": "documentation",
+      "jobs": [],
+      "scope": "fast",
+      "why": "No .NET project compiles these files and no .NET test reads them. The terminology guard and the Node tests run for every change.",
+      "paths": [
+        "docs/**",
+        "*.md",
+        ".claude/rules/*.md"
+      ]
+    },
+    {
+      "id": "browser-tests",
+      "jobs": ["unit-tests"],
+      "scope": "full",
+      "why": "The headless-browser tests (Category=Browser) and their driver, HeadlessChromium. The fast scope leaves those tests out, so a pull request that changes them runs the full scope, or it would not run them at all. Only Wasla.UnitTests compiles or reads its own folder.",
+      "paths": [
+        "tests/Wasla.UnitTests/**/*Browser*",
+        "tests/Wasla.UnitTests/**/HeadlessChromium*"
+      ]
+    },
+    {
+      "id": "webview2-runtime-tests",
+      "jobs": ["print-bridge"],
+      "scope": "full",
+      "why": "The Print Bridge web shell tests, among them every test that hosts the real WebView2 Runtime (Category=WebView2Runtime), and their host. The fast scope leaves those tests out, so a pull request that changes them runs the full scope. Only Wasla.PrintBridge.Tests compiles or reads its own folder.",
+      "paths": ["tests/Wasla.PrintBridge.Tests/WebShell/**"]
+    },
+    {
+      "id": "integrations-consumer-tests-project",
+      "jobs": [],
+      "scope": "fast",
+      "why": "The Wasla.Integrations consumer tests reference only Wasla.Integrations; no Windows job runs or reads them. Their own job, integrations-consumer, runs for every change. The Windows jobs build them with Wasla.sln, and that job builds them too.",
+      "paths": ["tests/Wasla.Integrations.ConsumerTests/**"]
+    },
+    {
+      "id": "unit-tests-project",
+      "jobs": ["unit-tests"],
+      "scope": "fast",
+      "why": "Only Wasla.UnitTests compiles or reads the files of its own folder.",
+      "paths": ["tests/Wasla.UnitTests/**"]
+    },
+    {
+      "id": "print-bridge-tests-project",
+      "jobs": ["print-bridge"],
+      "scope": "fast",
+      "why": "Only Wasla.PrintBridge.Tests compiles or reads the files of its own folder.",
+      "paths": ["tests/Wasla.PrintBridge.Tests/**"]
+    },
+    {
+      "id": "print-bridge-installer",
+      "jobs": ["print-bridge"],
+      "scope": "fast",
+      "why": "Only the Print Bridge job builds the installers, and only Wasla.PrintBridge.Tests reads their sources. The MSBuild files of the folder match ci-and-build first.",
+      "paths": ["installer/print-bridge/**"]
+    },
+    {
+      "id": "server-hosts",
+      "jobs": ["unit-tests"],
+      "scope": "fast",
+      "why": "Wasla.UnitTests compiles Api and Cli, reads Worker sources and scans every file under src/. No Print Bridge project or test compiles or reads these projects. Neither the headless-browser tests (they start Wasla.Web) nor the WebView2 runtime tests (they start Wasla.PrintBridge) run them, so the full scope would add no test of them.",
+      "paths": [
+        "src/Wasla.Api/**",
+        "src/Wasla.Cli/**",
+        "src/Wasla.Worker/**"
+      ]
+    },
+    {
+      "id": "contracts",
+      "jobs": ["unit-tests"],
+      "scope": "full",
+      "why": "Wasla.UnitTests compiles Contracts; no Print Bridge project or test compiles or reads it. Wasla.Web builds on it, so the headless-browser tests run it: the full scope.",
+      "paths": ["src/Wasla.Contracts/**"]
+    },
+    {
+      "id": "web",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Wasla.UnitTests compiles Wasla.Web; Wasla.PrintBridge.Tests reads Web views, scripts and resources, and Wasla.PrintBridge embeds the Web logo. The headless-browser tests start Wasla.Web, so the full scope.",
+      "paths": ["src/Wasla.Web/**"]
+    },
+    {
+      "id": "shared-libraries",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Both test projects compile Domain, Application and Infrastructure: persistence and migrations, tenant isolation, authentication services and provider clients. They compile Wasla.Integrations, the provider library, through Infrastructure, and the integrations-consumer job, which runs for every change, tests it too. Wasla.Web builds on all four and Wasla.PrintBridge on Domain and Application, so the headless-browser and WebView2 runtime tests run them: the full scope.",
+      "paths": [
+        "src/Wasla.Domain/**",
+        "src/Wasla.Application/**",
+        "src/Wasla.Infrastructure/**",
+        "src/Wasla.Integrations/**"
+      ]
+    },
+    {
+      "id": "print-bridge-app",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Wasla.PrintBridge.Tests compiles the tray app and the engine; Wasla.UnitTests reads their resources and sources and scans every file under src/. The WebView2 runtime tests start the tray app, which builds on the engine, so the full scope.",
+      "paths": [
+        "src/Wasla.PrintBridge/**",
+        "src/Wasla.PrintBridge.Core/**"
+      ]
+    },
+    {
+      "id": "print-bridge-service",
+      "jobs": "all",
+      "scope": "fast",
+      "why": "Wasla.PrintBridge.Tests compiles and starts the service; Wasla.UnitTests reads Print Bridge sources and scans every file under src/. The WebView2 runtime tests do not run the service, so the fast scope runs every test of it.",
+      "paths": ["src/Wasla.PrintBridge.Service/**"]
+    },
+    {
+      "id": "deployment",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Wasla.UnitTests reads deploy/linux/publish-release.ps1; the folder is not narrowed in the first version. Not analyzed, so the full scope too.",
+      "paths": ["deploy/**"]
+    },
+    {
+      "id": "report-export-smoke",
+      "jobs": "all",
+      "scope": "full",
+      "why": "Checked by report-export-checks.yml, not by this workflow's jobs; not narrowed in the first version. Not analyzed, so the full scope too.",
+      "paths": ["tests/Wasla.ReportExport.LinuxSmoke/**"]
+    }
+  ]
+}

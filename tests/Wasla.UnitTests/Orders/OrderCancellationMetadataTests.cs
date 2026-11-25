@@ -4,9 +4,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Realtime;
 using Wasla.Application.Orders;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
@@ -14,6 +15,8 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.UnitTests.Admin;
+using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -574,12 +577,13 @@ public sealed class OrderCancellationMetadataTests : IDisposable
     };
 
     private OrderActionService Actions() =>
-        new(_tenants, [_trendyol, _yemeksepeti, _getir], new NoNotifier(), NullLogger<OrderActionService>.Instance);
+        new(_tenants, [_trendyol, _yemeksepeti, _getir], new PassthroughSecrets(), new NoNotifier(), NullLogger<OrderActionService>.Instance);
 
     private OrderSyncService Sync() =>
         new(
             _tenants,
             [_trendyol, _yemeksepeti, _getir],
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             new NoAutoApprove(),
             new NoReceipts(),
@@ -695,7 +699,7 @@ public sealed class OrderCancellationMetadataTests : IDisposable
 
     private static ExternalOrderDto Package(FoodPlatform platform, string externalOrderId, string providerStatus) =>
         new(
-            platform,
+            platform.ToProviderPlatform(),
             externalOrderId,
             "CODE-" + externalOrderId,
             new DateTime(2026, 11, 8, 9, 0, 0, DateTimeKind.Utc),
@@ -706,8 +710,8 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             0m,
             0m,
             100m,
-            PaymentMethod.CreditCard,
-            PaymentStatus.Paid,
+            ProviderPaymentMethod.CreditCard,
+            ProviderPaymentStatus.Paid,
             providerStatus,
             "{}",
             [new ExternalOrderItemDto(externalOrderId + "-line", "Lahmacun", 1, 100m, 100m, null, [])]);
@@ -716,17 +720,17 @@ public sealed class OrderCancellationMetadataTests : IDisposable
     {
         private IReadOnlyCollection<ExternalOrderDto> _orders = [];
 
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
         public Exception? FailNextReject { get; set; }
         public List<int?> RejectReasons { get; } = [];
 
         public void Set(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) =>
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) =>
             Task.FromResult(_orders);
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct)
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct)
         {
             if (FailNextReject is { } failure)
             {
@@ -738,10 +742,10 @@ public sealed class OrderCancellationMetadataTests : IDisposable
             return Task.CompletedTask;
         }
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class NoNotifier : ITenantChangeNotifier

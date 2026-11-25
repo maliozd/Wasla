@@ -5,7 +5,7 @@ using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Demos;
 using Wasla.Application.Orders;
 using Wasla.Infrastructure.Persistence.Central;
-using Wasla.Infrastructure.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.Worker.Console;

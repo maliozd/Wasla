@@ -8,14 +8,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Admin;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Security;
 using Wasla.Application.Abstractions.Setup;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Platform.Mock;
+using Wasla.Integrations.Platform.Mock;
 using Wasla.Infrastructure.Services;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Admin;
 
@@ -369,6 +371,24 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
         Assert.Equal(ProviderConnectionHealthState.NeverSynced, byPlatform[FoodPlatform.GetirYemek].State);
     }
 
+    /// <summary>
+    /// The explicit mark gives the same kind as the namespace check it replaced (WAS-232): every client in the mock
+    /// namespace carries it, and no other provider client does.
+    /// </summary>
+    [Fact]
+    public void TheMockMark_IsOnExactlyTheMockNamespaceClients()
+    {
+        var clients = typeof(MockGetirYemekFoodPlatformClient).Assembly.GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IFoodPlatformClient).IsAssignableFrom(t))
+            .ToList();
+
+        Assert.Equal(5, clients.Count);
+        Assert.All(clients, client => Assert.Equal(
+            client.Namespace == typeof(MockGetirYemekFoodPlatformClient).Namespace,
+            typeof(IMockFoodPlatformClient).IsAssignableFrom(client)));
+        Assert.Equal(3, clients.Count(typeof(IMockFoodPlatformClient).IsAssignableFrom));
+    }
+
     // Probe-only SQL Server connection -------------------------------------------------------------------
 
     [Fact]
@@ -504,13 +524,13 @@ public sealed class TenantOperationalHealthReaderTests : IDisposable
     /// <summary>A client outside the mock namespace, standing in for a real HTTP client.</summary>
     private sealed class FakeRealClient(FoodPlatform platform) : IFoodPlatformClient
     {
-        public FoodPlatform Platform => platform;
+        public ProviderPlatform Platform => platform.ToProviderPlatform();
         public TimeSpan? MaxFetchWindow => null;
-        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(PlatformConnection connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
+        public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(ProviderConnectionContext connection, OrderFetchWindow window, CancellationToken ct) => throw new NotSupportedException();
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => throw new NotSupportedException();
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => throw new NotSupportedException();
     }
 }

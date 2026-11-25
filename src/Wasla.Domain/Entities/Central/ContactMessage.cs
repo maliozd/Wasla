@@ -59,6 +59,16 @@ public sealed class ContactMessage
     /// </summary>
     public Guid? NotificationClaimId { get; private set; }
 
+    /// <summary>Where the team stands with a pilot application (WAS-222); null for a contact form message.</summary>
+    public PilotApplicationStatus? PilotStatus { get; private set; }
+
+    /// <summary>
+    /// The last meaningful activity on a pilot application, in UTC: when it was received, when its status last changed,
+    /// or when the team last recorded a contact with the restaurant. Its retention period runs from here
+    /// (<c>PilotApplicationRetention</c>). Null for a contact form message, which the pilot retention never selects.
+    /// </summary>
+    public DateTime? PilotLastActivityAtUtc { get; private set; }
+
     public static ContactMessage Create(
         string fullName,
         string restaurantName,
@@ -139,8 +149,49 @@ public sealed class ContactMessage
             PrivacyNoticeAcknowledged = false,
             CreatedAtUtc = nowUtc,
             NotificationStatus = ContactMessageNotificationStatus.Pending,
-            NotificationClaimId = Guid.NewGuid()
+            NotificationClaimId = Guid.NewGuid(),
+            PilotStatus = PilotApplicationStatus.New,
+            PilotLastActivityAtUtc = nowUtc
         };
+    }
+
+    /// <summary>
+    /// Corrects a stored pilot application's personal data on the data subject's request (WAS-222), with the same rules as
+    /// a new application. A correction is not contact with the restaurant, so it does not move
+    /// <see cref="PilotLastActivityAtUtc"/> and does not extend the retention period.
+    /// </summary>
+    public void CorrectPilotApplication(
+        string restaurantName,
+        string contactName,
+        string email,
+        string phoneDigits,
+        string cityPlateCode,
+        string? note)
+    {
+        if (Topic != ContactTopic.PilotApplication)
+            throw new InvalidOperationException("Only a pilot application is corrected this way.");
+
+        var phone = OptionalPhone(phoneDigits)
+            ?? throw new ArgumentException("A pilot application requires a phone number.", nameof(phoneDigits));
+
+        var plate = cityPlateCode?.Trim() ?? string.Empty;
+        if (!IsPlateCode(plate))
+            throw new ArgumentException("A city is stored as its two-digit plate code, 01 to 81.", nameof(cityPlateCode));
+
+        var trimmedNote = note?.Trim() ?? string.Empty;
+        if (trimmedNote.Length > ContactMessageLimits.MessageMaxLength)
+            throw new ArgumentException($"The note is longer than {ContactMessageLimits.MessageMaxLength} characters.", nameof(note));
+
+        var name = Required(contactName, ContactMessageLimits.FullNameMaxLength, nameof(contactName));
+        var restaurant = Required(restaurantName, ContactMessageLimits.RestaurantNameMaxLength, nameof(restaurantName));
+        var validEmail = ValidEmail(email);
+
+        FullName = name;
+        RestaurantName = restaurant;
+        Email = validEmail;
+        Phone = phone;
+        CityPlateCode = plate;
+        Message = trimmedNote;
     }
 
     /// <summary>Whether <paramref name="value"/> is a Turkish plate code, two digits from <c>01</c> to <c>81</c>.</summary>

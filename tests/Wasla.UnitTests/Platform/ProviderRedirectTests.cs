@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Wasla.Application.Abstractions.Platform;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Infrastructure.Diagnostics;
-using Wasla.Infrastructure.Platform.TrendyolGo;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
+using Wasla.Integrations.Diagnostics;
+using Wasla.Integrations.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.Yemeksepeti;
 using static Wasla.UnitTests.Platform.ProviderCookieIsolationTests;
 
 namespace Wasla.UnitTests.Platform;
@@ -60,10 +62,10 @@ public sealed class ProviderRedirectTests
 
         var outcomes = new[]
         {
-            await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None)),
-            await Outcome("TrendyolGo AcceptOrder", () => trendyol.AcceptOrderAsync(TrendyolConnection("a"), "package-1", 15, CancellationToken.None)),
-            await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None)),
-            await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b"), Window, CancellationToken.None))
+            await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a").AsProviderContext(), Window, CancellationToken.None)),
+            await Outcome("TrendyolGo AcceptOrder", () => trendyol.AcceptOrderAsync(TrendyolConnection("a").AsProviderContext(), "package-1", 15, CancellationToken.None)),
+            await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a").AsProviderContext(), Window, CancellationToken.None)),
+            await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b").AsProviderContext(), Window, CancellationToken.None))
         };
 
         var redirected = (crossOrigin ? target.Requests : provider.Requests.Where(r => r.Path.StartsWith("/moved/", StringComparison.Ordinal)))
@@ -124,10 +126,10 @@ public sealed class ProviderRedirectTests
 
         var outcomes = new[]
         {
-            await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a"), Window, CancellationToken.None)),
-            await Outcome("TrendyolGo RejectOrder", () => trendyol.RejectOrderAsync(TrendyolConnection("a"), TrendyolGoRejectRequestTests.StoredPackageOrder("package-1", "item-1"), 621, CancellationToken.None)),
-            await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a"), Window, CancellationToken.None)),
-            await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b"), Window, CancellationToken.None))
+            await Outcome("TrendyolGo FetchOrders", () => trendyol.FetchOrdersAsync(TrendyolConnection("a").AsProviderContext(), Window, CancellationToken.None)),
+            await Outcome("TrendyolGo RejectOrder", () => trendyol.RejectOrderAsync(TrendyolConnection("a").AsProviderContext(), TrendyolGoRejectRequestTests.StoredPackageOrder("package-1", "item-1").AsProviderReference(), 621, CancellationToken.None)),
+            await Outcome("Yemeksepeti Token", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("a").AsProviderContext(), Window, CancellationToken.None)),
+            await Outcome("Yemeksepeti FetchOrders", () => yemeksepeti.FetchOrdersAsync(YemeksepetiConnection("b").AsProviderContext(), Window, CancellationToken.None))
         };
 
         Assert.Equal(
@@ -173,12 +175,12 @@ public sealed class ProviderRedirectTests
         var connection = YemeksepetiConnection($"token-redirect-{status}");
 
         var ex = await Assert.ThrowsAsync<ProviderRequestException>(() =>
-            yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None));
+            yemeksepeti.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None));
         Assert.Equal(status, (int?)ex.StatusCode);
         Assert.Equal(0, yemeksepeti.CachedTokenCount);
 
         redirectToken = false;
-        await yemeksepeti.FetchOrdersAsync(connection, Window, CancellationToken.None);
+        await yemeksepeti.FetchOrdersAsync(connection.AsProviderContext(), Window, CancellationToken.None);
 
         Assert.Empty(target.Requests);
         Assert.Equal(

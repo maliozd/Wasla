@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.Hosting;
+using Wasla.Application.Abstractions.Contact;
 using Wasla.Infrastructure.Services;
 
 namespace Wasla.Cli;
@@ -491,6 +492,24 @@ internal static class CliCommandTree
                 context.GetCancellationToken());
         });
 
+        // --- pilot-applications-retention (WAS-222) ---
+        var pilotRetention = new Command(
+            "pilot-applications-retention",
+            "Delete pilot applications 90 days after their last activity, each with a destruction record; --dry-run lists them only.");
+        var optPrDryRun = new Option<bool>("--dry-run", "List the expired applications (ids, status, dates) and change nothing");
+        var optPrBatchSize = new Option<int>("--batch-size", () => PilotRetentionRun.DefaultBatchSize, $"Rows read per round, 1 to {PilotRetentionRun.MaxBatchSize}");
+        pilotRetention.AddOption(optPrDryRun);
+        pilotRetention.AddOption(optPrBatchSize);
+        pilotRetention.SetHandler(async (InvocationContext context) =>
+        {
+            var p = context.ParseResult;
+            context.ExitCode = await CliPilotRetentionCommands.RunAsync(
+                host,
+                p.GetValueForOption(optPrDryRun),
+                p.GetValueForOption(optPrBatchSize),
+                context.GetCancellationToken());
+        });
+
         return new RootCommand("Wasla CLI — operational tool for tenant onboarding, migrations, and secrets.")
         {
             addTenant,
@@ -517,7 +536,8 @@ internal static class CliCommandTree
             seedPrintJob,
             listPrintJobs,
             mealWebhookIntegrator,
-            mealWebhookInbox
+            mealWebhookInbox,
+            pilotRetention
         };
     }
 }

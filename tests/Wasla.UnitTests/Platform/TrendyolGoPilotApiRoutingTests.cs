@@ -2,11 +2,11 @@ using System.Collections.Concurrent;
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
 
 namespace Wasla.UnitTests.Platform;
@@ -148,11 +148,11 @@ public sealed class TrendyolGoPilotApiRoutingTests
     {
         var pilot = Pilot();
 
-        Assert.Equal(new Uri("https://stageapi.tgoapis.com/"), pilot.ProviderApiFor(PilotConnection()));
-        Assert.Null(pilot.ProviderApiFor(Connection(Guid.NewGuid(), PilotSeller, PilotStore)));
-        Assert.Null(pilot.ProviderApiFor(Connection(Guid.Empty, PilotSeller, PilotStore)));
+        Assert.Equal(new Uri("https://stageapi.tgoapis.com/"), pilot.ProviderApiFor(PilotConnection().AsProviderContext()));
+        Assert.Null(pilot.ProviderApiFor(Connection(Guid.NewGuid(), PilotSeller, PilotStore).AsProviderContext()));
+        Assert.Null(pilot.ProviderApiFor(Connection(Guid.Empty, PilotSeller, PilotStore).AsProviderContext()));
         Assert.Null(new TrendyolGoMealWebhookPilotOptions { ProviderApiBaseUrl = "https://stageapi.tgoapis.com" }
-            .ProviderApiFor(Connection(Guid.Empty, PilotSeller, PilotStore)));
+            .ProviderApiFor(Connection(Guid.Empty, PilotSeller, PilotStore).AsProviderContext()));
     }
 
     private static TrendyolGoMealWebhookPilotOptions Pilot() => new()
@@ -191,10 +191,8 @@ public sealed class TrendyolGoPilotApiRoutingTests
                 // The deployment's API, as wasla-preflight requires it.
                 BaseAddress = new Uri("https://" + Production + "/")
             },
-            new PassthroughSecrets(),
-            new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             Options.Create(new TrendyolGoOptions { AgentName = "Wasla", BaseUrl = "https://" + Production }),
-            Options.Create(pilot),
+            new TrendyolGoMealWebhookPilotApiRouter(Options.Create(pilot)),
             NullLogger<TrendyolGoFoodPlatformClient>.Instance,
             new LimiterClock().Limiter(),
             TimeProvider.System);
@@ -202,12 +200,12 @@ public sealed class TrendyolGoPilotApiRoutingTests
     private static Task RunAsync(TrendyolGoFoodPlatformClient client, string operation, PlatformConnection connection) =>
         operation switch
         {
-            "fetch" => client.FetchOrdersAsync(connection, Window, Ct),
-            "accept" => client.AcceptOrderAsync(connection, "pkg-1", 15, Ct),
-            "invoiced" => client.MarkInvoicedAsync(connection, "pkg-1", Ct),
-            "shipped" => client.MarkShippedAsync(connection, "pkg-1", Ct),
-            "delivered" => client.MarkDeliveredAsync(connection, "pkg-1", Ct),
-            "reject" => client.RejectOrderAsync(connection, TrendyolGoRejectRequestTests.StoredPackageOrder("pkg-1", "1"), 621, Ct),
+            "fetch" => client.FetchOrdersAsync(connection.AsProviderContext(), Window, Ct),
+            "accept" => client.AcceptOrderAsync(connection.AsProviderContext(), "pkg-1", 15, Ct),
+            "invoiced" => client.MarkInvoicedAsync(connection.AsProviderContext(), "pkg-1", Ct),
+            "shipped" => client.MarkShippedAsync(connection.AsProviderContext(), "pkg-1", Ct),
+            "delivered" => client.MarkDeliveredAsync(connection.AsProviderContext(), "pkg-1", Ct),
+            "reject" => client.RejectOrderAsync(connection.AsProviderContext(), TrendyolGoRejectRequestTests.StoredPackageOrder("pkg-1", "1").AsProviderReference(), 621, Ct),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))
         };
 }

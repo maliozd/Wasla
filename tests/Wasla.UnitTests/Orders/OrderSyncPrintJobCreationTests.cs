@@ -4,8 +4,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Orders.Services;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Realtime;
@@ -14,6 +15,8 @@ using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Infrastructure.Printing;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
+using Wasla.UnitTests.Platform;
+using Wasla.Infrastructure.Platform;
 
 namespace Wasla.UnitTests.Orders;
 
@@ -191,6 +194,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
         return new OrderSyncService(
             _dbFactory,
             new IFoodPlatformClient[] { client },
+            new PassthroughSecrets(),
             new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NoAutoApproveService.Instance,
             receiptCreation,
@@ -255,7 +259,7 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             Options: Array.Empty<ExternalOrderItemOptionDto>());
 
         return new ExternalOrderDto(
-            Platform: FoodPlatform.TrendyolYemek,
+            Platform: ProviderPlatform.TrendyolYemek,
             ExternalOrderId: externalOrderId,
             ExternalOrderCode: $"TY-{externalOrderId}",
             OrderedAtUtc: DateTime.UtcNow.AddMinutes(-2),
@@ -266,8 +270,8 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
             DeliveryFee: 0m,
             ServiceFee: 0m,
             Total: 100m,
-            PaymentMethod: PaymentMethod.CreditCard,
-            PaymentStatus: PaymentStatus.Paid,
+            PaymentMethod: ProviderPaymentMethod.CreditCard,
+            PaymentStatus: ProviderPaymentStatus.Paid,
             ExternalStatus: externalStatus,
             RawPayloadJson: $"{{\"externalOrderId\":\"{externalOrderId}\",\"externalStatus\":\"{externalStatus}\"}}",
             Items: new[] { item });
@@ -281,34 +285,34 @@ public sealed class OrderSyncPrintJobCreationTests : IDisposable
 
         public FakeFoodPlatformClient(FoodPlatform platform, params ExternalOrderDto[] orders)
         {
-            Platform = platform;
+            Platform = platform.ToProviderPlatform();
             _orders = orders;
         }
 
-        public FoodPlatform Platform { get; }
+        public ProviderPlatform Platform { get; }
         public TimeSpan? MaxFetchWindow => null;
 
         public Task<IReadOnlyCollection<ExternalOrderDto>> FetchOrdersAsync(
-            PlatformConnection connection,
+            ProviderConnectionContext connection,
             OrderFetchWindow window,
             CancellationToken ct) =>
             Task.FromResult(_orders);
 
         public void ReplaceOrders(params ExternalOrderDto[] orders) => _orders = orders;
 
-        public Task AcceptOrderAsync(PlatformConnection connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
+        public Task AcceptOrderAsync(ProviderConnectionContext connection, string externalOrderId, int preparationMinutes, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkInvoicedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkInvoicedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkShippedAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task MarkDeliveredAsync(PlatformConnection connection, string externalOrderId, CancellationToken ct) =>
+        public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) =>
             Task.CompletedTask;
 
-        public Task RejectOrderAsync(PlatformConnection connection, Order order, int? reasonId, CancellationToken ct) =>
+        public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) =>
             Task.CompletedTask;
     }
 

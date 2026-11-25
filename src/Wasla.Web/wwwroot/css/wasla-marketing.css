@@ -102,6 +102,10 @@
   --wm-warning-soft: #f7ebd6;
   --wm-info: #2f5e92;
   --wm-info-soft: #e1eaf4;
+  /* The product's one danger pair: the foundation's --wasla-danger and the signup page's --su-danger values. */
+  --wm-danger: #b4232c;
+  --wm-danger-soft: #f6e2e1;
+  --wm-danger-line: rgba(180, 35, 44, 0.32);
   --wm-getir: #5d3ebc;
   --wm-font-display: "Bricolage Grotesque", "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --wm-font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -333,7 +337,8 @@
 .wm-badge--amber { background: var(--wm-warning-soft); color: var(--wm-warning); }
 .wm-badge--blue { background: var(--wm-info-soft); color: var(--wm-info); }
 .wm-badge--green { background: var(--wm-success-soft); color: var(--wm-success); }
-.wm-badge--orange { background: var(--wm-orange-soft); color: var(--wm-action); }
+/* Action orange on the soft orange is 4.2:1; the darker action shade keeps the small label at 5.5:1. */
+.wm-badge--orange { background: var(--wm-orange-soft); color: var(--wm-action-hover); }
 
 /* "Coming soon" label; text, not colour alone, carries the meaning. */
 .wm-soon {
@@ -1879,8 +1884,9 @@
   letter-spacing: -0.01em;
 }
 
+/* Action orange, not the brand orange: the brand orange is 3.0:1 on the surface, below AA for 14 px text. */
 .wm-step__num {
-  color: var(--wm-orange);
+  color: var(--wm-action);
   font-family: var(--wm-font-mono);
   font-size: 0.875rem;
   font-weight: 500;
@@ -2864,6 +2870,16 @@
   letter-spacing: -0.02em;
 }
 
+/* A period without a price says so in a sentence; text type keeps it from posing as an amount. */
+.wm-plan__period[data-price-set="false"] .wm-plan__price {
+  color: var(--wm-text-muted);
+  font-family: var(--wm-font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
 .wm-plan .wm-checks {
   flex: 1 1 auto;
   align-content: start;
@@ -3301,7 +3317,7 @@
 .wm-textarea[aria-invalid="true"],
 .wm-input.input-validation-error,
 .wm-textarea.input-validation-error {
-  border-color: #a4202a;
+  border-color: var(--wm-danger);
 }
 
 .wm-phone {
@@ -3339,7 +3355,7 @@
 
 .wm-form-field__error,
 .wm-form-field .field-validation-error {
-  color: #a4202a;
+  color: var(--wm-danger);
   font-size: 0.9375rem;
   line-height: 22px;
 }
@@ -3405,7 +3421,7 @@
   padding-inline-start: 12px;
   border-color: var(--wm-action);
   background: var(--wm-orange-soft);
-  color: var(--wm-action);
+  color: var(--wm-action-hover);
 }
 
 .wm-topic__option input:checked + .wm-topic__chip .bi {
@@ -3452,9 +3468,9 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid rgba(164, 32, 42, 0.35);
+  border: 1px solid var(--wm-danger-line);
   border-radius: 12px;
-  background: #f6e0e0;
+  background: var(--wm-danger-soft);
   color: var(--wm-text-body);
   font-size: 0.9375rem;
   line-height: 22px;
@@ -3467,12 +3483,12 @@
   block-size: 8px;
   margin-block-start: 7px;
   border-radius: 50%;
-  background: #a4202a;
+  background: var(--wm-danger);
 }
 
 .wm-form-alert__title {
   display: block;
-  color: #a4202a;
+  color: var(--wm-danger);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -5197,7 +5213,7 @@
 }
 
 .wm-phone--invalid {
-  border-color: #a4202a;
+  border-color: var(--wm-danger);
 }
 
 .wm-pilot-summary,
@@ -5206,9 +5222,9 @@
   align-items: flex-start;
   gap: 12px;
   padding: 18px 24px 18px 20px;
-  border: 1px solid rgba(164, 32, 42, 0.3);
+  border: 1px solid var(--wm-danger-line);
   border-radius: 12px;
-  background: #f6e0e0;
+  background: var(--wm-danger-soft);
   color: var(--wm-text-body);
   font-size: 0.9375rem;
   line-height: 22px;
@@ -5218,7 +5234,7 @@
 .wm-pilot-alert > .bi {
   flex: none;
   margin-block-start: 1px;
-  color: #a4202a;
+  color: var(--wm-danger);
   font-size: 1.125rem;
 }
 
@@ -5255,7 +5271,7 @@
 
 .wm-pilot-summary__list a,
 .wm-pilot-alert a {
-  color: #a4202a;
+  color: var(--wm-danger);
 }
 
 .wm-pilot-alert--warning a {

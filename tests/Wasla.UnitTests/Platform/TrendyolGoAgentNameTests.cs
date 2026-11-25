@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Wasla.Infrastructure.Platform.TrendyolGo;
+using Wasla.Integrations.Platform.TrendyolGo;
 
 namespace Wasla.UnitTests.Platform;
 

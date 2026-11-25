@@ -1,4 +1,4 @@
-using Wasla.Application.Platform.Dtos;
+using Wasla.Integrations.Platform.Dtos;
 
 namespace Wasla.Infrastructure.Sync;
 

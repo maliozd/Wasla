@@ -2587,4 +2587,43 @@
   <data name="Admin.ContactMessages.ResendNotConfigured" xml:space="preserve"><value>E-posta gönderimi yapılandırılmadığı için bildirim gönderilmedi (Email:Provider Smtp değil).</value></data>
   <data name="Admin.ContactMessages.ResendAlreadySent" xml:space="preserve"><value>Bu mesajın bildirimi zaten gönderilmiş; yeniden gönderilmedi.</value></data>
   <data name="Admin.ContactMessages.ResendInProgress" xml:space="preserve"><value>Bu mesaj için bir gönderim az önce başladı; bir süre sonra durumu yeniden kontrol edin.</value></data>
+  <data name="Admin.Pilot.StatusTitle" xml:space="preserve"><value>Başvuru durumu</value></data>
+  <data name="Admin.Pilot.Status" xml:space="preserve"><value>Durum</value></data>
+  <data name="Admin.Pilot.Status.New" xml:space="preserve"><value>Yeni, henüz yanıtlanmadı</value></data>
+  <data name="Admin.Pilot.Status.Contacted" xml:space="preserve"><value>Görüşülüyor</value></data>
+  <data name="Admin.Pilot.Status.Accepted" xml:space="preserve"><value>Pilota kabul edildi</value></data>
+  <data name="Admin.Pilot.Status.Declined" xml:space="preserve"><value>Reddedildi</value></data>
+  <data name="Admin.Pilot.LastActivity" xml:space="preserve"><value>Son işlem</value></data>
+  <data name="Admin.Pilot.DeleteOnOrAfter" xml:space="preserve"><value>En erken silinme zamanı</value></data>
+  <data name="Admin.Pilot.RetentionHelp" xml:space="preserve"><value>Saklama süresi son işlemden (başvurunun alınması, durum değişikliği veya kaydedilen bir görüşme) {0} gün sonra dolar; kişisel verileri ondan sonraki ilk planlı saklama temizliği siler.</value></data>
+  <data name="Admin.Pilot.SetStatus" xml:space="preserve"><value>Durumu kaydet</value></data>
+  <data name="Admin.Pilot.RecordContact" xml:space="preserve"><value>Görüşme kaydet</value></data>
+  <data name="Admin.Pilot.RecordContactHelp" xml:space="preserve"><value>Restoranla bir arama veya e-postadan sonra kullanın: {0} günlük süre şimdiden yeniden başlar.</value></data>
+  <data name="Admin.Pilot.StatusSaved" xml:space="preserve"><value>Durum kaydedildi. Saklama süresi şimdiden yeniden başlıyor.</value></data>
+  <data name="Admin.Pilot.StatusUnchanged" xml:space="preserve"><value>Başvuru zaten bu durumda.</value></data>
+  <data name="Admin.Pilot.ContactRecorded" xml:space="preserve"><value>Görüşme kaydedildi. Saklama süresi şimdiden yeniden başlıyor.</value></data>
+  <data name="Admin.Pilot.DataRequestTitle" xml:space="preserve"><value>İlgili kişi başvurusu</value></data>
+  <data name="Admin.Pilot.DataRequestHelp" xml:space="preserve"><value>Bu verileri indirmeden, düzeltmeden veya silmeden önce başvuru sahibinin kimliğini kendiniz doğrulayın (örneğin kayıtlı telefon numarasını geri arayarak). Burada hiçbir işlem verileri bir yere göndermez.</value></data>
+  <data name="Admin.Pilot.Export" xml:space="preserve"><value>Verileri indir (JSON)</value></data>
+  <data name="Admin.Pilot.Correct" xml:space="preserve"><value>Verileri düzelt</value></data>
+  <data name="Admin.Pilot.Delete" xml:space="preserve"><value>Başvuruyu sil</value></data>
+  <data name="Admin.Pilot.IdentityVerified" xml:space="preserve"><value>Başvuru sahibinin kimliğini doğruladım</value></data>
+  <data name="Admin.Pilot.IdentityRequired" xml:space="preserve"><value>Silmeden önce başvuru sahibinin kimliğini doğruladığınızı onaylayın.</value></data>
+  <data name="Admin.Pilot.Deleted" xml:space="preserve"><value>Pilot başvurusu silindi ve silme işlemi kayda alındı.</value></data>
+  <data name="Admin.Pilot.DeleteInProgress" xml:space="preserve"><value>Bu başvuru için ekip bildirimi gönderiliyor. Birkaç dakika sonra yeniden deneyin.</value></data>
+  <data name="Admin.Pilot.CorrectTitle" xml:space="preserve"><value>Başvuru verilerini düzelt</value></data>
+  <data name="Admin.Pilot.CorrectHelp" xml:space="preserve"><value>Düzeltme, saklama süresini yeniden başlatmaz.</value></data>
+  <data name="Admin.Pilot.Corrected" xml:space="preserve"><value>Başvuru verileri düzeltildi.</value></data>
+  <data name="Admin.Pilot.Invalid" xml:space="preserve"><value>Değerler kaydedilemedi. Alanları kontrol edin.</value></data>
+  <data name="Admin.Pilot.FindTitle" xml:space="preserve"><value>Bir kişinin pilot başvurusunu bul</value></data>
+  <data name="Admin.Pilot.FindHelp" xml:space="preserve"><value>Kişinin verdiği e-posta adresini veya telefon numarasını tam olarak girin. Yalnızca tam eşleşmeler listelenir.</value></data>
+  <data name="Admin.Pilot.FindEmail" xml:space="preserve"><value>E-posta adresi</value></data>
+  <data name="Admin.Pilot.FindPhone" xml:space="preserve"><value>Telefon numarası</value></data>
+  <data name="Admin.Pilot.FindSubmit" xml:space="preserve"><value>Ara</value></data>
+  <data name="Admin.Pilot.FindNone" xml:space="preserve"><value>Eşleşen pilot başvurusu yok.</value></data>
+  <data name="Admin.Pilot.FindNeedsValue" xml:space="preserve"><value>Bir e-posta adresi veya telefon numarası girin.</value></data>
+  <data name="Admin.Pilot.FindLink" xml:space="preserve"><value>Kişinin başvurusunu bul</value></data>
+  <data name="Admin.Pilot.Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Admin.Pilot.Cancel" xml:space="preserve"><value>Vazgeç</value></data>
+  <data name="PilotPrivacy.RetentionText" xml:space="preserve"><value>Başvurunuzun saklama süresi, sizinle son anlamlı iletişimimizden veya başvuru durumundaki son değişiklikten {0} gün sonra dolar; başvurunuz bu tarihten sonraki ilk planlı temizlikte silinir. Restoranınız pilota katılırsa, bundan sonra gereken veriler ayrı müşteri süreci ve onun saklama kuralları kapsamında işlenir.</value></data>
 </root>

@@ -16,7 +16,7 @@ It records how Wasla POS is installed at a restaurant, where its data lives and 
 
 Facts from the code on `dev` at `40fe698`:
 
-- **Every Orders server project depends on one Infrastructure assembly.** `Wasla.Web`, `Wasla.Api`, `Wasla.Worker` and `Wasla.Cli` reference `Wasla.Infrastructure`. It holds both `CentralDbContext` and `TenantDbContext`, their migrations, the provider clients, order and printing services, `TenantResolver` and `AesSecretManager`. Referencing it from POS would bring in all of Orders.
+- **Every Orders server project depends on one Infrastructure assembly.** `Wasla.Web`, `Wasla.Api`, `Wasla.Worker` and `Wasla.Cli` reference `Wasla.Infrastructure`. It holds both `CentralDbContext` and `TenantDbContext`, their migrations, the provider clients, order and printing services, `TenantResolver` and `AesSecretManager`. Referencing it from POS would bring in all of Orders. Since WAS-233 the provider clients are in their own library, `Wasla.Integrations`, which references neither product; Infrastructure composes it (see [../integrations/food-platforms.md](../integrations/food-platforms.md#provider-library-waslaintegrations)).
 - **Tenant users live in the Orders tenant database.** `AppUser` (email, BCrypt hash, `UserRole`, security stamp) is a `TenantDbContext` entity. Web login checks the password against that database (`AuthValidationService`), and every request is revalidated against it ([authentication.md](authentication.md#tenant-session-revalidation)). CentralDb's `TenantMembership` is a plan and subscription record, not a user store. `Tenant.SubscriptionStatus` and `TenantMembership` are where subscription state is today. Billing with iyzico (WAS-145 to WAS-154) is not implemented.
 - **Roles are Orders roles.** `UserRole` (Owner, Manager, Kitchen, Cashier, Viewer) and `WaslaTenantPolicies` describe platform-order work ([../product/roles-and-permissions.md](../product/roles-and-permissions.md)).
 - **There is no catalog.** `TenantDbContext` has orders, order items and options copied from provider payloads, but no product, category, modifier or table entity.
@@ -538,7 +538,7 @@ A secondary or failover Edge, and replication between Edges, are out of scope fo
 | `Wasla.Pos.Cli` | Operator tool: tenant activation, POS cloud database migrations, installation status | Operators |
 | Updater | Applies Edge and Terminal updates with backup and rollback | Restaurant Edge machine |
 
-Shared libraries: `Wasla.Pos.Domain` and `Wasla.Pos.Application` (POS rules, used by Edge), the local API contract (its OpenAPI document and the .NET client the Terminal uses; the Android app's client is checked against the same document), `Wasla.Pos.Sync.Contracts` (the versioned sync protocol, used by Edge and Cloud), the printing library (used by POS Edge and Print Bridge), and the platform library (secrets and the CentralDb registry reader, used by POS Cloud, `Wasla.Pos.Cli` and Orders).
+Shared libraries: `Wasla.Pos.Domain` and `Wasla.Pos.Application` (POS rules, used by Edge), the local API contract (its OpenAPI document and the .NET client the Terminal uses; the Android app's client is checked against the same document), `Wasla.Pos.Sync.Contracts` (the versioned sync protocol, used by Edge and Cloud), the printing library (used by POS Edge and Print Bridge), the platform library (secrets and the CentralDb registry reader, used by POS Cloud, `Wasla.Pos.Cli` and Orders), and the provider library (`Wasla.Integrations`, WAS-233: the food-platform provider contract and clients, used by Orders; POS use waits for the prerequisites of WAS-234).
 
 **Same repository (yes, for now).** Evaluated again with the installed product in mind:
 
@@ -558,7 +558,7 @@ Guardrails:
 - **Reference-direction tests** in `Wasla.UnitTests` and the POS test project read every `*.csproj`. They fail when:
   - a POS project references an Orders project (`Wasla.Domain`, `Wasla.Application`, `Wasla.Infrastructure`, `Wasla.Contracts`, `Wasla.Web`, `Wasla.Api`, `Wasla.Worker`, `Wasla.Cli`, `Wasla.PrintBridge*`);
   - an Orders project references a POS project;
-  - a shared library references either product.
+  - a shared library references either product. For the provider library this is `IntegrationsReferenceDirectionTests` in `Wasla.UnitTests` (WAS-233).
 - POS code has no `TenantDbContext`, `AppUser`, `UserRole` or `WaslaTenantPolicies`. Orders code has no POS type.
 - The Android app depends on nothing in the repository except the local API contract.
 - A contract test fails when the API changes incompatibly without a new API version.

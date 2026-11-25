@@ -13,12 +13,18 @@ public static class OrderRejectReasons
     public const string ReasonNotSupportedKey = "Orders.RejectReasonNotSupported";
 
     /// <summary>
-    /// Trendyol GO's documented restaurant reasons ("Paket Modelleri", checked 2026-11-03) for sellers whose orders the
-    /// platform's couriers deliver: 621 supply problem, 622 store closed, 623 store cannot prepare the order, 627 order
-    /// confusion. 624 and 626 are only for sellers with their own couriers, which Wasla does not support.
+    /// Trendyol GO: every reason the provider accepts from a restaurant whose orders the platform's couriers deliver.
+    /// The provider's list, which its client checks a reason against before sending it, is <c>ProviderRejectReasons</c>
+    /// in <c>Wasla.Integrations</c>. Application does not reference that library (Print Bridge builds on Application), so
+    /// Orders keeps the operator's list here and <c>OrderRejectReasonParityTests</c> requires it to equal the provider's
+    /// for every platform (WAS-233).
     /// </summary>
-    private static readonly int[] TrendyolGo = [621, 622, 623, 627];
+    private static readonly IReadOnlyList<int> TrendyolGo = [621, 622, 623, 627];
 
+    /// <summary>
+    /// The reasons an operator may choose for <paramref name="platform"/>: every reason id the provider accepts, in the
+    /// provider's order; empty for a platform without a verified list.
+    /// </summary>
     public static IReadOnlyList<int> For(FoodPlatform platform) =>
         platform == FoodPlatform.TrendyolYemek ? TrendyolGo : [];
 

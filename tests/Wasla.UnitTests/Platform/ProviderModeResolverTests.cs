@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
-using Wasla.Infrastructure.Platform;
+using Wasla.Integrations.Platform;
 
 namespace Wasla.UnitTests.Platform;
 

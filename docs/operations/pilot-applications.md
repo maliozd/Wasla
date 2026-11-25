@@ -4,6 +4,12 @@ WAS-217. A restaurant applies to the Wasla pilot from the coming-soon page. The 
 Wasla team is emailed; the team then calls or writes to arrange a conversation. An application starts no signup,
 payment, panel or provisioning, and it is not an acceptance into the pilot.
 
+WAS-222 adds the application's retention: its retention period ends 90 days after the last meaningful contact or status
+change, and the next scheduled cleanup then deletes its personal data ([Retention and deletion](#retention-and-deletion)),
+and Central Admin answers a data subject's request
+([Data subject requests](#data-subject-requests)). This is the approved product and technical decision of
+22 November 2026; **the legal wording is still under review** by the company's legal adviser.
+
 Design: Figma "Wasla — Web & App", page "WAS-217 · Pilot Başvuru · Claude Alternatifi" (screens S1 to S10, the
 localization frames and the accessibility board).
 
@@ -63,11 +69,23 @@ address or legal decision:
 | `ControllerContact` | Its contact address for the notice (email or KEP) |
 | `LegalBasis` | The legal basis under KVKK article 5, as decided by the legal review |
 | `Transfers` | Hosting and email providers and whether data goes abroad |
-| `Retention` | How long an application is kept and how it is deleted or anonymised |
+| `Retention` | How deletion is carried out, after the fixed sentence on the period (below) |
 | `RequestChannel` | Where a data subject sends a request about their rights |
 | `UpdatedOn` | Optional; the notice date, `yyyy-MM-dd` |
 
 The values are shown as configured, in every UI language; write them in Turkish.
+
+The notice's "How long it is kept" section starts with a fixed, translated sentence (`PilotPrivacy.RetentionText`) whose
+number of days comes from the rule the cleanup runs (`PilotApplicationRetention.PeriodDays`, 90), so the notice cannot
+state a different period. The sentence says that the retention period **ends** 90 days after the last meaningful
+contact or status change and that the application is then deleted by the next scheduled cleanup; it does not promise
+deletion at the exact instant, because the cleanup runs periodically. The wording in all four languages is **awaiting
+legal approval** ([WAS-224](https://linear.app/wasla-food/issue/WAS-224)). `Retention` then adds what the fixed sentence does not say. An example, to be approved by the
+legal adviser before use, not a legal text:
+
+```text
+Wasla:PilotApplication:PrivacyNotice:Retention = "Süre dolduktan sonraki ilk planlı temizlikte başvurudaki kişisel veriler (restoran adı, il, yetkili adı, telefon, e-posta ve not) aktif veritabanından silinir; silme işlemi kişisel veri içermeyen bir kayıtla üç yıl belgelenir. Silinen veriler, yedeklerin saklama süresi dolana kadar korunan yedeklerde kalabilir."
+```
 
 ### Before production
 
@@ -79,16 +97,24 @@ These are inputs the company must provide or work that must be done; none of the
 2. A legal review of the fixed notice and form texts in all four UI languages (Turkish, English, Arabic, Russian): the
    notice headings and fixed sentences, the "Personal data" box on the form and the received-state text come from the
    resource files, not from configuration.
-3. Retention, deletion or anonymisation, and data-subject requests for stored applications
-   ([WAS-222](https://linear.app/wasla-food/issue/WAS-222)). **The code has no automatic retention today:** a stored
-   application stays until it is deleted by hand, and no screen or command deletes, anonymises or exports one. The
-   configured `Retention` and `RequestChannel` texts must describe what is actually done.
+3. Retention and data subject requests ([WAS-222](https://linear.app/wasla-food/issue/WAS-222)). **Built:** the 90-day
+   rule, the `pilot-applications-retention` command with its destruction records, and the Central Admin request
+   procedure ([Retention and deletion](#retention-and-deletion), [Data subject requests](#data-subject-requests)).
+   **Still open before production**, each a separate issue that blocks WAS-222:
+   - [WAS-224](https://linear.app/wasla-food/issue/WAS-224): the legal adviser's approval of the notice and form texts in all four languages, of
+     the configured `Retention` and `RequestChannel` texts, and of the request response time.
+   - [WAS-225](https://linear.app/wasla-food/issue/WAS-225): the migration, a dry run, the systemd timer, an `OnFailure` alert and a
+     last-success readiness gate in Production ([Scheduling](#scheduling)).
+   - [WAS-226](https://linear.app/wasla-food/issue/WAS-226): a retention for labelled `INITIAL` and `PRE-<sha>` backups ([Backups](#backups)).
+   - [WAS-227](https://linear.app/wasla-food/issue/WAS-227): replaying data subject deletions durably after a restore, and a restore drill.
+   - [WAS-228](https://linear.app/wasla-food/issue/WAS-228): the retention policy for customer and contract data of accepted restaurants.
 4. A team role address for the notifications (`Wasla:Contact:PilotRecipientEmail`, optional; without it they go to
    `Wasla:Contact:RecipientEmail`), and a sender (`Email:FromEmail`) the SMTP server may send from. Confirm a real
    delivery once in the target environment.
 5. The CentralDb city catalog imported (`seed-turkey-reference-data` or `seed-address-reference-data`) with all 81
    provinces.
-6. The CentralDb migration `AddPilotApplications` applied ([migrations.md](migrations.md)).
+6. The CentralDb migrations `AddPilotApplications` and `AddPilotApplicationRetention` applied
+   ([migrations.md](migrations.md)).
 
 The existing contact form notice at `/privacy-notice` also names the controller only as "Wasla"; that gap is separate
 from this form.
@@ -122,6 +148,20 @@ and `CityPlateCode` (`varchar(2)`, `01` to `81`, checked against the active city
 `Message` column and may be empty. `PrivacyNoticeAcknowledged` is false, because the form asks for no acknowledgement.
 No IP address or other request data is stored.
 
+Two columns carry the team's side (WAS-222): `PilotStatus` (`New` 0, `Contacted` 1, `Accepted` 2, `Declined` 3) and
+`PilotLastActivityAtUtc`, the last meaningful activity in UTC. Both are null for contact form messages. A pilot
+application always has both: the check constraint `CK_ContactMessages_PilotFields`
+(`[Topic] <> 5 OR (both NOT NULL)`) refuses a pilot row without them; other topics are not constrained by it. The
+`AddPilotApplicationRetention` migration sets applications stored before it to `New`, last active when they were
+received, before it adds the constraint.
+
+**Rolling the migration back is guarded** (error **50222**, [migrations.md](migrations.md#rollback-guards)). Its `Down`
+refuses before it changes anything while `DataDestructionRecords` holds any row (evidence kept for three years) or while
+any pilot application holds a status other than `New` or a last activity other than its received time, because applying
+the migration again would reset that application's retention period to its submission. A database whose pilot
+applications are all still as the migration's backfill left them, with no destruction record, rolls back. Once real data
+matters, roll forward instead.
+
 The form carries a submission id generated when it is first shown and kept through validation errors and a failed save.
 It becomes the row's id: posting the same form again (a double click, a resubmitted page, or several posts at once)
 finds the stored row and stores and sends nothing; concurrent posts meet at the primary key. The submit button also
@@ -140,6 +180,13 @@ its outcome is recorded on the row (`NotificationStatus`, `NotificationAttempted
   topic, the failure category and the exception type, never what the visitor typed. `NotConfigured`: `Email:Provider`
   is not `Smtp` (Development, tests); nothing is sent and nothing claims delivery.
 - The visitor sees the received state in every case, because the application is stored.
+
+**What the email holds (WAS-222).** The team notification names the record, not the applicant: the subject is the fixed
+"Wasla: yeni pilot restoran başvurusu", and the body holds the record id, the time received (UTC), and the instruction to
+open the record in Central Admin (`/admin/contact-messages/<id>`, Central Admin sign-in required). It carries no
+restaurant name, contact name, phone number, email address, province or note: a copy in a mailbox or at the SMTP
+provider would be outside the 90-day retention and a data subject's deletion, which reach only the stored record. The
+team reads the application in Central Admin. A resend builds the same email. Contact form messages are unchanged.
 
 **One attempt at a time.** Each attempt owns the row through `NotificationClaimId`: the stored row carries the first
 attempt's claim, and a resend claims a new one in a single conditional update. An attempt records its outcome with a
@@ -170,6 +217,172 @@ claim query and the page; a test holds the query and the in-memory form together
 claims the row in one conditional update, so two administrators or a double click start one attempt; a notification
 already recorded as sent is not offered again. In a Log email setup the page says that nothing was sent.
 
+## Retention and deletion
+
+WAS-222. Approved product and technical decision of 22 November 2026; the legal wording is still under review.
+
+**The rule** (`PilotApplicationRetention`, the only place it is written; Central Admin, the cleanup and the tests use it):
+a pilot application's retention period ends **90 days after its last meaningful activity**; the next run of the
+scheduled cleanup then deletes its personal data. The cleanup runs periodically, so the physical deletion happens at or
+after the end of the period, not at that exact instant ([Scheduling](#scheduling)). The same rule holds for every status:
+
+| Status | What happens |
+|---|---|
+| `New` (unanswered) | Due for deletion 90 days after it was received, unless the team records activity first |
+| `Contacted` | Kept while the team keeps recording contacts; due for deletion 90 days after the last one |
+| `Declined` | Due for deletion 90 days after it was declined (or after a later recorded contact) |
+| `Accepted` | Due for deletion 90 days after the acceptance or the last recorded contact. The restaurant continues in the onboarding/customer process; data that becomes customer or contract data falls under that process's own, separate retention policy, not defined yet ([WAS-228](https://linear.app/wasla-food/issue/WAS-228)) |
+
+- **Meaningful activity** is the receipt of the application, a status change in Central Admin, and "Record a contact"
+  (pressed after a call or an email with the restaurant). Each moves `PilotLastActivityAtUtc` to now and restarts the
+  period, so an application is never deleted while the team is talking to the restaurant, provided the team records it.
+  Setting the status it already has, a correction on request, a notification resend, viewing and downloading are not
+  activity and do not extend the period.
+- **Times and boundary.** Everything is UTC. An application last active at `T` is kept at every instant before
+  `T + 90 days` and may be deleted at `T + 90 days` exactly and after. Central Admin shows the instant as "Deleted on or
+  after".
+- **Running operations hold it.** An application whose team notification is being sent (a claim taken less than 15
+  minutes ago) is not deleted; the next run takes it. An older claim belongs to an attempt that ended at its 3-minute
+  deadline and holds nothing back.
+- **Contact form messages are out of scope.** The rule selects only `Topic = PilotApplication` rows with a last activity;
+  contact form messages are never selected and keep their current handling, even if their pilot columns hold values
+  (the topic alone decides; a test stores such a row and checks that it is neither selected nor deleted).
+- Personal content is deleted, not anonymised: the whole row goes. No anonymous statistics are kept; nothing needs them
+  today.
+
+### The cleanup command
+
+```powershell
+dotnet run --project src\Wasla.Cli -- pilot-applications-retention --dry-run
+dotnet run --project src\Wasla.Cli -- pilot-applications-retention
+```
+
+On the server: `sudo wasla-cli -- pilot-applications-retention [--dry-run]`. It needs `ConnectionStrings:CentralDb` only
+(no `ENCRYPTION_MASTER_KEY`, no tenant database) and the application login's `db_datareader` and `db_datawriter` rights.
+
+- `--dry-run` reads the same rows and changes nothing. It prints each expired application as
+  `would delete <id> status=<status> last-activity=<UTC> due=<UTC>` and the number of destruction records past their own
+  retention. `--batch-size` (default 100, at most 1,000) sets how many rows one round reads.
+- A real run reads expired applications in rounds of at most the batch size, oldest activity first, and deletes each in
+  its own short transaction: a conditional delete that re-checks the rule inside the database, and only if it removed the
+  row, a destruction record. It prints `deleted <id>`, `kept <id>` for a row that changed since it was read (new activity,
+  a notification attempt that started, or another run that deleted it first) and `FAILED <id>` on the error stream.
+- **Safe to repeat and to overlap.** Two runs at once, or a run and an administrator, delete and record a row once: on
+  SQL Server the second delete waits for the first one's row lock and then finds nothing. A rerun finds nothing left to
+  delete. A status change or recorded contact that commits before the delete keeps the row; one that comes after finds
+  it gone and Central Admin says so.
+- **No deadlock between overlapping runs.** The batch read uses `IX_ContactMessages_Topic_PilotLastActivityAtUtc`
+  alone: the index covers every column the read filters on or returns (`INCLUDE (PilotStatus, NotificationClaimId,
+  NotificationAttemptedAtUtc, CreatedAtUtc)`). Without those columns the read sought the index and looked each row up in
+  the clustered index, holding the index key while it waited for a row another run was deleting; the delete locks the
+  row first and then the index key, so two overlapping runs deadlocked (error 1205, the shape of WAS-203 and WAS-205)
+  in about one round in nine on LocalDB. A SQL Server test checks the cached plan for a key lookup.
+- **A lost deadlock is retried a few times.** If SQL Server still picks a batch read as a deadlock victim (1205), the
+  read runs again after a short pause, at most three attempts in all, each retry logged at warning level. After the
+  third, or on any other error, the run stops (below). Deletes are not retried within a run; the next run takes them.
+- **Failures are visible.** A row that cannot be deleted is logged at error level with its id, the exception type and the
+  SQL Server error number (never its content), recorded as a failed destruction when possible, and left stored; the run
+  continues and exits with code 1. A pilot application without a status (only possible if the check constraint was
+  bypassed) is reported the same way (`FAILED <id> (no pilot status ...)`), recorded as a failed destruction and not
+  deleted, so someone corrects the row; the other rows continue. Code 0 means every expired row was deleted or no longer
+  expired; code 2 is an invalid option. The next run tries the failed rows again.
+- **A run that stops keeps what it did.** When a later batch read fails for good, or the removal of old destruction
+  records fails, the run stops, still prints `deleted <id>` for every application it deleted before (each with its
+  destruction record), then `STOPPED EARLY: <exception type> (SQL Server error <n>)` on the error stream, and exits 1.
+  The log's summary line says `StoppedEarly=True` with the counts. The next run continues.
+- Output and logs carry ids, statuses and UTC times only, never a name, email address, phone number, city or note.
+
+### Destruction records
+
+Every deletion writes a `DataDestructionRecords` row: the destroyed row's id (`SubjectId`) and kind, the UTC time, the
+method (`RetentionExpired` or `DataSubjectRequest`), the result (`Deleted` or `Failed`), the actor (`RetentionJob`, or
+`CentralAdmin` with the administrator's user id) and `RetainUntilUtc`. It holds no application content. The records are
+kept for **three years**, the period required for destruction operation records, and the same command removes the ones
+past `RetainUntilUtc`. A destruction record is not a copy of the application; it only shows that and how it was
+destroyed.
+
+### Scheduling
+
+The schedule is **not installed or enabled** by this change. To run it daily on the Linux host later, after the legal
+approval and the migration, add a oneshot unit and timer next to `wasla-backup` ([linux-vds-runbook.md](linux-vds-runbook.md)):
+
+```ini
+# /etc/systemd/system/wasla-pilot-retention.service
+[Unit]
+Description=Wasla pilot application retention cleanup
+After=mssql-server.service
+Requires=mssql-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/wasla/bin/wasla-cli -- pilot-applications-retention
+SyslogIdentifier=wasla-pilot-retention
+
+# /etc/systemd/system/wasla-pilot-retention.timer
+[Unit]
+Description=Daily Wasla pilot application retention cleanup
+
+[Timer]
+OnCalendar=*-*-* 04:15:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+```
+
+Run `sudo wasla-cli -- pilot-applications-retention --dry-run` once and check its list before
+`systemctl enable --now wasla-pilot-retention.timer`. A failed run leaves the unit failed (`systemctl --failed`,
+`journalctl -u wasla-pilot-retention`), as for the backup; no other alerting exists yet. The Production rollout, an
+`OnFailure=` alert and a last-success readiness gate are [WAS-225](https://linear.app/wasla-food/issue/WAS-225). A daily run deletes an
+application at most about a day after its 90 days; if runs stop, applications stay stored past their period, so a
+failed unit needs attention. Overlapping runs are harmless.
+
+### Backups
+
+Deletion applies to the **active** CentralDb. Deleted applications stay in backups taken before the deletion until those
+backups are removed; backup files are never edited. `wasla-backup` keeps its nightly `*_FULL_*` files for 14 days
+(`WASLA_BACKUP_RETENTION_DAYS`), so a deleted application leaves the nightly backups within about two weeks. **Labelled
+backups (`wasla-backup INITIAL`, `PRE-<sha>`) are not removed by the job**; until a retention for them is decided, they
+keep deleted applications indefinitely and must be removed by hand ([WAS-226](https://linear.app/wasla-food/issue/WAS-226)). Backups stay on the protected host
+([linux-vds-runbook.md](linux-vds-runbook.md#backups-and-restore)).
+
+After CentralDb is restored from a backup:
+
+1. Run `pilot-applications-retention --dry-run`, then a real run, before the services start again: applications that
+   expired since the backup was taken are deleted at once.
+2. Applications deleted **on request** after the backup was taken come back with the restore, and their destruction
+   records do not. Before restoring, if the current database is still readable, keep the `SubjectId`s of
+   `DataDestructionRecords` with `Method = 2` (`DataSubjectRequest`) newer than the backup; otherwise take them from the
+   Web log ("deleted on a data subject's request"). After the restore, delete each again in Central Admin. A durable
+   replay that survives the restore, and a restore drill, are [WAS-227](https://linear.app/wasla-food/issue/WAS-227).
+
+## Data subject requests
+
+A person may ask what is stored about them, have it corrected or have it deleted (KVKK articles 11 and 13). The request
+reaches the team through the configured `RequestChannel`. The answer time is part of the legal review (KVKK article 13
+sets at most thirty days). Central Admin (`/admin/contact-messages`, Central Admin sign-in only) offers:
+
+1. **Find.** "Find a person's application" (`/admin/contact-messages/find`) searches pilot applications by the exact email
+   address (case ignored) or phone number the person gave; at most 20 results, newest first. The search is posted, so the
+   address or number never lands in the browser history or a request log. Contact form messages are not searched.
+2. **Verify the identity by hand.** Nothing in the system verifies who is asking. Confirm it before answering, for example
+   by calling back the stored number or replying to the stored address, and keep the request with the team's records.
+3. **Export.** "Download data (JSON)" on the application's page downloads everything stored about it: the fields, the
+   province, the form language, the team's status, the last activity, the deletion date and the notification state. JSON,
+   not CSV, so no spreadsheet runs a typed value as a formula. The response is sent with `Cache-Control: no-store` and as
+   an attachment, the download is posted with the antiforgery token, and the log names the application and the
+   administrator only. Nothing is emailed automatically: send the file to the person through a channel the team chooses.
+4. **Correct.** "Correct data" edits the restaurant name, contact person, email address, phone number, province and note
+   with the application form's rules. A correction does not restart the retention period.
+5. **Delete.** "Delete application" requires ticking "I verified the requester's identity". It deletes the row with the
+   same transaction as the cleanup and writes a destruction record with the method `DataSubjectRequest` and the
+   administrator's id. It is refused while a team notification is being sent ("try again in a few minutes").
+
+Status changes and recorded contacts are on the same page ("Application status"). All of these are posted with the
+antiforgery token and limited to Central Admin; a tenant session or an anonymous visitor is sent to the Central Admin
+sign-in.
+
 ## Tests
 
 `PilotApplicationModelTests` (the gate, the catalog check, the resend rule), `PilotApplicationServiceTests`,
@@ -181,3 +394,26 @@ records its outcome late, rule parity); and `Contact/PilotApplicationBrowserTest
 `Category=Browser`) for the 1440 and 390 px layouts, Arabic right to left, long Russian text, keyboard order, error
 focus, a double click, and the phone field (typed, edited and pasted numbers, then a send; Backspace and Delete next to the group spaces and
 text inserted in one go, with the steps the signup business phone runs too, `Signup/TurkishPhoneFieldScenario.cs`). No test sends email or SMS.
+
+Retention and requests (WAS-222): `Contact/PilotApplicationRetentionTests` (SQLite: the inclusive UTC boundary, every
+status, recorded activity restarting the period and a correction not, a running notification attempt holding the row,
+contact messages untouched, a contact message with pilot values never selected or deleted, the dry run changing
+nothing, repeats, more rows than one batch with equal activity times, a failed deletion logged, recorded and retried, a
+pilot row without a status refused by the database and, if present, reported and kept while the others continue, a run
+stopping partway and still returning what it deleted, a deadlock-victim batch read retried at most three times in all,
+destruction records without content and their three-year removal, query and in-memory rule parity); `Contact/CentralAdminPilotApplicationServiceTests` (find, export, correct, status, recorded
+contact, deletion on request and its failure); `Contact/PilotApplicationRetentionSqlServerTests` on SQL Server (two runs
+at once deleting and recording each row once, 50 rounds of two overlapping runs and 40 rounds of two runs overlapping
+recorded contacts and status changes with no deadlock (no 1205 escaped or retried) and every row deleted once or kept,
+the batch read's cached plans reading the retention index alone with no key lookup, a held delete making a second run, a recorded contact and a deletion on
+request wait, a contact recorded between the run's read and its delete keeping the row, an uncommitted status change
+making the run wait and keep it, rule parity) and `PilotApplicationRetentionMigrationSqlServerTests` (earlier rows set
+to `New` and their received time, rollback of an untouched database, the rollback guard 50222 refusing with a
+destruction record, a changed status or a moved activity and changing nothing, the check constraint); `Cli/CliPilotRetentionTests` (the command's output without personal data,
+its exit codes, no master key); `Admin/AdminPilotApplicationRequestsWebTests` (Central Admin only, antiforgery on every
+change, the posted search, the uncached JSON attachment, correction errors, the identity confirmation, the destruction
+record naming the administrator, Arabic right to left); `PilotPageWebTests` (the notice's 90-day sentence in every
+culture from the rule's constant); `Contact/PilotApplicationServiceTests` (the team notification and the logs of a
+sent, failed and resent notification and a refused submission carry none of the values typed into any field); and `Admin/AdminRtlLayoutBrowserTests` (`Category=Browser`: the detail, correction and
+search pages without sideways overflow in Arabic at 375 px and English at 1,366 px, the controls named by their labels,
+and a real click on Delete refused until the identity box is ticked).

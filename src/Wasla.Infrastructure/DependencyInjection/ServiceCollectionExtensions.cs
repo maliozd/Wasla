@@ -13,6 +13,7 @@ using Wasla.Application.Abstractions.DevelopmentTools;
 using Wasla.Application.Abstractions.Notifications;
 using Wasla.Application.Abstractions.Orders;
 using Wasla.Application.Abstractions.Platform;
+using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.PlatformConnections;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
@@ -31,16 +32,13 @@ using Wasla.Infrastructure.Options;
 using Wasla.Infrastructure.Plans;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Persistence.Tenant;
-using Wasla.Infrastructure.Platform;
-using Wasla.Infrastructure.Platform.Mock;
 using Wasla.Infrastructure.Platform.Mapping;
-using Wasla.Infrastructure.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
-using Wasla.Infrastructure.Platform.Yemeksepeti;
 using Wasla.Infrastructure.Realtime;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Tenant;
+using Wasla.Integrations.DependencyInjection;
 
 namespace Wasla.Infrastructure.DependencyInjection;
 
@@ -58,10 +56,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOrderStatusMapper, DefaultOrderStatusMapper>();
         services.AddSingleton(TimeProvider.System);
 
-        services.Configure<TrendyolGoOptions>(configuration.GetSection(TrendyolGoOptions.SectionName));
-        // The webhook pilot's provider API override routes its one connection; every host that calls Trendyol GO binds it.
+        // The webhook pilot's provider API override routes its one connection; every host that calls Trendyol GO binds it,
+        // and the Trendyol GO client asks it before every request (ITrendyolGoApiRouter, WAS-233).
         services.AddTrendyolGoMealWebhookPilotOptions(configuration);
-        services.Configure<YemeksepetiOptions>(configuration.GetSection(YemeksepetiOptions.SectionName));
         services.AddOptions<TenantOnboardingOptions>()
             .Bind(configuration.GetSection(TenantOnboardingOptions.SectionName))
             .ValidateOnStart();
@@ -78,42 +75,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISignupReferenceDataService, SignupReferenceDataService>();
         services.AddScoped<ITenantBusinessSubtypeReader, TenantBusinessSubtypeReader>();
 
-        var providerMode = ProviderModeResolver.Resolve(configuration);
-
-        if (providerMode.IsMock)
-        {
-            // Mock mode: all three platforms use mock clients. No real provider HTTP calls.
-            services.AddSingleton<IFoodPlatformClient, MockYemeksepetiFoodPlatformClient>();
-            services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
-            services.AddSingleton<IFoodPlatformClient, MockTrendyolYemekFoodPlatformClient>();
-        }
-        else
-        {
-            // Real mode:
-            //   Yemeksepeti → real YemeksepetiFoodPlatformClient (OAuth2 + Partner Picking API)
-            //   GetirYemek  → still mock (real client not yet implemented)
-            //   TrendyolYemek → real TrendyolGoFoodPlatformClient (Basic auth + Trendyol GO API)
-            // Each real provider has its own named HttpClient (see ProviderHttpClientRegistration).
-            services.AddProviderHttpClient(YemeksepetiFoodPlatformClient.YemeksepetiHttpClientName, (sp, client) =>
-            {
-                var opts = sp.GetRequiredService<IOptions<YemeksepetiOptions>>().Value;
-                client.BaseAddress = new Uri(opts.BaseUrl);
-                client.Timeout = opts.RequestTimeout;
-            });
-            services.AddSingleton<IFoodPlatformClient, YemeksepetiFoodPlatformClient>();
-
-            services.AddSingleton<IFoodPlatformClient, MockGetirYemekFoodPlatformClient>();
-
-            // One limiter per process: every Trendyol GO client instance (typed clients are transient) and every
-            // tenant share its request budget.
-            services.AddSingleton<TrendyolRequestRateLimiter>();
-            services.AddProviderHttpClient(TrendyolGoFoodPlatformClient.TrendyolGoHttpClientName, (sp, client) =>
-            {
-                var opts = sp.GetRequiredService<IOptions<TrendyolGoOptions>>().Value;
-                client.BaseAddress = new Uri(opts.BaseUrl);
-                client.Timeout = opts.RequestTimeout;
-            }).AddTypedClient<IFoodPlatformClient, TrendyolGoFoodPlatformClient>();
-        }
+        // The food-platform provider clients, Mock or Real by Platforms:ProviderMode, with their options and provider HTTP
+        // clients: the provider library's own registration (WAS-233).
+        services.AddWaslaIntegrations(configuration);
 
         services.AddScoped<ITenantResolver, TenantResolver>();
 
