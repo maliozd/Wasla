@@ -407,6 +407,8 @@ node --test --test-reporter=spec --test-reporter-destination=stdout --test-repor
 
 `assert-test-results.ps1` runs in Windows PowerShell 5.1 and in PowerShell 7 (`pwsh`, used by CI). `artifacts/` is ignored by Git.
 
+The Node tests of the CI scripts (`ci-job-plan.test.js`, `test-shards.test.js`) start PowerShell through `scripts/ci/ci-test-support.js`, which gives the pwsh of each test process a cache folder of its own (`XDG_CACHE_HOME`). `node --test` runs the test files in parallel, and pwsh keeps a startup JIT profile in its cache folder: on Linux, two pwsh processes exiting together could mix that shared file, and every later pwsh on the machine would then crash at startup with "The given assembly name was invalid" (WAS-257). `scripts/ci/ci-test-support.test.js` checks the isolation.
+
 Print Bridge tests reference the shipped `Wasla.PrintBridge.Core` and `Wasla.PrintBridge` assemblies, and they print only to a recording fake. They never read or write `C:\ProgramData\Wasla\PrintBridge`:
 
 - Every test class that writes uses `IsolatedDataRoot` (`tests/Wasla.PrintBridge.Tests/IsolatedDataRoot.cs`), which redirects every Print Bridge path to its own temporary folder (`PrintBridgePaths.UseRootForTests`). Teardown first waits for every UI thread the class started (the tray application saves its settings when it exits) and only then releases the folder. If a thread does not end, the redirect stays for the rest of the run.
