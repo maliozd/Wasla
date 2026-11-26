@@ -1,4 +1,5 @@
 ﻿@model Wasla.Web.Models.PlatformConnections.EditPlatformConnectionViewModel
+@using Wasla.Application.PlatformConnections
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Wasla.Web.SharedResource> L
 @{
@@ -40,7 +41,7 @@
 
                 <div class="col-12 col-md-6 trendyol-only @(isTrendyol ? "" : "d-none")">
                     <label class="form-label" asp-for="SupplierId"></label>
-                    <input class="form-control" asp-for="SupplierId" />
+                    <input class="form-control" asp-for="SupplierId" maxlength="@CreatePlatformConnectionCommandValidator.MaxSupplierIdLength" />
                     <div class="form-text">@L["PlatformConnections.SupplierIdHelp"]</div>
                     <span class="text-danger" asp-validation-for="SupplierId"></span>
                 </div>

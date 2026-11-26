@@ -1121,6 +1121,7 @@
   <data name="Setup.LiveScreen.Action" xml:space="preserve"><value>Live Screen'i aç</value></data>
   <data name="Setup.LiveScreen.Status" xml:space="preserve"><value>Açılış kaydı tutulmuyor</value></data>
   <data name="PlatformConnections.DuplicateError" xml:space="preserve"><value>Bu platform için zaten bir bağlantı mevcut.</value></data>
+  <data name="Validation.SupplierIdMaxLength" xml:space="preserve"><value>Supplier Id en fazla 64 karakter olabilir.</value></data>
   <data name="Orders.LiveScreen.BoardItemsMore" xml:space="preserve"><value>Devamı detaylarda</value></data>
   <data name="Tour.Skip" xml:space="preserve"><value>Geç</value></data>
   <data name="Tour.Back" xml:space="preserve"><value>Geri</value></data>

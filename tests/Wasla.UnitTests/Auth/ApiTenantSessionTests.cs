@@ -627,6 +627,35 @@ public sealed class ApiTenantSessionTests : IAsyncLifetime
         Assert.Equal(before, CountBranches());
     }
 
+    [Fact]
+    public async Task PlatformConnectionCreate_AppliesTheSameSupplierIdLimitAsWeb()
+    {
+        using var web = await WebLoginAsync(_owner);
+        using var api = ToApi(web);
+        var before = CountConnections();
+
+        // The column holds 64 characters (CreatePlatformConnectionCommandValidator, as on Web).
+        var tooLong = await PostJsonAsync(api, "/api/platform-connections", new
+        {
+            platform = (int)FoodPlatform.GetirYemek, storeId = "STORE-2", apiKey = "fake-key", apiSecret = "fake-secret",
+            supplierId = new string('5', 65)
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+        Assert.Contains("Validation.SupplierIdMaxLength", await tooLong.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(before, CountConnections());
+
+        var longest = await PostJsonAsync(api, "/api/platform-connections", new
+        {
+            platform = (int)FoodPlatform.GetirYemek, storeId = "STORE-2", apiKey = "fake-key", apiSecret = "fake-secret",
+            supplierId = new string('5', 64)
+        });
+
+        Assert.Equal(HttpStatusCode.Created, longest.StatusCode);
+        using var db = AlphaDb();
+        Assert.Equal(new string('5', 64), db.PlatformConnections.AsNoTracking().Single(c => c.Platform == FoodPlatform.GetirYemek).SupplierId);
+    }
+
     // --- Cross-site requests ------------------------------------------------------------------------
 
     /// <summary>

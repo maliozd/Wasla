@@ -10,7 +10,7 @@
         Description = L["TenantUsers.CreateSubtitle"].Value
     })
 
-    <form class="wasla-manage-form" method="post" asp-area="Tenant" asp-controller="TenantUsers" asp-action="Create">
+    <form class="wasla-manage-form" method="post" asp-area="Tenant" asp-controller="TenantUsers" asp-action="Create" data-users-create>
         @Html.AntiForgeryToken()
         <div class="wasla-surface wasla-manage-form__surface">
             <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
@@ -66,3 +66,7 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script src="~/js/tenant-users-create.js" asp-append-version="true"></script>
+}
