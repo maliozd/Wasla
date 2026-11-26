@@ -76,12 +76,15 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
     /// <summary>
     /// Makes two writers compete for one protected section. <paramref name="first"/> runs until right before its first
     /// device write: it holds its locks and has read what it checks. Then <paramref name="second"/> starts, and the first
-    /// is held until SQL Server reports the second waiting for an application lock (<c>sp_getapplock</c>) that the
-    /// first's session holds. Fails if the first ends without writing or the second ends instead of waiting.
+    /// is held until SQL Server reports the second waiting for a lock that the first's session holds: by default an
+    /// application lock (<c>sp_getapplock</c>), or the lock on a <paramref name="resource"/> such as <c>" on KEY"</c>.
+    /// Fails if the first ends without writing or the second ends instead of waiting.
     /// </summary>
     public async Task<(T First, T Second)> ContendAsync<T>(
         Func<CentralDbContext, Task<T>> first,
-        Func<CentralDbContext, Task<T>> second)
+        Func<CentralDbContext, Task<T>> second,
+        string resource = " on APPLICATION",
+        string description = "the first writer's tenant lock")
     {
         var hold = new HoldBeforeCommand(IsDeviceWrite);
         await using var firstDb = database.Open("Holder", hold);
@@ -97,7 +100,7 @@ internal sealed class PrintBridgeSqlServerRace(SqlServerCentralDatabase database
         string? notWaiting;
         try
         {
-            notWaiting = await WaitForLockAsync(secondSession, firstSession, secondTask, " on APPLICATION", "the first writer's tenant lock");
+            notWaiting = await WaitForLockAsync(secondSession, firstSession, secondTask, resource, description);
         }
         finally
         {
