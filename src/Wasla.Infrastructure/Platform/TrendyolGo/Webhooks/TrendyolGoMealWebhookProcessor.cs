@@ -110,8 +110,9 @@ public sealed class TrendyolGoMealWebhookProcessor
         var processed = 0;
         foreach (var id in due)
         {
-            // Checked again before each claim, so an assignment change stops processing at the next event.
-            if (processed > 0 && !await ServesPilotTenantAsync(ct).ConfigureAwait(false))
+            // Checked again before every claim, the first one included: the assignment can change after the list is
+            // read, and a change then stops processing before the next event is claimed.
+            if (!await ServesPilotTenantAsync(ct).ConfigureAwait(false))
                 break;
 
             if (!await TryClaimAsync(id, ct).ConfigureAwait(false))
