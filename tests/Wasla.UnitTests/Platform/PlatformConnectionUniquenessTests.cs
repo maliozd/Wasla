@@ -200,6 +200,111 @@ public sealed class PlatformConnectionUniquenessTests : IAsyncLifetime
         Assert.Null(row.SupplierId);
     }
 
+    // SupplierId: the column holds 64 characters. Create and edit both measure the value as it is stored (trimmed, blank
+    // stored as null) and refuse a longer one before anything is written. SQLite does not enforce the column length, so a
+    // value the service let through would be stored here, and would fail on SQL Server.
+
+    public static TheoryData<string?, string?> StoredSupplierIds() => new()
+    {
+        { null, null },
+        { "", null },
+        { "   ", null },
+        // Blank, however long, is stored as null and is never too long.
+        { new string(' ', 100), null },
+        { "  5501\t", "5501" },
+        { new string('5', 64), new string('5', 64) },
+        // Measured as stored: 64 characters once trimmed.
+        { "  " + new string('5', 64) + " ", new string('5', 64) }
+    };
+
+    public static TheoryData<string> TooLongSupplierIds() => new()
+    {
+        new string('5', 65),
+        " " + new string('5', 65) + " "
+    };
+
+    [Theory]
+    [MemberData(nameof(StoredSupplierIds))]
+    public async Task Create_StoresTheSupplierIdTrimmed_UpTo64Characters(string? supplierId, string? stored)
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var created = await _service.CreateAsync(_tenantId, Command(FoodPlatform.TrendyolYemek, "ty") with { SupplierId = supplierId }, ct);
+
+        Assert.True(created.Succeeded, created.ErrorMessage);
+        await using var db = CreateContext();
+        Assert.Equal(stored, (await db.PlatformConnections.SingleAsync(ct)).SupplierId);
+    }
+
+    [Theory]
+    [MemberData(nameof(TooLongSupplierIds))]
+    public async Task Create_RefusesASupplierIdOver64Characters_AndStoresNoRow(string supplierId)
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var created = await _service.CreateAsync(_tenantId, Command(FoodPlatform.TrendyolYemek, "ty") with { SupplierId = supplierId }, ct);
+
+        Assert.False(created.Succeeded);
+        Assert.Equal("Validation", created.ErrorCode);
+        Assert.Equal("Validation.SupplierIdMaxLength", created.ErrorMessage);
+        await using var db = CreateContext();
+        Assert.Equal(0, await db.PlatformConnections.CountAsync(ct));
+    }
+
+    [Theory]
+    [MemberData(nameof(StoredSupplierIds))]
+    public async Task Edit_StoresTheSupplierIdTrimmed_UpTo64Characters(string? supplierId, string? stored)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var created = await _service.CreateAsync(_tenantId, Command(FoodPlatform.TrendyolYemek, "ty") with { SupplierId = "5501" }, ct);
+
+        var updated = await _service.UpdateAsync(
+            _tenantId,
+            created.Id!.Value,
+            Update(FoodPlatform.TrendyolYemek, "ty") with { SupplierId = supplierId },
+            ct);
+
+        Assert.True(updated.Succeeded, updated.ErrorMessage);
+        await using var db = CreateContext();
+        // An edit without a supplier id (null) keeps the stored one.
+        Assert.Equal(supplierId is null ? "5501" : stored, (await db.PlatformConnections.SingleAsync(ct)).SupplierId);
+    }
+
+    [Theory]
+    [MemberData(nameof(TooLongSupplierIds))]
+    public async Task Edit_RefusesASupplierIdOver64Characters_AndChangesNoField(string supplierId)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var created = await _service.CreateAsync(
+            _tenantId,
+            Command(FoodPlatform.TrendyolYemek, "ty") with { SupplierId = "5501", ExecutorEmail = "ops@example.com" },
+            ct);
+        PlatformConnection before;
+        await using (var db = CreateContext())
+            before = await db.PlatformConnections.AsNoTracking().SingleAsync(ct);
+
+        // Every other field changes too, so a partial write would show.
+        var updated = await _service.UpdateAsync(
+            _tenantId,
+            created.Id!.Value,
+            new UpdatePlatformConnectionCommand(
+                FoodPlatform.TrendyolYemek,
+                "moved",
+                false,
+                99,
+                supplierId,
+                "new@example.com",
+                "new-key",
+                "new-secret"),
+            ct);
+
+        Assert.False(updated.Succeeded);
+        Assert.Equal("Validation", updated.ErrorCode);
+        Assert.Equal("Validation.SupplierIdMaxLength", updated.ErrorMessage);
+        await using (var db = CreateContext())
+            Assert.Equivalent(before, await db.PlatformConnections.AsNoTracking().SingleAsync(ct), strict: true);
+    }
+
     [Fact]
     public async Task InactiveConnection_StillBlocksAnotherRow_ForSameOrDifferentStoreId()
     {
@@ -344,5 +449,12 @@ public sealed class PlatformConnectionModelTests
         Assert.NotNull(storeId);
         Assert.Equal(128, storeId!.GetMaxLength());
         Assert.False(storeId.IsNullable);
+
+        // Create and edit validate the supplier id against the column it is stored in.
+        var supplierId = entity.FindProperty(nameof(PlatformConnection.SupplierId));
+        Assert.NotNull(supplierId);
+        Assert.Equal(64, supplierId!.GetMaxLength());
+        Assert.Equal(CreatePlatformConnectionCommandValidator.MaxSupplierIdLength, supplierId.GetMaxLength());
+        Assert.True(supplierId.IsNullable);
     }
 }

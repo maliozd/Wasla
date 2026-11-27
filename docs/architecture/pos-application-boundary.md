@@ -152,7 +152,7 @@ Facts from the code on `dev` at `40fe698`:
 
 ## Activation and installation identity
 
-1. **Tenant activation (cloud, operator).** `Wasla.Pos.Cli activate --tenant <slug>` checks that the tenant is active, then:
+1. **Tenant activation (cloud, operator).** `Wasla.Pos.Cli activate --tenant <slug>` checks that the tenant is active and assigned to POS. The assignment is CentralDb's `Tenants.Product` (WAS-235). Moving a tenant from Orders to POS is the cutover (WAS-240), and how a new tenant is assigned to POS belongs to WAS-158 and WAS-165. Then the command:
    - creates the tenant's POS cloud database (SQL Server, created the same way as Orders tenant databases: explicit server, server-assigned name, ownership marker, reserved-name refusal, application lock; WAS-93);
    - records it in CentralDb;
    - issues a one-time **installation activation code**, valid for 24 hours.

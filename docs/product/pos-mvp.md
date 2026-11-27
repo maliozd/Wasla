@@ -27,7 +27,11 @@ It is a visual direction, not evidence that any of it exists, and it does not se
 
 ## Product position
 
-Wasla POS is the in-restaurant point of sale. A cashier or waiter builds a check on a touch terminal, the kitchen gets a printed ticket, and the sale is closed when the payment is recorded. It is not the Wasla Orders Live Screen and does not handle platform orders. A restaurant may use both products. They share the restaurant account (tenant), not their operational screens or databases.
+Wasla POS is the in-restaurant point of sale. A cashier or waiter builds a check on a touch terminal, the kitchen gets a printed ticket, and the sale is closed when the payment is recorded. It is not the Wasla Orders Live Screen, and the MVP does not handle platform orders.
+
+A restaurant uses Wasla Orders or Wasla POS, never both at once. The restaurant account (tenant) is assigned to exactly one of them, recorded in CentralDb (`Tenants.Product`, WAS-235). The two products share no operational screens or databases.
+
+Food-platform orders in POS are planned as a paid cloud add-on at 399 TL a month. They come through Wasla Integrations, the shared integration layer, which is not a product of its own. They come after the prerequisites in WAS-234 and are not part of the MVP. POS's local sale, payment and printing flows never depend on the add-on or on the internet.
 
 At the restaurant, **POS Edge** (a Windows service on one always-on PC) holds the POS database, serves the screens to the **POS Terminals** on the local network, prints, and synchronizes with the Wasla cloud whenever the internet is available. "Offline" below means offline from the internet and the Wasla cloud. The restaurant's network and its POS Edge machine must still be running.
 
@@ -311,7 +315,7 @@ In rough order of expected value:
 8. Barcode lookup for packaged products; product images
 9. Daily and period sales reports, product sales ranking, export
 10. Delivery orders taken by phone (*paket servis*) with customer address
-11. Showing Wasla Orders platform orders and POS checks together (the Figma "one ecosystem" panel), through a cloud read model, not a shared database
+11. Food-platform orders in POS, as the paid cloud add-on (prerequisites in WAS-234; where it runs is WAS-238). Wasla Orders and POS are never used together by one restaurant, so the Figma "one ecosystem" panel that showed both is not planned
 12. Menu translations for product names
 
 ### Out of scope
@@ -351,10 +355,10 @@ In rough order of expected value:
 | **Manual payment record.** Whether a payment taken outside the ÖKC flow may be recorded at all, by whom, and how the fiscal document is then issued | The earlier external-terminal flow is no longer primary | Pilot onboarding |
 | **Licence lease length.** The final lease length (14 days is a provisional design assumption) and the warning period. Restricted mode is not open: it refuses only new checks and never blocks completing, printing or reviewing an open sale | Trades protection against unpaid use against the risk of stopping a restaurant during a long outage ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)) | Pilot onboarding |
 | **Hardware and support model.** Who supplies and installs the Edge machine, whether a spare machine is required, and the restore time target | The Edge machine is the single point of failure ([ADR](../architecture/pos-application-boundary.md#failure-behavior)) | Pilot selection |
-| **Owner account.** Whether the POS Owner signs in with the same email and password as Wasla Orders | POS staff identity is local for the MVP; one Wasla login needs identity to move out of the Orders tenant database ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | Selling POS and Orders together |
+| **Owner account.** Whether the POS Owner signs in with the same email and password as Wasla Orders | POS staff identity is local for the MVP; one Wasla login needs identity to move out of the Orders tenant database ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | POS activation (WAS-165) |
 | **Waiter payments.** Whether waiters may record payments, as a per-restaurant setting | Changes the role table and the audit trail | Pilot onboarding |
 | **Waiter devices.** Whether the Android waiter app ships for the first pilots | The app and its pairing are decided in the [ADR](../architecture/pos-application-boundary.md#clients-and-the-local-api); shipping it adds its build, distribution and device tests to the pilot | Pilot selection |
-| **Pricing and packaging.** Whether POS is a separate plan, an add-on to Orders, or bundled | Decides what the licence lease checks (WAS-147 owns the billing domain) | Self-service activation |
+| **Pricing and packaging.** Decided 2026-11-25: POS is a separate product, not an add-on to Orders or a bundle, and a restaurant uses one of the two. Food-platform integrations for POS are a planned paid cloud add-on at 399 TL a month. Still open: the POS plan's own price, and how the licence lease reflects the add-on | Decides what the licence lease checks (WAS-147 owns the billing domain) | Self-service activation |
 | **Kitchen printing layout.** One kitchen printer, or routing by category to several stations | Several stations need product-to-printer routing in the menu | First pilot with more than one kitchen station |
 | **Check numbering.** Per business day or continuous for Wasla check numbers. After a restore, numbers carry the epoch as a prefix in either case ([ADR](../architecture/pos-application-boundary.md#numbering-after-a-restore)). Fiscal receipt and Z numbers belong to the ÖKC | Affects history search and how staff match a check to a fiscal receipt | First slice (the slice uses per-day numbers and can change before production) |
 

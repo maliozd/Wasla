@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Нам не удалось выполнить этот шаг с платформой. Попробуйте еще раз или проверьте соединение.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Не отправлено на платформу: не удалось подтвердить, что этот заказ относится к магазину, который подключён сейчас. Обработайте его в панели самой платформы.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Отметить готовность</value>
   </data>
@@ -2065,7 +2068,7 @@
     <value>Максимальная длина ApiSecret — 500.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Максимальная длина идентификатора поставщика — 100.</value>
+    <value>Максимальная длина идентификатора поставщика — 64 символа.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Максимальная длина электронного письма исполнителя — 200.</value>
@@ -4118,6 +4121,11 @@
   <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>Эта страница только читает; миграции применяются через CLI в рамках процедуры выпуска.</value></data>
   <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Режим работы</value></data>
   <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Рабочий</value></data>
+  <data name="Admin.Ops.Product" xml:space="preserve"><value>Продукт</value></data>
+  <data name="Admin.Ops.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Admin.Ops.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Admin.Ops.Product.MovingToPos" xml:space="preserve"><value>Переход на POS</value></data>
+  <data name="Admin.Ops.Product.MovingToOrders" xml:space="preserve"><value>Возврат в Orders</value></data>
   <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Настройка</value></data>
   <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Синхронизация заказов</value></data>
   <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Автопринятие</value></data>

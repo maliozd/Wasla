@@ -1,5 +1,9 @@
+using System.Data;
+using System.Globalization;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Auth;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
@@ -14,15 +18,40 @@ namespace Wasla.Infrastructure.Services;
 /// nothing. On SQL Server the serializable read locks also keep two concurrent changes from each relying on the other's
 /// Owner: one waits for the other, or is chosen as the deadlock victim and fails without writing.
 /// </summary>
+/// <remarks>
+/// Creating a user (WAS-116) also takes the tenant database's creation lock first in its transaction, so simultaneous
+/// creates run one at a time and the later ones find the email instead of deadlocking at their inserts. A create chosen
+/// as a deadlock victim is tried again from the start, and a duplicate key on the email index is answered as a
+/// duplicate email.
+/// </remarks>
 public sealed class TenantUserRoleService : ITenantUserRoleService
 {
+    /// <summary>How many times one user creation is tried in all when SQL Server picks it as a deadlock victim.</summary>
+    internal const int MaxCreateAttempts = 3;
+
+    /// <summary>
+    /// The application lock that puts the user creations of one tenant database in a queue. Application locks belong to
+    /// one database, so this is one queue per tenant.
+    /// </summary>
+    internal const string CreateLockResource = "Wasla.TenantUsers.Create";
+
+    private const int DeadlockVictim = 1205;
+    private const string EmailIndex = "IX_AppUsers_Email";
+    private const string SqliteProvider = "Microsoft.EntityFrameworkCore.Sqlite";
+    private static readonly TimeSpan CreateLockTimeout = TimeSpan.FromSeconds(10);
+
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly IPasswordPolicy _passwordPolicy;
+    private readonly ILogger<TenantUserRoleService> _logger;
 
-    public TenantUserRoleService(ITenantDbContextFactory dbFactory, IPasswordPolicy passwordPolicy)
+    public TenantUserRoleService(
+        ITenantDbContextFactory dbFactory,
+        IPasswordPolicy passwordPolicy,
+        ILogger<TenantUserRoleService> logger)
     {
         _dbFactory = dbFactory;
         _passwordPolicy = passwordPolicy;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<TenantUserSummaryDto>> ListUsersAsync(
@@ -81,8 +110,41 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
         if (!passwordResult.IsValid)
             return TenantUserMutationResult.InvalidPassword(passwordResult.Errors);
 
+        // BCrypt is slow on purpose. Hashed before the transaction, so no lock waits for it, and only once, however many
+        // attempts the create takes.
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(command.Password);
+
+        // The tenant contexts use EF's default execution strategy, which retries nothing and reports a deadlock as an
+        // InvalidOperationException around the SqlException; this loop is the only retry. SQL Server has rolled a
+        // deadlock victim back, so nothing was written, and the next attempt reads the actor and the email again.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await TryCreateUserAsync(tenantId, actor, command, passwordHash, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (attempt < MaxCreateAttempts && IsDeadlockVictim(ex))
+            {
+                _logger.LogWarning(
+                    "Tenant user creation in tenant {TenantId} was chosen as a deadlock victim (SQL Server error {SqlErrorNumber}); trying again, attempt {Attempt} of {MaxAttempts}.",
+                    tenantId,
+                    DeadlockVictim,
+                    attempt + 1,
+                    MaxCreateAttempts);
+            }
+        }
+    }
+
+    private async Task<TenantUserMutationResult> TryCreateUserAsync(
+        Guid tenantId,
+        TenantUserActor actor,
+        TenantUserCreateCommand command,
+        string passwordHash,
+        CancellationToken ct)
+    {
         await using var db = await _dbFactory.CreateAsync(tenantId, ct).ConfigureAwait(false);
         await using var transaction = await BeginAsync(db, ct).ConfigureAwait(false);
+        await AcquireCreateLockAsync(db, ct).ConfigureAwait(false);
         if (!await IsAuthorizedActorAsync(db, actor, ct).ConfigureAwait(false))
             return TenantUserMutationResult.ActorNotAuthorized();
 
@@ -102,13 +164,22 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
             FullName = command.FullName.Trim(),
             Role = command.Role,
             IsActive = command.IsActive,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.Password),
+            PasswordHash = passwordHash,
             CreatedAt = now,
             UpdatedAt = now
         };
 
         db.AppUsers.Add(user);
-        await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        catch (DbUpdateException ex) when (IsEmailConflict(ex))
+        {
+            // A row with this email that the check did not see. Disposing the transaction rolls it back.
+            return TenantUserMutationResult.DuplicateEmail();
+        }
+
         await transaction.CommitAsync(ct).ConfigureAwait(false);
         return TenantUserMutationResult.Created(user.Id);
     }
@@ -278,6 +349,80 @@ public sealed class TenantUserRoleService : ITenantUserRoleService
 
     private static Task<IDbContextTransaction> BeginAsync(TenantDbContext db, CancellationToken ct) =>
         SerializableTransaction.BeginAsync(db.Database, ct);
+
+    /// <summary>
+    /// Takes <see cref="CreateLockResource"/>: an exclusive SQL Server application lock owned by the create's
+    /// transaction, released when it commits or rolls back. Without it, simultaneous creates of one email all passed the
+    /// email check under shared key-range locks and then deadlocked at their inserts. It is taken first, while the
+    /// transaction holds no other lock, so waiting for it cannot be part of a deadlock. A lock not granted within
+    /// <see cref="CreateLockTimeout"/> fails the request.
+    /// </summary>
+    private static async Task AcquireCreateLockAsync(TenantDbContext db, CancellationToken ct)
+    {
+        if (!db.Database.IsSqlServer())
+        {
+            // SQLite backs single-process unit tests only, and runs the serializable transactions one after the other.
+            if (string.Equals(db.Database.ProviderName, SqliteProvider, StringComparison.Ordinal))
+                return;
+            throw new InvalidOperationException("Tenant user creation requires the tenant database on SQL Server.");
+        }
+
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction()
+                              ?? throw new InvalidOperationException("The creation lock is owned by a transaction; begin one first.");
+        command.CommandText =
+            "DECLARE @result int; " +
+            "EXEC @result = sys.sp_getapplock @Resource = @resource, @LockMode = N'Exclusive', " +
+            "@LockOwner = N'Transaction', @LockTimeout = @timeout; " +
+            "SELECT @result;";
+
+        var resource = command.CreateParameter();
+        resource.ParameterName = "@resource";
+        resource.DbType = DbType.String;
+        resource.Size = 255;
+        resource.Value = CreateLockResource;
+        command.Parameters.Add(resource);
+
+        var timeout = command.CreateParameter();
+        timeout.ParameterName = "@timeout";
+        timeout.DbType = DbType.Int32;
+        timeout.Value = (int)CreateLockTimeout.TotalMilliseconds;
+        command.Parameters.Add(timeout);
+
+        var result = Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false), CultureInfo.InvariantCulture);
+        if (result < 0)
+            throw new InvalidOperationException($"The tenant user creation lock was not granted (sp_getapplock result {result}).");
+    }
+
+    /// <summary>True when SQL Server chose the attempt as a deadlock victim (error 1205), at any depth of the exception.</summary>
+    private static bool IsDeadlockVictim(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sql)
+                return sql.Number == DeadlockVictim;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True only for a duplicate key on <c>IX_AppUsers_Email</c>: SQL Server error 2601 or 2627 naming that index. Any
+    /// other duplicate key, constraint or database error is not a duplicate email and fails the caller.
+    /// </summary>
+    internal static bool IsEmailConflict(DbUpdateException exception)
+    {
+        for (Exception? current = exception.InnerException; current is not null; current = current.InnerException)
+        {
+            if (current is SqlException sql)
+            {
+                return sql.Number is 2601 or 2627
+                    && sql.Errors[0].Message.Contains($"'{EmailIndex}'", StringComparison.Ordinal);
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// The actor must still be an active Owner (the role of the <c>CanManageTenantUsers</c> policy) with the security

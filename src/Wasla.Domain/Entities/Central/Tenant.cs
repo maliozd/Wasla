@@ -61,6 +61,12 @@ public class Tenant : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// The product the tenant is assigned to (WAS-235), the one record of it. Wasla Orders serves the tenant only while
+    /// this is <see cref="TenantProduct.Orders"/>, the database default. Changing it is the cutover (WAS-240).
+    /// </summary>
+    public TenantProduct Product { get; set; } = TenantProduct.Orders;
+
     /// <summary>Future billing payment state for tenant subscription (not order payment).</summary>
     public TenantBillingPaymentStatus BillingPaymentStatus { get; set; } = TenantBillingPaymentStatus.Pending;
 

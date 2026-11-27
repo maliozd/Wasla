@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>تعذر إكمال هذه الخطوة مع المنصة. أعد المحاولة أو تحقق من الاتصال.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>لم يُرسل إلى المنصة: تعذر التأكد من أن هذا الطلب يخص المتجر المتصل حاليًا. أدِر هذا الطلب من لوحة المنصة نفسها.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>جاهز</value>
   </data>
@@ -2065,7 +2068,7 @@
     <value>الحد الأقصى لطول ApiSecret هو 500.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>الحد الأقصى لطول Supplier Id هو 100.</value>
+    <value>الحد الأقصى لطول Supplier Id هو 64 حرفًا.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>الحد الأقصى لطول Executor Email هو 200.</value>
@@ -3692,6 +3695,11 @@
   <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>هذه الصفحة للقراءة فقط؛ تُطبَّق عمليات الترحيل عبر CLI ضمن إجراءات الإصدار.</value></data>
   <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>وضع التشغيل</value></data>
   <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>مباشر</value></data>
+  <data name="Admin.Ops.Product" xml:space="preserve"><value>المنتج</value></data>
+  <data name="Admin.Ops.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Admin.Ops.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Admin.Ops.Product.MovingToPos" xml:space="preserve"><value>قيد الانتقال إلى POS</value></data>
+  <data name="Admin.Ops.Product.MovingToOrders" xml:space="preserve"><value>قيد العودة إلى Orders</value></data>
   <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>الإعداد</value></data>
   <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>مزامنة الطلبات</value></data>
   <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>القبول التلقائي</value></data>

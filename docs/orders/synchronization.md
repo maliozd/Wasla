@@ -77,7 +77,7 @@ Polling already writes through the path a future webhook adapter would use ([Sha
 Behavior:
 
 - The Worker process stays running. Web does not start or stop Worker OS processes.
-- Each cycle loads **active** tenants from CentralDb (`IsActive`).
+- Each cycle loads **active** tenants assigned to Wasla Orders from CentralDb (`IsActive` and `Product` Orders, `OrdersTenantQueries.ActiveOrdersTenants`, WAS-235). `OrderSyncService` reads the assignment again before each tenant pass and each connection pass. A tenant that has left Orders is skipped there with `WasNotOrdersTenant = true`, without a provider call or a tenant database opened. A pass that has already started its connection still finishes it; stopping in-flight work is the cutover's job (WAS-240).
 - `OrderSyncCycleRunner` runs the cycle in two phases. Phase 1 is every tenant's current pass, up to five tenants at a time, so every eligible tenant gets its current-window check before any history recovery starts. Phase 2 is history recovery ([Current window first, then history](#current-window-first-then-history)) for tenants whose current pass reported a history gap: round-robin, one window per behind connection per turn, at most 12 rounds and only within the 30-second budget, starting from a different tenant each cycle. A tenant whose turn fails stops for this cycle. One tenant’s exception does not stop the others.
 - The next cycle starts after both phases, as before (15 seconds after the previous start, or at once if the cycle took longer).
 - Development uses `WorkerConsole` for cycle/tenant summaries. Non-Development logs cycle start at Debug and cycle completion at Debug (Warning if any connection failed).

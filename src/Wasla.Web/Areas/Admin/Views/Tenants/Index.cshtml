@@ -128,6 +128,7 @@
                         @{ SortHeader(TenantListSortField.Slug, "Admin.Slug", "d-none d-md-table-cell"); }
                         <th scope="col" class="d-none d-lg-table-cell">@L["Admin.PendingReg.Plan"]</th>
                         @{ SortHeader(TenantListSortField.Status, "Common.Status", ""); }
+                        <th scope="col" class="d-none d-lg-table-cell">@L["Admin.Ops.Product"]</th>
                         <th scope="col" class="d-none d-lg-table-cell">@L["Admin.Ops.List.MigrationRecord"]</th>
                         <th scope="col" class="d-none d-md-table-cell">@L["Admin.Ops.List.PrintBridge"]</th>
                         @{ SortHeader(TenantListSortField.CreatedAt, "Admin.CreatedAt", "d-none d-xl-table-cell"); }
@@ -160,6 +161,7 @@
                                 }
                             </td>
                             <td><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(t.IsActive)" /></td>
+                            <td class="d-none d-lg-table-cell"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Product(t.Product)" /></td>
                             <td class="d-none d-lg-table-cell"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.MigrationRecord(t.MigrationRecord)" /></td>
                             <td class="d-none d-md-table-cell small">
                                 @if (t.ActivePrintBridgeDevices == 0)

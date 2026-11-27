@@ -219,10 +219,11 @@ Implications:
 
 - A second connection for the same platform is rejected even when `StoreId` differs.
 - Deactivating a connection does not free that platform for a second row. The unique index is not filtered by `IsActive`.
-- Removing a connection (Platform Connections, Remove, then the confirmation; GitHub #72) deletes its row and stored credentials, which frees the platform: the same platform and store can be connected again as a new row with a new id. Orders, `SyncLogs` and `IntegrationErrors` are kept (none has a foreign key to the row; logs keep the removed id). Removal is by id in one statement, so a repeated or stale confirmation deletes nothing and says the connection no longer exists. The Worker loads connections on every pass, so a removed one is never polled again; one removed while its pass runs ends that pass without a failure record, and the tenant's other connections continue. Order actions on existing orders of that platform then fail as they do for an inactive connection, until the platform is connected again.
+- Removing a connection (Platform Connections, Remove, then the confirmation; GitHub #72) deletes its row and stored credentials, which frees the platform: the same platform and store can be connected again as a new row with a new id. Orders, `SyncLogs` and `IntegrationErrors` are kept (none has a foreign key to the row; logs keep the removed id). Removal is by id in one statement, so a repeated or stale confirmation deletes nothing and says the connection no longer exists. The Worker loads connections on every pass, so a removed one is never polled again; one removed while its pass runs ends that pass without a failure record, and the tenant's other connections continue. Order actions on existing orders of that platform then fail as they do for an inactive connection, until the platform is connected again with the same store.
 - `Platform` cannot be changed on an existing connection. An edit that posts a different platform is rejected and leaves the stored row unchanged.
 - Different platforms may coexist on one tenant (one Trendyol connection, one Yemeksepeti connection, and one Getir connection).
 - `StoreId` identifies this tenant's location in the provider. It is stored and sent to the provider. It does not model a second restaurant inside the tenant.
+- Each order records the `StoreId` and `SupplierId` of the connection it was imported under (WAS-241). Editing them, or connecting another store after a removal, does not move earlier orders to the new store: Wasla sends no action for those orders (`Orders.StoreNotConfirmed`). Replacing the credentials or the executor e-mail changes nothing for them. See [../orders/lifecycle.md](../orders/lifecycle.md#the-store-an-order-was-imported-under-was-241).
 - A business with several restaurants uses a separate tenant per location. See [../architecture/tenancy.md](../architecture/tenancy.md).
 
 ### Credential field mapping (high level)
@@ -232,6 +233,8 @@ Implications:
 | Trendyol GO | `SupplierId` or fallback `StoreId` → supplier id; encrypted API key/secret for Basic auth; optional `StoreId` query filter |
 | Yemeksepeti | `SupplierId` → chainId (required); `StoreId` → vendorId (falls back to chainId); encrypted API key/secret → OAuth clientId/clientSecret |
 | Getir | Mock credentials / connection shape only until a real client exists |
+
+`SupplierId` holds at most 64 characters, the length of its column (`CreatePlatformConnectionCommandValidator.MaxSupplierIdLength`). The limit applies to the value as stored: trimmed, with a blank value stored as null. Create, from Web and Api, checks it through the create validator. An edit checks it in `PlatformConnectionService.UpdateAsync` before any field is written, so a refused edit leaves the row unchanged. Both refusals use `Validation.SupplierIdMaxLength`, and the Web create and edit forms limit the input to the same length.
 
 Never log decrypted secrets.
 

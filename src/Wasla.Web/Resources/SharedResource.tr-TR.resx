@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Bu adım platformla tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Platforma gönderilmedi: Bu siparişin şu an bağlı olan mağazaya ait olduğu doğrulanamadı. Siparişi platformun kendi panelinden yönetin.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Hazır</value>
   </data>
@@ -2065,7 +2068,7 @@
     <value>ApiSecret en fazla 500 karakter olabilir.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Supplier Id en fazla 100 karakter olabilir.</value>
+    <value>Supplier Id en fazla 64 karakter olabilir.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Executor Email en fazla 200 karakter olabilir.</value>
@@ -3692,6 +3695,11 @@
   <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>Bu sayfa yalnızca okur; geçişler CLI ile ve yayın sürecine göre uygulanır.</value></data>
   <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Çalışma modu</value></data>
   <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Canlı</value></data>
+  <data name="Admin.Ops.Product" xml:space="preserve"><value>Ürün</value></data>
+  <data name="Admin.Ops.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Admin.Ops.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Admin.Ops.Product.MovingToPos" xml:space="preserve"><value>POS'a geçiyor</value></data>
+  <data name="Admin.Ops.Product.MovingToOrders" xml:space="preserve"><value>Orders'a dönüyor</value></data>
   <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Kurulum</value></data>
   <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Sipariş senkronizasyonu</value></data>
   <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Otomatik onay</value></data>

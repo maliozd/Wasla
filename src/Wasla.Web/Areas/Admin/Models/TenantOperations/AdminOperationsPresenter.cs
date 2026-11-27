@@ -38,6 +38,16 @@ public static class AdminOperationsPresenter
     public static AdminStatus TenantActive(bool isActive) =>
         isActive ? Ok("Admin.StatusActive") : Muted("Admin.StatusInactive");
 
+    /// <summary>The product the tenant is assigned to (WAS-235). Read-only here; changing it is the cutover (WAS-240).</summary>
+    public static AdminStatus Product(TenantProduct product) => product switch
+    {
+        TenantProduct.Orders => new(AdminStatusTone.Info, "Admin.Ops.Product.Orders", "bi-receipt"),
+        TenantProduct.Pos => new(AdminStatusTone.Info, "Admin.Ops.Product.Pos", "bi-shop"),
+        TenantProduct.MovingToPos => new(AdminStatusTone.Warning, "Admin.Ops.Product.MovingToPos", "bi-arrow-left-right"),
+        TenantProduct.MovingToOrders => new(AdminStatusTone.Warning, "Admin.Ops.Product.MovingToOrders", "bi-arrow-left-right"),
+        _ => Unknown("Admin.Ops.State.Unknown")
+    };
+
     public static AdminStatus MigrationRecord(TenantMigrationRecord record) => record switch
     {
         TenantMigrationRecord.Succeeded => Ok("Admin.Ops.MigrationRecord.Succeeded"),

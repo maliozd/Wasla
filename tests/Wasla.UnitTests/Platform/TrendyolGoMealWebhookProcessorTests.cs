@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Data.Common;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Wasla.Application.Abstractions.Orders;
@@ -8,9 +10,11 @@ using Wasla.Application.Abstractions.Platform;
 using Wasla.Integrations.Platform;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Application.Abstractions.Realtime;
+using Wasla.Application.Abstractions.Tenant;
 using Wasla.Integrations.Platform.Dtos;
 using Wasla.Domain.Entities.TenantDb;
 using Wasla.Domain.Enums;
+using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Platform.Mapping;
 using Wasla.Integrations.Platform.TrendyolGo;
 using Wasla.Infrastructure.Platform.TrendyolGo.Webhooks;
@@ -594,17 +598,52 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         Assert.Equal(2, bySupplier.Count);
     }
 
+    /// <summary>
+    /// WAS-235: the pilot tenant is on Wasla Orders when the processor starts, and leaves it after the due events are
+    /// listed but before the first claim. The processor checks the assignment again before that claim: nothing is
+    /// claimed, reconciled or stored, and the event stays pending.
+    /// </summary>
+    [Fact]
+    public async Task AnAssignmentChangeAfterTheEventsAreListed_IsSeenBeforeTheFirstClaim_AndTheEventStaysPending()
+    {
+        _client.Set(Package("pkg-1", "Created"));
+        await AcceptAsync("created", Created("pkg-1"));
+        var products = new MovableProduct();
+        var listing = new AfterTheEventsAreListed(() => products.Product = TenantProduct.MovingToPos);
+        _tenants.Override(_tenantId, _ => Task.FromResult(new TenantDbContext(
+            new DbContextOptionsBuilder<TenantDbContext>().UseSqlite(_tenants.ConnectionStringFor(_tenantId)).AddInterceptors(listing).Options)));
+        var openedBefore = _tenants.Opened.Count;
+
+        var processed = await Processor(products).ProcessDueAsync(10, Ct);
+        var openedByTheProcessor = _tenants.Opened.Count - openedBefore;
+
+        Assert.Equal(0, processed);
+        Assert.True(listing.Listed);
+        // Orders before the list was read; no longer Orders at the check before the first claim.
+        Assert.Equal([TenantProduct.Orders, TenantProduct.MovingToPos], products.Answered);
+        // The tenant database was opened only to list the events: no claim was attempted.
+        Assert.Equal(1, openedByTheProcessor);
+        var stored = Assert.Single(await EventsAsync());
+        Assert.Equal(ProviderWebhookEventStatus.Pending, stored.Status);
+        Assert.Equal(0, stored.Attempts);
+        Assert.Null(stored.LockedUntil);
+        Assert.Null(stored.Outcome);
+        Assert.Empty(_client.Windows);
+        await using var db = await _tenants.CreateAsync(_tenantId, Ct);
+        Assert.False(await db.Orders.AnyAsync(Ct));
+    }
+
     private async Task AcceptAsync(string eventType, string body) =>
         await new TrendyolGoMealWebhookInbox(Options.Create(_options), _tenants, NullLogger<TrendyolGoMealWebhookInbox>.Instance, _clock)
             .AcceptAsync(eventType, Encoding.UTF8.GetBytes(body), Ct);
 
-    private TrendyolGoMealWebhookProcessor Processor() =>
-        new(Options.Create(_options), _tenants, Sync(), new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
+    private TrendyolGoMealWebhookProcessor Processor(ITenantProductReader? products = null) =>
+        new(Options.Create(_options), _tenants, Sync(products), new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance),
             NullLogger<TrendyolGoMealWebhookProcessor>.Instance, _clock);
 
-    private OrderSyncService Sync() =>
+    private OrderSyncService Sync(ITenantProductReader? products = null) =>
         new(_tenants, [_providerClient ?? _client], new PassthroughSecrets(), new DefaultOrderStatusMapper(NullLogger<DefaultOrderStatusMapper>.Instance), _autoApprove, _receipts, _notifier,
-            NullLogger<OrderSyncService>.Instance, time: _clock);
+            NullLogger<OrderSyncService>.Instance, time: _clock, products: products);
 
     private async Task<List<ProviderWebhookEvent>> EventsAsync()
     {
@@ -710,6 +749,37 @@ public sealed class TrendyolGoMealWebhookProcessorTests : IDisposable
         public Task MarkShippedAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task MarkDeliveredAsync(ProviderConnectionContext connection, string externalOrderId, CancellationToken ct) => Task.CompletedTask;
         public Task RejectOrderAsync(ProviderConnectionContext connection, ProviderOrderReference order, int? reasonId, CancellationToken ct) => Task.CompletedTask;
+    }
+
+    /// <summary>The pilot tenant's product assignment as the processor reads it, with the product seen at each check.</summary>
+    private sealed class MovableProduct : ITenantProductReader
+    {
+        public TenantProduct Product { get; set; } = TenantProduct.Orders;
+
+        public List<TenantProduct> Answered { get; } = [];
+
+        public Task<bool> IsOrdersTenantAsync(Guid tenantId, CancellationToken ct)
+        {
+            Answered.Add(Product);
+            return Task.FromResult(Product == TenantProduct.Orders);
+        }
+    }
+
+    /// <summary>Runs an action once, when the first read of the webhook events has been read to its end.</summary>
+    private sealed class AfterTheEventsAreListed(Action onListed) : DbCommandInterceptor
+    {
+        public bool Listed { get; private set; }
+
+        public override InterceptionResult DataReaderDisposing(DbCommand command, DataReaderDisposingEventData eventData, InterceptionResult result)
+        {
+            if (!Listed && command.CommandText.Contains("\"ProviderWebhookEvents\"", StringComparison.Ordinal))
+            {
+                Listed = true;
+                onListed();
+            }
+
+            return base.DataReaderDisposing(command, eventData, result);
+        }
     }
 
     private sealed class RecordingNotifier : ITenantChangeNotifier

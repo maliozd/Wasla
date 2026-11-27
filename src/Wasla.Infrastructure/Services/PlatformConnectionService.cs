@@ -5,6 +5,7 @@ using Wasla.Application.Abstractions.Security;
 using Wasla.Application.PlatformConnections;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Domain.Entities.TenantDb;
+using Wasla.Application.Abstractions.Tenant;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -13,16 +14,30 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
     private readonly ITenantDbContextFactory _dbFactory;
     private readonly ISecretManager _secret;
     private readonly IValidator<CreatePlatformConnectionCommand> _validator;
+    private readonly ITenantProductReader? _products;
 
     public PlatformConnectionService(
         ITenantDbContextFactory dbFactory,
         ISecretManager secret,
-        IValidator<CreatePlatformConnectionCommand> validator)
+        IValidator<CreatePlatformConnectionCommand> validator,
+        ITenantProductReader? products = null)
     {
         _dbFactory = dbFactory;
         _secret = secret;
         _validator = validator;
+        _products = products;
     }
+
+    /// <summary>
+    /// WAS-235: a tenant that is not assigned to Wasla Orders cannot create, edit, reactivate or remove a platform
+    /// connection; it is answered as not found, like an inactive tenant. Without a reader (tests that build the service
+    /// directly) every tenant is served, as before.
+    /// </summary>
+    private async Task<bool> RefusesTenantAsync(Guid tenantId, CancellationToken ct) =>
+        _products is not null && !await _products.IsOrdersTenantAsync(tenantId, ct);
+
+    private static CreatePlatformConnectionResult NotFound() =>
+        new() { Succeeded = false, ErrorCode = "NotFound", ErrorMessage = "Not found." };
 
     public async Task<IReadOnlyList<PlatformConnectionResult>> GetListAsync(Guid tenantId, CancellationToken ct)
     {
@@ -74,6 +89,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             };
         }
 
+        if (await RefusesTenantAsync(tenantId, ct))
+            return NotFound();
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
 
         var storeId = (command.StoreId ?? string.Empty).Trim();
@@ -122,6 +140,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
 
     public async Task<CreatePlatformConnectionResult> UpdateAsync(Guid tenantId, Guid id, UpdatePlatformConnectionCommand command, CancellationToken ct)
     {
+        if (await RefusesTenantAsync(tenantId, ct))
+            return NotFound();
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null)
@@ -154,6 +175,18 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
                 Succeeded = false,
                 ErrorCode = "Validation",
                 ErrorMessage = "Validation.StoreIdRequired"
+            };
+        }
+
+        // SupplierId: the create limit, measured as it is stored (trimmed), applies to edits too, before any field is
+        // written. Null keeps the stored value and blank clears it, so neither is ever too long.
+        if (CreatePlatformConnectionCommandValidator.IsSupplierIdTooLong(command.SupplierId))
+        {
+            return new CreatePlatformConnectionResult
+            {
+                Succeeded = false,
+                ErrorCode = "Validation",
+                ErrorMessage = "Validation.SupplierIdMaxLength"
             };
         }
 
@@ -245,6 +278,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
 
     public async Task<bool> SetActiveAsync(Guid tenantId, Guid id, bool isActive, CancellationToken ct)
     {
+        if (await RefusesTenantAsync(tenantId, ct))
+            return false;
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         var entity = await db.PlatformConnections.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null) return false;
@@ -257,6 +293,9 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
 
     public async Task<bool> RemoveAsync(Guid tenantId, Guid id, CancellationToken ct)
     {
+        if (await RefusesTenantAsync(tenantId, ct))
+            return false;
+
         await using var db = await _dbFactory.CreateAsync(tenantId, ct);
         // One statement by id: a repeated or concurrent removal deletes nothing and reports false, and a connection
         // created again for the same platform has a new id, so a stale confirmation can never remove it.

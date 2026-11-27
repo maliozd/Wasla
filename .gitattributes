@@ -67,3 +67,10 @@
 ###############################################################################
 *.sh            text eol=lf
 deploy/linux/** text eol=lf
+
+###############################################################################
+# Pinned third-party folders get no line-ending conversion in any checkout: it
+# would change the release files' hashes (MarketingVendorFilesTests).
+###############################################################################
+src/Wasla.Web/wwwroot/lib/bootstrap-5.3.3/**        -text
+src/Wasla.Web/wwwroot/lib/bootstrap-icons-1.11.3/** -text

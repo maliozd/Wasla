@@ -23,6 +23,7 @@ using Wasla.Infrastructure.ReferenceData;
 using Wasla.Infrastructure.Security;
 using Wasla.Infrastructure.Persistence.Tenant;
 using Wasla.Infrastructure.Services;
+using Wasla.Infrastructure.Tenant;
 
 namespace Wasla.Cli;
 
@@ -884,8 +885,11 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
-            var query = central.Tenants.AsNoTracking().Where(c => c.IsActive);
-            var list = (await query.ToListAsync(ct).ConfigureAwait(false)).OrderBy(c => c.Slug).ToList();
+            // WAS-235: only the Orders databases of tenants assigned to Wasla Orders are migrated here.
+            var list = (await central.Tenants.AsNoTracking().ActiveOrdersTenants().ToListAsync(ct).ConfigureAwait(false))
+                .OrderBy(c => c.Slug).ToList();
+            var notOrders = (await central.Tenants.AsNoTracking().ActiveTenantsNotOnOrders().ToListAsync(ct).ConfigureAwait(false))
+                .OrderBy(c => c.Slug).ToList();
 
             if (onlySlugs is { Length: > 0 })
             {
@@ -893,12 +897,22 @@ internal static class CliCommands
                 list = list.Where(c => set.Contains(c.Slug)).ToList();
                 foreach (var s in set)
                 {
+                    if (notOrders.Any(c => string.Equals(c.Slug, s, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        WriteError($"Tenant {s} is not assigned to Wasla Orders; its Orders database is not migrated.");
+                        return 2;
+                    }
+
                     if (list.All(c => !string.Equals(c.Slug, s, StringComparison.OrdinalIgnoreCase)))
                     {
                         WriteError($"Tenant slug not found: {s}");
                         return 2;
                     }
                 }
+            }
+            else if (notOrders.Count > 0)
+            {
+                Console.WriteLine($"Skipped, not assigned to Wasla Orders: {string.Join(", ", notOrders.Select(c => c.Slug))}");
             }
 
             var total = list.Count;
@@ -1039,15 +1053,25 @@ internal static class CliCommands
                     Console.WriteLine($"  {m}");
             }
 
+            // WAS-235: the gate checks the Orders databases of tenants assigned to Wasla Orders only. A tenant on POS, or
+            // between the products, may have no Orders database, and it never stops an Orders service from starting.
             var tenants = await central.Tenants
                 .AsNoTracking()
-                .Where(c => c.IsActive)
+                .ActiveOrdersTenants()
+                .OrderBy(c => c.Slug)
+                .ToListAsync(ct)
+                .ConfigureAwait(false);
+            var notOrders = await central.Tenants
+                .AsNoTracking()
+                .ActiveTenantsNotOnOrders()
                 .OrderBy(c => c.Slug)
                 .ToListAsync(ct)
                 .ConfigureAwait(false);
 
             Console.WriteLine();
             Console.WriteLine("=== Tenant databases (active) ===");
+            if (notOrders.Count > 0)
+                Console.WriteLine($"Not assigned to Wasla Orders, not checked: {string.Join(", ", notOrders.Select(c => c.Slug))}");
             foreach (var c in tenants)
             {
                 Console.WriteLine();
@@ -1518,9 +1542,10 @@ internal static class CliCommands
             var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
             var secret = scope.ServiceProvider.GetRequiredService<ISecretManager>();
 
+            // WAS-235: only tenants assigned to Wasla Orders; a tenant on POS keeps whatever Orders database it has.
             var tenants = await central.Tenants
                 .AsNoTracking()
-                .Where(c => c.IsActive)
+                .ActiveOrdersTenants()
                 .OrderBy(c => c.Slug)
                 .ToListAsync(ct)
                 .ConfigureAwait(false);

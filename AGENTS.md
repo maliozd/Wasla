@@ -207,6 +207,17 @@ CustomerAddress to Tenant terminology.
   only exception. Do not edit them, do not add files to that list, and do not
   generate migrations that contain retired names.
 
+### 5.5 One product per restaurant
+
+- A restaurant (tenant) uses Wasla Orders or Wasla POS, never both at once.
+  CentralDb `Tenants.Product` is the one record of which.
+- Every Orders entry point serves a tenant only while it is assigned to Orders
+  and refuses any other tenant like an inactive one. A new entry point checks
+  the assignment too.
+- Only the cutover (WAS-240) changes an assignment.
+- Wasla Integrations is the shared integration layer that Orders or POS
+  connects to, not a product.
+
 ## 6. Architecture boundaries
 
 ### Wasla.Web

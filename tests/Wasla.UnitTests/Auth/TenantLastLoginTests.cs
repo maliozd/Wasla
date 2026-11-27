@@ -373,7 +373,8 @@ public sealed class TenantLastLoginTests : IDisposable
         var loggedIn = await SeedUserAsync(_tenantA, "a@example.test");
         var never = await SeedUserAsync(_tenantA, "b@example.test");
         await WebLogin(_tenantA).Controller.Login(LoginModel(loggedIn.Email, Password), Ct);
-        var users = new TenantUserRoleService(_tenants, new DefaultPasswordPolicy());
+        var users = new TenantUserRoleService(
+            _tenants, new DefaultPasswordPolicy(), Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantUserRoleService>.Instance);
 
         var list = await users.ListUsersAsync(_tenantA, Ct);
 
