@@ -32,6 +32,7 @@ using Wasla.Infrastructure.Sync;
 using Wasla.Infrastructure.Tenant;
 using Wasla.Integrations.Platform;
 using Wasla.Integrations.Platform.Dtos;
+using Wasla.UnitTests.Cli;
 using Wasla.UnitTests.Platform;
 using Wasla.UnitTests.Setup;
 using Wasla.Web.Areas.Admin.Models.TenantOperations;
@@ -43,8 +44,10 @@ namespace Wasla.UnitTests.Tenancy;
 /// WAS-235: each tenant's product assignment is recorded once, in CentralDb (<see cref="CentralTenant.Product"/>), and
 /// every Orders entry point serves a tenant only while it is assigned to Orders. A tenant on POS, or between the
 /// products, is refused like an inactive one. These tests use SQLite for the databases; the column, its default and the
-/// shared tenant query are tested on SQL Server in <c>TenantProductSqlServerTests</c>.
+/// shared tenant query are tested on SQL Server in <c>TenantProductSqlServerTests</c>. The CLI tests capture the
+/// console, so the class runs in <see cref="CliConsoleCollection"/>.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantProductAssignmentTests : IDisposable
 {
     private readonly SqliteConnection _centralConnection = new("Data Source=:memory:");

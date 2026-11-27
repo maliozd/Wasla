@@ -11,6 +11,7 @@ using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Tenant;
 using Wasla.UnitTests.Billing;
+using Wasla.UnitTests.Cli;
 using CentralTenant = Wasla.Domain.Entities.Central.Tenant;
 
 namespace Wasla.UnitTests.Tenancy;
@@ -144,8 +145,10 @@ public sealed class TenantProductSqlServerTests : IClassFixture<SqlServerCentral
 /// <summary>
 /// The migration gate that every Orders service runs before it starts (<c>migration-status --require-current</c>) on a
 /// real SQL Server CentralDb (WAS-235): a tenant on POS, or between the products, has no Orders database to read and
-/// does not stop the gate. Its own database, so no other test's tenants are in the registry.
+/// does not stop the gate. Its own database, so no other test's tenants are in the registry. It captures the CLI's
+/// console output, so it runs in <see cref="CliConsoleCollection"/>.
 /// </summary>
+[Collection(nameof(CliConsoleCollection))]
 public sealed class TenantProductMigrationGateSqlServerTests : IClassFixture<SqlServerCentralDatabase>
 {
     private readonly SqlServerCentralDatabase _db;
