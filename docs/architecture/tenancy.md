@@ -104,7 +104,7 @@ A restaurant uses Wasla Orders or Wasla POS, never both at once. `Tenants.Produc
 - **Defaults.** Every existing tenant, every tenant provisioned today and every insert from a build that predates the column is `Orders`: the column's database default is 1 and the entity default is `Orders`.
 - **Changing the assignment is the cutover (WAS-240).** No code path changes it yet. Central Admin shows it read-only on the tenant list and detail pages.
 - **Orders database of a POS tenant (decision D3).** Whether a tenant that is not on Orders has an Orders database is decided with POS activation (WAS-158, WAS-165). Orders never opens one either way.
-- **Rollback.** A rollback past the `AddTenantProduct` migration drops the column, and every tenant becomes Orders again. Roll back past it only while every tenant is on Orders. After the first other assignment, see WAS-236.
+- **Rollback.** A rollback past the `AddTenantProduct` migration drops the column, and every tenant becomes Orders again. Roll back past it only while every tenant is on Orders. From the first other assignment on, the floor release, the rollback targets, the backups that may be restored and the reconciliation after a restore are in [linux-vds-runbook.md](../operations/linux-vds-runbook.md#product-floor-and-restore-reconciliation-was-236).
 
 ## Database-per-tenant
 
