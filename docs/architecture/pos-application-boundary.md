@@ -173,7 +173,7 @@ POS Cloud never writes CentralDb at runtime. Only `Wasla.Pos.Cli`, an operator t
 - **Listening.** POS Edge listens with HTTPS on the configured LAN interface and on loopback, on one configurable port. It has no plain-HTTP listener on the LAN. A second, loopback-only listener serves the setup console's requests (activation, first Owner PIN, restore status), made by the Terminal on the Edge machine. It refuses any non-loopback request.
 - **Certificates.** Each installation has its own private certificate authority (the *installation CA*). It issues POS Edge's short-lived server certificates, and Terminals pin the CA's public key, not a server certificate ([Certificate lifecycle](#certificate-lifecycle)).
 - **Pairing a device.**
-  1. On an already signed-in terminal, or on the Edge console, an Owner or Manager creates a **pairing code**. It is single-use, valid 10 minutes, and includes the first characters of the installation CA's public-key fingerprint.
+  1. On an already signed-in terminal, or on the Edge console, the Owner creates a **pairing code**. In the first pilots only the Owner can create one ([roles](../product/pos-mvp.md#roles)). It is single-use, valid 10 minutes, and includes the first characters of the installation CA's public-key fingerprint.
   2. On the new device, the Terminal or the waiter app asks for the Edge address and the code (the waiter app can scan both from a QR code). It connects, checks that the server certificate chains to a CA whose key matches the fingerprint in the code, and only then sends the code. A mismatch stops pairing.
   3. POS Edge returns a random **device credential** (stored hashed in the Edge database), the installation id and the CA's full public key. The device pins that key and stores the credential: with DPAPI on Windows, under an Android Keystore key on Android.
 
@@ -233,7 +233,7 @@ POS staff identity stays POS-owned (Orders users live in the Orders tenant datab
 - **First Owner.** The Owner setup code from activation sets the first Owner PIN on the loopback-only console.
 - **Owner recovery** without a permanent bypass:
   - *Offline:* activation also issues a printed one-time **recovery code**, stored hashed. Using it lets one new Owner PIN be set, is audited, and issues a new recovery code.
-  - *Online:* support or the tenant's Orders Owner can request a **recovery token** from POS Cloud. It is signed, bound to this installation id, single-use and valid 24 hours, and it is audited both locally and in the cloud.
+  - *Online:* a **recovery token** from POS Cloud. It is signed, bound to this installation id, single-use and valid 24 hours, and it is audited both locally and in the cloud. Who may request one is an [open decision](../product/pos-mvp.md#unresolved-product-decisions) for POS activation (WAS-165). A restaurant on POS does not use Wasla Orders, so the requester is not assumed to be an Orders Owner.
   - There is no master PIN, no default password and no support backdoor.
 - **Revocation from the cloud.** Support can revoke a device or a staff member. The revocation reaches POS Edge as a cloud command on its next contact. Until then the local state applies. A revocation is never undone by a later local change; it has to be re-granted locally.
 
@@ -592,7 +592,7 @@ Guardrails:
 - **Terminals pin a per-installation CA, not a server certificate.** Routine renewal and IP changes never need re-pairing; a replacement machine or a compromised key does.
 - **Wasla now ships installed software:** a signed installer, an updater, a certificate per installation, Windows Firewall rules and support bundles. That is new operational work, owned by POS.
 - **SQLite needs care:** money as integer kuruş, POS's own concurrency tests, and explicit migrations after a backup.
-- **Owners have separate Orders and POS credentials** until the identity decision is made.
+- **The POS Owner signs in with a local PIN only** until the [Owner account decision](../product/pos-mvp.md#unresolved-product-decisions) is made.
 - **POS has two native user interfaces besides the Orders Razor pages.** No UI code is shared with Orders, and none between the Terminal and the waiter app. The design is shared through the Wasla POS Figma file, whose tokens carry their WinUI resource and Compose names. UI tests use UI Automation on Windows and Compose tests on Android instead of browser tests.
 - **The local API is a contract between separately updated apps.** It is versioned, supports the previous client version, and has contract tests.
 - **Kotlin and Gradle join the repository's toolchain** for the waiter app.

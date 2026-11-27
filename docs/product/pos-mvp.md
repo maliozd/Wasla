@@ -59,7 +59,7 @@ Terms used below:
 2. **First Owner.** On the Edge machine, the Owner sets their PIN with the setup code.
 3. **Printers.** In the back office, the Owner maps the receipt and kitchen printer roles to printers installed on the Edge machine (the kitchen role may use the receipt printer) and prints a test page. The "receipt" role prints pre-bills and other non-fiscal slips; fiscal receipts come from the ÖKC.
 4. **Fiscal cash register.** The ÖKC is connected to the Edge machine and paired in the back office by the Owner. Payments stay disabled until POS Edge passes a connection check with it. Connection type and pairing steps depend on the device ([open](#unresolved-product-decisions)).
-5. **Terminals.** For each terminal: install the Terminal app, then pair it with a pairing code created by the Owner or a Manager. The code also verifies POS Edge's certificate.
+5. **Terminals.** For each terminal: install the Terminal app, then pair it with a pairing code created by the Owner (only the Owner, in the first pilots). The code also verifies POS Edge's certificate.
 6. **Menu, tables, staff.** The Owner imports or enters the menu, areas and tables, and adds staff with their roles and PINs. Products may need a VAT rate or ÖKC department for the fiscal receipt ([open](#unresolved-product-decisions)).
 7. **Backups.** POS Edge backs up automatically. The Owner may add a second backup location (another disk or a USB drive).
 
@@ -211,12 +211,13 @@ POS roles are owned by Wasla POS. They are **not** the Wasla Orders `UserRole` v
 | View history | ✓ | ✓ | ✓ | | |
 | Edit menu, prices, modifiers, tables | ✓ | ✓ | | | |
 | View sync and backup status; create a support bundle; apply a downloaded update | ✓ | ✓ | | | |
-| Manage POS staff and PINs; pair and revoke terminals; printer roles; pair the ÖKC; POS settings; enter an emergency licence code | ✓ | | | | |
+| Manage POS staff and PINs; create pairing codes; pair and revoke terminals and waiter devices; printer roles; pair the ÖKC; POS settings; enter an emergency licence code | ✓ | | | | |
 | Use any POS screen | | | | | MVP: none |
 
 - **Kitchen** works from printed tickets in the MVP. A kitchen display screen is later. The role exists so that the staff list is complete and a kitchen screen can be added without changing other roles.
 - **Waiter** cannot take payments in the MVP. Whether some restaurants want waiters to collect payment is an [open decision](#unresolved-product-decisions).
-- **Owner** in POS is the restaurant's POS administrator. Its PIN, recovery and relation to the Orders Owner account are decided in the [ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery).
+- **Owner** in POS is the restaurant's POS administrator. Its PIN and recovery are decided in the [ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery). Who may start an online Owner recovery, and whether the Owner signs in with a Wasla account, are [open decisions](#unresolved-product-decisions).
+- **Pairing codes** are created only by the Owner in the first pilots, on a signed-in Terminal or the Edge console.
 - POS Edge enforces this table on every request. Hiding a button is not authorization.
 - The Owner and Manager capabilities that change configuration are pages of the Terminal's back office ([Screens by role](#screens-by-role)). A browser back office is later ([Should-have later](#should-have-later)).
 
@@ -356,6 +357,7 @@ In rough order of expected value:
 | **Licence lease length.** The final lease length (14 days is a provisional design assumption) and the warning period. Restricted mode is not open: it refuses only new checks and never blocks completing, printing or reviewing an open sale | Trades protection against unpaid use against the risk of stopping a restaurant during a long outage ([ADR](../architecture/pos-application-boundary.md#licensing-while-offline)) | Pilot onboarding |
 | **Hardware and support model.** Who supplies and installs the Edge machine, whether a spare machine is required, and the restore time target | The Edge machine is the single point of failure ([ADR](../architecture/pos-application-boundary.md#failure-behavior)) | Pilot selection |
 | **Owner account.** Whether the POS Owner signs in with the same email and password as Wasla Orders | POS staff identity is local for the MVP; one Wasla login needs identity to move out of the Orders tenant database ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | POS activation (WAS-165) |
+| **Online Owner recovery.** Who may start an online Owner recovery by requesting a recovery token from POS Cloud. A restaurant on POS does not use Wasla Orders, so the requester is not an Orders Owner | The printed offline recovery code works either way; the online path decides how the restaurant proves who it is to Wasla ([ADR](../architecture/pos-application-boundary.md#staff-pins-and-recovery)) | POS activation (WAS-165) |
 | **Waiter payments.** Whether waiters may record payments, as a per-restaurant setting | Changes the role table and the audit trail | Pilot onboarding |
 | **Waiter devices.** Whether the Android waiter app ships for the first pilots | The app and its pairing are decided in the [ADR](../architecture/pos-application-boundary.md#clients-and-the-local-api); shipping it adds its build, distribution and device tests to the pilot | Pilot selection |
 | **Pricing and packaging.** Decided 2026-11-25: POS is a separate product, not an add-on to Orders or a bundle, and a restaurant uses one of the two. Food-platform integrations for POS are a planned paid cloud add-on at 399 TL a month. Still open: the POS plan's own price, and how the licence lease reflects the add-on | Decides what the licence lease checks (WAS-147 owns the billing domain) | Self-service activation |
