@@ -89,6 +89,10 @@ public sealed class TrendyolGoMealWebhookProcessor
         if (!_options.Enabled)
             return 0;
 
+        // WAS-235: events of a tenant that is not assigned to Wasla Orders stay pending, unread and unapplied.
+        if (!await ServesPilotTenantAsync(ct).ConfigureAwait(false))
+            return 0;
+
         var now = Now();
         List<Guid> due;
         await using (var db = await _tenants.CreateAsync(_options.TenantId, ct).ConfigureAwait(false))
@@ -106,6 +110,11 @@ public sealed class TrendyolGoMealWebhookProcessor
         var processed = 0;
         foreach (var id in due)
         {
+            // Checked again before every claim, the first one included: the assignment can change after the list is
+            // read, and a change then stops processing before the next event is claimed.
+            if (!await ServesPilotTenantAsync(ct).ConfigureAwait(false))
+                break;
+
             if (!await TryClaimAsync(id, ct).ConfigureAwait(false))
                 continue;
 
@@ -114,6 +123,17 @@ public sealed class TrendyolGoMealWebhookProcessor
         }
 
         return processed;
+    }
+
+    private async Task<bool> ServesPilotTenantAsync(CancellationToken ct)
+    {
+        if (await _sync.ServesTenantAsync(_options.TenantId, ct).ConfigureAwait(false))
+            return true;
+
+        _logger.LogWarning(
+            "Trendyol GO Meal webhook events not processed: the pilot tenant is not assigned to Wasla Orders. TenantId={TenantId}",
+            _options.TenantId);
+        return false;
     }
 
     /// <summary>

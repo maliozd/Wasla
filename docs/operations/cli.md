@@ -99,7 +99,7 @@ Every command past `help` and `hash-password` stops when `ConnectionStrings:Cent
 | `list-tenants` | List tenants from CentralDb |
 | `delete-tenant` | Delete tenant record and drop tenant DB (destructive; `--slug` or `--tenant-id`) |
 | `reset-tenant-db` | Drop/recreate one tenant DB; keep CentralDb row (destructive; `--slug` or `--tenant-id`) |
-| `reset-all-tenant-dbs` | Drop/recreate all active tenant DBs (destructive) |
+| `reset-all-tenant-dbs` | Drop/recreate the databases of all active tenants assigned to Wasla Orders (destructive) |
 | `seed-tenant-admin` | Create Owner admin in an existing tenant DB if missing |
 | `update-tenant-profile` | Set the restaurant business phone, city or country the setup checklist requires (`--tenant <slug-or-id>`). Creates the membership row if missing; idempotent |
 
@@ -117,8 +117,8 @@ Both `provision-signup-request` and `add-tenant` create the tenant's single `Ten
 |---------|---------|
 | `migrate-central` | Apply pending CentralDb migrations |
 | `migrate-tenant` | Apply pending TenantDb migrations for one tenant (`--slug` or `--tenant-id`) |
-| `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants; supports `--dry-run`, `--only` |
-| `migration-status` | Show CentralDb and per-tenant migration status; `--require-current` provides a strict, read-only release gate (pending, unknown or unreadable schema exits non-zero) |
+| `migrate-all-tenants` | Apply pending TenantDb migrations for active tenants assigned to Wasla Orders; supports `--dry-run`, `--only`. Tenants on POS or between the products are skipped and named; `--only` with one of them exits 2 |
+| `migration-status` | Show CentralDb and per-tenant migration status; `--require-current` provides a strict, read-only release gate (pending, unknown or unreadable schema exits non-zero). Only tenants assigned to Wasla Orders are checked; the others are named as not checked (WAS-235) |
 | `seed-turkey-reference-data` | Seed Turkish cities/districts into CentralDb |
 | `seed-address-reference-data` | Seed the country, cities and districts; with `--source <data/jsonl>` also the pinned neighbourhood and street catalog (`--dry-run` writes nothing, `--report <file>` writes the JSON report). See [address-reference-data.md](address-reference-data.md) |
 

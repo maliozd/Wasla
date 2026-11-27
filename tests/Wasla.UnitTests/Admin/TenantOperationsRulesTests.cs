@@ -259,7 +259,7 @@ public sealed class TenantOperationsRulesTests
         new("Kitchen", true, Now, "1.0.0", status);
 
     private static TenantOperationsDetail Detail(IReadOnlyList<TenantPrintBridgeDeviceSummary> devices) =>
-        new(Guid.NewGuid(), "Kebap", "kebap", "kebap.app.wasla.local", "Wasla_Tenant_kebap", true, Now, Now, true,
+        new(Guid.NewGuid(), "Kebap", "kebap", "kebap.app.wasla.local", "Wasla_Tenant_kebap", true, TenantProduct.Orders, Now, Now, true,
             TenantMigrationRecord.Succeeded, Now, null, null, new TenantPrintBridgeDevicePage(devices, 1, devices.Count),
             Counts(devices), Now);
 

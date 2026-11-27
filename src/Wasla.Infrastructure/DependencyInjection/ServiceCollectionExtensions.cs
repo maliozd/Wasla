@@ -80,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddWaslaIntegrations(configuration);
 
         services.AddScoped<ITenantResolver, TenantResolver>();
+        services.AddScoped<ITenantProductReader, TenantProductReader>();
 
         services.AddScoped<IAuthValidationService, AuthValidationService>();
         services.AddScoped<ITenantLoginRecorder, TenantLoginRecorder>();

@@ -90,6 +90,8 @@
                             </dd>
                             <dt class="col-sm-4">@L["Common.Status"]</dt>
                             <dd class="col-sm-8"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.TenantActive(detail.IsActive)" /></dd>
+                            <dt class="col-sm-4">@L["Admin.Ops.Product"]</dt>
+                            <dd class="col-sm-8"><partial name="_AdminStatusBadge" model="AdminOperationsPresenter.Product(detail.Product)" /></dd>
                             <dt class="col-sm-4">@L["Admin.CreatedAt"]</dt>
                             <dd class="col-sm-8">@AdminOperationsPresenter.Time(detail.CreatedAtUtc)</dd>
                             <dt class="col-sm-4">@L["Admin.UpdatedAt"]</dt>

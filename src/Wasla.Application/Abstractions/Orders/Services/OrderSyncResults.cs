@@ -42,6 +42,12 @@ public sealed record OrderSyncTenantResult(
     /// <summary>True when the sync was skipped because the tenant has disabled order sync.</summary>
     public bool WasSyncDisabled { get; init; }
 
+    /// <summary>
+    /// True when the pass did not start, or stopped before a connection, because the tenant is no longer assigned to
+    /// Wasla Orders (WAS-235). Connections finished before the stop are in <see cref="Connections"/>.
+    /// </summary>
+    public bool WasNotOrdersTenant { get; init; }
+
     /// <summary>True when at least one connection's order history is still behind and needs backfill turns.</summary>
     public bool BackfillPending { get; init; }
 }

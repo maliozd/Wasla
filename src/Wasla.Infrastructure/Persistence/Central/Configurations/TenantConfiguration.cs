@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Wasla.Domain.Enums;
 using CentralTenant = Wasla.Domain.Entities.Central.Tenant;
 
 namespace Wasla.Infrastructure.Persistence.Central.Configurations;
@@ -22,6 +23,15 @@ public class TenantConfiguration : IEntityTypeConfiguration<CentralTenant>
         builder.Property(c => c.BillingPaymentStatus).HasConversion<int>();
         builder.Property(c => c.ProvisioningStatus).HasConversion<int>();
         builder.Property(c => c.SubscriptionStatus).HasConversion<int>();
+
+        // WAS-235: the database default keeps every existing row, and every insert from a build that predates the
+        // column, assigned to Orders. The sentinel is 0, which is not a product: EF sends every real value it holds,
+        // and only an unset 0 would fall back to the default.
+        builder.Property(c => c.Product)
+            .HasConversion<int>()
+            .IsRequired()
+            .HasDefaultValue(TenantProduct.Orders)
+            .HasSentinel((TenantProduct)0);
 
         // Primary lookup path for every single web request - must be indexed and unique.
         builder.HasIndex(c => c.PrimaryDomain).IsUnique().HasDatabaseName("IX_Tenants_PrimaryDomain");

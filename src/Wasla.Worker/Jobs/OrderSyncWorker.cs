@@ -9,6 +9,7 @@ using Wasla.Integrations.Platform;
 using Wasla.Infrastructure.Services;
 using Wasla.Infrastructure.Sync;
 using Wasla.Worker.Console;
+using Wasla.Infrastructure.Tenant;
 
 namespace Wasla.Worker.Jobs;
 
@@ -146,9 +147,11 @@ public sealed class OrderSyncWorker : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var central = scope.ServiceProvider.GetRequiredService<CentralDbContext>();
 
+        // WAS-235: only tenants assigned to Wasla Orders. The sync checks the assignment again before each tenant and
+        // connection pass, so a change during the cycle takes effect at the next boundary.
         return await central.Tenants
             .AsNoTracking()
-            .Where(c => c.IsActive)
+            .ActiveOrdersTenants()
             .Select(c => new ActiveTenant(c.Id, c.Slug, c.Name))
             .ToListAsync(ct);
     }

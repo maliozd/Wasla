@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Wasla.Application.Abstractions.Tenant;
+using Wasla.Domain.Enums;
 using Wasla.Infrastructure.Persistence.Central;
 
 namespace Wasla.Infrastructure.Tenant;
@@ -34,6 +35,8 @@ public sealed class TenantResolver : ITenantResolver
 
         if (tenant is null) return null;
         if (!tenant.IsActive) return null;
+        // WAS-235: a tenant that is not assigned to Orders is refused like an inactive one.
+        if (tenant.Product != TenantProduct.Orders) return null;
 
         var dto = new ResolvedTenantDto(tenant.Id, tenant.Name, tenant.Slug, tenant.PrimaryDomain);
         _cache.Set(cacheKey, dto, CacheTtl);

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Wasla.Application.Abstractions.Printing;
 using Wasla.Infrastructure.Persistence.Central;
 using Wasla.Infrastructure.Security;
+using Wasla.Domain.Enums;
 
 namespace Wasla.Infrastructure.Services;
 
@@ -85,6 +86,17 @@ public sealed class PrintBridgeAuthService : IPrintBridgeAuthService
         {
             _logger.LogWarning(
                 "Print Bridge authentication failed: tenant inactive. DeviceId={DeviceId}, TenantId={TenantId}",
+                device.Id,
+                device.TenantId);
+            return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.TenantInactive);
+        }
+
+        // WAS-235: Print Bridge is part of Wasla Orders. A tenant that is not assigned to Orders is refused like an
+        // inactive one, with the same failure code, so the device shows nothing new.
+        if (device.Tenant.Product != TenantProduct.Orders)
+        {
+            _logger.LogWarning(
+                "Print Bridge authentication failed: tenant not assigned to Wasla Orders. DeviceId={DeviceId}, TenantId={TenantId}",
                 device.Id,
                 device.TenantId);
             return PrintBridgeAuthResult.Failure(PrintBridgeAuthFailureCode.TenantInactive);

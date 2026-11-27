@@ -498,6 +498,7 @@ public sealed class PilotApplicationRetentionSqlServerTests : IClassFixture<SqlS
 public sealed class PilotApplicationRetentionMigrationSqlServerTests : IClassFixture<SqlServerCentralDatabase>
 {
     private const string Previous = "20261121032923_AddPilotApplications";
+    private const string Retention = "20261122155808_AddPilotApplicationRetention";
 
     private readonly SqlServerCentralDatabase _db;
 
@@ -575,13 +576,18 @@ public sealed class PilotApplicationRetentionMigrationSqlServerTests : IClassFix
                 break;
         }
 
+        // Migrations added after WAS-222 roll back first, and they do not refuse; rolling them back here leaves the
+        // WAS-222 rollback as the only change the refused migration could make.
+        var migrator = db.GetService<IMigrator>();
+        await migrator.MigrateAsync(Retention, Ct);
         var before = await SchemaAndDataAsync(db);
-        var refusal = await Assert.ThrowsAsync<SqlException>(() => db.GetService<IMigrator>().MigrateAsync(Previous, Ct));
+        var refusal = await Assert.ThrowsAsync<SqlException>(() => migrator.MigrateAsync(Previous, Ct));
 
         Assert.Equal(50222, refusal.Number);
         Assert.Contains("WAS-222", refusal.Message, StringComparison.Ordinal);
         db.ChangeTracker.Clear();
         Assert.Equal(before, await SchemaAndDataAsync(db));
+        await migrator.MigrateAsync(cancellationToken: Ct);
         Assert.Empty(await db.Database.GetPendingMigrationsAsync(Ct));
 
         await db.DataDestructionRecords.ExecuteDeleteAsync(Ct);

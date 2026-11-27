@@ -1434,6 +1434,11 @@ namespace Wasla.Infrastructure.Persistence.Central.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int>("Product")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("ProvisioningStatus")
                         .HasColumnType("int");
 

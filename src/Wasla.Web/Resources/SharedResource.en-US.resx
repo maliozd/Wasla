@@ -3695,6 +3695,11 @@
   <data name="Admin.Ops.Migrations.ReadOnlyNote" xml:space="preserve"><value>This page only reads; migrations are applied with the CLI as part of the release procedure.</value></data>
   <data name="Admin.Ops.Mode.Title" xml:space="preserve"><value>Operational mode</value></data>
   <data name="Admin.Ops.Mode.Live" xml:space="preserve"><value>Live</value></data>
+  <data name="Admin.Ops.Product" xml:space="preserve"><value>Product</value></data>
+  <data name="Admin.Ops.Product.Orders" xml:space="preserve"><value>Wasla Orders</value></data>
+  <data name="Admin.Ops.Product.Pos" xml:space="preserve"><value>Wasla POS</value></data>
+  <data name="Admin.Ops.Product.MovingToPos" xml:space="preserve"><value>Moving to POS</value></data>
+  <data name="Admin.Ops.Product.MovingToOrders" xml:space="preserve"><value>Moving back to Orders</value></data>
   <data name="Admin.Ops.Mode.Setup" xml:space="preserve"><value>Setup</value></data>
   <data name="Admin.Ops.Automation.OrderSync" xml:space="preserve"><value>Order sync</value></data>
   <data name="Admin.Ops.Automation.AutoApprove" xml:space="preserve"><value>Auto-approve</value></data>
