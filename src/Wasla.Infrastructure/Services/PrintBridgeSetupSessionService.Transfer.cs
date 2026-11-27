@@ -264,7 +264,7 @@ public sealed partial class PrintBridgeSetupSessionService
             }
 
             var now = DateTime.UtcNow;
-            var session = await _centralDb.PrintBridgeSetupSessions
+            var session = await SessionForUpdate(sessionId)
                 .FirstOrDefaultAsync(s => s.Id == sessionId, ct)
                 .ConfigureAwait(false);
             if (session is { SourcePrintBridgeDeviceId: not null })
@@ -382,6 +382,20 @@ public sealed partial class PrintBridgeSetupSessionService
             return new PrintBridgeTransferResult(PrintBridgeTransferOutcome.Failed);
         }
     }
+
+    /// <summary>
+    /// The session a move is about to use, read with an update lock on SQL Server that the move holds until it commits
+    /// (WAS-254). An ordinary exchange marks the session with one autocommit update that takes no setup lock. A shared lock
+    /// from this read let that update take its own update lock on the row and wait for the move to finish reading, while the
+    /// move's write of the session waited for that update lock: a deadlock. With the update lock here the exchange waits
+    /// holding nothing and then finds the code used, or, if it marked the session first, this read waits and finds it used.
+    /// SQLite has no row locks, so it reads the table as is.
+    /// </summary>
+    private IQueryable<PrintBridgeSetupSession> SessionForUpdate(Guid sessionId) =>
+        _centralDb.Database.IsSqlServer()
+            ? _centralDb.PrintBridgeSetupSessions.FromSql(
+                $"SELECT * FROM [PrintBridgeSetupSessions] WITH (UPDLOCK) WHERE [Id] = {sessionId}")
+            : _centralDb.PrintBridgeSetupSessions;
 
     /// <summary>
     /// The identical move request again, after the move was stored: the app lost the response, restarted or could not
