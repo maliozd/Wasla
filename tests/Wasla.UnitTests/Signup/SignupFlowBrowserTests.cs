@@ -1777,10 +1777,28 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         browser.EvaluateAsync<string?>($"document.getElementById('{id}').getAttribute('{name}')", ct);
 
     // A real mouse click in the middle of the element, scrolled into view first (instantly: the page scrolls smoothly):
-    // whatever is on top there receives it.
+    // whatever is on top there receives it. The point is taken once the element has stayed in place for two frames. A
+    // smooth scroll the page started itself (focusing a field with an error) can still move the page after the instant
+    // scroll (Edge 158 does), and a point read before it ends misses the element.
     private static async Task ClickAsync(HeadlessChromium browser, string element, CancellationToken ct)
     {
-        var point = await browser.EvaluateAsync<JsonElement>($"(() => {{ const e = {element}; e.scrollIntoView({{ block: 'center', behavior: 'instant' }}); const r = e.getBoundingClientRect(); return {{ x: r.left + r.width / 2, y: r.top + r.height / 2 }}; }})()", ct);
+        var point = await browser.EvaluateAsync<JsonElement>($$"""
+            (async () => {
+              const e = {{element}};
+              const frame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+              let last = null;
+              for (let still = 0, frames = 0; frames < 300; frames++) {
+                e.scrollIntoView({ block: 'center', behavior: 'instant' });
+                await frame();
+                const r = e.getBoundingClientRect();
+                still = last && r.left === last.left && r.top === last.top ? still + 1 : 0;
+                last = r;
+                if (still === 2) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+              }
+              return null;
+            })()
+            """, ct);
+        Assert.True(point.ValueKind == JsonValueKind.Object, "The element kept moving, so there was no place to click.");
         await browser.ClickAtAsync(point.GetProperty("x").GetDouble(), point.GetProperty("y").GetDouble(), ct);
     }
 
