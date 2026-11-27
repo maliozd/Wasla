@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Bu adım platformla tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Platforma gönderilmedi: Bu siparişin şu an bağlı olan mağazaya ait olduğu doğrulanamadı. Siparişi platformun kendi panelinden yönetin.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Hazır</value>
   </data>
@@ -2065,7 +2068,7 @@
     <value>ApiSecret en fazla 500 karakter olabilir.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Supplier Id en fazla 100 karakter olabilir.</value>
+    <value>Supplier Id en fazla 64 karakter olabilir.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Executor Email en fazla 200 karakter olabilir.</value>

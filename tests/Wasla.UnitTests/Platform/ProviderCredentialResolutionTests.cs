@@ -370,6 +370,8 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
     {
         await using var db = await _tenants.CreateAsync(_tenant, Ct);
         var orderId = Guid.NewGuid();
+        // Imported under the platform's connection these tests seed (WAS-241).
+        var imported = platform == FoodPlatform.Yemeksepeti ? YemeksepetiConnection() : TrendyolConnection();
         db.Orders.Add(new Order
         {
             Id = orderId,
@@ -377,6 +379,8 @@ public sealed class ProviderCredentialResolutionTests : IDisposable
             ExternalOrderId = externalOrderId,
             ExternalOrderCode = "C-" + externalOrderId,
             IdempotencyKey = $"{platform}:{externalOrderId}:{_tenant:N}",
+            StoreId = imported.StoreId,
+            SupplierId = imported.SupplierId,
             InternalStatus = status,
             PlatformStatus = "Created",
             CustomerName = "Test Customer",

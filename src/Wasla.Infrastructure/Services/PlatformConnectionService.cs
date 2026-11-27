@@ -178,6 +178,18 @@ public sealed class PlatformConnectionService : IPlatformConnectionService
             };
         }
 
+        // SupplierId: the create limit, measured as it is stored (trimmed), applies to edits too, before any field is
+        // written. Null keeps the stored value and blank clears it, so neither is ever too long.
+        if (CreatePlatformConnectionCommandValidator.IsSupplierIdTooLong(command.SupplierId))
+        {
+            return new CreatePlatformConnectionResult
+            {
+                Succeeded = false,
+                ErrorCode = "Validation",
+                ErrorMessage = "Validation.SupplierIdMaxLength"
+            };
+        }
+
         var newApiKey = string.IsNullOrWhiteSpace(command.ApiKey) ? null : command.ApiKey;
         var newApiSecret = string.IsNullOrWhiteSpace(command.ApiSecret) ? null : command.ApiSecret;
         var credentialError =

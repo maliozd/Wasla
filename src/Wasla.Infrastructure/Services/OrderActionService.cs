@@ -125,8 +125,8 @@ public sealed class OrderActionService : IOrderActionService
             return new OrderActionResult(false, refusal);
         }
 
-        // Choose a connection for the platform. We don't persist connection-id on Order yet (MVP),
-        // so we use the first active connection for this platform.
+        // The tenant's one connection for the platform (IX_PlatformConnections_Platform). It is used only while it still
+        // has the store the order was imported under (WAS-241).
         var connection = await db.PlatformConnections
             .AsNoTracking()
             .Where(c => c.IsActive && c.Platform == order.Platform)
@@ -138,6 +138,9 @@ public sealed class OrderActionService : IOrderActionService
         var client = _clients.FirstOrDefault(c => c.Platform.ToFoodPlatform() == order.Platform);
         if (client is null)
             return new OrderActionResult(false, "Orders.ActionFailed");
+
+        if (RefuseUnconfirmedStore(order, connection, target) is { } storeRefusal)
+            return storeRefusal;
 
         var providerConnection = connection.ToProviderContext(_secretManager);
 
@@ -306,6 +309,9 @@ public sealed class OrderActionService : IOrderActionService
         if (client is null)
             return new OrderActionResult(false, "Orders.OrderActionFailed");
 
+        if (RefuseUnconfirmedStore(order, connection, nextStatus) is { } storeRefusal)
+            return storeRefusal;
+
         var providerConnection = connection.ToProviderContext(_secretManager);
 
         // The action owns the transition: as in ExecuteAsync, the provider call and its local write ignore the request token.
@@ -386,6 +392,32 @@ public sealed class OrderActionService : IOrderActionService
         var version = await OrderChangeVersions.NextAsync(db, orderId, ct);
         await tx.CommitAsync(ct);
         return version;
+    }
+
+    /// <summary>
+    /// Null when the connection still has the store the order was imported under. Otherwise the action is refused before
+    /// the provider is called and before anything is written (WAS-241): another store would get this order's provider
+    /// id with its own identity and credentials. An order stored before Wasla recorded its store is refused the same
+    /// way, because its store cannot be confirmed.
+    /// </summary>
+    private OrderActionResult? RefuseUnconfirmedStore(Order order, PlatformConnection connection, OrderStatus target)
+    {
+        var match = OrderStoreIdentity.Compare(order, connection);
+        if (match == OrderStoreMatch.Same)
+            return null;
+
+        _logger.LogWarning(
+            "Order action refused: the order's store is not confirmed as the connection's current store, so the provider was not called. OrderId={OrderId} Platform={Platform} ConnectionId={ConnectionId} Target={Target} Match={Match} OrderStoreId={OrderStoreId} OrderSupplierId={OrderSupplierId} ConnectionStoreId={ConnectionStoreId} ConnectionSupplierId={ConnectionSupplierId}",
+            order.Id,
+            order.Platform,
+            connection.Id,
+            target,
+            match,
+            order.StoreId,
+            order.SupplierId,
+            connection.StoreId,
+            connection.SupplierId);
+        return new OrderActionResult(false, OrderStoreIdentity.NotConfirmedKey);
     }
 
     // Another action on the same order holds its transition: this one changes nothing and calls no provider.

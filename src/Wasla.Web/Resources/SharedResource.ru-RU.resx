@@ -1365,6 +1365,9 @@
   <data name="Orders.OrderActionFailed" xml:space="preserve">
     <value>Нам не удалось выполнить этот шаг с платформой. Попробуйте еще раз или проверьте соединение.</value>
   </data>
+  <data name="Orders.StoreNotConfirmed" xml:space="preserve">
+    <value>Не отправлено на платформу: не удалось подтвердить, что этот заказ относится к магазину, который подключён сейчас. Обработайте его в панели самой платформы.</value>
+  </data>
   <data name="Orders.MarkReady" xml:space="preserve">
     <value>Отметить готовность</value>
   </data>
@@ -2065,7 +2068,7 @@
     <value>Максимальная длина ApiSecret — 500.</value>
   </data>
   <data name="Validation.SupplierIdMaxLength" xml:space="preserve">
-    <value>Максимальная длина идентификатора поставщика — 100.</value>
+    <value>Максимальная длина идентификатора поставщика — 64 символа.</value>
   </data>
   <data name="Validation.ExecutorEmailMaxLength" xml:space="preserve">
     <value>Максимальная длина электронного письма исполнителя — 200.</value>

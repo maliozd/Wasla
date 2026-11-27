@@ -1269,15 +1269,19 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal(choice.GetProperty("cardAmount").GetString(), choice.GetProperty("receiptAmount").GetString());
     }
 
-    // Chrome reloads a page from its history when the back/forward cache cannot keep it (an unload listener rules it out
-    // here), then checks the radios the visitor last chose: after the page's script drew the receipt, with no change
-    // event, leaving one plan checked beside another plan's price. The plan and period radios belong to the draft, so
-    // the browser leaves them alone and the page shows one choice.
+    // Chrome reloads a page from its history when the back/forward cache does not keep it, then checks the radios the
+    // visitor last chose: after the page's script drew the receipt, with no change event, leaving one plan checked
+    // beside another plan's price. The plan and period radios belong to the draft, so the browser leaves them alone and
+    // the page shows one choice.
+    // Chromium keeps this page in that cache despite its Cache-Control: no-store, and an unload listener no longer keeps
+    // it out either: Edge 158 does not allow unload by default, so the listener is never added. This browser therefore
+    // runs without the cache (--disable-back-forward-cache), so the way back is always the history reload.
     [Fact]
     public async Task APlanChosenButNotSaved_IsNotPutBackByTheBrowserAfterAHistoryReload_SoTheReceiptMatchesTheCheckedPlan()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var browser = await BrowserAsync("tr-TR", 1440, 900, mobile: false, ct);
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: null,
+            arguments: ["--disable-back-forward-cache"]);
         await OpenAsync(browser, "/signup?plan=Starter", ct);
         var start = await PlanChoiceAsync(browser, ct);
         Assert.Equal("Starter", start.GetProperty("plan").GetString());
@@ -1292,7 +1296,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         AssertOnePlanChoice(chosen);
 
         // Away and back through the history, as a new document: a page kept by the cache would still have its marker.
-        await Js(browser, "window.__suSamePage = true; window.addEventListener('unload', () => {})", ct);
+        await Js(browser, "window.__suSamePage = true", ct);
         await browser.NavigateAsync(new Uri($"http://{Host}:{Port}/"), ct);
         await WaitForAsync(browser, "location.pathname === '/'", ct);
         await Js(browser, "history.back()", ct);
@@ -1773,10 +1777,28 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         browser.EvaluateAsync<string?>($"document.getElementById('{id}').getAttribute('{name}')", ct);
 
     // A real mouse click in the middle of the element, scrolled into view first (instantly: the page scrolls smoothly):
-    // whatever is on top there receives it.
+    // whatever is on top there receives it. The point is taken once the element has stayed in place for two frames. A
+    // smooth scroll the page started itself (focusing a field with an error) can still move the page after the instant
+    // scroll (Edge 158 does), and a point read before it ends misses the element.
     private static async Task ClickAsync(HeadlessChromium browser, string element, CancellationToken ct)
     {
-        var point = await browser.EvaluateAsync<JsonElement>($"(() => {{ const e = {element}; e.scrollIntoView({{ block: 'center', behavior: 'instant' }}); const r = e.getBoundingClientRect(); return {{ x: r.left + r.width / 2, y: r.top + r.height / 2 }}; }})()", ct);
+        var point = await browser.EvaluateAsync<JsonElement>($$"""
+            (async () => {
+              const e = {{element}};
+              const frame = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+              let last = null;
+              for (let still = 0, frames = 0; frames < 300; frames++) {
+                e.scrollIntoView({ block: 'center', behavior: 'instant' });
+                await frame();
+                const r = e.getBoundingClientRect();
+                still = last && r.left === last.left && r.top === last.top ? still + 1 : 0;
+                last = r;
+                if (still === 2) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+              }
+              return null;
+            })()
+            """, ct);
+        Assert.True(point.ValueKind == JsonValueKind.Object, "The element kept moving, so there was no place to click.");
         await browser.ClickAtAsync(point.GetProperty("x").GetDouble(), point.GetProperty("y").GetDouble(), ct);
     }
 
@@ -2153,14 +2175,15 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     private async Task<HeadlessChromium> BrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct) =>
         await StartBrowserAsync(culture, width, height, mobile, ct, extraScript: null);
 
-    private async Task<HeadlessChromium> StartBrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct, string? extraScript)
+    private async Task<HeadlessChromium> StartBrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct, string? extraScript,
+        IReadOnlyList<string>? arguments = null)
     {
         var executable = HeadlessChromium.FindExecutable();
         if (executable is null)
             Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the signup flow checks.");
 
         Port = _host.BaseAddress.Port;
-        var browser = await HeadlessChromium.StartAsync(executable, ct);
+        var browser = await HeadlessChromium.StartAsync(executable, arguments ?? [], ct);
         return await browser.SetUpAsync(async started =>
         {
             var cookie = Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)));
