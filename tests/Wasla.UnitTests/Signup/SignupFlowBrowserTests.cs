@@ -1269,15 +1269,19 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         Assert.Equal(choice.GetProperty("cardAmount").GetString(), choice.GetProperty("receiptAmount").GetString());
     }
 
-    // Chrome reloads a page from its history when the back/forward cache cannot keep it (an unload listener rules it out
-    // here), then checks the radios the visitor last chose: after the page's script drew the receipt, with no change
-    // event, leaving one plan checked beside another plan's price. The plan and period radios belong to the draft, so
-    // the browser leaves them alone and the page shows one choice.
+    // Chrome reloads a page from its history when the back/forward cache does not keep it, then checks the radios the
+    // visitor last chose: after the page's script drew the receipt, with no change event, leaving one plan checked
+    // beside another plan's price. The plan and period radios belong to the draft, so the browser leaves them alone and
+    // the page shows one choice.
+    // Chromium keeps this page in that cache despite its Cache-Control: no-store, and an unload listener no longer keeps
+    // it out either: Edge 158 does not allow unload by default, so the listener is never added. This browser therefore
+    // runs without the cache (--disable-back-forward-cache), so the way back is always the history reload.
     [Fact]
     public async Task APlanChosenButNotSaved_IsNotPutBackByTheBrowserAfterAHistoryReload_SoTheReceiptMatchesTheCheckedPlan()
     {
         var ct = TestContext.Current.CancellationToken;
-        await using var browser = await BrowserAsync("tr-TR", 1440, 900, mobile: false, ct);
+        await using var browser = await StartBrowserAsync("tr-TR", 1440, 900, mobile: false, ct, extraScript: null,
+            arguments: ["--disable-back-forward-cache"]);
         await OpenAsync(browser, "/signup?plan=Starter", ct);
         var start = await PlanChoiceAsync(browser, ct);
         Assert.Equal("Starter", start.GetProperty("plan").GetString());
@@ -1292,7 +1296,7 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
         AssertOnePlanChoice(chosen);
 
         // Away and back through the history, as a new document: a page kept by the cache would still have its marker.
-        await Js(browser, "window.__suSamePage = true; window.addEventListener('unload', () => {})", ct);
+        await Js(browser, "window.__suSamePage = true", ct);
         await browser.NavigateAsync(new Uri($"http://{Host}:{Port}/"), ct);
         await WaitForAsync(browser, "location.pathname === '/'", ct);
         await Js(browser, "history.back()", ct);
@@ -2171,14 +2175,15 @@ public sealed class SignupFlowBrowserTests : IAsyncLifetime
     private async Task<HeadlessChromium> BrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct) =>
         await StartBrowserAsync(culture, width, height, mobile, ct, extraScript: null);
 
-    private async Task<HeadlessChromium> StartBrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct, string? extraScript)
+    private async Task<HeadlessChromium> StartBrowserAsync(string culture, int width, int height, bool mobile, CancellationToken ct, string? extraScript,
+        IReadOnlyList<string>? arguments = null)
     {
         var executable = HeadlessChromium.FindExecutable();
         if (executable is null)
             Assert.Skip($"No Chromium browser found; set {HeadlessChromium.BrowserVariable} to run the signup flow checks.");
 
         Port = _host.BaseAddress.Port;
-        var browser = await HeadlessChromium.StartAsync(executable, ct);
+        var browser = await HeadlessChromium.StartAsync(executable, arguments ?? [], ct);
         return await browser.SetUpAsync(async started =>
         {
             var cookie = Uri.EscapeDataString(CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)));

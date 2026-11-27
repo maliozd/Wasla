@@ -115,6 +115,48 @@ public sealed class PrintBridgeTransferSqlServerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AnOrdinaryExchange_WhileAMoveOfTheSameCodeIsAboutToWrite_WaitsAndFindsTheCodeUsed()
+    {
+        var (tenantA, tenantB, _) = await TenantsAsync();
+        var movedInstallation = Guid.NewGuid();
+        var otherInstallation = Guid.NewGuid();
+        var (sourceId, sourceToken) = await CreateDeviceAsync(tenantA, movedInstallation);
+        var code = await CreateSessionAsync(tenantB, "https://bahce.app.wasla.tr/");
+
+        // The move is held right before its write, after it has read the session under its locks; it goes on only once the
+        // exchange is seen waiting for the move's lock on the session row. A shared lock from that read let the exchange
+        // take the row's update lock first, and the move's write of the session then deadlocked with it (WAS-254).
+        PrintBridgeTransferResult? moved = null;
+        PrintBridgeSetupExchangeResult? exchanged = null;
+        await _race.ContendAsync(
+            async db =>
+            {
+                moved = await Service(db).TransferAsync(Request(sourceToken, movedInstallation, code, "https://bahce.app.wasla.tr/"), CancellationToken.None);
+                return true;
+            },
+            async db =>
+            {
+                exchanged = await Service(db).ExchangeAsync(code, new PrintBridgeSetupClientInfo("Other-PC", null, null, otherInstallation), CancellationToken.None);
+                return true;
+            },
+            " on KEY",
+            "the move's lock on the session row");
+
+        Assert.True(moved!.Outcome == PrintBridgeTransferOutcome.Ready, $"{moved.Outcome}; errors: {Errors.Text()}");
+        Assert.Null(exchanged);
+
+        await using var db = _database.Open("Inspector");
+        var session = await db.PrintBridgeSetupSessions.AsNoTracking().SingleAsync(s => s.CodeHash == PrintBridgeSetupCode.Hash(code), Ct);
+        Assert.NotNull(session.ExchangedAtUtc);
+        Assert.Equal(sourceId, session.SourcePrintBridgeDeviceId);
+        Assert.Null(session.FailedAtUtc);
+        Assert.NotNull((await db.PrintBridgeDevices.AsNoTracking().SingleAsync(d => d.Id == sourceId, Ct)).RemovedAtUtc);
+        Assert.Equal(
+            [movedInstallation],
+            await db.PrintBridgeDevices.Where(d => d.TenantId == tenantB).Select(d => d.InstallationId!.Value).ToListAsync(Ct));
+    }
+
+    [Fact]
     public async Task TheSameMoveSentTwiceAtOnce_AnswersBothTheSame_AndStoresItOnce()
     {
         // The app repeats a request whose answer it has not had yet, while the first is still on the server.
