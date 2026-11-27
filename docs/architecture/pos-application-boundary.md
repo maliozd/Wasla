@@ -4,6 +4,8 @@
 
 Proposed in WAS-34 (2026-10). It becomes accepted when the pull request that adds it is merged. It replaces an earlier draft in the same pull request that put the POS on a cloud host and required internet for every sale.
 
+**Revised 2026-11-25: native clients.** The user interface decision changed. POS Edge no longer serves Razor pages to a WebView2 shell. It exposes a versioned local API, cashier terminals run a native WinUI 3 app, and waiter phones and tablets run a native Android app ([Clients and the local API](#clients-and-the-local-api)). The back office stays local, inside the Windows app. Everything else in this decision is unchanged. The screens are designed in the Wasla POS Figma file ([pos-mvp](../product/pos-mvp.md#ux-requirements)).
+
 It records how Wasla POS is installed at a restaurant, where its data lives and who is authoritative for it, how it synchronizes with the Wasla cloud, how it prints, how devices and staff are authenticated, how it is licensed while offline, and where its code lives relative to Wasla Orders.
 
 **Nothing here is built.** No POS project, database, installer, table or route exists; this repository still implements only Wasla Orders ([../product/product-boundaries.md](../product/product-boundaries.md)). The product scope is in [../product/pos-mvp.md](../product/pos-mvp.md), and the build order in [../product/pos-first-slice.md](../product/pos-first-slice.md).
@@ -26,14 +28,15 @@ Facts from the code on `dev` at `40fe698`:
 
 ## Decision summary
 
-1. **Wasla POS is installed at the restaurant.** Each restaurant location runs one **POS Edge**. It is a Windows service hosting an ASP.NET Core application with the local POS database, the POS user interface, the local print queue and the cloud synchronizer.
+1. **Wasla POS is installed at the restaurant.** Each restaurant location runs one **POS Edge**. It is a Windows service hosting an ASP.NET Core application with the local POS database, the local POS API, the local print queue and the cloud synchronizer. It serves no user interface.
 2. **The operational POS database is local SQLite**, owned by POS Edge. Nothing else opens it.
-3. **Cashier devices are Windows touch terminals running the Wasla POS Terminal**, a WebView2 desktop shell. It shows the user interface served by POS Edge, over the restaurant network or on the Edge machine itself, through HTTPS. The Terminal pins the installation's own certificate authority, so routine certificate renewal never needs re-pairing.
-4. **The Wasla cloud is not in the sale path.** Opening checks, adding lines, kitchen tickets, payments, closing, printing, history and PIN sign-in on paired devices all run against POS Edge alone.
-5. **POS Edge synchronizes with Wasla POS Cloud** over outbound HTTPS only. It uses a durable local outbox, per-installation sequence numbers, idempotent uploads and acknowledgements given after durable storage ([Synchronization](#synchronization)). After a restore, POS Cloud returns the synced facts the backup lacks in a signed recovery package ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
-6. **POS Edge prints locally.** It uses a printing library extracted from Print Bridge's proven Windows printing code, and it never needs the cloud or Wasla Orders. Print Bridge stays the Orders printing client ([Printing](#printing)).
-7. **Code stays in this repository as separate applications**: POS Edge, POS Terminal, POS Cloud and their tools. None of them reference Orders projects, and Orders references none of them ([Repository](#repository-and-application-boundaries)).
-8. **Payments run through the restaurant's fiscal cash register (ÖKC), driven by POS Edge.** POS Edge owns the device communication through a device adapter; Terminals never talk to the ÖKC. The ÖKC issues the fiscal receipt; POS Edge prints only non-fiscal documents. The first brand and model are open ([Fiscal cash register](#fiscal-cash-register-ökc), added 2026-10-22).
+3. **Cashier devices are Windows touch terminals running the Wasla POS Terminal**, a native WinUI 3 app. It calls the POS Edge API over the restaurant network or on the Edge machine itself, through HTTPS. It also holds the back office and the setup console. The Terminal pins the installation's own certificate authority, so routine certificate renewal never needs re-pairing.
+4. **Waiter phones and tablets run Wasla POS Waiter**, a native Android app. It pairs, pins the certificate authority and calls the same API with the Waiter role's permissions. Whether it ships for the first pilots is an [open product decision](../product/pos-mvp.md#unresolved-product-decisions).
+5. **The Wasla cloud is not in the sale path.** Opening checks, adding lines, kitchen tickets, payments, closing, printing, history and PIN sign-in on paired devices all run against POS Edge alone.
+6. **POS Edge synchronizes with Wasla POS Cloud** over outbound HTTPS only. It uses a durable local outbox, per-installation sequence numbers, idempotent uploads and acknowledgements given after durable storage ([Synchronization](#synchronization)). After a restore, POS Cloud returns the synced facts the backup lacks in a signed recovery package ([Restore and recovery](#restore-and-recovery-from-the-cloud)).
+7. **POS Edge prints locally.** It uses a printing library extracted from Print Bridge's proven Windows printing code, and it never needs the cloud or Wasla Orders. Print Bridge stays the Orders printing client ([Printing](#printing)).
+8. **Code stays in this repository as separate applications**: POS Edge, POS Terminal, POS Waiter, POS Cloud and their tools. None of them reference Orders projects, and Orders references none of them ([Repository](#repository-and-application-boundaries)).
+9. **Payments run through the restaurant's fiscal cash register (ÖKC), driven by POS Edge.** POS Edge owns the device communication through a device adapter; paired devices never talk to the ÖKC. The ÖKC issues the fiscal receipt; POS Edge prints only non-fiscal documents. The first brand and model are open ([Fiscal cash register](#fiscal-cash-register-ökc), added 2026-10-22).
 
 ## Installed product
 
@@ -47,28 +50,32 @@ Facts from the code on `dev` at `40fe698`:
 ┌─────────────────────────┼───────────────── restaurant ──────────────────────┐
 │  POS Edge machine (Windows 10/11 Pro, always on, wired, UPS recommended)    │
 │   ├── Wasla POS Edge (Windows service, NT SERVICE\WaslaPosEdge)             │
-│   │     ├── HTTPS on the LAN (pinned installation CA) and loopback          │
+│   │     ├── local POS API: HTTPS on the LAN (pinned CA) and loopback        │
 │   │     ├── SQLite database, outbox, backups (ProgramData\Wasla\Pos)        │
 │   │     ├── print queue → Windows spooler → receipt and kitchen printers    │
 │   │     └── ÖKC adapter → fiscal cash register (ÖKC, link device-dependent) │
-│   └── Wasla POS Terminal (optional: the Edge machine as a cashier station)  │
+│   └── Wasla POS Terminal, WinUI 3 (setup console; optional cashier station) │
 │                                                                             │
-│  Windows touch terminals ── restaurant LAN ──► POS Edge (HTTPS)             │
+│  Windows touch terminals (WinUI 3) ── restaurant LAN ──► POS Edge (HTTPS)   │
+│  Android waiter devices ── staff Wi-Fi, same subnet ──► POS Edge (HTTPS)    │
 │  Wasla Print Bridge (only if the restaurant also uses Wasla Orders)         │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - One POS Edge per restaurant location. A location is still one tenant ([tenancy.md](tenancy.md)). A second Edge for the same tenant, or failover between two Edges, is out of scope for the MVP.
-- Printers are installed in Windows on the Edge machine for all users (USB, or network printers added by an administrator). Terminals never print directly.
+- Printers are installed in Windows on the Edge machine for all users (USB, or network printers added by an administrator). Terminals and waiter devices never print directly.
+- Waiter devices join the restaurant's staff Wi-Fi on the Edge machine's subnet, never a guest network. The firewall rule admits only the local subnet ([Devices](#devices-and-the-local-network)).
 - The Edge machine needs no inbound internet access. The restaurant router must not forward any port to it.
 
 ### Options considered
 
 | Concern | Options | Chosen | Why |
 | --- | --- | --- | --- |
-| Local runtime | Windows service with ASP.NET Core; a desktop app that also serves the network; a container | **Windows service** hosting ASP.NET Core (`Microsoft.Extensions.Hosting.WindowsServices`) | Runs without a signed-in user, restarts on failure, starts at boot. It reuses the repository's ASP.NET Core, Razor and EF Core skills. Containers would need Docker on a restaurant PC |
-| Local user interface | Plain browser; WebView2 desktop shell; WinUI native UI | **WebView2 shell (Wasla POS Terminal)** showing Razor pages served by Edge | One UI codebase in the repository's MVC/Razor, Bootstrap and vanilla JavaScript stack. The shell pins Edge's certificate, keeps the device credential out of browser storage, and runs full screen. The repository already ships a WebView2 shell with a navigation and security policy (Print Bridge). A plain browser would need a trusted LAN certificate on every device. WinUI would be a second UI stack |
-| Terminals | Same machine only; LAN terminals | **Both**: the Edge machine may run a Terminal, and further Windows terminals connect over the LAN | Most restaurants have one or two Windows touch terminals. Tablets and phones need a separate certificate and shell decision ([Later](#later-decisions)) |
+| Local runtime | Windows service with ASP.NET Core; a desktop app that also serves the network; a container | **Windows service** hosting ASP.NET Core (`Microsoft.Extensions.Hosting.WindowsServices`) | Runs without a signed-in user, restarts on failure, starts at boot. It reuses the repository's ASP.NET Core and EF Core skills. Containers would need Docker on a restaurant PC |
+| Local user interface | Plain browser; WebView2 desktop shell showing Razor pages served by Edge (chosen until 2026-11-25); WPF; WinUI 3 native app | **WinUI 3 app (Wasla POS Terminal)** on the Windows App SDK, calling the [local API](#clients-and-the-local-api) | Touch, pen and keyboard input, the touch keyboard, focus visuals and UI Automation for Narrator come from the platform instead of being rebuilt in HTML. The app's own HTTP client pins Edge's CA and keeps the device credential under DPAPI, with no page navigation policy or script bridge to secure (Print Bridge needs both for its WebView2 page). Unsent draft lines are plain app state. WPF's built-in controls predate touch-first Fluent design. A plain browser would need a trusted LAN certificate on every device. The cost is a UI stack separate from the Orders Razor pages; the two products share no screens ([product boundaries](../product/product-boundaries.md)) |
+| Terminals | Same machine only; LAN terminals | **Both**: the Edge machine may run a Terminal, and further Windows terminals connect over the LAN | Most restaurants have one or two Windows touch terminals. Android phones and tablets use the waiter app (next rows) |
+| Edge–client interface | Server-rendered pages; versioned JSON API over HTTPS; gRPC | **Versioned JSON API** under `/pos/v1/`, described in OpenAPI | Both native clients use one contract. JSON over HTTPS works with each platform's HTTP client and the pinned-CA check. gRPC adds HTTP/2 requirements and code generation on both clients for no gain at restaurant scale |
+| Waiter devices | Android browser on the LAN; .NET MAUI (also for the Terminal); Flutter; native Android | **Native Android app (Wasla POS Waiter)**: Kotlin, Jetpack Compose, Material 3 | A browser cannot pin a private CA. The app checks POS Edge with its own trust manager, keeps the device credential under an Android Keystore key, and follows Android conventions (back gesture, TalkBack, font scale, edge-to-edge) directly. The cashier and waiter screens are different designs for different jobs, so one cross-platform UI codebase saves little, and MAUI adds its own layer over both WinUI and Android. Flutter adds Dart. iPadOS is [later](#later-decisions) |
 | Local database | SQLite; SQL Server Express; SQL Server LocalDB; PostgreSQL | **SQLite (WAL mode)** | No database server to install, patch or administer. One file to back up and restore. The installer stays small. POS Edge is the only process that writes, which suits SQLite's single writer. The EF Core provider is already used in this repository's tests. SQL Server Express adds a service, an administrator and a 10 GB limit. LocalDB is per user and unsuitable for a service |
 | Local transport | Plain HTTP on the LAN; HTTPS with a public certificate; HTTPS with a per-installation certificate | **HTTPS with a per-installation private CA, pinned at pairing** | PINs and device credentials never cross the LAN in clear text. No public DNS or certificate authority is needed, and nothing depends on the internet |
 
@@ -88,13 +95,15 @@ Facts from the code on `dev` at `40fe698`:
   - adds a Windows Firewall rule that allows the Edge port only on the Private profile and the local subnet;
   - creates the data and backup folders with restricted ACLs.
 
-  The Terminal needs the Microsoft Edge WebView2 Runtime, which Windows 11 includes; the installer installs it where it is missing. The installer technology is chosen in its backlog issue.
+  The Terminal ships the Windows App SDK self-contained, so it needs neither the WebView2 Runtime nor a separate Windows App SDK runtime. It runs on Windows 10 version 1809 or later, as WinUI 3 requires. On the Edge machine the installer always includes the Terminal, because the setup console is part of it; using that machine as a cashier station stays optional. The installer technology is chosen in its backlog issue.
 - **Updates** are signed packages listed in a release manifest served by POS Cloud. POS Edge downloads and verifies a package while online. It never applies one by itself during service: an Owner or Manager applies it from the back office, or it is applied at a configured quiet hour with no request in flight. A separate updater process runs these steps:
   1. Stop the service.
   2. Back up the database.
   3. Install the package.
   4. Run `migrate`.
   5. Start the service and check its health.
+
+  The Android waiter app is updated through its own distribution channel (chosen in its backlog issue). Devices may update after POS Edge, so the local API accepts the current and previous client versions ([Clients](#clients-and-the-local-api)).
 - **Rollback.** If the health check fails, the updater reinstalls the previous package and restores the pre-update backup automatically. No sale can have been recorded at that point, because the new version never became healthy. Rolling back later, after sales on the new version, is a support procedure. It never happens automatically, because it would lose those sales.
 - **Staged updates.** POS Cloud supports the current and previous sync protocol versions ([Versioning](#versioning)), so installations can update over days.
 - **Backups.**
@@ -108,6 +117,38 @@ Facts from the code on `dev` at `40fe698`:
 - POS Edge and POS Terminal write rolling log files (Serilog file sink, as Print Bridge does) under `C:\ProgramData\Wasla\Pos\logs`. Logs never contain PINs, device or installation credentials, activation or emergency codes, or card data. Like Orders, they hold identifiers but no customer content.
 - **Support bundle.** An Owner or Manager can create a ZIP from the back office or from the loopback-only console. It contains the last 7 days of logs, versions, sync health, configuration without secrets, the last backup's status and the result of a database integrity check. It contains no database contents. It is saved locally and uploaded to POS Cloud only when the Owner chooses to, while online.
 - Sync health is also sent to POS Cloud with each successful contact, so support can see an installation's last checkpoint and last contact without the bundle.
+
+## Clients and the local API
+
+*Paired device* means a Terminal or a waiter device. Where this document says Terminal about pairing, certificates, revocation, failures or restore, the same applies to a paired waiter device.
+
+**One local API.**
+
+- POS Edge exposes one versioned JSON API under `/pos/v1/` on its LAN and loopback HTTPS listeners, described by an OpenAPI document kept in the repository. It is the only way a client reads or changes POS data. POS Edge serves no pages, scripts or styles.
+- Every request carries the device credential, and staff actions also carry the PIN session bound to that device ([Devices](#devices-and-the-local-network)). POS Edge enforces the [role table](../product/pos-mvp.md#roles) on every request. A client hiding a button authorizes nothing.
+- Every write carries a client-generated idempotency key, so a retry after a timeout never repeats a kitchen send, a payment start or a close. A change to a check carries the check's version; a stale version is refused with the current state, which the client shows (a check edited from two devices: one wins).
+- Clients learn about changes made elsewhere (another device, the back office, a payment result) from notifications that carry identifiers and versions only, then read the state through the API. Polling stays as the safety net. This is the contract Orders uses ([realtime.md](realtime.md)); the transport is chosen in the scaffold issue.
+- **Versions.** POS Edge accepts the current and the previous client API version, so devices can update after POS Edge. An older client is told to update and cannot sign in; it is never served data it could misread. A change older clients cannot ignore is a new API version.
+
+**Wasla POS Terminal (Windows).**
+
+- WinUI 3 on the Windows App SDK, in C# and XAML. Full screen on touch terminals, and fully usable with keyboard and mouse.
+- Three areas, each shown only to the roles allowed to use it:
+  - **selling**: tables, the sale screen, takeaway, quick sale, payments through the ÖKC, kitchen tickets, history and the day summary;
+  - **back office**: categories, products, modifier groups (single or multiple choice, required or optional, minimum and maximum, price changes), areas and tables, staff and PINs, devices and pairing codes, printer roles, the ÖKC, POS settings, sync health, updates and the support bundle;
+  - **setup console**, on the Edge machine only: activation, the first Owner PIN and restore status. It talks only to the loopback-only listener.
+- Unsent draft lines are state of the app on that Terminal until they are sent or discarded ([Failure behavior](#failure-behavior)).
+
+**Wasla POS Waiter (Android).**
+
+- Kotlin with Jetpack Compose and Material 3, for phones and tablets.
+- The Waiter role's work only: tables, a check's lines, products with modifiers and notes, send to kitchen, pre-bill requests and void requests. It has no payment screens and no back office, as the role table allows neither.
+- Pairs with the same pairing code. The code can also be scanned as a QR code that carries the Edge address, the code and the fingerprint prefix; typing them stays possible.
+- Keeps the device credential encrypted with an Android Keystore key and excludes it from backups and device transfers.
+- Validates POS Edge with its own trust manager and the same rules as the Terminal ([Certificate lifecycle](#certificate-lifecycle)). The Android system trust store is never used for POS Edge, and no user-installed certificate is needed.
+- The minimum Android version and the distribution channel are chosen in its backlog issue.
+
+**The back office stays local.** It is part of the Terminal, so menu, table and staff changes work without the internet, and POS Edge stays their only authority ([Data ownership](#data-ownership)). A price change applies to new lines; lines already on a check keep their price snapshot. A browser back office on the Wasla cloud is [later work](#later-decisions) under the single-writer rule.
 
 ## Activation and installation identity
 
@@ -129,12 +170,12 @@ POS Cloud never writes CentralDb at runtime. Only `Wasla.Pos.Cli`, an operator t
 
 ## Devices and the local network
 
-- **Listening.** POS Edge listens with HTTPS on the configured LAN interface and on loopback, on one configurable port. It has no plain-HTTP listener on the LAN. A second, loopback-only listener serves the setup console (activation, first Owner PIN, restore status). It refuses any non-loopback request.
+- **Listening.** POS Edge listens with HTTPS on the configured LAN interface and on loopback, on one configurable port. It has no plain-HTTP listener on the LAN. A second, loopback-only listener serves the setup console's requests (activation, first Owner PIN, restore status), made by the Terminal on the Edge machine. It refuses any non-loopback request.
 - **Certificates.** Each installation has its own private certificate authority (the *installation CA*). It issues POS Edge's short-lived server certificates, and Terminals pin the CA's public key, not a server certificate ([Certificate lifecycle](#certificate-lifecycle)).
-- **Pairing a terminal.**
-  1. On an already signed-in terminal, or on the Edge console, an Owner or Manager creates a **pairing code**. It is single-use, valid 10 minutes, and includes the first characters of the installation CA's public-key fingerprint.
-  2. On the new terminal, the POS Terminal asks for the Edge address and the code. It connects, checks that the server certificate chains to a CA whose key matches the fingerprint in the code, and only then sends the code. A mismatch stops pairing.
-  3. POS Edge returns a random **device credential** (stored hashed in the Edge database), the installation id and the CA's full public key. The Terminal pins that key and stores the credential with DPAPI.
+- **Pairing a device.**
+  1. On an already signed-in terminal, or on the Edge console, the Owner creates a **pairing code**. In the first pilots only the Owner can create one ([roles](../product/pos-mvp.md#roles)). It is single-use, valid 10 minutes, and includes the first characters of the installation CA's public-key fingerprint.
+  2. On the new device, the Terminal or the waiter app asks for the Edge address and the code (the waiter app can scan both from a QR code). It connects, checks that the server certificate chains to a CA whose key matches the fingerprint in the code, and only then sends the code. A mismatch stops pairing.
+  3. POS Edge returns a random **device credential** (stored hashed in the Edge database), the installation id and the CA's full public key. The device pins that key and stores the credential: with DPAPI on Windows, under an Android Keystore key on Android.
 
   There is no anonymous pairing endpoint: an exchange without a valid code is refused and rate limited.
 - **Requests.** Every request except the pairing exchange and an anonymous health probe must present a valid, unrevoked device credential. The health probe shows no tenant data. Staff actions also need a PIN session bound to that device. Device revocation in the back office takes effect immediately.
@@ -155,7 +196,7 @@ Terminals trust a per-installation key that changes rarely and only through a si
 - it has the server-authentication usage;
 - it carries the `urn:wasla:pos:installation:` URI of the paired installation.
 
-The address itself is not part of the check: the Terminal connects to whatever address it has stored (an IP address or a host name). The pinned key never signs anything for anyone else, so a matching name would add no security. A changed IP address or machine name therefore needs **no new certificate** and no re-pairing; the Owner corrects the address in the Terminal's settings. A DHCP reservation for the Edge machine is recommended. Anything that fails these checks is refused with "This is not your POS Edge", and is never offered as a click-through. The WebView2 shell and the Terminal's own HTTP client use the same check.
+The address itself is not part of the check: the Terminal connects to whatever address it has stored (an IP address or a host name). The pinned key never signs anything for anyone else, so a matching name would add no security. A changed IP address or machine name therefore needs **no new certificate** and no re-pairing; the Owner corrects the address in the Terminal's settings. A DHCP reservation for the Edge machine is recommended. Anything that fails these checks is refused with "This is not your POS Edge", and is never offered as a click-through. The Terminal's HTTP client and the waiter app's trust manager use the same check.
 
 **Server certificate renewal (routine, no Terminal involvement).**
 - 30 days before expiry, POS Edge issues the next server certificate from the installation CA.
@@ -192,7 +233,7 @@ POS staff identity stays POS-owned (Orders users live in the Orders tenant datab
 - **First Owner.** The Owner setup code from activation sets the first Owner PIN on the loopback-only console.
 - **Owner recovery** without a permanent bypass:
   - *Offline:* activation also issues a printed one-time **recovery code**, stored hashed. Using it lets one new Owner PIN be set, is audited, and issues a new recovery code.
-  - *Online:* support or the tenant's Orders Owner can request a **recovery token** from POS Cloud. It is signed, bound to this installation id, single-use and valid 24 hours, and it is audited both locally and in the cloud.
+  - *Online:* a **recovery token** from POS Cloud. It is signed, bound to this installation id, single-use and valid 24 hours, and it is audited both locally and in the cloud. Who may request one is an [open decision](../product/pos-mvp.md#unresolved-product-decisions) for POS activation (WAS-165). A restaurant on POS does not use Wasla Orders, so the requester is not assumed to be an Orders Owner.
   - There is no master PIN, no default password and no support backdoor.
 - **Revocation from the cloud.** Support can revoke a device or a staff member. The revocation reaches POS Edge as a cloud command on its next contact. Until then the local state applies. A revocation is never undone by a later local change; it has to be re-granted locally.
 
@@ -470,8 +511,8 @@ Support then chooses one of two paths, and the choice is audited in both places:
 | Failure | Effect | Recovery |
 | --- | --- | --- |
 | Internet or Wasla cloud down | None for sales, printing, history or sign-in. Sync health shows "offline since". The outbox grows | Automatic upload on reconnection. The lease covers the lease period (provisionally 14 days) |
-| A terminal loses the LAN | That terminal cannot send, pay or close. Its unsent draft lines stay on screen. Other terminals continue | It reconnects by itself. Repeated requests carry the same idempotency keys |
-| POS Edge service crashes | Terminals show "POS Edge unavailable" | Windows restarts the service. Committed work and the outbox are in SQLite; draft lines on terminals survive |
+| A terminal or waiter device loses the network (LAN or Wi-Fi) | That device cannot send, pay or close. Its unsent draft lines stay on screen. Other devices continue | It reconnects by itself. Repeated requests carry the same idempotency keys |
+| POS Edge service crashes | Paired devices show "POS Edge unavailable" | Windows restarts the service. Committed work and the outbox are in SQLite; draft lines on terminals survive |
 | Edge machine fails (disk, power supply, theft) | **The restaurant cannot use POS** until it is replaced. Terminals depend on it | Install on a replacement machine, restore the newest surviving backup, run the restore operation with cloud recovery, and re-pair the Terminals. **Synced facts are restored into local history**, not merely visible to support. Only committed-but-unsynced records missing from every surviving backup, open-check changes after the backup, and unsent Terminal drafts can be lost ([Restore and recovery](#restore-and-recovery-from-the-cloud)). Target: within 2 hours with a spare machine. Meanwhile the restaurant follows its paper and fiscal-register fallback |
 | Database corruption | POS Edge refuses to start on a failed integrity check | Restore operation on the same machine from the newest backup that passes its integrity check, with cloud recovery. No re-pairing |
 | Server certificate expired, corrupted or lost | Terminals refuse an invalid certificate | POS Edge reissues it from the installation CA. No re-pairing ([Certificate lifecycle](#certificate-lifecycle)) |
@@ -490,13 +531,14 @@ A secondary or failover Edge, and replication between Edges, are out of scope fo
 
 | Application | What | Deployed to |
 | --- | --- | --- |
-| `Wasla.Pos.Edge` | Windows service: ASP.NET Core, Razor UI, SQLite, outbox, synchronizer, print queue | Restaurant Edge machine (installer) |
-| `Wasla.Pos.Terminal` | WebView2 desktop shell | Restaurant terminals (installer) |
+| `Wasla.Pos.Edge` | Windows service: ASP.NET Core local API (no user interface), SQLite, outbox, synchronizer, print queue | Restaurant Edge machine (installer) |
+| `Wasla.Pos.Terminal` | WinUI 3 app: selling, back office, setup console | Restaurant terminals and the Edge machine (installer) |
+| Wasla POS Waiter | Native Android app (Kotlin, Jetpack Compose) in its own folder with its own Gradle build | Restaurant phones and tablets (distribution channel chosen in its backlog issue) |
 | `Wasla.Pos.Cloud` | ASP.NET Core: activation, entitlement leases, ingestion, commands, release manifest | Wasla servers, its own process and host (name set with WAS-66) |
 | `Wasla.Pos.Cli` | Operator tool: tenant activation, POS cloud database migrations, installation status | Operators |
 | Updater | Applies Edge and Terminal updates with backup and rollback | Restaurant Edge machine |
 
-Shared libraries: `Wasla.Pos.Domain` and `Wasla.Pos.Application` (POS rules, used by Edge), `Wasla.Pos.Sync.Contracts` (the versioned sync protocol, used by Edge and Cloud), the printing library (used by POS Edge and Print Bridge), the platform library (secrets and the CentralDb registry reader, used by POS Cloud, `Wasla.Pos.Cli` and Orders), and the provider library (`Wasla.Integrations`, WAS-233: the food-platform provider contract and clients, used by Orders; POS use waits for the prerequisites of WAS-234).
+Shared libraries: `Wasla.Pos.Domain` and `Wasla.Pos.Application` (POS rules, used by Edge), the local API contract (its OpenAPI document and the .NET client the Terminal uses; the Android app's client is checked against the same document), `Wasla.Pos.Sync.Contracts` (the versioned sync protocol, used by Edge and Cloud), the printing library (used by POS Edge and Print Bridge), the platform library (secrets and the CentralDb registry reader, used by POS Cloud, `Wasla.Pos.Cli` and Orders), and the provider library (`Wasla.Integrations`, WAS-233: the food-platform provider contract and clients, used by Orders; POS use waits for the prerequisites of WAS-234).
 
 **Same repository (yes, for now).** Evaluated again with the installed product in mind:
 
@@ -508,6 +550,7 @@ Shared libraries: `Wasla.Pos.Domain` and `Wasla.Pos.Application` (POS rules, use
 | Installer size | Depends on the self-contained publish (expected below 150 MB), not on the repository |
 | CI duration | POS gets its own solution (`Wasla.Pos.sln`) and Windows CI job with path filters. Orders-only changes do not wait for it, except changes to shared libraries, which run both |
 | Operational ownership | POS releases, installers and installation support have their own owner and runbooks under `docs/` |
+| The Android app | A Gradle build with its own CI job and path filters. An API change and its Android client change land in one pull request, checked against the same OpenAPI document |
 | A future dedicated POS team | The trigger to move POS to its own repository. Shared contracts would first be published as versioned packages |
 
 Guardrails:
@@ -517,21 +560,24 @@ Guardrails:
   - an Orders project references a POS project;
   - a shared library references either product. For the provider library this is `IntegrationsReferenceDirectionTests` in `Wasla.UnitTests` (WAS-233).
 - POS code has no `TenantDbContext`, `AppUser`, `UserRole` or `WaslaTenantPolicies`. Orders code has no POS type.
+- The Android app depends on nothing in the repository except the local API contract.
+- A contract test fails when the API changes incompatibly without a new API version.
 - CentralDb changes for POS are additive and migrate before the POS Cloud release that reads them.
 - POS issues use their own branches and worktrees and focused POS tests.
 
 ### Stack
 
 - .NET 8.
-- ASP.NET Core MVC/Razor, Bootstrap 5 and vanilla JavaScript for the POS UI ([../frontend/architecture.md](../frontend/architecture.md)).
+- ASP.NET Core for the POS Edge API and POS Cloud. POS has no Razor user interface.
 - EF Core with SQLite at the Edge, and SQL Server for POS cloud databases.
-- WebView2 for the Terminal.
-- The repository's architecture boundary rules inside the POS projects ([AGENTS.md](../../AGENTS.md#6-architecture-boundaries)), and its localization rules and cultures.
+- WinUI 3 on the Windows App SDK (C#, XAML) for the Terminal.
+- Kotlin, Jetpack Compose and Material 3 for the Android waiter app.
+- The repository's architecture boundary rules inside the POS projects ([AGENTS.md](../../AGENTS.md#6-architecture-boundaries)), and its localization rules and cultures. Each client keeps its strings in its own resources (`.resw` for the Terminal, Android string resources for the waiter app) in TR, EN, AR and RU, with a parity test like the Orders resource tests. POS Edge renders printed documents in the receipt language.
 
 ## Later decisions
 
-- Tablets and phones (Android, iPadOS) as waiter devices: they need their own shell, or a trusted LAN certificate scheme.
-- Cloud menu and configuration editing, with the single-writer rule above.
+- iPadOS and iOS waiter devices. Android is decided ([Clients](#clients-and-the-local-api)); whether it ships for the first pilots is an [open product decision](../product/pos-mvp.md#unresolved-product-decisions).
+- Cloud menu and configuration editing in a browser back office, with the single-writer rule above.
 - Encrypted cloud backups of the whole Edge database. They would also restore open checks, and PIN hashes under the restaurant's own key.
 - Restoring the installation CA on a replacement machine, which would avoid re-pairing. It needs a key escrow design.
 - A secondary Edge, or failover.
@@ -546,7 +592,10 @@ Guardrails:
 - **Terminals pin a per-installation CA, not a server certificate.** Routine renewal and IP changes never need re-pairing; a replacement machine or a compromised key does.
 - **Wasla now ships installed software:** a signed installer, an updater, a certificate per installation, Windows Firewall rules and support bundles. That is new operational work, owned by POS.
 - **SQLite needs care:** money as integer kuruş, POS's own concurrency tests, and explicit migrations after a backup.
-- **Owners have separate Orders and POS credentials** until the identity decision is made.
+- **The POS Owner signs in with a local PIN only** until the [Owner account decision](../product/pos-mvp.md#unresolved-product-decisions) is made.
+- **POS has two native user interfaces besides the Orders Razor pages.** No UI code is shared with Orders, and none between the Terminal and the waiter app. The design is shared through the Wasla POS Figma file, whose tokens carry their WinUI resource and Compose names. UI tests use UI Automation on Windows and Compose tests on Android instead of browser tests.
+- **The local API is a contract between separately updated apps.** It is versioned, supports the previous client version, and has contract tests.
+- **Kotlin and Gradle join the repository's toolchain** for the waiter app.
 - **Orders behavior is unchanged.** The first code changes that touch Orders are two refactors: extracting the platform library, and extracting the printing library from Print Bridge Core. Each must leave every Orders and Print Bridge test green with no behavior change.
 
 ## Related documents
