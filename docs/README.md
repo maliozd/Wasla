@@ -37,7 +37,7 @@ Older files in this folder (`wasla-design-language-v1.md`, `orders-printjob-stat
 | [operations/address-reference-data.md](operations/address-reference-data.md) | Cities, districts and the pinned neighbourhood and street catalog: source, licence question, import rules, coverage, target import plan |
 | [operations/migrations.md](operations/migrations.md) | Central vs tenant EF |
 | [operations/deployment.md](operations/deployment.md) | Hosts, keys, config |
-| [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md) | Single Ubuntu server: systemd units, Nginx, paths, SQL identities, first deployment, update, rollback, backups (`deploy/linux/`) |
+| [operations/linux-vds-runbook.md](operations/linux-vds-runbook.md) | Single Ubuntu server: systemd units, Nginx, paths, SQL identities, first deployment, update, rollback, backups (`deploy/linux/`); the product floor release, rollback targets, restore hold and assignment reconciliation (WAS-236) |
 | [operations/observability.md](operations/observability.md) | Logs, trace id, health |
 | [operations/tenant-operations-center.md](operations/tenant-operations-center.md) | Central Admin tenant overview, list and per-tenant health |
 | [operations/pilot-applications.md](operations/pilot-applications.md) | Pilot restaurant applications from the coming-soon page (WAS-217): `/pilot`, storage, team notification and its resend, the privacy notice configuration and production prerequisites; WAS-222 retention (90 days after the last activity), the `pilot-applications-retention` command, destruction records and data subject requests |
