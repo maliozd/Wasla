@@ -39,7 +39,7 @@ DNS: `A` records for `wasla.tr`, `www.wasla.tr`, `app.wasla.tr` and `*.app.wasla
 | `/opt/wasla/current` | symlink | The release systemd runs. Switched atomically, never built into |
 | `/opt/wasla/previous-release` | `root 0644` | Commit of the release before the last switch |
 | `/opt/wasla/product-floor` | `root 0644` | Commit of the product floor release, written once, at its first install ([The floor release](#the-floor-release)) |
-| `/opt/wasla/product-assignment-status` | `root 0644` | `none` or `assigned`: whether any tenant has ever been assigned to anything but Orders. `none` is written only at the floor's first install ([Assignment records](#assignment-records)) |
+| `/opt/wasla/product-assignment-status` | `root 0644` | `none` or `assigned`: whether any tenant has ever been assigned to anything but Orders. `none` is decided only at the floor's first install ([Assignment records](#assignment-records)) |
 | `/opt/wasla/retired-releases/` | `root 0700` | Releases older than the floor, moved aside before the first assignment other than Orders |
 | `/etc/wasla/hold/` | `root 0700` | Restore hold: one empty file per held unit, named after the unit ([Held restore](#held-restore-cases-2-and-3)) |
 | `/etc/systemd/system/<unit>.d/50-restore-hold.conf` | `root 0644` | Drop-in that refuses to start the unit, a service or the backup timer, while its hold file exists |
@@ -189,16 +189,42 @@ The cutover (WAS-240) may change an assignment for the first time only when all 
 
 ### Release history
 
-The release history is the set of release tickets: one for every production install and every rollback, each naming the commit and the UTC time ([Update](#update), [Rollback](#rollback)). It lives outside the server, so a rebuilt server does not lose it. It is trusted only when it covers every production install since the first deployment and every ticket can be read. A gap, a ticket that cannot be read, or a ticket that disagrees with another ticket or with the server makes it untrusted.
+The release history is the [baseline ticket](#baseline-for-the-installs-before-was-236) for the installs made before WAS-236, followed by one release ticket for every later production install and every rollback, each naming the commit and the UTC time ([Update](#update), [Rollback](#rollback)). It lives outside the server, so a rebuilt server does not lose it. It is trusted only when the baseline has no gap, a ticket exists for every install and rollback since, and every ticket can be read. A gap, a ticket that cannot be read, or a ticket that disagrees with another ticket or with the server makes it untrusted.
+
+#### Baseline for the installs before WAS-236
+
+The installs made before this section existed have no release tickets. Record them once, in a baseline ticket, before the floor is installed:
+
+1. **Collect the existing evidence, read only**, and keep each source's output in the ticket:
+   - every directory in `/opt/wasla/releases/` and `/opt/wasla/retired-releases/`, with its `RELEASE` file (`commit=`, `published_utc=`);
+   - the target of `/opt/wasla/current` and the commit in `/opt/wasla/previous-release`;
+   - the `PRE-<short-sha>` and other named backups in `/var/opt/mssql/backup/wasla-prod/`, with their times;
+   - the release notes, tickets, pull requests and deployment messages that name a production install;
+   - whether `/opt/wasla/product-floor` and `/opt/wasla/product-assignment-status` exist;
+   - the `AddTenantProduct` query from [step 4 of the held restore](#held-restore-cases-2-and-3) in `WaslaProd_Central`.
+2. **List every install** that any source names, with its full commit, its time when a source shows it, and the sources. For each commit, record the exit code of `git merge-base --is-ancestor 530e2ccde3d0f77739489991aff263da02b0657b <commit>`.
+3. **Record the conclusion with its grounds.** The baseline confirms that the floor was never installed in production only when all of these hold:
+   - every listed commit resolves to a full commit and exits 1;
+   - the sources do not contradict one another: each `RELEASE` file names its directory's commit, `current` and `previous-release` name listed commits, and no backup or note names a commit missing from the list;
+   - neither record file exists, and the query returns 0.
+
+   Then write: "The floor has not been installed in production as of `<UTC time>`", with who checked and the grounds.
+4. **A gap stays a gap.** Do not close it by assumption, for example that every install was built from `master`. Record what is missing. The history stays untrusted, so restores fall in case 3, until evidence closes the gap.
 
 ### Assignment records
 
 Two records say what the assignments should be. Both live outside CentralDb and outside every backup restored with it, so a restore that rolls back CentralDb does not roll them back. Copy every change to them into the release ticket. A server restored from an image, or rebuilt, loses or rolls back the server copy.
 
 - **The status record**, `/opt/wasla/product-assignment-status`, says whether any tenant has ever been assigned to anything but Orders.
-  - `none` is written once, at the floor's first install ([The floor release](#the-floor-release)), and never again: `sudo sh -c 'set -C; echo "none since <floor commit> $(date -u +%FT%TZ)" > /opt/wasla/product-assignment-status'`. `set -C` refuses to overwrite an existing record.
+  - `none` is decided once, at the floor's first install ([The floor release](#the-floor-release)), and written then, on the server and in the ticket: `sudo sh -c 'set -C; echo "none since <floor commit> $(date -u +%FT%TZ)" > /opt/wasla/product-assignment-status'`. `set -C` refuses to overwrite an existing record.
   - The cutover (WAS-240) writes `assigned <UTC time>` there, and in the ticket, before it changes the first assignment.
-  - A rollback, a restore, a reinstall, a rebuilt server or an image restore never resets `assigned`. When either copy says `assigned`, write `assigned` into the other one too. A server copy that is missing while the ticket says `none` stays missing: `none` is not written again, so restores on that server fall in case 3 ([Restore](#restore)).
+  - A rollback, a restore, a reinstall, a rebuilt server or an image restore never resets `assigned`. When either copy says `assigned`, write `assigned` into the other one too.
+  - A rebuild, reinstall, rollback or restore never makes a new `none` decision. A lost server copy of the existing `none` record may be put back only when all of these can be verified:
+    - the ticket holds that record, `none since <floor commit> <time>`, written at the floor's first install;
+    - the [release history](#release-history) is trusted and names that first install of the same floor commit;
+    - no record says `assigned`: not the ticket, not a server copy, not a server image.
+
+    Then copy the ticket's line unchanged, with `set -C` as above, and note in the ticket where it came from. When anything is unclear, the server copy stays missing and restores fall in case 3 ([Restore](#restore)).
 - **The assignment register** lists every tenant whose assignment is not Orders, with its value. WAS-165 and WAS-240 define its form and who writes it. It must exist and be verified before the first assignment other than Orders.
 
 The restored CentralDb is what gets checked, never the reference. An expected list is never taken as empty because the restored CentralDb shows every tenant on Orders.
@@ -210,8 +236,8 @@ Before anything else, decide which case applies, from the release history, the f
 | Case | When | Procedure |
 |---|---|---|
 | 1. Before the floor | The trusted [release history](#release-history) confirms that the floor was never installed in production, and nothing contradicts it (below) | [Case 1](#case-1-before-the-floor) |
-| 2. Floor installed, no assignment other than Orders ever made | The release history names the floor's first install, `/opt/wasla/product-floor` names the same commit, and the status record says `none` both on the server and in the release ticket | [Held restore](#held-restore-cases-2-and-3), then [Case 2](#case-2-no-assignment-other-than-orders-was-ever-made) |
-| 3. An assignment was made, or the case is unclear | Every other state: the status record says `assigned`, or the release history, the floor record or the status record is missing, cannot be read, or disagrees with another record or with the server | [Held restore](#held-restore-cases-2-and-3), then [Case 3](#case-3-an-assignment-was-made-or-the-case-is-unclear) |
+| 2. Floor installed, no assignment other than Orders ever made | The trusted release history names the floor's first install, `/opt/wasla/product-floor` names the same commit, and the status record says `none` both on the server and in the release ticket | [Held restore](#held-restore-cases-2-and-3), then [Case 2](#case-2-no-assignment-other-than-orders-was-ever-made) |
+| 3. An assignment was made, or the case is unclear | Every other state: the status record says `assigned`; the release history is untrusted; or the floor record or the status record is missing, cannot be read, or disagrees with another record or with the server | [Held restore](#held-restore-cases-2-and-3), then [Case 3](#case-3-an-assignment-was-made-or-the-case-is-unclear) |
 
 The release history confirms case 1 only when all of these hold:
 
@@ -270,35 +296,38 @@ The existing restore and migration check apply. The `Product` column does not ex
 6. **Check the restored CentralDb before any migration**, and save the result: the `AddTenantProduct` query from step 4. 1 means the backup was taken at or after the floor, 0 before it.
 7. **Continue with case 2 or case 3.** Every unit and the backup timer stay held until [Start after a held restore](#start-after-a-held-restore) allows them.
 
+**No tenant migration before the assignments are verified.** `sudo wasla-cli --operator --gate` and `migrate-all-tenants` choose the tenant databases to migrate by the assignments in the restored CentralDb, so cases 2 and 3 check those assignments first.
+
 #### Case 2: no assignment other than Orders was ever made
 
-1. **Migration check**, with the floor or a later release: `sudo wasla-cli -- migration-status --require-current`. A backup taken before the floor, or before a later release's migrations, shows them as pending: apply them with `sudo wasla-cli --operator --gate`, then run the check again. The check has completed only when it exits 0. Save that output.
-2. **Assignment verification**, after the check has completed, so the `Product` column exists:
+1. **Assignment check before any migration**, when step 6 of the held restore returned 1, so the `Product` column exists:
    - the status record still says `none`, both on the server and in the release ticket;
-   - `SELECT Slug, IsActive, Product FROM dbo.Tenants WHERE Product <> 1 ORDER BY Slug;` in the restored `WaslaProd_Central` returns no row;
-   - the completed check's output has no `Not assigned to Wasla Orders` line.
+   - `SELECT Slug, IsActive, Product FROM dbo.Tenants WHERE Product <> 1 ORDER BY Slug;` in the restored `WaslaProd_Central` returns no row.
 
-   When all three hold, the expected list is empty and the restored CentralDb matches it.
-3. **When a row or that line appears,** the records and the database disagree. Continue with case 3, from its first check.
-4. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
+   When step 6 returned 0, the backup predates the floor and has no `Product` column. Check only the status record here; the migrations add the column with every tenant on Orders.
+2. **Migration check**, with the floor or a later release: `sudo wasla-cli -- migration-status --require-current`. A backup taken before the floor, or before a later release's migrations, shows them as pending: apply them with `sudo wasla-cli --operator --gate`, then run the check again. The check has completed only when it exits 0. Save that output.
+3. **Assignment verification**, after the check has completed: the status record still says `none`, the `Product` query from step 1 returns no row, and the completed check's output has no `Not assigned to Wasla Orders` line. Then the expected list is empty and the restored CentralDb matches it.
+4. **When a row or that line appears,** the records and the database disagree. Continue with case 3, from its first check. A row found in step 1 leaves the tenant databases unmigrated.
+5. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
 #### Case 3: an assignment was made, or the case is unclear
 
-Web, Api, the Worker, the POS integration host and the backup timer stay held while the register is missing or does not match the restored CentralDb.
+Web, Api, the Worker, the POS integration host and the backup timer stay held until step 7 has passed. When the register, or the cutover procedure that a difference needs, does not exist yet, the restore waits with everything held.
 
-1. **The backup is at or after the floor:** step 6 of the held restore returned 1. A 0 means a prohibited pre-floor backup: do not migrate it; restore a backup taken at or after the floor instead.
-2. **Migration check**, as in case 2: `sudo wasla-cli -- migration-status --require-current`. Pending migrations are applied with `sudo wasla-cli --operator --gate`, which migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
-3. **The register exists and has been verified.** Without it, everything stays held.
-4. **The assignments match the register.** The `Product` query from case 2, run on the restored CentralDb after the check has completed, lists the same tenants with the same values as the register, in both directions.
-5. **A difference is corrected only through the cutover procedure (WAS-240),** never by editing `Tenants.Product`. Then repeat checks 2 and 4.
-6. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
+1. **The backup holds `AddTenantProduct`:** step 6 of the held restore, run before any migration, returned 1. A 0 means a prohibited pre-floor backup: do not migrate it; restore a backup taken at or after the floor instead.
+2. **The register exists and has been verified.** Without it, wait.
+3. **Compare the assignments with the register, before any tenant migration.** The `Product` query from case 2, run on the restored CentralDb, lists the same tenants with the same values as the register, in both directions. Check 1 shows that the column exists, so the comparison needs no migration.
+4. **Correct a difference only through the cutover procedure (WAS-240),** never by editing `Tenants.Product`. If that procedure does not exist yet, wait. Then repeat check 3, until the assignments match.
+5. **Only then, the migration check:** `sudo wasla-cli -- migration-status --require-current`. Pending migrations are applied with `sudo wasla-cli --operator --gate`, which migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
+6. **Verify the assignments again** after the migrations: check 3 on the migrated CentralDb, and the completed check's `Not assigned to Wasla Orders` line names the same active tenants as the register.
+7. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
 #### Start after a held restore
 
 A unit starts only when both of these have passed, with their output in the ticket:
 
-- **the migration check:** `migration-status --require-current` exited 0 on the restored databases, after every migration applied to them (case 2 step 1, case 3 step 2);
-- **the assignment verification** of the case: case 2 step 2, or case 3 checks 1, 3 and 4.
+- **the migration check:** `migration-status --require-current` exited 0 on the restored databases, after every migration applied to them (case 2 step 2, case 3 step 5);
+- **the assignment verification** of the case, after that check: case 2 step 3, or case 3 step 6.
 
 Until then every unit and the backup timer stay held. Then remove each hold file just before starting its unit:
 
@@ -323,7 +352,7 @@ Until then every unit and the backup timer stay held. Then remove each hold file
   - `systemctl mask` refuses the installed unit file;
   - removing the hold file lets the unit start.
 - **The assignment register does not exist yet (WAS-165, WAS-240).** The first assignment other than Orders waits for it. Until it exists, a restore that falls in case 3 keeps Web, Api, the Worker and the backup timer held ([Restore](#restore)).
-- **The release history may not cover the installs made before WAS-236.** Case 1 needs a release ticket for every production install since the first deployment ([Release history](#release-history)). Without them every restore falls in case 3, and while production is before the floor, case 3 refuses every backup (check 1), so no restore can complete. Record the installs made so far before a restore is needed.
+- **The release history baseline has not been recorded yet (WAS-236).** Until it is recorded without a gap ([Baseline for the installs before WAS-236](#baseline-for-the-installs-before-was-236)), every restore falls in case 3. While production is before the floor, case 3 refuses every backup (check 1), so no restore can complete. Record the baseline before a restore is needed.
 - `Email:Provider` is `Log`: no email is sent (welcome, password reset, contact form notifications) until SMTP credentials are configured. Contact form messages are still stored in CentralDb and listed in Central Admin (`/admin/contact-messages`), marked as not notified.
 - Payment and billing are not implemented, so public signup stays closed; tenants are added with the CLI.
 - One certificate names each tenant host (no wildcard yet).
