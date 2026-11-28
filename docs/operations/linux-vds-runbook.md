@@ -233,6 +233,8 @@ The restored CentralDb is what gets checked, never the reference. An expected li
 
 Before anything else, decide which case applies, from the release history, the floor record and the status record, on the server and in the release ticket. Never decide it from the backup that is about to be restored. The operator who runs the restore does every step as root and as the SQL administrator, and records the case and each step's output in the incident or release ticket.
 
+**Nothing runs beside a restore.** From the moment the restore starts until the migration check has completed and, in cases 2 and 3, the assignment verification has passed, nobody runs a deploy (`wasla-install-release`), a rollback (`wasla-rollback`), a product cutover or a manual migration. The restore operator runs only what the runbook allows at the current step, such as the migrations in case 2 step 2 and case 3 step 5 and the correction through the cutover procedure (WAS-240) in case 3 step 4. A rollback that belongs to the incident, as in [Rollback](#rollback), is finished before the restore starts, so the migration check runs with the release that serves afterwards.
+
 | Case | When | Procedure |
 |---|---|---|
 | 1. Before the floor | The trusted [release history](#release-history) confirms that the floor was never installed in production, and nothing contradicts it (below) | [Case 1](#case-1-before-the-floor) |
