@@ -235,7 +235,7 @@ The restored CentralDb is what gets checked, never the reference. An expected li
 
 Before anything else, decide which case applies, from the release history, the floor record and the status record, on the server and in the release ticket. Never decide it from the backup that is about to be restored. The operator who runs the restore does every step as root and as the SQL administrator, and records the case and each step's output in the incident or release ticket.
 
-**Nothing runs beside a restore.** From the moment the restore starts until the migration check has completed and, in cases 2 and 3, the assignment verification has passed, nobody runs a deploy (`wasla-install-release`), a rollback (`wasla-rollback`), a product cutover or a manual migration. The restore operator runs only what the runbook allows at the current step, such as the migrations in case 2 step 2 and case 3 step 5 and the correction through the cutover procedure (WAS-240) in case 3 step 4. A rollback that belongs to the incident, as in [Rollback](#rollback), is finished before the restore starts: `wasla-rollback` has exited, also when it exited 1, and `current` names its target. The restore's checks then run with that release ([Which release runs the checks](#which-release-runs-the-checks)).
+**Nothing runs beside a restore.** From the moment the restore starts until the migration check has completed and, in cases 2 and 3, the assignment verification has passed, nobody runs a deploy (`wasla-install-release`), a rollback (`wasla-rollback`), a product cutover or a manual migration. The restore operator runs only what the runbook allows at the current step, such as the migrations in case 2 step 2 and case 3 step 6 and the correction through the cutover procedure (WAS-240) in case 3 step 5. A rollback that belongs to the incident, as in [Rollback](#rollback), is finished before the restore starts: `wasla-rollback` has exited, also when it exited 1, and `current` names its target. The restore's checks then run with that release ([Which release runs the checks](#which-release-runs-the-checks)).
 
 | Case | When | Procedure |
 |---|---|---|
@@ -334,27 +334,28 @@ The existing restore and migration check apply. The `Product` column does not ex
 
    Then run `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. A backup taken before that release's migrations shows them as pending: apply them with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`, then run the check again. When the check reports migrations unknown to that release, do not run `--gate` ([Which release runs the checks](#which-release-runs-the-checks) item 3). The check has completed only when it exits 0. Save that output.
 3. **Assignment verification**, after the check has completed: the status record still says `none`, the `Product` query from step 1 returns no row, and the completed check's output has no `Not assigned to Wasla Orders` line. Then the expected list is empty and the restored CentralDb matches it. When the release that serves is older than the floor, the restored CentralDb has no `Product` column and the check prints no such line; the status record is then the whole verification.
-4. **When a row or that line appears,** the records and the database disagree. Continue with case 3, from its first check. A row found in step 1 leaves the tenant databases unmigrated.
+4. **When a row or that line appears,** the records and the database disagree. Continue with case 3, from its first check, which checks the release that serves again. A row found in step 1 leaves the tenant databases unmigrated.
 5. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
 #### Case 3: an assignment was made, or the case is unclear
 
-Web, Api, the Worker, the POS integration host and the backup timer stay held until step 7 has passed. When the register, or the cutover procedure that a difference needs, does not exist yet, the restore waits with everything held.
+Web, Api, the Worker, the POS integration host and the backup timer stay held until step 8 has passed. When the register, or the cutover procedure that a difference needs, does not exist yet, the restore waits with everything held.
 
-1. **The backup holds `AddTenantProduct`:** step 7 of the held restore, run before any migration, returned 1. A 0 means a prohibited pre-floor backup: do not migrate it; restore a backup taken at or after the floor instead.
-2. **The register exists and has been verified.** Without it, wait.
-3. **Compare the assignments with the register, before any tenant migration.** The `Product` query from case 2, run on the restored CentralDb, lists the same tenants with the same values as the register, in both directions. Check 1 shows that the column exists, so the comparison needs no migration.
-4. **Correct a difference only through the cutover procedure (WAS-240),** never by editing `Tenants.Product`. If that procedure does not exist yet, wait. Then repeat check 3, until the assignments match.
-5. **Only then, the migration check**, with the release that serves ([Which release runs the checks](#which-release-runs-the-checks)): `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. That release is the floor or later (step 5 of the held restore). Pending migrations are applied with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`, which in such a release migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
-6. **Verify the assignments again** after the migrations: check 3 on the migrated CentralDb, and the completed check's `Not assigned to Wasla Orders` line names the same active tenants as the register.
-7. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
+1. **The release that serves is the floor or later**, checked again before anything else, however case 3 was reached: from the case table, or from case 2 step 4. Repeat the checks of step 5 of the held restore and save their output. When `current` names a release older than the floor, or the release cannot be checked, stop: do not run `--gate`, keep every unit and the backup timer held, and record why in the ticket.
+2. **The backup holds `AddTenantProduct`:** step 7 of the held restore, run before any migration, returned 1. A 0 means a prohibited pre-floor backup: do not migrate it; restore a backup taken at or after the floor instead.
+3. **The register exists and has been verified.** Without it, wait.
+4. **Compare the assignments with the register, before any tenant migration.** The `Product` query from case 2, run on the restored CentralDb, lists the same tenants with the same values as the register, in both directions. Check 2 shows that the column exists, so the comparison needs no migration.
+5. **Correct a difference only through the cutover procedure (WAS-240),** never by editing `Tenants.Product`. If that procedure does not exist yet, wait. Then repeat check 4, until the assignments match.
+6. **Only then, the migration check**, with the release that serves ([Which release runs the checks](#which-release-runs-the-checks)): `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. That release is the floor or later (step 1). Pending migrations are applied with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`, which in such a release migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
+7. **Verify the assignments again** after the migrations: check 4 on the migrated CentralDb, and the completed check's `Not assigned to Wasla Orders` line names the same active tenants as the register.
+8. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
 #### Start after a held restore
 
 A unit starts only when both of these have passed, with their output in the ticket:
 
-- **the migration check:** `migration-status --require-current` exited 0 on the restored databases, after every migration applied to them (case 2 step 2, case 3 step 5);
-- **the assignment verification** of the case, after that check: case 2 step 3, or case 3 step 6.
+- **the migration check:** `migration-status --require-current` exited 0 on the restored databases, after every migration applied to them (case 2 step 2, case 3 step 6);
+- **the assignment verification** of the case, after that check: case 2 step 3, or case 3 step 7.
 
 Until then every unit and the backup timer stay held. Then remove each hold file just before starting its unit:
 
@@ -382,7 +383,7 @@ Until then every unit and the backup timer stay held. Then remove each hold file
 
   A container restart starts systemd again, not the kernel. Before the hold's first production use, check on a non-production server that a held service and the held backup timer stay stopped after a reboot.
 - **The assignment register does not exist yet (WAS-165, WAS-240).** The first assignment other than Orders waits for it. Until it exists, a restore that falls in case 3 keeps Web, Api, the Worker and the backup timer held ([Restore](#restore)).
-- **The release history baseline has not been recorded yet (WAS-236).** Until it is recorded without a gap ([Baseline for the installs before WAS-236](#baseline-for-the-installs-before-was-236)), every restore falls in case 3. While production is before the floor, case 3 stops before anything is restored ([Held restore](#held-restore-cases-2-and-3) step 5) and refuses every backup (check 1), so no restore can complete. Record the baseline before a restore is needed.
+- **The release history baseline has not been recorded yet (WAS-236).** Until it is recorded without a gap ([Baseline for the installs before WAS-236](#baseline-for-the-installs-before-was-236)), every restore falls in case 3. While production is before the floor, case 3 stops before anything is restored ([Held restore](#held-restore-cases-2-and-3) step 5) and refuses every backup (check 2), so no restore can complete. Record the baseline before a restore is needed.
 - `Email:Provider` is `Log`: no email is sent (welcome, password reset, contact form notifications) until SMTP credentials are configured. Contact form messages are still stored in CentralDb and listed in Central Admin (`/admin/contact-messages`), marked as not notified.
 - Payment and billing are not implemented, so public signup stays closed; tenants are added with the CLI.
 - One certificate names each tenant host (no wildcard yet).
