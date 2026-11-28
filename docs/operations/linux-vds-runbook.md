@@ -137,7 +137,9 @@ sudo wasla-rollback            # to /opt/wasla/previous-release
 sudo wasla-rollback <commit>   # to any installed release
 ```
 
-It switches `current` back and restarts the services. **It does not roll back database migrations.** Each unit runs the target release's `migration-status --require-current` before it starts, so a release older than the applied schema refuses to start (unknown migrations). Then either restore the pre-release backups (below) and roll back, or switch forward again (`sudo wasla-rollback <newer commit>`). Never remove that check to make an old release start. Record the target commit and the UTC time in the release ticket ([Release history](#release-history)).
+It switches `current` back and restarts the services. **It does not roll back database migrations.** Each unit runs the target release's `migration-status --require-current` before it starts, so a release older than the applied schema refuses to start (unknown migrations). Then either keep the target and restore the pre-release backups ([Restore](#restore)), or switch forward again (`sudo wasla-rollback <newer commit>`). Never remove that check to make an old release start. Record the target commit and the UTC time in the release ticket ([Release history](#release-history)).
+
+**When a service does not start**, `wasla-rollback` exits 1 after it has switched: `current` names the target and `previous-release` the release it left. The services keep retrying their start (`Restart=on-failure`, about every 12 seconds in the drill) until systemd's start limit ends the retries with `Start request repeated too quickly` in the journal, and the backup timer keeps running. Before any backup is restored, [Restore](#restore) stops the services and, in cases 2 and 3, holds them: a service that is still retrying starts by itself as soon as the restored schema matches the target, before any restore check. A service stopped by its start limit refuses `systemctl start`, even after `systemctl stop`, until `sudo systemctl reset-failed <unit>`, and `systemctl` then reports only its last failure.
 
 After the first assignment other than Orders, the rollback targets and the backups that may be restored are narrower: see [Product floor and restore reconciliation](#product-floor-and-restore-reconciliation-was-236).
 
@@ -233,7 +235,7 @@ The restored CentralDb is what gets checked, never the reference. An expected li
 
 Before anything else, decide which case applies, from the release history, the floor record and the status record, on the server and in the release ticket. Never decide it from the backup that is about to be restored. The operator who runs the restore does every step as root and as the SQL administrator, and records the case and each step's output in the incident or release ticket.
 
-**Nothing runs beside a restore.** From the moment the restore starts until the migration check has completed and, in cases 2 and 3, the assignment verification has passed, nobody runs a deploy (`wasla-install-release`), a rollback (`wasla-rollback`), a product cutover or a manual migration. The restore operator runs only what the runbook allows at the current step, such as the migrations in case 2 step 2 and case 3 step 5 and the correction through the cutover procedure (WAS-240) in case 3 step 4. A rollback that belongs to the incident, as in [Rollback](#rollback), is finished before the restore starts, so the migration check runs with the release that serves afterwards.
+**Nothing runs beside a restore.** From the moment the restore starts until the migration check has completed and, in cases 2 and 3, the assignment verification has passed, nobody runs a deploy (`wasla-install-release`), a rollback (`wasla-rollback`), a product cutover or a manual migration. The restore operator runs only what the runbook allows at the current step, such as the migrations in case 2 step 2 and case 3 step 5 and the correction through the cutover procedure (WAS-240) in case 3 step 4. A rollback that belongs to the incident, as in [Rollback](#rollback), is finished before the restore starts: `wasla-rollback` has exited, also when it exited 1, and `current` names its target. The restore's checks then run with that release ([Which release runs the checks](#which-release-runs-the-checks)).
 
 | Case | When | Procedure |
 |---|---|---|
@@ -249,6 +251,15 @@ The release history confirms case 1 only when all of these hold:
 - When the CentralDb that the restore replaces can still be read, its `__EFMigrationsHistory` has no `20261125185955_AddTenantProduct` row. This reads the migration history, not the `Product` column.
 
 When any of them fails or cannot be checked, the restore is case 3.
+
+#### Which release runs the checks
+
+The migration check and the gate of every case run with the release that serves after the restore. That is the release `current` names; after a rollback, its target ([Rollback](#rollback)). With the services stopped:
+
+1. `readlink -e /opt/wasla/current` names `/opt/wasla/releases/<commit>`, and `<commit>` is the release the ticket says will serve.
+2. The check names that release: `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. Where the case applies pending migrations, it does so with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`.
+
+A check run with another release answers for that release. In the drill, after a failed rollback from `578a279c` to `94acc764` and a restore of the `PRE-578a279c` backups, the `94acc764` check exited 0, while the `578a279c` CLI listed five pending migrations and failed with `Invalid column name 'Product'`.
 
 #### Stopping the backups
 
@@ -269,7 +280,7 @@ The existing restore and migration check apply. The `Product` column does not ex
 1. Stop: `sudo systemctl stop wasla-worker wasla-api wasla-web`.
 2. Stop the backups ([Stopping the backups](#stopping-the-backups)).
 3. Restore as the SQL administrator: `RESTORE DATABASE [<db>] FROM DISK = N'<file>' WITH REPLACE, CHECKSUM;`. Restore CentralDb the same way. A tenant database restored from an older backup than CentralDb keeps working only while its schema matches.
-4. Run the gate before starting: `sudo wasla-cli -- migration-status --require-current`. Only when it exits 0: `sudo systemctl start wasla-web wasla-api wasla-worker`, then `sudo systemctl start wasla-backup.timer`.
+4. Run the check before starting, with the release that serves ([Which release runs the checks](#which-release-runs-the-checks)): `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. Only when it exits 0: `sudo systemctl start wasla-web wasla-api wasla-worker`, then `sudo systemctl start wasla-backup.timer`. A service stopped by its start limit needs `sudo systemctl reset-failed <unit>` first ([Rollback](#rollback)).
 
 #### Held restore: cases 2 and 3
 
@@ -286,7 +297,7 @@ The existing restore and migration check apply. The `Product` column does not ex
    systemctl show -p DropInPaths wasla-web.service wasla-api.service wasla-worker.service wasla-backup.service wasla-backup.timer
    ```
 
-   Hold the POS integration host the same way once it exists. Do not use `systemctl mask`: it refuses a unit whose file `wasla-install-host` installed in `/etc/systemd/system`, and `mask --runtime` does not survive a reboot. This hold has not yet been verified on Linux ([Known gaps](#known-gaps)).
+   Hold the POS integration host the same way once it exists. Do not use `systemctl mask`: it refuses a unit whose file `wasla-install-host` installed in `/etc/systemd/system`, and `mask --runtime` does not survive a reboot. The hold has been verified in an Ubuntu 22.04 container with systemd 249, not yet across a reboot of a real server ([Known gaps](#known-gaps)).
 2. **Stop the services**, the Worker first: `wasla-worker` (and the POS integration host, once it exists), then `wasla-api`, then `wasla-web`. `systemctl is-active` reports `inactive` for each.
 3. **Stop the backups** ([Stopping the backups](#stopping-the-backups)).
 4. **Record the current state** while the databases are still readable. This is evidence of what the restore replaces; it never decides the case or the expected assignments.
@@ -307,8 +318,8 @@ The existing restore and migration check apply. The `Product` column does not ex
    - `SELECT Slug, IsActive, Product FROM dbo.Tenants WHERE Product <> 1 ORDER BY Slug;` in the restored `WaslaProd_Central` returns no row.
 
    When step 6 returned 0, the backup predates the floor and has no `Product` column. Check only the status record here; the migrations add the column with every tenant on Orders.
-2. **Migration check**, with the floor or a later release: `sudo wasla-cli -- migration-status --require-current`. A backup taken before the floor, or before a later release's migrations, shows them as pending: apply them with `sudo wasla-cli --operator --gate`, then run the check again. The check has completed only when it exits 0. Save that output.
-3. **Assignment verification**, after the check has completed: the status record still says `none`, the `Product` query from step 1 returns no row, and the completed check's output has no `Not assigned to Wasla Orders` line. Then the expected list is empty and the restored CentralDb matches it.
+2. **Migration check**, with the release that serves ([Which release runs the checks](#which-release-runs-the-checks)): `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. A backup taken before that release's migrations shows them as pending: apply them with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`, then run the check again. The check has completed only when it exits 0. Save that output. Until the first assignment other than Orders, the release that serves may be older than the floor, for example after a rollback ([Allowed versions](#allowed-versions-rollback-targets-and-backups)).
+3. **Assignment verification**, after the check has completed: the status record still says `none`, the `Product` query from step 1 returns no row, and the completed check's output has no `Not assigned to Wasla Orders` line. Then the expected list is empty and the restored CentralDb matches it. When the release that serves is older than the floor, the restored CentralDb has no `Product` column and the check prints no such line; the status record is then the whole verification.
 4. **When a row or that line appears,** the records and the database disagree. Continue with case 3, from its first check. A row found in step 1 leaves the tenant databases unmigrated.
 5. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
@@ -320,7 +331,7 @@ Web, Api, the Worker, the POS integration host and the backup timer stay held un
 2. **The register exists and has been verified.** Without it, wait.
 3. **Compare the assignments with the register, before any tenant migration.** The `Product` query from case 2, run on the restored CentralDb, lists the same tenants with the same values as the register, in both directions. Check 1 shows that the column exists, so the comparison needs no migration.
 4. **Correct a difference only through the cutover procedure (WAS-240),** never by editing `Tenants.Product`. If that procedure does not exist yet, wait. Then repeat check 3, until the assignments match.
-5. **Only then, the migration check:** `sudo wasla-cli -- migration-status --require-current`. Pending migrations are applied with `sudo wasla-cli --operator --gate`, which migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
+5. **Only then, the migration check**, with the release that serves ([Which release runs the checks](#which-release-runs-the-checks)): `sudo wasla-cli --release /opt/wasla/releases/<commit> -- migration-status --require-current`. Pending migrations are applied with `sudo wasla-cli --operator --release /opt/wasla/releases/<commit> --gate`, which migrates only the Orders databases of tenants assigned to Orders; then the check runs again. The check has completed only when it exits 0.
 6. **Verify the assignments again** after the migrations: check 3 on the migrated CentralDb, and the completed check's `Not assigned to Wasla Orders` line names the same active tenants as the register.
 7. **Start** only as [Start after a held restore](#start-after-a-held-restore) allows.
 
@@ -333,7 +344,7 @@ A unit starts only when both of these have passed, with their output in the tick
 
 Until then every unit and the backup timer stay held. Then remove each hold file just before starting its unit:
 
-1. Web, then Api, each answering `/health/ready`, then the Worker, then the POS integration host once it exists: `sudo rm /etc/wasla/hold/wasla-web.service && sudo systemctl start wasla-web`, and so on.
+1. Web, then Api, each answering `/health/ready`, then the Worker, then the POS integration host once it exists: `sudo rm /etc/wasla/hold/wasla-web.service && sudo systemctl start wasla-web`, and so on. A service stopped by its start limit before it was held needs `sudo systemctl reset-failed <unit>` first ([Rollback](#rollback)).
 2. The backups: `sudo rm /etc/wasla/hold/wasla-backup.service /etc/wasla/hold/wasla-backup.timer && sudo systemctl start wasla-backup.timer`.
 3. When no hold file is left, delete the `50-restore-hold.conf` drop-ins and run `systemctl daemon-reload`.
 
@@ -349,10 +360,13 @@ Until then every unit and the backup timer stay held. Then remove each hold file
 ## Known gaps
 
 - Off-site backups and a restore drill (WAS-79).
-- **The restore hold has not been verified on Linux (WAS-236).** Before its first production use, check it on a non-production systemd host that has the units installed by `wasla-install-host`:
-  - a held service or the held backup timer does not start, neither with `systemctl start` nor after a reboot;
-  - `systemctl mask` refuses the installed unit file;
-  - removing the hold file lets the unit start.
+- **The restore hold has not been verified across a real reboot (WAS-236).** The drill of 2026-11-28 ran in an Ubuntu 22.04 container with systemd 249, SQL Server 2022 Express and the units installed by `wasla-install-host`:
+  - a held service and the held backup timer refused `systemctl start` (`Assertion failed`);
+  - `systemctl mask` refused the installed unit file;
+  - removing the hold files let them start;
+  - they stayed stopped across a restart of the container.
+
+  A container restart starts systemd again, not the kernel. Before the hold's first production use, check on a non-production server that a held service and the held backup timer stay stopped after a reboot.
 - **The assignment register does not exist yet (WAS-165, WAS-240).** The first assignment other than Orders waits for it. Until it exists, a restore that falls in case 3 keeps Web, Api, the Worker and the backup timer held ([Restore](#restore)).
 - **The release history baseline has not been recorded yet (WAS-236).** Until it is recorded without a gap ([Baseline for the installs before WAS-236](#baseline-for-the-installs-before-was-236)), every restore falls in case 3. While production is before the floor, case 3 refuses every backup (check 1), so no restore can complete. Record the baseline before a restore is needed.
 - `Email:Provider` is `Log`: no email is sent (welcome, password reset, contact form notifications) until SMTP credentials are configured. Contact form messages are still stored in CentralDb and listed in Central Admin (`/admin/contact-messages`), marked as not notified.
